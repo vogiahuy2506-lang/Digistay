@@ -1,0 +1,250 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/db'
+import { auth } from '@/lib/auth'
+import { updateWorkspaceSchema } from '@/lib/validations'
+
+// Helper function to check workspace access
+async function checkWorkspaceAccess(workspaceId: string, userId: string) {
+  const workspace = await prisma.workspace.findFirst({
+    where: {
+      id: workspaceId,
+      OR: [
+        { ownerId: userId },
+        { members: { some: { userId } } },
+      ],
+    },
+    include: {
+      owner: { select: { id: true } },
+      members: { where: { userId }, select: { role: true } },
+    },
+  })
+
+  if (!workspace) {
+    return { hasAccess: false, isAdmin: false, isOwner: false, isManager: false }
+  }
+
+  const isOwner = workspace.ownerId === userId
+  const memberRole = workspace.members[0]?.role
+  
+  // ADMIN = chủ sở hữu (toàn quyền)
+  // MANAGER = quản lý (quản lý property, members)
+  // RECEPTIONIST = lễ tân (hạn chế)
+  // USER = người dùng thường (xem)
+  const isAdmin = isOwner || memberRole === 'ADMIN'
+  const isManager = memberRole === 'MANAGER' || isAdmin
+  const isReceptionist = memberRole === 'RECEPTIONIST' || isManager
+
+  return { hasAccess: true, isAdmin, isOwner, isManager, isReceptionist }
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth()
+    const { id } = await params
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { success: false, error: 'Vui lòng đăng nhập' },
+        { status: 401 }
+      )
+    }
+
+    const access = await checkWorkspaceAccess(id, session.user.id)
+    if (!access.hasAccess) {
+      return NextResponse.json(
+        { success: false, error: 'Bạn không có quyền truy cập workspace này' },
+        { status: 403 }
+      )
+    }
+
+    const workspace = await prisma.workspace.findUnique({
+      where: { id },
+      include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true,
+              },
+            },
+          },
+        },
+        properties: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            isActive: true,
+            subdomain: true,
+          },
+        },
+      },
+    })
+
+    if (!workspace) {
+      return NextResponse.json(
+        { success: false, error: 'Không tìm thấy workspace' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: workspace,
+    })
+  } catch (error) {
+    console.error('Get workspace error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Đã xảy ra lỗi khi lấy thông tin workspace' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth()
+    const { id } = await params
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { success: false, error: 'Vui lòng đăng nhập' },
+        { status: 401 }
+      )
+    }
+
+    const access = await checkWorkspaceAccess(id, session.user.id)
+    if (!access.isAdmin) {
+      return NextResponse.json(
+        { success: false, error: 'Bạn không có quyền chỉnh sửa workspace này' },
+        { status: 403 }
+      )
+    }
+
+    const body = await request.json()
+    
+    // Validate input
+    const validation = updateWorkspaceSchema.safeParse(body)
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, error: validation.error.errors[0].message },
+        { status: 400 }
+      )
+    }
+
+    const { name, description, domain, logo } = validation.data
+
+    const workspace = await prisma.workspace.update({
+      where: { id },
+      data: {
+        ...(name && { name }),
+        ...(description !== undefined && { description }),
+        ...(domain !== undefined && { domain: domain || null }),
+        ...(logo !== undefined && { logo }),
+      },
+      include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true,
+              },
+            },
+          },
+        },
+      },
+    })
+
+    return NextResponse.json({
+      success: true,
+      data: workspace,
+      message: 'Cập nhật workspace thành công',
+    })
+  } catch (error) {
+    console.error('Update workspace error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Đã xảy ra lỗi khi cập nhật workspace' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth()
+    const { id } = await params
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { success: false, error: 'Vui lòng đăng nhập' },
+        { status: 401 }
+      )
+    }
+
+    const workspace = await prisma.workspace.findUnique({
+      where: { id },
+      select: { ownerId: true },
+    })
+
+    if (!workspace) {
+      return NextResponse.json(
+        { success: false, error: 'Không tìm thấy workspace' },
+        { status: 404 }
+      )
+    }
+
+    // Only owner can delete workspace
+    if (workspace.ownerId !== session.user.id) {
+      return NextResponse.json(
+        { success: false, error: 'Chỉ chủ sở hữu mới có thể xóa workspace' },
+        { status: 403 }
+      )
+    }
+
+    await prisma.workspace.delete({
+      where: { id },
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Xóa workspace thành công',
+    })
+  } catch (error) {
+    console.error('Delete workspace error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Đã xảy ra lỗi khi xóa workspace' },
+      { status: 500 }
+    )
+  }
+}

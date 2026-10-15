@@ -1,0 +1,1001 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USER & AUTHENTICATION
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  password      String?
+  role          UserRole  @default(USER)
+  
+  // OAuth providers
+  accounts      Account[]
+  sessions      Session[]
+  
+  // User profile
+  phone         String?
+  address       String?
+  dateOfBirth   DateTime?
+  avatar        String?
+  bio           String?
+  
+  // Relations
+  ownedWorkspaces  Workspace[]       @relation("WorkspaceOwner")
+  workspaceMembers WorkspaceMember[]
+  invitations      Invitation[]      @relation("InvitationRecipient")
+  createdInvitations Invitation[]   @relation("InvitationSender")
+  
+  // Booking relations
+  createdBookings  Booking[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("users")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ============================================
+// WORKSPACE (Không gian làm việc)
+// ============================================
+
+model Workspace {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  logo        String?
+  domain      String?  // Custom domain if any
+  
+  // Owner of the workspace
+  ownerId     String
+  owner       User     @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  
+  // Settings
+  settings    Json?    @default("{}")
+  
+  // Relations
+  members     WorkspaceMember[]
+  properties  Property[]
+  invitations Invitation[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String          @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        WorkspaceRole   @default(USER)
+  
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  joinedAt    DateTime  @default(now())
+  
+  @@unique([workspaceId, userId])
+  @@map("workspace_members")
+}
+
+enum WorkspaceRole {
+  ADMIN      // Chủ sở hữu - Toàn quyền, xóa workspace
+  MANAGER    // Quản lý - Quản lý property, members (không xóa được workspace)
+  RECEPTIONIST // Lễ tân - Nhân viên lễ tân
+  USER       // Người dùng - Tài khoản thường
+}
+
+// ============================================
+// INVITATION (Mời thành viên)
+// ============================================
+
+model Invitation {
+  id          String   @id @default(cuid())
+  email       String
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  role        WorkspaceRole @default(USER)
+  token       String   @unique
+  
+  senderId    String
+  sender      User     @relation("InvitationSender", fields: [senderId], references: [id])
+  
+  recipientId String?
+  recipient   User?    @relation("InvitationRecipient", fields: [recipientId], references: [id])
+  
+  status      InvitationStatus @default(PENDING)
+  expiresAt   DateTime
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("invitations")
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+// ============================================
+// PROPERTY (Khách sạn / Nhà hàng)
+// ============================================
+
+model Property {
+  id          String   @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  name        String
+  slug        String   @unique
+  type        PropertyType
+  
+  // Address
+  address     String
+  city        String
+  district    String?
+  ward        String?
+  country     String   @default("Vietnam")
+  postalCode  String?
+  latitude    Float?
+  longitude   Float?
+  
+  // Contact
+  phone       String?
+  email       String?
+  website     String?
+  
+  // Branding
+  logo        String?
+  coverImage  String?
+  description String?  @db.Text
+  
+  // Subdomain
+  subdomain   String   @unique
+  isActive    Boolean  @default(true)
+  
+  // Relations
+  roomTypes   RoomType[]
+  amenities   PropertyAmenity[]
+  images      PropertyImage[]
+  pricing     PricingConfig[]
+  bookings    Booking[]
+  payments    Payment[]
+  invoices    Invoice[]
+  websiteBlocks WebsiteBlock[]
+  websiteSettings WebsiteSettings?
+  bankAccounts   BankAccount[]
+  roomLocks      RoomLock[]
+  extraServices   ExtraService[]
+  dailyRevenues   DailyRevenue[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("properties")
+}
+
+enum PropertyType {
+  HOTEL
+  HOMESTAY
+  RESORT
+  RESTAURANT
+  VILLA
+  MOTEL
+  OTHER
+}
+
+// ============================================
+// ROOM TYPE (Hạng phòng)
+// ============================================
+
+model RoomType {
+  id          String   @id @default(cuid())
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  
+  name        String
+  slug        String
+  
+  // Room details
+  description String?  @db.Text
+  area        Float?   // Diện tích (m2)
+  bedType     BedType
+  maxAdults   Int      @default(2)
+  maxChildren Int      @default(0)
+  totalRooms  Int      @default(1)
+  availableRooms Int   @default(1)
+  
+  // Base occupancy
+  baseOccupancy Int    @default(2)
+  maxOccupancy  Int    @default(4)
+  
+  // Relations
+  images      RoomTypeImage[]
+  pricing     RoomTypePricing[]
+  amenities   RoomTypeAmenity[]
+  
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([propertyId, slug])
+  @@map("room_types")
+}
+
+enum BedType {
+  SINGLE
+  DOUBLE
+  TWIN
+  TRIPLE
+  QUADRUPLE
+  KING
+  QUEEN
+  SUITE
+  BUNK
+}
+
+// ============================================
+// PRICING (Bảng giá)
+// ============================================
+
+model PricingConfig {
+  id          String   @id @default(cuid())
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  
+  name        String   @default("Standard")
+  
+  // Base prices
+  weekdayPrice    Float   // Giá ngày thường
+  weekendPrice    Float   // Giá cuối tuần
+  
+  // Extra charges
+  extraAdultPrice Float   @default(0)  // Phụ thu người lớn thêm
+  extraChildPrice Float   @default(0)  // Phụ thu trẻ em thêm
+  
+  // Hourly pricing (for motels)
+  hourlyPrice     Float?
+  minHours        Int?
+  
+  // Active
+  isActive    Boolean  @default(true)
+  
+  // Relations
+  roomTypePrices RoomTypePricing[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("pricing_configs")
+}
+
+model RoomTypePricing {
+  id          String   @id @default(cuid())
+  roomTypeId  String
+  pricingId   String
+  
+  roomType    RoomType     @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  pricing     PricingConfig @relation(fields: [pricingId], references: [id], onDelete: Cascade)
+  
+  weekdayPrice    Float
+  weekendPrice    Float
+  extraAdultPrice Float   @default(0)
+  extraChildPrice Float   @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("room_type_pricing")
+}
+
+// ============================================
+// AMENITIES (Tiện ích)
+// ============================================
+
+model Amenity {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  icon        String?
+  category    String   @default("general")
+  
+  properties  PropertyAmenity[]
+  roomTypes   RoomTypeAmenity[]
+  
+  createdAt   DateTime @default(now())
+
+  @@map("amenities")
+}
+
+model PropertyAmenity {
+  id          String   @id @default(cuid())
+  propertyId  String
+  amenityId   String
+  
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  amenity     Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+  
+  @@unique([propertyId, amenityId])
+  @@map("property_amenities")
+}
+
+model RoomTypeAmenity {
+  id          String   @id @default(cuid())
+  roomTypeId  String
+  amenityId   String
+  
+  roomType    RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  amenity     Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+  
+  @@unique([roomTypeId, amenityId])
+  @@map("room_type_amenities")
+}
+
+// ============================================
+// IMAGES (Hình ảnh)
+// ============================================
+
+model PropertyImage {
+  id          String   @id @default(cuid())
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  
+  url         String
+  thumbnail   String?
+  alt         String?
+  category    String?  // lobby, pool, restaurant, etc.
+  
+  width       Int?
+  height      Int?
+  size        Int?
+  
+  isPrimary   Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  
+  createdAt   DateTime @default(now())
+
+  @@map("property_images")
+}
+
+model RoomTypeImage {
+  id          String   @id @default(cuid())
+  roomTypeId  String
+  roomType    RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  
+  url         String
+  thumbnail   String?
+  alt         String?
+  
+  isPrimary   Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  
+  createdAt   DateTime @default(now())
+
+  @@map("room_type_images")
+}
+
+// ============================================
+// POLICIES (Chính sách)
+// ============================================
+
+model Policy {
+  id          String   @id @default(cuid())
+  propertyId  String   @unique
+  
+  // Check-in/Check-out
+  checkInTime     String  @default("14:00")
+  checkOutTime    String  @default("12:00")
+  
+  // Cancellation
+  cancellationHours Int?   // Số giờ trước check-in để hủy miễn phí
+  cancellationPolicy String? @db.Text
+  
+  // Children policy
+  childrenAllowed Boolean @default(true)
+  minChildAge      Int     @default(0)
+  
+  // Pet policy
+  petsAllowed      Boolean @default(false)
+  
+  // Smoking policy
+  smokingAllowed   Boolean @default(false)
+  
+  // Other rules
+  additionalRules  String? @db.Text
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("policies")
+}
+
+// ============================================
+// WEBSITE BUILDER (Block Builder Framework)
+// ============================================
+
+model WebsiteBlock {
+  id          String   @id @default(cuid())
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  
+  type        BlockType
+  name        String
+  
+  // Block content/settings
+  config      Json     @default("{}")
+  
+  // Visibility
+  isEnabled   Boolean  @default(true)
+  
+  // Order
+  sortOrder   Int      @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("website_blocks")
+  @@index([propertyId])
+}
+
+enum BlockType {
+  HERO              // Banner chính + Search
+  ROOMS             // Danh sách phòng
+  AMENITIES         // Tiện ích
+  ABOUT             // Giới thiệu
+  GALLERY           // Thư viện ảnh
+  REVIEWS           // Đánh giá khách hàng
+  MAP               // Bản đồ
+  CONTACT           // Liên hệ
+  FOOTER            // Footer
+  RESTAURANT_MENU   // Menu nhà hàng
+  SERVICES          // Dịch vụ
+  CTA               // Call to action
+}
+
+model WebsiteSettings {
+  id          String   @id @default(cuid())
+  propertyId  String   @unique
+  
+  // Branding
+  primaryColor     String  @default("#3B82F6")
+  secondaryColor   String  @default("#10B981")
+  accentColor      String  @default("#F59E0B")
+  fontFamily       String  @default("Inter")
+  headingFont      String  @default("Playfair Display")
+  
+  // Layout
+  layout        String  @default("modern")  // modern, classic, minimal
+  containerWidth String @default("1280px")
+  
+  // SEO
+  metaTitle       String?
+  metaDescription  String?
+  metaKeywords    String?
+  
+  // Custom domain
+  customDomain    String?
+  sslEnabled      Boolean @default(false)
+  sslVerifiedAt   DateTime?
+  
+  // Published status
+  isPublished     Boolean @default(false)
+  publishedAt     DateTime?
+  
+  // Relations
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("website_settings")
+}
+
+// ============================================
+// BOOKING (Đặt phòng)
+// ============================================
+
+model Booking {
+  id              String   @id @default(cuid())
+  bookingCode     String   @unique
+  
+  propertyId      String
+  property        Property @relation(fields: [propertyId], references: [id])
+  
+  // Guest info
+  guestName       String
+  guestEmail      String
+  guestPhone      String
+  guestNote       String?
+  
+  // Booking details
+  checkInDate     DateTime
+  checkOutDate    DateTime
+  numAdults       Int      @default(1)
+  numChildren     Int      @default(0)
+  
+  // Status
+  status          BookingStatus @default(PENDING)
+  
+  // Pricing
+  subtotal        Float    // Tổng tiền phòng
+  extraCharges    Float    @default(0)  // Phụ phí
+  discount        Float    @default(0)  // Giảm giá
+  totalAmount     Float    // Tổng cộng
+  depositAmount   Float    @default(0)  // Tiền cọc đã thanh toán
+  
+  // Payment
+  paymentMethod   PaymentMethod?
+  paymentStatus   PaymentStatus @default(PENDING)
+  paymentDueDate  DateTime?
+  
+  // VAT Invoice
+  vatCompany      String?
+  vatTaxCode      String?
+  vatAddress      String?
+  vatEmail        String?
+  
+  // Check-in/out
+  actualCheckIn   DateTime?
+  actualCheckOut  DateTime?
+  checkedInBy     String?
+  checkedOutBy    String?
+  
+  // Source
+  source          BookingSource @default(DIRECT)
+  referralCode    String?
+  
+  // Staff who created (for walk-in)
+  createdById     String?
+  createdBy       User?    @relation(fields: [createdById], references: [id])
+  
+  // Relations
+  bookingItems    BookingItem[]
+  roomLocks       RoomLock[]
+  payments        Payment[]
+  invoices        Invoice[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("bookings")
+  @@index([propertyId])
+  @@index([bookingCode])
+  @@index([status])
+  @@index([checkInDate])
+}
+
+enum BookingStatus {
+  PENDING           // Chờ thanh toán
+  CONFIRMED         // Đã xác nhận
+  CHECKED_IN        // Đã nhận phòng
+  CHECKED_OUT       // Đã trả phòng
+  CANCELLED         // Đã hủy
+  NO_SHOW           // Không đến
+}
+
+enum BookingSource {
+  DIRECT            // Đặt trực tiếp trên web
+  WALK_IN           // Đặng tại quầy
+  PHONE             // Đặt qua điện thoại
+  OTA               // OTA (Traveloka, Booking.com...)
+  AGENT             // Đại lý
+}
+
+model BookingItem {
+  id              String   @id @default(cuid())
+  bookingId       String
+  booking        Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  
+  roomTypeId     String
+  
+  // Room number (assigned later)
+  roomNumber     String?
+  
+  // Dates
+  checkInDate    DateTime
+  checkOutDate   DateTime
+  
+  // Pricing for this item
+  basePrice      Float
+  extraAdultPrice Float   @default(0)
+  extraChildPrice Float   @default(0)
+  totalPrice     Float
+  
+  // Extra services
+  extraServices  Json?    @default("[]")
+  
+  createdAt      DateTime @default(now())
+
+  @@map("booking_items")
+  @@index([bookingId])
+}
+
+model RoomLock {
+  id              String   @id @default(cuid())
+  bookingId       String?
+  booking         Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  
+  propertyId      String
+  property        Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  
+  roomTypeId      String
+  
+  // Lock period
+  lockStart       DateTime
+  lockEnd         DateTime
+  
+  // Lock type
+  type            RoomLockType @default(HOLD)
+  
+  // Who/what locked
+  sessionId       String?
+  customerInfo    String?
+  
+  expiresAt       DateTime  // Lock expires at this time
+  
+  createdAt       DateTime @default(now())
+
+  @@map("room_locks")
+  @@index([propertyId])
+  @@index([roomTypeId])
+  @@index([lockStart, lockEnd])
+}
+
+enum RoomLockType {
+  HOLD             // Giữ tạm thời (khi đặt)
+  BOOKED           // Đã đặt thành công
+  MAINTENANCE     // Bảo trì
+  BLOCKED          // Chặn thủ công
+}
+
+// ============================================
+// EXTRA SERVICES (Dịch vụ kèm theo)
+// ============================================
+
+model ExtraService {
+  id          String   @id @default(cuid())
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  
+  name        String
+  description String?
+  
+  // Pricing
+  priceType   PriceType @default(FIXED)
+  price       Float
+  
+  // Per person/per room
+  perPerson   Boolean @default(false)
+  
+  isActive    Boolean @default(true)
+  
+  createdAt   DateTime @default(now())
+
+  @@map("extra_services")
+  @@index([propertyId])
+}
+
+// ============================================
+// PAYMENT (Thanh toán)
+// ============================================
+
+model Payment {
+  id              String   @id @default(cuid())
+  bookingId       String
+  booking         Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  
+  // Property reference
+  property        Property @relation(fields: [propertyId], references: [id])
+  propertyId       String
+  
+  // Amount
+  amount          Float
+  fee             Float    @default(0)
+  netAmount       Float
+  
+  // Method
+  method          PaymentMethod
+  
+  // Status
+  status          PaymentStatus @default(PENDING)
+  
+  // Bank transfer
+  bankCode        String?
+  bankAccount     String?
+  accountHolder   String?
+  transferContent String?
+  
+  // QR Code
+  qrCodeUrl       String?
+  qrExpiresAt     DateTime?
+  
+  // Transaction reference
+  transactionId   String?   // Từ cổng thanh toán
+  paymentGateway  PaymentGateway?
+  
+  // Timestamps
+  paidAt          DateTime?
+  expiresAt       DateTime?
+  
+  // Metadata
+  metadata        Json?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("payments")
+  @@index([bookingId])
+  @@index([status])
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER    // Chuyển khoản
+  QR_VIETQR       // VietQR
+  CARD            // Thẻ ATM
+  CREDIT_CARD     // Thẻ tín dụng
+  E_WALLET        // Ví điện tử
+  CASH            // Tiền mặt
+}
+
+enum PaymentStatus {
+  PENDING         // Chờ thanh toán
+  PROCESSING      // Đang xử lý
+  PAID            // Đã thanh toán
+  FAILED          // Thất bại
+  REFUNDED        // Đã hoàn tiền
+  CANCELLED       // Đã hủy
+  EXPIRED         // Hết hạn
+}
+
+enum PaymentGateway {
+  VIETQR
+  VNPAY
+  ONEPAY
+  STRIPE
+  MOMO
+  ZALOPAY
+}
+
+enum PriceType {
+  FIXED           // Giá cố định
+  PER_NIGHT       // Theo đêm
+  PER_PERSON      // Theo người
+}
+
+// ============================================
+// BANK ACCOUNT (Tài khoản ngân hàng)
+// ============================================
+
+model BankAccount {
+  id              String   @id @default(cuid())
+  propertyId      String
+  property        Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  
+  bankName        String
+  bankCode        String   // VietQR bank code
+  accountNumber   String
+  accountHolder   String
+  
+  // QR settings
+  qrEnabled       Boolean @default(true)
+  
+  // Status
+  isActive        Boolean @default(true)
+  isVerified      Boolean @default(false)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("bank_accounts")
+  @@index([propertyId])
+}
+
+// ============================================
+// INVOICE (Hóa đơn điện tử)
+// ============================================
+
+model Invoice {
+  id              String   @id @default(cuid())
+  bookingId       String
+  booking         Booking  @relation(fields: [bookingId], references: [id])
+  
+  // Property reference
+  property        Property @relation(fields: [propertyId], references: [id])
+  propertyId      String
+  
+  invoiceNumber   String   @unique
+  invoiceCode     String?  // Mã hóa đơn từ cổng
+  
+  // Company info
+  companyName     String
+  companyAddress  String
+  taxCode         String
+  companyEmail    String?
+  
+  // Customer
+  customerName    String
+  customerEmail   String
+  customerAddress String?
+  
+  // Totals
+  subtotal        Float
+  taxRate         Float    @default(0.1)
+  taxAmount       Float
+  totalAmount     Float
+  
+  // Status
+  status          InvoiceStatus @default(DRAFT)
+  
+  // Electronic invoice
+  invoicePattern  String?  // 01GTKT
+  invoiceSeries   String?  // NC
+  fiscalCode      String?  // Mã số thuế
+  
+  // E-invoice provider
+  eInvoiceProvider EInvoiceProvider?
+  
+  // Published info
+  publishedAt     DateTime?
+  xmlUrl          String?
+  pdfUrl          String?
+  
+  // Metadata
+  metadata        Json?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("invoices")
+  @@index([bookingId])
+  @@index([invoiceNumber])
+}
+
+enum InvoiceStatus {
+  DRAFT           // Nháp
+  PENDING         // Chờ phát hành
+  PUBLISHED       // Đã phát hành
+  CANCELLED       // Đã hủy
+  REPLACED        // Thay thế
+}
+
+enum EInvoiceProvider {
+  MISA
+  VNPT
+  VIETTAX
+  FAST
+  BASE
+}
+
+// ============================================
+// REVENUE REPORT (Báo cáo doanh thu)
+// ============================================
+
+model DailyRevenue {
+  id          String   @id @default(cuid())
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  
+  date        DateTime @db.Date
+  
+  // Room revenue
+  roomRevenue     Float @default(0)
+  extraRevenue    Float @default(0)
+  totalRevenue   Float @default(0)
+  
+  // Bookings
+  totalBookings      Int @default(0)
+  confirmedBookings   Int @default(0)
+  checkedInBookings  Int @default(0)
+  checkedOutBookings Int @default(0)
+  cancelledBookings  Int @default(0)
+  
+  // Room stats
+  totalRooms      Int @default(0)
+  occupiedRooms   Int @default(0)
+  avgOccupancy    Float @default(0)
+  
+  // Payment breakdown
+  cashRevenue     Float @default(0)
+  bankRevenue     Float @default(0)
+  qrRevenue       Float @default(0)
+  cardRevenue     Float @default(0)
+  
+  createdAt       DateTime @default(now())
+
+  @@unique([propertyId, date])
+  @@map("daily_revenues")
+  @@index([propertyId])
+}
+
+// ============================================
+// ACTIVITY LOG
+// ============================================
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  
+  userId      String?
+  workspaceId String?
+  propertyId  String?
+  
+  action      String
+  entityType  String
+  entityId    String
+  changes     Json?
+  metadata    Json?
+  
+  ipAddress   String?
+  userAgent   String?
+  
+  createdAt   DateTime @default(now())
+
+  @@map("activity_logs")
+  @@index([workspaceId])
+  @@index([propertyId])
+  @@index([userId])
+}

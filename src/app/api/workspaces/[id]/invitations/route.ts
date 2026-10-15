@@ -1,0 +1,199 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/db'
+import { auth } from '@/lib/auth'
+import { inviteMemberSchema } from '@/lib/validations'
+import { generateRandomToken } from '@/lib/utils'
+
+// Check if user is workspace admin or owner
+async function checkWorkspaceAdmin(workspaceId: string, userId: string) {
+  const workspace = await prisma.workspace.findFirst({
+    where: {
+      id: workspaceId,
+      OR: [
+        { ownerId: userId },
+        { members: { some: { userId, role: 'ADMIN' } } },
+      ],
+    },
+  })
+
+  return !!workspace
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth()
+    const { id } = await params
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { success: false, error: 'Vui lòng đăng nhập' },
+        { status: 401 }
+      )
+    }
+
+    const isAdmin = await checkWorkspaceAdmin(id, session.user.id)
+    if (!isAdmin) {
+      return NextResponse.json(
+        { success: false, error: 'Bạn không có quyền xem danh sách lời mời' },
+        { status: 403 }
+      )
+    }
+
+    const invitations = await prisma.invitation.findMany({
+      where: { workspaceId: id },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
+        recipient: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    return NextResponse.json({
+      success: true,
+      data: invitations,
+    })
+  } catch (error) {
+    console.error('Get invitations error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Đã xảy ra lỗi khi lấy danh sách lời mời' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth()
+    const { id } = await params
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { success: false, error: 'Vui lòng đăng nhập' },
+        { status: 401 }
+      )
+    }
+
+    const isAdmin = await checkWorkspaceAdmin(id, session.user.id)
+    if (!isAdmin) {
+      return NextResponse.json(
+        { success: false, error: 'Bạn không có quyền mời thành viên' },
+        { status: 403 }
+      )
+    }
+
+    const body = await request.json()
+    
+    // Validate input
+    const validation = inviteMemberSchema.safeParse(body)
+    if (!validation.success) {
+      return NextResponse.json(
+        { success: false, error: validation.error.errors[0].message },
+        { status: 400 }
+      )
+    }
+
+    const { email, role } = validation.data
+
+    // Check if user is already a member
+    const existingMember = await prisma.workspaceMember.findFirst({
+      where: {
+        workspaceId: id,
+        user: { email },
+      },
+    })
+
+    if (existingMember) {
+      return NextResponse.json(
+        { success: false, error: 'Người dùng này đã là thành viên của workspace' },
+        { status: 400 }
+      )
+    }
+
+    // Check if there's already a pending invitation
+    const existingInvitation = await prisma.invitation.findFirst({
+      where: {
+        workspaceId: id,
+        email,
+        status: 'PENDING',
+      },
+    })
+
+    if (existingInvitation) {
+      return NextResponse.json(
+        { success: false, error: 'Đã có lời mời đang chờ xử lý cho email này' },
+        { status: 400 }
+      )
+    }
+
+    // Find user by email
+    const invitedUser = await prisma.user.findUnique({
+      where: { email },
+    })
+
+    // Create invitation
+    const invitation = await prisma.invitation.create({
+      data: {
+        email,
+        workspaceId: id,
+        role,
+        token: generateRandomToken(32),
+        senderId: session.user.id,
+        recipientId: invitedUser?.id,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
+        recipient: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
+      },
+    })
+
+    // TODO: Send email notification
+    // await sendInvitationEmail(email, invitation.token, workspace.name)
+
+    return NextResponse.json({
+      success: true,
+      data: invitation,
+      message: `Đã gửi lời mời đến ${email}`,
+    })
+  } catch (error) {
+    console.error('Create invitation error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Đã xảy ra lỗi khi gửi lời mời' },
+      { status: 500 }
+    )
+  }
+}
