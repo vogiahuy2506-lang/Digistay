@@ -14,6 +14,9 @@ Nền tảng quản lý khách sạn và nhà hàng chuyên nghiệp, được x
 - ✅ **Bảng giá**: Thiết lập giá ngày thường, cuối tuần, phụ phí
 - ✅ **Chính sách**: Cài đặt giờ check-in/out, quy định
 - ✅ **Dashboard**: Tổng quan với các chỉ số nhanh
+- ✅ **Quản lý đặt phòng**: Tạo, xem, quản lý booking
+- ✅ **Thanh toán VietQR**: Tích hợp mã QR thanh toán ngân hàng
+- ✅ **Website Builder**: Tạo trang public cho cơ sở
 
 ## Yêu cầu hệ thống
 
@@ -27,7 +30,8 @@ Nền tảng quản lý khách sạn và nhà hàng chuyên nghiệp, được x
 ### 1. Clone dự án
 
 ```bash
-cd DigistayFinal
+git clone https://github.com/vogiahuy2506-lang/Digistay.git
+cd Digistay
 ```
 
 ### 2. Cài đặt dependencies
@@ -57,10 +61,10 @@ NEXTAUTH_SECRET="your-super-secret-key-change-in-production"
 
 ```bash
 # Push schema vào database
-npm run db:push
+npx prisma db push
 
 # (Tùy chọn) Chạy seed để tạo dữ liệu demo
-npm run db:seed
+npx prisma db seed
 ```
 
 ### 5. Chạy ứng dụng
@@ -85,6 +89,7 @@ src/
 ├── app/                    # Next.js App Router
 │   ├── (auth)/            # Trang đăng nhập, đăng ký
 │   ├── (dashboard)/       # Dashboard và các trang quản lý
+│   ├── (public)/          # Trang public cho khách
 │   └── api/               # API routes
 ├── components/
 │   ├── ui/               # UI components cơ bản
@@ -108,7 +113,6 @@ src/
 
 ### Users
 - `GET/PATCH /api/users/me` - Thông tin & cập nhật profile
-- `PUT /api/users/me` - Đổi mật khẩu
 
 ### Workspaces
 - `GET /api/workspaces` - Danh sách workspace
@@ -128,6 +132,21 @@ src/
 - `GET/POST /api/properties/[id]/amenities` - Quản lý tiện ích
 - `GET/POST/DELETE /api/properties/[id]/images` - Quản lý hình ảnh
 
+### Bookings
+- `GET/POST /api/bookings` - Danh sách & tạo booking
+- `GET/PATCH/DELETE /api/bookings/[id]` - Chi tiết/cập nhật/xóa booking
+- `POST /api/bookings/[id]/check-in` - Check-in khách
+- `POST /api/bookings/[id]/check-out` - Check-out khách
+- `GET /api/bookings/availability` - Kiểm tra availability
+
+### Bank Accounts & Payments
+- `GET/POST /api/bank-accounts` - Quản lý tài khoản ngân hàng
+- `GET/POST /api/payments` - Quản lý thanh toán
+
+### Invoices
+- `GET/POST /api/invoices` - Danh sách & tạo hóa đơn
+- `GET/PATCH/DELETE /api/invoices/[id]` - Chi tiết/cập nhật/xóa hóa đơn
+
 ## Công nghệ sử dụng
 
 - **Frontend**: Next.js 14, React 18, TypeScript, Tailwind CSS
@@ -137,16 +156,16 @@ src/
 - **Authentication**: NextAuth.js v5 (Auth.js)
 - **Validation**: Zod
 - **UI Components**: Custom components với Tailwind
+- **QR Code**: qrcode library
 
 ## Phát triển tiếp theo (Giai đoạn 2)
 
-- [ ] Quản lý đặt phòng (Bookings)
-- [ ] Thanh toán trực tuyến
+- [ ] Thanh toán trực tuyến (VNPay, Momo, ZaloPay)
 - [ ] Gửi email tự động
 - [ ] Tích hợp Cloudinary/S3 cho hình ảnh
-- [ ] Trang public cho khách sạn
 - [ ] Quản lý review/đánh giá
-- [ ] Báo cáo doanh thu
+- [ ] Báo cáo doanh thu chi tiết
+- [ ] Mobile app
 
 ## License
 
