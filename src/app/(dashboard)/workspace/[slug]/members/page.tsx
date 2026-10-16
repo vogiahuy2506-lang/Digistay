@@ -152,7 +152,7 @@ export default function MembersPage() {
       case 'MANAGER':
         return <Badge variant="primary">Quản lý</Badge>
       case 'RECEPTIONIST':
-        return <Badge variant="info">Lễ tân</Badge>
+        return <Badge variant="secondary">Lễ tân</Badge>
       case 'USER':
         return <Badge variant="gray">Nhân viên</Badge>
       default:

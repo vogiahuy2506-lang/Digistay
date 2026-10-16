@@ -19,12 +19,12 @@ const updateInvoiceSchema = z.object({
 })
 
 interface RouteParams {
-  params: Promise<{ id: string }>
+  params: { id: string }
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = await params
+    const { id } = params
     const session = await auth()
 
     if (!session?.user?.id) {
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = await params
+    const { id } = params
     const session = await auth()
     const body = await request.json()
 
@@ -163,7 +163,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = await params
+    const { id } = params
     const session = await auth()
 
     if (!session?.user?.id) {

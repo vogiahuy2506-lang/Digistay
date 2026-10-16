@@ -4,10 +4,10 @@ import { auth } from '@/lib/auth'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string; token: string }> }
+  { params }: { params: { id: string; token: string } }
 ) {
   try {
-    const { id, token } = await params
+    const { id, token } = params
 
     const invitation = await prisma.invitation.findUnique({
       where: { token },

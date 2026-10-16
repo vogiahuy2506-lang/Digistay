@@ -365,14 +365,14 @@ export default function WalkinBookingPage() {
               <div className="space-y-4">
                 <h3 className="font-semibold">Phòng trống ({roomTypes.length})</h3>
                 {roomTypes.map((roomType) => (
-                  <Card 
-                    key={roomType.id} 
-                    className={`cursor-pointer transition-all hover:shadow-lg ${
+                  <div
+                    key={roomType.id}
+                    className={`cursor-pointer transition-all hover:shadow-lg rounded-xl border border-gray-200 bg-white ${
                       selectedRoomType?.id === roomType.id ? 'ring-2 ring-primary' : ''
                     }`}
                     onClick={() => handleSelectRoomType(roomType)}
                   >
-                    <CardContent className="p-6">
+                    <div className="p-6">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
@@ -428,8 +428,8 @@ export default function WalkinBookingPage() {
                           )}
                         </div>
                       )}
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}

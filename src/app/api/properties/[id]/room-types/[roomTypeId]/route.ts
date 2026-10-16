@@ -32,11 +32,11 @@ async function checkRoomTypeAdmin(roomTypeId: string, userId: string) {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ roomTypeId: string }> }
+  { params }: { params: { roomTypeId: string } }
 ) {
   try {
     const session = await auth()
-    const { roomTypeId } = await params
+    const { roomTypeId } = params
 
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -94,11 +94,11 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ roomTypeId: string }> }
+  { params }: { params: { roomTypeId: string } }
 ) {
   try {
     const session = await auth()
-    const { roomTypeId } = await params
+    const { roomTypeId } = params
 
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -212,11 +212,11 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ roomTypeId: string }> }
+  { params }: { params: { roomTypeId: string } }
 ) {
   try {
     const session = await auth()
-    const { roomTypeId } = await params
+    const { roomTypeId } = params
 
     if (!session?.user?.id) {
       return NextResponse.json(

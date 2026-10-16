@@ -21,7 +21,7 @@ export interface RouteContext {
 export const routes = {
   // Top-level
   workspaces: () => '/workspaces',
-  workspace: (slug: string) => `/workspace-picker/${slug}`,
+  workspace: (slug: string) => `/workspace/${slug}`,
 
   // Property-scoped
   properties: (slug: string) => `/workspace/${slug}/properties`,
