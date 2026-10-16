@@ -4,8 +4,9 @@ import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, Button, Badge, Modal, ModalFooter, Input, Textarea } from '@/components/ui'
-import { Plus, Building2, Users, MoreVertical, Pencil, Trash2, ExternalLink } from 'lucide-react'
+import { Plus, Building2, Users, MoreVertical, Pencil, Trash2, ExternalLink, Crown } from 'lucide-react'
 import { Dropdown, DropdownItem, DropdownDivider } from '@/components/ui'
+import { toast } from '@/components/ui/toast'
 
 interface Workspace {
   id: string
@@ -14,6 +15,12 @@ interface Workspace {
   description: string | null
   logo: string | null
   ownerId: string
+  owner: {
+    id: string
+    name: string | null
+    email: string
+    image: string | null
+  }
   _count: {
     properties: number
     members: number
@@ -23,9 +30,13 @@ interface Workspace {
 export default function WorkspacesPage() {
   const router = useRouter()
   const [workspaces, setWorkspaces] = React.useState<Workspace[]>([])
+  const [currentUserId, setCurrentUserId] = React.useState<string | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false)
+  const [selectedWorkspace, setSelectedWorkspace] = React.useState<Workspace | null>(null)
   const [isCreating, setIsCreating] = React.useState(false)
+  const [isUpdating, setIsUpdating] = React.useState(false)
   const [formData, setFormData] = React.useState({
     name: '',
     description: '',
@@ -43,11 +54,59 @@ export default function WorkspacesPage() {
       if (data.success) {
         setWorkspaces(data.data)
       }
+      // Get current user ID
+      const meRes = await fetch('/api/users/me')
+      const meData = await meRes.json()
+      if (meData.success) {
+        setCurrentUserId(meData.data.id)
+      }
     } catch (err) {
       console.error('Failed to fetch workspaces:', err)
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleEditWorkspace = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedWorkspace) return
+
+    setIsUpdating(true)
+    setError('')
+
+    try {
+      const response = await fetch(`/api/workspaces/${selectedWorkspace.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Đã xảy ra lỗi')
+        return
+      }
+
+      setIsEditModalOpen(false)
+      setSelectedWorkspace(null)
+      setFormData({ name: '', description: '' })
+      fetchWorkspaces()
+      toast.success('Cập nhật workspace thành công')
+    } catch (err) {
+      setError('Đã xảy ra lỗi, vui lòng thử lại')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const openEditModal = (workspace: Workspace) => {
+    setSelectedWorkspace(workspace)
+    setFormData({
+      name: workspace.name,
+      description: workspace.description || '',
+    })
+    setIsEditModalOpen(true)
   }
 
   const handleCreateWorkspace = async (e: React.FormEvent) => {
@@ -144,28 +203,41 @@ export default function WorkspacesPage() {
                       <p className="text-sm text-gray-500">{workspace.slug}</p>
                     </div>
                   </div>
-                  <Dropdown
-                    trigger={
-                      <button className="p-1 rounded hover:bg-gray-100">
-                        <MoreVertical className="w-5 h-5 text-gray-400" />
-                      </button>
-                    }
-                  >
-                    <DropdownItem icon={<Pencil className="w-4 h-4" />}>
-                      Chỉnh sửa
-                    </DropdownItem>
-                    <DropdownItem icon={<ExternalLink className="w-4 h-4" />}>
-                      Mở trang chủ
-                    </DropdownItem>
-                    <DropdownDivider />
-                    <DropdownItem 
-                      icon={<Trash2 className="w-4 h-4" />} 
-                      danger
-                      onClick={() => handleDeleteWorkspace(workspace.id)}
+                  <div className="flex items-center gap-2">
+                    {workspace.ownerId === currentUserId && (
+                      <Badge variant="warning" className="flex items-center gap-1">
+                        <Crown className="w-3 h-3" />
+                        Chủ sở hữu
+                      </Badge>
+                    )}
+                    <Dropdown
+                      trigger={
+                        <button className="p-1 rounded hover:bg-gray-100">
+                          <MoreVertical className="w-5 h-5 text-gray-400" />
+                        </button>
+                      }
                     >
-                      Xóa
-                    </DropdownItem>
-                  </Dropdown>
+                      <DropdownItem 
+                        icon={<Pencil className="w-4 h-4" />}
+                        onClick={() => openEditModal(workspace)}
+                      >
+                        Chỉnh sửa
+                      </DropdownItem>
+                      <DropdownItem icon={<ExternalLink className="w-4 h-4" />}>
+                        Mở trang chủ
+                      </DropdownItem>
+                      <DropdownDivider />
+                      {workspace.ownerId === currentUserId && (
+                        <DropdownItem 
+                          icon={<Trash2 className="w-4 h-4" />} 
+                          danger
+                          onClick={() => handleDeleteWorkspace(workspace.id)}
+                        >
+                          Xóa
+                        </DropdownItem>
+                      )}
+                    </Dropdown>
+                  </div>
                 </div>
 
                 {workspace.description && (
@@ -240,6 +312,52 @@ export default function WorkspacesPage() {
             </Button>
             <Button type="submit" isLoading={isCreating}>
               Tạo Workspace
+            </Button>
+          </ModalFooter>
+        </form>
+      </Modal>
+      {/* Edit Workspace Modal */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Chỉnh sửa Workspace"
+        description="Cập nhật thông tin workspace của bạn"
+      >
+        <form onSubmit={handleEditWorkspace}>
+          {error && (
+            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
+              {error}
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <Input
+              label="Tên Workspace"
+              placeholder="VD: Công ty ABC"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
+
+            <Textarea
+              label="Mô tả (tùy chọn)"
+              placeholder="Mô tả ngắn về workspace của bạn"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={3}
+            />
+          </div>
+
+          <ModalFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsEditModalOpen(false)}
+            >
+              Hủy
+            </Button>
+            <Button type="submit" isLoading={isUpdating}>
+              Lưu thay đổi
             </Button>
           </ModalFooter>
         </form>

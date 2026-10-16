@@ -143,9 +143,19 @@ export default function MembersPage() {
   }
 
   const getRoleBadge = (role: string, isOwner?: boolean) => {
-    if (isOwner) return <Badge variant="primary">Chủ sở hữu</Badge>
-    if (role === 'ADMIN') return <Badge variant="warning">Quản trị viên</Badge>
-    return <Badge variant="gray">Nhân viên</Badge>
+    if (isOwner) return <Badge variant="warning">Chủ sở hữu</Badge>
+    switch (role) {
+      case 'ADMIN':
+        return <Badge variant="danger">Quản trị viên</Badge>
+      case 'MANAGER':
+        return <Badge variant="primary">Quản lý</Badge>
+      case 'RECEPTIONIST':
+        return <Badge variant="info">Lễ tân</Badge>
+      case 'USER':
+        return <Badge variant="gray">Nhân viên</Badge>
+      default:
+        return <Badge variant="gray">{role}</Badge>
+    }
   }
 
   const getInvitationStatusBadge = (status: string) => {
@@ -256,10 +266,22 @@ export default function MembersPage() {
                               Thăng lên Quản trị viên
                             </DropdownItem>
                             <DropdownItem 
-                              icon={<User className="w-4 h-4" />}
-                              onClick={() => handleUpdateRole(member.id, 'STAFF')}
+                              icon={<Shield className="w-4 h-4" />}
+                              onClick={() => handleUpdateRole(member.id, 'MANAGER')}
                             >
-                              Hạ xuống Nhân viên
+                              Thăng lên Quản lý
+                            </DropdownItem>
+                            <DropdownItem 
+                              icon={<User className="w-4 h-4" />}
+                              onClick={() => handleUpdateRole(member.id, 'RECEPTIONIST')}
+                            >
+                              Đặt làm Lễ tân
+                            </DropdownItem>
+                            <DropdownItem 
+                              icon={<User className="w-4 h-4" />}
+                              onClick={() => handleUpdateRole(member.id, 'USER')}
+                            >
+                              Đặt làm Nhân viên
                             </DropdownItem>
                             <DropdownDivider />
                             <DropdownItem 
@@ -344,8 +366,10 @@ export default function MembersPage() {
             <Select
               label="Vai trò"
               options={[
-                { value: 'STAFF', label: 'Nhân viên (Staff)' },
-                { value: 'ADMIN', label: 'Quản trị viên (Admin)' },
+                { value: 'USER', label: 'Nhân viên' },
+                { value: 'RECEPTIONIST', label: 'Lễ tân' },
+                { value: 'MANAGER', label: 'Quản lý' },
+                { value: 'ADMIN', label: 'Quản trị viên' },
               ]}
               value={inviteForm.role}
               onChange={(e) => setInviteForm({ ...inviteForm, role: e.target.value })}
