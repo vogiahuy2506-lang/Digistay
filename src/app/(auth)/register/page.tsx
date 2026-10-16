@@ -64,7 +64,7 @@ export default function RegisterPage() {
         setError('Đăng ký thành công nhưng không thể đăng nhập tự động')
         router.push('/login')
       } else {
-        router.push('/dashboard')
+        router.push('/workspaces')
         router.refresh()
       }
     } catch {
@@ -75,7 +75,7 @@ export default function RegisterPage() {
   }
 
   const handleGoogleLogin = () => {
-    signIn('google', { callbackUrl: '/dashboard' })
+    signIn('google', { callbackUrl: '/workspaces' })
   }
 
   return (

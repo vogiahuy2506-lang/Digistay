@@ -8,6 +8,7 @@ import {
   ArrowLeft, Building2, MapPin, Phone, Mail, Globe, Bed, Wifi, Car, Utensils, 
   Plus, Pencil, Trash2, Save, Clock, Users, Baby, ExternalLink
 } from 'lucide-react'
+import { routes } from '@/lib/utils/routes'
 import Image from 'next/image'
 
 interface Property {
@@ -108,8 +109,9 @@ const defaultAmenities = [
 
 export default function PropertyDetailPage() {
   const router = useRouter()
-  const params = useParams()
-  const propertyId = params.id as string
+  const params = useParams<{ slug: string; id: string }>()
+  const slug = params.slug
+  const propertyId = params.id
 
   const [property, setProperty] = React.useState<Property | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
@@ -366,7 +368,7 @@ export default function PropertyDetailPage() {
         <Card>
           <CardContent className="p-12 text-center">
             <p className="text-gray-500">Không tìm thấy cơ sở</p>
-            <Button onClick={() => router.push('/properties')} className="mt-4">
+            <Button onClick={() => router.push(routes.properties(slug))} className="mt-4">
               Quay lại
             </Button>
           </CardContent>
@@ -379,7 +381,7 @@ export default function PropertyDetailPage() {
     <PageContainer>
       {/* Back button and header */}
       <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" onClick={() => router.push('/properties')}>
+        <Button variant="ghost" onClick={() => router.push(routes.properties(slug))}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Quay lại
         </Button>
@@ -402,7 +404,7 @@ export default function PropertyDetailPage() {
             </Button>
             <Button 
               variant="outline"
-              onClick={() => router.push(`/properties/${propertyId}/website`)}
+              onClick={() => router.push(routes.propertyWebsite(slug, propertyId))}
             >
               <Globe className="w-4 h-4 mr-2" />
               Website Builder

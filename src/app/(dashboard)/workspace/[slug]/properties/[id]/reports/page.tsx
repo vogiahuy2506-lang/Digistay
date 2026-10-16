@@ -1,9 +1,10 @@
 'use client'
 
 import * as React from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, CardHeader, CardTitle, Button, Select, Input } from '@/components/ui'
+import { routes } from '@/lib/utils/routes'
 import { 
   TrendingUp, TrendingDown, DollarSign, Calendar, Users, 
   CreditCard, Building2, Download
@@ -31,11 +32,12 @@ interface RevenueReport {
 
 export default function ReportsPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  
+  const params = useParams<{ slug: string; id: string }>()
+  const propertyIdFromUrl = params.id
+
   const [report, setReport] = React.useState<RevenueReport | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
-  const [propertyId, setPropertyId] = React.useState(searchParams.get('property') || '')
+  const [propertyId, setPropertyId] = React.useState(propertyIdFromUrl || '')
   const [dateRange, setDateRange] = React.useState('30')
 
   React.useEffect(() => {
@@ -96,7 +98,7 @@ export default function ReportsPage() {
           <CardContent className="p-12 text-center">
             <TrendingUp className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-500 mb-4">Vui lòng chọn cơ sở để xem báo cáo</p>
-            <Button onClick={() => router.push('/properties')}>
+            <Button onClick={() => router.push(routes.properties(params.slug))}>
               Chọn cơ sở
             </Button>
           </CardContent>

@@ -1,12 +1,14 @@
 'use client'
 
 import * as React from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, Button, Badge, Modal, ModalFooter, Input, Select, Textarea } from '@/components/ui'
 import { Plus, Building2, MapPin, MoreVertical, Pencil, Trash2, Eye, EyeOff } from 'lucide-react'
 import { Dropdown, DropdownItem, DropdownDivider } from '@/components/ui'
 import Image from 'next/image'
+import { useWorkspace } from '@/lib/hooks/use-workspace'
+import { routes } from '@/lib/utils/routes'
 
 interface Property {
   id: string
@@ -53,8 +55,8 @@ const getPropertyTypeBadge = (type: string) => {
 
 export default function PropertiesPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const workspaceId = searchParams.get('workspace')
+  const { workspace, loading: wsLoading } = useWorkspace()
+  const workspaceId = workspace?.id
 
   const [properties, setProperties] = React.useState<Property[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
@@ -122,7 +124,7 @@ export default function PropertiesPage() {
       setIsCreateModalOpen(false)
       resetForm()
       fetchProperties()
-      router.push(`/properties/${data.data.id}`)
+      router.push(routes.property(workspace!.slug, data.data.id))
     } catch (err) {
       setError('Đã xảy ra lỗi, vui lòng thử lại')
     } finally {
@@ -173,6 +175,16 @@ export default function PropertiesPage() {
     }
   }
 
+  if (wsLoading) {
+    return (
+      <PageContainer>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </PageContainer>
+    )
+  }
+
   if (!workspaceId) {
     return (
       <PageContainer>
@@ -185,7 +197,7 @@ export default function PropertiesPage() {
             <p className="text-gray-500 mb-6">
               Bạn cần chọn một workspace để xem và quản lý cơ sở kinh doanh.
             </p>
-            <Button onClick={() => router.push('/workspaces')}>
+            <Button onClick={() => router.push(routes.workspaces())}>
               Chuyển đến Workspace
             </Button>
           </CardContent>
@@ -269,7 +281,7 @@ export default function PropertiesPage() {
                     >
                       <DropdownItem 
                         icon={<Pencil className="w-4 h-4" />}
-                        onClick={() => router.push(`/properties/${property.id}`)}
+                        onClick={() => router.push(routes.property(workspace!.slug, property.id))}
                       >
                         Chỉnh sửa
                       </DropdownItem>
@@ -307,7 +319,7 @@ export default function PropertiesPage() {
                   <Button 
                     variant="outline" 
                     className="w-full"
-                    onClick={() => router.push(`/properties/${property.id}`)}
+                    onClick={() => router.push(routes.property(workspace!.slug, property.id))}
                   >
                     Quản lý
                   </Button>

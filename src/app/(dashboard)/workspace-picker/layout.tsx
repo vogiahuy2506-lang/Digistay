@@ -2,8 +2,7 @@ import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
-// Dashboard layout WITHOUT sidebar - uses full width for the custom UI
-export default async function DashboardPageLayout({
+export default async function WorkspacePickerLayout({
   children,
 }: {
   children: React.ReactNode

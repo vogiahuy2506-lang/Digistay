@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, Button, Badge, Input, Select, Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui'
 import { 
@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { format, addDays, differenceInDays } from 'date-fns'
 import { vi } from 'date-fns/locale'
+import { routes } from '@/lib/utils/routes'
 
 interface RoomType {
   id: string
@@ -52,10 +53,11 @@ const bedTypeLabels: Record<string, string> = {
 
 export default function WalkinBookingPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
+  const params = useParams<{ slug: string; id: string }>()
+  const propertyIdFromUrl = params.id
   
   const [properties, setProperties] = React.useState<Property[]>([])
-  const [selectedProperty, setSelectedProperty] = React.useState(searchParams.get('propertyId') || '')
+  const [selectedProperty, setSelectedProperty] = React.useState(propertyIdFromUrl || '')
   const [roomTypes, setRoomTypes] = React.useState<RoomType[]>([])
   const [availableRooms, setAvailableRooms] = React.useState<Room[]>([])
   const [isLoading, setIsLoading] = React.useState(false)

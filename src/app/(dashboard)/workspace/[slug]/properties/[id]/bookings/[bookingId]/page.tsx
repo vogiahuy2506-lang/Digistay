@@ -4,6 +4,7 @@ import * as React from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, CardHeader, CardTitle, Button, Badge, Input, Textarea } from '@/components/ui'
+import { routes } from '@/lib/utils/routes'
 import { 
   ArrowLeft, Calendar, Clock, Users, CreditCard, FileText, 
   CheckCircle, XCircle, Printer, Mail, ArrowRightLeft, User
@@ -60,8 +61,10 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 
 export default function BookingDetailPage() {
   const router = useRouter()
-  const params = useParams()
-  const bookingId = params.id as string
+  const params = useParams<{ slug: string; id: string; bookingId: string }>()
+  const slug = params.slug
+  const propertyId = params.id
+  const bookingId = params.bookingId
 
   const [booking, setBooking] = React.useState<Booking | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
@@ -179,7 +182,7 @@ export default function BookingDetailPage() {
         <Card>
           <CardContent className="p-12 text-center">
             <p className="text-gray-500">Không tìm thấy đơn đặt phòng</p>
-            <Button onClick={() => router.push('/bookings')} className="mt-4">
+            <Button onClick={() => router.push(routes.propertyBookings(params.slug, params.id!))} className="mt-4">
               Quay lại
             </Button>
           </CardContent>
@@ -192,7 +195,7 @@ export default function BookingDetailPage() {
     <PageContainer>
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" onClick={() => router.push('/bookings')}>
+        <Button variant="ghost" onClick={() => router.push(routes.propertyBookings(params.slug, params.id!))}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Quay lại
         </Button>

@@ -1,9 +1,10 @@
 'use client'
 
 import * as React from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, Button, Badge, Input, Select, Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui'
+import { routes } from '@/lib/utils/routes'
 import { 
   Search, Filter, Plus, Calendar, Clock, CheckCircle, XCircle, 
   Users, CreditCard, Eye, MoreVertical, ArrowRightLeft, Wrench
@@ -49,24 +50,24 @@ const paymentStatusConfig: Record<string, { label: string; color: string }> = {
 
 export default function BookingsPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
+  const params = useParams<{ slug: string; id: string }>()
+  const propertyId = params.id
   
   const [bookings, setBookings] = React.useState<Booking[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
-  const [selectedProperty, setSelectedProperty] = React.useState(searchParams.get('property') || '')
   const [statusFilter, setStatusFilter] = React.useState('')
   const [searchQuery, setSearchQuery] = React.useState('')
   const [activeTab, setActiveTab] = React.useState('all')
 
   React.useEffect(() => {
     fetchBookings()
-  }, [selectedProperty, statusFilter, activeTab])
+  }, [propertyId, statusFilter, activeTab])
 
   const fetchBookings = async () => {
     setIsLoading(true)
     try {
       const params = new URLSearchParams()
-      if (selectedProperty) params.set('propertyId', selectedProperty)
+      if (propertyId) params.set('propertyId', propertyId)
       if (statusFilter) params.set('status', statusFilter)
 
       const response = await fetch(`/api/bookings?${params.toString()}`)
@@ -158,7 +159,7 @@ export default function BookingsPage() {
         title="Quản lý đặt phòng"
         description="Xem và quản lý tất cả đơn đặt phòng"
         actions={
-          <Button onClick={() => router.push('/bookings/new')}>
+          <Button onClick={() => router.push(routes.propertyBookingNew(params.slug, propertyId!))}>
             <Plus className="w-4 h-4 mr-2" />
             Tạo đặt phòng
           </Button>
@@ -214,7 +215,7 @@ export default function BookingsPage() {
           <CardContent className="p-12 text-center">
             <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-500">Chưa có đơn đặt phòng nào</p>
-            <Button onClick={() => router.push('/bookings/new')} className="mt-4">
+            <Button onClick={() => router.push(routes.propertyBookingNew(params.slug, propertyId!))} className="mt-4">
               <Plus className="w-4 h-4 mr-2" />
               Tạo đặt phòng mới
             </Button>
@@ -281,7 +282,7 @@ export default function BookingsPage() {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => router.push(`/bookings/${booking.id}`)}
+                      onClick={() => router.push(routes.propertyBooking(params.slug, propertyId!, booking.id))}
                     >
                       <Eye className="w-4 h-4 mr-1" />
                       Chi tiết

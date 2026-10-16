@@ -42,7 +42,7 @@ export default function LoginPage() {
 
         setStatusMessage('Xác thực thành công! Đang chuyển hướng...')
         setTimeout(() => {
-          router.push('/dashboard')
+          router.push('/workspaces')
           router.refresh()
         }, 500)
       } else if (authMode === 'otp') {

@@ -1,12 +1,14 @@
 'use client'
 
 import * as React from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, Button, Badge, Modal, ModalFooter, Input, Select } from '@/components/ui'
 import { Plus, Users, Mail, MoreVertical, Shield, User, Trash2, UserPlus } from 'lucide-react'
 import { Dropdown, DropdownItem, DropdownDivider } from '@/components/ui'
 import { Avatar } from '@/components/ui'
+import { useWorkspace } from '@/lib/hooks/use-workspace'
+import { routes } from '@/lib/utils/routes'
 
 interface Member {
   id: string
@@ -40,8 +42,8 @@ interface Invitation {
 
 export default function MembersPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const workspaceId = searchParams.get('workspace')
+  const { workspace } = useWorkspace()
+  const workspaceId = workspace?.id
 
   const [members, setMembers] = React.useState<Member[]>([])
   const [invitations, setInvitations] = React.useState<Invitation[]>([])
@@ -185,7 +187,7 @@ export default function MembersPage() {
             <p className="text-gray-500 mb-6">
               Bạn cần chọn một workspace để quản lý thành viên.
             </p>
-            <Button onClick={() => router.push('/workspaces')}>
+            <Button onClick={() => router.push(routes.workspaces())}>
               Chuyển đến Workspace
             </Button>
           </CardContent>

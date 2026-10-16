@@ -15,7 +15,6 @@ import {
   BarChart3,
   Users,
   Globe,
-  Settings,
   LogOut,
   ChevronDown,
   Bell,
@@ -137,27 +136,6 @@ const managementNavigation: NavItem[] = [
     href: '/services',
     icon: Star,
     roles: ['ADMIN', 'MANAGER'],
-  },
-]
-
-const settingsNavigation: NavItem[] = [
-  {
-    name: 'Cài đặt Workspace',
-    href: '/settings',
-    icon: Settings,
-    roles: ['ADMIN', 'MANAGER'],
-  },
-  {
-    name: 'Cài đặt Công Ty',
-    href: '/settings/company',
-    icon: Building,
-    roles: ['ADMIN'],
-  },
-  {
-    name: 'Phân Quyền',
-    href: '/settings/roles',
-    icon: Shield,
-    roles: ['ADMIN'],
   },
 ]
 
@@ -386,9 +364,6 @@ export function Sidebar({
         
         {/* Quản trị */}
         {renderSection('Quản trị', 'management', managementNavigation)}
-        
-        {/* Cài đặt */}
-        {renderSection('Cài đặt', 'settings', settingsNavigation)}
       </nav>
 
       {/* Quick Stats */}
@@ -420,13 +395,6 @@ export function Sidebar({
         </div>
         
         <div className="flex items-center gap-1">
-          <Link 
-            href="/settings"
-            className="flex-1 flex items-center justify-center p-2 rounded-lg hover:bg-gray-50 transition-colors"
-            title="Cài đặt"
-          >
-            <Settings className="w-4 h-4 text-gray-400" />
-          </Link>
           <button
             className="flex-1 flex items-center justify-center p-2 rounded-lg hover:bg-gray-50 transition-colors"
             title="Thông báo"

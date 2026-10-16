@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { useSearchParams, useParams } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import QRCode from 'qrcode'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, CardHeader, CardTitle, Button, Badge, Input, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Select } from '@/components/ui'
@@ -41,8 +41,9 @@ const bankList = [
 ]
 
 export default function BankAccountsPage() {
-  const searchParams = useSearchParams()
-  const workspaceId = searchParams.get('workspace')
+  const params = useParams<{ slug: string; id: string }>()
+  const propertyIdFromUrl = params.id
+  const workspaceId = params.slug ? null : null // not used in this page
   
   const [properties, setProperties] = React.useState<Property[]>([])
   const [accounts, setAccounts] = React.useState<BankAccount[]>([])

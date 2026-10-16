@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, Button, Badge, Modal, ModalFooter, Input, Select, Textarea, Dropdown, DropdownItem, DropdownDivider } from '@/components/ui'
 import { 
@@ -62,9 +62,11 @@ const amenityIcons: Record<string, React.ReactNode> = {
 }
 
 export default function RoomTypesPage() {
-  const searchParams = useSearchParams()
+  const router = useRouter()
+  const params = useParams<{ slug: string; id: string }>()
+  const propertyIdFromUrl = params.id
   const [properties, setProperties] = React.useState<Property[]>([])
-  const [selectedProperty, setSelectedProperty] = React.useState<string>(searchParams.get('propertyId') || '')
+  const [selectedProperty, setSelectedProperty] = React.useState<string>(propertyIdFromUrl || '')
   const [selectedPropertyData, setSelectedPropertyData] = React.useState<any>(null)
   const [roomTypes, setRoomTypes] = React.useState<RoomType[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
