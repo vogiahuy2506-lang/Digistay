@@ -4,6 +4,13 @@ import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { generateRandomToken } from '@/lib/utils'
 
+class BookingCapacityError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'BookingCapacityError'
+  }
+}
+
 const createBookingSchema = z.object({
   propertyId: z.string(),
   guestName: z.string().min(2, 'Tên khách phải có ít nhất 2 ký tự'),
@@ -173,37 +180,115 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy hạng phòng' }, { status: 404 })
     }
 
-    // Count existing bookings for this room type in the date range
-    const existingBookings = await prisma.booking.count({
-      where: {
-        propertyId: data.propertyId,
-        status: { in: ['PENDING', 'CONFIRMED', 'CHECKED_IN'] },
-        OR: [
-          {
-            AND: [
-              { checkInDate: { lte: checkIn } },
-              { checkOutDate: { gt: checkIn } },
-            ],
-          },
-          {
-            AND: [
-              { checkInDate: { lt: checkOut } },
-              { checkOutDate: { gte: checkOut } },
-            ],
-          },
-          {
-            AND: [
-              { checkInDate: { gte: checkIn } },
-              { checkOutDate: { lte: checkOut } },
-            ],
-          },
-        ],
-      },
-    })
-
-    if (existingBookings >= roomType.totalRooms) {
-      return NextResponse.json({ success: false, error: 'Phòng đã hết trong khoảng ngày này' }, { status: 400 })
+    // -----------------------------------------------------------------
+    // Transactionally reserve the room: count overlapping bookings +
+    // room locks, then create the booking + lock. Without the
+    // transaction two concurrent POSTs can both pass the count check
+    // and over-sell the room.
+    // -----------------------------------------------------------------
+    const overlappingWhere = {
+      propertyId: data.propertyId,
+      OR: [
+        { checkInDate: { lte: checkIn }, checkOutDate: { gt: checkIn } },
+        { checkInDate: { lt: checkOut }, checkOutDate: { gte: checkOut } },
+        { checkInDate: { gte: checkIn }, checkOutDate: { lte: checkOut } },
+      ],
     }
+
+    const booking = await prisma.$transaction(async (tx) => {
+      const [activeBookings, activeLocks] = await Promise.all([
+        tx.booking.count({
+          where: {
+            ...overlappingWhere,
+            status: { in: ['PENDING', 'CONFIRMED', 'CHECKED_IN'] },
+          },
+        }),
+        tx.roomLock.count({
+          where: {
+            propertyId: data.propertyId,
+            roomTypeId: data.roomTypeId,
+            expiresAt: { gt: new Date() },
+            OR: [
+              { lockStart: { lte: checkIn }, lockEnd: { gt: checkIn } },
+              { lockStart: { lt: checkOut }, lockEnd: { gte: checkOut } },
+              { lockStart: { gte: checkIn }, lockEnd: { lte: checkOut } },
+            ],
+          },
+        }),
+      ])
+
+      if (activeBookings + activeLocks >= roomType.totalRooms) {
+        // Throw to roll back the (would-be) write
+        throw new BookingCapacityError('Phòng đã hết trong khoảng ngày này')
+      }
+
+      return tx.booking.create({
+        data: {
+          bookingCode: generateBookingCode(),
+          propertyId: data.propertyId,
+          guestName: data.guestName,
+          guestEmail: data.guestEmail,
+          guestPhone: data.guestPhone,
+          guestNote: data.guestNote,
+          checkInDate: checkIn,
+          checkOutDate: checkOut,
+          numAdults: data.numAdults,
+          numChildren: data.numChildren,
+          status: 'PENDING',
+          subtotal,
+          extraCharges,
+          totalAmount,
+          depositAmount: 0,
+          source: 'DIRECT',
+          createdById: session?.user?.id,
+          vatCompany: data.vatCompany,
+          vatTaxCode: data.vatTaxCode,
+          vatAddress: data.vatAddress,
+          vatEmail: data.vatEmail,
+          bookingItems: {
+            create: {
+              roomTypeId: data.roomTypeId,
+              roomNumber: data.roomNumber,
+              checkInDate: checkIn,
+              checkOutDate: checkOut,
+              basePrice,
+              extraAdultPrice: extraAdults * extraAdultPrice * numNights,
+              extraChildPrice: extraChildren * extraChildPrice * numNights,
+              totalPrice: totalAmount,
+            },
+          },
+          roomLocks: {
+            create: {
+              propertyId: data.propertyId,
+              roomTypeId: data.roomTypeId,
+              lockStart: checkIn,
+              lockEnd: checkOut,
+              type: 'HOLD',
+              expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 min hold
+            },
+          },
+        },
+        include: {
+          bookingItems: true,
+          property: {
+            select: {
+              id: true,
+              name: true,
+              subdomain: true,
+              address: true,
+              phone: true,
+              city: true,
+              workspace: {
+                select: {
+                  ownerId: true,
+                  owner: { select: { email: true, name: true } },
+                },
+              },
+            },
+          },
+        },
+      })
+    })
 
     // Calculate pricing
     const numNights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
@@ -234,62 +319,6 @@ export async function POST(request: NextRequest) {
     const totalAmount = subtotal
 
     // Create booking
-    const booking = await prisma.booking.create({
-      data: {
-        bookingCode: generateBookingCode(),
-        propertyId: data.propertyId,
-        guestName: data.guestName,
-        guestEmail: data.guestEmail,
-        guestPhone: data.guestPhone,
-        guestNote: data.guestNote,
-        checkInDate: checkIn,
-        checkOutDate: checkOut,
-        numAdults: data.numAdults,
-        numChildren: data.numChildren,
-        status: 'PENDING',
-        subtotal,
-        extraCharges,
-        totalAmount,
-        depositAmount: 0,
-        source: session?.user?.id ? 'DIRECT' : 'DIRECT',
-        createdById: session?.user?.id,
-        vatCompany: data.vatCompany,
-        vatTaxCode: data.vatTaxCode,
-        vatAddress: data.vatAddress,
-        vatEmail: data.vatEmail,
-        bookingItems: {
-          create: {
-            roomTypeId: data.roomTypeId,
-            roomNumber: data.roomNumber,
-            checkInDate: checkIn,
-            checkOutDate: checkOut,
-            basePrice,
-            extraAdultPrice: extraAdults * extraAdultPrice * numNights,
-            extraChildPrice: extraChildren * extraChildPrice * numNights,
-            totalPrice: totalAmount,
-          },
-        },
-      },
-      include: {
-        bookingItems: true,
-        property: {
-          select: {
-            id: true,
-            name: true,
-            subdomain: true,
-            address: true,
-            phone: true,
-            city: true,
-            workspace: {
-              select: {
-                ownerId: true,
-                owner: { select: { email: true, name: true } },
-              },
-            },
-          },
-        },
-      },
-    })
 
     // Fire-and-forget emails: booking confirmation to guest, new-booking
     // notification to property owner. Errors are logged but do not break
@@ -355,6 +384,9 @@ export async function POST(request: NextRequest) {
       message: 'Tạo đơn đặt phòng thành công',
     })
   } catch (error) {
+    if (error instanceof BookingCapacityError) {
+      return NextResponse.json({ success: false, error: error.message }, { status: 409 })
+    }
     console.error('Create booking error:', error)
     return NextResponse.json({ success: false, error: 'Lỗi khi tạo đặt phòng' }, { status: 500 })
   }

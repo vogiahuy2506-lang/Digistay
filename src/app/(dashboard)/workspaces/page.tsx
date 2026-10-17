@@ -73,6 +73,7 @@ interface User {
 
 interface Invitation {
   id: string
+  token: string
   workspaceId: string
   workspace: {
     id: string
@@ -231,18 +232,23 @@ export default function WorkspacesPage() {
 
   const handleAcceptInvitation = async (invitationId: string) => {
     try {
-      // Find the invitation to get workspace info
       const invitation = invitations.find(inv => inv.id === invitationId)
       if (!invitation) return
 
-      const res = await fetch(`/api/workspaces/${invitation.workspaceId}/invitations/${invitationId}/accept`, {
+      // Use the token-based endpoint so the same code path works for
+      // both the public /invitations/[token] page and this dashboard
+      // banner.
+      const res = await fetch(`/api/invitations/${invitation.token}/accept`, {
         method: 'POST',
       })
-      
+
       if (res.ok) {
         toast.success('Đã chấp nhận lời mời!')
         await fetchInvitations()
         await fetchWorkspaces()
+      } else {
+        const data = await res.json().catch(() => ({}))
+        toast.error(data.error || 'Không thể chấp nhận lời mời')
       }
     } catch (err) {
       console.error(err)
@@ -255,13 +261,16 @@ export default function WorkspacesPage() {
       const invitation = invitations.find(inv => inv.id === invitationId)
       if (!invitation) return
 
-      const res = await fetch(`/api/workspaces/${invitation.workspaceId}/invitations/${invitationId}/decline`, {
+      const res = await fetch(`/api/invitations/${invitation.token}/decline`, {
         method: 'POST',
       })
-      
+
       if (res.ok) {
         toast.success('Đã từ chối lời mời')
         await fetchInvitations()
+      } else {
+        const data = await res.json().catch(() => ({}))
+        toast.error(data.error || 'Không thể từ chối lời mời')
       }
     } catch (err) {
       console.error(err)

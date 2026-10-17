@@ -2,12 +2,26 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 
+/**
+ * POST /api/invitations/[token]/decline
+ *
+ * Decline a pending invitation. Requires a session whose email matches
+ * the invitation's email.
+ */
 export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string; token: string } }
+  _request: NextRequest,
+  { params }: { params: { token: string } }
 ) {
   try {
-    const { id, token } = params
+    const { token } = params
+    const session = await auth()
+
+    if (!session?.user?.id || !session.user.email) {
+      return NextResponse.json(
+        { success: false, error: 'Vui lòng đăng nhập để từ chối lời mời' },
+        { status: 401 }
+      )
+    }
 
     const invitation = await prisma.invitation.findUnique({
       where: { token },
@@ -15,7 +29,7 @@ export async function POST(
 
     if (!invitation) {
       return NextResponse.json(
-        { success: false, error: 'Lời mời không hợp lệ' },
+        { success: false, error: 'Lời mời không tồn tại' },
         { status: 404 }
       )
     }
@@ -27,34 +41,19 @@ export async function POST(
       )
     }
 
-    if (invitation.workspaceId !== id) {
-      return NextResponse.json(
-        { success: false, error: 'Lời mời không thuộc workspace này' },
-        { status: 400 }
-      )
-    }
-
-    const session = await auth()
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Vui lòng đăng nhập' },
-        { status: 401 }
-      )
-    }
-
-    // Verify email matches
-    if (session.user.email !== invitation.email) {
+    if (session.user.email.toLowerCase() !== invitation.email.toLowerCase()) {
       return NextResponse.json(
         { success: false, error: 'Email không khớp với lời mời' },
         { status: 403 }
       )
     }
 
-    // Update invitation status to declined
     await prisma.invitation.update({
       where: { id: invitation.id },
-      data: { status: 'DECLINED' },
+      data: {
+        status: 'DECLINED',
+        recipientId: session.user.id,
+      },
     })
 
     return NextResponse.json({

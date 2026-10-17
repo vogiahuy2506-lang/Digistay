@@ -185,6 +185,8 @@ export async function POST(
     // Send invitation email (fire-and-forget so the response is fast even
     // when the email provider is slow).
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+    // URL shape: /invitations/[token] (the public accept page is
+    // token-only; the workspace is looked up server-side from the token).
     const inviteUrl = `${siteUrl}/invitations/${invitation.token}`
 
     void (async () => {
