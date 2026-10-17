@@ -236,7 +236,7 @@ export default function LoginPage() {
                   <div className="relative flex items-center">
                     <span className="material-symbols-outlined absolute left-3.5 text-stone-400 text-[20px] pointer-events-none">mail</span>
                     <input 
-                      className="w-full pl-11 pr-4 py-3 bg-stone-50/70 border border-stone-200 rounded-xl text-sm font-medium text-charcoal placeholder-stone-400 focus:bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 transition-all outline-none" 
+                      className="w-full pl-11 pr-4 py-3 bg-stone-50/70 border border-stone-200 rounded-xl text-sm font-medium text-charcoal placeholder-stone-400 focus-visible:bg-white focus-visible:border-terracotta focus-visible:ring-2 focus-visible:ring-terracotta/20 transition-all outline-none" 
                       id="email-input" 
                       placeholder="quanly@khachsan.vn" 
                       required 
@@ -258,7 +258,7 @@ export default function LoginPage() {
                     <div className="relative flex items-center">
                       <span className="material-symbols-outlined absolute left-3.5 text-stone-400 text-[20px] pointer-events-none">lock</span>
                       <input 
-                        className="w-full pl-11 pr-11 py-3 bg-stone-50/70 border border-stone-200 rounded-xl text-sm font-medium text-charcoal placeholder-stone-400 focus:bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 transition-all outline-none" 
+                        className="w-full pl-11 pr-11 py-3 bg-stone-50/70 border border-stone-200 rounded-xl text-sm font-medium text-charcoal placeholder-stone-400 focus-visible:bg-white focus-visible:border-terracotta focus-visible:ring-2 focus-visible:ring-terracotta/20 transition-all outline-none" 
                         id="password-input" 
                         placeholder="Nhập mật khẩu" 
                         required 
@@ -289,7 +289,7 @@ export default function LoginPage() {
                     <div className="relative flex items-center">
                       <span className="material-symbols-outlined absolute left-3.5 text-stone-400 text-[20px] pointer-events-none">pin</span>
                       <input 
-                        className="w-full pl-11 pr-4 py-3 bg-stone-50/70 border border-stone-200 rounded-xl text-sm font-medium text-charcoal tracking-widest focus:bg-white focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 transition-all outline-none" 
+                        className="w-full pl-11 pr-4 py-3 bg-stone-50/70 border border-stone-200 rounded-xl text-sm font-medium text-charcoal tracking-widest focus-visible:bg-white focus-visible:border-terracotta focus-visible:ring-2 focus-visible:ring-terracotta/20 transition-all outline-none" 
                         id="otp-input" 
                         maxLength={6} 
                         placeholder="Nhập mã xác thực từ Zalo hoặc SMS" 
@@ -317,7 +317,7 @@ export default function LoginPage() {
                 <div className="flex items-center justify-between pt-1">
                   <label className="inline-flex items-center gap-2 cursor-pointer select-none">
                     <input 
-                      className="w-4 h-4 rounded text-terracotta focus:ring-terracotta accent-terracotta border-stone-300" 
+                      className="w-4 h-4 rounded text-terracotta focus-visible:ring-terracotta accent-terracotta border-stone-300" 
                       type="checkbox" 
                       checked={formData.rememberMe}
                       onChange={(e) => setFormData({ ...formData, rememberMe: e.target.checked })}

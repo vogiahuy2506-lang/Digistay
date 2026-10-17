@@ -376,7 +376,7 @@ export default function BankAccountsPage() {
                       bankName: bank?.name || '',
                     })
                   }}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  className="w-full px-3 py-2 border rounded-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary"
                 >
                   <option value="">Chọn ngân hàng</option>
                   {bankList.map((bank) => (

@@ -190,7 +190,7 @@ export default function RegisterPage() {
           <input
             type="checkbox"
             id="terms"
-            className="mt-1 rounded border-gray-300 text-primary focus:ring-primary-500"
+            className="mt-1 rounded border-gray-300 text-primary focus-visible:ring-primary-500"
             required
           />
           <label htmlFor="terms" className="text-sm text-gray-600">

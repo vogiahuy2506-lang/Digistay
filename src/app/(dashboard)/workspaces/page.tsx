@@ -606,7 +606,7 @@ export default function WorkspacesPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-12 py-2 text-xs md:text-sm bg-white border border-sand-300 rounded-xl focus:border-terracotta-500 focus:ring-2 focus:ring-terracotta-500/20 outline-none placeholder:text-slate-400 shadow-sm transition"
+                className="w-full pl-10 pr-12 py-2 text-xs md:text-sm bg-white border border-sand-300 rounded-xl focus-visible:border-terracotta-500 focus-visible:ring-2 focus-visible:ring-terracotta-500/20 outline-none placeholder:text-slate-400 shadow-sm transition"
                 placeholder="Tìm nhanh workspace..."
               />
               <kbd className="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-mono bg-sand-100 text-slate-500 rounded border border-sand-200 pointer-events-none">
@@ -1115,7 +1115,7 @@ export default function WorkspacesPage() {
               type="text"
               value={formData.name}
               onChange={(e) => handleNameChange(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white border border-sand-300 rounded-xl focus:border-terracotta-500 focus:ring-2 focus:ring-terracotta-500/20 outline-none text-slate-900 shadow-sm font-medium"
+              className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white border border-sand-300 rounded-xl focus-visible:border-terracotta-500 focus-visible:ring-2 focus-visible:ring-terracotta-500/20 outline-none text-slate-900 shadow-sm font-medium"
               placeholder="VD: An Nam Boutique Hotel, Hoi An Retreat..."
               required
               autoFocus
@@ -1256,7 +1256,7 @@ export default function WorkspacesPage() {
             <textarea
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value.slice(0, 250) }))}
-              className="w-full px-3.5 py-2 text-xs sm:text-sm bg-white border border-sand-300 rounded-xl focus:border-terracotta-500 focus:ring-2 focus:ring-terracotta-500/20 outline-none text-slate-800 placeholder:text-slate-400 shadow-sm transition"
+              className="w-full px-3.5 py-2 text-xs sm:text-sm bg-white border border-sand-300 rounded-xl focus-visible:border-terracotta-500 focus-visible:ring-2 focus-visible:ring-terracotta-500/20 outline-none text-slate-800 placeholder:text-slate-400 shadow-sm transition"
               placeholder="Mô tả định vị khách sạn, phong cách dịch vụ hoặc ghi chú cho nội bộ..."
               rows={2}
             />
@@ -1269,7 +1269,7 @@ export default function WorkspacesPage() {
               <select
                 value={formData.currency}
                 onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value }))}
-                className="w-full px-3 py-2 text-xs font-semibold bg-white border border-sand-300 rounded-xl focus:border-terracotta-500 outline-none text-slate-800 shadow-sm"
+                className="w-full px-3 py-2 text-xs font-semibold bg-white border border-sand-300 rounded-xl focus-visible:border-terracotta-500 outline-none text-slate-800 shadow-sm"
               >
                 <option value="VND">VND (₫) - Đồng Việt Nam</option>
                 <option value="USD">USD ($) - US Dollar</option>
@@ -1281,7 +1281,7 @@ export default function WorkspacesPage() {
               <select
                 value={formData.timezone}
                 onChange={(e) => setFormData(prev => ({ ...prev, timezone: e.target.value }))}
-                className="w-full px-3 py-2 text-xs font-semibold bg-white border border-sand-300 rounded-xl focus:border-terracotta-500 outline-none text-slate-800 shadow-sm"
+                className="w-full px-3 py-2 text-xs font-semibold bg-white border border-sand-300 rounded-xl focus-visible:border-terracotta-500 outline-none text-slate-800 shadow-sm"
               >
                 <option value="GMT+07:00">GMT+07:00 (Hà Nội, TP.HCM)</option>
                 <option value="GMT+08:00">GMT+08:00 (Singapore, Bali)</option>

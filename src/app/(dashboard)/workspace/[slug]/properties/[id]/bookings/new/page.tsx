@@ -485,7 +485,7 @@ export default function WalkinBookingPage() {
                       onChange={(e) => setGuestInfo({ ...guestInfo, note: e.target.value })}
                       placeholder="Yêu cầu đặc biệt..."
                       rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-transparent"
                     />
                   </div>
                 </div>
