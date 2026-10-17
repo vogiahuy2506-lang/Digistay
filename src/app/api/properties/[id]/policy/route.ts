@@ -1,16 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { createPolicySchema, updatePolicySchema } from '@/lib/validations'
+import { z } from 'zod'
+
+const policySchema = z.object({
+  checkInTime: z
+    .string()
+    .regex(/^([01]?\d|2[0-3]):[0-5]\d$/, 'checkInTime phải có dạng HH:MM')
+    .optional(),
+  checkOutTime: z
+    .string()
+    .regex(/^([01]?\d|2[0-3]):[0-5]\d$/, 'checkOutTime phải có dạng HH:MM')
+    .optional(),
+  cancellationHours: z.coerce.number().int().min(0).max(720).nullable().optional(),
+  cancellationPolicy: z.string().max(2000).nullable().optional(),
+  childrenAllowed: z.boolean().optional(),
+  minChildAge: z.coerce.number().int().min(0).max(18).optional(),
+  petsAllowed: z.boolean().optional(),
+  smokingAllowed: z.boolean().optional(),
+  additionalRules: z.string().max(2000).nullable().optional(),
+})
+
+async function userCanEditProperty(propertyId: string, userId: string) {
+  return prisma.property.findFirst({
+    where: {
+      id: propertyId,
+      workspace: {
+        OR: [
+          { ownerId: userId },
+          { members: { some: { userId, role: { in: ['ADMIN', 'MANAGER'] } } } },
+        ],
+      },
+    },
+    select: { id: true },
+  })
+}
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const session = await auth()
-    const { id } = params
-
     if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, error: 'Vui lòng đăng nhập' },
@@ -18,49 +49,24 @@ export async function GET(
       )
     }
 
-    const property = await prisma.property.findFirst({
-      where: {
-        id,
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id } } },
-          ],
-        },
-      },
-      select: { id: true },
-    })
-
-    if (!property) {
-      return NextResponse.json(
-        { success: false, error: 'Bạn không có quyền truy cập' },
-        { status: 403 }
-      )
+    const ok = await userCanEditProperty(params.id, session.user.id)
+    if (!ok) {
+      return NextResponse.json({ success: false, error: 'Không có quyền' }, { status: 403 })
     }
 
-    const policy = await prisma.policy.findUnique({
-      where: { propertyId: id },
+    // Auto-create a default policy if missing so the form always has
+    // something to display
+    const policy = await prisma.policy.upsert({
+      where: { propertyId: params.id },
+      create: { propertyId: params.id },
+      update: {},
     })
 
-    if (!policy) {
-      // Create default policy if not exists
-      const defaultPolicy = await prisma.policy.create({
-        data: { propertyId: id },
-      })
-      return NextResponse.json({
-        success: true,
-        data: defaultPolicy,
-      })
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: policy,
-    })
+    return NextResponse.json({ success: true, data: policy })
   } catch (error) {
     console.error('Get policy error:', error)
     return NextResponse.json(
-      { success: false, error: 'Đã xảy ra lỗi khi lấy chính sách' },
+      { success: false, error: 'Lỗi khi lấy chính sách' },
       { status: 500 }
     )
   }
@@ -72,8 +78,6 @@ export async function PATCH(
 ) {
   try {
     const session = await auth()
-    const { id } = params
-
     if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, error: 'Vui lòng đăng nhập' },
@@ -81,35 +85,16 @@ export async function PATCH(
       )
     }
 
-    // Verify admin access
-    const property = await prisma.property.findFirst({
-      where: {
-        id,
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, role: 'ADMIN' } } },
-          ],
-        },
-      },
-      include: {
-        workspace: {
-          select: { id: true },
-        },
-      },
-    })
-
-    if (!property) {
+    const ok = await userCanEditProperty(params.id, session.user.id)
+    if (!ok) {
       return NextResponse.json(
-        { success: false, error: 'Bạn không có quyền cập nhật chính sách' },
+        { success: false, error: 'Không có quyền chỉnh sửa' },
         { status: 403 }
       )
     }
 
     const body = await request.json()
-
-    // Validate input
-    const validation = updatePolicySchema.safeParse(body)
+    const validation = policySchema.safeParse(body)
     if (!validation.success) {
       return NextResponse.json(
         { success: false, error: validation.error.errors[0].message },
@@ -117,35 +102,26 @@ export async function PATCH(
       )
     }
 
-    // Update or create policy
-    const policy = await prisma.policy.upsert({
-      where: { propertyId: id },
-      create: { propertyId: id, ...validation.data },
-      update: validation.data,
-    })
+    // Strip undefined fields so they don't overwrite existing data
+    const data = Object.fromEntries(
+      Object.entries(validation.data).filter(([, v]) => v !== undefined)
+    )
 
-    // Log activity
-    await prisma.activityLog.create({
-      data: {
-        userId: session.user.id,
-        workspaceId: property.workspace.id,
-        propertyId: id,
-        action: 'UPDATE',
-        entityType: 'POLICY',
-        entityId: policy.id,
-        changes: validation.data,
-      },
+    const policy = await prisma.policy.upsert({
+      where: { propertyId: params.id },
+      create: { propertyId: params.id, ...data },
+      update: data,
     })
 
     return NextResponse.json({
       success: true,
       data: policy,
-      message: 'Cập nhật chính sách thành công',
+      message: 'Đã cập nhật chính sách',
     })
   } catch (error) {
     console.error('Update policy error:', error)
     return NextResponse.json(
-      { success: false, error: 'Đã xảy ra lỗi khi cập nhật chính sách' },
+      { success: false, error: 'Lỗi khi cập nhật chính sách' },
       { status: 500 }
     )
   }

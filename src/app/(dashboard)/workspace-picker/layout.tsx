@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { getWorkspaceRoleBySlug } from '@/lib/auth/rbac'
 import { WorkspaceShell } from '@/components/layout/workspace-shell'
 
 export default async function WorkspacePickerLayout({
@@ -13,42 +14,34 @@ export default async function WorkspacePickerLayout({
 }) {
   const { slug } = params
 
-  // Guard: if no slug, redirect to workspaces list
   if (!slug) {
     redirect('/workspaces')
   }
 
   const session = await getServerSession(authOptions)
-
   if (!session?.user?.id) {
     redirect('/login')
   }
 
-  // Resolve workspace by slug + role of current user
-  const workspace = await prisma.workspace.findUnique({
-    where: { slug },
-    include: {
-      members: {
-        where: { userId: session.user.id },
-        select: { role: true },
-      },
-    },
-  })
+  // Resolve workspace by slug + the caller's actual role. Owners are
+  // treated as ADMIN; members get their stored role; everyone else is
+  // redirected to the workspace list.
+  const resolution = await getWorkspaceRoleBySlug(slug, session.user.id)
+  if (!resolution || !resolution.role) {
+    redirect('/workspaces')
+  }
+  const { workspaceId, role: workspaceRole } = resolution
 
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { id: true, name: true, slug: true, ownerId: true },
+  })
   if (!workspace) {
     redirect('/workspaces')
   }
 
-  const isOwner = workspace.ownerId === session.user.id
-  const memberRole = workspace.members[0]?.role
-
-  if (!isOwner && !memberRole) {
-    redirect('/workspaces')
-  }
-
-  const workspaceRole = isOwner ? 'ADMIN' : (memberRole as any) || 'USER'
-
-  // List user's other workspaces for the switcher
+  // List user's other workspaces for the switcher, each with its
+  // actual role (owner → ADMIN, member → stored role).
   const userWorkspaces = await prisma.workspace.findMany({
     where: {
       OR: [
@@ -56,7 +49,17 @@ export default async function WorkspacePickerLayout({
         { members: { some: { userId: session.user.id } } },
       ],
     },
-    select: { id: true, name: true, slug: true, ownerId: true },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      ownerId: true,
+      members: {
+        where: { userId: session.user.id },
+        select: { role: true },
+        take: 1,
+      },
+    },
     orderBy: { createdAt: 'asc' },
   })
 
@@ -64,7 +67,11 @@ export default async function WorkspacePickerLayout({
     id: w.id,
     name: w.name,
     slug: w.slug,
-    role: (w.ownerId === session.user.id ? 'ADMIN' : 'USER') as any,
+    role: (w.ownerId === session.user.id ? 'ADMIN' : w.members[0]?.role ?? 'USER') as
+      | 'ADMIN'
+      | 'MANAGER'
+      | 'RECEPTIONIST'
+      | 'USER',
   }))
 
   return (
