@@ -4,11 +4,11 @@ import { auth } from '@/lib/auth'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await auth()
-    const { id } = await params
+    const { id } = params
     const body = await request.json().catch(() => ({}))
 
     if (!session?.user?.id) {

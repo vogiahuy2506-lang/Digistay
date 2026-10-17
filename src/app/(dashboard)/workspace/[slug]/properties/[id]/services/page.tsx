@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { Header, PageContainer } from '@/components/layout'
-import { Card, CardContent, CardHeader, CardTitle, Button, Badge, Input, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Select } from '@/components/ui'
+import { Card, CardContent, CardHeader, CardTitle, Button, Badge, Input, Modal, ModalHeader, ModalBody, ModalFooter, Select } from '@/components/ui'
 import { 
   Star, Plus, Trash2, Edit, Wifi, Car, Utensils, Waves, Dumbbell, 
   Coffee, Sun, Shield, CoffeeIcon, Music, Baby, Dog, Cigarette, 

@@ -1,9 +1,11 @@
-import NextAuth, { NextAuthOptions } from 'next-auth'
+import NextAuth, { NextAuthOptions, getServerSession } from 'next-auth'
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import GoogleProvider from 'next-auth/providers/google'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
+
+export { getServerSession }
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
@@ -13,7 +15,7 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/login',
-    signOut: '/login',
+    signOut: '/',
     error: '/login',
   },
   providers: [
@@ -79,11 +81,11 @@ export const authOptions: NextAuthOptions = {
       return token
     },
     async session({ session, token }) {
-      if (session.user) {
+      if (session.user && token) {
         session.user.id = token.id as string
         session.user.role = token.role as string
       }
-      return session
+      return session || null
     },
   },
   events: {
@@ -99,10 +101,7 @@ export const authOptions: NextAuthOptions = {
 // For API routes
 export { authOptions as config }
 
-// For server components - create a wrapper function
+// For server components - get session directly
 export async function auth() {
-  const session = await import('next-auth').then(m => 
-    m.getServerSession(authOptions)
-  )
-  return session
+  return getServerSession(authOptions)
 }

@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { cn } from '@/lib/utils'
-import { X } from 'lucide-react'
+import { X, Building2 } from 'lucide-react'
 
 interface ModalProps {
   isOpen: boolean
@@ -10,7 +10,7 @@ interface ModalProps {
   title?: string
   description?: string
   children: React.ReactNode
-  size?: 'sm' | 'md' | 'lg' | 'xl'
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
 }
 
 export function Modal({ 
@@ -49,74 +49,68 @@ export function Modal({
     md: 'max-w-lg',
     lg: 'max-w-2xl',
     xl: 'max-w-4xl',
+    '2xl': 'max-w-2xl',
   }
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto">
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/50 transition-opacity"
+        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
       
       {/* Modal */}
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div className={cn(
-          'relative w-full bg-white rounded-xl shadow-xl',
-          'transform transition-all animate-in',
-          sizes[size]
-        )}>
-          {/* Header */}
-          {(title || description) && (
-            <div className="px-6 py-4 border-b border-gray-100">
-              <div className="flex items-start justify-between">
-                <div>
-                  {title && (
-                    <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
-                  )}
-                  {description && (
-                    <p className="mt-1 text-sm text-gray-500">{description}</p>
-                  )}
-                </div>
-                <button
-                  onClick={onClose}
-                  className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <X className="w-5 h-5 text-gray-400" />
-                </button>
-              </div>
-            </div>
-          )}
-          
-          {/* Content */}
-          <div className="p-6">
-            {children}
-          </div>
-        </div>
+      <div className={cn(
+        'relative bg-white rounded-2xl shadow-2xl border border-sand-200 w-full max-h-[92vh] flex flex-col z-10 overflow-hidden transform transition-all',
+        sizes[size]
+      )}>
+        {children}
       </div>
     </div>
   )
 }
 
+export function ModalHeader({ 
+  className, 
+  children, 
+  onClose 
+}: { 
+  className?: string; 
+  children: React.ReactNode
+  onClose?: () => void
+}) {
+  return (
+    <div className={cn(
+      'px-6 py-4 border-b border-sand-200/90 flex items-center justify-between bg-gradient-to-r from-sand-50/90 via-white to-sand-50/60',
+      className
+    )}>
+      <div className="flex items-center gap-3">
+        {children}
+      </div>
+      {onClose && (
+        <button
+          onClick={onClose}
+          className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-sand-100 flex items-center justify-center transition border border-transparent hover:border-sand-200"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      )}
+    </div>
+  )
+}
+
+export function ModalBody({ className, children }: { className?: string; children: React.ReactNode }) {
+  return <div className={cn('p-6 overflow-y-auto space-y-5 text-left', className)}>{children}</div>
+}
+
 export function ModalFooter({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
     <div className={cn(
-      'px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-end gap-3',
+      'px-6 py-4 bg-sand-50/90 border-t border-sand-200/90 flex flex-col sm:flex-row items-center justify-between gap-3',
       className
     )}>
       {children}
     </div>
   )
-}
-
-export function ModalContent({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <div className={cn('p-6', className)}>{children}</div>
-}
-
-export function ModalHeader({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <div className={cn('px-6 py-4 border-b border-gray-100', className)}>{children}</div>
-}
-
-export function ModalBody({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <div className={cn('p-6', className)}>{children}</div>
 }

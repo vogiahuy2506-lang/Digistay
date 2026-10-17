@@ -4,7 +4,7 @@ import * as React from 'react'
 import { useParams } from 'next/navigation'
 import QRCode from 'qrcode'
 import { Header, PageContainer } from '@/components/layout'
-import { Card, CardContent, CardHeader, CardTitle, Button, Badge, Input, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Select } from '@/components/ui'
+import { Card, CardContent, CardHeader, CardTitle, Button, Badge, Input, Modal, ModalHeader, ModalBody, ModalFooter, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Select } from '@/components/ui'
 import { VietQR, downloadQR } from '@/components/ui/viet-qr'
 import { 
   Building, Plus, Trash2, Edit, QrCode, Check, X, Copy, 

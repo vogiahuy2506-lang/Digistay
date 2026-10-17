@@ -367,21 +367,12 @@ export default function WalkinBookingPage() {
                 {roomTypes.map((roomType) => (
                   <div
                     key={roomType.id}
-                    role="button"
-                    tabIndex={0}
-                    className={`cursor-pointer transition-all hover:shadow-lg rounded-xl ${
+                    className={`cursor-pointer transition-all hover:shadow-lg rounded-xl border border-gray-200 bg-white ${
                       selectedRoomType?.id === roomType.id ? 'ring-2 ring-primary' : ''
                     }`}
                     onClick={() => handleSelectRoomType(roomType)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        handleSelectRoomType(roomType)
-                      }
-                    }}
                   >
-                    <Card>
-                    <CardContent className="p-6">
+                    <div className="p-6">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
@@ -437,8 +428,7 @@ export default function WalkinBookingPage() {
                           )}
                         </div>
                       )}
-                    </CardContent>
-                  </Card>
+                    </div>
                   </div>
                 ))}
               </div>

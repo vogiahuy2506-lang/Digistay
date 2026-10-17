@@ -2,12 +2,13 @@
 
 import * as React from 'react'
 import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 type AuthMode = 'password' | 'otp' | 'passkey'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [authMode, setAuthMode] = React.useState<AuthMode>('password')
   const [showPassword, setShowPassword] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(false)
@@ -41,10 +42,26 @@ export default function LoginPage() {
         }
 
         setStatusMessage('Xác thực thành công! Đang chuyển hướng...')
+        // Wait a bit for session to be established, then redirect
         setTimeout(() => {
-          router.push('/workspaces')
-          router.refresh()
-        }, 500)
+          // Preserve URL params for workspace creation
+          const hotelName = searchParams.get('hotelName')
+          const phone = searchParams.get('phone')
+          const scale = searchParams.get('scale')
+          const createWorkspace = searchParams.get('createWorkspace')
+          
+          const params = new URLSearchParams()
+          if (hotelName) params.set('hotelName', hotelName)
+          if (phone) params.set('phone', phone)
+          if (scale) params.set('scale', scale)
+          if (createWorkspace) params.set('createWorkspace', createWorkspace)
+          
+          const redirectUrl = params.toString() 
+            ? `/workspaces?${params.toString()}`
+            : '/workspaces'
+          
+          router.push(redirectUrl)
+        }, 300)
       } else if (authMode === 'otp') {
         // OTP verification would go here
         setStatusMessage('Đang xác thực OTP...')

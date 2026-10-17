@@ -3,12 +3,12 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 
 interface RouteParams {
-  params: Promise<{ id: string }>
+  params: { id: string }
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = await params
+    const { id } = params
     const session = await auth()
 
     if (!session?.user?.id) {

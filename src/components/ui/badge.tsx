@@ -7,6 +7,7 @@ interface BadgeProps {
   variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'gray' | 'outline'
   size?: 'sm' | 'md'
   className?: string
+  textColor?: string
   children: React.ReactNode
 }
 
@@ -14,6 +15,7 @@ export function Badge({
   variant = 'primary', 
   size = 'sm', 
   className, 
+  textColor,
   children 
 }: BadgeProps) {
   const variants = {
@@ -36,6 +38,7 @@ export function Badge({
       'inline-flex items-center rounded-full font-medium',
       variants[variant],
       sizes[size],
+      textColor,
       className
     )}>
       {children}
