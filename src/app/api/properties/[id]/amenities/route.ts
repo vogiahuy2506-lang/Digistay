@@ -1,25 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { z } from 'zod'
 
+const assignSchema = z.object({
+  propertyId: z.string(),
+  amenityIds: z.array(z.string()).max(200),
+})
+
+// GET /api/properties/[id]/amenities — list amenities + selection state
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const session = await auth()
-    const { id } = params
-
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Vui lòng đăng nhập' },
-        { status: 401 }
-      )
+      return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
     }
 
     const property = await prisma.property.findFirst({
       where: {
-        id,
+        id: params.id,
         workspace: {
           OR: [
             { ownerId: session.user.id },
@@ -29,130 +31,84 @@ export async function GET(
       },
       select: { id: true },
     })
-
     if (!property) {
-      return NextResponse.json(
-        { success: false, error: 'Bạn không có quyền truy cập' },
-        { status: 403 }
-      )
+      return NextResponse.json({ success: false, error: 'Không có quyền' }, { status: 403 })
     }
 
-    const amenities = await prisma.propertyAmenity.findMany({
-      where: { propertyId: id },
-      include: {
-        amenity: true,
-      },
-    })
+    const [allAmenities, selected] = await Promise.all([
+      prisma.amenity.findMany({ orderBy: [{ category: 'asc' }, { name: 'asc' }] }),
+      prisma.propertyAmenity.findMany({
+        where: { propertyId: params.id },
+        select: { amenityId: true },
+      }),
+    ])
+
+    const selectedIds = new Set(selected.map(s => s.amenityId))
 
     return NextResponse.json({
       success: true,
-      data: amenities.map((pa) => pa.amenity),
+      data: allAmenities.map(a => ({ ...a, isSelected: selectedIds.has(a.id) })),
     })
   } catch (error) {
-    console.error('Get amenities error:', error)
-    return NextResponse.json(
-      { success: false, error: 'Đã xảy ra lỗi khi lấy danh sách tiện ích' },
-      { status: 500 }
-    )
+    console.error('List amenities error:', error)
+    return NextResponse.json({ success: false, error: 'Lỗi khi lấy tiện ích' }, { status: 500 })
   }
 }
 
-export async function POST(
+// PUT /api/properties/[id]/amenities — replace selection
+export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const session = await auth()
-    const { id } = params
-
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Vui lòng đăng nhập' },
-        { status: 401 }
-      )
-    }
-
-    // Verify admin access
-    const property = await prisma.property.findFirst({
-      where: {
-        id,
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, role: 'ADMIN' } } },
-          ],
-        },
-      },
-      include: {
-        workspace: {
-          select: { id: true },
-        },
-      },
-    })
-
-    if (!property) {
-      return NextResponse.json(
-        { success: false, error: 'Bạn không có quyền cập nhật tiện ích' },
-        { status: 403 }
-      )
+      return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
     }
 
     const body = await request.json()
-    const { amenityIds } = body
-
-    if (!Array.isArray(amenityIds)) {
+    const validation = assignSchema.safeParse({ ...body, propertyId: params.id })
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: 'Danh sách tiện ích không hợp lệ' },
+        { success: false, error: validation.error.errors[0].message },
         { status: 400 }
       )
     }
 
-    // Remove existing amenities
-    await prisma.propertyAmenity.deleteMany({
-      where: { propertyId: id },
+    const property = await prisma.property.findFirst({
+      where: {
+        id: params.id,
+        workspace: {
+          OR: [
+            { ownerId: session.user.id },
+            { members: { some: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER'] } } } },
+          ],
+        },
+      },
+      select: { id: true },
     })
-
-    // Add new amenities
-    if (amenityIds.length > 0) {
-      await prisma.propertyAmenity.createMany({
-        data: amenityIds.map((amenityId: string) => ({
-          propertyId: id,
-          amenityId,
-        })),
-      })
+    if (!property) {
+      return NextResponse.json({ success: false, error: 'Không có quyền' }, { status: 403 })
     }
 
-    // Get updated amenities
-    const amenities = await prisma.propertyAmenity.findMany({
-      where: { propertyId: id },
-      include: {
-        amenity: true,
-      },
+    // Validate every id exists
+    const validAmenities = await prisma.amenity.findMany({
+      where: { id: { in: validation.data.amenityIds } },
+      select: { id: true },
     })
+    const validIds = validAmenities.map(a => a.id)
 
-    // Log activity
-    await prisma.activityLog.create({
-      data: {
-        userId: session.user.id,
-        workspaceId: property.workspace.id,
-        propertyId: id,
-        action: 'UPDATE',
-        entityType: 'AMENITIES',
-        entityId: id,
-        changes: { amenityIds },
-      },
-    })
+    await prisma.$transaction([
+      prisma.propertyAmenity.deleteMany({ where: { propertyId: params.id } }),
+      prisma.propertyAmenity.createMany({
+        data: validIds.map(amenityId => ({ propertyId: params.id, amenityId })),
+        skipDuplicates: true,
+      }),
+    ])
 
-    return NextResponse.json({
-      success: true,
-      data: amenities.map((pa) => pa.amenity),
-      message: 'Cập nhật tiện ích thành công',
-    })
+    return NextResponse.json({ success: true, message: 'Đã cập nhật tiện ích' })
   } catch (error) {
-    console.error('Update amenities error:', error)
-    return NextResponse.json(
-      { success: false, error: 'Đã xảy ra lỗi khi cập nhật tiện ích' },
-      { status: 500 }
-    )
+    console.error('Assign amenities error:', error)
+    return NextResponse.json({ success: false, error: 'Lỗi khi cập nhật' }, { status: 500 })
   }
 }

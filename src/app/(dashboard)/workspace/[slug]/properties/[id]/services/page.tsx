@@ -1,48 +1,35 @@
 'use client'
 
 import * as React from 'react'
+import { useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
-import { Card, CardContent, CardHeader, CardTitle, Button, Badge, Input, Modal, ModalHeader, ModalBody, ModalFooter, Select } from '@/components/ui'
-import { 
-  Star, Plus, Trash2, Edit, Wifi, Car, Utensils, Waves, Dumbbell, 
-  Coffee, Sun, Shield, CoffeeIcon, Music, Baby, Dog, Cigarette, 
-  Check, X, Save
+import { Card, CardContent, CardHeader, CardTitle, Button, Badge, Input } from '@/components/ui'
+import { toast } from '@/components/ui/toast'
+import {
+  Star, Plus, Trash2, Edit, Wifi, Car, Utensils, Waves, Dumbbell,
+  Coffee, Sun, Shield, Dog, Save, Check
 } from 'lucide-react'
 
-interface Service {
+interface Amenity {
   id: string
   name: string
+  slug: string
+  icon: string | null
   category: string
+  isSelected: boolean
+}
+
+interface ExtraService {
+  id: string
+  propertyId: string
+  name: string
+  description: string | null
+  category: string | null
   priceType: 'FIXED' | 'PER_NIGHT' | 'PER_PERSON'
   price: number
   perPerson: boolean
   isActive: boolean
 }
-
-interface Amenity {
-  id: string
-  name: string
-  icon: string
-  category: string
-  isSelected: boolean
-}
-
-const defaultAmenities: Omit<Amenity, 'isSelected'>[] = [
-  { id: 'wifi', name: 'Wifi miễn phí', icon: 'Wifi', category: 'internet' },
-  { id: 'parking', name: 'Bãi đỗ xe', icon: 'Car', category: 'parking' },
-  { id: 'restaurant', name: 'Nhà hàng', icon: 'Utensils', category: 'food' },
-  { id: 'pool', name: 'Hồ bơi', icon: 'Waves', category: 'entertainment' },
-  { id: 'gym', name: 'Phòng gym', icon: 'Dumbbell', category: 'entertainment' },
-  { id: 'cafe', name: 'Bar & Cafe', icon: 'Coffee', category: 'food' },
-  { id: 'spa', name: 'Spa & Massage', icon: 'Sun', category: 'entertainment' },
-  { id: 'security', name: 'An ninh 24/7', icon: 'Shield', category: 'security' },
-  { id: 'ac', name: 'Điều hòa', icon: 'Star', category: 'room' },
-  { id: 'tv', name: 'TV', icon: 'Star', category: 'room' },
-  { id: 'minibar', name: 'Mini bar', icon: 'Coffee', category: 'room' },
-  { id: 'laundry', name: 'Giặt ủi', icon: 'Star', category: 'service' },
-  { id: 'airport', name: 'Đưa đón sân bay', icon: 'Car', category: 'service' },
-  { id: 'pet', name: 'Cho phép thú cưng', icon: 'Dog', category: 'policy' },
-]
 
 const serviceCategories = [
   { value: 'laundry', label: 'Giặt ủi' },
@@ -52,17 +39,20 @@ const serviceCategories = [
   { value: 'other', label: 'Khác' },
 ]
 
-const iconMap: Record<string, any> = {
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Wifi, Car, Utensils, Waves, Dumbbell, Coffee, Sun, Shield, Star, Dog,
 }
 
 export default function ServicesPage() {
-  const [selectedProperty, setSelectedProperty] = React.useState('')
+  const params = useParams<{ slug: string; id: string }>()
+  const propertyId = params.id
+
   const [amenities, setAmenities] = React.useState<Amenity[]>([])
-  const [services, setServices] = React.useState<Service[]>([])
+  const [services, setServices] = React.useState<ExtraService[]>([])
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [showServiceModal, setShowServiceModal] = React.useState(false)
-  const [editingService, setEditingService] = React.useState<Service | null>(null)
-  const [isLoading, setIsLoading] = React.useState(false)
+  const [editingService, setEditingService] = React.useState<ExtraService | null>(null)
 
   const [serviceForm, setServiceForm] = React.useState({
     name: '',
@@ -73,86 +63,129 @@ export default function ServicesPage() {
   })
 
   React.useEffect(() => {
-    if (selectedProperty) {
+    if (propertyId) {
       fetchData()
+    } else {
+      setIsLoading(false)
     }
-  }, [selectedProperty])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propertyId])
 
   const fetchData = async () => {
     setIsLoading(true)
     try {
-      // Mock data
-      setAmenities(defaultAmenities.map(a => ({ ...a, isSelected: true })))
-      setServices([
-        {
-          id: '1',
-          name: 'Giặt ủi quần áo',
-          category: 'laundry',
-          priceType: 'PER_PERSON',
-          price: 50000,
-          perPerson: true,
-          isActive: true,
-        },
-        {
-          id: '2',
-          name: 'Đưa đón sân bay',
-          category: 'transport',
-          priceType: 'FIXED',
-          price: 250000,
-          perPerson: false,
-          isActive: true,
-        },
-        {
-          id: '3',
-          name: 'Thuê xe máy',
-          category: 'transport',
-          priceType: 'PER_NIGHT',
-          price: 150000,
-          perPerson: false,
-          isActive: true,
-        },
+      const [amenitiesRes, servicesRes] = await Promise.all([
+        fetch(`/api/properties/${propertyId}/amenities`),
+        fetch(`/api/extra-services?propertyId=${propertyId}`),
       ])
+
+      const [amenitiesData, servicesData] = await Promise.all([
+        amenitiesRes.json(),
+        servicesRes.json(),
+      ])
+
+      if (amenitiesData.success) {
+        setAmenities(amenitiesData.data)
+      } else {
+        toast.error(amenitiesData.error || 'Không thể tải tiện ích')
+      }
+      if (servicesData.success) {
+        setServices(servicesData.data)
+      } else {
+        toast.error(servicesData.error || 'Không thể tải dịch vụ')
+      }
     } catch (err) {
       console.error('Failed to fetch data:', err)
+      toast.error('Đã xảy ra lỗi khi tải dữ liệu')
     } finally {
       setIsLoading(false)
     }
   }
 
   const toggleAmenity = (id: string) => {
-    setAmenities(amenities.map(a => 
-      a.id === id ? { ...a, isSelected: !a.isSelected } : a
-    ))
+    setAmenities(amenities.map(a => (a.id === id ? { ...a, isSelected: !a.isSelected } : a)))
   }
 
-  const handleSaveServices = async () => {
-    // Save amenities
-    const selectedAmenities = amenities.filter(a => a.isSelected).map(a => a.id)
-    console.log('Saving amenities:', selectedAmenities)
-    alert('Đã lưu tiện ích!')
-  }
-
-  const handleDeleteService = (id: string) => {
-    if (confirm('Xóa dịch vụ này?')) {
-      setServices(services.filter(s => s.id !== id))
+  const handleSaveAmenities = async () => {
+    setIsSubmitting(true)
+    try {
+      const selectedIds = amenities.filter(a => a.isSelected).map(a => a.id)
+      const res = await fetch(`/api/properties/${propertyId}/amenities`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amenityIds: selectedIds }),
+      })
+      const data = await res.json()
+      if (!data.success) {
+        toast.error(data.error || 'Không thể lưu tiện ích')
+        return
+      }
+      toast.success('Đã lưu tiện ích')
+    } catch (err) {
+      console.error('Save amenities error:', err)
+      toast.error('Đã xảy ra lỗi khi lưu tiện ích')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
-  const handleSubmitService = () => {
-    if (!serviceForm.name || serviceForm.price <= 0) {
-      alert('Vui lòng điền đầy đủ thông tin')
+  const handleDeleteService = async (id: string) => {
+    if (!confirm('Xóa dịch vụ này?')) return
+    try {
+      const res = await fetch(`/api/extra-services/${id}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (!data.success) {
+        toast.error(data.error || 'Không thể xóa dịch vụ')
+        return
+      }
+      toast.success('Đã xóa dịch vụ')
+      setServices(services.filter(s => s.id !== id))
+    } catch (err) {
+      console.error('Delete service error:', err)
+      toast.error('Đã xảy ra lỗi khi xóa dịch vụ')
+    }
+  }
+
+  const handleSubmitService = async () => {
+    if (!propertyId) {
+      toast.error('Không xác định được cơ sở')
+      return
+    }
+    if (!serviceForm.name || serviceForm.price < 0) {
+      toast.error('Vui lòng điền tên và giá hợp lệ')
       return
     }
 
-    if (editingService) {
-      setServices(services.map(s => 
-        s.id === editingService.id ? { ...s, ...serviceForm } : s
-      ))
-    } else {
-      setServices([...services, { id: Date.now().toString(), ...serviceForm, isActive: true }])
+    setIsSubmitting(true)
+    try {
+      const url = editingService
+        ? `/api/extra-services/${editingService.id}`
+        : '/api/extra-services'
+      const method = editingService ? 'PATCH' : 'POST'
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          propertyId,
+          ...serviceForm,
+        }),
+      })
+      const data = await res.json()
+      if (!data.success) {
+        toast.error(data.error || 'Không thể lưu dịch vụ')
+        return
+      }
+      toast.success(editingService ? 'Đã cập nhật dịch vụ' : 'Đã thêm dịch vụ')
+      setShowServiceModal(false)
+      resetServiceForm()
+      await fetchData()
+    } catch (err) {
+      console.error('Save service error:', err)
+      toast.error('Đã xảy ra lỗi khi lưu dịch vụ')
+    } finally {
+      setIsSubmitting(false)
     }
-    setShowServiceModal(false)
-    resetServiceForm()
   }
 
   const resetServiceForm = () => {
@@ -166,11 +199,11 @@ export default function ServicesPage() {
     })
   }
 
-  const handleEditService = (service: Service) => {
+  const handleEditService = (service: ExtraService) => {
     setEditingService(service)
     setServiceForm({
       name: service.name,
-      category: service.category,
+      category: service.category ?? 'other',
       priceType: service.priceType,
       price: service.price,
       perPerson: service.perPerson,
@@ -184,21 +217,20 @@ export default function ServicesPage() {
       currency: 'VND',
       minimumFractionDigits: 0,
     }).format(price)
-
     if (priceType === 'FIXED') return formatted
     if (priceType === 'PER_NIGHT') return `${formatted}/đêm`
     if (priceType === 'PER_PERSON') return `${formatted}/${perPerson ? 'người' : 'lần'}`
     return formatted
   }
 
-  if (!selectedProperty) {
+  if (!propertyId) {
     return (
       <PageContainer>
         <Header title="Tiện ích & Dịch vụ" description="Quản lý tiện ích và dịch vụ của cơ sở" />
         <Card>
           <CardContent className="p-12 text-center">
             <Star className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 mb-4">Vui lòng chọn cơ sở để quản lý</p>
+            <p className="text-gray-500">Không xác định được cơ sở.</p>
           </CardContent>
         </Card>
       </PageContainer>
@@ -217,44 +249,69 @@ export default function ServicesPage() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Tiện ích của cơ sở</CardTitle>
-            <p className="text-sm text-gray-500 mt-1">Chọn các tiện ích hiển thị trên website</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Chọn các tiện ích hiển thị trên website
+            </p>
           </div>
-          <Button onClick={handleSaveServices}>
+          <Button onClick={handleSaveAmenities} isLoading={isSubmitting}>
             <Save className="w-4 h-4 mr-2" />
             Lưu thay đổi
           </Button>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {amenities.map((amenity) => {
-              const IconComponent = iconMap[amenity.icon] || Star
-              return (
-                <div
-                  key={amenity.id}
-                  onClick={() => toggleAmenity(amenity.id)}
-                  className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                    amenity.isSelected
-                      ? 'border-primary bg-primary-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                        amenity.isSelected ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        <IconComponent className="w-5 h-5" />
+          {isLoading ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            </div>
+          ) : amenities.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">
+              Chưa có tiện ích nào trong hệ thống. Hãy chạy{' '}
+              <code className="bg-gray-100 px-1 rounded">npx tsx prisma/seed-amenities.ts</code>{' '}
+              để thêm danh sách tiện ích mặc định.
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {amenities.map((amenity) => {
+                const IconComponent = iconMap[amenity.icon ?? ''] || Star
+                return (
+                  <div
+                    key={amenity.id}
+                    onClick={() => toggleAmenity(amenity.id)}
+                    role="checkbox"
+                    aria-checked={amenity.isSelected}
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === ' ' || e.key === 'Enter') {
+                        e.preventDefault()
+                        toggleAmenity(amenity.id)
+                      }
+                    }}
+                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                      amenity.isSelected
+                        ? 'border-primary bg-primary-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                            amenity.isSelected
+                              ? 'bg-primary text-white'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}
+                        >
+                          <IconComponent className="w-5 h-5" />
+                        </div>
+                        <span className="font-medium text-sm">{amenity.name}</span>
                       </div>
-                      <span className="font-medium text-sm">{amenity.name}</span>
+                      {amenity.isSelected && <Check className="w-5 h-5 text-primary" />}
                     </div>
-                    {amenity.isSelected && (
-                      <Check className="w-5 h-5 text-primary" />
-                    )}
                   </div>
-                </div>
-              )
-            })}
-          </div>
+                )
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -263,7 +320,9 @@ export default function ServicesPage() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Dịch vụ kèm theo</CardTitle>
-            <p className="text-sm text-gray-500 mt-1">Các dịch vụ có thể đặt thêm khi đặt phòng</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Các dịch vụ có thể đặt thêm khi đặt phòng
+            </p>
           </div>
           <Button onClick={() => { resetServiceForm(); setShowServiceModal(true) }}>
             <Plus className="w-4 h-4 mr-2" />
@@ -271,18 +330,29 @@ export default function ServicesPage() {
           </Button>
         </CardHeader>
         <CardContent>
-          {services.length === 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            </div>
+          ) : services.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <Star className="w-12 h-12 text-gray-300 mx-auto mb-4" />
               <p>Chưa có dịch vụ nào</p>
-              <Button variant="outline" className="mt-4" onClick={() => setShowServiceModal(true)}>
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => { resetServiceForm(); setShowServiceModal(true) }}
+              >
                 Thêm dịch vụ đầu tiên
               </Button>
             </div>
           ) : (
             <div className="space-y-3">
               {services.map((service) => (
-                <div key={service.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div
+                  key={service.id}
+                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                >
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-lg bg-primary-100 text-primary flex items-center justify-center">
                       <Star className="w-5 h-5" />
@@ -290,8 +360,9 @@ export default function ServicesPage() {
                     <div>
                       <p className="font-medium">{service.name}</p>
                       <p className="text-sm text-gray-500">
-                        {serviceCategories.find(c => c.value === service.category)?.label} •{' '}
-                        {formatPrice(service.price, service.priceType, service.perPerson)}
+                        {serviceCategories.find(c => c.value === service.category)?.label ??
+                          'Khác'}{' '}
+                        • {formatPrice(service.price, service.priceType, service.perPerson)}
                       </p>
                     </div>
                   </div>
@@ -302,7 +373,11 @@ export default function ServicesPage() {
                     <Button variant="ghost" size="sm" onClick={() => handleEditService(service)}>
                       <Edit className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDeleteService(service.id)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteService(service.id)}
+                    >
                       <Trash2 className="w-4 h-4 text-red-500" />
                     </Button>
                   </div>
@@ -334,15 +409,13 @@ export default function ServicesPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Danh mục
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>
                 <select
                   value={serviceForm.category}
                   onChange={(e) => setServiceForm({ ...serviceForm, category: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg"
                 >
-                  {serviceCategories.map((cat) => (
+                  {serviceCategories.map(cat => (
                     <option key={cat.value} value={cat.value}>
                       {cat.label}
                     </option>
@@ -351,12 +424,15 @@ export default function ServicesPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Loại giá
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Loại giá</label>
                   <select
                     value={serviceForm.priceType}
-                    onChange={(e) => setServiceForm({ ...serviceForm, priceType: e.target.value as any })}
+                    onChange={(e) =>
+                      setServiceForm({
+                        ...serviceForm,
+                        priceType: e.target.value as typeof serviceForm.priceType,
+                      })
+                    }
                     className="w-full px-3 py-2 border rounded-lg"
                   >
                     <option value="FIXED">Cố định</option>
@@ -365,23 +441,27 @@ export default function ServicesPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Giá (VNĐ)
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Giá (VNĐ)</label>
                   <Input
                     type="number"
                     value={serviceForm.price}
-                    onChange={(e) => setServiceForm({ ...serviceForm, price: parseInt(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setServiceForm({ ...serviceForm, price: parseInt(e.target.value) || 0 })
+                    }
                     placeholder="0"
                   />
                 </div>
               </div>
             </div>
             <div className="p-6 border-t border-gray-100 flex justify-end gap-3">
-              <Button variant="outline" onClick={() => { setShowServiceModal(false); resetServiceForm() }}>
+              <Button
+                variant="outline"
+                onClick={() => { setShowServiceModal(false); resetServiceForm() }}
+                disabled={isSubmitting}
+              >
                 Hủy
               </Button>
-              <Button onClick={handleSubmitService}>
+              <Button onClick={handleSubmitService} isLoading={isSubmitting}>
                 {editingService ? 'Lưu thay đổi' : 'Thêm dịch vụ'}
               </Button>
             </div>

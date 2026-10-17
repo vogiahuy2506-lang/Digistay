@@ -4,27 +4,24 @@ import * as React from 'react'
 import { useParams } from 'next/navigation'
 import QRCode from 'qrcode'
 import { Header, PageContainer } from '@/components/layout'
-import { Card, CardContent, CardHeader, CardTitle, Button, Badge, Input, Modal, ModalHeader, ModalBody, ModalFooter, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Select } from '@/components/ui'
+import { Card, CardContent, Button, Badge, Input } from '@/components/ui'
 import { VietQR, downloadQR } from '@/components/ui/viet-qr'
-import { 
-  Building, Plus, Trash2, Edit, QrCode, Check, X, Copy, 
-  CreditCard, Shield, AlertCircle, Download
+import { buildVietQr } from '@/lib/vietqr'
+import { toast } from '@/components/ui/toast'
+import {
+  Building, Plus, Trash2, Edit, QrCode, Copy,
+  AlertCircle, Download
 } from 'lucide-react'
 
 interface BankAccount {
   id: string
+  propertyId: string
   bankName: string
   bankCode: string
   accountNumber: string
   accountHolder: string
   qrEnabled: boolean
   isActive: boolean
-}
-
-interface Property {
-  id: string
-  name: string
-  subdomain: string
 }
 
 const bankList = [
@@ -37,20 +34,18 @@ const bankList = [
   { code: 'VPB', name: 'VPBank' },
   { code: 'TCB', name: 'Techcombank' },
   { code: 'STB', name: 'Sacombank' },
-  { code: 'CTG', name: 'BIDV' },
+  { code: 'CTG', name: 'VietinBank' },
 ]
 
 export default function BankAccountsPage() {
   const params = useParams<{ slug: string; id: string }>()
-  const propertyIdFromUrl = params.id
-  const workspaceId = params.slug ? null : null // not used in this page
-  
-  const [properties, setProperties] = React.useState<Property[]>([])
+  const propertyId = params.id
+
   const [accounts, setAccounts] = React.useState<BankAccount[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [showModal, setShowModal] = React.useState(false)
   const [editingAccount, setEditingAccount] = React.useState<BankAccount | null>(null)
-  const [selectedProperty, setSelectedProperty] = React.useState('')
 
   const [formData, setFormData] = React.useState({
     bankName: '',
@@ -60,106 +55,95 @@ export default function BankAccountsPage() {
     qrEnabled: true,
   })
 
-  // Fetch properties when workspace changes
   React.useEffect(() => {
-    fetchProperties()
-  }, [workspaceId])
-
-  // Fetch accounts when property changes
-  React.useEffect(() => {
-    if (selectedProperty) {
+    if (propertyId) {
       fetchAccounts()
     } else {
-      setAccounts([])
       setIsLoading(false)
     }
-  }, [selectedProperty])
-
-  const fetchProperties = async () => {
-    if (!workspaceId) {
-      setIsLoading(false)
-      return
-    }
-    try {
-      const response = await fetch(`/api/properties?workspaceId=${workspaceId}`)
-      const data = await response.json()
-      if (data.success && data.data.length > 0) {
-        setProperties(data.data)
-        // Auto-select first property if none selected
-        if (!selectedProperty) {
-          setSelectedProperty(data.data[0].id)
-        }
-      }
-    } catch (err) {
-      console.error('Failed to fetch properties:', err)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propertyId])
 
   const fetchAccounts = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch(`/api/bank-accounts?propertyId=${selectedProperty}`)
+      const response = await fetch(`/api/bank-accounts?propertyId=${propertyId}`)
       const data = await response.json()
       if (data.success) {
         setAccounts(data.data)
       } else {
-        // Mock data
-        setAccounts([
-          {
-            id: '1',
-            bankName: 'Ngân hàng Quân đội (MB Bank)',
-            bankCode: 'MB',
-            accountNumber: '1234567890123',
-            accountHolder: 'CÔNG TY TNHH DIGISTAY',
-            qrEnabled: true,
-            isActive: true,
-          },
-          {
-            id: '2',
-            bankName: 'Vietcombank',
-            bankCode: 'VCB',
-            accountNumber: '1234567890',
-            accountHolder: 'CÔNG TY TNHH DIGISTAY',
-            qrEnabled: true,
-            isActive: true,
-          },
-        ])
+        toast.error(data.error || 'Không thể tải danh sách tài khoản')
+        setAccounts([])
       }
     } catch (err) {
       console.error('Failed to fetch accounts:', err)
+      toast.error('Đã xảy ra lỗi khi tải danh sách tài khoản')
+      setAccounts([])
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleSubmit = async () => {
+    if (!propertyId) {
+      toast.error('Không xác định được cơ sở')
+      return
+    }
+    if (!formData.bankCode || !formData.accountNumber || !formData.accountHolder) {
+      toast.error('Vui lòng điền đầy đủ thông tin')
+      return
+    }
+
+    setIsSubmitting(true)
     try {
-      if (editingAccount) {
-        // Update
-        setAccounts(accounts.map(a => 
-          a.id === editingAccount.id ? { ...a, ...formData } : a
-        ))
-      } else {
-        // Create
-        const newAccount: BankAccount = {
-          id: Date.now().toString(),
+      const url = editingAccount
+        ? `/api/bank-accounts/${editingAccount.id}`
+        : '/api/bank-accounts'
+      const method = editingAccount ? 'PATCH' : 'POST'
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          propertyId,
           ...formData,
-          isActive: true,
-        }
-        setAccounts([...accounts, newAccount])
+        }),
+      })
+      const data = await response.json()
+
+      if (!data.success) {
+        toast.error(data.error || 'Không thể lưu tài khoản')
+        return
       }
+
+      toast.success(editingAccount ? 'Đã cập nhật tài khoản' : 'Đã thêm tài khoản')
       setShowModal(false)
       resetForm()
+      await fetchAccounts()
     } catch (err) {
       console.error('Failed to save account:', err)
+      toast.error('Đã xảy ra lỗi khi lưu tài khoản')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (confirm('Bạn có chắc chắn muốn xóa tài khoản này?')) {
+    if (!confirm('Bạn có chắc chắn muốn xóa tài khoản này?')) return
+    try {
+      const response = await fetch(`/api/bank-accounts/${id}`, {
+        method: 'DELETE',
+      })
+      const data = await response.json()
+      if (!data.success) {
+        toast.error(data.error || 'Không thể xóa tài khoản')
+        return
+      }
+      toast.success('Đã xóa tài khoản')
       setAccounts(accounts.filter(a => a.id !== id))
+    } catch (err) {
+      console.error('Failed to delete account:', err)
+      toast.error('Đã xảy ra lỗi khi xóa tài khoản')
     }
   }
 
@@ -186,27 +170,32 @@ export default function BankAccountsPage() {
     })
   }
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-    alert('Đã copy!')
+  const copyToClipboard = async (text: string, label = 'Đã copy') => {
+    try {
+      await navigator.clipboard.writeText(text)
+      toast.success(label)
+    } catch {
+      toast.error('Không thể copy, vui lòng thử lại')
+    }
   }
 
   const formatAccountNumber = (num: string) => {
     return num.replace(/(.{4})/g, '$1 ').trim()
   }
 
-  // Build VietQR string for preview/download
+  // Build a real VietQR string using the canonical EMVCo implementation
+  // (CRC-16/CCITT, full TLV tags) so that bank apps can parse it.
   const buildVietQRPreview = (account: BankAccount) => {
-    const parts: string[] = []
-    parts.push(`38${account.bankCode}`)
-    parts.push(`0012${account.accountNumber}`)
-    const nameLength = account.accountHolder.length.toString().padStart(2, '0')
-    parts.push(`0808${nameLength}${account.accountHolder}`)
-    parts.push('6304')
-    return parts.join('')
+    return buildVietQr({
+      bankCode: account.bankCode,
+      accountNumber: account.accountNumber,
+      accountHolder: account.accountHolder,
+      amount: 0,
+      addInfo: `DIGISTAY-${account.accountNumber}`,
+    })
   }
 
-  if (!workspaceId) {
+  if (!propertyId) {
     return (
       <PageContainer>
         <Header
@@ -216,8 +205,7 @@ export default function BankAccountsPage() {
         <Card>
           <CardContent className="p-12 text-center">
             <Building className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 mb-2">Không tìm thấy thông tin workspace</p>
-            <p className="text-sm text-gray-400">Vui lòng chọn workspace từ thanh sidebar</p>
+            <p className="text-gray-500">Không xác định được cơ sở.</p>
           </CardContent>
         </Card>
       </PageContainer>
@@ -230,21 +218,10 @@ export default function BankAccountsPage() {
         title="Tài Khoản Ngân Hàng"
         description="Quản lý tài khoản ngân hàng để nhận thanh toán"
         actions={
-          <div className="flex items-center gap-3">
-            <Select
-              value={selectedProperty}
-              onChange={(e) => setSelectedProperty(e.target.value)}
-              className="w-64"
-            >
-              {properties.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </Select>
-            <Button onClick={() => { resetForm(); setShowModal(true) }} disabled={!selectedProperty}>
-              <Plus className="w-4 h-4 mr-2" />
-              Thêm tài khoản
-            </Button>
-          </div>
+          <Button onClick={() => { resetForm(); setShowModal(true) }}>
+            <Plus className="w-4 h-4 mr-2" />
+            Thêm tài khoản
+          </Button>
         }
       />
 
@@ -255,34 +232,24 @@ export default function BankAccountsPage() {
           <div>
             <p className="font-medium text-blue-900">Tích hợp VietQR</p>
             <p className="text-sm text-blue-700">
-              Khách hàng có thể quét mã QR để thanh toán nhanh chóng. 
+              Khách hàng có thể quét mã QR để thanh toán nhanh chóng.
               Hỗ trợ tất cả ngân hàng tại Việt Nam.
             </p>
           </div>
         </CardContent>
       </Card>
 
-      {/* No property selected */}
-      {!selectedProperty && properties.length > 0 && (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Building className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 mb-4">Vui lòng chọn cơ sở để quản lý tài khoản</p>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Accounts List */}
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         </div>
       ) : accounts.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center">
             <Building className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-500 mb-4">Chưa có tài khoản ngân hàng nào</p>
-            <Button onClick={() => setShowModal(true)}>
+            <Button onClick={() => { resetForm(); setShowModal(true) }}>
               <Plus className="w-4 h-4 mr-2" />
               Thêm tài khoản
             </Button>
@@ -335,6 +302,7 @@ export default function BankAccountsPage() {
                         <button
                           onClick={() => copyToClipboard(account.accountNumber)}
                           className="p-1 hover:bg-gray-200 rounded"
+                          aria-label="Copy số tài khoản"
                         >
                           <Copy className="w-4 h-4 text-gray-400" />
                         </button>
@@ -348,35 +316,36 @@ export default function BankAccountsPage() {
                 </div>
 
                 {/* QR Preview */}
-                <div className="mt-4 flex items-center gap-4">
-                  <div className="flex flex-col items-center gap-2">
-                    <VietQR
-                      bankCode={account.bankCode}
-                      accountNumber={account.accountNumber}
-                      accountHolder={account.accountHolder}
-                      size={120}
-                    />
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => {
-                        // Generate and download QR with amount
-                        const qrData = buildVietQRPreview(account)
-                        QRCode.toDataURL(qrData, { width: 300, margin: 2 }).then(downloadQR)
-                      }}
-                      className="text-xs"
-                    >
-                      <Download className="w-3 h-3 mr-1" />
-                      Tải QR
-                    </Button>
+                {account.qrEnabled && (
+                  <div className="mt-4 flex items-center gap-4">
+                    <div className="flex flex-col items-center gap-2">
+                      <VietQR
+                        bankCode={account.bankCode}
+                        accountNumber={account.accountNumber}
+                        accountHolder={account.accountHolder}
+                        size={120}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const qrData = buildVietQRPreview(account)
+                          QRCode.toDataURL(qrData, { width: 300, margin: 2 }).then(downloadQR)
+                        }}
+                        className="text-xs"
+                      >
+                        <Download className="w-3 h-3 mr-1" />
+                        Tải QR
+                      </Button>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Nội dung chuyển khoản</p>
+                      <p className="font-mono text-sm bg-gray-100 px-2 py-1 rounded mt-1">
+                        DIGISTAY - {account.accountNumber}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Nội dung chuyển khoản</p>
-                    <p className="font-mono text-sm bg-gray-100 px-2 py-1 rounded mt-1">
-                      DIGISTAY - {account.accountNumber}
-                    </p>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           ))}
@@ -451,10 +420,14 @@ export default function BankAccountsPage() {
               </div>
             </div>
             <div className="p-6 border-t border-gray-100 flex justify-end gap-3">
-              <Button variant="outline" onClick={() => { setShowModal(false); resetForm() }}>
+              <Button
+                variant="outline"
+                onClick={() => { setShowModal(false); resetForm() }}
+                disabled={isSubmitting}
+              >
                 Hủy
               </Button>
-              <Button onClick={handleSubmit}>
+              <Button onClick={handleSubmit} isLoading={isSubmitting}>
                 {editingAccount ? 'Lưu thay đổi' : 'Thêm tài khoản'}
               </Button>
             </div>
