@@ -671,7 +671,7 @@ export default function InvoicesPage() {
                             <span className="font-semibold">{formatPrice(invoice.totalAmount)}</span>
                           </td>
                           <td className="px-4 py-3">
-                            <Badge className={statusInfo.bgColor} textColor={statusInfo.color}>
+                            <Badge className={`${statusInfo.bgColor} ${statusInfo.color}`}>
                               <StatusIcon className="w-3 h-3 mr-1" />
                               {statusInfo.label}
                             </Badge>
@@ -1024,8 +1024,7 @@ export default function InvoicesPage() {
                   </p>
                 </div>
                 <div className="text-right">
-                  <Badge className={invoiceStatusConfig[selectedInvoice.status]?.bgColor} 
-                         textColor={invoiceStatusConfig[selectedInvoice.status]?.color}>
+                  <Badge className={`${invoiceStatusConfig[selectedInvoice.status]?.bgColor} ${invoiceStatusConfig[selectedInvoice.status]?.color}`}>
                     {React.createElement(invoiceStatusConfig[selectedInvoice.status]?.icon || FileText, { className: 'w-3 h-3 mr-1' })}
                     {invoiceStatusConfig[selectedInvoice.status]?.label}
                   </Badge>
@@ -1163,13 +1162,13 @@ export default function InvoicesPage() {
                 Đóng
               </Button>
               {selectedInvoice.pdfUrl && (
-                <Button variant="outline" onClick={() => window.open(selectedInvoice.pdfUrl, '_blank')}>
+                <Button variant="outline" onClick={() => selectedInvoice.pdfUrl && window.open(selectedInvoice.pdfUrl, '_blank')}>
                   <Download className="w-4 h-4 mr-2" />
                   Tải PDF
                 </Button>
               )}
               {selectedInvoice.xmlUrl && (
-                <Button variant="outline" onClick={() => window.open(selectedInvoice.xmlUrl, '_blank')}>
+                <Button variant="outline" onClick={() => selectedInvoice.xmlUrl && window.open(selectedInvoice.xmlUrl, '_blank')}>
                   <FileText className="w-4 h-4 mr-2" />
                   Tải XML
                 </Button>

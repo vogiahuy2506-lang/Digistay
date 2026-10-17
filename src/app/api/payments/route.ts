@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
           select: {
             id: true,
             name: true,
+            city: true,
             bankAccounts: {
               where: { isActive: true, qrEnabled: true },
               take: 1,
@@ -121,6 +122,26 @@ export async function POST(request: NextRequest) {
 
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000) // 30 minutes
 
+    // For QR_VIETQR, build a compliant VietQR string. The frontend can
+    // pipe it through any QR library (e.g. qrcode.react) to render.
+    let qrString: string | null = null
+    if (method === 'QR_VIETQR' && bankAccount) {
+      try {
+        const { buildVietQr } = await import('@/lib/vietqr')
+        qrString = buildVietQr({
+          bankCode: bankAccount.bankCode,
+          accountNumber: bankAccount.accountNumber,
+          accountHolder: bankAccount.accountHolder,
+          amount,
+          addInfo: transferContent,
+          merchantName: booking.property.name,
+          merchantCity: booking.property.city,
+        })
+      } catch (err) {
+        console.error('[payment] Failed to build VietQR:', err)
+      }
+    }
+
     const payment = await prisma.payment.create({
       data: {
         bookingId,
@@ -134,6 +155,7 @@ export async function POST(request: NextRequest) {
         bankAccount: bankAccount?.accountNumber,
         accountHolder: bankAccount?.accountHolder,
         transferContent,
+        qrCodeUrl: qrString, // store the QR string; UI can render it
         paidAt: method === 'CASH' ? new Date() : null,
         expiresAt,
       },

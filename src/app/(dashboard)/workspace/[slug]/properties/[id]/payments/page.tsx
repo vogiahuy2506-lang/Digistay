@@ -497,7 +497,7 @@ export default function PaymentsPage() {
                             </div>
                           </td>
                           <td className="px-4 py-3">
-                            <Badge className={statusInfo.bgColor} textColor={statusInfo.color}>
+                            <Badge className={`${statusInfo.bgColor} ${statusInfo.color}`}>
                               <StatusIcon className="w-3 h-3 mr-1" />
                               {statusInfo.label}
                             </Badge>
@@ -610,8 +610,7 @@ export default function PaymentsPage() {
                     Tạo lúc: {format(new Date(selectedPayment.createdAt), 'dd/MM/yyyy HH:mm')}
                   </p>
                 </div>
-                <Badge className={paymentStatusConfig[selectedPayment.status]?.bgColor} 
-                       textColor={paymentStatusConfig[selectedPayment.status]?.color}>
+                <Badge className={`${paymentStatusConfig[selectedPayment.status]?.bgColor} ${paymentStatusConfig[selectedPayment.status]?.color}`}>
                   {paymentStatusConfig[selectedPayment.status]?.label}
                 </Badge>
               </div>

@@ -6,7 +6,7 @@ import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, Button, Badge, Modal, ModalFooter, Input, Select, Textarea, Dropdown, DropdownItem, DropdownDivider } from '@/components/ui'
 import { 
   Plus, Bed, Edit, Trash2, MoreVertical, Image, Users, Maximize2, 
-  DollarSign, BedDouble, Wifi, Restaurant, 
+  DollarSign, BedDouble, Wifi, Utensils, 
   Bath, Coffee, Wine, Sparkles, Waves, ChevronRight, Save
 } from 'lucide-react'
 
@@ -54,7 +54,7 @@ const bedTypeOptions = [
 const amenityIcons: Record<string, React.ReactNode> = {
   'pool': <Waves className="w-3 h-3 text-[#2a674c]" />,
   'wifi': <Wifi className="w-3 h-3 text-[#545f73]" />,
-  'restaurant': <Restaurant className="w-3 h-3 text-[#a93119]" />,
+  'restaurant': <Utensils className="w-3 h-3 text-[#a93119]" />,
   'breakfast': <Coffee className="w-3 h-3 text-[#a93119]" />,
   'spa': <Sparkles className="w-3 h-3 text-[#2a674c]" />,
   'bathtub': <Bath className="w-3 h-3 text-[#a93119]" />,

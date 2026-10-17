@@ -123,7 +123,15 @@ export async function POST(request: NextRequest) {
         maxOccupancy: maxOccupancy || 4,
         pricing: weekdayPrice || weekendPrice ? {
           create: {
-            pricingId: property.pricingConfigId || (await prisma.pricingConfig.create({ data: { name: 'Default' } })).id,
+            pricingId: (await prisma.pricingConfig.findFirst({ where: { propertyId } }))?.id
+              ?? (await prisma.pricingConfig.create({
+                data: {
+                  name: 'Default',
+                  propertyId,
+                  weekdayPrice: weekdayPrice || 0,
+                  weekendPrice: weekendPrice || weekdayPrice || 0,
+                },
+              })).id,
             weekdayPrice: weekdayPrice || 0,
             weekendPrice: weekendPrice || weekdayPrice || 0,
             extraAdultPrice: 0,

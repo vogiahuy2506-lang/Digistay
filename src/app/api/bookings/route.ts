@@ -277,10 +277,65 @@ export async function POST(request: NextRequest) {
             id: true,
             name: true,
             subdomain: true,
+            address: true,
+            phone: true,
+            city: true,
+            workspace: {
+              select: {
+                ownerId: true,
+                owner: { select: { email: true, name: true } },
+              },
+            },
           },
         },
       },
     })
+
+    // Fire-and-forget emails: booking confirmation to guest, new-booking
+    // notification to property owner. Errors are logged but do not break
+    // the booking flow.
+    const manageUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/bookings/${booking.id}`
+    const prop = booking.property
+
+    void (async () => {
+      try {
+        const {
+          sendBookingConfirmation,
+          sendOwnerNewBooking,
+        } = await import('@/lib/email')
+        await sendBookingConfirmation({
+          guestName: booking.guestName,
+          guestEmail: booking.guestEmail,
+          bookingCode: booking.bookingCode,
+          propertyName: prop.name,
+          propertyAddress: `${prop.address}, ${prop.city}`,
+          propertyPhone: prop.phone,
+          checkIn: booking.checkInDate.toISOString(),
+          checkOut: booking.checkOutDate.toISOString(),
+          numAdults: booking.numAdults,
+          numChildren: booking.numChildren,
+          totalAmount: booking.totalAmount,
+          manageUrl,
+        })
+        if (prop.workspace?.owner?.email) {
+          await sendOwnerNewBooking({
+            ownerEmail: prop.workspace.owner.email,
+            ownerName: prop.workspace.owner.name ?? undefined,
+            bookingCode: booking.bookingCode,
+            guestName: booking.guestName,
+            guestPhone: booking.guestPhone,
+            guestEmail: booking.guestEmail,
+            propertyName: prop.name,
+            checkIn: booking.checkInDate.toISOString(),
+            checkOut: booking.checkOutDate.toISOString(),
+            totalAmount: booking.totalAmount,
+            manageUrl: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/workspace/_/properties/${prop.id}/bookings/${booking.id}`,
+          })
+        }
+      } catch (err) {
+        console.error('[booking] Email send failed:', err)
+      }
+    })()
 
     // Log activity
     await prisma.activityLog.create({

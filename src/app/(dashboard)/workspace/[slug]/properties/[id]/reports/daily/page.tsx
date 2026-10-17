@@ -45,80 +45,23 @@ export default function DailyReportPage() {
   const fetchDailyData = async () => {
     setIsLoading(true)
     try {
-      // Mock data for demo
-      setSummary({
+      const params = new URLSearchParams({
+        propertyId: selectedProperty,
         date: selectedDate,
-        totalIn: 4500000,
-        totalOut: 500000,
-        balance: 4000000,
-        bookings: 5,
-        checkIns: 3,
-        checkOuts: 2,
       })
-      setTransactions([
-        {
-          id: '1',
-          type: 'IN',
-          category: 'Đặt phòng',
-          description: 'Phòng 101 - Khách Nguyễn Văn A',
-          amount: 850000,
-          paymentMethod: 'Chuyển khoản',
-          createdAt: '08:30',
-          createdBy: 'Lễ tân 1',
-        },
-        {
-          id: '2',
-          type: 'IN',
-          category: 'Đặt phòng',
-          description: 'Phòng 201 - Khách Trần Thị B',
-          amount: 1200000,
-          paymentMethod: 'Tiền mặt',
-          createdAt: '09:15',
-          createdBy: 'Lễ tân 2',
-        },
-        {
-          id: '3',
-          type: 'IN',
-          category: 'Thanh toán',
-          description: 'Thanh toán còn lại - Phòng 301',
-          amount: 500000,
-          paymentMethod: 'QR VietQR',
-          createdAt: '10:00',
-          createdBy: 'Lễ tân 1',
-        },
-        {
-          id: '4',
-          type: 'OUT',
-          category: 'Chi phí',
-          description: 'Mua vật tư, dụng cụ',
-          amount: 200000,
-          paymentMethod: 'Tiền mặt',
-          createdAt: '11:30',
-          createdBy: 'Admin',
-        },
-        {
-          id: '5',
-          type: 'OUT',
-          category: 'Chi phí',
-          description: 'Thanh toán hóa đơn điện nước',
-          amount: 300000,
-          paymentMethod: 'Chuyển khoản',
-          createdAt: '14:00',
-          createdBy: 'Admin',
-        },
-        {
-          id: '6',
-          type: 'IN',
-          category: 'Dịch vụ',
-          description: 'Dịch vụ giặt ủi - Phòng 101',
-          amount: 150000,
-          paymentMethod: 'Tiền mặt',
-          createdAt: '15:30',
-          createdBy: 'Lễ tân 2',
-        },
-      ])
+      const res = await fetch(`/api/reports/daily?${params.toString()}`)
+      const json = await res.json()
+      if (json.success) {
+        setSummary(json.data.summary)
+        setTransactions(json.data.transactions ?? [])
+      } else {
+        setSummary(null)
+        setTransactions([])
+      }
     } catch (err) {
-      console.error('Failed to fetch daily data:', err)
+      console.error('Fetch daily report error:', err)
+      setSummary(null)
+      setTransactions([])
     } finally {
       setIsLoading(false)
     }

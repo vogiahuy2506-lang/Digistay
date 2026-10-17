@@ -162,6 +162,7 @@ export async function POST(
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
       },
       include: {
+        workspace: { select: { name: true } },
         sender: {
           select: {
             id: true,
@@ -181,8 +182,27 @@ export async function POST(
       },
     })
 
-    // TODO: Send email notification
-    // await sendInvitationEmail(email, invitation.token, workspace.name)
+    // Send invitation email (fire-and-forget so the response is fast even
+    // when the email provider is slow).
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+    const inviteUrl = `${siteUrl}/invitations/${invitation.token}`
+
+    void (async () => {
+      try {
+        const { sendWorkspaceInvite } = await import('@/lib/email')
+        await sendWorkspaceInvite({
+          recipientEmail: invitation.email,
+          recipientName: invitation.recipient?.name ?? undefined,
+          inviterName: invitation.sender.name ?? invitation.sender.email,
+          workspaceName: invitation.workspace.name,
+          role: invitation.role,
+          inviteUrl,
+          expiresAt: invitation.expiresAt,
+        })
+      } catch (err) {
+        console.error('[invitation] Email send failed:', err)
+      }
+    })()
 
     return NextResponse.json({
       success: true,

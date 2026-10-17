@@ -365,13 +365,22 @@ export default function WalkinBookingPage() {
               <div className="space-y-4">
                 <h3 className="font-semibold">Phòng trống ({roomTypes.length})</h3>
                 {roomTypes.map((roomType) => (
-                  <Card 
-                    key={roomType.id} 
-                    className={`cursor-pointer transition-all hover:shadow-lg ${
+                  <div
+                    key={roomType.id}
+                    role="button"
+                    tabIndex={0}
+                    className={`cursor-pointer transition-all hover:shadow-lg rounded-xl ${
                       selectedRoomType?.id === roomType.id ? 'ring-2 ring-primary' : ''
                     }`}
                     onClick={() => handleSelectRoomType(roomType)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        handleSelectRoomType(roomType)
+                      }
+                    }}
                   >
+                    <Card>
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -430,6 +439,7 @@ export default function WalkinBookingPage() {
                       )}
                     </CardContent>
                   </Card>
+                  </div>
                 ))}
               </div>
             )}
