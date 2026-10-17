@@ -38,6 +38,22 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setToasts((prev) => prev.filter((t) => t.id !== id))
   }, [])
 
+  // Bridge: the convenience `toast.success/error/...` helpers
+  // dispatch a `CustomEvent('toast', …)` on `window` so any module
+  // (including non-React code) can fire a toast without having to
+  // import the React context. We listen for it here and forward to
+  // `addToast`.
+  React.useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent).detail
+      if (detail && typeof detail === 'object' && 'title' in detail) {
+        addToast(detail as Omit<ToastProps, 'id'>)
+      }
+    }
+    window.addEventListener('toast', handler)
+    return () => window.removeEventListener('toast', handler)
+  }, [addToast])
+
   return (
     <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
       {children}
