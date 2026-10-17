@@ -310,8 +310,22 @@ export default function WalkinBookingPage() {
                     label="Ngày nhận phòng"
                     type="date"
                     value={checkInDate}
-                    onChange={(e) => setCheckOutDate(format(addDays(new Date(e.target.value), 1), 'yyyy-MM-dd'))}
-                    onChangeCapture={(e) => setCheckInDate((e.target as HTMLInputElement).value)}
+                    onChange={(e) => {
+                      const next = e.target.value
+                      if (!next) {
+                        setCheckInDate('')
+                        return
+                      }
+                      setCheckInDate(next)
+                      // If checkout is missing or already on/before
+                      // the new check-in, push it one day forward so
+                      // the search has a valid range.
+                      setCheckOutDate((prev) =>
+                        !prev || prev <= next
+                          ? format(addDays(new Date(next), 1), 'yyyy-MM-dd')
+                          : prev
+                      )
+                    }}
                   />
                   <Input
                     label="Ngày trả phòng"
