@@ -92,7 +92,11 @@ export function GalleryClient({ images, title = 'Hình ảnh' }: Props) {
                 }
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={img.thumbnail ?? img.url} alt="" className="w-full h-full object-cover" />
+                <img
+                  src={img.thumbnail ?? img.url}
+                  alt={img.alt ? `Xem ảnh ${i + 1}: ${img.alt}` : `Xem ảnh ${i + 1}`}
+                  className="w-full h-full object-cover"
+                />
               </button>
             ))}
           </div>
