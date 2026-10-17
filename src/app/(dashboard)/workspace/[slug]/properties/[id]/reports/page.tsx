@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, CardHeader, CardTitle, Button, Select, Input } from '@/components/ui'
 import { routes } from '@/lib/utils/routes'
+import { formatCurrency, formatDate } from '@/lib/utils'
 import { 
   TrendingUp, TrendingDown, DollarSign, Calendar, Users, 
   CreditCard, Building2, Download
@@ -69,22 +70,6 @@ export default function ReportsPage() {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount)
-  }
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-    })
   }
 
   if (!propertyId) {
@@ -232,7 +217,9 @@ export default function ReportsPage() {
                         style={{ height: `${Math.max(height, 4)}%` }}
                         title={formatCurrency(day.revenue)}
                       />
-                      <span className="text-xs text-gray-500">{formatDate(day.date)}</span>
+                      <span className="text-xs text-gray-500">
+                        {formatDate(day.date, { day: '2-digit', month: '2-digit' })}
+                      </span>
                     </div>
                   )
                 })}
@@ -313,7 +300,7 @@ export default function ReportsPage() {
                   {report.daily.slice().reverse().slice(0, 10).map((day) => (
                     <div key={day.date} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div>
-                        <p className="font-medium">{formatDate(day.date)}</p>
+                        <p className="font-medium">{formatDate(day.date, { day: '2-digit', month: '2-digit' })}</p>
                         <p className="text-sm text-gray-500">{day.bookings} đơn</p>
                       </div>
                       <div className="text-right">

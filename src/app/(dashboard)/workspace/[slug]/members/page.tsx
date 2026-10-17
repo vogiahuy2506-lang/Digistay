@@ -9,6 +9,7 @@ import { Dropdown, DropdownItem, DropdownDivider } from '@/components/ui'
 import { Avatar } from '@/components/ui'
 import { useWorkspace } from '@/lib/hooks/use-workspace'
 import { routes } from '@/lib/utils/routes'
+import { formatDate } from '@/lib/utils'
 
 interface Member {
   id: string
@@ -323,8 +324,8 @@ export default function MembersPage() {
                         <div>
                           <p className="font-medium text-gray-900">{invitation.email}</p>
                           <p className="text-sm text-gray-500">
-                            Mời bởi {invitation.sender.name || invitation.sender.email} • 
-                            {new Date(invitation.createdAt).toLocaleDateString('vi-VN')}
+                            Mời bởi {invitation.sender.name || invitation.sender.email} •
+                            {' '}{formatDate(invitation.createdAt)}
                           </p>
                         </div>
                       </div>

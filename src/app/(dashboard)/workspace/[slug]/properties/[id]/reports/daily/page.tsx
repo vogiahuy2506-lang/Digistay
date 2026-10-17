@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, CardHeader, CardTitle, Button, Badge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Input } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
+import { formatDate } from '@/lib/utils'
 import {
   Wallet, DollarSign, CreditCard, Banknote, Calendar,
   Printer, Download, ArrowUpRight, ArrowDownRight
@@ -124,7 +125,7 @@ export default function DailyReportPage() {
     <PageContainer>
       <Header
         title="Sổ Quỹ"
-        description={`Ngày ${new Date(selectedDate).toLocaleDateString('vi-VN')}`}
+        description={`Ngày ${formatDate(selectedDate)}`}
         actions={
           <div className="flex items-center gap-4">
             <Input

@@ -9,6 +9,7 @@ import {
   Calendar as CalendarIcon, ChevronLeft, ChevronRight,
   Bed, Users, BedDouble,
 } from 'lucide-react'
+import { formatDate } from '@/lib/utils'
 
 interface RoomType {
   id: string
@@ -160,7 +161,7 @@ export default function CalendarPage() {
     return result
   }
 
-  const monthLabel = currentDate.toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' })
+  const monthLabel = formatDate(currentDate, { month: 'long', year: 'numeric' })
   const today = startOfDay(new Date())
   const days = buildMonthGrid(currentDate)
   const totalRooms = roomTypes.reduce((sum, rt) => sum + rt.totalRooms, 0)

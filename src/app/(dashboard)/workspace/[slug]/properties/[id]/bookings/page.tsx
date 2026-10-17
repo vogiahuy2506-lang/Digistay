@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, Button, Badge, Input, Select, Tabs, TabsList, TabsTrigger, TabsContent, PageLoading } from '@/components/ui'
 import { routes } from '@/lib/utils/routes'
+import { formatDate, formatCurrency } from '@/lib/utils'
 import { 
   Search, Filter, Plus, Calendar, Clock, CheckCircle, XCircle, 
   Users, CreditCard, Eye, MoreVertical, ArrowRightLeft, Wrench
@@ -136,22 +137,6 @@ export default function BookingsPage() {
       booking.guestPhone.includes(query)
     )
   })
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    })
-  }
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
 
   return (
     <PageContainer>
