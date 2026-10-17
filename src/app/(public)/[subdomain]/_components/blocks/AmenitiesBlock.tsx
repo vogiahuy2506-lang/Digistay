@@ -1,5 +1,7 @@
+import { Sparkles } from 'lucide-react'
 import { getIcon } from '../icon-map'
 import type { PublicAmenity, PublicBlock } from '../PropertySite'
+import { EmptyState } from './EmptyState'
 
 interface Props {
   block: PublicBlock
@@ -10,7 +12,28 @@ export function AmenitiesBlock({ block, amenities }: Props) {
   const cfg = block.config || {}
   const title = cfg.title ?? 'Tiện ích'
 
-  if (amenities.length === 0) return null
+  if (amenities.length === 0) {
+    // Render an empty card (instead of nothing) so the page doesn't
+    // look broken for a freshly-published workspace that hasn't added
+    // amenities yet.
+    return (
+      <section id="amenities" className="py-16 px-4">
+        <div className="max-w-7xl mx-auto">
+          <h2
+            className="text-3xl md:text-4xl font-bold text-center mb-4"
+            style={{ fontFamily: 'var(--brand-font-heading)' }}
+          >
+            {title}
+          </h2>
+          <EmptyState
+            icon={<Sparkles className="h-6 w-6" />}
+            title="Danh sách tiện ích đang được cập nhật"
+            description="Chủ cơ sở sẽ bổ sung tiện ích trong thời gian tới. Vui lòng quay lại sau."
+          />
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section id="amenities" className="py-16 px-4">

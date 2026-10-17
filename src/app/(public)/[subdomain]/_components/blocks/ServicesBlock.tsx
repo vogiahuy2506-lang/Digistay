@@ -1,5 +1,7 @@
+import { Sparkles } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import type { PublicBlock, PublicService } from '../PropertySite'
+import { EmptyState } from './EmptyState'
 
 interface Props {
   block: PublicBlock
@@ -10,7 +12,25 @@ export function ServicesBlock({ block, services }: Props) {
   const cfg = block.config || {}
   const title = cfg.title ?? 'Dịch vụ tiện ích'
 
-  if (services.length === 0) return null
+  if (services.length === 0) {
+    return (
+      <section id="services" className="py-16 px-4">
+        <div className="max-w-7xl mx-auto">
+          <h2
+            className="text-3xl md:text-4xl font-bold text-center mb-4"
+            style={{ fontFamily: 'var(--brand-font-heading)' }}
+          >
+            {title}
+          </h2>
+          <EmptyState
+            icon={<Sparkles className="h-6 w-6" />}
+            title="Danh sách dịch vụ đang được cập nhật"
+            description="Các dịch vụ kèm theo sẽ sớm được bổ sung."
+          />
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section id="services" className="py-16 px-4">
