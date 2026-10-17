@@ -1163,13 +1163,13 @@ export default function InvoicesPage() {
                 Đóng
               </Button>
               {selectedInvoice.pdfUrl && (
-                <Button variant="outline" onClick={() => window.open(selectedInvoice.pdfUrl, '_blank')}>
+                <Button variant="outline" onClick={() => window.open(selectedInvoice.pdfUrl || '', '_blank')}>
                   <Download className="w-4 h-4 mr-2" />
                   Tải PDF
                 </Button>
               )}
               {selectedInvoice.xmlUrl && (
-                <Button variant="outline" onClick={() => window.open(selectedInvoice.xmlUrl, '_blank')}>
+                <Button variant="outline" onClick={() => window.open(selectedInvoice.xmlUrl || '', '_blank')}>
                   <FileText className="w-4 h-4 mr-2" />
                   Tải XML
                 </Button>

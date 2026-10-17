@@ -89,22 +89,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { name, description, domain } = validation.data
+    const { name, description, domain, slug: customSlug, businessType, currency, timezone, logo } = validation.data
 
-    // Generate unique slug
-    const slug = generateSlug(name)
-
-    // Check if slug already exists
-    const existingWorkspace = await prisma.workspace.findUnique({
-      where: { slug },
-    })
-
-    if (existingWorkspace) {
-      return NextResponse.json(
-        { success: false, error: 'Tên workspace đã tồn tại, vui lòng chọn tên khác' },
-        { status: 400 }
-      )
+    // Generate slug from name or use custom slug
+    const baseSlug = customSlug || generateSlug(name)
+    let slug = baseSlug
+    let counter = 1
+    
+    // Check if slug already exists and make it unique
+    while (await prisma.workspace.findUnique({ where: { slug } })) {
+      slug = `${baseSlug}-${counter}`
+      counter++
     }
+
+    // Prepare settings from additional fields
+    const settings: Record<string, unknown> = {}
+    if (businessType) settings.businessType = businessType
+    if (currency) settings.currency = currency
+    if (timezone) settings.timezone = timezone
 
     // Create workspace
     const workspace = await prisma.workspace.create({
@@ -113,7 +115,9 @@ export async function POST(request: NextRequest) {
         slug,
         description,
         domain: domain || null,
+        logo: logo || null,
         ownerId: session.user.id,
+        settings: Object.keys(settings).length > 0 ? settings : undefined,
       },
       include: {
         owner: {

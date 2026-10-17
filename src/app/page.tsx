@@ -1,849 +1,2052 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
-import { motion, useScroll, useTransform, useSpring, useInView, AnimatePresence } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 
-// Icons as SVG components
-const Icons = {
-  Calendar: () => (
-    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm-8 4H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/>
-    </svg>
-  ),
-  Globe: () => (
-    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-    </svg>
-  ),
-  Sparkles: () => (
-    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 2L9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2zm0 3.36l1.95 4.57 4.95.42-3.77 3.33 1.16 5.05L12 15.82l-4.29 2.91 1.16-5.05-3.77-3.33 4.95-.42L12 5.36z"/>
-    </svg>
-  ),
-  Lightning: () => (
-    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M7 2v11h3v9l7-12h-4l4-8z"/>
-    </svg>
-  ),
-  Users: () => (
-    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-    </svg>
-  ),
-  Check: () => (
-    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-    </svg>
-  ),
-  Arrow: () => (
-    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/>
-    </svg>
-  ),
-  Star: () => (
-    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-    </svg>
-  ),
-  Settings: () => (
-    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
-    </svg>
-  ),
-  Chart: () => (
-    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/>
-    </svg>
-  ),
-  Code: () => (
-    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/>
-    </svg>
-  ),
-  Shield: () => (
-    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
-    </svg>
-  ),
-  Phone: () => (
-    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
-    </svg>
-  ),
-  Mail: () => (
-    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-    </svg>
-  ),
-  Template: () => (
-    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
-    </svg>
-  ),
-  Zap: () => (
-    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-    </svg>
-  ),
-  Building: () => (
-    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/>
-    </svg>
-  ),
-  CreditCard: () => (
-    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>
-    </svg>
-  ),
+// ═══════════════════════════════════════════════════════════
+// 🎨 MODERN TRENDING ANIMATION EFFECTS SYSTEM
+// ═══════════════════════════════════════════════════════════
+
+// Animation Types
+type AnimationType = 
+  | 'fade-up' | 'fade-down' | 'fade-left' | 'fade-right' 
+  | 'zoom-in' | 'zoom-out' | 'blur-in' | 'slide-up' 
+  | 'bounce-in' | 'flip-in' | 'rotate-in' | 'scale-in'
+  | 'parallax' | 'split-reveal' | 'curtain-reveal'
+
+// Material Symbols icon component
+function Icon({ name, className = '' }: { name: string; className?: string }) {
+  return (
+    <span className={`material-symbols-outlined ${className}`}>{name}</span>
+  )
 }
 
-// Color palette - Professional SaaS colors
-const colors = {
-  primary: '#6366f1',      // Indigo
-  primaryLight: '#818cf8',
-  primaryDark: '#4f46e5',
-  secondary: '#0f172a',    // Dark slate
-  tertiary: '#10b981',     // Emerald
-  background: '#f8fafc',
-  surface: '#ffffff',
-  surfaceLight: '#f1f5f9',
-  surfaceHigh: '#e2e8f0',
-  onSurface: '#1e293b',
-  onSurfaceVariant: '#64748b',
-  outline: '#cbd5e1',
-  accent: '#f59e0b',       // Amber
-}
+// ═══════════════════════════════════════════════════════════
+// ✨ 1. ENHANCED SCROLL REVEAL WITH SPRING PHYSICS
+// ═══════════════════════════════════════════════════════════
+function useSpringReveal(options: {
+  threshold?: number
+  rootMargin?: string
+  animation?: AnimationType
+  delay?: number
+  duration?: number
+  springConfig?: { stiffness: number; damping: number }
+}) {
+  const { 
+    threshold = 0.15, 
+    rootMargin = '-30px', 
+    animation = 'fade-up', 
+    delay = 0, 
+    duration = 800,
+    springConfig = { stiffness: 100, damping: 15 }
+  } = options
+  const ref = useRef<HTMLDivElement>(null)
+  const [isVisible, setIsVisible] = useState(false)
+  const [scrollProgress, setScrollProgress] = useState(0)
 
-// Animation variants
-const fadeInUp = {
-  hidden: { opacity: 0, y: 60 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } }
-}
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true)
+        }
+      },
+      { threshold, rootMargin }
+    )
 
-const fadeInScale = {
-  hidden: { opacity: 0, scale: 0.8 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } }
-}
+    const element = ref.current
+    if (element) {
+      observer.observe(element)
+    }
 
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.15, delayChildren: 0.2 }
+    return () => observer.disconnect()
+  }, [threshold, rootMargin])
+
+  // Parallax scroll effect
+  useEffect(() => {
+    if (animation !== 'parallax') return
+    
+    const handleScroll = () => {
+      if (!ref.current) return
+      const rect = ref.current.getBoundingClientRect()
+      const scrollCenter = window.innerHeight / 2
+      const elementCenter = rect.top + rect.height / 2
+      const progress = (scrollCenter - elementCenter) / (window.innerHeight / 2)
+      setScrollProgress(Math.max(-1, Math.min(1, progress)))
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [animation])
+
+  const getAnimationStyle = () => {
+    const baseStyles: Record<string, React.CSSProperties> = {
+      'fade-up': { 
+        opacity: isVisible ? 1 : 0, 
+        transform: isVisible ? 'translateY(0)' : 'translateY(60px)' 
+      },
+      'fade-down': { 
+        opacity: isVisible ? 1 : 0, 
+        transform: isVisible ? 'translateY(0)' : 'translateY(-60px)' 
+      },
+      'fade-left': { 
+        opacity: isVisible ? 1 : 0, 
+        transform: isVisible ? 'translateX(0)' : 'translateX(-60px)' 
+      },
+      'fade-right': { 
+        opacity: isVisible ? 1 : 0, 
+        transform: isVisible ? 'translateX(0)' : 'translateX(60px)' 
+      },
+      'zoom-in': { 
+        opacity: isVisible ? 1 : 0, 
+        transform: isVisible ? 'scale(1)' : 'scale(0.7)' 
+      },
+      'zoom-out': { 
+        opacity: isVisible ? 1 : 0, 
+        transform: isVisible ? 'scale(1)' : 'scale(1.3)' 
+      },
+      'blur-in': { 
+        opacity: isVisible ? 1 : 0, 
+        transform: isVisible ? 'blur(0)' : 'blur(20px)' 
+      },
+      'slide-up': { 
+        opacity: isVisible ? 1 : 0, 
+        transform: isVisible ? 'translateY(0) skewY(0deg)' : 'translateY(100px) skewY(3deg)' 
+      },
+      'bounce-in': { 
+        opacity: isVisible ? 1 : 0, 
+        transform: isVisible ? 'scale(1) translateY(0)' : 'scale(0.5) translateY(80px)' 
+      },
+      'flip-in': { 
+        opacity: isVisible ? 1 : 0, 
+        transform: isVisible ? 'rotateX(0) scale(1)' : 'rotateX(90deg) scale(0.8)' 
+      },
+      'rotate-in': { 
+        opacity: isVisible ? 1 : 0, 
+        transform: isVisible ? 'rotate(0deg) scale(1)' : 'rotate(-180deg) scale(0.5)' 
+      },
+      'scale-in': { 
+        opacity: isVisible ? 1 : 0, 
+        transform: isVisible ? 'scale(1)' : 'scale(0)' 
+      },
+      'parallax': {
+        transform: `translateY(${scrollProgress * 50}px)`
+      },
+      'split-reveal': { 
+        opacity: isVisible ? 1 : 0, 
+        clipPath: isVisible ? 'inset(0 0 0 0)' : 'inset(0 100% 0 0)' 
+      },
+      'curtain-reveal': { 
+        opacity: isVisible ? 1 : 0, 
+        clipPath: isVisible ? 'inset(0 0 0 0)' : 'inset(50% 0 50% 0)' 
+      },
+    }
+
+    const easing = `cubic-bezier(${springConfig.stiffness / 200}, ${springConfig.damping / 20}, 0.68, 0.53)`
+    return {
+      ...baseStyles[animation],
+      transition: `all ${duration}ms ${easing} ${delay}ms`,
+      willChange: 'transform, opacity',
+    }
   }
+
+  return { ref, style: getAnimationStyle(), isVisible }
 }
 
-const slideInLeft = {
-  hidden: { opacity: 0, x: -80 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } }
-}
-
-const slideInRight = {
-  hidden: { opacity: 0, x: 80 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } }
-}
-
-// Animated Section Component
-function AnimatedSection({ children, className = '', variants = fadeInUp }: { children: React.ReactNode, className?: string, variants?: any }) {
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: "-100px" })
+// ═══════════════════════════════════════════════════════════
+// 🎯 2. ANIMATED SECTION WRAPPER
+// ═══════════════════════════════════════════════════════════
+function AnimatedSection({ 
+  children, 
+  className = '', 
+  animation = 'fade-up',
+  delay = 0,
+  duration = 800,
+  springConfig,
+  stagger = false,
+  threshold,
+}: { 
+  children: React.ReactNode
+  className?: string
+  animation?: AnimationType
+  delay?: number
+  duration?: number
+  springConfig?: { stiffness: number; damping: number }
+  stagger?: boolean
+  threshold?: number
+}) {
+  const { ref, style, isVisible } = useSpringReveal({ 
+    animation, 
+    delay, 
+    duration, 
+    springConfig,
+    threshold 
+  })
   
   return (
-    <motion.div
-      ref={ref}
-      initial="hidden"
-      animate={isInView ? "visible" : "hidden"}
-      variants={variants}
-      className={className}
+    <div 
+      ref={ref} 
+      className={`${className} ${isVisible ? 'animate-active' : ''}`} 
+      style={style}
     >
       {children}
-    </motion.div>
+    </div>
   )
 }
 
-// Floating Element
-function FloatingElement({ children, delay = 0 }: { children: React.ReactNode, delay?: number }) {
+// Alias for backwards compatibility
+const Section = AnimatedSection
+
+// ═══════════════════════════════════════════════════════════
+// 🎪 3. STAGGERED CHILDREN WITH DYNAMIC DELAYS
+// ═══════════════════════════════════════════════════════════
+function StaggeredChildren({ 
+  children, 
+  className = '', 
+  staggerDelay = 80,
+  animation = 'fade-up',
+  direction = 'up' // 'up', 'down', 'left', 'right'
+}: { 
+  children: React.ReactNode
+  className?: string
+  staggerDelay?: number
+  animation?: AnimationType
+  direction?: 'up' | 'down' | 'left' | 'right'
+}) {
+  const animations: Record<string, AnimationType> = {
+    up: 'fade-up',
+    down: 'fade-down',
+    left: 'fade-left',
+    right: 'fade-right',
+  }
+  
   return (
-    <motion.div
-      animate={{
-        y: [0, -20, 0],
-        scale: [1, 1.05, 1]
-      }}
-      transition={{
-        duration: 4,
-        repeat: Infinity,
-        delay,
-        ease: "easeInOut"
-      }}
-    >
-      {children}
-    </motion.div>
+    <div className={className}>
+      {Array.isArray(children) 
+        ? children.map((child, index) => (
+            <AnimatedSection 
+              key={index} 
+              animation={animations[direction]}
+              delay={index * staggerDelay}
+              duration={600}
+            >
+              {child}
+            </AnimatedSection>
+          ))
+        : children
+      }
+    </div>
   )
 }
 
-// Scroll Progress Indicator
-function ScrollProgress() {
-  const { scrollYProgress } = useScroll()
-  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 })
-  
+// ═══════════════════════════════════════════════════════════
+// 🧲 4. MAGNETIC BUTTON WITH SMOOTH FOLLOW
+// ═══════════════════════════════════════════════════════════
+function MagneticButton({ 
+  children, 
+  className = '',
+  strength = 0.4,
+  glowColor = 'rgba(169, 49, 25, 0.3)'
+}: { 
+  children: React.ReactNode
+  className?: string
+  strength?: number
+  glowColor?: string
+}) {
+  const buttonRef = useRef<HTMLDivElement>(null)
+  const [isHovered, setIsHovered] = useState(false)
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!buttonRef.current) return
+    const rect = buttonRef.current.getBoundingClientRect()
+    const x = e.clientX - rect.left - rect.width / 2
+    const y = e.clientY - rect.top - rect.height / 2
+    
+    buttonRef.current.style.transform = `translate(${x * strength}px, ${y * strength}px)`
+    buttonRef.current.style.boxShadow = isHovered ? `0 20px 40px ${glowColor}` : ''
+  }, [strength, isHovered, glowColor])
+
+  const handleMouseEnter = useCallback(() => {
+    setIsHovered(true)
+  }, [])
+
+  const handleMouseLeave = useCallback(() => {
+    setIsHovered(false)
+    if (!buttonRef.current) return
+    buttonRef.current.style.transform = 'translate(0, 0)'
+    buttonRef.current.style.boxShadow = ''
+  }, [])
+
   return (
-    <motion.div
-      className="fixed top-0 left-0 right-0 h-1 bg-primary z-[100] origin-left"
-      style={{ scaleX }}
+    <div 
+      ref={buttonRef}
+      className={`transition-all duration-200 ease-out ${className}`}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      style={{ willChange: 'transform, box-shadow' }}
+    >
+      {children}
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════
+// 🎴 5. 3D TILT CARD WITH REFLECTION
+// ═══════════════════════════════════════════════════════════
+function TiltCard3D({ 
+  children, 
+  className = '',
+  tiltStrength = 15,
+  glareStrength = 0.3
+}: { 
+  children: React.ReactNode
+  className?: string
+  tiltStrength?: number
+  glareStrength?: number
+}) {
+  const cardRef = useRef<HTMLDivElement>(null)
+  const [transform, setTransform] = useState('')
+  const [glarePos, setGlarePos] = useState({ x: 50, y: 50 })
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!cardRef.current) return
+    const rect = cardRef.current.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    const centerX = rect.width / 2
+    const centerY = rect.height / 2
+    
+    const rotateX = (y - centerY) / centerY * tiltStrength
+    const rotateY = (centerX - x) / centerX * tiltStrength
+    
+    setTransform(
+      `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`
+    )
+    
+    // Update glare position
+    setGlarePos({
+      x: (x / rect.width) * 100,
+      y: (y / rect.height) * 100
+    })
+  }, [tiltStrength])
+
+  const handleMouseLeave = useCallback(() => {
+    setTransform('perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)')
+    setGlarePos({ x: 50, y: 50 })
+  }, [])
+
+  return (
+    <div 
+      ref={cardRef}
+      className={`relative overflow-hidden transition-transform duration-200 ease-out ${className}`}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{ 
+        transform,
+        transformStyle: 'preserve-3d',
+        willChange: 'transform'
+      }}
+    >
+      {/* Glare overlay */}
+      <div 
+        className="absolute inset-0 pointer-events-none transition-opacity duration-300"
+        style={{ 
+          opacity: transform ? 1 : 0,
+          background: `radial-gradient(circle at ${glarePos.x}% ${glarePos.y}%, rgba(255,255,255,${glareStrength}) 0%, transparent 50%)`,
+        }}
+      />
+      {children}
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════
+// ✍️ 6. TEXT SCRAMBLE EFFECT (TRENDING)
+// ═══════════════════════════════════════════════════════════
+function TextScramble({ 
+  children, 
+  className = '',
+  scrambleChars = '!<>-_\\/[]{}—=+*^?#________',
+  speed = 30
+}: { 
+  children: string
+  className?: string
+  scrambleChars?: string
+  speed?: number
+}) {
+  const [displayText, setDisplayText] = useState(children)
+  const [isScrambling, setIsScrambling] = useState(false)
+  const ref = useRef<HTMLSpanElement>(null)
+  const timeoutRef = useRef<NodeJS.Timeout>()
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !isScrambling) {
+          setIsScrambling(true)
+          let iteration = 0
+          const originalText = children
+          
+          timeoutRef.current = setInterval(() => {
+            setDisplayText(
+              originalText.split('').map((letter, index) => {
+                if (index < iteration) {
+                  return originalText[index]
+                }
+                return scrambleChars[Math.floor(Math.random() * scrambleChars.length)]
+              }).join('')
+            )
+            
+            if (iteration >= originalText.length) {
+              clearInterval(timeoutRef.current)
+              setDisplayText(originalText)
+            }
+            
+            iteration += 0.5
+          }, speed)
+        }
+      },
+      { threshold: 0.5 }
+    )
+
+    if (ref.current) {
+      observer.observe(ref.current)
+    }
+
+    return () => {
+      observer.disconnect()
+      if (timeoutRef.current) clearInterval(timeoutRef.current)
+    }
+  }, [children, scrambleChars, speed, isScrambling])
+
+  return <span ref={ref} className={className}>{displayText}</span>
+}
+
+// ═══════════════════════════════════════════════════════════
+// 🎬 7. TYPEWRITER EFFECT (VERY TRENDING)
+// ═══════════════════════════════════════════════════════════
+function Typewriter({ 
+  children, 
+  className = '',
+  speed = 50,
+  startDelay = 500
+}: { 
+  children: string
+  className?: string
+  speed?: number
+  startDelay?: number
+}) {
+  const [displayText, setDisplayText] = useState('')
+  const [isTyping, setIsTyping] = useState(false)
+  const ref = useRef<HTMLSpanElement>(null)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !isTyping) {
+          setIsTyping(true)
+          let index = 0
+          
+          setTimeout(() => {
+            const interval = setInterval(() => {
+              setDisplayText(children.slice(0, index + 1))
+              index++
+              if (index >= children.length) {
+                clearInterval(interval)
+              }
+            }, speed)
+            
+            return () => clearInterval(interval)
+          }, startDelay)
+        }
+      },
+      { threshold: 0.5 }
+    )
+
+    if (ref.current) {
+      observer.observe(ref.current)
+    }
+
+    return () => observer.disconnect()
+  }, [children, speed, startDelay, isTyping])
+
+  return (
+    <span ref={ref} className={className}>
+      {displayText}
+      <span className="animate-pulse">|</span>
+    </span>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════
+// 🔢 8. COUNTER ANIMATION WITH SPRING
+// ═══════════════════════════════════════════════════════════
+function AnimatedCounter({ 
+  end, 
+  duration = 2500,
+  prefix = '',
+  suffix = '',
+  decimals = 0
+}: { 
+  end: number
+  duration?: number
+  prefix?: string
+  suffix?: string
+  decimals?: number
+}) {
+  const [count, setCount] = useState(0)
+  const ref = useRef<HTMLSpanElement>(null)
+  const [hasAnimated, setHasAnimated] = useState(false)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAnimated) {
+          setHasAnimated(true)
+          let startTime: number
+          const animate = (timestamp: number) => {
+            if (!startTime) startTime = timestamp
+            const progress = Math.min((timestamp - startTime) / duration, 1)
+            
+            // Spring easing
+            const eased = 1 - Math.pow(1 - progress, 4)
+            setCount(eased * end)
+            
+            if (progress < 1) {
+              requestAnimationFrame(animate)
+            } else {
+              setCount(end)
+            }
+          }
+          requestAnimationFrame(animate)
+        }
+      },
+      { threshold: 0.5 }
+    )
+
+    if (ref.current) {
+      observer.observe(ref.current)
+    }
+
+    return () => observer.disconnect()
+  }, [end, duration, hasAnimated])
+
+  return (
+    <span ref={ref}>
+      {prefix}{count.toFixed(decimals)}{suffix}
+    </span>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════
+// 🎇 9. RIPPLE EFFECT BUTTON (TRENDING)
+// ═══════════════════════════════════════════════════════════
+function RippleButton({ 
+  children, 
+  className = '',
+  onClick,
+  color = 'rgba(255, 255, 255, 0.4)'
+}: { 
+  children: React.ReactNode
+  className?: string
+  onClick?: () => void
+  color?: string
+}) {
+  const [ripples, setRipples] = useState<Array<{ x: number; y: number; id: number }>>([])
+
+  const handleClick = (e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    const id = Date.now()
+    
+    setRipples(prev => [...prev, { x, y, id }])
+    setTimeout(() => {
+      setRipples(prev => prev.filter(r => r.id !== id))
+    }, 700)
+    
+    onClick?.()
+  }
+
+  return (
+    <button 
+      className={`relative overflow-hidden ${className}`}
+      onClick={handleClick}
+    >
+      {ripples.map(ripple => (
+        <span 
+          key={ripple.id}
+          className="absolute rounded-full animate-ripple-expand"
+          style={{ 
+            left: ripple.x, 
+            top: ripple.y, 
+            transform: 'translate(-50%, -50%)',
+            background: color,
+            width: '10px',
+            height: '10px',
+          }}
+        />
+      ))}
+      {children}
+    </button>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════
+// 🖱️ 10. CURSOR FOLLOWER WITH GLOW
+// ═══════════════════════════════════════════════════════════
+function CursorFollower() {
+  const [position, setPosition] = useState({ x: 0, y: 0 })
+  const [isClicking, setIsClicking] = useState(false)
+  const [isHovering, setIsHovering] = useState(false)
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setPosition({ x: e.clientX, y: e.clientY })
+    }
+
+    const handleMouseDown = () => setIsClicking(true)
+    const handleMouseUp = () => setIsClicking(false)
+
+    const handleMouseOver = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (target.closest('a, button, [role="button"], input, select, textarea')) {
+        setIsHovering(true)
+      } else {
+        setIsHovering(false)
+      }
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mousedown', handleMouseDown)
+    window.addEventListener('mouseup', handleMouseUp)
+    window.addEventListener('mouseover', handleMouseOver)
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mousedown', handleMouseDown)
+      window.removeEventListener('mouseup', handleMouseUp)
+      window.removeEventListener('mouseover', handleMouseOver)
+    }
+  }, [])
+
+  return (
+    <div 
+      className={`fixed pointer-events-none z-[9999] transition-all duration-150 ${isClicking ? 'scale-50' : ''}`}
+      style={{ 
+        left: position.x, 
+        top: position.y, 
+        transform: 'translate(-50%, -50%)' 
+      }}
+    >
+      {/* Outer glow ring */}
+      <div 
+        className={`absolute rounded-full transition-all duration-300 ${isHovering ? 'w-16 h-16 opacity-100' : 'w-10 h-10 opacity-50'}`}
+        style={{ 
+          background: 'radial-gradient(circle, rgba(169, 49, 25, 0.3) 0%, transparent 70%)',
+          transform: 'translate(-50%, -50%)',
+          left: '50%',
+          top: '50%'
+        }}
+      />
+      {/* Inner dot */}
+      <div 
+        className={`w-3 h-3 rounded-full border-2 border-primary transition-all duration-200 ${isHovering ? 'bg-primary scale-150' : 'bg-transparent'}`}
+      />
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════
+// 🌊 11. FLOATING PARTICLES BACKGROUND
+// ═══════════════════════════════════════════════════════════
+function FloatingParticles({ count = 30, color = '169, 49, 25' }: { count?: number; color?: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    canvas.width = window.innerWidth
+    canvas.height = window.innerHeight
+
+    const particles: Array<{
+      x: number
+      y: number
+      size: number
+      speedX: number
+      speedY: number
+      opacity: number
+      angle: number
+      angleSpeed: number
+    }> = []
+
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: Math.random() * 4 + 2,
+        speedX: (Math.random() - 0.5) * 0.6,
+        speedY: (Math.random() - 0.5) * 0.6,
+        opacity: Math.random() * 0.4 + 0.1,
+        angle: Math.random() * Math.PI * 2,
+        angleSpeed: (Math.random() - 0.5) * 0.02
+      })
+    }
+
+    let animationId: number
+
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      
+      particles.forEach(particle => {
+        particle.x += particle.speedX
+        particle.y += particle.speedY
+        particle.angle += particle.angleSpeed
+
+        if (particle.x < 0 || particle.x > canvas.width) particle.speedX *= -1
+        if (particle.y < 0 || particle.y > canvas.height) particle.speedY *= -1
+
+        // Draw glow
+        ctx.beginPath()
+        ctx.arc(particle.x, particle.y, particle.size * 3, 0, Math.PI * 2)
+        const gradient = ctx.createRadialGradient(
+          particle.x, particle.y, 0,
+          particle.x, particle.y, particle.size * 3
+        )
+        gradient.addColorStop(0, `rgba(${color}, ${particle.opacity})`)
+        gradient.addColorStop(1, `rgba(${color}, 0)`)
+        ctx.fillStyle = gradient
+        ctx.fill()
+
+        // Draw core
+        ctx.beginPath()
+        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(${color}, ${particle.opacity + 0.2})`
+        ctx.fill()
+      })
+
+      animationId = requestAnimationFrame(animate)
+    }
+
+    animate()
+
+    const handleResize = () => {
+      canvas.width = window.innerWidth
+      canvas.height = window.innerHeight
+    }
+
+    window.addEventListener('resize', handleResize)
+
+    return () => {
+      cancelAnimationFrame(animationId)
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [count, color])
+
+  return (
+    <canvas 
+      ref={canvasRef} 
+      className="fixed inset-0 pointer-events-none z-0"
+      style={{ mixBlendMode: 'screen' }}
     />
   )
 }
 
-// Magnetic Button
-function MagneticButton({ children, className = '' }: { children: React.ReactNode, className?: string }) {
+// ═══════════════════════════════════════════════════════════
+// 🌈 12. MORPHING GRADIENT ANIMATION
+// ═══════════════════════════════════════════════════════════
+function MorphingGradient() {
+  return (
+    <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+      {/* Primary gradient blob */}
+      <div className="absolute top-1/4 -left-1/4 w-[900px] h-[900px] rounded-full bg-gradient-to-br from-primary/20 via-primary/10 to-transparent blur-3xl animate-morph-1" />
+      
+      {/* Secondary gradient blob */}
+      <div className="absolute bottom-1/4 -right-1/4 w-[700px] h-[700px] rounded-full bg-gradient-to-tl from-tertiary/15 via-tertiary/5 to-transparent blur-3xl animate-morph-2" />
+      
+      {/* Tertiary gradient blob */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[1200px] rounded-full bg-gradient-to-r from-secondary/10 via-transparent to-primary/10 blur-3xl animate-morph-3" />
+      
+      {/* Animated mesh gradient overlay */}
+      <div 
+        className="absolute inset-0 opacity-30 animate-gradient-shift"
+        style={{
+          background: 'linear-gradient(45deg, transparent 30%, rgba(169, 49, 25, 0.05) 50%, transparent 70%)'
+        }}
+      />
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════
+// 🎭 13. SMOOTH PARALLAX SCROLL WITH ZOOM (BOTH DIRECTIONS)
+// ═══════════════════════════════════════════════════════════
+function useParallaxZoom(options: {
+  speed?: number
+  zoomSpeed?: number
+  zoomRange?: number
+}) {
+  const { speed = 0.1, zoomSpeed = 0.6, zoomRange = 1.12 } = options
   const ref = useRef<HTMLDivElement>(null)
-  const [position, setPosition] = useState({ x: 0, y: 0 })
-  
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (ref.current) {
+  const [transform, setTransform] = useState({ y: 0, scale: 1 })
+  const prevProgress = useRef(0)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!ref.current) return
+      
       const rect = ref.current.getBoundingClientRect()
-      const x = (e.clientX - rect.left - rect.width / 2) * 0.4
-      const y = (e.clientY - rect.top - rect.height / 2) * 0.4
-      setPosition({ x, y })
+      const viewportHeight = window.innerHeight
+      
+      // Calculate progress: 0 when element is at bottom, 1 when at top
+      const progress = 1 - (rect.top / viewportHeight)
+      const clampedProgress = Math.max(0, Math.min(1, progress))
+      
+      // Smooth transition between states
+      const smoothedProgress = prevProgress.current + (clampedProgress - prevProgress.current) * 0.1
+      prevProgress.current = smoothedProgress
+      
+      // Parallax Y - subtle movement
+      const yOffset = (smoothedProgress - 0.5) * 80
+      
+      // Zoom - more pronounced at center of viewport
+      const distFromCenter = 1 - Math.abs(smoothedProgress - 0.5) * 2
+      const scale = 1 + (distFromCenter * zoomSpeed * 0.5)
+      
+      setTransform({ y: yOffset, scale: Math.min(zoomRange, scale) })
+    }
+
+    handleScroll()
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [speed, zoomSpeed, zoomRange])
+
+  return { 
+    ref, 
+    style: { 
+      transform: `translateY(${transform.y}px) scale(${transform.scale})`,
+      willChange: 'transform'
+    } 
+  }
+}
+
+// Parallax Section with Zoom
+function ParallaxZoomSection({ 
+  children, 
+  className = '',
+  speed = 0.1,
+  zoomSpeed = 0.6,
+  zoomRange = 1.12
+}: { 
+  children: React.ReactNode
+  className?: string
+  speed?: number
+  zoomSpeed?: number
+  zoomRange?: number
+}) {
+  const { ref, style } = useParallaxZoom({ speed, zoomSpeed, zoomRange })
+  
+  return (
+    <div ref={ref} className={className} style={style}>
+      {children}
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════
+// 🌟 14. SCROLL ZOOM IMAGE EFFECT (For hero backgrounds)
+// ═══════════════════════════════════════════════════════════
+function ScrollZoomImage({ 
+  children, 
+  className = '',
+  zoomFactor = 1.3
+}: { 
+  children: React.ReactNode
+  className?: string
+  zoomFactor?: number
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(1)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!ref.current) return
+      const rect = ref.current.getBoundingClientRect()
+      const scrollProgress = Math.max(0, Math.min(1, -rect.top / (window.innerHeight * 0.5)))
+      const newScale = 1 + (zoomFactor - 1) * (1 - scrollProgress)
+      setScale(Math.max(1, newScale))
+    }
+
+    handleScroll()
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [zoomFactor])
+
+  return (
+    <div ref={ref} className={className} style={{ 
+      transform: `scale(${scale})`,
+      transformOrigin: 'center center',
+      willChange: 'transform'
+    }}>
+      {children}
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════
+// ✨ 14. GLOW HOVER EFFECT
+// ═══════════════════════════════════════════════════════════
+function GlowCard({ 
+  children, 
+  className = '',
+  glowColor = '169, 49, 25'
+}: { 
+  children: React.ReactNode
+  className?: string
+  glowColor?: string
+}) {
+  const [isHovered, setIsHovered] = useState(false)
+
+  return (
+    <div 
+      className={`relative transition-all duration-500 ${className}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Glow effect behind card */}
+      <div 
+        className={`absolute inset-0 rounded-3xl blur-xl transition-opacity duration-500 ${isHovered ? 'opacity-50' : 'opacity-0'}`}
+        style={{
+          background: `radial-gradient(ellipse at center, rgba(${glowColor}, 0.3) 0%, transparent 70%)`
+        }}
+      />
+      {children}
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════
+// 🎪 15. MARQUEE INFINITE SCROLL
+// ═══════════════════════════════════════════════════════════
+function Marquee({ 
+  children, 
+  speed = 30,
+  direction = 'left' // 'left' or 'right'
+}: { 
+  children: React.ReactNode
+  speed?: number
+  direction?: 'left' | 'right'
+}) {
+  return (
+    <div className="overflow-hidden relative">
+      <div 
+        className="flex gap-8 animate-marquee"
+        style={{
+          animation: `marquee ${speed}s linear infinite`,
+          animationDirection: direction === 'right' ? 'reverse' : 'normal'
+        }}
+      >
+        {children}
+        {children}
+      </div>
+    </div>
+  )
+}
+
+// Smooth Scroll to Section
+function useSmoothScroll() {
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id)
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
   }
-  
-  const handleMouseLeave = () => {
-    setPosition({ x: 0, y: 0 })
-  }
-  
+
+  return scrollToSection
+}
+
+// Mouse Follower
+function MouseFollower() {
+  const [position, setPosition] = useState({ x: 0, y: 0 })
+  const [isHovering, setIsHovering] = useState(false)
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setPosition({ x: e.clientX, y: e.clientY })
+    }
+
+    const handleMouseOver = (e: MouseEvent) => {
+      if ((e.target as HTMLElement).closest('a, button, [role="button"]')) {
+        setIsHovering(true)
+      } else {
+        setIsHovering(false)
+      }
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseover', handleMouseOver)
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseover', handleMouseOver)
+    }
+  }, [])
+
   return (
-    <motion.div
-      ref={ref}
-      animate={{ x: position.x, y: position.y }}
-      transition={{ type: "spring", stiffness: 150, damping: 15 }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      className={className}
+    <div 
+      className={`fixed pointer-events-none z-[9999] transition-all duration-300 ${isHovering ? 'scale-150 opacity-50' : 'scale-100 opacity-30'}`}
+      style={{ 
+        left: position.x, 
+        top: position.y, 
+        transform: 'translate(-50%, -50%)' 
+      }}
     >
-      {children}
-    </motion.div>
+      <div className="w-8 h-8 rounded-full border-2 border-primary animate-pulse" />
+    </div>
   )
 }
 
-// Feature Card Component
-function FeatureCard({ icon: Icon, title, description }: { icon: any, title: string, description: string }) {
+// Template Card Component
+function TemplateCard({ 
+  name, 
+  description, 
+  category, 
+  tags, 
+  isPopular = false,
+  image 
+}: { 
+  name: string; 
+  description: string; 
+  category: string; 
+  tags: string[]; 
+  isPopular?: boolean;
+  image: string;
+}) {
   return (
-    <motion.div
-      whileHover={{ y: -8, scale: 1.02 }}
-      transition={{ duration: 0.3 }}
-      className="bg-white rounded-2xl p-6 shadow-lg shadow-slate-200/50 border border-slate-100 hover:shadow-xl hover:shadow-slate-300/50"
-    >
-      <div className="w-14 h-14 rounded-xl bg-indigo-50 flex items-center justify-center mb-4 text-primary">
-        <Icon />
-      </div>
-      <h3 className="text-xl font-bold text-secondary mb-3">{title}</h3>
-      <p className="text-slate-600 leading-relaxed">{description}</p>
-    </motion.div>
-  )
-}
-
-// Testimonial Card
-function TestimonialCard({ name, role, company, content, avatar }: { name: string, role: string, company: string, content: string, avatar: string }) {
-  return (
-    <motion.div
-      whileHover={{ y: -4 }}
-      className="bg-white rounded-2xl p-6 shadow-lg shadow-slate-200/50 border border-slate-100"
-    >
-      <div className="flex items-center gap-1 text-amber-400 mb-4">
-        {[...Array(5)].map((_, i) => <Icons.Star key={i} />)}
-      </div>
-      <p className="text-slate-600 mb-6 leading-relaxed">&ldquo;{content}&rdquo;</p>
-      <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primaryLight flex items-center justify-center text-white font-bold">
-          {name.charAt(0)}
-        </div>
-        <div>
-          <p className="font-semibold text-secondary">{name}</p>
-          <p className="text-sm text-slate-500">{role} - {company}</p>
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
-// Pricing Card
-function PricingCard({ name, price, features, isPopular = false }: { name: string, price: string, features: string[], isPopular?: boolean }) {
-  return (
-    <motion.div
-      whileHover={{ y: -8, scale: 1.02 }}
-      className={`rounded-2xl p-8 ${isPopular ? 'bg-secondary text-white' : 'bg-white border border-slate-200'}`}
-    >
-      {isPopular && (
-        <span className="inline-block px-3 py-1 bg-primary text-white text-xs font-bold rounded-full mb-4">PHỔ BIẾN NHẤT</span>
-      )}
-      <h3 className={`text-xl font-bold mb-2 ${isPopular ? 'text-white' : 'text-secondary'}`}>{name}</h3>
-      <div className="flex items-baseline gap-1 mb-6">
-        <span className={`text-4xl font-bold ${isPopular ? 'text-white' : 'text-secondary'}`}>{price}</span>
-        <span className={isPopular ? 'text-slate-300' : 'text-slate-500'}>/tháng</span>
-      </div>
-      <ul className="space-y-3 mb-8">
-        {features.map((feature, i) => (
-          <li key={i} className="flex items-center gap-3">
-            <div className={`w-5 h-5 rounded-full ${isPopular ? 'bg-primary' : 'bg-emerald-500'} flex items-center justify-center text-white`}>
-              <Icons.Check />
+    <div className="rounded-3xl bg-surface-container-lowest border border-outline-variant/30 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col justify-between">
+      <div>
+        <div className="relative h-64 overflow-hidden bg-surface-container">
+          <img 
+            alt={name} 
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+            src={image}
+          />
+          <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-surface-container-lowest/90 backdrop-blur-md text-on-surface font-label-caps text-label-caps uppercase font-bold">
+            {category}
+          </div>
+          {isPopular && (
+            <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-md text-white text-xs font-bold">
+              Phổ Biến Nhất
             </div>
-            <span className={isPopular ? 'text-slate-200' : 'text-slate-600'}>{feature}</span>
-          </li>
-        ))}
-      </ul>
-      <button className={`w-full py-3 rounded-xl font-semibold transition-all ${
-        isPopular 
-          ? 'bg-primary hover:bg-primaryDark text-white' 
-          : 'bg-slate-100 hover:bg-slate-200 text-secondary'
-      }`}>
-        Bắt đầu ngay
-      </button>
-    </motion.div>
+          )}
+          {!isPopular && (
+            <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-md text-white text-xs font-bold">
+              Conversion +34%
+            </div>
+          )}
+        </div>
+        <div className="p-space-md">
+          <h4 className="font-headline-sm text-on-surface font-bold">{name}</h4>
+          <p className="font-body-sm text-body-sm text-on-surface-variant mt-1.5">
+            {description}
+          </p>
+          <div className="flex flex-wrap gap-1.5 mt-3">
+            {tags.map((tag, i) => (
+              <span key={i} className="px-2 py-0.5 rounded bg-surface-container font-label-caps text-label-caps text-on-surface-variant">
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="p-space-md pt-0">
+        <a 
+          href="#dang-ky-dung-thu" 
+          className={`w-full py-2.5 rounded-xl font-label-md text-label-md font-bold flex items-center justify-center gap-1.5 transition-all ${
+            isPopular
+              ? 'bg-primary text-on-primary hover:bg-primary-container shadow-md'
+              : 'bg-surface-container text-on-surface hover:bg-primary hover:text-white'
+          }`}
+        >
+          <Icon name="visibility" className="text-base" />
+          <span>Xem Mẫu Thử & Áp Dụng</span>
+        </a>
+      </div>
+    </div>
   )
 }
 
-// Stats Counter
-function StatCounter({ value, label }: { value: string, label: string }) {
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true })
-  
+// Pricing Card Component
+function PricingCard({ 
+  name, 
+  price, 
+  period, 
+  description, 
+  features, 
+  isPopular = false, 
+  badge 
+}: { 
+  name: string; 
+  price: string; 
+  period: string; 
+  description: string; 
+  features: string[]; 
+  isPopular?: boolean; 
+  badge?: string;
+}) {
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 30 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6 }}
-      className="text-center"
-    >
-      <div className="text-4xl md:text-5xl font-bold text-primary mb-2">{value}</div>
-      <div className="text-slate-600">{label}</div>
-    </motion.div>
+    <div className={`rounded-3xl p-space-lg flex flex-col justify-between ${
+      isPopular 
+        ? 'bg-surface-container-lowest border-2 border-primary shadow-2xl relative' 
+        : 'bg-surface-container-lowest border border-outline-variant/30 shadow-sm'
+    }`}>
+      {isPopular && (
+        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-primary text-on-primary font-label-caps text-label-caps uppercase tracking-wider font-bold shadow-md">
+          {badge}
+        </div>
+      )}
+      <div>
+        <div className={`flex justify-between items-center ${isPopular ? 'mt-2' : ''}`}>
+          <h3 className="font-headline-sm text-on-surface font-bold">{name}</h3>
+          {!isPopular && badge && (
+            <span className="px-2.5 py-0.5 rounded-full bg-surface-container-highest font-label-caps text-label-caps text-on-surface-variant uppercase">{badge}</span>
+          )}
+          {isPopular && (
+            <span className="px-2.5 py-0.5 rounded-full bg-primary-fixed text-primary font-label-caps text-label-caps uppercase font-bold">Khuyên Dùng</span>
+          )}
+        </div>
+        <p className="font-body-sm text-body-sm text-on-surface-variant mt-2">{description}</p>
+        <div className="mt-space-md">
+          <span className={`font-headline-xl font-bold ${isPopular ? 'text-primary' : 'text-on-surface'}`}>{price}</span>
+          <span className="font-body-md text-body-md text-on-surface-variant">{period}</span>
+        </div>
+        <ul className="mt-space-md space-y-2.5 font-body-sm text-body-sm text-on-surface">
+          {features.map((feature, i) => (
+            <li key={i} className="flex items-center gap-2">
+              <Icon name="check" className="text-lg text-tertiary" />
+              <span>{feature}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <a 
+        href="#dang-ky-dung-thu" 
+        className={`mt-space-lg w-full py-3.5 rounded-xl font-label-lg text-label-lg font-bold shadow-md transition-all flex items-center justify-center gap-2 ${
+          isPopular
+            ? 'bg-primary text-on-primary hover:bg-primary-container shadow-lg'
+            : 'bg-surface-container text-on-surface hover:bg-surface-container-high'
+        }`}
+      >
+        {isPopular ? 'Trải Nghiệm Gói Pro Miễn Phí' : badge === 'Homestay Nhỏ' ? 'Dùng Thử 14 Ngày' : 'Liên Hệ Đội Ngũ Kỹ Thuật'}
+      </a>
+    </div>
+  )
+}
+
+// ROI Calculator Component
+function ROICalculator() {
+  const [rooms, setRooms] = useState(12)
+  const [adr, setAdr] = useState(1200000)
+  const [directRatio, setDirectRatio] = useState(35)
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('vi-VN').format(Math.round(amount)) + ' đ'
+  }
+
+  const monthlyRoomNights = rooms * 30 * 0.7
+  const directRoomNights = monthlyRoomNights * (directRatio / 100)
+  const directRevenue = directRoomNights * adr
+  const savedCommissionMonthly = directRevenue * 0.18
+  const savedCommissionYearly = savedCommissionMonthly * 12
+
+  return (
+    <div className="rounded-3xl bg-surface-container-lowest border border-outline-variant/30 p-space-lg sm:margin shadow-xl">
+      <div className="text-center max-w-2xl mx-auto mb-space-lg">
+        <span className="font-label-caps text-label-caps uppercase tracking-wider text-primary font-bold">Bảng Tính Tiết Kiệm Chi Phí Trực Quan</span>
+        <h2 className="mt-space-xs font-headline-lg text-headline-lg-mobile md:font-headline-lg text-on-surface tracking-tight">
+          Ước Tính Số Tiền Bạn Giữ Lại Mỗi Năm
+        </h2>
+        <p className="mt-space-xs font-body-md text-body-md text-on-surface-variant">
+          Kéo thanh trượt để xem ngay số tiền hoa hồng OTA được giữ trọn vẹn tại quỹ của khách sạn.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-center">
+        {/* Left Controls */}
+        <div className="lg:col-span-7 space-y-space-md text-left">
+          <div className="p-4 rounded-2xl bg-surface-container-low border border-surface-container-high">
+            <div className="flex justify-between items-center mb-2">
+              <label className="font-label-lg text-label-lg text-on-surface font-bold">Quy mô cơ sở (Số phòng):</label>
+              <span className="font-headline-sm text-primary font-bold">{rooms} Phòng</span>
+            </div>
+            <input
+              type="range"
+              min="3"
+              max="60"
+              step="1"
+              value={rooms}
+              onChange={(e) => setRooms(parseInt(e.target.value))}
+              className="w-full accent-primary h-2 bg-surface-container rounded-lg cursor-pointer"
+            />
+          </div>
+
+          <div className="p-4 rounded-2xl bg-surface-container-low border border-surface-container-high">
+            <div className="flex justify-between items-center mb-2">
+              <label className="font-label-lg text-label-lg text-on-surface font-bold">Giá bán trung bình / đêm (VND):</label>
+              <span className="font-headline-sm text-on-surface font-bold">{formatCurrency(adr)}</span>
+            </div>
+            <input
+              type="range"
+              min="400000"
+              max="5000000"
+              step="100000"
+              value={adr}
+              onChange={(e) => setAdr(parseInt(e.target.value))}
+              className="w-full accent-primary h-2 bg-surface-container rounded-lg cursor-pointer"
+            />
+          </div>
+
+          <div className="p-4 rounded-2xl bg-surface-container-low border border-surface-container-high">
+            <div className="flex justify-between items-center mb-2">
+              <label className="font-label-lg text-label-lg text-on-surface font-bold">Tỷ lệ khách Direct Booking mục tiêu:</label>
+              <span className="font-headline-sm text-tertiary font-bold">{directRatio}%</span>
+            </div>
+            <input
+              type="range"
+              min="10"
+              max="80"
+              step="5"
+              value={directRatio}
+              onChange={(e) => setDirectRatio(parseInt(e.target.value))}
+              className="w-full accent-primary h-2 bg-surface-container rounded-lg cursor-pointer"
+            />
+          </div>
+        </div>
+
+        {/* Right: Dashboard Savings Metric Output */}
+        <div className="lg:col-span-5 rounded-3xl bg-gradient-to-br from-surface-container-high to-surface-container p-space-lg text-center shadow-md border border-outline-variant/30 flex flex-col justify-between">
+          <div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant font-label-caps text-label-caps uppercase font-bold">
+              <Icon name="trending_up" className="text-base" /> Lợi Nhuận Thuần Giữ Lại
+            </div>
+            <div className="mt-4 font-display-hero text-headline-xl-mobile sm:text-headline-xl text-tertiary font-bold tracking-tight">
+              +{formatCurrency(savedCommissionYearly)}
+            </div>
+            <span className="font-label-md text-label-md text-on-surface-variant block mt-1">Ước tính mỗi năm không còn mất phí sàn OTA</span>
+            <div className="mt-4 pt-4 border-t border-surface-container-highest flex items-center justify-between text-left">
+              <div>
+                <span className="font-label-caps text-label-caps uppercase text-on-surface-variant block">Mỗi tháng tiết kiệm</span>
+                <span className="font-headline-sm text-primary font-bold">{formatCurrency(savedCommissionMonthly)}</span>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <Icon name="account_balance_wallet" className="text-2xl" />
+              </div>
+            </div>
+          </div>
+          <a href="#dang-ky-dung-thu" className="mt-6 w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-xl bg-primary text-on-primary font-label-lg text-label-lg shadow-lg shadow-primary/20 hover:bg-primary-container transition-all">
+            <Icon name="redeem" className="text-lg" />
+            <span>Giữ Lại Doanh Thu Ngay Hôm Nay</span>
+          </a>
+        </div>
+      </div>
+    </div>
   )
 }
 
 export default function LandingPage() {
-  const [email, setEmail] = useState('')
+  const [formData, setFormData] = useState({
+    hotelName: '',
+    phone: '',
+    scale: '5-20'
+  })
+
+  const router = useRouter()
   
-  const { scrollY } = useScroll()
-  const heroY = useTransform(scrollY, [0, 500], [0, 150])
-  const heroScale = useTransform(scrollY, [0, 500], [1, 1.1])
-  const heroOpacity = useTransform(scrollY, [0, 400], [1, 0])
-  
-  const navbarBg = useTransform(scrollY, [0, 100], ['rgba(255,255,255,0)', 'rgba(255,255,255,0.95)'])
-  const navbarShadow = useTransform(scrollY, [0, 100], ['none', '0 4px 20px rgba(0,0,0,0.1)'])
-
-  const features = [
-    {
-      icon: Icons.Calendar,
-      title: 'Đặt lịch thông minh',
-      description: 'Hệ thống đặt lịch tự động, hỗ trợ nhiều loại dịch vụ, quản lý lịch hẹn dễ dàng.'
-    },
-    {
-      icon: Icons.Globe,
-      title: 'Website chuyên nghiệp',
-      description: 'Tạo website đẹp, responsive, tối ưu SEO giúp khách hàng dễ dàng tìm thấy bạn.'
-    },
-    {
-      icon: Icons.CreditCard,
-      title: 'Thanh toán trực tuyến',
-      description: 'Tích hợp thanh toán online, quản lý hóa đơn và giao dịch tự động.'
-    },
-    {
-      icon: Icons.Chart,
-      title: 'Báo cáo chi tiết',
-      description: 'Theo dõi doanh thu, lịch hẹn, khách hàng với biểu đồ trực quan và chi tiết.'
-    },
-    {
-      icon: Icons.Settings,
-      title: 'Quản lý dễ dàng',
-      description: 'Giao diện quản trị trực quan, quản lý phòng, dịch vụ, nhân viên hiệu quả.'
-    },
-    {
-      icon: Icons.Shield,
-      title: 'Bảo mật cao cấp',
-      description: 'Dữ liệu được mã hóa, backup tự động, đảm bảo an toàn thông tin tuyệt đối.'
-    }
-  ]
-
-  const testimonials = [
-    {
-      name: 'Nguyễn Thị Lan',
-      role: 'Chủ spa',
-      company: 'Spa Minh Châu',
-      content: 'Từ khi dùng Digistay, khách hàng đặt lịch tăng 200%. Tôi tiết kiệm được 3 tiếng mỗi ngày để quản lý lịch hẹn.',
-      avatar: 'NL'
-    },
-    {
-      name: 'Trần Văn Minh',
-      role: 'Quản lý khách sạn',
-      company: 'Khách Sạn Phương Nam',
-      content: 'Website đẹp, dễ sử dụng, khách đặt phòng tăng rõ rệt. Đội ngũ hỗ trợ rất nhiệt tình.',
-      avatar: 'TM'
-    },
-    {
-      name: 'Lê Hoàng Anh',
-      role: 'Giám đốc',
-      company: 'Clinic Thẩm Mỹ Venus',
-      content: 'Giải pháp toàn diện cho việc quản lý clinic. Đặc biệt tính năng thanh toán online rất tiện lợi.',
-      avatar: 'LA'
-    }
-  ]
-
-  const pricingPlans = [
-    {
-      name: 'Starter',
-      price: '499K',
-      features: [
-        '1 website',
-        '100 lượt đặt/tháng',
-        '1 quản trị viên',
-        'Hỗ trợ email',
-        'Báo cáo cơ bản'
-      ]
-    },
-    {
-      name: 'Professional',
-      price: '999K',
-      isPopular: true,
-      features: [
-        '1 website cao cấp',
-        'Không giới hạn đặt lịch',
-        '5 quản trị viên',
-        'Thanh toán online',
-        'Hỗ trợ 24/7',
-        'Báo cáo nâng cao'
-      ]
-    },
-    {
-      name: 'Enterprise',
-      price: '2.9M',
-      features: [
-        'Nhiều website',
-        'Không giới hạn',
-        'Không giới hạn users',
-        'API riêng',
-        'Thiết kế theo yêu cầu',
-        'Quản lý nâng cao'
-      ]
-    }
-  ]
-
-  const steps = [
-    {
-      number: '01',
-      title: 'Đăng ký tài khoản',
-      description: 'Đăng ký nhanh chóng với email và bắt đầu dùng thử miễn phí 14 ngày.'
-    },
-    {
-      number: '02',
-      title: 'Tùy chỉnh website',
-      description: 'Chọn giao diện, thêm dịch vụ, thiết lập lịch làm việc theo ý bạn.'
-    },
-    {
-      number: '03',
-      title: 'Chia sẻ với khách hàng',
-      description: 'Nhận link website để chia sẻ, khách hàng có thể đặt lịch ngay.'
-    }
-  ]
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    // Encode form data to pass to register page
+    const params = new URLSearchParams({
+      hotelName: formData.hotelName,
+      phone: formData.phone,
+      scale: formData.scale,
+      createWorkspace: 'true'
+    })
+    router.push(`/register?${params.toString()}`)
+  }
 
   return (
-    <div className="min-h-screen bg-background font-sans antialiased">
-      <ScrollProgress />
+    <div className="min-h-screen bg-surface font-body-md text-body-md text-on-surface antialiased selection:bg-primary-fixed selection:text-primary">
+      {/* Floating Particles Background */}
+      <FloatingParticles count={40} color="169, 49, 25" />
       
-      {/* Navbar */}
-      <motion.header
-        style={{ backgroundColor: navbarBg, boxShadow: navbarShadow }}
-        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md"
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 md:h-20">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primaryDark flex items-center justify-center">
-                <Icons.Calendar />
-                <span className="text-white font-bold text-lg ml-1">D</span>
-              </div>
-              <span className="text-2xl font-bold text-secondary">Digistay</span>
-            </div>
-            
-            <nav className="hidden md:flex items-center gap-8">
-              <a href="#features" className="text-slate-600 hover:text-primary transition-colors font-medium">Tính năng</a>
-              <a href="#how-it-works" className="text-slate-600 hover:text-primary transition-colors font-medium">Cách hoạt động</a>
-              <a href="#pricing" className="text-slate-600 hover:text-primary transition-colors font-medium">Bảng giá</a>
-              <a href="#testimonials" className="text-slate-600 hover:text-primary transition-colors font-medium">Đánh giá</a>
-            </nav>
-            
-            <div className="flex items-center gap-4">
-              <Link href="/login" className="hidden sm:block text-slate-600 hover:text-primary transition-colors font-medium">
-                Đăng nhập
-              </Link>
-              <MagneticButton>
-                <Link href="/register" className="bg-primary hover:bg-primaryDark text-white px-5 py-2.5 rounded-xl font-semibold transition-all hover:shadow-lg hover:shadow-indigo-300/50">
-                  Dùng thử miễn phí
-                </Link>
-              </MagneticButton>
-            </div>
+      {/* Morphing Gradient Background */}
+      <MorphingGradient />
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-xl border-b border-surface-container">
+    <div className="h-20 max-w-7xl mx-auto px-4 md:px-8 flex items-center justify-between gap-4 md:gap-6">
+      <div className="flex items-center gap-4 md:gap-6">
+        <a href="#" className="flex items-center gap-2 md:gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-sm">
+            <Icon name="villa" className="text-2xl" />
           </div>
-        </div>
-      </motion.header>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1.5">
+              <span className="font-headline-sm text-on-surface font-bold">DigiStay</span>
+              <span className="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-caps text-label-caps uppercase">SaaS</span>
+            </div>
+            <span className="font-label-caps text-label-caps tracking-widest text-on-surface-variant uppercase hidden sm:block">Boutique OS</span>
+          </div>
+        </a>
+        <nav className="hidden xl:flex items-center gap-8">
+          <a href="#tinh-nang" className="font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-colors py-2 whitespace-nowrap">Tính Năng</a>
+          <a href="#mau-giao-dien" className="font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-colors py-2 whitespace-nowrap">Mẫu Giao Diện</a>
+          <a href="#so-sanh" className="font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-colors py-2 whitespace-nowrap">So Sánh OTA</a>
+          <a href="#tinh-roi" className="font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-colors py-2 whitespace-nowrap">Tính Tiết Kiệm</a>
+          <a href="#bang-gia" className="font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-colors py-2 whitespace-nowrap">Bảng Giá</a>
+        </nav>
+      </div>
 
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-emerald-50" />
-        <div className="absolute top-20 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-0 w-[500px] h-[500px] bg-tertiary/5 rounded-full blur-3xl" />
-        
-        <motion.div 
-          style={{ y: heroY, scale: heroScale, opacity: heroOpacity }}
-          className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
-        >
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="text-center lg:text-left">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                className="inline-flex items-center gap-2 bg-indigo-50 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6"
-              >
-                <Icons.Lightning />
-                <span>Hơn 10,000+ doanh nghiệp đang sử dụng</span>
-              </motion.div>
-              
-              <motion.h1
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-                className="text-4xl md:text-5xl lg:text-6xl font-bold text-secondary leading-tight mb-6"
-              >
-                Nền tảng tạo website
-                <span className="text-primary"> đặt lịch </span>
-                chuyên nghiệp
-              </motion.h1>
-              
-              <motion.p
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-lg md:text-xl text-slate-600 mb-8 leading-relaxed max-w-xl mx-auto lg:mx-0"
-              >
-                Giúp bạn tạo website đặt lịch hẹn, quản lý dịch vụ, thanh toán trực tuyến 
-                chỉ trong vài phút. Không cần biết lập trình.
-              </motion.p>
-              
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-                className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
-              >
-                <MagneticButton>
-                  <Link href="/register" className="bg-primary hover:bg-primaryDark text-white px-8 py-4 rounded-xl font-semibold transition-all hover:shadow-xl hover:shadow-indigo-300/50 flex items-center justify-center gap-2 text-lg">
-                    Bắt đầu miễn phí
-                    <Icons.Arrow />
-                  </Link>
+      <div className="flex items-center gap-3 md:gap-4">
+        <a href="/login">
+          <MagneticButton className="cursor-pointer" strength={0.15} glowColor="rgba(169, 49, 25, 0.2)">
+            <span className="hidden sm:inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-on-surface font-label-lg text-label-lg hover:bg-surface-container-high transition-all duration-300 hover:scale-105">
+              Đăng Nhập
+            </span>
+          </MagneticButton>
+        </a>
+        <MagneticButton strength={0.2} glowColor="rgba(169, 49, 25, 0.4)">
+          <RippleButton className="inline-flex items-center justify-center px-5 py-2.5 rounded-lg bg-primary text-on-primary font-label-lg text-label-lg hover:bg-primary-container transition-all duration-300 shadow-[0_4px_16px_-4px_rgba(169,49,25,0.4)] hover:scale-105 hover:shadow-[0_8px_32px_-4px_rgba(169,49,25,0.5)]">
+            <span>Trải Nghiệm Miễn Phí 14 Ngày</span>
+            <Icon name="arrow_forward" className="text-lg ml-1 group-hover:translate-x-1 transition-transform" />
+          </RippleButton>
+        </MagneticButton>
+        <div className="w-8 h-8 rounded-full bg-surface-container-highest text-on-surface flex items-center justify-center font-bold text-xs hover:scale-110 transition-transform cursor-pointer">VN</div>
+      </div>
+    </div>
+  </header>
+
+      <main className="w-full pt-20 bg-surface">
+        <div className="flex flex-col w-full">
+          {/* SECTION 1: HERO DISPLAY */}
+          <ParallaxZoomSection speed={0.1} zoomSpeed={0.6} zoomRange={1.12} className="relative overflow-hidden py-10 md:py-16 lg:py-20">
+            <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[850px] h-[420px] bg-primary/8 rounded-full blur-3xl pointer-events-none -z-10"></div>
+            <div className="absolute -top-24 right-10 w-96 h-96 bg-tertiary/5 rounded-full blur-2xl pointer-events-none -z-10"></div>
+
+            <div className="max-w-7xl mx-auto px-4 md:px-8 flex flex-col items-center text-center">
+              {/* Tagline Badge */}
+              <AnimatedSection animation="bounce-in" duration={800} className="mt-4 md:mt-6">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-surface-container-high border border-outline-variant/30 text-on-surface shadow-lg animate-glow-pulse hover:scale-105 transition-transform">
+                  <span className="w-2.5 h-2.5 rounded-full bg-tertiary animate-pulse"></span>
+                  <span className="font-label-caps text-label-caps uppercase tracking-wider text-on-surface font-bold">Nền Tảng No-Code Xây Dựng Kênh Bán Phòng Độc Quyền</span>
+                  <span className="text-outline-variant font-label-caps">|</span>
+                  <span className="inline-flex items-center gap-1 font-label-caps text-label-caps text-primary font-bold">
+                    <Icon name="verified" className="text-base animate-bounce-subtle" /> 0% Phí Sàn
+                  </span>
+                </div>
+              </AnimatedSection>
+
+              {/* Main SaaS Headline */}
+              <AnimatedSection animation="fade-up" delay={100} duration={900} className="mt-4 md:mt-6">
+                <h1 className="font-display-hero text-headline-xl-mobile md:text-display-hero text-on-surface max-w-5xl tracking-tight leading-tight">
+                  Tự Thiết Kế Website Đặt Phòng Riêng Biệt. <br className="hidden sm:inline"/>
+                  <span className="text-primary animate-text-shimmer">Giải Phóng Lợi Nhuận</span> Khỏi Phí Hoa Hồng OTA 15–20%.
+                </h1>
+              </AnimatedSection>
+
+              <AnimatedSection animation="fade-up" delay={200} duration={900} className="mt-4 md:mt-6">
+                <p className="font-body-lg text-body-md md:text-body-lg text-on-surface-variant max-w-3xl leading-relaxed">
+                  DigiStay là nền tảng SaaS No-Code toàn diện: Tự tạo website boutique hotel chỉ trong 15 phút, tích hợp Booking Engine trực tiếp, đồng bộ phòng tức thì và cổng VietQR Napas247 tiền về ngay trong 3 giây.
+                </p>
+              </AnimatedSection>
+
+              {/* CTAs */}
+              <AnimatedSection animation="fade-up" delay={300} duration={800} className="mt-6 md:mt-8 flex flex-col sm:flex-row items-center gap-4 md:gap-6">
+                <MagneticButton strength={0.25} glowColor="rgba(169, 49, 25, 0.5)">
+                  <RippleButton 
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-primary text-on-primary font-label-lg text-label-lg shadow-xl shadow-primary/30 hover:bg-primary-container transition-all duration-300 scale-100 hover:scale-[1.03] hover:shadow-2xl hover:shadow-primary/40"
+                    onClick={() => document.getElementById('dang-ky-dung-thu')?.scrollIntoView({ behavior: 'smooth' })}
+                  >
+                    <Icon name="bolt" className="text-xl animate-pulse-subtle" />
+                    Bắt Đầu Dùng Thử Miễn Phí (14 Ngày)
+                  </RippleButton>
                 </MagneticButton>
-                <button className="border-2 border-slate-200 hover:border-primary text-slate-700 hover:text-primary px-8 py-4 rounded-xl font-semibold transition-all flex items-center justify-center gap-2">
-                  Xem demo
-                </button>
-              </motion.div>
-              
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.5 }}
-                className="mt-8 flex items-center gap-6 justify-center lg:justify-start"
-              >
-                <div className="flex -space-x-3">
-                  {['JK', 'ML', 'TN', 'PH'].map((initials, i) => (
-                    <div key={i} className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primaryLight border-2 border-white flex items-center justify-center text-white text-xs font-bold">
-                      {initials}
+                <MagneticButton strength={0.2}>
+                  <RippleButton 
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-on-surface font-label-lg text-label-lg shadow-sm hover:bg-surface-container-high transition-all duration-300 hover:scale-[1.02] hover:border-primary/50"
+                    onClick={() => document.getElementById('mau-giao-dien')?.scrollIntoView({ behavior: 'smooth' })}
+                  >
+                    <Icon name="visibility" className="text-xl text-primary" />
+                    Khám Phá Mẫu Giao Diện Mẫu
+                  </RippleButton>
+                </MagneticButton>
+              </AnimatedSection>
+
+              {/* Visual Showcase with Floating Badges & Studio Window */}
+              <Section className="mt-8 md:mt-10 w-full max-w-6xl relative">
+                {/* Floating Chip 1: Profit Saved - Moved outside and above */}
+                <div className="hidden lg:flex items-center gap-3 absolute -left-4 top-0 z-20 px-4 py-3 rounded-2xl bg-surface-container-lowest/95 backdrop-blur-md shadow-xl border border-surface-container-high">
+                  <div className="w-10 h-10 rounded-xl bg-tertiary-fixed text-on-tertiary-fixed-variant flex items-center justify-center">
+                    <Icon name="savings" className="text-2xl" />
+                  </div>
+                  <div className="text-left">
+                    <span className="font-label-caps text-label-caps uppercase text-on-surface-variant block">Lợi Nhuận Giữ Lại</span>
+                    <span className="font-title-md text-title-md font-bold text-tertiary">+228.614.400 đ/năm</span>
+                  </div>
+                </div>
+
+                {/* Floating Chip 2: VietQR - Moved to right side, above studio */}
+                <div className="hidden lg:flex items-center gap-3 absolute -right-4 top-0 z-20 px-4 py-3 rounded-2xl bg-surface-container-lowest/95 backdrop-blur-md shadow-xl border border-surface-container-high">
+                  <div className="w-10 h-10 rounded-xl bg-primary-fixed text-primary flex items-center justify-center">
+                    <Icon name="qr_code_scanner" className="text-2xl" />
+                  </div>
+                  <div className="text-left">
+                    <span className="font-label-caps text-label-caps uppercase text-on-surface-variant block">VietQR Napas247</span>
+                    <span className="font-title-md text-title-md font-bold text-primary">Khớp cọc trong 3 giây</span>
+                  </div>
+                </div>
+
+                {/* Studio Window Container - Added marginTop to clear floating badges on lg+ */}
+                <div className="rounded-3xl bg-surface-container-lowest border border-outline-variant/30 shadow-2xl p-2 md:p-4 text-left mt-0 lg:mt-20">
+                  {/* Mock Browser Chrome Header */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 md:gap-4 pb-2 md:pb-4 px-2 md:px-4 border-b border-surface-container text-on-surface-variant">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-error/80"></span>
+                      <span className="w-3 h-3 rounded-full bg-secondary-container"></span>
+                      <span className="w-3 h-3 rounded-full bg-tertiary/80"></span>
+                      <span className="ml-2 font-label-caps text-label-caps uppercase text-on-surface font-bold tracking-wider hidden sm:inline">DigiStay Studio • Drag-and-Drop Visual Builder</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container font-label-md text-label-md text-on-surface">
+                      <Icon name="lock" className="text-base text-tertiary" />
+                      <span className="text-on-surface font-semibold">latelier-boutique.vn</span>
+                      <span className="px-1.5 py-0.5 rounded bg-tertiary/15 text-tertiary text-xs uppercase font-bold">Live SSL</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-1 rounded-lg bg-surface-container-low font-label-caps text-label-caps uppercase text-on-surface-variant">Tự lưu 10:42 AM</span>
+                      <span className="px-3 py-1.5 rounded-lg bg-primary text-on-primary font-label-caps text-label-caps uppercase font-bold shadow-sm flex items-center gap-1">
+                        <Icon name="rocket_launch" className="text-sm" /> Xuất Bản
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Studio Workspace */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 mt-4">
+                    {/* Left: Visual Palette */}
+                    <div className="lg:col-span-4 rounded-2xl bg-surface-container-low/70 border border-surface-container-high p-4 md:p-6 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="font-label-caps text-label-caps uppercase tracking-wider text-on-surface font-bold flex items-center gap-1.5">
+                            <Icon name="widgets" className="text-primary text-lg" /> Khối Giao Diện (Blocks)
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full bg-primary-fixed text-primary font-label-caps text-label-caps font-bold">Kéo thả</span>
+                        </div>
+
+                        <div className="space-y-2.5">
+                          {[
+                            { icon: 'view_carousel', title: 'Hero + Direct Booking Bar', desc: 'Header, video nền & bộ chọn ngày', color: 'bg-primary-fixed/60 text-primary' },
+                            { icon: 'bed', title: 'Hạng Phòng & Realtime Rate', desc: 'Thẻ phòng, slider ảnh & nút cọc', color: 'bg-tertiary-fixed/60 text-tertiary' },
+                            { icon: 'qr_code_2', title: 'VietQR Napas247 Instant Pay', desc: 'Tự sinh mã QR ngân hàng kèm số tiền', color: 'bg-secondary-fixed/60 text-secondary' },
+                            { icon: 'restaurant', title: 'Dịch Vụ Đi Kèm & Ẩm Thực', desc: 'Bữa sáng, BBQ villa, tour trekking', color: 'bg-surface-container-highest text-on-surface' },
+                          ].map((item, i) => (
+                            <div key={i} className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/30 shadow-sm flex items-center justify-between hover:border-primary transition-colors cursor-pointer group">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-lg ${item.color} flex items-center justify-center`}>
+                                  <Icon name={item.icon} className="text-lg" />
+                                </div>
+                                <div>
+                                  <span className="font-label-lg text-label-lg font-bold text-on-surface block group-hover:text-primary transition-colors">{item.title}</span>
+                                  <span className="font-label-md text-label-md text-on-surface-variant">{item.desc}</span>
+                                </div>
+                              </div>
+                              <Icon name="drag_indicator" className="text-outline text-lg" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Property Switcher */}
+                      <div className="mt-4 pt-3 border-t border-surface-container-high rounded-xl bg-surface-container p-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-tertiary text-on-tertiary flex items-center justify-center font-bold text-xs">LA</div>
+                          <div>
+                            <span className="font-label-caps text-label-caps uppercase text-on-surface-variant block">Đang hiệu chỉnh</span>
+                            <span className="font-label-lg text-label-lg font-bold text-on-surface">L'Atelier Dalat Villa</span>
+                          </div>
+                        </div>
+                        <span className="px-2 py-0.5 rounded-full bg-tertiary/15 text-tertiary font-label-caps text-label-caps font-bold">12 Phòng</span>
+                      </div>
+                    </div>
+
+                    {/* Right: Website Preview */}
+                    <div className="lg:col-span-8 rounded-2xl bg-surface overflow-hidden border border-outline-variant/20 shadow-inner flex flex-col justify-between">
+                      <div className="relative w-full h-80 md:h-[370px] bg-cover bg-center flex flex-col justify-between p-4 md:p-6 text-on-primary" style={{ backgroundImage: 'linear-gradient(to top, rgba(27,28,26,0.95) 0%, rgba(27,28,26,0.4) 40%, rgba(0,0,0,0.3) 100%), url(https://images.unsplash.com/photo-1587061949409-02df41d5e562?w=1200)' }}>
+                        <div className="relative z-10 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="font-headline-sm text-on-surface font-bold tracking-tight text-on-primary">L&apos;Atelier Boutique Villa</span>
+                            <span className="px-2 py-0.5 rounded-full bg-surface-container-lowest/25 backdrop-blur-md text-on-primary font-label-caps text-label-caps">Đà Lạt</span>
+                          </div>
+                          <div className="hidden sm:flex items-center gap-4 text-xs font-semibold">
+                            <span>Hạng Phòng</span>
+                            <span>Trải Nghiệm</span>
+                            <span>Liên Hệ</span>
+                            <span className="px-3 py-1 rounded-full bg-primary text-white">Đặt Trực Tiếp</span>
+                          </div>
+                        </div>
+
+                        <div className="relative z-10 max-w-md">
+                          <span className="px-2.5 py-1 rounded bg-white/20 backdrop-blur-md text-xs font-bold uppercase tracking-wider">Ưu Đãi Độc Quyền Website -10%</span>
+                          <h3 className="text-2xl md:text-3xl font-bold mt-1 text-white">Kỳ Nghỉ Thư Thái Giữa Rừng Thông Biệt Lập</h3>
+                        </div>
+
+                        {/* Booking Bar */}
+                        <div className="relative z-10 bg-surface-container-lowest/95 backdrop-blur-md rounded-2xl p-2.5 md:p-3 text-on-surface shadow-2xl border border-white/40">
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <div className="p-2 rounded-xl bg-surface-container-low">
+                              <span className="font-label-caps text-label-caps uppercase text-on-surface-variant block">Nhận phòng</span>
+                              <span className="font-label-lg text-label-lg font-bold text-on-surface">24 Tháng 05</span>
+                            </div>
+                            <div className="p-2 rounded-xl bg-surface-container-low">
+                              <span className="font-label-caps text-label-caps uppercase text-on-surface-variant block">Trả phòng</span>
+                              <span className="font-label-lg text-label-lg font-bold text-on-surface">26 Tháng 05</span>
+                            </div>
+                            <div className="p-2 rounded-xl bg-surface-container-low">
+                              <span className="font-label-caps text-label-caps uppercase text-on-surface-variant block">Số khách</span>
+                              <span className="font-label-lg text-label-lg font-bold text-on-surface">2 Người lớn</span>
+                            </div>
+                            <div className="flex items-center">
+                              <button className="w-full h-full py-2.5 rounded-xl bg-primary text-on-primary font-label-lg text-label-lg flex items-center justify-center gap-1.5 shadow-md hover:bg-primary-container transition-all">
+                                <Icon name="lock_clock" className="text-lg" />
+                                <span>Khóa Phòng</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Sync Status Bar */}
+                      <div className="p-3 bg-surface-container-low flex flex-wrap items-center justify-between gap-2 border-t border-surface-container text-xs">
+                        <div className="flex items-center gap-2 text-on-surface-variant">
+                          <Icon name="sync" className="text-tertiary text-lg" />
+                          <span>Đồng bộ 2 chiều: <strong>Agoda, Booking.com, Airbnb</strong> qua iCal & Channel API</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 font-bold text-tertiary">
+                          <span className="w-2 h-2 rounded-full bg-tertiary animate-ping"></span>
+                          <span>Khóa chống Overbooking 15 Phút kích hoạt</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Section>
+            </div>
+          </ParallaxZoomSection>
+
+          {/* SECTION 2: 4 TRỤ CỘT TÍNH NĂNG */}
+          <section className="py-space-xl lg:py-margin-lg bg-surface-container-low/60" id="tinh-nang">
+            <div className="max-w-7xl mx-auto px-margin-sm lg:margin">
+              <Section className="text-center max-w-3xl mx-auto mb-space-xl">
+                <span className="font-label-caps text-label-caps uppercase tracking-wider text-primary font-bold">Hệ Thống SaaS Toàn Diện</span>
+                <h2 className="mt-space-xs font-headline-xl text-headline-xl-mobile md:text-headline-xl text-on-surface tracking-tight">
+                  4 Trụ Cột Đột Phá Doanh Thu Đặt Phòng Trực Tiếp
+                </h2>
+                <p className="mt-space-xs font-body-lg text-body-md md:text-body-lg text-on-surface-variant">
+                  Thay thế hoàn toàn bảng chữ dài dòng bằng các công cụ vận hành thông minh, trực quan và tự động hóa 100%.
+                </p>
+              </Section>
+
+              {/* Bento Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+                {/* Card 1: No-Code Builder */}
+                <Section className="md:col-span-7 rounded-3xl bg-surface-container-lowest border border-outline-variant/30 p-space-lg shadow-sm flex flex-col justify-between overflow-hidden">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-fixed text-primary font-label-caps text-label-caps uppercase font-bold">
+                        <Icon name="draw" className="text-base" /> Trụ Cột 01
+                      </div>
+                      <span className="font-label-caps text-label-caps uppercase text-tertiary font-bold">Block Builder Framework</span>
+                    </div>
+                    <h3 className="font-headline-md text-on-surface mt-space-sm font-bold">
+                      Trình Dựng Web Kéo Thả No-Code Chuyên Biệt Khách Sạn
+                    </h3>
+                    <p className="font-body-md text-body-md text-on-surface-variant mt-2 max-w-xl">
+                      Tự do tùy biến 16+ khối giao diện chuẩn hospitality: Khối Hero, Bảng tìm phòng, Slider Hạng phòng, Thực đơn F&B và Đánh giá 5 sao chuẩn SEO Google.
+                    </p>
+
+                    <div className="mt-space-md grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      {[
+                        { icon: 'view_carousel', title: 'Hero Banner', status: 'Ready', color: 'text-primary' },
+                        { icon: 'travel_explore', title: 'Booking Bar', status: 'Realtime', color: 'text-tertiary' },
+                        { icon: 'king_bed', title: 'Room Gallery', status: 'WebP HD', color: 'text-secondary' },
+                        { icon: 'restaurant_menu', title: 'F&B Menu', status: 'Interactive', color: 'text-primary' },
+                      ].map((item, i) => (
+                        <div key={i} className="p-3 rounded-2xl bg-surface-container-low border border-surface-container-high text-center">
+                          <Icon name={item.icon} className={`text-2xl ${item.color} mx-auto`} />
+                          <span className="font-label-md text-label-md font-bold text-on-surface block mt-1">{item.title}</span>
+                          <span className="text-xs text-tertiary font-bold uppercase">{item.status}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="mt-space-md pt-space-sm border-t border-surface-container flex items-center justify-between text-on-surface-variant font-label-md text-label-md">
+                    <span className="flex items-center gap-1.5"><Icon name="smartphone" className="text-tertiary text-lg" /> Chuẩn di động 100%</span>
+                    <span className="flex items-center gap-1.5"><Icon name="bolt" className="text-tertiary text-lg" /> Tốc độ tải trang &lt; 1.2s</span>
+                  </div>
+                </Section>
+
+                {/* Card 2: Booking Engine */}
+                <Section className="md:col-span-5 rounded-3xl bg-surface-container-lowest border border-outline-variant/30 p-space-lg shadow-sm flex flex-col justify-between overflow-hidden">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-tertiary-fixed text-tertiary font-label-caps text-label-caps uppercase font-bold">
+                        <Icon name="calendar_month" className="text-base" /> Trụ Cột 02
+                      </div>
+                      <span className="px-2 py-0.5 rounded-full bg-error/10 text-error font-label-caps text-label-caps font-bold">Khóa 15 Phút</span>
+                    </div>
+                    <h3 className="font-headline-md text-on-surface mt-space-sm font-bold">
+                      Booking Engine & Khóa Giữ Phòng
+                    </h3>
+                    <p className="font-body-md text-body-md text-on-surface-variant mt-2">
+                      Loại bỏ nỗi lo Overbooking với cơ chế khóa phòng tạm 15 phút và lưới Timeline quản lý phòng theo ngày trực quan.
+                    </p>
+
+                    <div className="mt-space-md rounded-2xl bg-surface-container-low p-3 border border-surface-container-high space-y-2">
+                      <div className="flex justify-between items-center text-xs text-on-surface-variant font-semibold pb-1 border-b border-surface-container">
+                        <span>Hạng Phòng</span>
+                        <div className="flex gap-3">
+                          <span>T2 24/5</span>
+                          <span>T3 25/5</span>
+                          <span>T4 26/5</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-on-surface">Deluxe Pine (101)</span>
+                        <div className="flex gap-2">
+                          <span className="px-2 py-1 rounded bg-tertiary/20 text-tertiary font-bold">Direct (Đã Cọc)</span>
+                          <span className="px-2 py-1 rounded bg-secondary-fixed text-on-secondary-fixed">OTA Agoda</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-on-surface">Villa Garden (202)</span>
+                        <div className="flex gap-2">
+                          <span className="px-3 py-1 rounded bg-primary/20 text-primary font-bold animate-pulse">Đang Khóa 14:28</span>
+                          <span className="px-2 py-1 rounded bg-tertiary/20 text-tertiary font-bold">Trống</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-space-md pt-space-sm border-t border-surface-container flex items-center justify-between text-xs text-on-surface-variant">
+                    <span className="font-semibold text-tertiary flex items-center gap-1">
+                      <Icon name="sync" className="text-base" /> Đồng bộ 2 chiều iCal / API
+                    </span>
+                    <span>Báo qua Telegram Bot</span>
+                  </div>
+                </Section>
+
+                {/* Card 3: VietQR Payment */}
+                <Section className="md:col-span-5 rounded-3xl bg-surface-container-lowest border border-outline-variant/30 p-space-lg shadow-sm flex flex-col justify-between overflow-hidden">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-caps text-label-caps uppercase font-bold">
+                        <Icon name="qr_code_2" className="text-base" /> Trụ Cột 03
+                      </div>
+                      <span className="px-2 py-0.5 rounded-full bg-tertiary/15 text-tertiary font-label-caps text-label-caps font-bold">Napas247</span>
+                    </div>
+                    <h3 className="font-headline-md text-on-surface mt-space-sm font-bold">
+                      VietQR Tự Động & Hóa Đơn VAT
+                    </h3>
+                    <p className="font-body-md text-body-md text-on-surface-variant mt-2">
+                      Tiền cọc chuyển thẳng vào tài khoản ngân hàng của bạn trong 3 giây. Webhook tự động khớp lệnh đơn và xuất hóa đơn MISA meInvoice.
+                    </p>
+
+                    <div className="mt-space-md rounded-2xl bg-surface-container-low p-3.5 border border-surface-container-high flex items-center gap-4">
+                      <div className="w-20 h-20 rounded-xl bg-white p-1.5 shadow-sm border border-outline-variant/30 flex items-center justify-center shrink-0">
+                        <Icon name="qr_code_2" className="text-5xl text-primary" />
+                      </div>
+                      <div className="text-xs space-y-1">
+                        <div className="flex items-center gap-1.5 text-tertiary font-bold">
+                          <Icon name="check_circle" className="text-base" />
+                          <span>Khớp cọc: 1.200.000 đ</span>
+                        </div>
+                        <p className="text-on-surface-variant">VietinBank • STK: 108871928xxx</p>
+                        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-highest text-xs font-bold text-on-surface">
+                          <Icon name="receipt_long" className="text-sm text-tertiary" /> Xuất HĐĐT MISA meInvoice
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-space-md pt-space-sm border-t border-surface-container flex items-center justify-between text-xs text-on-surface-variant">
+                    <span>54 Ngân hàng thành viên</span>
+                    <span className="font-bold text-tertiary">0% Phí trung gian cọc</span>
+                  </div>
+                </Section>
+
+                {/* Card 4: Multi-Property */}
+                <Section className="md:col-span-7 rounded-3xl bg-surface-container-lowest border border-outline-variant/30 p-space-lg shadow-sm flex flex-col justify-between overflow-hidden">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-fixed text-primary font-label-caps text-label-caps uppercase font-bold">
+                        <Icon name="apartment" className="text-base" /> Trụ Cột 04
+                      </div>
+                      <span className="font-label-caps text-label-caps uppercase text-secondary font-bold">Multi-Tenant Cloud</span>
+                    </div>
+                    <h3 className="font-headline-md text-on-surface mt-space-sm font-bold">
+                      1 Tài Khoản Quản Lý Chuỗi Đa Cơ Sở & Tên Miền Riêng
+                    </h3>
+                    <p className="font-body-md text-body-md text-on-surface-variant mt-2 max-w-xl">
+                      Tách biệt dữ liệu tài chính cho từng homestay, resort. Gắn tên miền thương hiệu riêng (CNAME) với chứng chỉ bảo mật SSL tự kích hoạt trong 60 giây.
+                    </p>
+
+                    <div className="mt-space-md grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {[
+                        { num: '01', name: 'The Dalat Pine', domain: 'thedalatpine.vn • SSL Ok', color: 'bg-primary text-white' },
+                        { num: '02', name: 'An Bang Beach Villa', domain: 'anbangvilla.com • SSL Ok', color: 'bg-tertiary text-white' },
+                        { num: '03', name: 'Sapa Misty Retreat', domain: 'sapamisty.digistay.vn', color: 'bg-secondary text-white' },
+                      ].map((item, i) => (
+                        <div key={i} className="p-3 rounded-2xl bg-surface-container-low border border-surface-container-high">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-6 h-6 rounded-md ${item.color} text-xs font-bold flex items-center justify-center`}>{item.num}</div>
+                            <span className="font-label-md text-label-md font-bold text-on-surface">{item.name}</span>
+                          </div>
+                          <span className="text-xs text-tertiary block mt-1 font-semibold">{item.domain}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="mt-space-md pt-space-sm border-t border-surface-container flex items-center justify-between text-xs text-on-surface-variant">
+                    <span className="flex items-center gap-1"><Icon name="lock" className="text-base text-tertiary" /> Bảo mật cấp ngân hàng</span>
+                    <span>Phân quyền 3 cấp (Owner, Manager, Staff)</span>
+                  </div>
+                </Section>
+              </div>
+            </div>
+          </section>
+
+          {/* SECTION 3: TEMPLATE SHOWCASE */}
+          <section className="py-space-xl lg:py-margin-lg" id="mau-giao-dien">
+            <div className="max-w-7xl mx-auto px-margin-sm lg:margin">
+              <Section className="flex flex-col md:flex-row md:items-end justify-between gap-space-md mb-space-xl">
+                <div className="max-w-2xl">
+                  <span className="font-label-caps text-label-caps uppercase tracking-wider text-primary font-bold">Thư Viện Giao Diện May Đo</span>
+                  <h2 className="mt-space-xs font-headline-xl text-headline-xl-mobile md:text-headline-xl text-on-surface tracking-tight">
+                    Bộ Mẫu Giao Diện Boutique Chuẩn Quốc Tế
+                  </h2>
+                  <p className="mt-space-xs font-body-lg text-body-md md:text-body-lg text-on-surface-variant">
+                    Được thiết kế riêng cho từng ngôn ngữ kiến trúc nghỉ dưỡng. Tối ưu tỷ lệ chuyển đổi đặt cọc phòng ngay từ lần chạm đầu tiên.
+                  </p>
+                </div>
+                <a href="#dang-ky-dung-thu" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-on-surface font-label-lg text-label-lg hover:bg-surface-container-high transition-colors">
+                  <span>Xem tất cả 24+ mẫu</span>
+                  <Icon name="arrow_forward" className="text-lg" />
+                </a>
+              </Section>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+                <AnimatedSection animation="fade-up" delay={0} duration={700}>
+                  <TiltCard3D tiltStrength={12} className="h-full">
+                    <GlowCard glowColor="169, 49, 25" className="h-full">
+                      <TemplateCard
+                        name="Mẫu 'Hội An Memories'"
+                        description="Tông màu vàng đất ấm, gạch bông cổ điển, phù hợp biệt thự di sản, homestay phố cổ và villa phong cách Đông Dương."
+                        category="Indochine Heritage"
+                        image="https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=600"
+                        tags={['Widget Đặt Nhanh', 'F&B Showcase']}
+                      />
+                    </GlowCard>
+                  </TiltCard3D>
+                </AnimatedSection>
+                <AnimatedSection animation="fade-up" delay={100} duration={700}>
+                  <TiltCard3D tiltStrength={12} className="h-full">
+                    <GlowCard glowColor="169, 49, 25" className="h-full">
+                      <TemplateCard
+                        name="Mẫu 'Nordic Pine Valley'"
+                        description="Cửa kính kịch trần, gỗ thông ấm áp, tối giản nội thất. Hoàn hảo cho homestay Đà Lạt, Sa Pa, Ba Vì, Tam Đảo."
+                        category="Modern Minimalist"
+                        image="https://images.unsplash.com/photo-1510798831971-661eb04b3739?w=600"
+                        tags={['Lưới Lịch Phòng', 'VietQR 3s']}
+                        isPopular
+                      />
+                    </GlowCard>
+                  </TiltCard3D>
+                </AnimatedSection>
+                <AnimatedSection animation="fade-up" delay={200} duration={700}>
+                  <TiltCard3D tiltStrength={12} className="h-full">
+                    <GlowCard glowColor="169, 49, 25" className="h-full">
+                      <TemplateCard
+                        name="Mẫu 'Azure Ocean Retreat'"
+                        description="Không gian biển mở, tích hợp đặt dịch vụ Spa, bể bơi vô cực và tour canoe ngắm hoàng hôn chuyên nghiệp."
+                        category="Coastal Luxury"
+                        image="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600"
+                        tags={['Add-on Tour', 'Multi-Currency']}
+                      />
+                    </GlowCard>
+                  </TiltCard3D>
+                </AnimatedSection>
+              </div>
+            </div>
+          </section>
+
+          {/* SECTION 4: OTA COMPARISON */}
+          <section className="py-space-xl bg-surface-container-low/70" id="so-sanh">
+            <div className="max-w-7xl mx-auto px-margin-sm lg:margin">
+              <Section className="text-center max-w-3xl mx-auto mb-space-xl">
+                <span className="font-label-caps text-label-caps uppercase tracking-wider text-primary font-bold">Giải Phóng Lợi Nhuận</span>
+                <h2 className="mt-space-xs font-headline-xl text-headline-xl-mobile md:text-headline-xl text-on-surface tracking-tight">
+                  Nỗi Đau Phụ Thuộc OTA vs. Sức Mạnh Nền Tảng DigiStay
+                </h2>
+                <p className="mt-space-xs font-body-lg text-body-md md:text-body-lg text-on-surface-variant">
+                  Tại sao các boutique hotel hàng đầu đều đang dịch chuyển mạnh mẽ sang kênh Direct Booking?
+                </p>
+              </Section>
+
+              <Section className="overflow-x-auto">
+                <div className="min-w-[700px] rounded-3xl bg-surface-container-lowest border border-outline-variant/30 shadow-md p-space-md">
+                  <div className="grid grid-cols-12 pb-space-sm border-b border-surface-container font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant px-3">
+                    <div className="col-span-4 font-bold text-on-surface">Tiêu Chí Trọng Yếu</div>
+                    <div className="col-span-4 text-error font-bold flex items-center gap-1">
+                      <Icon name="cancel" className="text-base" /> Bán Qua Sàn OTA
+                    </div>
+                    <div className="col-span-4 text-tertiary font-bold flex items-center gap-1">
+                      <Icon name="check_circle" className="text-base" /> Website Direct DigiStay
+                    </div>
+                  </div>
+
+                  {[
+                    { label: 'Phí hoa hồng mỗi đơn', ota: 'Mất 15% – 25% doanh thu', direct: '0% Hoa hồng vĩnh viễn', highlight: true },
+                    { label: 'Dòng tiền về tài khoản', ota: 'Giam vốn 15 đến 45 ngày', direct: 'Tài khoản nhận sau 3 giây (VietQR)', highlight: false },
+                    { label: 'Sở hữu dữ liệu khách hàng', ota: 'Bị ẩn Email, SĐT (OTA giữ độc quyền)', direct: 'Sở hữu 100% CRM để remarketing lại', highlight: true },
+                    { label: 'Nhận diện thương hiệu', ota: 'Bị so sánh giá trực tiếp với đối thủ', direct: 'Website tên miền riêng đẳng cấp', highlight: false },
+                    { label: 'Kế toán & Hóa đơn VAT', ota: 'Đối soát thủ công, hóa đơn nước ngoài khó', direct: 'Tự động phát hành HĐĐT MISA meInvoice', highlight: true },
+                  ].map((row, i) => (
+                    <div key={i} className={`grid grid-cols-12 py-space-sm items-center rounded-xl px-3 my-1.5 ${row.highlight ? 'bg-surface-container-low/40' : ''}`}>
+                      <div className="col-span-4 font-label-lg text-label-lg font-bold text-on-surface">{row.label}</div>
+                      <div className="col-span-4 font-body-md text-body-md text-error flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-error"></span>
+                        <span>{row.ota}</span>
+                      </div>
+                      <div className="col-span-4 font-body-md text-body-md text-tertiary font-bold flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-tertiary"></span>
+                        <span>{row.direct}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
-                <div>
-                  <div className="flex items-center gap-1 text-amber-400">
-                    {[...Array(5)].map((_, i) => <Icons.Star key={i} />)}
-                  </div>
-                  <p className="text-sm text-slate-600">4.9/5 từ 2,000+ đánh giá</p>
-                </div>
-              </motion.div>
+              </Section>
             </div>
-            
-            {/* Hero Image/Preview */}
-            <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              className="relative"
-            >
-              <div className="relative bg-white rounded-2xl shadow-2xl shadow-slate-300/50 p-4 border border-slate-100">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-3 h-3 rounded-full bg-red-400" />
-                  <div className="w-3 h-3 rounded-full bg-amber-400" />
-                  <div className="w-3 h-3 rounded-full bg-emerald-400" />
-                </div>
-                {/* Mock website preview */}
-                <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="w-32 h-6 bg-primary/20 rounded" />
-                    <div className="flex gap-4">
-                      <div className="w-16 h-4 bg-slate-300 rounded" />
-                      <div className="w-16 h-4 bg-slate-300 rounded" />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4 mb-6">
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="bg-white rounded-lg p-3 shadow-sm">
-                        <div className="w-full h-20 bg-slate-200 rounded-lg mb-2" />
-                        <div className="w-3/4 h-4 bg-slate-300 rounded mb-1" />
-                        <div className="w-1/2 h-3 bg-slate-200 rounded" />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="bg-primary text-white text-center py-3 rounded-lg font-medium">
-                    Đặt lịch ngay
-                  </div>
-                </div>
+          </section>
+
+          {/* SECTION 5: ROI CALCULATOR */}
+          <section className="py-space-xl lg:py-margin-lg" id="tinh-roi">
+            <div className="max-w-5xl mx-auto px-margin-sm lg:margin">
+              <ROICalculator />
+            </div>
+          </section>
+
+          {/* SECTION 6: PRICING */}
+          <section className="py-space-xl bg-surface-container-low" id="bang-gia">
+            <div className="max-w-7xl mx-auto px-margin-sm lg:margin">
+              <Section className="text-center max-w-3xl mx-auto mb-space-xl">
+                <span className="font-label-caps text-label-caps uppercase tracking-wider text-primary font-bold">Chi Phí Minh Bạch - Không Phí Ẩn</span>
+                <h2 className="mt-space-xs font-headline-xl text-headline-xl-mobile md:text-headline-xl text-on-surface tracking-tight">
+                  Bảng Giá Dịch Vụ SaaS DigiStay
+                </h2>
+                <p className="mt-space-xs font-body-lg text-body-md md:text-body-lg text-on-surface-variant">
+                  Tuyệt đối không thu % hoa hồng doanh thu. Giữ trọn 100% dòng tiền của bạn.
+                </p>
+              </Section>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter items-stretch">
+                <PricingCard
+                  name="Starter"
+                  price="990.000"
+                  period="đ / tháng"
+                  description="Dành cho homestay từ 1 - 5 phòng bắt đầu xây dựng kênh đặt phòng trực tiếp."
+                  features={[
+                    'Tối đa 5 phòng vận hành',
+                    'Trình dựng kéo thả Block Builder',
+                    'Cổng VietQR Napas247 tự động 3s',
+                    'Subdomain .digistay.vn miễn phí',
+                    'Bảo mật SSL Cloudflare cấp tốc'
+                  ]}
+                  badge="Homestay Nhỏ"
+                />
+                <PricingCard
+                  name="Boutique Pro"
+                  price="1.990.000"
+                  period="đ / tháng"
+                  description="Dành cho Khách sạn Boutique & Villa nghỉ dưỡng từ 5 - 25 phòng tối ưu lợi nhuận."
+                  features={[
+                    'Lên đến 25 phòng & 3 Workspace',
+                    'Gắn Tên Miền Riêng (Custom Domain)',
+                    'Khóa giữ phòng Anti-Overbooking 15p',
+                    'Đồng bộ 2 chiều OTA (iCal / Booking / Agoda)',
+                    'Tích hợp hóa đơn điện tử MISA meInvoice',
+                    'Báo tin đơn cọc mới qua Telegram Bot'
+                  ]}
+                  isPopular
+                  badge="Phổ Biến Nhất Cho Boutique Hotel"
+                />
+                <PricingCard
+                  name="Enterprise"
+                  price="Tùy Chỉnh"
+                  period="Liên hệ chuyên gia"
+                  description="Dành cho tập đoàn lưu trú hoặc chuỗi đa cơ sở quy mô lớn cần hạ tầng riêng biệt."
+                  features={[
+                    'Không giới hạn phòng & Chi nhánh',
+                    'Database riêng biệt cách ly tuyệt đối',
+                    'Mở Open API kết nối hệ thống PMS',
+                    'Custom module F&B, Spa theo yêu cầu',
+                    'Kỹ sư hỗ trợ onboarding 1-on-1 24/7'
+                  ]}
+                  badge="Chuỗi Nghỉ Dưỡng"
+                />
               </div>
-              
-              {/* Floating elements */}
-              <FloatingElement delay={0}>
-                <div className="absolute -top-4 -right-4 bg-white rounded-xl shadow-lg p-3 flex items-center gap-2">
-                  <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600">
-                    <Icons.Check />
-                  </div>
-                  <span className="text-sm font-medium text-secondary">Đặt lịch thành công!</span>
-                </div>
-              </FloatingElement>
-              
-              <FloatingElement delay={0.5}>
-                <div className="absolute -bottom-4 -left-4 bg-white rounded-xl shadow-lg p-3 flex items-center gap-2">
-                  <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center text-amber-600">
-                    <Icons.Calendar />
-                  </div>
-                  <span className="text-sm font-medium text-secondary">Lịch hẹn mới</span>
-                </div>
-              </FloatingElement>
-            </motion.div>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-16 bg-white border-y border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <StatCounter value="10,000+" label="Doanh nghiệp" />
-            <StatCounter value="1M+" label="Lượt đặt lịch" />
-            <StatCounter value="99.9%" label="Uptime" />
-            <StatCounter value="4.9/5" label="Đánh giá" />
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className="py-20 md:py-32">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimatedSection className="text-center mb-16">
-            <span className="inline-block text-primary font-semibold text-sm tracking-wider uppercase mb-4">Tính năng</span>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-secondary mb-6">
-              Mọi thứ bạn cần để quản lý đặt lịch
-            </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Digistay cung cấp giải pháp toàn diện giúp bạn tạo website, quản lý lịch hẹn 
-              và thanh toán một cách dễ dàng.
-            </p>
-          </AnimatedSection>
-          
-          <motion.div 
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
-          >
-            {features.map((feature, i) => (
-              <FeatureCard key={i} {...feature} />
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* How it works Section */}
-      <section id="how-it-works" className="py-20 md:py-32 bg-gradient-to-br from-secondary to-slate-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimatedSection className="text-center mb-16">
-            <span className="inline-block text-primaryLight font-semibold text-sm tracking-wider uppercase mb-4">Cách hoạt động</span>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
-              Tạo website trong 3 bước đơn giản
-            </h2>
-            <p className="text-lg text-slate-300 max-w-2xl mx-auto">
-              Không cần biết lập trình. Chỉ cần vài phút để có website đặt lịch chuyên nghiệp.
-            </p>
-          </AnimatedSection>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            {steps.map((step, i) => (
-              <AnimatedSection key={i} variants={slideInRight} className="relative">
-                {i < steps.length - 1 && (
-                  <div className="hidden md:block absolute top-12 left-[calc(50%+40px)] w-[calc(100%-80px)] h-0.5 bg-gradient-to-r from-primaryLight to-transparent" />
-                )}
-                <div className="text-7xl font-bold text-primaryLight/20 mb-4">{step.number}</div>
-                <h3 className="text-xl font-bold mb-3">{step.title}</h3>
-                <p className="text-slate-300 leading-relaxed">{step.description}</p>
-              </AnimatedSection>
-            ))}
-          </div>
-          
-          <AnimatedSection className="mt-16 text-center">
-            <MagneticButton>
-              <Link href="/register" className="bg-primary hover:bg-primaryDark text-white px-8 py-4 rounded-xl font-semibold transition-all hover:shadow-xl hover:shadow-indigo-500/30 inline-flex items-center gap-2">
-                Bắt đầu ngay
-                <Icons.Arrow />
-              </Link>
-            </MagneticButton>
-          </AnimatedSection>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section id="testimonials" className="py-20 md:py-32">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimatedSection className="text-center mb-16">
-            <span className="inline-block text-primary font-semibold text-sm tracking-wider uppercase mb-4">Đánh giá</span>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-secondary mb-6">
-              Khách hàng nói gì về Digistay
-            </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Hàng nghìn doanh nghiệp đã tin tưởng sử dụng Digistay để phát triển dịch vụ của họ.
-            </p>
-          </AnimatedSection>
-          
-          <motion.div 
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            className="grid md:grid-cols-3 gap-8"
-          >
-            {testimonials.map((testimonial, i) => (
-              <TestimonialCard key={i} {...testimonial} />
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section id="pricing" className="py-20 md:py-32 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimatedSection className="text-center mb-16">
-            <span className="inline-block text-primary font-semibold text-sm tracking-wider uppercase mb-4">Bảng giá</span>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-secondary mb-6">
-              Chọn gói phù hợp với bạn
-            </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Giá cả hợp lý, không phí ẩn. Dùng thử miễn phí 14 ngày.
-            </p>
-          </AnimatedSection>
-          
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {pricingPlans.map((plan, i) => (
-              <PricingCard key={i} {...plan} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 md:py-32 bg-gradient-to-br from-primary to-primaryDark">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6">
-              Sẵn sàng tạo website của bạn?
-            </h2>
-            <p className="text-xl text-indigo-100 mb-10 max-w-2xl mx-auto">
-              Bắt đầu dùng thử miễn phí 14 ngày. Không cần thẻ tín dụng.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <MagneticButton>
-                <Link href="/register" className="bg-white text-primary hover:bg-slate-100 px-8 py-4 rounded-xl font-semibold transition-all hover:shadow-xl inline-flex items-center justify-center gap-2 text-lg">
-                  Dùng thử miễn phí
-                  <Icons.Arrow />
-                </Link>
-              </MagneticButton>
-              <a href="#pricing" className="border-2 border-white/30 text-white hover:bg-white/10 px-8 py-4 rounded-xl font-semibold transition-all inline-flex items-center justify-center gap-2">
-                Xem bảng giá
-              </a>
             </div>
-          </motion.div>
+          </section>
+
+          {/* SECTION 7: CTA FORM */}
+          <section className="py-space-xl lg:py-margin-lg" id="dang-ky-dung-thu">
+            <div className="max-w-6xl mx-auto px-margin-sm lg:margin">
+              <Section className="rounded-3xl bg-surface-container-lowest border border-outline-variant/30 p-space-lg sm:margin shadow-2xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-space-lg">
+                <div className="max-w-xl text-left">
+                  <span className="font-label-caps text-label-caps uppercase tracking-wider text-primary font-bold">Khởi Đầu Tự Chủ Doanh Thu</span>
+                  <h2 className="mt-space-xs font-headline-xl text-headline-xl-mobile md:text-headline-xl text-on-surface font-bold tracking-tight">
+                    Sở Hữu Kênh Đặt Phòng Trực Tiếp Trong 15 Phút.
+                  </h2>
+                  <p className="mt-space-xs font-body-md text-body-md text-on-surface-variant">
+                    Không cần biết code. Không yêu cầu thẻ tín dụng để đăng ký. Đội ngũ chuyên gia DigiStay hỗ trợ đưa hình ảnh & dữ liệu phòng lên website miễn phí.
+                  </p>
+                  <div className="mt-space-md flex flex-wrap items-center gap-space-sm text-on-surface font-label-md text-label-md">
+                    <span className="flex items-center gap-1"><Icon name="verified" className="text-tertiary text-lg" /> 14 ngày dùng thử full tính năng</span>
+                    <span className="flex items-center gap-1"><Icon name="verified" className="text-tertiary text-lg" /> Tự cấp tên miền SSL trong 60s</span>
+                  </div>
+                </div>
+
+                {/* Signup Form */}
+                <form onSubmit={handleSubmit} className="w-full md:w-88 rounded-2xl bg-surface-container-low border border-surface-container-high p-space-md shadow-sm space-y-3.5 text-left">
+                  <div>
+                    <label className="font-label-caps text-label-caps uppercase text-on-surface-variant block mb-1">Tên Khách sạn / Homestay</label>
+                    <input
+                      type="text"
+                      placeholder="VD: The Dalat Pine Retreat"
+                      value={formData.hotelName}
+                      onChange={(e) => setFormData({ ...formData, hotelName: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-on-surface font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-label-caps text-label-caps uppercase text-on-surface-variant block mb-1">Số điện thoại liên hệ</label>
+                    <input
+                      type="tel"
+                      placeholder="090x xxx xxx"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-on-surface font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-label-caps text-label-caps uppercase text-on-surface-variant block mb-1">Quy mô cơ sở</label>
+                    <select
+                      value={formData.scale}
+                      onChange={(e) => setFormData({ ...formData, scale: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-on-surface font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    >
+                      <option value="1-5">Dưới 5 phòng (Homestay / Villa nhỏ)</option>
+                      <option value="5-20">Từ 5 - 20 phòng (Boutique Hotel)</option>
+                      <option value="20+">Trên 20 phòng hoặc Chuỗi đa cơ sở</option>
+                    </select>
+                  </div>
+                  <button type="submit" className="w-full py-3.5 rounded-xl bg-primary text-on-primary font-label-lg text-label-lg font-bold shadow-md hover:bg-primary-container transition-all flex items-center justify-center gap-2">
+                    <span>Tạo Website Ngay Miễn Phí</span>
+                    <Icon name="arrow_forward" className="text-lg" />
+                  </button>
+                  <span className="text-xs text-center block text-on-surface-variant">Bảo mật thông tin 100% theo tiêu chuẩn PCI-DSS</span>
+                </form>
+              </Section>
+            </div>
+          </section>
         </div>
-      </section>
+      </main>
 
       {/* Footer */}
-      <footer className="bg-secondary text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-12 mb-12">
-            <div className="md:col-span-1">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primaryLight flex items-center justify-center">
-                  <Icons.Calendar />
+      <footer className="w-full bg-surface-container-low mt-space-xl pt-space-xl pb-space-lg border-t border-surface-container">
+        <div className="max-w-7xl mx-auto px-margin-sm lg:margin">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-gutter-lg pb-space-xl">
+            <div className="lg:col-span-2 space-y-space-md">
+              <div className="flex items-center gap-space-sm">
+                <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-on-primary">
+                  <Icon name="villa" className="text-xl" />
                 </div>
-                <span className="text-2xl font-bold">Digistay</span>
+                <span className="font-headline-sm text-on-surface font-bold">DigiStay OS</span>
               </div>
-              <p className="text-slate-400 leading-relaxed">
-                Nền tảng tạo website đặt lịch hàng đầu Việt Nam. Giúp doanh nghiệp số hóa dịch vụ một cách dễ dàng.
+              <p className="font-body-md text-body-md text-on-surface-variant max-w-sm">
+                Hệ điều hành đặt phòng trực tiếp & Nền tảng thiết kế website chuyên biệt cho Boutique Hotels, Homestays & Khu nghỉ dưỡng tại Việt Nam. Tăng trưởng doanh thu trực tiếp không phụ thuộc OTA.
               </p>
+              <div className="flex items-center gap-space-sm pt-space-xs">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-highest text-on-surface font-label-md text-label-md">
+                  <Icon name="location_on" className="text-tertiary text-base" />Hà Nội • TP. Hồ Chí Minh • Đà Lạt
+                </span>
+              </div>
             </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Sản phẩm</h4>
-              <ul className="space-y-2 text-slate-400">
-                <li><a href="#features" className="hover:text-white transition-colors">Tính năng</a></li>
-                <li><a href="#pricing" className="hover:text-white transition-colors">Bảng giá</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Template</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">API</a></li>
+
+            <div className="space-y-space-sm">
+              <h4 className="font-label-caps text-label-caps uppercase tracking-wider text-on-surface font-bold">Giải Pháp</h4>
+              <ul className="space-y-2.5 font-body-sm text-body-sm text-on-surface-variant">
+                <li><a href="#tinh-nang" className="hover:text-primary transition-colors">Booking Engine Trực Tiếp</a></li>
+                <li><a href="#tinh-nang" className="hover:text-primary transition-colors">Kéo Thả Web Khách Sạn</a></li>
+                <li><a href="#tinh-nang" className="hover:text-primary transition-colors">Đồng Bộ Kênh OTA</a></li>
+                <li><a href="#tinh-nang" className="hover:text-primary transition-colors">Quản Lý Trải Nghiệm Khách</a></li>
+                <li><a href="#tinh-nang" className="hover:text-primary transition-colors">Cổng Thanh Toán VietQR</a></li>
               </ul>
             </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Hỗ trợ</h4>
-              <ul className="space-y-2 text-slate-400">
-                <li><a href="#" className="hover:text-white transition-colors">Trung tâm trợ giúp</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Liên hệ</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Hướng dẫn sử dụng</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Câu hỏi thường gặp</a></li>
+
+            <div className="space-y-space-sm">
+              <h4 className="font-label-caps text-label-caps uppercase tracking-wider text-on-surface font-bold">Khám Phá & Tài Nguyên</h4>
+              <ul className="space-y-2.5 font-body-sm text-body-sm text-on-surface-variant">
+                <li><a href="#mau-giao-dien" className="hover:text-primary transition-colors">Thư Viện Giao Diện Mẫu</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Cẩm Nang Vận Hành Homestay</a></li>
+                <li><a href="#so-sanh" className="hover:text-primary transition-colors">So Sánh Lợi Nhuận OTA</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Tài Liệu Hướng Dẫn API</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Chính Sách Đối Tác</a></li>
               </ul>
             </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Liên hệ</h4>
-              <ul className="space-y-3 text-slate-400">
-                <li className="flex items-center gap-2">
-                  <Icons.Mail />
-                  <span>contact@digistay.vn</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Icons.Phone />
-                  <span>1900 1234</span>
-                </li>
-              </ul>
+
+            <div className="space-y-space-sm">
+              <h4 className="font-label-caps text-label-caps uppercase tracking-wider text-on-surface font-bold">Bảo Mật & Thanh Toán</h4>
+              <p className="font-body-sm text-body-sm text-on-surface-variant">
+                Tích hợp chuẩn thanh toán nội địa và chứng nhận an toàn dữ liệu khách sạn quốc tế.
+              </p>
+              <div className="flex flex-wrap gap-2 pt-space-xs">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-highest text-on-surface font-label-md text-label-md">
+                  <Icon name="verified" className="text-tertiary text-lg" />VietQR PRO
+                </div>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-highest text-on-surface font-label-md text-label-md">
+                  <Icon name="lock" className="text-secondary text-lg" />PCI-DSS Level 1
+                </div>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-highest text-on-surface font-label-md text-label-md">
+                  <Icon name="shield" className="text-secondary text-lg" />SSL 256-Bit
+                </div>
+              </div>
             </div>
           </div>
-          
-          <div className="border-t border-slate-700 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-slate-400 text-sm">
-              © 2024 Digistay. Tất cả quyền được bảo lưu.
-            </p>
-            <div className="flex gap-6 text-sm text-slate-400">
-              <a href="#" className="hover:text-white transition-colors">Điều khoản sử dụng</a>
-              <a href="#" className="hover:text-white transition-colors">Chính sách bảo mật</a>
+
+          <div className="pt-space-lg flex flex-col md:flex-row items-center justify-between gap-space-md text-on-surface-variant font-body-sm text-body-sm">
+            <div className="flex flex-wrap items-center gap-space-md">
+              <span>© 2026 DigiStay OS. Bản quyền thuộc về DigiStay Vietnam Co., Ltd.</span>
+              <span className="hidden md:inline">•</span>
+              <span className="text-tertiary font-label-md text-label-md flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-tertiary"></span>Hệ thống máy chủ hoạt động 99.98%
+              </span>
+            </div>
+            <div className="flex items-center gap-gutter">
+              <a href="#" className="hover:text-on-surface transition-colors">Điều Khoản Sử Dụng</a>
+              <a href="#" className="hover:text-on-surface transition-colors">Bảo Mật Thông Tin</a>
+              <a href="#" className="hover:text-on-surface transition-colors">Hỗ Trợ 24/7</a>
             </div>
           </div>
         </div>

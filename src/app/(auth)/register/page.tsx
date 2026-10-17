@@ -2,14 +2,22 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import { Button, Input } from '@/components/ui'
 
 export default function RegisterPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = React.useState(false)
   const [error, setError] = React.useState('')
+  
+  // Get prefill data from URL params
+  const hotelName = searchParams.get('hotelName') || ''
+  const phone = searchParams.get('phone') || ''
+  const scale = searchParams.get('scale') || ''
+  const createWorkspace = searchParams.get('createWorkspace') === 'true'
+  
   const [formData, setFormData] = React.useState({
     name: '',
     email: '',
@@ -64,7 +72,18 @@ export default function RegisterPage() {
         setError('Đăng ký thành công nhưng không thể đăng nhập tự động')
         router.push('/login')
       } else {
-        router.push('/workspaces')
+        // Build redirect URL with params to prefill workspace creation
+        const params = new URLSearchParams()
+        if (hotelName) params.set('hotelName', hotelName)
+        if (phone) params.set('phone', phone)
+        if (scale) params.set('scale', scale)
+        if (createWorkspace) params.set('createWorkspace', 'true')
+        
+        const redirectUrl = params.toString() 
+          ? `/workspaces?${params.toString()}`
+          : '/workspaces'
+        
+        router.push(redirectUrl)
         router.refresh()
       }
     } catch {

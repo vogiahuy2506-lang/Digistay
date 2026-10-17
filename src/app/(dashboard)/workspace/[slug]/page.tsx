@@ -56,6 +56,7 @@ export default function WorkspaceDashboardPage() {
   }, [workspace?.id])
 
   const fetchDashboard = async () => {
+    if (!workspace?.id) return
     setLoading(true)
     try {
       const [propsRes, statsRes, bookingsRes] = await Promise.all([

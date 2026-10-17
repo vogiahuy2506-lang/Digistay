@@ -106,6 +106,28 @@ export async function POST(request: NextRequest) {
     // Generate slug from name
     const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
 
+    // Create or find pricing config for the property
+    let pricingConfigId: string
+    const existingPricing = await prisma.pricingConfig.findFirst({
+      where: { propertyId },
+    })
+    
+    if (existingPricing) {
+      pricingConfigId = existingPricing.id
+    } else {
+      const newPricing = await prisma.pricingConfig.create({
+        data: {
+          propertyId,
+          name: 'Standard',
+          weekdayPrice: weekdayPrice || 0,
+          weekendPrice: weekendPrice || weekdayPrice || 0,
+          extraAdultPrice: 0,
+          extraChildPrice: 0,
+        },
+      })
+      pricingConfigId = newPricing.id
+    }
+
     // Create room type
     const roomType = await prisma.roomType.create({
       data: {
@@ -123,7 +145,7 @@ export async function POST(request: NextRequest) {
         maxOccupancy: maxOccupancy || 4,
         pricing: weekdayPrice || weekendPrice ? {
           create: {
-            pricingId: property.pricingConfigId || (await prisma.pricingConfig.create({ data: { name: 'Default' } })).id,
+            pricingId: pricingConfigId,
             weekdayPrice: weekdayPrice || 0,
             weekendPrice: weekendPrice || weekdayPrice || 0,
             extraAdultPrice: 0,
