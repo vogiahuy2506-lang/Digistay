@@ -313,6 +313,7 @@ export default function InvoicesPage() {
 
     setFormError('')
     setFormSuccess('')
+    setIsCreating(true)
 
     try {
       const res = await fetch('/api/invoices', {
@@ -346,6 +347,8 @@ export default function InvoicesPage() {
       }
     } catch (err) {
       setFormError('Có lỗi xảy ra, vui lòng thử lại')
+    } finally {
+      setIsCreating(false)
     }
   }
 
@@ -360,6 +363,7 @@ export default function InvoicesPage() {
 
     setFormError('')
     setFormSuccess('')
+    setIsEditing(true)
 
     try {
       const res = await fetch(`/api/invoices/${editingId}`, {
@@ -394,6 +398,8 @@ export default function InvoicesPage() {
       }
     } catch (err) {
       setFormError('Có lỗi xảy ra, vui lòng thử lại')
+    } finally {
+      setIsEditing(false)
     }
   }
 
@@ -848,7 +854,7 @@ export default function InvoicesPage() {
               <Button variant="secondary" onClick={() => setIsCreating(false)}>
                 Hủy
               </Button>
-              <Button onClick={handleCreateInvoice}>
+              <Button onClick={handleCreateInvoice} isLoading={isCreating} disabled={isCreating}>
                 Tạo hóa đơn
               </Button>
             </ModalFooter>
@@ -985,7 +991,7 @@ export default function InvoicesPage() {
               <Button variant="secondary" onClick={() => setIsEditing(false)}>
                 Hủy
               </Button>
-              <Button onClick={handleUpdateInvoice}>
+              <Button onClick={handleUpdateInvoice} isLoading={isEditing} disabled={isEditing}>
                 Lưu thay đổi
               </Button>
             </ModalFooter>

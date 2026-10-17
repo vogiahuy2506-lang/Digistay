@@ -266,6 +266,8 @@ export default function PaymentsPage() {
       }
     } catch (err) {
       setCreateError('Có lỗi xảy ra, vui lòng thử lại')
+    } finally {
+      setIsCreating(false)
     }
   }
 
@@ -582,7 +584,7 @@ export default function PaymentsPage() {
               <Button variant="secondary" onClick={() => setIsCreating(false)}>
                 Hủy
               </Button>
-              <Button onClick={handleCreatePayment}>
+              <Button onClick={handleCreatePayment} isLoading={isCreating} disabled={isCreating}>
                 Tạo thanh toán
               </Button>
             </ModalFooter>
