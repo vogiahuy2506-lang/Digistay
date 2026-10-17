@@ -317,6 +317,7 @@ export function WorkspaceShell({
             <button
               className="flex-1 flex items-center justify-center p-2 rounded-lg hover:bg-gray-50 transition-colors"
               title="Thông báo"
+              aria-label="Thông báo"
             >
               <Bell className="w-4 h-4 text-gray-400" />
             </button>
@@ -325,6 +326,7 @@ export function WorkspaceShell({
                 type="submit"
                 className="w-full flex items-center justify-center p-2 rounded-lg hover:bg-red-50 transition-colors"
                 title="Đăng xuất"
+                aria-label="Đăng xuất"
               >
                 <LogOut className="w-4 h-4 text-gray-400 hover:text-red-500" />
               </button>

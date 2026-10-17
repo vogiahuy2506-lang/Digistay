@@ -316,7 +316,7 @@ export function Sidebar({
                     {workspaceName || 'Chọn Workspace'}
                   </span>
                   <span className={cn(
-                    'text-[10px] px-1.5 py-0.5 rounded-full',
+                    'text-[10px] px-1.5 py-0.5 rounded-full inline-block max-w-full truncate align-middle',
                     getRoleBadge(workspaceRole).color
                   )}>
                     {getRoleBadge(workspaceRole).label}
@@ -398,6 +398,7 @@ export function Sidebar({
           <button
             className="flex-1 flex items-center justify-center p-2 rounded-lg hover:bg-gray-50 transition-colors"
             title="Thông báo"
+            aria-label="Thông báo"
           >
             <Bell className="w-4 h-4 text-gray-400" />
           </button>
@@ -406,6 +407,7 @@ export function Sidebar({
               type="submit"
               className="w-full flex items-center justify-center p-2 rounded-lg hover:bg-red-50 transition-colors"
               title="Đăng xuất"
+              aria-label="Đăng xuất"
             >
               <LogOut className="w-4 h-4 text-gray-400 hover:text-red-500" />
             </button>
