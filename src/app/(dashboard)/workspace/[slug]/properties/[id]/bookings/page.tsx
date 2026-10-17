@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
-import { Card, CardContent, Button, Badge, Input, Select, Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui'
+import { Card, CardContent, Button, Badge, Input, Select, Tabs, TabsList, TabsTrigger, TabsContent, PageLoading } from '@/components/ui'
 import { routes } from '@/lib/utils/routes'
 import { 
   Search, Filter, Plus, Calendar, Clock, CheckCircle, XCircle, 
@@ -207,18 +207,43 @@ export default function BookingsPage() {
 
       {/* Bookings List */}
       {isLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
+        <PageLoading text="Đang tải danh sách đặt phòng..." />
       ) : filteredBookings.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center">
             <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">Chưa có đơn đặt phòng nào</p>
-            <Button onClick={() => router.push(routes.propertyBookingNew(params.slug, propertyId!))} className="mt-4">
-              <Plus className="w-4 h-4 mr-2" />
-              Tạo đặt phòng mới
-            </Button>
+            {bookings.length === 0 ? (
+              <>
+                <p className="text-gray-500">Chưa có đơn đặt phòng nào</p>
+                <Button
+                  onClick={() => router.push(routes.propertyBookingNew(params.slug, propertyId!))}
+                  className="mt-4"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Tạo đặt phòng mới
+                </Button>
+              </>
+            ) : (
+              <>
+                {/* The list is non-empty but the active filter/search
+                    is hiding everything. Give the user a way out
+                    instead of pretending there are no bookings. */}
+                <p className="text-gray-500">
+                  Không có đơn nào khớp bộ lọc hiện tại
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setStatusFilter('')
+                    setSearchQuery('')
+                    setActiveTab('all')
+                  }}
+                  className="mt-4"
+                >
+                  Xoá bộ lọc
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
       ) : (

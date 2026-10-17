@@ -29,8 +29,16 @@ import {
   WorkspaceRoles,
 } from './rbac'
 
-const mockPrisma = prisma as ReturnType<typeof vi.mocked<typeof prisma>>
-const mockAuth = auth as ReturnType<typeof vi.mocked<typeof auth>>
+// `vi.mocked` is a runtime helper; for the type system we cast to
+// `any` here because the Prisma client surface is huge and we only
+// touch one method per test. Keeps the test file readable without
+// pulling in `@types/node`-style deep casts.
+const mockPrisma = prisma as unknown as {
+  workspace: {
+    findUnique: ReturnType<typeof vi.fn>
+  }
+}
+const mockAuth = auth as unknown as ReturnType<typeof vi.fn>
 
 beforeEach(() => {
   vi.clearAllMocks()

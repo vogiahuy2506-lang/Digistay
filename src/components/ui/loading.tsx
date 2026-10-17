@@ -27,10 +27,10 @@ export function Loading({ size = 'md', className, text }: LoadingProps) {
   )
 }
 
-export function PageLoading() {
+export function PageLoading({ text = 'Đang tải...' }: { text?: string }) {
   return (
     <div className="min-h-[400px] flex items-center justify-center">
-      <Loading size="lg" text="Đang tải..." />
+      <Loading size="lg" text={text} />
     </div>
   )
 }

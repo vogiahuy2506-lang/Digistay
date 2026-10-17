@@ -10,21 +10,26 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 const originalEnv = { ...process.env }
 
 function setRequiredEnv() {
-  process.env.DATABASE_URL = 'postgresql://user:pass@localhost:5432/db'
-  process.env.NEXTAUTH_URL = 'http://localhost:3000'
-  process.env.NEXTAUTH_SECRET = 'a'.repeat(32)
-  process.env.NODE_ENV = 'test'
+  const env = process.env as Record<string, string | undefined>
+  env.DATABASE_URL = 'postgresql://user:pass@localhost:5432/db'
+  env.NEXTAUTH_URL = 'http://localhost:3000'
+  env.NEXTAUTH_SECRET = 'a'.repeat(32)
+  env.NODE_ENV = 'test'
 }
 
 beforeEach(() => {
   // Restore a clean env before each test, then re-apply required keys.
-  process.env = { ...originalEnv }
+  // Cast to `any` because TS treats `process.env.NODE_ENV` as readonly
+  // and the test intentionally mutates it.
+  ;(process.env as Record<string, string | undefined>) = {
+    ...originalEnv as Record<string, string | undefined>,
+  }
   setRequiredEnv()
   vi.resetModules()
 })
 
 afterEach(() => {
-  process.env = originalEnv
+  ;(process.env as Record<string, string | undefined>) = originalEnv as Record<string, string | undefined>
   vi.resetModules()
 })
 
@@ -58,7 +63,7 @@ describe('env validation', () => {
   })
 
   it('rejects an unknown NODE_ENV value', async () => {
-    process.env.NODE_ENV = 'staging'
+    ;(process.env as Record<string, string | undefined>).NODE_ENV = 'staging'
     await expect(import('./env')).rejects.toThrow()
   })
 
