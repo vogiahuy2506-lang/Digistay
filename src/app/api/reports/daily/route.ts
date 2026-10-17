@@ -65,67 +65,99 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const [paidAgg, refundedAgg, bookings, checkIns, checkOuts, payments] =
-      await Promise.all([
-        prisma.payment.aggregate({
-          where: {
-            propertyId,
-            status: 'PAID',
-            paidAt: { gte: start, lte: end },
-          },
-          _sum: { amount: true },
-          _count: true,
-        }),
-        prisma.payment.aggregate({
-          where: {
-            propertyId,
-            status: 'REFUNDED',
-            updatedAt: { gte: start, lte: end },
-          },
-          _sum: { amount: true },
-          _count: true,
-        }),
-        prisma.booking.count({
-          where: {
-            propertyId,
-            createdAt: { gte: start, lte: end },
-          },
-        }),
-        prisma.booking.findMany({
-          where: {
-            propertyId,
-            actualCheckIn: { gte: start, lte: end },
-          },
-          select: { id: true, bookingCode: true, guestName: true, actualCheckIn: true },
-        }),
-        prisma.booking.findMany({
-          where: {
-            propertyId,
-            actualCheckOut: { gte: start, lte: end },
-          },
-          select: { id: true, bookingCode: true, guestName: true, actualCheckOut: true },
-        }),
-        prisma.payment.findMany({
-          where: {
-            propertyId,
-            OR: [
-              { paidAt: { gte: start, lte: end } },
-              { status: 'REFUNDED', updatedAt: { gte: start, lte: end } },
-            ],
-          },
-          include: {
-            booking: { select: { bookingCode: true, guestName: true } },
-            // No createdBy relation on Payment — show the owner email of
-            // the workspace as the actor in a real implementation. We
-            // skip that here to avoid extra queries.
-          },
-          orderBy: { paidAt: 'desc' },
-        }),
-      ])
+    const [
+      paidAgg,
+      refundedAgg,
+      bookings,
+      checkIns,
+      checkOuts,
+      payments,
+      paidByMethod,
+    ] = await Promise.all([
+      prisma.payment.aggregate({
+        where: {
+          propertyId,
+          status: 'PAID',
+          paidAt: { gte: start, lte: end },
+        },
+        _sum: { amount: true },
+        _count: true,
+      }),
+      prisma.payment.aggregate({
+        where: {
+          propertyId,
+          status: 'REFUNDED',
+          updatedAt: { gte: start, lte: end },
+        },
+        _sum: { amount: true },
+        _count: true,
+      }),
+      prisma.booking.count({
+        where: {
+          propertyId,
+          createdAt: { gte: start, lte: end },
+        },
+      }),
+      prisma.booking.findMany({
+        where: {
+          propertyId,
+          actualCheckIn: { gte: start, lte: end },
+        },
+        select: { id: true, bookingCode: true, guestName: true, actualCheckIn: true },
+      }),
+      prisma.booking.findMany({
+        where: {
+          propertyId,
+          actualCheckOut: { gte: start, lte: end },
+        },
+        select: { id: true, bookingCode: true, guestName: true, actualCheckOut: true },
+      }),
+      prisma.payment.findMany({
+        where: {
+          propertyId,
+          OR: [
+            { paidAt: { gte: start, lte: end } },
+            { status: 'REFUNDED', updatedAt: { gte: start, lte: end } },
+          ],
+        },
+        include: {
+          booking: { select: { bookingCode: true, guestName: true } },
+        },
+        orderBy: { paidAt: 'desc' },
+      }),
+      // Breakdown by payment method — only PAID payments, grouped
+      // client-side to avoid needing Prisma's groupBy raw support
+      prisma.payment.findMany({
+        where: {
+          propertyId,
+          status: 'PAID',
+          paidAt: { gte: start, lte: end },
+        },
+        select: { method: true, amount: true },
+      }),
+    ])
 
     const totalIn = paidAgg._sum.amount ?? 0
     const totalOut = refundedAgg._sum.amount ?? 0
     const balance = totalIn - totalOut
+
+    // Group PAID payments by method for the 3 breakdown cards
+    const byMethod: Record<
+      string,
+      { amount: number; count: number; label: string }
+    > = {}
+    for (const p of paidByMethod) {
+      const key = p.method
+      if (!byMethod[key]) {
+        byMethod[key] = { amount: 0, count: 0, label: methodLabel(key) }
+      }
+      byMethod[key].amount += p.amount
+      byMethod[key].count += 1
+    }
+    const methodBreakdown = Object.entries(byMethod).map(([key, value]) => ({
+      method: key,
+      ...value,
+    }))
 
     // Flatten to a unified "transaction" list for the report table
     const transactions: Array<{
@@ -191,6 +223,7 @@ export async function GET(request: NextRequest) {
           checkIns: checkIns.length,
           checkOuts: checkOuts.length,
         },
+        methodBreakdown,
         transactions,
       },
     })
