@@ -7,8 +7,10 @@ import { Card, CardContent, Button, Badge, Modal, ModalFooter, Input, Select, Te
 import { 
   Plus, Bed, Edit, Trash2, MoreVertical, Image, Users, Maximize2, 
   DollarSign, BedDouble, Wifi, Utensils, 
-  Bath, Coffee, Wine, Sparkles, Waves, ChevronRight, Save
+  Bath, Coffee, Wine, Sparkles, Waves, ChevronRight, Save, Wrench,
+  Calendar, X, AlertCircle
 } from 'lucide-react'
+import { format, addDays } from 'date-fns'
 
 interface RoomType {
   id: string
@@ -27,6 +29,20 @@ interface RoomType {
   images: { id: string; url: string; isPrimary: boolean }[]
   amenities: { amenity: { id: string; name: string; icon: string | null } }[]
   pricing: { weekdayPrice: number; weekendPrice: number }[]
+}
+
+interface MaintenanceLock {
+  id: string
+  propertyId: string
+  roomTypeId: string
+  lockStart: string
+  lockEnd: string
+  customerInfo: string | null
+  notes: string | null
+  roomType: {
+    id: string
+    name: string
+  }
 }
 
 interface Property {
@@ -75,6 +91,19 @@ export default function RoomTypesPage() {
   const [selectedRoomType, setSelectedRoomType] = React.useState<RoomType | null>(null)
   const [isSaving, setIsSaving] = React.useState(false)
 
+  // Maintenance state
+  const [activeTab, setActiveTab] = React.useState<'rooms' | 'maintenance'>('rooms')
+  const [maintenanceLocks, setMaintenanceLocks] = React.useState<MaintenanceLock[]>([])
+  const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = React.useState(false)
+  const [maintenanceForm, setMaintenanceForm] = React.useState({
+    roomTypeId: '',
+    startDate: format(new Date(), 'yyyy-MM-dd'),
+    endDate: format(addDays(new Date(), 1), 'yyyy-MM-dd'),
+    reason: '',
+    notes: '',
+  })
+  const [isDeletingMaintenance, setIsDeletingMaintenance] = React.useState<string | null>(null)
+
   const [formData, setFormData] = React.useState({
     name: '',
     description: '',
@@ -98,11 +127,14 @@ export default function RoomTypesPage() {
   React.useEffect(() => {
     if (selectedProperty) {
       fetchRoomTypes()
+      if (activeTab === 'maintenance') {
+        fetchMaintenanceLocks()
+      }
     } else {
       setRoomTypes([])
       setIsLoading(false)
     }
-  }, [selectedProperty])
+  }, [selectedProperty, activeTab])
 
   const fetchProperties = async () => {
     try {
@@ -141,6 +173,78 @@ export default function RoomTypesPage() {
       console.error('Failed to fetch room types:', err)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const fetchMaintenanceLocks = async () => {
+    setIsLoading(true)
+    try {
+      const res = await fetch(`/api/rooms/maintenance?propertyId=${selectedProperty}`)
+      const data = await res.json()
+      if (data.success) {
+        setMaintenanceLocks(data.data)
+      }
+    } catch (err) {
+      console.error('Failed to fetch maintenance locks:', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleCreateMaintenance = async () => {
+    if (!maintenanceForm.roomTypeId || !maintenanceForm.startDate || !maintenanceForm.endDate) {
+      alert('Vui lòng điền đầy đủ thông tin')
+      return
+    }
+    setIsSaving(true)
+    try {
+      const res = await fetch('/api/rooms/maintenance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          propertyId: selectedProperty,
+          ...maintenanceForm,
+        }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setIsMaintenanceModalOpen(false)
+        setMaintenanceForm({
+          roomTypeId: '',
+          startDate: format(new Date(), 'yyyy-MM-dd'),
+          endDate: format(addDays(new Date(), 1), 'yyyy-MM-dd'),
+          reason: '',
+          notes: '',
+        })
+        fetchMaintenanceLocks()
+        alert('Đã tạo lịch bảo trì')
+      } else {
+        alert(data.error || 'Lỗi khi tạo lịch bảo trì')
+      }
+    } catch (err) {
+      console.error('Failed to create maintenance lock:', err)
+      alert('Đã xảy ra lỗi')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleDeleteMaintenance = async (lockId: string) => {
+    if (!confirm('Bạn có chắc muốn xóa lịch bảo trì này?')) return
+    setIsDeletingMaintenance(lockId)
+    try {
+      const res = await fetch(`/api/rooms/maintenance?lockId=${lockId}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (data.success) {
+        fetchMaintenanceLocks()
+      } else {
+        alert(data.error || 'Lỗi khi xóa lịch bảo trì')
+      }
+    } catch (err) {
+      console.error('Failed to delete maintenance lock:', err)
+      alert('Đã xảy ra lỗi')
+    } finally {
+      setIsDeletingMaintenance(null)
     }
   }
 
@@ -291,6 +395,106 @@ export default function RoomTypesPage() {
       />
 
       <PageContainer>
+        {/* Tabs */}
+        <div className="flex items-center gap-4 mb-6">
+          <button
+            onClick={() => setActiveTab('rooms')}
+            className={`px-4 py-2 rounded-lg font-medium transition ${
+              activeTab === 'rooms'
+                ? 'bg-primary text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            <Bed className="w-4 h-4 inline mr-2" />
+            Hạng Phòng
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab('maintenance')
+              if (selectedProperty) fetchMaintenanceLocks()
+            }}
+            className={`px-4 py-2 rounded-lg font-medium transition ${
+              activeTab === 'maintenance'
+                ? 'bg-primary text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            <Wrench className="w-4 h-4 inline mr-2" />
+            Bảo Trì
+          </button>
+        </div>
+
+        {/* Maintenance Tab */}
+        {activeTab === 'maintenance' && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-semibold">Lịch Bảo Trì</h3>
+                <p className="text-sm text-gray-500">Quản lý lịch bảo trì sửa chữa phòng</p>
+              </div>
+              <Button onClick={() => setIsMaintenanceModalOpen(true)} disabled={!selectedProperty || roomTypes.length === 0}>
+                <Plus className="w-4 h-4 mr-2" />
+                Thêm Lịch Bảo Trì
+              </Button>
+            </div>
+
+            {isLoading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
+              </div>
+            ) : maintenanceLocks.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Wrench className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                  <p className="text-gray-500 mb-4">Chưa có lịch bảo trì nào</p>
+                  <Button onClick={() => setIsMaintenanceModalOpen(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Thêm Lịch Bảo Trì Đầu Tiên
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {maintenanceLocks.map((lock) => (
+                  <Card key={lock.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-lg bg-yellow-100 flex items-center justify-center">
+                            <Wrench className="w-6 h-6 text-yellow-600" />
+                          </div>
+                          <div>
+                            <p className="font-semibold">{lock.roomType.name}</p>
+                            <p className="text-sm text-gray-500">
+                              {format(new Date(lock.lockStart), 'dd/MM/yyyy')} - {format(new Date(lock.lockEnd), 'dd/MM/yyyy')}
+                            </p>
+                            {lock.customerInfo && (
+                              <p className="text-sm text-yellow-600">{lock.customerInfo}</p>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteMaintenance(lock.id)}
+                          isLoading={isDeletingMaintenance === lock.id}
+                          className="text-red-600 border-red-200 hover:bg-red-50"
+                        >
+                          <X className="w-4 h-4 mr-2" />
+                          Xóa
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Rooms Tab */}
+        {activeTab === 'rooms' && (
+          <>
         {/* Property Info Banner */}
         {selectedPropertyData && (
           <div className="mb-6 p-4 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-between">
@@ -641,6 +845,62 @@ export default function RoomTypesPage() {
           </Button>
           <Button onClick={handleUpdate} disabled={isSaving || !formData.name}>
             {isSaving ? 'Đang lưu...' : 'Lưu Thay Đổi'}
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Maintenance Modal */}
+      <Modal isOpen={isMaintenanceModalOpen} onClose={() => setIsMaintenanceModalOpen(false)} title="Thêm Lịch Bảo Trì">
+        <div className="space-y-4">
+          <Select
+            label="Hạng phòng"
+            value={maintenanceForm.roomTypeId}
+            onChange={(e) => setMaintenanceForm({ ...maintenanceForm, roomTypeId: e.target.value })}
+          >
+            <option value="">Chọn hạng phòng</option>
+            {roomTypes.map((rt) => (
+              <option key={rt.id} value={rt.id}>{rt.name}</option>
+            ))}
+          </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Ngày bắt đầu"
+              type="date"
+              value={maintenanceForm.startDate}
+              onChange={(e) => setMaintenanceForm({ ...maintenanceForm, startDate: e.target.value })}
+            />
+            <Input
+              label="Ngày kết thúc"
+              type="date"
+              value={maintenanceForm.endDate}
+              onChange={(e) => setMaintenanceForm({ ...maintenanceForm, endDate: e.target.value })}
+              min={maintenanceForm.startDate}
+            />
+          </div>
+          <Input
+            label="Lý do bảo trì"
+            value={maintenanceForm.reason}
+            onChange={(e) => setMaintenanceForm({ ...maintenanceForm, reason: e.target.value })}
+            placeholder="VD: Sơn lại tường, thay máy lạnh..."
+          />
+          <Textarea
+            label="Ghi chú thêm"
+            value={maintenanceForm.notes}
+            onChange={(e) => setMaintenanceForm({ ...maintenanceForm, notes: e.target.value })}
+            placeholder="Thông tin chi tiết..."
+            rows={2}
+          />
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-700">
+            <AlertCircle className="w-4 h-4 inline mr-2" />
+            Phòng sẽ bị khóa không cho đặt trong khoảng thời gian bảo trì
+          </div>
+        </div>
+        <ModalFooter>
+          <Button variant="secondary" onClick={() => setIsMaintenanceModalOpen(false)}>
+            Hủy
+          </Button>
+          <Button onClick={handleCreateMaintenance} disabled={isSaving || !maintenanceForm.roomTypeId}>
+            {isSaving ? 'Đang lưu...' : 'Tạo Lịch Bảo Trì'}
           </Button>
         </ModalFooter>
       </Modal>

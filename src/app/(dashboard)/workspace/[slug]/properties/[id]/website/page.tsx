@@ -2,12 +2,12 @@
 
 import * as React from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { Header, PageContainer } from '@/components/layout'
-import { Card, CardContent, CardHeader, CardTitle, Button, Input, Badge, Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui'
+import { PageContainer } from '@/components/layout'
+import { Card, CardContent, CardHeader, CardTitle, Button, Input, Badge, Tabs, TabsList, TabsTrigger, TabsContent, Alert, AlertDescription } from '@/components/ui'
 import { 
   Monitor, Smartphone, Eye, Save, Globe, Palette, Type, Image, 
-  Plus, Trash2, GripVertical, Settings, Layout, Sun, Moon, Search, ArrowRight,
-  Check, X, ChevronRight
+  Plus, Trash2, GripVertical, Settings, Layout, Search, ArrowRight,
+  Check, X, ChevronRight, Shield, AlertCircle, Loader2, ExternalLink, RefreshCw
 } from 'lucide-react'
 
 interface WebsiteSettings {
@@ -18,11 +18,15 @@ interface WebsiteSettings {
   fontFamily: string
   headingFont: string
   layout: string
-  metaTitle: string
-  metaDescription: string
+  metaTitle?: string
+  metaDescription?: string
   isPublished: boolean
-  customDomain: string
+  customDomain?: string
   sslEnabled: boolean
+  sslVerifiedAt?: string
+  sslProvider?: string
+  domainVerificationStatus?: string
+  domainVerifiedAt?: string
 }
 
 interface Block {
@@ -40,13 +44,13 @@ const blockTypes = [
   { type: 'AMENITIES', name: 'Tiện ích', icon: Check, description: 'Danh sách tiện ích của cơ sở' },
   { type: 'ABOUT', name: 'Giới thiệu', icon: Type, description: 'Thông tin giới thiệu cơ sở' },
   { type: 'GALLERY', name: 'Thư viện ảnh', icon: Image, description: 'Bộ sưu tập hình ảnh' },
-  { type: 'REVIEWS', name: 'Đánh giá', icon: Star, description: 'Hiển thị đánh giá khách hàng' },
+  { type: 'REVIEWS', name: 'Đánh giá', icon: StarIcon, description: 'Hiển thị đánh giá khách hàng' },
   { type: 'MAP', name: 'Bản đồ', icon: Globe, description: 'Vị trí trên Google Maps' },
   { type: 'CONTACT', name: 'Liên hệ', icon: Settings, description: 'Thông tin liên hệ' },
   { type: 'CTA', name: 'Call to Action', icon: ArrowRight, description: 'Nút kêu gọi hành động' },
 ]
 
-function Star(props: any) {
+function StarIcon(props: any) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
@@ -65,6 +69,13 @@ export default function WebsiteBuilderPage() {
   const [isSaving, setIsSaving] = React.useState(false)
   const [previewMode, setPreviewMode] = React.useState<'desktop' | 'mobile'>('desktop')
   const [activeTab, setActiveTab] = React.useState('blocks')
+  
+  // Domain verification state
+  const [domainInput, setDomainInput] = React.useState('')
+  const [isVerifying, setIsVerifying] = React.useState(false)
+  const [isProvisioningSSL, setIsProvisioningSSL] = React.useState(false)
+  const [verificationResult, setVerificationResult] = React.useState<any>(null)
+  const [sslStatus, setSSLStatus] = React.useState<any>(null)
 
   React.useEffect(() => {
     fetchWebsiteData()
@@ -72,24 +83,38 @@ export default function WebsiteBuilderPage() {
 
   const fetchWebsiteData = async () => {
     try {
-      // Fetch blocks
+      // Fetch blocks - this API also returns settings
       const blocksResponse = await fetch(`/api/website/blocks?propertyId=${propertyId}`)
       const blocksData = await blocksResponse.json()
       
-      // Fetch settings
-      const settingsResponse = await fetch(`/api/website/settings?propertyId=${propertyId}`)
-      const settingsData = await settingsResponse.json()
-
       if (blocksData.success) {
-        setBlocks(blocksData.data)
-      }
-      if (settingsData.success) {
-        setSettings(settingsData.data)
+        setBlocks(blocksData.data.blocks || [])
+        if (blocksData.data.settings) {
+          setSettings(blocksData.data.settings)
+          setDomainInput(blocksData.data.settings.customDomain || '')
+          
+          // Check SSL status if domain exists
+          if (blocksData.data.settings.customDomain) {
+            fetchSSLStatus()
+          }
+        }
       }
     } catch (err) {
       console.error('Failed to fetch website data:', err)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const fetchSSLStatus = async () => {
+    try {
+      const response = await fetch(`/api/website/ssl/provision?propertyId=${propertyId}`)
+      const data = await response.json()
+      if (data.success) {
+        setSSLStatus(data.data)
+      }
+    } catch (err) {
+      console.error('Failed to fetch SSL status:', err)
     }
   }
 
@@ -115,6 +140,66 @@ export default function WebsiteBuilderPage() {
       console.error('Save failed:', err)
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const handleVerifyDomain = async () => {
+    if (!domainInput.trim()) return
+    
+    setIsVerifying(true)
+    setVerificationResult(null)
+    
+    try {
+      const response = await fetch('/api/website/domain/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ propertyId, domain: domainInput }),
+      })
+      
+      const data = await response.json()
+      setVerificationResult(data)
+      
+      // Refresh settings
+      fetchWebsiteData()
+      
+      // If verified, prompt for SSL provisioning
+      if (data.success && data.data?.status === 'verified') {
+        // Optionally auto-provision SSL
+        handleProvisionSSL()
+      }
+    } catch (err) {
+      console.error('Verification failed:', err)
+    } finally {
+      setIsVerifying(false)
+    }
+  }
+
+  const handleProvisionSSL = async () => {
+    setIsProvisioningSSL(true)
+    
+    try {
+      const response = await fetch('/api/website/ssl/provision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ propertyId }),
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        // Refresh data
+        fetchWebsiteData()
+        fetchSSLStatus()
+      } else {
+        setVerificationResult({
+          success: false,
+          message: data.error || 'Không thể cấp phát SSL',
+        })
+      }
+    } catch (err) {
+      console.error('SSL provisioning failed:', err)
+    } finally {
+      setIsProvisioningSSL(false)
     }
   }
 
@@ -153,6 +238,21 @@ export default function WebsiteBuilderPage() {
     setBlocks(newBlocks)
   }
 
+  const getDomainStatusBadge = () => {
+    const status = settings?.domainVerificationStatus || verificationResult?.data?.status
+    
+    switch (status) {
+      case 'verified':
+        return <Badge variant="success" className="gap-1"><Check className="w-3 h-3" /> Đã xác minh</Badge>
+      case 'pending':
+        return <Badge variant="warning" className="gap-1"><RefreshCw className="w-3 h-3" /> Đang chờ</Badge>
+      case 'mismatch':
+        return <Badge variant="danger" className="gap-1"><AlertCircle className="w-3 h-3" /> Không khớp</Badge>
+      default:
+        return <Badge variant="outline" className="gap-1"><AlertCircle className="w-3 h-3" /> Chưa xác minh</Badge>
+    }
+  }
+
   if (isLoading) {
     return (
       <PageContainer>
@@ -181,17 +281,22 @@ export default function WebsiteBuilderPage() {
             <button
               onClick={() => setPreviewMode('desktop')}
               className={`p-2 rounded ${previewMode === 'desktop' ? 'bg-gray-100' : ''}`}
+              title="Desktop"
             >
               <Monitor className="w-4 h-4" />
             </button>
             <button
               onClick={() => setPreviewMode('mobile')}
               className={`p-2 rounded ${previewMode === 'mobile' ? 'bg-gray-100' : ''}`}
+              title="Mobile"
             >
               <Smartphone className="w-4 h-4" />
             </button>
           </div>
-          <Button variant="outline" onClick={() => window.open(`/preview/${propertyId}`, '_blank')}>
+          <Button 
+            variant="outline" 
+            onClick={() => window.open(`/${settings?.customDomain || propertyId}`, '_blank')}
+          >
             <Eye className="w-4 h-4 mr-2" />
             Xem trước
           </Button>
@@ -427,29 +532,123 @@ export default function WebsiteBuilderPage() {
                 </CardContent>
               </Card>
 
+              {/* Domain Configuration Card */}
               <Card className="mt-4">
                 <CardHeader>
-                  <CardTitle className="text-base">Tên miền</CardTitle>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Globe className="w-4 h-4" />
+                    Tên miền & SSL
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Input
-                    label="Tên miền tùy chỉnh"
-                    value={settings?.customDomain || ''}
-                    onChange={(e) => setSettings({ ...settings!, customDomain: e.target.value })}
-                    placeholder="VD: khachsanabc.vn"
-                  />
-                  <p className="text-sm text-gray-500">
-                    Sau khi thêm tên miền, hãy trỏ bản ghi CNAME về máy chủ của Digistay
-                  </p>
-                  {settings?.sslEnabled && (
-                    <Badge variant="success" className="flex items-center gap-1 w-fit">
-                      <Check className="w-4 h-4" />
-                      SSL đã kích hoạt
-                    </Badge>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Tên miền tùy chỉnh</label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Input
+                        value={domainInput}
+                        onChange={(e) => setDomainInput(e.target.value)}
+                        placeholder="VD: khachsanabc.vn"
+                      />
+                      <Button 
+                        onClick={handleVerifyDomain}
+                        disabled={!domainInput.trim() || isVerifying}
+                        variant="outline"
+                      >
+                        {isVerifying ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          'Xác minh'
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Domain Status */}
+                  <div className="flex items-center gap-2">
+                    {getDomainStatusBadge()}
+                    {settings?.sslEnabled && (
+                      <Badge variant="success" className="gap-1">
+                        <Shield className="w-3 h-3" /> SSL Active
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Verification Result */}
+                  {verificationResult && (
+                    <Alert variant={verificationResult.success ? 'success' : 'destructive'}>
+                      <AlertDescription>
+                        <p className="font-medium mb-2">{verificationResult.data?.message || verificationResult.message}</p>
+                        
+                        {verificationResult.data?.instructions && (
+                          <div className="mt-3 text-sm bg-gray-50 p-3 rounded-lg">
+                            <p className="font-medium mb-2">Hướng dẫn cấu hình DNS:</p>
+                            <pre className="whitespace-pre-wrap text-xs">
+                              {verificationResult.data.instructions.join('\n')}
+                            </pre>
+                          </div>
+                        )}
+                        
+                        {verificationResult.data?.details && (
+                          <div className="mt-2 text-xs text-gray-500">
+                            <p>Record Type: {verificationResult.data.details.recordType}</p>
+                            {verificationResult.data.details.expectedValue && (
+                              <p>Giá trị mong đợi: {verificationResult.data.details.expectedValue}</p>
+                            )}
+                            {verificationResult.data.details.actualValue && (
+                              <p>Giá trị hiện tại: {verificationResult.data.details.actualValue}</p>
+                            )}
+                          </div>
+                        )}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {/* SSL Provisioning */}
+                  {settings?.customDomain && settings?.domainVerificationStatus === 'verified' && !settings?.sslEnabled && (
+                    <div className="pt-2">
+                      <Button 
+                        onClick={handleProvisionSSL}
+                        disabled={isProvisioningSSL}
+                        className="w-full"
+                      >
+                        {isProvisioningSSL ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Đang cấp phát SSL...
+                          </>
+                        ) : (
+                          <>
+                            <Shield className="w-4 h-4 mr-2" />
+                            Cấp phát SSL miễn phí
+                          </>
+                        )}
+                      </Button>
+                      <p className="text-xs text-gray-500 mt-2 text-center">
+                        SSL sẽ được tự động kích hoạt trong vài giây
+                      </p>
+                    </div>
+                  )}
+
+                  {/* SSL Status */}
+                  {settings?.sslEnabled && sslStatus && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-green-700">
+                        <Shield className="w-5 h-5" />
+                        <span className="font-medium">SSL đã kích hoạt</span>
+                      </div>
+                      <div className="mt-2 text-sm text-green-600">
+                        <p>Domain: {settings.customDomain}</p>
+                        <p>Provider: {sslStatus.provider || settings.sslProvider || 'Digistay Auto SSL'}</p>
+                        {sslStatus.expiresAt && (
+                          <p>Hết hạn: {new Date(sslStatus.expiresAt).toLocaleDateString('vi-VN')}</p>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </CardContent>
               </Card>
 
+              {/* Publish Card */}
               <Card className="mt-4">
                 <CardHeader>
                   <CardTitle>Xuất bản</CardTitle>
@@ -466,10 +665,28 @@ export default function WebsiteBuilderPage() {
                           : 'Website chỉ hiển thị khi bạn xuất bản'}
                       </p>
                     </div>
-                    <Button onClick={() => setSettings({ ...settings!, isPublished: !settings?.isPublished })}>
+                    <Button 
+                      onClick={() => setSettings({ ...settings!, isPublished: !settings?.isPublished })}
+                      variant={settings?.isPublished ? 'danger' : 'primary'}
+                    >
                       {settings?.isPublished ? 'Gỡ xuất bản' : 'Xuất bản ngay'}
                     </Button>
                   </div>
+                  
+                  {settings?.isPublished && settings?.customDomain && (
+                    <div className="mt-3 pt-3 border-t">
+                      <p className="text-sm text-gray-500 mb-2">Website của bạn:</p>
+                      <a 
+                        href={`https://${settings.customDomain}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline flex items-center gap-1"
+                      >
+                        https://{settings.customDomain}
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -489,7 +706,8 @@ export default function WebsiteBuilderPage() {
                     <div className="w-3 h-3 rounded-full bg-green-400"></div>
                   </div>
                   <div className="flex-1 bg-white rounded px-3 py-1 text-sm text-gray-500">
-                    yourwebsite.com
+                    {settings?.customDomain || `${propertyId}.digistay.vn`}
+                    {settings?.sslEnabled && <span className="ml-1">🔒</span>}
                   </div>
                 </div>
                 

@@ -1,19 +1,9 @@
 /**
- * Email service for Digistay.
- *
- * Backed by Resend (https://resend.com) — a simple transactional email API
- * that works without a separate SMTP server.
- *
- * All functions are no-ops when `RESEND_API_KEY` is not configured, so the
- * app can be developed locally without a key. The functions return a
- * `sent: false` flag in that case so callers can show a "would-have-sent"
- * state in the UI during development.
+ * Email service for Digistay (Stub).
+ * 
+ * In production, this would be backed by Resend (https://resend.com)
+ * For development, emails are logged to console.
  */
-import { Resend } from 'resend'
-import { renderBookingConfirmation } from './templates/booking-confirmation'
-import { renderOwnerNewBooking } from './templates/owner-new-booking'
-import { renderWorkspaceInvite } from './templates/workspace-invite'
-import { renderInvoiceEmail } from './templates/invoice-email'
 
 export interface EmailRecipient {
   email: string
@@ -27,11 +17,7 @@ export interface SendResult {
   error?: string
 }
 
-const apiKey = process.env.RESEND_API_KEY
-const fromAddress = process.env.EMAIL_FROM ?? 'Digistay <noreply@digistay.vn>'
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
-
-const resend = apiKey ? new Resend(apiKey) : null
 
 async function send(
   to: EmailRecipient,
@@ -39,35 +25,12 @@ async function send(
   html: string,
   text?: string
 ): Promise<SendResult> {
-  if (!resend) {
-    // Dev fallback: log to console so developers can see the email.
-    console.log(
-      `[email:dev] Would send "${subject}" to ${to.email}\n` +
-        `--- TEXT ---\n${text ?? stripHtml(html)}\n---`
-    )
-    return { success: true, sent: false, error: 'RESEND_API_KEY not configured' }
-  }
-  try {
-    const result = await resend.emails.send({
-      from: fromAddress,
-      to: to.email,
-      subject,
-      html,
-      text,
-    })
-    if (result.error) {
-      console.error('[email] Send error:', result.error)
-      return { success: false, sent: false, error: result.error.message }
-    }
-    return { success: true, sent: true, id: result.data?.id }
-  } catch (err) {
-    console.error('[email] Unexpected error:', err)
-    return {
-      success: false,
-      sent: false,
-      error: err instanceof Error ? err.message : 'Unknown error',
-    }
-  }
+  // Dev fallback: log to console so developers can see the email.
+  console.log(
+    `[email:dev] Would send "${subject}" to ${to.email}\n` +
+      `--- TEXT ---\n${text ?? html}\n---`
+  )
+  return { success: true, sent: false, error: 'Email service not configured' }
 }
 
 function stripHtml(html: string): string {
@@ -79,7 +42,7 @@ function stripHtml(html: string): string {
 }
 
 // ============================================
-//  Booking confirmation (#29)
+//  Booking confirmation
 // ============================================
 
 export interface BookingConfirmationData {
@@ -89,7 +52,7 @@ export interface BookingConfirmationData {
   propertyName: string
   propertyAddress: string
   propertyPhone: string | null
-  checkIn: string // ISO date
+  checkIn: string
   checkOut: string
   numAdults: number
   numChildren: number
@@ -102,14 +65,13 @@ export async function sendBookingConfirmation(
   data: BookingConfirmationData
 ): Promise<SendResult> {
   const { guestName, guestEmail, bookingCode, propertyName } = data
-  const subject = `[${bookingCode}] Xác nhận đặt phòng tại ${propertyName}`
-  const html = renderBookingConfirmation({ ...data, siteUrl })
-  const text = stripHtml(html)
-  return send({ email: guestEmail, name: guestName }, subject, html, text)
+  const subject = `[${bookingCode}] Xac nhan dat phong tai ${propertyName}`
+  const text = `Xac nhan dat phong: ${bookingCode}\nKhach san: ${propertyName}\nNgay: ${data.checkIn} - ${data.checkOut}`
+  return send({ email: guestEmail, name: guestName }, subject, text, text)
 }
 
 // ============================================
-//  Owner new-booking notification (#30)
+//  Owner new-booking notification
 // ============================================
 
 export interface OwnerNewBookingData {
@@ -130,14 +92,13 @@ export interface OwnerNewBookingData {
 export async function sendOwnerNewBooking(
   data: OwnerNewBookingData
 ): Promise<SendResult> {
-  const subject = `🔔 Đơn đặt phòng mới #${data.bookingCode} - ${data.propertyName}`
-  const html = renderOwnerNewBooking({ ...data, siteUrl })
-  const text = stripHtml(html)
-  return send({ email: data.ownerEmail, name: data.ownerName }, subject, html, text)
+  const subject = `Don dat phong moi #${data.bookingCode} - ${data.propertyName}`
+  const text = `Don dat phong: ${data.bookingCode}\nKhach: ${data.guestName}\nNgay: ${data.checkIn} - ${data.checkOut}`
+  return send({ email: data.ownerEmail, name: data.ownerName }, subject, text, text)
 }
 
 // ============================================
-//  Workspace invitation (#4)
+//  Workspace invitation
 // ============================================
 
 export interface WorkspaceInviteData {
@@ -153,14 +114,13 @@ export interface WorkspaceInviteData {
 export async function sendWorkspaceInvite(
   data: WorkspaceInviteData
 ): Promise<SendResult> {
-  const subject = `${data.inviterName} mời bạn tham gia ${data.workspaceName} trên Digistay`
-  const html = renderWorkspaceInvite({ ...data, siteUrl })
-  const text = stripHtml(html)
-  return send({ email: data.recipientEmail, name: data.recipientName }, subject, html, text)
+  const subject = `${data.inviterName} moi ban tham gia ${data.workspaceName}`
+  const text = `Loi moi tu: ${data.inviterName}\nWorkspace: ${data.workspaceName}\nVai tro: ${data.role}`
+  return send({ email: data.recipientEmail, name: data.recipientName }, subject, text, text)
 }
 
 // ============================================
-//  Invoice email (#39)
+//  Invoice email
 // ============================================
 
 export interface InvoiceEmailData {
@@ -177,13 +137,7 @@ export interface InvoiceEmailData {
 }
 
 export async function sendInvoiceEmail(data: InvoiceEmailData): Promise<SendResult> {
-  const subject = `[${data.invoiceNumber}] Hóa đơn điện tử từ ${data.propertyName}`
-  const html = renderInvoiceEmail({ ...data, siteUrl })
-  const text = stripHtml(html)
-  return send(
-    { email: data.customerEmail, name: data.customerName },
-    subject,
-    html,
-    text
-  )
+  const subject = `[${data.invoiceNumber}] Hoa don tu ${data.propertyName}`
+  const text = `Hoa don: ${data.invoiceNumber}\nBooking: ${data.bookingCode}\nSo tien: ${data.totalAmount}`
+  return send({ email: data.customerEmail, name: data.customerName }, subject, text, text)
 }

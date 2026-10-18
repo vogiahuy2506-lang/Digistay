@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
+import { signOut } from 'next-auth/react'
 import { 
   LayoutDashboard, 
   Building2, 
@@ -27,6 +28,8 @@ import {
   UserCog,
   Shield,
   Star,
+  User,
+  Settings,
 } from 'lucide-react'
 import { Avatar, Dropdown, DropdownItem, DropdownDivider } from '@/components/ui'
 
@@ -139,6 +142,21 @@ const managementNavigation: NavItem[] = [
   },
 ]
 
+const settingsNavigation: NavItem[] = [
+  {
+    name: 'Tài Khoản Của Tôi',
+    href: '/profile',
+    icon: User,
+    roles: ['ADMIN', 'MANAGER', 'RECEPTIONIST', 'USER'],
+  },
+  {
+    name: 'Cài Đặt Workspace',
+    href: '/settings',
+    icon: Settings,
+    roles: ['ADMIN', 'MANAGER'],
+  },
+]
+
 interface Workspace {
   id: string
   name: string
@@ -149,6 +167,7 @@ interface Workspace {
 interface SidebarProps {
   workspaceName?: string
   workspaceId?: string
+  workspaceSlug?: string
   workspaceRole?: WorkspaceRole
   userName?: string
   userEmail?: string
@@ -159,6 +178,7 @@ interface SidebarProps {
 export function Sidebar({ 
   workspaceName = 'Workspace',
   workspaceId,
+  workspaceSlug,
   workspaceRole = 'USER',
   userName,
   userEmail,
@@ -174,6 +194,14 @@ export function Sidebar({
     management: true,
     settings: false,
   })
+
+  // Build workspace-scoped href
+  const wsHref = (path: string) => {
+    if (workspaceSlug) {
+      return `/workspace/${workspaceSlug}${path}`
+    }
+    return path
+  }
 
   useEffect(() => {
     fetchWorkspaces()
@@ -192,11 +220,12 @@ export function Sidebar({
   }
 
   const buildHref = (baseHref: string) => {
-    if (workspaceId && !baseHref.includes('workspace=')) {
-      const separator = baseHref.includes('?') ? '&' : '?'
-      return `${baseHref}${separator}workspace=${workspaceId}`
+    const scopedHref = wsHref(baseHref)
+    if (workspaceId && !scopedHref.includes('workspace=')) {
+      const separator = scopedHref.includes('?') ? '&' : '?'
+      return `${scopedHref}${separator}workspace=${workspaceId}`
     }
-    return baseHref
+    return scopedHref
   }
 
   const handleWorkspaceChange = (wsId: string) => {
@@ -287,6 +316,12 @@ export function Sidebar({
     return badges[role] || badges.USER
   }
 
+  const handleLogout = async () => {
+    if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+      await signOut({ callbackUrl: '/login' })
+    }
+  }
+
   return (
     <div className="flex flex-col w-64 bg-white border-r border-gray-200 h-screen">
       {/* Logo */}
@@ -364,6 +399,9 @@ export function Sidebar({
         
         {/* Quản trị */}
         {renderSection('Quản trị', 'management', managementNavigation)}
+        
+        {/* Cài đặt */}
+        {renderSection('Cài đặt', 'settings', settingsNavigation)}
       </nav>
 
       {/* Quick Stats */}
@@ -395,23 +433,22 @@ export function Sidebar({
         </div>
         
         <div className="flex items-center gap-1">
-          <button
+          <Link
+            href="/profile"
             className="flex-1 flex items-center justify-center p-2 rounded-lg hover:bg-gray-50 transition-colors"
-            title="Thông báo"
-            aria-label="Thông báo"
+            title="Tài khoản"
+            aria-label="Tài khoản"
           >
             <Bell className="w-4 h-4 text-gray-400" />
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="flex-1 flex items-center justify-center p-2 rounded-lg hover:bg-red-50 transition-colors"
+            title="Đăng xuất"
+            aria-label="Đăng xuất"
+          >
+            <LogOut className="w-4 h-4 text-gray-400 hover:text-red-500" />
           </button>
-          <form action="/api/auth/signout" method="POST" className="flex-1">
-            <button
-              type="submit"
-              className="w-full flex items-center justify-center p-2 rounded-lg hover:bg-red-50 transition-colors"
-              title="Đăng xuất"
-              aria-label="Đăng xuất"
-            >
-              <LogOut className="w-4 h-4 text-gray-400 hover:text-red-500" />
-            </button>
-          </form>
         </div>
       </div>
     </div>

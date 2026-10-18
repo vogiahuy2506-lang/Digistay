@@ -2,6 +2,66 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 
+/**
+ * GET /api/website/settings?propertyId=xxx
+ * Lấy website settings cho một property
+ */
+export async function GET(request: NextRequest) {
+  try {
+    const session = await auth()
+    const { searchParams } = new URL(request.url)
+    const propertyId = searchParams.get('propertyId')
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
+    }
+
+    if (!propertyId) {
+      return NextResponse.json({ success: false, error: 'Thiếu propertyId' }, { status: 400 })
+    }
+
+    // Check property access
+    const property = await prisma.property.findFirst({
+      where: {
+        id: propertyId,
+        workspace: {
+          OR: [
+            { ownerId: session.user.id },
+            { members: { some: { userId: session.user.id } } },
+          ],
+        },
+      },
+    })
+
+    if (!property) {
+      return NextResponse.json({ success: false, error: 'Không có quyền truy cập' }, { status: 403 })
+    }
+
+    // Get or create settings
+    let settings = await prisma.websiteSettings.findUnique({
+      where: { propertyId },
+    })
+
+    if (!settings) {
+      settings = await prisma.websiteSettings.create({
+        data: { propertyId },
+      })
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: settings,
+    })
+  } catch (error) {
+    console.error('Get website settings error:', error)
+    return NextResponse.json({ success: false, error: 'Lỗi khi lấy cài đặt website' }, { status: 500 })
+  }
+}
+
+/**
+ * PUT /api/website/settings
+ * Cập nhật website settings
+ */
 export async function PUT(request: NextRequest) {
   try {
     const session = await auth()

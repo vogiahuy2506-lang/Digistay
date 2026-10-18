@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
-import { generateRandomToken } from '@/lib/utils'
 
 class BookingCapacityError extends Error {
   constructor(message: string) {
@@ -97,7 +96,7 @@ export async function GET(request: NextRequest) {
         include: {
           bookingItems: {
             include: {
-              // Room type info would be here
+              // Room type info loaded below
             },
           },
           property: {
@@ -105,6 +104,13 @@ export async function GET(request: NextRequest) {
               id: true,
               name: true,
               subdomain: true,
+            },
+          },
+          createdBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
             },
           },
         },
@@ -161,7 +167,11 @@ export async function POST(request: NextRequest) {
         roomTypes: {
           where: { id: data.roomTypeId },
           include: {
-            pricing: true,
+            pricing: {
+              include: { pricing: true },
+              orderBy: { createdAt: 'desc' },
+              take: 1,
+            },
           },
         },
       },
@@ -179,6 +189,33 @@ export async function POST(request: NextRequest) {
     if (!roomType) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy hạng phòng' }, { status: 404 })
     }
+
+    // -----------------------------------------------------------------
+    // Calculate pricing BEFORE the transaction so values are ready when
+    // the booking is created inside the transaction.
+    // -----------------------------------------------------------------
+    const numNights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
+    const pricingConfig = roomType.pricing[0]?.pricing
+    const weekdayPrice = pricingConfig?.weekdayPrice || 0
+    const weekendPrice = pricingConfig?.weekendPrice || weekdayPrice
+    const extraAdultPricePerNight = pricingConfig?.extraAdultPrice || 0
+    const extraChildPricePerNight = pricingConfig?.extraChildPrice || 0
+
+    // Calculate weekend nights
+    let weekendNights = 0
+    for (let d = new Date(checkIn); d < checkOut; d.setDate(d.getDate() + 1)) {
+      const day = d.getDay()
+      if (day === 0 || day === 6) weekendNights++
+    }
+    const weekdayNights = numNights - weekendNights
+
+    const basePrice = (weekdayNights * weekdayPrice) + (weekendNights * weekendPrice)
+    const extraAdults = Math.max(0, data.numAdults - roomType.baseOccupancy)
+    const extraChildren = Math.max(0, data.numChildren)
+    const extraCharges = (extraAdults * extraAdultPricePerNight * numNights) + 
+                         (extraChildren * extraChildPricePerNight * numNights)
+    const subtotal = basePrice + extraCharges
+    const totalAmount = subtotal // discount can be added later if needed
 
     // -----------------------------------------------------------------
     // Transactionally reserve the room: count overlapping bookings +
@@ -252,8 +289,8 @@ export async function POST(request: NextRequest) {
               checkInDate: checkIn,
               checkOutDate: checkOut,
               basePrice,
-              extraAdultPrice: extraAdults * extraAdultPrice * numNights,
-              extraChildPrice: extraChildren * extraChildPrice * numNights,
+              extraAdultPrice: extraAdults * extraAdultPricePerNight * numNights,
+              extraChildPrice: extraChildren * extraChildPricePerNight * numNights,
               totalPrice: totalAmount,
             },
           },
@@ -289,36 +326,6 @@ export async function POST(request: NextRequest) {
         },
       })
     })
-
-    // Calculate pricing
-    const numNights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
-    const pricing = roomType.pricing[0]
-
-    let basePrice = pricing?.weekdayPrice || 0
-    const extraAdultPrice = pricing?.extraAdultPrice || 0
-    const extraChildPrice = pricing?.extraChildPrice || 0
-
-    // Calculate weekend nights
-    let weekendNights = 0
-    for (let d = new Date(checkIn); d < checkOut; d.setDate(d.getDate() + 1)) {
-      const day = d.getDay()
-      if (day === 0 || day === 6) weekendNights++
-    }
-
-    const weekdayNights = numNights - weekendNights
-    basePrice = (weekdayNights * (pricing?.weekdayPrice || 0)) + 
-                (weekendNights * (pricing?.weekendPrice || 0))
-
-    const extraAdults = Math.max(0, data.numAdults - roomType.baseOccupancy)
-    const extraChildren = Math.max(0, data.numChildren - 0)
-    
-    const extraCharges = (extraAdults * extraAdultPrice * numNights) + 
-                         (extraChildren * extraChildPrice * numNights)
-
-    const subtotal = basePrice + extraCharges
-    const totalAmount = subtotal
-
-    // Create booking
 
     // Fire-and-forget emails: booking confirmation to guest, new-booking
     // notification to property owner. Errors are logged but do not break

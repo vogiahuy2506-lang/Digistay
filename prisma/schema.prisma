@@ -539,8 +539,14 @@ model WebsiteSettings {
   
   // Custom domain
   customDomain    String?
+  domainVerificationStatus String?  // pending, verified, mismatch, not_found, a_record, dns_error
+  domainVerifiedAt DateTime?
+  
+  // SSL
   sslEnabled      Boolean @default(false)
   sslVerifiedAt   DateTime?
+  sslProvider     String?  // letsencrypt, cloudflare, digistay-auto-ssl
+  sslCertificateId String?
   
   // Published status
   isPublished     Boolean @default(false)
@@ -806,6 +812,7 @@ enum PaymentStatus {
   PENDING         // Chờ thanh toán
   PROCESSING      // Đang xử lý
   PAID            // Đã thanh toán
+  PARTIAL         // Thanh toán một phần
   FAILED          // Thất bại
   REFUNDED        // Đã hoàn tiền
   CANCELLED       // Đã hủy

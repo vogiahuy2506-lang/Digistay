@@ -49,6 +49,9 @@ export const routes = {
 
   // Public
   publicSite: (subdomain: string) => `/${subdomain}`,
+
+  // User
+  profile: () => '/profile',
 } as const
 
 /**

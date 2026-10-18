@@ -9,12 +9,13 @@ import { formatCurrency } from '@/lib/utils'
 interface Props {
   qrString: string
   amount: number
-  transferContent: string
-  bankName: string
-  accountNumber: string
-  accountHolder: string
+  transferContent?: string
+  bankName?: string
+  accountNumber?: string
+  accountHolder?: string
   currency?: string
   expiresAt?: string
+  size?: number
 }
 
 /**
@@ -25,12 +26,13 @@ interface Props {
 export function VietQRDisplay({
   qrString,
   amount,
-  transferContent,
-  bankName,
-  accountNumber,
-  accountHolder,
+  transferContent = '',
+  bankName = '',
+  accountNumber = '',
+  accountHolder = '',
   currency = 'VND',
   expiresAt,
+  size = 320,
 }: Props) {
   const [dataUrl, setDataUrl] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
@@ -39,7 +41,7 @@ export function VietQRDisplay({
     let cancelled = false
     QRCode.toDataURL(qrString, {
       errorCorrectionLevel: 'M',
-      width: 320,
+      width: size,
       margin: 2,
     })
       .then((url) => {

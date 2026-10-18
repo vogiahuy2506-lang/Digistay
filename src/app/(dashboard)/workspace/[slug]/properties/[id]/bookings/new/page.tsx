@@ -3,13 +3,13 @@
 import * as React from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
-import { Card, CardContent, Button, Badge, Input, Select, Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui'
+import { Card, CardContent, Button, Badge, Input, Select, Modal } from '@/components/ui'
+import { VietQRDisplay } from '@/components/payment/VietQRDisplay'
 import { 
   Search, Calendar, Users, CreditCard, User, Phone, Mail, 
-  Home, Check, ArrowLeft, Baby, ChevronRight, Clock
+  Home, Check, ArrowLeft, ChevronRight, Clock, Copy, AlertCircle
 } from 'lucide-react'
 import { format, addDays, differenceInDays } from 'date-fns'
-import { vi } from 'date-fns/locale'
 import { routes } from '@/lib/utils/routes'
 
 interface RoomType {
@@ -20,6 +20,8 @@ interface RoomType {
   maxOccupancy: number
   totalRooms: number
   availableRooms: number
+  isActive: boolean
+  isAvailable?: boolean
   pricing: { weekdayPrice: number; weekendPrice: number }[]
 }
 
@@ -43,6 +45,26 @@ interface GuestInfo {
   note: string
 }
 
+interface BookingResult {
+  id: string
+  bookingCode: string
+  status: string
+}
+
+interface PaymentInfo {
+  id: string
+  amount: number
+  method: string
+  qrCodeUrl: string | null
+  transferContent: string
+  bankAccount: {
+    bankName: string
+    accountNumber: string
+    accountHolder: string
+  } | null
+  expiresAt: string
+}
+
 const bedTypeLabels: Record<string, string> = {
   SINGLE: 'Giường đơn',
   DOUBLE: 'Giường đôi',
@@ -50,6 +72,12 @@ const bedTypeLabels: Record<string, string> = {
   TRIPLE: 'Ba giường',
   QUADRUPLE: 'Bốn giường',
 }
+
+const paymentMethods = [
+  { value: 'CASH', label: 'Tiền mặt', icon: '💵', desc: 'Thanh toán trực tiếp tại quầy' },
+  { value: 'QR_VIETQR', label: 'Quét QR VietQR', icon: '📱', desc: 'Chuyển khoản qua mã QR' },
+  { value: 'BANK_TRANSFER', label: 'Chuyển khoản', icon: '🏦', desc: 'Chuyển khoản thủ công' },
+]
 
 export default function WalkinBookingPage() {
   const router = useRouter()
@@ -62,7 +90,7 @@ export default function WalkinBookingPage() {
   const [availableRooms, setAvailableRooms] = React.useState<Room[]>([])
   const [isLoading, setIsLoading] = React.useState(false)
   
-  // Booking steps: guest -> room -> payment
+  // Booking steps: 1=search, 2=guest info, 3=payment, 4=confirmation
   const [currentStep, setCurrentStep] = React.useState(1)
   
   // Search criteria
@@ -84,6 +112,10 @@ export default function WalkinBookingPage() {
   // Payment
   const [paymentMethod, setPaymentMethod] = React.useState('CASH')
   const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [bookingResult, setBookingResult] = React.useState<BookingResult | null>(null)
+  const [paymentInfo, setPaymentInfo] = React.useState<PaymentInfo | null>(null)
+  const [showQRModal, setShowQRModal] = React.useState(false)
+  const [error, setError] = React.useState('')
 
   React.useEffect(() => {
     fetchProperties()
@@ -112,16 +144,20 @@ export default function WalkinBookingPage() {
 
   const searchAvailability = async () => {
     setIsLoading(true)
+    setError('')
     try {
       const res = await fetch(
-        `/api/room-types?propertyId=${selectedProperty}&checkIn=${checkInDate}&checkOut=${checkOutDate}&adults=${numAdults}&children=${numChildren}`
+        `/api/bookings/availability?propertyId=${selectedProperty}&checkInDate=${checkInDate}&checkOutDate=${checkOutDate}&numGuests=${parseInt(numAdults) + parseInt(numChildren)}`
       )
       const data = await res.json()
       if (data.success) {
-        setRoomTypes(data.data.filter((rt: RoomType) => rt.availableRooms > 0))
+        setRoomTypes(data.data.filter((rt: RoomType) => rt.isAvailable))
+      } else {
+        setError(data.error || 'Lỗi khi tìm kiếm')
       }
     } catch (err) {
       console.error('Failed to search availability:', err)
+      setError('Lỗi kết nối')
     } finally {
       setIsLoading(false)
     }
@@ -155,7 +191,6 @@ export default function WalkinBookingPage() {
     let weekdayNights = 0
     let weekendNights = 0
     
-    // Count weekdays vs weekends
     let current = new Date(checkInDate)
     while (current < new Date(checkOutDate)) {
       const day = current.getDay()
@@ -191,16 +226,17 @@ export default function WalkinBookingPage() {
 
   const handleSelectRoom = (room: Room) => {
     setSelectedRoom(room)
-    setCurrentStep(2) // Go to guest info
+    setCurrentStep(2)
   }
 
   const handleSubmitBooking = async () => {
     if (!guestInfo.name || !guestInfo.phone) {
-      alert('Vui lòng nhập đầy đủ thông tin khách hàng')
+      setError('Vui lòng nhập đầy đủ thông tin khách hàng')
       return
     }
     
     setIsSubmitting(true)
+    setError('')
     try {
       const res = await fetch('/api/bookings', {
         method: 'POST',
@@ -208,39 +244,70 @@ export default function WalkinBookingPage() {
         body: JSON.stringify({
           propertyId: selectedProperty,
           roomTypeId: selectedRoomType?.id,
-          roomId: selectedRoom?.id,
           guestName: guestInfo.name,
           guestPhone: guestInfo.phone,
           guestEmail: guestInfo.email,
+          guestNote: guestInfo.note,
           checkInDate,
           checkOutDate,
           numAdults: parseInt(numAdults),
           numChildren: parseInt(numChildren),
-          paymentMethod,
-          paymentStatus: paymentMethod === 'CASH' ? 'PAID' : 'PENDING',
-          source: 'WALKIN',
-          note: guestInfo.note,
+          roomNumber: selectedRoom?.number,
         }),
       })
       const data = await res.json()
-      if (data.success) {
-        alert('Đặt phòng thành công!')
-        router.push(`/bookings/${data.data.id}`)
-      } else {
-        alert(data.error || 'Đặt phòng thất bại')
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Đặt phòng thất bại')
       }
-    } catch (err) {
-      console.error('Failed to create booking:', err)
-      alert('Đã xảy ra lỗi')
+
+      const booking = data.data
+      
+      // For cash payment, booking is immediately confirmed
+      if (paymentMethod === 'CASH') {
+        setBookingResult({ id: booking.id, bookingCode: booking.bookingCode, status: booking.status })
+        setCurrentStep(4)
+      } else {
+        // For QR/bank transfer, create payment and show QR code
+        const paymentRes = await fetch('/api/payments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bookingId: booking.id,
+            method: paymentMethod,
+            amount: calculatePrice().total,
+          }),
+        })
+        const paymentData = await paymentRes.json()
+        
+        if (!paymentData.success) {
+          throw new Error(paymentData.error || 'Tạo thanh toán thất bại')
+        }
+
+        setBookingResult({ id: booking.id, bookingCode: booking.bookingCode, status: 'PENDING' })
+        setPaymentInfo(paymentData.data)
+        
+        if (paymentMethod === 'QR_VIETQR' && paymentData.data.qrCodeUrl) {
+          setShowQRModal(true)
+        }
+        setCurrentStep(4)
+      }
+    } catch (err: any) {
+      setError(err.message)
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
   }
 
   const steps = [
     { number: 1, title: 'Chọn phòng', icon: Home },
     { number: 2, title: 'Thông tin khách', icon: User },
     { number: 3, title: 'Thanh toán', icon: CreditCard },
+    { number: 4, title: 'Hoàn tất', icon: Check },
   ]
 
   const pricing = calculatePrice()
@@ -289,6 +356,14 @@ export default function WalkinBookingPage() {
           </div>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm flex items-center gap-2">
+            <AlertCircle className="w-4 h-4" />
+            {error}
+          </div>
+        )}
+
         {/* Step 1: Search & Select Room */}
         {currentStep === 1 && (
           <div className="space-y-6">
@@ -312,14 +387,7 @@ export default function WalkinBookingPage() {
                     value={checkInDate}
                     onChange={(e) => {
                       const next = e.target.value
-                      if (!next) {
-                        setCheckInDate('')
-                        return
-                      }
                       setCheckInDate(next)
-                      // If checkout is missing or already on/before
-                      // the new check-in, push it one day forward so
-                      // the search has a valid range.
                       setCheckOutDate((prev) =>
                         !prev || prev <= next
                           ? format(addDays(new Date(next), 1), 'yyyy-MM-dd')
@@ -417,27 +485,28 @@ export default function WalkinBookingPage() {
                       {selectedRoomType?.id === roomType.id && (
                         <div className="mt-4 pt-4 border-t">
                           <p className="text-sm font-medium mb-3">Chọn phòng cụ thể:</p>
-                          <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
-                            {availableRooms.map((room) => (
-                              <button
-                                key={room.id}
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleSelectRoom(room)
-                                }}
-                                className={`
-                                  p-3 rounded-lg border text-center transition-all
-                                  ${selectedRoom?.id === room.id 
-                                    ? 'border-primary bg-primary-50 text-primary-700' 
-                                    : 'border-gray-200 hover:border-primary hover:bg-gray-50'}
-                                `}
-                              >
-                                <span className="font-medium">{room.number}</span>
-                                <span className="block text-xs text-gray-500">Tầng {room.floor}</span>
-                              </button>
-                            ))}
-                          </div>
-                          {availableRooms.length === 0 && (
+                          {availableRooms.length > 0 ? (
+                            <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                              {availableRooms.map((room) => (
+                                <button
+                                  key={room.id}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleSelectRoom(room)
+                                  }}
+                                  className={`
+                                    p-3 rounded-lg border text-center transition-all
+                                    ${selectedRoom?.id === room.id 
+                                      ? 'border-primary bg-primary-50 text-primary-700' 
+                                      : 'border-gray-200 hover:border-primary hover:bg-gray-50'}
+                                  `}
+                                >
+                                  <span className="font-medium">{room.number}</span>
+                                  <span className="block text-xs text-gray-500">Tầng {room.floor}</span>
+                                </button>
+                              ))}
+                            </div>
+                          ) : (
                             <p className="text-sm text-gray-500">Đang tải danh sách phòng...</p>
                           )}
                         </div>
@@ -458,14 +527,14 @@ export default function WalkinBookingPage() {
                 <h3 className="font-semibold mb-4">Thông tin khách hàng</h3>
                 <div className="space-y-4">
                   <Input
-                    label="Họ tên khách"
+                    label="Họ tên khách *"
                     value={guestInfo.name}
                     onChange={(e) => setGuestInfo({ ...guestInfo, name: e.target.value })}
                     placeholder="Nguyễn Văn A"
                     required
                   />
                   <Input
-                    label="Số điện thoại"
+                    label="Số điện thoại *"
                     value={guestInfo.phone}
                     onChange={(e) => setGuestInfo({ ...guestInfo, phone: e.target.value })}
                     placeholder="0912345678"
@@ -544,62 +613,31 @@ export default function WalkinBookingPage() {
                 <h3 className="font-semibold mb-4">Phương thức thanh toán</h3>
                 
                 <div className="space-y-3 mb-6">
-                  <label className={`
-                    flex items-center p-4 border rounded-lg cursor-pointer transition-all
-                    ${paymentMethod === 'CASH' ? 'border-primary bg-primary-50' : 'border-gray-200 hover:border-gray-300'}
-                  `}>
-                    <input
-                      type="radio"
-                      name="payment"
-                      value="CASH"
-                      checked={paymentMethod === 'CASH'}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="w-4 h-4 text-primary"
-                    />
-                    <div className="ml-3 flex-1">
-                      <p className="font-medium">Tiền mặt</p>
-                      <p className="text-sm text-gray-500">Thanh toán bằng tiền mặt tại quầy</p>
-                    </div>
-                    <span className="text-2xl">💵</span>
-                  </label>
-                  
-                  <label className={`
-                    flex items-center p-4 border rounded-lg cursor-pointer transition-all
-                    ${paymentMethod === 'BANKING' ? 'border-primary bg-primary-50' : 'border-gray-200 hover:border-gray-300'}
-                  `}>
-                    <input
-                      type="radio"
-                      name="payment"
-                      value="BANKING"
-                      checked={paymentMethod === 'BANKING'}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="w-4 h-4 text-primary"
-                    />
-                    <div className="ml-3 flex-1">
-                      <p className="font-medium">Chuyển khoản ngân hàng</p>
-                      <p className="text-sm text-gray-500">Chuyển khoản trước qua QR hoặc tài khoản</p>
-                    </div>
-                    <span className="text-2xl">🏦</span>
-                  </label>
-                  
-                  <label className={`
-                    flex items-center p-4 border rounded-lg cursor-pointer transition-all
-                    ${paymentMethod === 'CARD' ? 'border-primary bg-primary-50' : 'border-gray-200 hover:border-gray-300'}
-                  `}>
-                    <input
-                      type="radio"
-                      name="payment"
-                      value="CARD"
-                      checked={paymentMethod === 'CARD'}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="w-4 h-4 text-primary"
-                    />
-                    <div className="ml-3 flex-1">
-                      <p className="font-medium">Thẻ</p>
-                      <p className="text-sm text-gray-500">Thanh toán bằng thẻ ATM, Visa, Mastercard</p>
-                    </div>
-                    <span className="text-2xl">💳</span>
-                  </label>
+                  {paymentMethods.map((method) => (
+                    <label
+                      key={method.value}
+                      className={`
+                        flex items-center p-4 border rounded-lg cursor-pointer transition-all
+                        ${paymentMethod === method.value ? 'border-primary bg-primary-50' : 'border-gray-200 hover:border-gray-300'}
+                      `}
+                    >
+                      <input
+                        type="radio"
+                        name="payment"
+                        value={method.value}
+                        checked={paymentMethod === method.value}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        className="w-4 h-4 text-primary"
+                      />
+                      <div className="ml-3 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">{method.icon}</span>
+                          <p className="font-medium">{method.label}</p>
+                        </div>
+                        <p className="text-sm text-gray-500">{method.desc}</p>
+                      </div>
+                    </label>
+                  ))}
                 </div>
 
                 {/* Final Summary */}
@@ -625,10 +663,15 @@ export default function WalkinBookingPage() {
                     Quay lại
                   </Button>
                   <Button onClick={handleSubmitBooking} disabled={isSubmitting}>
-                    {isSubmitting ? 'Đang xử lý...' : (
+                    {isSubmitting ? 'Đang xử lý...' : paymentMethod === 'CASH' ? (
                       <>
                         <Check className="w-4 h-4 mr-2" />
                         Xác nhận đặt phòng
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Tạo yêu cầu thanh toán
                       </>
                     )}
                   </Button>
@@ -637,7 +680,153 @@ export default function WalkinBookingPage() {
             </Card>
           </div>
         )}
+
+        {/* Step 4: Confirmation */}
+        {currentStep === 4 && (
+          <div className="max-w-2xl mx-auto">
+            <Card>
+              <CardContent className="p-6 text-center">
+                <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+                  <Check className="w-8 h-8 text-green-600" />
+                </div>
+                
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  {paymentMethod === 'CASH' ? 'Đặt phòng thành công!' : 'Tạo yêu cầu thanh toán thành công!'}
+                </h2>
+                
+                <p className="text-gray-500 mb-6">
+                  Mã đặt phòng: <span className="font-mono font-bold text-primary">{bookingResult?.bookingCode}</span>
+                </p>
+
+                {/* VietQR Display */}
+                {paymentMethod !== 'CASH' && paymentInfo?.qrCodeUrl && (
+                  <div className="mb-6 p-4 bg-white rounded-lg border">
+                    <p className="text-sm text-gray-500 mb-3">Quét mã QR để thanh toán:</p>
+                    <div className="flex justify-center">
+                      <VietQRDisplay qrString={paymentInfo.qrCodeUrl} amount={paymentInfo.amount} />
+                    </div>
+                    <div className="mt-4 text-left text-sm space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Số tiền:</span>
+                        <span className="font-bold">{formatPrice(paymentInfo.amount)}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500">Nội dung CK:</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold">{paymentInfo.transferContent}</span>
+                          <button
+                            onClick={() => copyToClipboard(paymentInfo.transferContent)}
+                            className="p-1 hover:bg-gray-100 rounded"
+                            title="Sao chép"
+                          >
+                            <Copy className="w-4 h-4 text-gray-400" />
+                          </button>
+                        </div>
+                      </div>
+                      {paymentInfo.bankAccount && (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Ngân hàng:</span>
+                            <span>{paymentInfo.bankAccount.bankName}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Số TK:</span>
+                            <span className="font-mono">{paymentInfo.bankAccount.accountNumber}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Tên TK:</span>
+                            <span>{paymentInfo.bankAccount.accountHolder}</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-4">
+                      Hết hạn: {paymentInfo.expiresAt ? format(new Date(paymentInfo.expiresAt), 'HH:mm, dd/MM/yyyy') : '30 phút'}
+                    </p>
+                  </div>
+                )}
+
+                {/* Bank Transfer Info */}
+                {paymentMethod === 'BANK_TRANSFER' && paymentInfo && (
+                  <div className="mb-6 p-4 bg-white rounded-lg border text-left">
+                    <p className="text-sm font-medium mb-3">Thông tin chuyển khoản:</p>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Số tiền:</span>
+                        <span className="font-bold">{formatPrice(paymentInfo.amount)}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500">Nội dung CK:</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold">{paymentInfo.transferContent}</span>
+                          <button
+                            onClick={() => copyToClipboard(paymentInfo.transferContent)}
+                            className="p-1 hover:bg-gray-100 rounded"
+                          >
+                            <Copy className="w-4 h-4 text-gray-400" />
+                          </button>
+                        </div>
+                      </div>
+                      {paymentInfo.bankAccount && (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Ngân hàng:</span>
+                            <span>{paymentInfo.bankAccount.bankName}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Số TK:</span>
+                            <span className="font-mono">{paymentInfo.bankAccount.accountNumber}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Tên TK:</span>
+                            <span>{paymentInfo.bankAccount.accountHolder}</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-3 justify-center">
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setCurrentStep(1)
+                      setBookingResult(null)
+                      setPaymentInfo(null)
+                    }}
+                  >
+                    Tạo đặt phòng mới
+                  </Button>
+                  <Button onClick={() => router.push(routes.propertyBookings(params.slug, propertyIdFromUrl!))}>
+                    Xem danh sách đặt phòng
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </PageContainer>
+
+      {/* QR Modal for large QR display */}
+      {showQRModal && paymentInfo?.qrCodeUrl && (
+        <Modal
+          isOpen={showQRModal}
+          onClose={() => setShowQRModal(false)}
+          title="Quét mã QR để thanh toán"
+        >
+          <div className="text-center">
+            <div className="bg-white p-4 rounded-lg inline-block mb-4">
+              <VietQRDisplay qrString={paymentInfo.qrCodeUrl} amount={paymentInfo.amount} size={280} />
+            </div>
+            <p className="text-lg font-bold mb-2">{formatPrice(paymentInfo.amount)}</p>
+            <p className="text-sm text-gray-500 mb-4">
+              Nội dung: <span className="font-mono font-bold">{paymentInfo.transferContent}</span>
+            </p>
+            <Button onClick={() => setShowQRModal(false)}>Đóng</Button>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }

@@ -3,12 +3,14 @@
 import * as React from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
-import { Card, CardContent, CardHeader, CardTitle, Button, Badge, Input, Textarea } from '@/components/ui'
+import { Card, CardContent, CardHeader, CardTitle, Button, Badge, Input, Modal } from '@/components/ui'
 import { routes } from '@/lib/utils/routes'
 import { 
   ArrowLeft, Calendar, Clock, Users, CreditCard, FileText, 
-  CheckCircle, XCircle, Printer, Mail, ArrowRightLeft, User
+  CheckCircle, XCircle, Printer, Mail, User, AlertTriangle,
+  CalendarPlus, Ban, UserX
 } from 'lucide-react'
+import { format, addDays } from 'date-fns'
 
 interface Booking {
   id: string
@@ -69,6 +71,14 @@ export default function BookingDetailPage() {
   const [booking, setBooking] = React.useState<Booking | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
   const [roomNumber, setRoomNumber] = React.useState('')
+  
+  // Modals
+  const [showCancelModal, setShowCancelModal] = React.useState(false)
+  const [showExtendModal, setShowExtendModal] = React.useState(false)
+  const [cancelReason, setCancelReason] = React.useState('')
+  const [extendDate, setExtendDate] = React.useState('')
+  const [actionLoading, setActionLoading] = React.useState('')
+  const [error, setError] = React.useState('')
 
   React.useEffect(() => {
     fetchBooking()
@@ -83,6 +93,11 @@ export default function BookingDetailPage() {
         if (data.data.bookingItems[0]?.roomNumber) {
           setRoomNumber(data.data.bookingItems[0].roomNumber)
         }
+        // Set default extend date to next day after checkout
+        if (data.data.checkOutDate) {
+          const checkout = new Date(data.data.checkOutDate)
+          setExtendDate(format(addDays(checkout, 1), 'yyyy-MM-dd'))
+        }
       }
     } catch (err) {
       console.error('Failed to fetch booking:', err)
@@ -92,10 +107,9 @@ export default function BookingDetailPage() {
   }
 
   const handleCheckIn = async () => {
+    setActionLoading('checkin')
     try {
-      const response = await fetch(`/api/bookings/${bookingId}/check-in`, {
-        method: 'POST',
-      })
+      const response = await fetch(`/api/bookings/${bookingId}/check-in`, { method: 'POST' })
       const data = await response.json()
       if (data.success) {
         fetchBooking()
@@ -104,14 +118,15 @@ export default function BookingDetailPage() {
       }
     } catch (err) {
       console.error('Check-in failed:', err)
+    } finally {
+      setActionLoading('')
     }
   }
 
   const handleCheckOut = async () => {
+    setActionLoading('checkout')
     try {
-      const response = await fetch(`/api/bookings/${bookingId}/check-out`, {
-        method: 'POST',
-      })
+      const response = await fetch(`/api/bookings/${bookingId}/check-out`, { method: 'POST' })
       const data = await response.json()
       if (data.success) {
         alert(data.message)
@@ -121,6 +136,88 @@ export default function BookingDetailPage() {
       }
     } catch (err) {
       console.error('Check-out failed:', err)
+    } finally {
+      setActionLoading('')
+    }
+  }
+
+  const handleNoShow = async () => {
+    if (!confirm('Đánh dấu khách không đến?')) return
+    setActionLoading('noshow')
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}/no-show`, { method: 'POST' })
+      const data = await response.json()
+      if (data.success) {
+        alert('Đã đánh dấu no-show')
+        fetchBooking()
+      } else {
+        alert(data.error)
+      }
+    } catch (err) {
+      console.error('No-show failed:', err)
+    } finally {
+      setActionLoading('')
+    }
+  }
+
+  const handleCancel = async () => {
+    setActionLoading('cancel')
+    setError('')
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: cancelReason }),
+      })
+      const data = await response.json()
+      if (data.success) {
+        alert('Đã hủy đặt phòng')
+        if (data.refundInfo) {
+          alert(`Số tiền hoàn: ${data.refundInfo.refundAmount?.toLocaleString('vi-VN')} VNĐ`)
+        }
+        setShowCancelModal(false)
+        fetchBooking()
+      } else {
+        setError(data.error)
+      }
+    } catch (err) {
+      console.error('Cancel failed:', err)
+      setError('Lỗi khi hủy đặt phòng')
+    } finally {
+      setActionLoading('')
+    }
+  }
+
+  const handleExtend = async () => {
+    if (!extendDate) {
+      setError('Vui lòng chọn ngày trả phòng mới')
+      return
+    }
+    setActionLoading('extend')
+    setError('')
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}/extend`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          newCheckOutDate: extendDate,
+          addPayment: true,
+          paymentMethod: 'CASH',
+        }),
+      })
+      const data = await response.json()
+      if (data.success) {
+        alert(data.message)
+        setShowExtendModal(false)
+        fetchBooking()
+      } else {
+        setError(data.error)
+      }
+    } catch (err) {
+      console.error('Extend failed:', err)
+      setError('Lỗi khi gia hạn đặt phòng')
+    } finally {
+      setActionLoading('')
     }
   }
 
@@ -190,6 +287,12 @@ export default function BookingDetailPage() {
       </PageContainer>
     )
   }
+
+  const canCheckIn = booking.status === 'PENDING' || booking.status === 'CONFIRMED'
+  const canCheckOut = booking.status === 'CHECKED_IN'
+  const canCancel = ['PENDING', 'CONFIRMED', 'CHECKED_IN'].includes(booking.status)
+  const canNoShow = ['PENDING', 'CONFIRMED'].includes(booking.status)
+  const canExtend = booking.status === 'CHECKED_IN' || booking.status === 'CONFIRMED'
 
   return (
     <PageContainer>
@@ -367,27 +470,75 @@ export default function BookingDetailPage() {
               <CardTitle>Thao tác</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {booking.status === 'CONFIRMED' || booking.status === 'PENDING' ? (
-                <Button className="w-full" onClick={handleCheckIn}>
+              {/* Primary actions */}
+              {canCheckIn && (
+                <Button 
+                  className="w-full" 
+                  onClick={handleCheckIn}
+                  isLoading={actionLoading === 'checkin'}
+                >
                   <CheckCircle className="w-4 h-4 mr-2" />
                   Check-in khách
                 </Button>
-              ) : booking.status === 'CHECKED_IN' ? (
-                <Button className="w-full" onClick={handleCheckOut}>
+              )}
+              {canCheckOut && (
+                <Button 
+                  className="w-full" 
+                  onClick={handleCheckOut}
+                  isLoading={actionLoading === 'checkout'}
+                >
                   <XCircle className="w-4 h-4 mr-2" />
                   Check-out khách
                 </Button>
-              ) : null}
+              )}
 
-              <Button variant="outline" className="w-full">
-                <Printer className="w-4 h-4 mr-2" />
-                In phiếu
-              </Button>
+              {/* Secondary actions */}
+              {canExtend && (
+                <Button 
+                  variant="outline" 
+                  className="w-full" 
+                  onClick={() => setShowExtendModal(true)}
+                  disabled={!!actionLoading}
+                >
+                  <CalendarPlus className="w-4 h-4 mr-2" />
+                  Gia hạn đặt phòng
+                </Button>
+              )}
               
-              <Button variant="outline" className="w-full">
-                <Mail className="w-4 h-4 mr-2" />
-                Gửi email xác nhận
-              </Button>
+              {canNoShow && (
+                <Button 
+                  variant="outline" 
+                  className="w-full" 
+                  onClick={handleNoShow}
+                  isLoading={actionLoading === 'noshow'}
+                >
+                  <UserX className="w-4 h-4 mr-2" />
+                  Đánh dấu không đến
+                </Button>
+              )}
+              
+              {canCancel && (
+                <Button 
+                  variant="outline" 
+                  className="w-full text-red-600 border-red-200 hover:bg-red-50" 
+                  onClick={() => setShowCancelModal(true)}
+                  disabled={!!actionLoading}
+                >
+                  <Ban className="w-4 h-4 mr-2" />
+                  Hủy đặt phòng
+                </Button>
+              )}
+
+              <div className="border-t border-gray-100 pt-3">
+                <Button variant="outline" className="w-full">
+                  <Printer className="w-4 h-4 mr-2" />
+                  In phiếu
+                </Button>
+                <Button variant="outline" className="w-full mt-2">
+                  <Mail className="w-4 h-4 mr-2" />
+                  Gửi email xác nhận
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
@@ -449,6 +600,98 @@ export default function BookingDetailPage() {
           </Card>
         </div>
       </div>
+
+      {/* Cancel Modal */}
+      <Modal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        title="Hủy đặt phòng"
+      >
+        <div className="space-y-4">
+          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-700">
+            <AlertTriangle className="w-4 h-4 inline mr-2" />
+            Hành động này không thể hoàn tác.
+          </div>
+          
+          {booking.depositAmount > 0 && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+              <p className="text-gray-600">Khách đã thanh toán: <strong>{formatCurrency(booking.depositAmount)}</strong></p>
+              <p className="text-gray-600">Số tiền hoàn (nếu có) sẽ được xử lý theo chính sách hủy.</p>
+            </div>
+          )}
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Lý do hủy (tùy chọn)</label>
+            <textarea
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Nhập lý do hủy đặt phòng..."
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus-visible:ring-2 focus-visible:ring-primary"
+            />
+          </div>
+          
+          {error && (
+            <p className="text-sm text-red-600">{error}</p>
+          )}
+          
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => setShowCancelModal(false)} className="flex-1">
+              Đóng
+            </Button>
+            <Button 
+              variant="danger" 
+              onClick={handleCancel}
+              isLoading={actionLoading === 'cancel'}
+              className="flex-1"
+            >
+              Xác nhận hủy
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Extend Modal */}
+      <Modal
+        isOpen={showExtendModal}
+        onClose={() => setShowExtendModal(false)}
+        title="Gia hạn đặt phòng"
+      >
+        <div className="space-y-4">
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+            <p className="text-gray-600">Ngày trả phòng hiện tại: <strong>{formatDate(booking.checkOutDate)}</strong></p>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Ngày trả phòng mới</label>
+            <Input
+              type="date"
+              value={extendDate}
+              onChange={(e) => setExtendDate(e.target.value)}
+              min={format(addDays(new Date(booking.checkOutDate), 1), 'yyyy-MM-dd')}
+            />
+            <p className="text-xs text-gray-500 mt-1">Chọn ngày trả phòng mới (phải sau ngày hiện tại)</p>
+          </div>
+          
+          {error && (
+            <p className="text-sm text-red-600">{error}</p>
+          )}
+          
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => setShowExtendModal(false)} className="flex-1">
+              Đóng
+            </Button>
+            <Button 
+              onClick={handleExtend}
+              isLoading={actionLoading === 'extend'}
+              className="flex-1"
+            >
+              Xác nhận gia hạn
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </PageContainer>
   )
 }
+

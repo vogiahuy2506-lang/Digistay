@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 
 type AuthMode = 'password' | 'otp' | 'passkey'
 
@@ -253,7 +254,7 @@ export default function LoginPage() {
                   <div id="password-section">
                     <div className="flex items-center justify-between mb-1.5">
                       <label className="text-xs font-bold text-charcoal" htmlFor="password-input">Mật khẩu bảo mật</label>
-                      <a className="text-xs font-medium text-terracotta hover:underline" href="#">Quên mật khẩu?</a>
+                      <Link className="text-xs font-medium text-terracotta hover:underline" href="/forgot-password">Quên mật khẩu?</Link>
                     </div>
                     <div className="relative flex items-center">
                       <span className="material-symbols-outlined absolute left-3.5 text-stone-400 text-[20px] pointer-events-none">lock</span>
