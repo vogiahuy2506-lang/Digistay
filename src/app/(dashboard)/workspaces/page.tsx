@@ -42,6 +42,10 @@ import {
   HelpCircle,
   PhoneCall,
   Sparkles,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Maximize2,
 } from 'lucide-react'
 
 interface Workspace {
@@ -126,6 +130,17 @@ export default function WorkspacesPage() {
   const [isEditOpen, setIsEditOpen] = React.useState(false)
   const [isUpdating, setIsUpdating] = React.useState(false)
   const [selected, setSelected] = React.useState<Workspace | null>(null)
+
+  // Image editor modal state
+  const [isImageEditorOpen, setIsImageEditorOpen] = React.useState(false)
+  const [imageTransform, setImageTransform] = React.useState({
+    scale: 1,
+    positionX: 0,
+    positionY: 0,
+  })
+  const [isDragging, setIsDragging] = React.useState(false)
+  const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 })
+  const [imagePositionStart, setImagePositionStart] = React.useState({ x: 0, y: 0 })
 
   // Check URL params for prefill data
   React.useEffect(() => {
@@ -1209,12 +1224,28 @@ export default function WorkspacesPage() {
           <div className="space-y-2">
             <label className="text-xs font-bold text-slate-900 uppercase tracking-wide">Nhận diện thương hiệu</label>
             <div className="flex items-center gap-4 p-3 bg-sand-50/70 rounded-xl border border-sand-200">
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-terracotta-100 to-terracotta-200 border-2 border-terracotta-300 flex items-center justify-center text-terracotta-700 font-serif font-bold text-2xl shadow-inner shrink-0">
-                {formData.name ? formData.name.charAt(0).toUpperCase() : 'A'}
+              <div className="w-14 h-14 rounded-xl overflow-hidden bg-gradient-to-br from-terracotta-100 to-terracotta-200 border-2 border-terracotta-300 flex items-center justify-center shadow-inner shrink-0">
+                {formData.logo ? (
+                  <img
+                    src={formData.logo}
+                    alt="Logo"
+                    className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => {
+                      // Reset transform when opening
+                      setImageTransform({ scale: 1, positionX: 0, positionY: 0 })
+                      setIsImageEditorOpen(true)
+                    }}
+                  />
+                ) : (
+                  <span className="text-terracotta-700 font-serif font-bold text-2xl">
+                    {formData.name ? formData.name.charAt(0).toUpperCase() : 'A'}
+                  </span>
+                )}
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <input
+                    ref={(el) => { if (el) (window as any).__logoInputRef = el }}
                     type="file"
                     id="logo-upload"
                     accept="image/png,image/svg+xml,image/jpeg"
@@ -1232,15 +1263,30 @@ export default function WorkspacesPage() {
                         }
                         reader.readAsDataURL(file)
                       }
+                      // Reset input so same file can be selected again
+                      e.target.value = ''
                     }}
                   />
-                  <label
-                    htmlFor="logo-upload"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const input = document.getElementById('logo-upload') as HTMLInputElement
+                      if (input) input.click()
+                    }}
                     className="px-3 py-1.5 text-xs font-bold bg-white text-slate-800 border border-sand-300 rounded-lg hover:border-terracotta-400 hover:text-terracotta-600 shadow-sm transition cursor-pointer"
                   >
                     Tải logo lên
-                  </label>
-                  <span className="text-[11px] text-slate-400">hoặc tự sinh monogram</span>
+                  </button>
+                  {formData.logo && (
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, logo: null }))}
+                      className="px-3 py-1.5 text-xs font-bold bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 hover:border-red-400 shadow-sm transition"
+                    >
+                      Xóa logo
+                    </button>
+                  )}
+                  <span className="text-[11px] text-slate-400">{formData.logo ? 'Đã tải lên ✓' : 'hoặc tự sinh monogram'}</span>
                 </div>
                 <p className="text-[10px] sm:text-[11px] text-slate-400 mt-1.5">Hỗ trợ PNG, SVG, JPG (Khuyến nghị 512x512px, tối đa 2MB)</p>
               </div>
@@ -1395,6 +1441,109 @@ export default function WorkspacesPage() {
           z-index: 0;
         }
       `}</style>
+
+      {/* Image Editor Modal */}
+      <Modal isOpen={isImageEditorOpen} onClose={() => setIsImageEditorOpen(false)} size="lg">
+        <div className="px-6 py-4 border-b border-sand-200/90 flex items-center justify-between bg-gradient-to-r from-sand-50/90 via-white to-sand-50/60">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-terracotta-500 to-terracotta-600 text-white flex items-center justify-center shadow-md shadow-terracotta-500/25 shrink-0">
+              <Maximize2 className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900">Chỉnh sửa Logo</h3>
+              <p className="text-xs text-slate-500">Thu/phóng và di chuyển để chọn bố cục đẹp nhất</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsImageEditorOpen(false)}
+            className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-sand-100 flex items-center justify-center transition border border-transparent hover:border-sand-200"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Image Preview Area */}
+        <div className="relative">
+          <div
+            className="w-full h-80 bg-slate-900/5 overflow-hidden cursor-move flex items-center justify-center select-none"
+            onMouseDown={(e) => {
+              setIsDragging(true)
+              setDragStart({ x: e.clientX, y: e.clientY })
+              setImagePositionStart({ x: imageTransform.positionX, y: imageTransform.positionY })
+            }}
+            onMouseMove={(e) => {
+              if (!isDragging) return
+              const deltaX = e.clientX - dragStart.x
+              const deltaY = e.clientY - dragStart.y
+              setImageTransform(prev => ({
+                ...prev,
+                positionX: imagePositionStart.x + deltaX,
+                positionY: imagePositionStart.y + deltaY,
+              }))
+            }}
+            onMouseUp={() => setIsDragging(false)}
+            onMouseLeave={() => setIsDragging(false)}
+          >
+            <div
+              className="w-40 h-40 rounded-2xl overflow-hidden border-4 border-white shadow-2xl"
+              style={{
+                transform: `translate(${imageTransform.positionX}px, ${imageTransform.positionY}px) scale(${imageTransform.scale})`,
+                transition: isDragging ? 'none' : 'transform 0.2s ease',
+              }}
+            >
+              <img
+                src={formData.logo!}
+                alt="Logo Preview"
+                className="w-full h-full object-cover pointer-events-none"
+                draggable={false}
+              />
+            </div>
+          </div>
+
+          {/* Transform Info */}
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-sm">
+            Zoom: {Math.round(imageTransform.scale * 100)}%
+          </div>
+        </div>
+
+        {/* Controls */}
+        <div className="px-6 py-4 border-t border-sand-200/90 bg-sand-50/50">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <button
+              onClick={() => setImageTransform(prev => ({ ...prev, scale: Math.max(0.5, prev.scale - 0.1) }))}
+              className="w-10 h-10 rounded-xl bg-white border border-sand-300 text-slate-700 hover:bg-sand-100 hover:border-terracotta-400 flex items-center justify-center transition shadow-sm"
+              title="Thu nhỏ"
+            >
+              <ZoomOut className="w-4 h-4" />
+            </button>
+            <div className="w-32 h-1 bg-sand-200 rounded-full mx-2 overflow-hidden">
+              <div
+                className="h-full bg-terracotta-500 rounded-full transition-all"
+                style={{ width: `${((imageTransform.scale - 0.5) / 1.5) * 100}%` }}
+              />
+            </div>
+            <button
+              onClick={() => setImageTransform(prev => ({ ...prev, scale: Math.min(2, prev.scale + 0.1) }))}
+              className="w-10 h-10 rounded-xl bg-white border border-sand-300 text-slate-700 hover:bg-sand-100 hover:border-terracotta-400 flex items-center justify-center transition shadow-sm"
+              title="Phóng lớn"
+            >
+              <ZoomIn className="w-4 h-4" />
+            </button>
+            <div className="w-px h-8 bg-sand-300 mx-2" />
+            <button
+              onClick={() => setImageTransform({ scale: 1, positionX: 0, positionY: 0 })}
+              className="px-4 py-2 rounded-xl bg-white border border-sand-300 text-slate-700 hover:bg-sand-100 hover:border-terracotta-400 flex items-center gap-2 transition shadow-sm"
+              title="Đặt lại"
+            >
+              <RotateCcw className="w-4 h-4" />
+              <span className="text-xs font-bold">Đặt lại</span>
+            </button>
+          </div>
+          <p className="text-center text-xs text-slate-400">
+            Kéo để di chuyển • Cuộn chuột hoặc dùng nút để zoom
+          </p>
+        </div>
+      </Modal>
     </div>
   )
 }

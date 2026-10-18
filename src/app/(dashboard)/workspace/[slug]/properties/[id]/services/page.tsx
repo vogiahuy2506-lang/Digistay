@@ -2,12 +2,13 @@
 
 import * as React from 'react'
 import { useParams } from 'next/navigation'
-import { Header, PageContainer } from '@/components/layout'
-import { Card, CardContent, CardHeader, CardTitle, Button, Badge, Input } from '@/components/ui'
+import { PageContainer } from '@/components/layout'
+import { Button, Badge, Input } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
 import {
   Star, Plus, Trash2, Edit, Wifi, Car, Utensils, Waves, Dumbbell,
-  Coffee, Sun, Shield, Dog, Save, Check
+  Coffee, Sun, Shield, Dog, Save, Check, ConciergeBell,
+  Shirt, Bike, Music, X, Search
 } from 'lucide-react'
 
 interface Amenity {
@@ -31,6 +32,11 @@ interface ExtraService {
   isActive: boolean
 }
 
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  Wifi, Car, Utensils, Waves, Dumbbell, Coffee, Sun, Shield, Star, Dog,
+  Shirt, Bike, Music, ConciergeBell
+}
+
 const serviceCategories = [
   { value: 'laundry', label: 'Giặt ủi' },
   { value: 'transport', label: 'Vận chuyển' },
@@ -39,8 +45,16 @@ const serviceCategories = [
   { value: 'other', label: 'Khác' },
 ]
 
-const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  Wifi, Car, Utensils, Waves, Dumbbell, Coffee, Sun, Shield, Star, Dog,
+const categoryLabels: Record<string, string> = {
+  comfort: 'Tiện nghi',
+  entertainment: 'Giải trí',
+  facility: 'Cơ sở',
+  food: 'Ăn uống',
+  internet: 'Internet',
+  leisure: 'Giải trí',
+  parking: 'Đỗ xe',
+  security: 'An ninh',
+  service: 'Dịch vụ',
 }
 
 export default function ServicesPage() {
@@ -53,6 +67,7 @@ export default function ServicesPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [showServiceModal, setShowServiceModal] = React.useState(false)
   const [editingService, setEditingService] = React.useState<ExtraService | null>(null)
+  const [searchQuery, setSearchQuery] = React.useState('')
 
   const [serviceForm, setServiceForm] = React.useState({
     name: '',
@@ -68,7 +83,6 @@ export default function ServicesPage() {
     } else {
       setIsLoading(false)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [propertyId])
 
   const fetchData = async () => {
@@ -86,13 +100,9 @@ export default function ServicesPage() {
 
       if (amenitiesData.success) {
         setAmenities(amenitiesData.data)
-      } else {
-        toast.error(amenitiesData.error || 'Không thể tải tiện ích')
       }
       if (servicesData.success) {
         setServices(servicesData.data)
-      } else {
-        toast.error(servicesData.error || 'Không thể tải dịch vụ')
       }
     } catch (err) {
       console.error('Failed to fetch data:', err)
@@ -120,7 +130,7 @@ export default function ServicesPage() {
         toast.error(data.error || 'Không thể lưu tiện ích')
         return
       }
-      toast.success('Đã lưu tiện ích')
+      toast.success('Đã lưu tiện ích thành công!')
     } catch (err) {
       console.error('Save amenities error:', err)
       toast.error('Đã xảy ra lỗi khi lưu tiện ích')
@@ -176,7 +186,7 @@ export default function ServicesPage() {
         toast.error(data.error || 'Không thể lưu dịch vụ')
         return
       }
-      toast.success(editingService ? 'Đã cập nhật dịch vụ' : 'Đã thêm dịch vụ')
+      toast.success(editingService ? 'Đã cập nhật dịch vụ' : 'Đã thêm dịch vụ mới')
       setShowServiceModal(false)
       resetServiceForm()
       await fetchData()
@@ -212,195 +222,246 @@ export default function ServicesPage() {
   }
 
   const formatPrice = (price: number, priceType: string, perPerson: boolean) => {
-    const formatted = new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-      minimumFractionDigits: 0,
-    }).format(price)
-    if (priceType === 'FIXED') return formatted
-    if (priceType === 'PER_NIGHT') return `${formatted}/đêm`
-    if (priceType === 'PER_PERSON') return `${formatted}/${perPerson ? 'người' : 'lần'}`
-    return formatted
+    const formatted = new Intl.NumberFormat('vi-VN').format(price)
+    if (priceType === 'FIXED') return `${formatted} ₫`
+    if (priceType === 'PER_NIGHT') return `${formatted} ₫/đêm`
+    if (priceType === 'PER_PERSON') return `${formatted} ₫/${perPerson ? 'người' : 'lần'}`
+    return `${formatted} ₫`
   }
+
+  const groupedAmenities = React.useMemo(() => {
+    const filtered = amenities.filter(a =>
+      searchQuery ? a.name.toLowerCase().includes(searchQuery.toLowerCase()) : true
+    )
+    const groups: Record<string, Amenity[]> = {}
+    filtered.forEach(a => {
+      if (!groups[a.category]) groups[a.category] = []
+      groups[a.category].push(a)
+    })
+    return groups
+  }, [amenities, searchQuery])
+
+  const selectedCount = amenities.filter(a => a.isSelected).length
 
   if (!propertyId) {
     return (
       <PageContainer>
-        <Header title="Tiện ích & Dịch vụ" description="Quản lý tiện ích và dịch vụ của cơ sở" />
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Star className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">Không xác định được cơ sở.</p>
-          </CardContent>
-        </Card>
+        <div className="max-w-5xl mx-auto py-16 text-center">
+          <p className="text-gray-500">Không xác định được cơ sở.</p>
+        </div>
       </PageContainer>
     )
   }
 
   return (
     <PageContainer>
-      <Header
-        title="Tiện ích & Dịch vụ"
-        description="Quản lý tiện ích và dịch vụ của cơ sở"
-      />
+      <div className="max-w-5xl mx-auto space-y-8">
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">Tiện ích & Dịch vụ</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Quản lý tiện ích và dịch vụ cho cơ sở của bạn
+          </p>
+        </div>
 
-      {/* Amenities Section */}
-      <Card className="mb-6">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Tiện ích của cơ sở</CardTitle>
-            <p className="text-sm text-gray-500 mt-1">
-              Chọn các tiện ích hiển thị trên website
-            </p>
+        {/* Amenities Section */}
+        <section className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="text-lg font-medium text-gray-900">Tiện ích</h2>
+              <p className="text-sm text-gray-500 mt-0.5">
+                {selectedCount > 0 ? `${selectedCount} tiện ích đã chọn` : 'Chọn tiện ích cho cơ sở'}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 w-56"
+                />
+              </div>
+              <Button
+                onClick={handleSaveAmenities}
+                isLoading={isSubmitting}
+                size="sm"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Lưu
+              </Button>
+            </div>
           </div>
-          <Button onClick={handleSaveAmenities} isLoading={isSubmitting}>
-            <Save className="w-4 h-4 mr-2" />
-            Lưu thay đổi
-          </Button>
-        </CardHeader>
-        <CardContent>
+
           {isLoading ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            <div className="grid grid-cols-3 gap-3">
+              {[1, 2, 3, 4, 5, 6].map(i => (
+                <div key={i} className="h-14 bg-gray-100 rounded-lg animate-pulse" />
+              ))}
             </div>
           ) : amenities.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">
-              Chưa có tiện ích nào trong hệ thống. Hãy chạy{' '}
-              <code className="bg-gray-100 px-1 rounded">npx tsx prisma/seed-amenities.ts</code>{' '}
-              để thêm danh sách tiện ích mặc định.
-            </p>
+            <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg">
+              <p className="text-sm text-gray-500">
+                Chưa có tiện ích. Chạy{' '}
+                <code className="bg-gray-100 px-2 py-0.5 rounded text-xs">
+                  npx tsx prisma/seed-amenities.ts
+                </code>
+              </p>
+            </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {amenities.map((amenity) => {
-                const IconComponent = iconMap[amenity.icon ?? ''] || Star
+            <div className="space-y-6">
+              {Object.entries(groupedAmenities).map(([category, items]) => (
+                <div key={category}>
+                  <h3 className="text-sm font-medium text-gray-700 mb-3">
+                    {categoryLabels[category] || category}
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    {items.map((amenity) => {
+                      const IconComponent = iconMap[amenity.icon ?? ''] || Star
+                      return (
+                        <button
+                          key={amenity.id}
+                          onClick={() => toggleAmenity(amenity.id)}
+                          className={`
+                            flex items-center gap-3 px-4 py-3 rounded-lg border text-left
+                            transition-colors
+                            ${amenity.isSelected
+                              ? 'border-blue-500 bg-blue-50'
+                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                            }
+                          `}
+                        >
+                          <IconComponent className={`w-5 h-5 ${amenity.isSelected ? 'text-blue-600' : 'text-gray-500'}`} />
+                          <span className={`text-sm font-medium ${amenity.isSelected ? 'text-blue-700' : 'text-gray-700'}`}>
+                            {amenity.name}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Services Section */}
+        <section className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="text-lg font-medium text-gray-900">Dịch vụ bổ sung</h2>
+              <p className="text-sm text-gray-500 mt-0.5">
+                {services.length > 0 ? `${services.length} dịch vụ` : 'Chưa có dịch vụ nào'}
+              </p>
+            </div>
+            <Button
+              onClick={() => { resetServiceForm(); setShowServiceModal(true) }}
+              size="sm"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Thêm dịch vụ
+            </Button>
+          </div>
+
+          {isLoading ? (
+            <div className="space-y-2">
+              {[1, 2].map(i => (
+                <div key={i} className="h-16 bg-gray-100 rounded-lg animate-pulse" />
+              ))}
+            </div>
+          ) : services.length === 0 ? (
+            <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg">
+              <ConciergeBell className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+              <p className="text-sm text-gray-600 font-medium">Chưa có dịch vụ nào</p>
+              <p className="text-xs text-gray-400 mt-1 mb-4">Tạo dịch vụ để khách có thể đặt thêm</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => { resetServiceForm(); setShowServiceModal(true) }}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Thêm dịch vụ đầu tiên
+              </Button>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {services.map((service) => {
+                const categoryInfo = serviceCategories.find(c => c.value === service.category)
                 return (
                   <div
-                    key={amenity.id}
-                    onClick={() => toggleAmenity(amenity.id)}
-                    role="checkbox"
-                    aria-checked={amenity.isSelected}
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === ' ' || e.key === 'Enter') {
-                        e.preventDefault()
-                        toggleAmenity(amenity.id)
-                      }
-                    }}
-                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                      amenity.isSelected
-                        ? 'border-primary bg-primary-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                    key={service.id}
+                    className="flex items-center gap-4 py-4 first:pt-0 last:pb-0"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                            amenity.isSelected
-                              ? 'bg-primary text-white'
-                              : 'bg-gray-100 text-gray-600'
-                          }`}
-                        >
-                          <IconComponent className="w-5 h-5" />
-                        </div>
-                        <span className="font-medium text-sm">{amenity.name}</span>
+                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center shrink-0">
+                      <ConciergeBell className="w-5 h-5 text-gray-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className={`font-medium ${service.isActive ? 'text-gray-900' : 'text-gray-400'}`}>
+                          {service.name}
+                        </span>
+                        {!service.isActive && (
+                          <Badge variant="secondary" className="text-xs">Tắt</Badge>
+                        )}
                       </div>
-                      {amenity.isSelected && <Check className="w-5 h-5 text-primary" />}
+                      <p className="text-sm text-gray-500 mt-0.5">
+                        {categoryInfo?.label || 'Khác'}
+                        {service.priceType === 'PER_NIGHT' && ' · Theo đêm'}
+                        {service.priceType === 'PER_PERSON' && (service.perPerson ? ' · Theo người' : ' · Theo lần')}
+                      </p>
+                    </div>
+                    <span className="text-base font-semibold text-gray-900 tabular-nums">
+                      {formatPrice(service.price, service.priceType, service.perPerson)}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleEditService(service)}
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteService(service.id)}
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 )
               })}
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Services Section */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Dịch vụ kèm theo</CardTitle>
-            <p className="text-sm text-gray-500 mt-1">
-              Các dịch vụ có thể đặt thêm khi đặt phòng
-            </p>
-          </div>
-          <Button onClick={() => { resetServiceForm(); setShowServiceModal(true) }}>
-            <Plus className="w-4 h-4 mr-2" />
-            Thêm dịch vụ
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-            </div>
-          ) : services.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Star className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p>Chưa có dịch vụ nào</p>
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => { resetServiceForm(); setShowServiceModal(true) }}
-              >
-                Thêm dịch vụ đầu tiên
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {services.map((service) => (
-                <div
-                  key={service.id}
-                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-primary-100 text-primary flex items-center justify-center">
-                      <Star className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{service.name}</p>
-                      <p className="text-sm text-gray-500">
-                        {serviceCategories.find(c => c.value === service.category)?.label ??
-                          'Khác'}{' '}
-                        • {formatPrice(service.price, service.priceType, service.perPerson)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={service.isActive ? 'success' : 'gray'}>
-                      {service.isActive ? 'Hoạt động' : 'Tắt'}
-                    </Badge>
-                    <Button variant="ghost" size="sm" onClick={() => handleEditService(service)}>
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteService(service.id)}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        </section>
+      </div>
 
       {/* Service Modal */}
       {showServiceModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full">
-            <div className="p-6 border-b border-gray-100">
-              <h2 className="text-xl font-semibold">
-                {editingService ? 'Sửa dịch vụ' : 'Thêm dịch vụ mới'}
-              </h2>
-            </div>
-            <div className="p-6 space-y-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tên dịch vụ <span className="text-red-500">*</span>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  {editingService ? 'Chỉnh sửa dịch vụ' : 'Dịch vụ mới'}
+                </h2>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  {editingService ? 'Cập nhật thông tin dịch vụ' : 'Tạo dịch vụ mới'}
+                </p>
+              </div>
+              <button
+                onClick={() => { setShowServiceModal(false); resetServiceForm() }}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Tên dịch vụ
                 </label>
                 <Input
                   value={serviceForm.name}
@@ -408,23 +469,31 @@ export default function ServicesPage() {
                   placeholder="VD: Giặt ủi quần áo"
                 />
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>
-                <select
-                  value={serviceForm.category}
-                  onChange={(e) => setServiceForm({ ...serviceForm, category: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
-                >
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Danh mục</label>
+                <div className="flex flex-wrap gap-2">
                   {serviceCategories.map(cat => (
-                    <option key={cat.value} value={cat.value}>
+                    <button
+                      key={cat.value}
+                      onClick={() => setServiceForm({ ...serviceForm, category: cat.value })}
+                      className={`
+                        px-3 py-1.5 rounded-md text-sm font-medium transition-colors
+                        ${serviceForm.category === cat.value
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }
+                      `}
+                    >
                       {cat.label}
-                    </option>
+                    </button>
                   ))}
-                </select>
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Loại giá</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Loại giá</label>
                   <select
                     value={serviceForm.priceType}
                     onChange={(e) =>
@@ -433,7 +502,7 @@ export default function ServicesPage() {
                         priceType: e.target.value as typeof serviceForm.priceType,
                       })
                     }
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 bg-white"
                   >
                     <option value="FIXED">Cố định</option>
                     <option value="PER_NIGHT">Theo đêm</option>
@@ -441,7 +510,7 @@ export default function ServicesPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Giá (VNĐ)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Giá (₫)</label>
                   <Input
                     type="number"
                     value={serviceForm.price}
@@ -452,17 +521,33 @@ export default function ServicesPage() {
                   />
                 </div>
               </div>
+
+              {serviceForm.priceType === 'PER_PERSON' && (
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={serviceForm.perPerson}
+                    onChange={(e) => setServiceForm({ ...serviceForm, perPerson: e.target.checked })}
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600"
+                  />
+                  <span className="text-sm text-gray-700">Tính theo số người</span>
+                </label>
+              )}
             </div>
-            <div className="p-6 border-t border-gray-100 flex justify-end gap-3">
+
+            <div className="flex items-center justify-end gap-3 p-5 border-t border-gray-100 bg-gray-50 rounded-b-xl">
               <Button
-                variant="outline"
+                variant="ghost"
                 onClick={() => { setShowServiceModal(false); resetServiceForm() }}
                 disabled={isSubmitting}
               >
                 Hủy
               </Button>
-              <Button onClick={handleSubmitService} isLoading={isSubmitting}>
-                {editingService ? 'Lưu thay đổi' : 'Thêm dịch vụ'}
+              <Button
+                onClick={handleSubmitService}
+                isLoading={isSubmitting}
+              >
+                {editingService ? 'Lưu thay đổi' : 'Tạo dịch vụ'}
               </Button>
             </div>
           </div>

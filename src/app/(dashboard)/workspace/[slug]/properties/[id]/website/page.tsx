@@ -4,10 +4,32 @@ import * as React from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { PageContainer } from '@/components/layout'
 import { Card, CardContent, CardHeader, CardTitle, Button, Input, Badge, Tabs, TabsList, TabsTrigger, TabsContent, Alert, AlertDescription } from '@/components/ui'
-import { 
-  Monitor, Smartphone, Eye, Save, Globe, Palette, Type, Image, 
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragStartEvent,
+  DragMoveEvent,
+  DragOverlay
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import {
+  Monitor, Smartphone, Eye, Save, Globe, Palette, Type, Image,
   Plus, Trash2, GripVertical, Settings, Layout, Search, ArrowRight,
-  Check, X, ChevronRight, Shield, AlertCircle, Loader2, ExternalLink, RefreshCw
+  Check, X, ChevronRight, Shield, AlertCircle, Loader2, ExternalLink, RefreshCw, Star,
+  LayoutGrid, Hotel, ImageIcon, MapPin, Phone, MousePointer2, Zap, Sparkles,
+  FileText, Clock, Undo2, Redo2, Copy, Wand2, ChevronDown, ChevronUp
 } from 'lucide-react'
 
 interface WebsiteSettings {
@@ -27,6 +49,62 @@ interface WebsiteSettings {
   sslProvider?: string
   domainVerificationStatus?: string
   domainVerifiedAt?: string
+  propertyName?: string
+  propertyDescription?: string
+  propertyImages?: string[]
+  rooms?: any[]
+}
+
+interface BlockConfig {
+  // Hero
+  heroTitle?: string
+  heroSubtitle?: string
+  heroImage?: string
+  heroCtaText?: string
+  heroCtaLink?: string
+  
+  // Rooms
+  roomsTitle?: string
+  roomsDisplay?: 'grid' | 'list'
+  roomsLimit?: number
+  
+  // Amenities
+  amenitiesTitle?: string
+  amenitiesColumns?: number
+  
+  // About
+  aboutTitle?: string
+  aboutContent?: string
+  aboutImage?: string
+  
+  // Gallery
+  galleryTitle?: string
+  galleryColumns?: number
+  galleryImages?: string[]
+  
+  // Reviews
+  reviewsTitle?: string
+  reviewsLimit?: number
+  
+  // Map
+  mapAddress?: string
+  mapLat?: number
+  mapLng?: number
+  mapZoom?: number
+  
+  // Contact
+  contactTitle?: string
+  contactEmail?: string
+  contactPhone?: string
+  contactAddress?: string
+  contactFormEnabled?: boolean
+  
+  // CTA
+  ctaTitle?: string
+  ctaSubtitle?: string
+  ctaButtonText?: string
+  ctaButtonLink?: string
+  ctaBackground?: string
 }
 
 interface Block {
@@ -35,29 +113,1112 @@ interface Block {
   name: string
   isEnabled: boolean
   sortOrder: number
-  config: any
+  config: BlockConfig
 }
 
-const blockTypes = [
-  { type: 'HERO', name: 'Banner chính', icon: Layout, description: 'Banner đầu trang với hình ảnh và tìm kiếm' },
-  { type: 'ROOMS', name: 'Danh sách phòng', icon: Layout, description: 'Hiển thị các hạng phòng có sẵn' },
-  { type: 'AMENITIES', name: 'Tiện ích', icon: Check, description: 'Danh sách tiện ích của cơ sở' },
-  { type: 'ABOUT', name: 'Giới thiệu', icon: Type, description: 'Thông tin giới thiệu cơ sở' },
-  { type: 'GALLERY', name: 'Thư viện ảnh', icon: Image, description: 'Bộ sưu tập hình ảnh' },
-  { type: 'REVIEWS', name: 'Đánh giá', icon: StarIcon, description: 'Hiển thị đánh giá khách hàng' },
-  { type: 'MAP', name: 'Bản đồ', icon: Globe, description: 'Vị trí trên Google Maps' },
-  { type: 'CONTACT', name: 'Liên hệ', icon: Settings, description: 'Thông tin liên hệ' },
-  { type: 'CTA', name: 'Call to Action', icon: ArrowRight, description: 'Nút kêu gọi hành động' },
+interface BlockType {
+  type: string
+  name: string
+  icon: React.ElementType
+  description: string
+  color: string
+  bgGradient: string
+  defaultConfig: BlockConfig
+}
+
+const blockTypes: BlockType[] = [
+  { 
+    type: 'HERO', 
+    name: 'Banner Hero', 
+    icon: LayoutGrid, 
+    description: 'Banner đầu trang với hình ảnh & tìm kiếm', 
+    color: 'text-blue-600', 
+    bgGradient: 'from-blue-500 to-blue-600',
+    defaultConfig: {
+      heroTitle: 'Chào mừng đến với',
+      heroSubtitle: 'Trải nghiệm lưu trú tuyệt vời',
+      heroCtaText: 'Đặt phòng ngay',
+      heroCtaLink: '#rooms'
+    }
+  },
+  { 
+    type: 'ROOMS', 
+    name: 'Danh sách phòng', 
+    icon: Hotel, 
+    description: 'Hiển thị các hạng phòng', 
+    color: 'text-emerald-600', 
+    bgGradient: 'from-emerald-500 to-emerald-600',
+    defaultConfig: {
+      roomsTitle: 'Các hạng phòng',
+      roomsDisplay: 'grid',
+      roomsLimit: 6
+    }
+  },
+  { 
+    type: 'AMENITIES', 
+    name: 'Tiện ích', 
+    icon: Zap, 
+    description: 'Danh sách tiện ích cơ sở', 
+    color: 'text-amber-600', 
+    bgGradient: 'from-amber-500 to-amber-600',
+    defaultConfig: {
+      amenitiesTitle: 'Tiện ích nổi bật',
+      amenitiesColumns: 3
+    }
+  },
+  { 
+    type: 'ABOUT', 
+    name: 'Giới thiệu', 
+    icon: Sparkles, 
+    description: 'Thông tin giới thiệu', 
+    color: 'text-purple-600', 
+    bgGradient: 'from-purple-500 to-purple-600',
+    defaultConfig: {
+      aboutTitle: 'Về chúng tôi',
+      aboutContent: 'Nơi mang đến cho bạn trải nghiệm lưu trú tuyệt vời với dịch vụ chuyên nghiệp và không gian thoải mái.'
+    }
+  },
+  { 
+    type: 'GALLERY', 
+    name: 'Thư viện ảnh', 
+    icon: ImageIcon, 
+    description: 'Bộ sưu tập hình ảnh', 
+    color: 'text-pink-600', 
+    bgGradient: 'from-pink-500 to-pink-600',
+    defaultConfig: {
+      galleryTitle: 'Thư viện hình ảnh',
+      galleryColumns: 3,
+      galleryImages: []
+    }
+  },
+  { 
+    type: 'REVIEWS', 
+    name: 'Đánh giá', 
+    icon: Star, 
+    description: 'Hiển thị đánh giá khách', 
+    color: 'text-yellow-600', 
+    bgGradient: 'from-yellow-500 to-yellow-600',
+    defaultConfig: {
+      reviewsTitle: 'Đánh giá từ khách hàng',
+      reviewsLimit: 4
+    }
+  },
+  { 
+    type: 'MAP', 
+    name: 'Bản đồ', 
+    icon: MapPin, 
+    description: 'Vị trí Google Maps', 
+    color: 'text-red-600', 
+    bgGradient: 'from-red-500 to-red-600',
+    defaultConfig: {
+      mapAddress: 'Hà Nội, Việt Nam',
+      mapZoom: 15
+    }
+  },
+  { 
+    type: 'CONTACT', 
+    name: 'Liên hệ', 
+    icon: Phone, 
+    description: 'Thông tin liên hệ', 
+    color: 'text-cyan-600', 
+    bgGradient: 'from-cyan-500 to-cyan-600',
+    defaultConfig: {
+      contactTitle: 'Liên hệ với chúng tôi',
+      contactFormEnabled: true
+    }
+  },
+  { 
+    type: 'CTA', 
+    name: 'Call to Action', 
+    icon: MousePointer2, 
+    description: 'Nút kêu gọi hành động', 
+    color: 'text-indigo-600', 
+    bgGradient: 'from-indigo-500 to-indigo-600',
+    defaultConfig: {
+      ctaTitle: 'Sẵn sàng trải nghiệm?',
+      ctaSubtitle: 'Đặt phòng ngay hôm nay để nhận ưu đãi đặc biệt',
+      ctaButtonText: 'Đặt phòng ngay',
+      ctaButtonLink: '#contact'
+    }
+  },
 ]
 
-function StarIcon(props: any) {
+// Website Templates
+interface WebsiteTemplate {
+  id: string
+  name: string
+  description: string
+  icon: React.ElementType
+  blocks: Partial<Block>[]
+}
+
+const websiteTemplates: WebsiteTemplate[] = [
+  {
+    id: 'classic-hotel',
+    name: 'Khách sạn Cổ điển',
+    description: 'Phong cách thanh lịch, chuyên nghiệp',
+    icon: Hotel,
+    blocks: [
+      { type: 'HERO', name: 'Banner Hero', isEnabled: true },
+      { type: 'ROOMS', name: 'Danh sách phòng', isEnabled: true },
+      { type: 'AMENITIES', name: 'Tiện ích', isEnabled: true },
+      { type: 'ABOUT', name: 'Giới thiệu', isEnabled: true },
+      { type: 'REVIEWS', name: 'Đánh giá', isEnabled: true },
+      { type: 'CONTACT', name: 'Liên hệ', isEnabled: true },
+    ]
+  },
+  {
+    id: 'modern-resort',
+    name: 'Resort Hiện đại',
+    description: 'Tối giản, sang trọng, nghỉ dưỡng',
+    icon: Sparkles,
+    blocks: [
+      { type: 'HERO', name: 'Banner Hero', isEnabled: true },
+      { type: 'ABOUT', name: 'Giới thiệu', isEnabled: true },
+      { type: 'ROOMS', name: 'Danh sách phòng', isEnabled: true },
+      { type: 'GALLERY', name: 'Thư viện ảnh', isEnabled: true },
+      { type: 'AMENITIES', name: 'Tiện ích', isEnabled: true },
+      { type: 'CTA', name: 'Call to Action', isEnabled: true },
+      { type: 'CONTACT', name: 'Liên hệ', isEnabled: true },
+    ]
+  },
+  {
+    id: 'budget-friendly',
+    name: 'Tiết kiệm',
+    description: 'Đơn giản, dễ dùng, giá tốt',
+    icon: LayoutGrid,
+    blocks: [
+      { type: 'HERO', name: 'Banner Hero', isEnabled: true },
+      { type: 'ROOMS', name: 'Danh sách phòng', isEnabled: true },
+      { type: 'MAP', name: 'Bản đồ', isEnabled: true },
+      { type: 'CONTACT', name: 'Liên hệ', isEnabled: true },
+    ]
+  },
+  {
+    id: 'premium-boutique',
+    name: 'Boutique Cao cấp',
+    description: 'Độc đáo, riêng tư, cao cấp',
+    icon: Star,
+    blocks: [
+      { type: 'HERO', name: 'Banner Hero', isEnabled: true },
+      { type: 'ABOUT', name: 'Giới thiệu', isEnabled: true },
+      { type: 'ROOMS', name: 'Danh sách phòng', isEnabled: true },
+      { type: 'GALLERY', name: 'Thư viện ảnh', isEnabled: true },
+      { type: 'REVIEWS', name: 'Đánh giá', isEnabled: true },
+      { type: 'AMENITIES', name: 'Tiện ích', isEnabled: true },
+      { type: 'CTA', name: 'Call to Action', isEnabled: true },
+      { type: 'MAP', name: 'Bản đồ', isEnabled: true },
+      { type: 'CONTACT', name: 'Liên hệ', isEnabled: true },
+    ]
+  }
+]
+
+// Sortable Block Item Component
+function SortableBlockItem({
+  block,
+  onRemove,
+  onToggle,
+  onEdit,
+  isSelected,
+}: {
+  block: Block
+  onRemove: () => void
+  onToggle: () => void
+  onEdit: () => void
+  isSelected: boolean
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: block.id })
+
+  const blockTypeInfo = blockTypes.find(b => b.type === block.type)
+  const BlockIcon = blockTypeInfo?.icon || Layout
+  const bgGradient = blockTypeInfo?.bgGradient || 'from-gray-500 to-gray-600'
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-    </svg>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`
+        group relative rounded-xl border transition-all duration-200 cursor-grab active:cursor-grabbing
+        ${isSelected ? 'ring-2 ring-primary ring-offset-2 border-primary bg-primary-50' : ''}
+        ${block.isEnabled 
+          ? 'bg-white border-slate-200 hover:shadow-md hover:border-primary-300 hover:bg-primary-50/30' 
+          : 'bg-slate-50 border-slate-100 opacity-60'
+        }
+        ${isDragging ? 'shadow-xl border-primary bg-primary-50 z-50 scale-[1.02]' : 'shadow-sm'}
+      `}
+    >
+      <div 
+        {...attributes}
+        {...listeners}
+        className="flex items-center gap-3 p-3 select-none"
+      >
+        {/* Drag Indicator */}
+        <div className={`
+          flex flex-col gap-0.5 py-1 px-1 rounded-lg transition-colors duration-200
+          ${isDragging ? 'bg-primary-100' : 'group-hover:bg-slate-100'}
+        `}>
+          <div className="w-4 h-1 rounded-full bg-current opacity-40"></div>
+          <div className="w-4 h-1 rounded-full bg-current opacity-40"></div>
+          <div className="w-4 h-1 rounded-full bg-current opacity-40"></div>
+        </div>
+
+        {/* Block Icon */}
+        <div className={`
+          w-10 h-10 rounded-xl flex items-center justify-center shrink-0
+          bg-gradient-to-br ${bgGradient} text-white shadow-sm
+        `}>
+          <BlockIcon className="w-5 h-5" />
+        </div>
+
+        {/* Block Info */}
+        <div className="flex-1 min-w-0">
+          <p className={`font-medium text-sm ${block.isEnabled ? 'text-slate-900' : 'text-slate-500'}`}>
+            {block.name}
+          </p>
+          <p className="text-xs text-slate-400">{blockTypeInfo?.description}</p>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-1">
+          {/* Edit */}
+          <button
+            onClick={(e) => { e.stopPropagation(); onEdit(); }}
+            className={`
+              p-1.5 rounded-lg transition-all duration-200
+              ${isSelected 
+                ? 'bg-primary-100 text-primary hover:bg-primary-200' 
+                : 'bg-slate-100 text-slate-500 hover:bg-primary-100 hover:text-primary'
+              }
+            `}
+            title="Cấu hình khối"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+
+          {/* Toggle */}
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggle(); }}
+            className={`
+              p-1.5 rounded-lg transition-all duration-200
+              ${block.isEnabled 
+                ? 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200' 
+                : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+              }
+            `}
+            title={block.isEnabled ? 'Ẩn khối' : 'Hiện khối'}
+          >
+            {block.isEnabled ? <Eye className="w-4 h-4" /> : <X className="w-4 h-4" />}
+          </button>
+
+          {/* Remove */}
+          <button
+            onClick={(e) => { e.stopPropagation(); onRemove(); }}
+            className="p-1.5 rounded-lg bg-slate-100 text-slate-400 hover:bg-red-100 hover:text-red-600 transition-all duration-200"
+            title="Xóa khối"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Drag hint */}
+      <div className={`
+        absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-primary font-medium
+        bg-primary-50 px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none
+        ${isDragging ? 'opacity-100' : ''}
+      `}>
+        Kéo để sắp xếp
+      </div>
+    </div>
   )
 }
 
+// Block Configuration Panel Component
+function BlockConfigPanel({
+  block,
+  onUpdate,
+  onClose,
+  propertyData
+}: {
+  block: Block
+  onUpdate: (config: BlockConfig) => void
+  onClose: () => void
+  propertyData: any
+}) {
+  const blockTypeInfo = blockTypes.find(b => b.type === block.type)
+  const BlockIcon = blockTypeInfo?.icon || Layout
+  const bgGradient = blockTypeInfo?.bgGradient || 'from-gray-500 to-gray-600'
+  const [config, setConfig] = React.useState<BlockConfig>(block.config || {})
+
+  React.useEffect(() => {
+    setConfig(block.config || {})
+  }, [block])
+
+  const updateConfig = (key: keyof BlockConfig, value: any) => {
+    const newConfig = { ...config, [key]: value }
+    setConfig(newConfig)
+    onUpdate(newConfig)
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-slate-50 to-white">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${bgGradient} flex items-center justify-center shadow-lg`}>
+              <BlockIcon className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-slate-900">Cấu hình: {block.name}</h3>
+              <p className="text-xs text-slate-500">{blockTypeInfo?.description}</p>
+            </div>
+          </div>
+          <button 
+            onClick={onClose}
+            className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+          >
+            <X className="w-5 h-5 text-slate-500" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Hero Config */}
+          {block.type === 'HERO' && (
+            <>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1">Tiêu đề chính</label>
+                <Input 
+                  value={config.heroTitle || ''} 
+                  onChange={(e) => updateConfig('heroTitle', e.target.value)}
+                  placeholder="VD: Chào mừng đến với..."
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1">Phụ đề</label>
+                <Input 
+                  value={config.heroSubtitle || ''} 
+                  onChange={(e) => updateConfig('heroSubtitle', e.target.value)}
+                  placeholder="VD: Trải nghiệm lưu trú tuyệt vời"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1">Nút CTA</label>
+                <Input 
+                  value={config.heroCtaText || ''} 
+                  onChange={(e) => updateConfig('heroCtaText', e.target.value)}
+                  placeholder="VD: Đặt phòng ngay"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1">Link CTA</label>
+                <Input 
+                  value={config.heroCtaLink || ''} 
+                  onChange={(e) => updateConfig('heroCtaLink', e.target.value)}
+                  placeholder="VD: #rooms"
+                />
+              </div>
+            </>
+          )}
+
+          {/* Rooms Config */}
+          {block.type === 'ROOMS' && (
+            <>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1">Tiêu đề</label>
+                <Input 
+                  value={config.roomsTitle || ''} 
+                  onChange={(e) => updateConfig('roomsTitle', e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1">Kiểu hiển thị</label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => updateConfig('roomsDisplay', 'grid')}
+                    className={`flex-1 py-2 rounded-lg border transition-all ${config.roomsDisplay === 'grid' ? 'border-primary bg-primary-50 text-primary' : 'border-slate-200 text-slate-600'}`}
+                  >
+                    Grid (Lưới)
+                  </button>
+                  <button
+                    onClick={() => updateConfig('roomsDisplay', 'list')}
+                    className={`flex-1 py-2 rounded-lg border transition-all ${config.roomsDisplay === 'list' ? 'border-primary bg-primary-50 text-primary' : 'border-slate-200 text-slate-600'}`}
+                  >
+                    List (Danh sách)
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1">Số phòng hiển thị</label>
+                <Input 
+                  type="number"
+                  value={config.roomsLimit || 6} 
+                  onChange={(e) => updateConfig('roomsLimit', parseInt(e.target.value))}
+                  min={1}
+                  max={20}
+                />
+              </div>
+            </>
+          )}
+
+          {/* Amenities Config */}
+          {block.type === 'AMENITIES' && (
+            <>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1">Tiêu đề</label>
+                <Input 
+                  value={config.amenitiesTitle || ''} 
+                  onChange={(e) => updateConfig('amenitiesTitle', e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1">Số cột hiển thị</label>
+                <select
+                  value={config.amenitiesColumns || 3}
+                  onChange={(e) => updateConfig('amenitiesColumns', parseInt(e.target.value))}
+                  className="w-full px-3 py-2 border rounded-lg"
+                >
+                  <option value={2}>2 cột</option>
+                  <option value={3}>3 cột</option>
+                  <option value={4}>4 cột</option>
+                </select>
+              </div>
+            </>
+          )}
+
+          {/* About Config */}
+          {block.type === 'ABOUT' && (
+            <>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1">Tiêu đề</label>
+                <Input 
+                  value={config.aboutTitle || ''} 
+                  onChange={(e) => updateConfig('aboutTitle', e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1">Nội dung</label>
+                <textarea
+                  value={config.aboutContent || ''}
+                  onChange={(e) => updateConfig('aboutContent', e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  rows={4}
+                  placeholder="Giới thiệu về cơ sở của bạn..."
+                />
+              </div>
+            </>
+          )}
+
+          {/* Gallery Config */}
+          {block.type === 'GALLERY' && (
+            <>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1">Tiêu đề</label>
+                <Input 
+                  value={config.galleryTitle || ''} 
+                  onChange={(e) => updateConfig('galleryTitle', e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1">Số cột</label>
+                <select
+                  value={config.galleryColumns || 3}
+                  onChange={(e) => updateConfig('galleryColumns', parseInt(e.target.value))}
+                  className="w-full px-3 py-2 border rounded-lg"
+                >
+                  <option value={2}>2 cột</option>
+                  <option value={3}>3 cột</option>
+                  <option value={4}>4 cột</option>
+                </select>
+              </div>
+            </>
+          )}
+
+          {/* Reviews Config */}
+          {block.type === 'REVIEWS' && (
+            <>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1">Tiêu đề</label>
+                <Input 
+                  value={config.reviewsTitle || ''} 
+                  onChange={(e) => updateConfig('reviewsTitle', e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1">Số đánh giá hiển thị</label>
+                <Input 
+                  type="number"
+                  value={config.reviewsLimit || 4} 
+                  onChange={(e) => updateConfig('reviewsLimit', parseInt(e.target.value))}
+                  min={1}
+                  max={10}
+                />
+              </div>
+            </>
+          )}
+
+          {/* Map Config */}
+          {block.type === 'MAP' && (
+            <>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1">Địa chỉ hiển thị</label>
+                <Input 
+                  value={config.mapAddress || ''} 
+                  onChange={(e) => updateConfig('mapAddress', e.target.value)}
+                  placeholder="VD: 123 Đường ABC, Quận 1, TP.HCM"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-700 block mb-1">Vĩ độ (Latitude)</label>
+                  <Input 
+                    type="number"
+                    step="0.0001"
+                    value={config.mapLat || ''} 
+                    onChange={(e) => updateConfig('mapLat', parseFloat(e.target.value))}
+                    placeholder="21.0285"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-700 block mb-1">Kinh độ (Longitude)</label>
+                  <Input 
+                    type="number"
+                    step="0.0001"
+                    value={config.mapLng || ''} 
+                    onChange={(e) => updateConfig('mapLng', parseFloat(e.target.value))}
+                    placeholder="105.8542"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1">Zoom level</label>
+                <Input 
+                  type="number"
+                  value={config.mapZoom || 15} 
+                  onChange={(e) => updateConfig('mapZoom', parseInt(e.target.value))}
+                  min={1}
+                  max={20}
+                />
+              </div>
+            </>
+          )}
+
+          {/* Contact Config */}
+          {block.type === 'CONTACT' && (
+            <>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1">Tiêu đề</label>
+                <Input 
+                  value={config.contactTitle || ''} 
+                  onChange={(e) => updateConfig('contactTitle', e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1">Email</label>
+                <Input 
+                  type="email"
+                  value={config.contactEmail || ''} 
+                  onChange={(e) => updateConfig('contactEmail', e.target.value)}
+                  placeholder="contact@example.com"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1">Số điện thoại</label>
+                <Input 
+                  value={config.contactPhone || ''} 
+                  onChange={(e) => updateConfig('contactPhone', e.target.value)}
+                  placeholder="0901 234 567"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1">Địa chỉ</label>
+                <Input 
+                  value={config.contactAddress || ''} 
+                  onChange={(e) => updateConfig('contactAddress', e.target.value)}
+                  placeholder="123 Đường ABC..."
+                />
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                <input
+                  type="checkbox"
+                  id="contactForm"
+                  checked={config.contactFormEnabled ?? true}
+                  onChange={(e) => updateConfig('contactFormEnabled', e.target.checked)}
+                  className="w-4 h-4 rounded"
+                />
+                <label htmlFor="contactForm" className="text-sm font-medium text-slate-700">
+                  Hiển thị form liên hệ
+                </label>
+              </div>
+            </>
+          )}
+
+          {/* CTA Config */}
+          {block.type === 'CTA' && (
+            <>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1">Tiêu đề</label>
+                <Input 
+                  value={config.ctaTitle || ''} 
+                  onChange={(e) => updateConfig('ctaTitle', e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700 block mb-1">Mô tả</label>
+                <Input 
+                  value={config.ctaSubtitle || ''} 
+                  onChange={(e) => updateConfig('ctaSubtitle', e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-700 block mb-1">Text nút</label>
+                  <Input 
+                    value={config.ctaButtonText || ''} 
+                    onChange={(e) => updateConfig('ctaButtonText', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-700 block mb-1">Link nút</label>
+                  <Input 
+                    value={config.ctaButtonLink || ''} 
+                    onChange={(e) => updateConfig('ctaButtonLink', e.target.value)}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t bg-slate-50">
+          <Button onClick={onClose} className="w-full">Đóng</Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Template Selection Modal
+function TemplateModal({
+  onSelect,
+  onClose
+}: {
+  onSelect: (template: WebsiteTemplate) => void
+  onClose: () => void
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-indigo-50 to-white">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg">
+              <Wand2 className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-slate-900">Chọn Template</h3>
+              <p className="text-xs text-slate-500">Bắt đầu nhanh với template có sẵn</p>
+            </div>
+          </div>
+          <button 
+            onClick={onClose}
+            className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+          >
+            <X className="w-5 h-5 text-slate-500" />
+          </button>
+        </div>
+
+        {/* Templates Grid */}
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {websiteTemplates.map((template) => {
+              const TemplateIcon = template.icon
+              return (
+                <button
+                  key={template.id}
+                  onClick={() => onSelect(template)}
+                  className="p-4 rounded-xl border-2 border-slate-200 hover:border-primary hover:bg-primary-50/30 transition-all text-left group"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center group-hover:from-indigo-100 group-hover:to-purple-100 transition-all">
+                      <TemplateIcon className="w-7 h-7 text-slate-500 group-hover:text-primary transition-colors" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-slate-900 group-hover:text-primary transition-colors">
+                        {template.name}
+                      </h4>
+                      <p className="text-sm text-slate-500 mt-1">{template.description}</p>
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {template.blocks.slice(0, 4).map((b, i) => (
+                          <Badge key={i} className="text-xs bg-slate-100 text-slate-600 border-0">
+                            {b.name}
+                          </Badge>
+                        ))}
+                        {template.blocks.length > 4 && (
+                          <Badge className="text-xs bg-slate-100 text-slate-600 border-0">
+                            +{template.blocks.length - 4}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t bg-slate-50">
+          <p className="text-sm text-slate-500 text-center">
+            Hoặc bắt đầu trống và tự thiết kế theo ý bạn
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Block Overlay for Drag
+function BlockOverlay({ block }: { block: Block }) {
+  const blockTypeInfo = blockTypes.find(b => b.type === block.type)
+  const BlockIcon = blockTypeInfo?.icon || Layout
+  const bgGradient = blockTypeInfo?.bgGradient || 'from-gray-500 to-gray-600'
+
+  return (
+    <div className="w-full rounded-xl bg-white border-2 border-primary shadow-2xl p-3 rotate-2 scale-105">
+      <div className="flex items-center gap-3">
+        <div className={`
+          w-10 h-10 rounded-xl flex items-center justify-center
+          bg-gradient-to-br ${bgGradient} text-white shadow-lg
+        `}>
+          <BlockIcon className="w-5 h-5" />
+        </div>
+        <div className="flex-1">
+          <p className="font-medium text-sm text-slate-900">{block.name}</p>
+          <p className="text-xs text-slate-400">{blockTypeInfo?.description}</p>
+        </div>
+        <div className="px-2 py-1 bg-primary-100 rounded-lg">
+          <span className="text-xs text-primary font-medium">Di chuyển...</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Available Block Card
+function AvailableBlockCard({
+  blockType,
+  isAdded,
+  onAdd,
+}: {
+  blockType: BlockType
+  isAdded: boolean
+  onAdd: () => void
+}) {
+  const BlockIcon = blockType.icon
+
+  return (
+    <div className={`
+      relative group rounded-xl border p-4 transition-all duration-300
+      ${isAdded 
+        ? 'bg-slate-50 border-slate-200 opacity-70' 
+        : 'bg-white border-slate-200 hover:border-primary hover:shadow-lg hover:shadow-primary-500/10'
+      }
+    `}>
+      <div className="flex items-start gap-3">
+        <div className={`
+          w-12 h-12 rounded-xl flex items-center justify-center
+          bg-gradient-to-br ${blockType.bgGradient} text-white shadow-md
+          group-hover:shadow-lg transition-shadow duration-300
+        `}>
+          <BlockIcon className="w-6 h-6" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className={`font-semibold text-sm ${isAdded ? 'text-slate-500' : 'text-slate-900'}`}>
+            {blockType.name}
+          </p>
+          <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
+            {blockType.description}
+          </p>
+        </div>
+      </div>
+
+      {/* Add Button */}
+      {!isAdded ? (
+        <button
+          onClick={onAdd}
+          className="
+            mt-3 w-full py-2 rounded-lg text-sm font-medium
+            bg-gradient-to-r from-primary-500 to-primary-600 text-white
+            hover:from-primary-600 hover:to-primary-700
+            shadow-sm hover:shadow transition-all duration-200
+            flex items-center justify-center gap-2
+          "
+        >
+          <Plus className="w-4 h-4" />
+          Thêm vào trang
+        </button>
+      ) : (
+        <div className="mt-3 w-full py-2 rounded-lg text-sm font-medium bg-emerald-100 text-emerald-700 flex items-center justify-center gap-2">
+          <Check className="w-4 h-4" />
+          Đã thêm
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Preview Block Component
+function PreviewBlock({ 
+  block, 
+  propertyData,
+  index 
+}: { 
+  block: Block
+  propertyData: any
+  index: number
+}) {
+  const blockTypeInfo = blockTypes.find(b => b.type === block.type)
+  const BlockIcon = blockTypeInfo?.icon || Layout
+  const bgGradient = blockTypeInfo?.bgGradient || 'from-slate-400 to-slate-500'
+  const config = block.config || {}
+
+  // Default property data if not provided
+  const propertyName = propertyData?.name || 'Khách sạn của bạn'
+  const propertyDescription = propertyData?.description || 'Mô tả ngắn về cơ sở của bạn'
+
+  const renderBlockContent = () => {
+    switch (block.type) {
+      case 'HERO':
+        return (
+          <div className="relative h-64 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+              <h2 className="text-2xl font-bold mb-2">{config.heroTitle || propertyName}</h2>
+              <p className="text-slate-200 mb-4">{config.heroSubtitle || propertyDescription}</p>
+              <button className="px-6 py-2 bg-white text-slate-900 rounded-lg font-medium">
+                {config.heroCtaText || 'Đặt phòng ngay'}
+              </button>
+            </div>
+          </div>
+        )
+      
+      case 'ROOMS':
+        return (
+          <div className="p-4 bg-white rounded-xl border border-slate-200">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <Hotel className="w-5 h-5 text-emerald-500" />
+              {config.roomsTitle || 'Các hạng phòng'}
+            </h3>
+            <div className={`grid gap-3 ${config.roomsDisplay === 'list' ? 'grid-cols-1' : 'grid-cols-2'}`}>
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-slate-100 rounded-lg p-3 flex gap-3">
+                  <div className="w-16 h-16 bg-slate-200 rounded-lg flex items-center justify-center">
+                    <Hotel className="w-6 h-6 text-slate-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-slate-800">Phòng {['Deluxe', 'Suite', 'Standard'][i-1]}</p>
+                    <p className="text-sm text-slate-500">2 người • 25m²</p>
+                    <p className="text-sm font-medium text-emerald-600">500.000đ/đêm</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      
+      case 'AMENITIES':
+        const amenities = [
+          { icon: '📶', name: 'Wifi miễn phí' },
+          { icon: '🅿️', name: 'Bãi đỗ xe' },
+          { icon: '🏊', name: 'Hồ bơi' },
+          { icon: '🍽️', name: 'Nhà hàng' },
+          { icon: '💆', name: 'Spa' },
+          { icon: '🎤', name: 'Karaoke' },
+        ]
+        const cols = config.amenitiesColumns || 3
+        return (
+          <div className="p-4 bg-white rounded-xl border border-slate-200">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-amber-500" />
+              {config.amenitiesTitle || 'Tiện ích nổi bật'}
+            </h3>
+            <div className={`grid gap-2`} style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+              {amenities.slice(0, cols * 2).map((item, i) => (
+                <div key={i} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg">
+                  <span>{item.icon}</span>
+                  <span className="text-sm text-slate-700">{item.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      
+      case 'ABOUT':
+        return (
+          <div className="p-4 bg-white rounded-xl border border-slate-200">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-purple-500" />
+              {config.aboutTitle || 'Về chúng tôi'}
+            </h3>
+            <p className="text-slate-600 leading-relaxed">
+              {config.aboutContent || propertyDescription}
+            </p>
+          </div>
+        )
+      
+      case 'GALLERY':
+        return (
+          <div className="p-4 bg-white rounded-xl border border-slate-200">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <ImageIcon className="w-5 h-5 text-pink-500" />
+              {config.galleryTitle || 'Thư viện hình ảnh'}
+            </h3>
+            <div className={`grid gap-2`} style={{ gridTemplateColumns: `repeat(${config.galleryColumns || 3}, 1fr)` }}>
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="aspect-square bg-slate-100 rounded-lg flex items-center justify-center">
+                  <ImageIcon className="w-6 h-6 text-slate-300" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      
+      case 'REVIEWS':
+        const reviews = [
+          { name: 'Nguyễn Văn A', rating: 5, comment: 'Dịch vụ tuyệt vời, phòng sạch sẽ!' },
+          { name: 'Trần Thị B', rating: 4, comment: 'Vị trí thuận tiện, nhân viên friendly.' },
+          { name: 'Lê Văn C', rating: 5, comment: 'Sẽ quay lại lần sau!' },
+        ]
+        return (
+          <div className="p-4 bg-white rounded-xl border border-slate-200">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <Star className="w-5 h-5 text-yellow-500" />
+              {config.reviewsTitle || 'Đánh giá từ khách hàng'}
+            </h3>
+            <div className="space-y-3">
+              {reviews.slice(0, config.reviewsLimit || 3).map((r, i) => (
+                <div key={i} className="p-3 bg-slate-50 rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-medium text-slate-800">{r.name}</span>
+                    <div className="flex">
+                      {[...Array(r.rating)].map((_, j) => (
+                        <Star key={j} className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-sm text-slate-600">{r.comment}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      
+      case 'MAP':
+        return (
+          <div className="p-4 bg-white rounded-xl border border-slate-200">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-red-500" />
+              Vị trí của chúng tôi
+            </h3>
+            <div className="h-40 bg-slate-100 rounded-lg flex items-center justify-center">
+              <div className="text-center">
+                <MapPin className="w-8 h-8 text-red-400 mx-auto mb-2" />
+                <p className="text-sm text-slate-600">{config.mapAddress || 'Chưa cài đặt vị trí'}</p>
+                <p className="text-xs text-slate-400 mt-1">Google Maps Preview</p>
+              </div>
+            </div>
+          </div>
+        )
+      
+      case 'CONTACT':
+        return (
+          <div className="p-4 bg-white rounded-xl border border-slate-200">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <Phone className="w-5 h-5 text-cyan-500" />
+              {config.contactTitle || 'Liên hệ với chúng tôi'}
+            </h3>
+            <div className="space-y-2 mb-4">
+              {config.contactPhone && (
+                <p className="text-sm text-slate-600 flex items-center gap-2">
+                  <Phone className="w-4 h-4" /> {config.contactPhone}
+                </p>
+              )}
+              {config.contactEmail && (
+                <p className="text-sm text-slate-600 flex items-center gap-2">
+                  <span>✉️</span> {config.contactEmail}
+                </p>
+              )}
+              {config.contactAddress && (
+                <p className="text-sm text-slate-600 flex items-center gap-2">
+                  <MapPin className="w-4 h-4" /> {config.contactAddress}
+                </p>
+              )}
+            </div>
+            {config.contactFormEnabled !== false && (
+              <div className="space-y-2">
+                <input type="text" placeholder="Họ tên" className="w-full px-3 py-2 border rounded-lg text-sm" disabled />
+                <input type="email" placeholder="Email" className="w-full px-3 py-2 border rounded-lg text-sm" disabled />
+                <textarea placeholder="Nội dung" className="w-full px-3 py-2 border rounded-lg text-sm" rows={2} disabled />
+                <button className="w-full py-2 bg-primary text-white rounded-lg text-sm font-medium" disabled>
+                  Gửi liên hệ
+                </button>
+              </div>
+            )}
+          </div>
+        )
+      
+      case 'CTA':
+        return (
+          <div className="p-6 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl text-white text-center">
+            <h3 className="text-xl font-bold mb-2">{config.ctaTitle || 'Sẵn sàng trải nghiệm?'}</h3>
+            <p className="text-indigo-100 mb-4">{config.ctaSubtitle || 'Đặt phòng ngay hôm nay!'}</p>
+            <button className="px-6 py-2 bg-white text-indigo-600 rounded-lg font-medium">
+              {config.ctaButtonText || 'Đặt phòng ngay'}
+            </button>
+          </div>
+        )
+      
+      default:
+        return (
+          <div className="p-6 bg-slate-100 rounded-xl text-center">
+            <div className={`w-14 h-14 rounded-2xl mx-auto mb-3 bg-gradient-to-br ${bgGradient} flex items-center justify-center`}>
+              <BlockIcon className="w-7 h-7 text-white" />
+            </div>
+            <p className="font-semibold text-slate-700">{block.name}</p>
+          </div>
+        )
+    }
+  }
+
+  return (
+    <div className="relative group">
+      {renderBlockContent()}
+      <div className="absolute -top-2 -right-2">
+        <Badge className="bg-slate-800 text-white text-xs shadow-lg">
+          #{index + 1}
+        </Badge>
+      </div>
+    </div>
+  )
+}
+
+// Main Component
 export default function WebsiteBuilderPage() {
   const router = useRouter()
   const params = useParams()
@@ -69,21 +1230,49 @@ export default function WebsiteBuilderPage() {
   const [isSaving, setIsSaving] = React.useState(false)
   const [previewMode, setPreviewMode] = React.useState<'desktop' | 'mobile'>('desktop')
   const [activeTab, setActiveTab] = React.useState('blocks')
+  const [activeId, setActiveId] = React.useState<string | null>(null)
+  const [selectedBlockId, setSelectedBlockId] = React.useState<string | null>(null)
+  const [isDragging, setIsDragging] = React.useState(false)
+  const [previewBlocks, setPreviewBlocks] = React.useState<Block[]>([])
+  const [showTemplateModal, setShowTemplateModal] = React.useState(false)
+  const [propertyData, setPropertyData] = React.useState<any>(null)
   
-  // Domain verification state
-  const [domainInput, setDomainInput] = React.useState('')
-  const [isVerifying, setIsVerifying] = React.useState(false)
-  const [isProvisioningSSL, setIsProvisioningSSL] = React.useState(false)
-  const [verificationResult, setVerificationResult] = React.useState<any>(null)
-  const [sslStatus, setSSLStatus] = React.useState<any>(null)
+  // Undo/Redo state
+  const [history, setHistory] = React.useState<Block[][]>([])
+  const [historyIndex, setHistoryIndex] = React.useState(-1)
 
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 0,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  // Update preview blocks
+  React.useEffect(() => {
+    setPreviewBlocks(blocks)
+  }, [blocks])
+
+  // Load data
   React.useEffect(() => {
     fetchWebsiteData()
   }, [propertyId])
 
   const fetchWebsiteData = async () => {
     try {
-      // Fetch blocks - this API also returns settings
+      // Fetch property data
+      const propResponse = await fetch(`/api/properties/${propertyId}`)
+      const propData = await propResponse.json()
+      if (propData.success) {
+        setPropertyData(propData.data)
+      }
+
+      // Fetch blocks
       const blocksResponse = await fetch(`/api/website/blocks?propertyId=${propertyId}`)
       const blocksData = await blocksResponse.json()
       
@@ -91,12 +1280,6 @@ export default function WebsiteBuilderPage() {
         setBlocks(blocksData.data.blocks || [])
         if (blocksData.data.settings) {
           setSettings(blocksData.data.settings)
-          setDomainInput(blocksData.data.settings.customDomain || '')
-          
-          // Check SSL status if domain exists
-          if (blocksData.data.settings.customDomain) {
-            fetchSSLStatus()
-          }
         }
       }
     } catch (err) {
@@ -106,29 +1289,37 @@ export default function WebsiteBuilderPage() {
     }
   }
 
-  const fetchSSLStatus = async () => {
-    try {
-      const response = await fetch(`/api/website/ssl/provision?propertyId=${propertyId}`)
-      const data = await response.json()
-      if (data.success) {
-        setSSLStatus(data.data)
-      }
-    } catch (err) {
-      console.error('Failed to fetch SSL status:', err)
+  // History management
+  const pushHistory = (newBlocks: Block[]) => {
+    const newHistory = history.slice(0, historyIndex + 1)
+    newHistory.push(JSON.parse(JSON.stringify(newBlocks)))
+    setHistory(newHistory)
+    setHistoryIndex(newHistory.length - 1)
+  }
+
+  const undo = () => {
+    if (historyIndex > 0) {
+      setHistoryIndex(historyIndex - 1)
+      setBlocks(history[historyIndex - 1])
+    }
+  }
+
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+      setHistoryIndex(historyIndex + 1)
+      setBlocks(history[historyIndex + 1])
     }
   }
 
   const handleSave = async () => {
     setIsSaving(true)
     try {
-      // Save blocks
       await fetch('/api/website/blocks', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ propertyId, blocks }),
       })
 
-      // Save settings
       if (settings) {
         await fetch('/api/website/settings', {
           method: 'PUT',
@@ -143,115 +1334,94 @@ export default function WebsiteBuilderPage() {
     }
   }
 
-  const handleVerifyDomain = async () => {
-    if (!domainInput.trim()) return
-    
-    setIsVerifying(true)
-    setVerificationResult(null)
-    
-    try {
-      const response = await fetch('/api/website/domain/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ propertyId, domain: domainInput }),
-      })
-      
-      const data = await response.json()
-      setVerificationResult(data)
-      
-      // Refresh settings
-      fetchWebsiteData()
-      
-      // If verified, prompt for SSL provisioning
-      if (data.success && data.data?.status === 'verified') {
-        // Optionally auto-provision SSL
-        handleProvisionSSL()
-      }
-    } catch (err) {
-      console.error('Verification failed:', err)
-    } finally {
-      setIsVerifying(false)
-    }
-  }
-
-  const handleProvisionSSL = async () => {
-    setIsProvisioningSSL(true)
-    
-    try {
-      const response = await fetch('/api/website/ssl/provision', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ propertyId }),
-      })
-      
-      const data = await response.json()
-      
-      if (data.success) {
-        // Refresh data
-        fetchWebsiteData()
-        fetchSSLStatus()
-      } else {
-        setVerificationResult({
-          success: false,
-          message: data.error || 'Không thể cấp phát SSL',
-        })
-      }
-    } catch (err) {
-      console.error('SSL provisioning failed:', err)
-    } finally {
-      setIsProvisioningSSL(false)
-    }
-  }
-
   const addBlock = (type: string, name: string) => {
+    const blockTypeInfo = blockTypes.find(b => b.type === type)
     const newBlock: Block = {
       id: `block-${Date.now()}`,
       type,
       name,
       isEnabled: true,
       sortOrder: blocks.length,
-      config: {},
+      config: blockTypeInfo?.defaultConfig || {},
     }
-    setBlocks([...blocks, newBlock])
+    const newBlocks = [...blocks, newBlock]
+    setBlocks(newBlocks)
+    pushHistory(newBlocks)
   }
 
   const removeBlock = (blockId: string) => {
-    setBlocks(blocks.filter(b => b.id !== blockId))
+    const newBlocks = blocks.filter(b => b.id !== blockId)
+    setBlocks(newBlocks)
+    pushHistory(newBlocks)
   }
 
   const toggleBlock = (blockId: string) => {
-    setBlocks(blocks.map(b => 
+    const newBlocks = blocks.map(b => 
       b.id === blockId ? { ...b, isEnabled: !b.isEnabled } : b
-    ))
+    )
+    setBlocks(newBlocks)
+    pushHistory(newBlocks)
   }
 
-  const moveBlock = (index: number, direction: 'up' | 'down') => {
-    const newBlocks = [...blocks]
-    const targetIndex = direction === 'up' ? index - 1 : index + 1
-    if (targetIndex < 0 || targetIndex >= blocks.length) return
-    
-    const temp = newBlocks[index]
-    newBlocks[index] = newBlocks[targetIndex]
-    newBlocks[targetIndex] = temp
-    
-    newBlocks.forEach((b, i) => b.sortOrder = i)
+  const updateBlockConfig = (blockId: string, config: BlockConfig) => {
+    const newBlocks = blocks.map(b => 
+      b.id === blockId ? { ...b, config } : b
+    )
     setBlocks(newBlocks)
   }
 
-  const getDomainStatusBadge = () => {
-    const status = settings?.domainVerificationStatus || verificationResult?.data?.status
-    
-    switch (status) {
-      case 'verified':
-        return <Badge variant="success" className="gap-1"><Check className="w-3 h-3" /> Đã xác minh</Badge>
-      case 'pending':
-        return <Badge variant="warning" className="gap-1"><RefreshCw className="w-3 h-3" /> Đang chờ</Badge>
-      case 'mismatch':
-        return <Badge variant="danger" className="gap-1"><AlertCircle className="w-3 h-3" /> Không khớp</Badge>
-      default:
-        return <Badge variant="outline" className="gap-1"><AlertCircle className="w-3 h-3" /> Chưa xác minh</Badge>
+  const applyTemplate = (template: WebsiteTemplate) => {
+    const newBlocks: Block[] = template.blocks.map((t, index) => {
+      const blockTypeInfo = blockTypes.find(b => b.type === t.type)
+      return {
+        id: `block-${Date.now()}-${index}`,
+        type: t.type || '',
+        name: t.name || '',
+        isEnabled: t.isEnabled ?? true,
+        sortOrder: index,
+        config: blockTypeInfo?.defaultConfig || {},
+      }
+    })
+    setBlocks(newBlocks)
+    pushHistory(newBlocks)
+    setShowTemplateModal(false)
+  }
+
+  // DnD handlers
+  function handleDragStart(event: DragStartEvent) {
+    setActiveId(event.active.id as string)
+    setIsDragging(true)
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+
+    if (over && active.id !== over.id) {
+      const newBlocks = arrayMove(blocks, 
+        blocks.findIndex(item => item.id === active.id),
+        blocks.findIndex(item => item.id === over.id)
+      )
+      setBlocks(newBlocks)
+      pushHistory(newBlocks)
+    }
+
+    setActiveId(null)
+    setIsDragging(false)
+  }
+
+  function handleDragMove(event: any) {
+    const { active, over } = event
+    if (over && active.id !== over.id) {
+      const activeIndex = previewBlocks.findIndex(b => b.id === active.id)
+      const overIndex = previewBlocks.findIndex(b => b.id === over.id)
+      if (activeIndex !== overIndex) {
+        setPreviewBlocks(arrayMove(previewBlocks, activeIndex, overIndex))
+      }
     }
   }
+
+  const activeBlock = activeId ? (previewBlocks.length > 0 ? previewBlocks.find(b => b.id === activeId) : blocks.find(b => b.id === activeId)) : null
+  const selectedBlock = selectedBlockId ? blocks.find(b => b.id === selectedBlockId) : null
 
   if (isLoading) {
     return (
@@ -266,145 +1436,237 @@ export default function WebsiteBuilderPage() {
   return (
     <PageContainer className="max-w-full">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => router.push(`/properties/${propertyId}`)}>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => router.push(`/properties/${propertyId}`)}
+            className="gap-2"
+          >
+            <ChevronRight className="w-4 h-4 rotate-180" />
             Quay lại
           </Button>
+          <div className="h-8 w-px bg-slate-200" />
           <div>
-            <h1 className="text-xl font-semibold">Website Builder</h1>
-            <p className="text-sm text-gray-500">Tùy chỉnh giao diện website</p>
+            <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <Layout className="w-5 h-5 text-primary" />
+              Website Builder
+            </h1>
+            <p className="text-sm text-slate-500">Kéo thả để sắp xếp giao diện website</p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1 border rounded-lg p-1">
+        
+        <div className="flex items-center gap-3">
+          {/* Undo/Redo */}
+          <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+            <button
+              onClick={undo}
+              disabled={historyIndex <= 0}
+              className="p-2 rounded-md hover:bg-white hover:shadow-sm transition-all disabled:opacity-40 disabled:hover:bg-transparent"
+              title="Hoàn tác (Ctrl+Z)"
+            >
+              <Undo2 className="w-4 h-4 text-slate-600" />
+            </button>
+            <button
+              onClick={redo}
+              disabled={historyIndex >= history.length - 1}
+              className="p-2 rounded-md hover:bg-white hover:shadow-sm transition-all disabled:opacity-40 disabled:hover:bg-transparent"
+              title="Làm lại (Ctrl+Y)"
+            >
+              <Redo2 className="w-4 h-4 text-slate-600" />
+            </button>
+          </div>
+
+          {/* Template Button */}
+          <Button 
+            variant="outline"
+            size="sm"
+            onClick={() => setShowTemplateModal(true)}
+            className="gap-2"
+          >
+            <Wand2 className="w-4 h-4" />
+            Template
+          </Button>
+
+          {/* Preview Mode Toggle */}
+          <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1">
             <button
               onClick={() => setPreviewMode('desktop')}
-              className={`p-2 rounded ${previewMode === 'desktop' ? 'bg-gray-100' : ''}`}
-              title="Desktop"
+              className={`
+                p-2 rounded-lg transition-all duration-200
+                ${previewMode === 'desktop' 
+                  ? 'bg-white shadow-sm text-primary' 
+                  : 'text-slate-500 hover:text-slate-700'
+                }
+              `}
             >
               <Monitor className="w-4 h-4" />
             </button>
             <button
               onClick={() => setPreviewMode('mobile')}
-              className={`p-2 rounded ${previewMode === 'mobile' ? 'bg-gray-100' : ''}`}
-              title="Mobile"
+              className={`
+                p-2 rounded-lg transition-all duration-200
+                ${previewMode === 'mobile' 
+                  ? 'bg-white shadow-sm text-primary' 
+                  : 'text-slate-500 hover:text-slate-700'
+                }
+              `}
             >
               <Smartphone className="w-4 h-4" />
             </button>
           </div>
+          
           <Button 
-            variant="outline" 
+            variant="outline"
+            size="sm"
             onClick={() => window.open(`/${settings?.customDomain || propertyId}`, '_blank')}
+            className="gap-2"
           >
-            <Eye className="w-4 h-4 mr-2" />
+            <Eye className="w-4 h-4" />
             Xem trước
           </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
-            <Save className="w-4 h-4 mr-2" />
+          
+          <Button 
+            onClick={handleSave} 
+            disabled={isSaving}
+            size="sm"
+            className="gap-2 bg-gradient-to-r from-primary to-primary-600 hover:from-primary-600 hover:to-primary-700 shadow-lg shadow-primary-500/25"
+          >
+            {isSaving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
             {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Sidebar */}
-        <div className="lg:col-span-1">
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+        {/* Sidebar - Block Editor */}
+        <div className="xl:col-span-2 space-y-4">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="blocks">Blocks</TabsTrigger>
-              <TabsTrigger value="style">Style</TabsTrigger>
-              <TabsTrigger value="settings">Cài đặt</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 bg-slate-100 p-1 rounded-xl">
+              <TabsTrigger 
+                value="blocks"
+                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              >
+                <Layout className="w-4 h-4 mr-1.5" />
+                Blocks
+              </TabsTrigger>
+              <TabsTrigger 
+                value="style"
+                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              >
+                <Palette className="w-4 h-4 mr-1.5" />
+                Style
+              </TabsTrigger>
+              <TabsTrigger 
+                value="settings"
+                className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              >
+                <Settings className="w-4 h-4 mr-1.5" />
+                Cài đặt
+              </TabsTrigger>
             </TabsList>
 
             {/* Blocks Tab */}
-            <TabsContent value="blocks" className="mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Các khối giao diện</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {blockTypes.map((block) => {
-                    const isAdded = blocks.some(b => b.type === block.type)
-                    return (
-                      <div 
-                        key={block.type}
-                        className={`p-3 rounded-lg border ${isAdded ? 'border-primary bg-primary-50' : 'border-gray-200'}`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <block.icon className="w-4 h-4 text-gray-500" />
-                            <span className="font-medium text-sm">{block.name}</span>
-                          </div>
-                          {!isAdded ? (
-                            <Button 
-                              size="sm" 
-                              variant="ghost"
-                              onClick={() => addBlock(block.type, block.name)}
-                            >
-                              <Plus className="w-4 h-4" />
-                            </Button>
-                          ) : (
-                            <Badge variant="success">Đã thêm</Badge>
-                          )}
-                        </div>
+            <TabsContent value="blocks" className="mt-4 space-y-4">
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragStart={handleDragStart}
+                onDragMove={handleDragMove}
+                onDragEnd={handleDragEnd}
+              >
+                {/* Active Blocks - Sortable */}
+                <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+                        <LayoutGrid className="w-4 h-4 text-white" />
                       </div>
+                      <div>
+                        <h3 className="font-semibold text-slate-900">Sắp xếp khối</h3>
+                        <p className="text-xs text-slate-500">Kéo thả để sắp xếp thứ tự</p>
+                      </div>
+                    </div>
+                    <Badge className="bg-primary-100 text-primary border-primary-200">
+                      {blocks.length} khối
+                    </Badge>
+                  </div>
+
+                  {blocks.length === 0 ? (
+                    <div className="text-center py-10 bg-gradient-to-br from-indigo-50 to-slate-50 rounded-xl border-2 border-dashed border-indigo-200">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-100 to-indigo-200 flex items-center justify-center mx-auto mb-3">
+                        <GripVertical className="w-8 h-8 text-indigo-400" />
+                      </div>
+                      <p className="text-sm font-semibold text-slate-600 mb-1">Chưa có khối nào</p>
+                      <p className="text-xs text-slate-400 max-w-[200px] mx-auto mb-3">
+                        Chọn template hoặc thêm khối thủ công
+                      </p>
+                      <Button 
+                        size="sm" 
+                        onClick={() => setShowTemplateModal(true)}
+                        className="gap-2"
+                      >
+                        <Wand2 className="w-4 h-4" />
+                        Chọn Template
+                      </Button>
+                    </div>
+                  ) : (
+                    <SortableContext
+                      items={blocks.map(b => b.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="space-y-2">
+                        {blocks.map((block) => (
+                          <SortableBlockItem
+                            key={block.id}
+                            block={block}
+                            onRemove={() => removeBlock(block.id)}
+                            onToggle={() => toggleBlock(block.id)}
+                            onEdit={() => setSelectedBlockId(block.id)}
+                            isSelected={selectedBlockId === block.id}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  )}
+                </div>
+
+                <DragOverlay>
+                  {activeBlock ? <BlockOverlay block={activeBlock} /> : null}
+                </DragOverlay>
+              </DndContext>
+
+              {/* Available Blocks */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary-600 flex items-center justify-center shadow-lg shadow-primary-500/25">
+                    <Plus className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-900">Thêm khối mới</h3>
+                    <p className="text-xs text-slate-500">Chọn khối để thêm vào website</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {blockTypes.map((blockType) => {
+                    const isAdded = blocks.some(b => b.type === blockType.type)
+                    return (
+                      <AvailableBlockCard
+                        key={blockType.type}
+                        blockType={blockType}
+                        isAdded={isAdded}
+                        onAdd={() => addBlock(blockType.type, blockType.name)}
+                      />
                     )
                   })}
-                </CardContent>
-              </Card>
-
-              {/* Current Blocks */}
-              {blocks.length > 0 && (
-                <Card className="mt-4">
-                  <CardHeader>
-                    <CardTitle className="text-base">Thứ tự hiển thị</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {blocks.map((block, index) => (
-                      <div 
-                        key={block.id}
-                        className={`p-3 rounded-lg border ${block.isEnabled ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 opacity-50'}`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <GripVertical className="w-4 h-4 text-gray-400 cursor-move" />
-                            <span className="font-medium text-sm">{block.name}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => moveBlock(index, 'up')}
-                              disabled={index === 0}
-                              className="p-1 hover:bg-gray-100 rounded disabled:opacity-50"
-                            >
-                              <ChevronRight className="w-4 h-4 rotate-[-90deg]" />
-                            </button>
-                            <button
-                              onClick={() => moveBlock(index, 'down')}
-                              disabled={index === blocks.length - 1}
-                              className="p-1 hover:bg-gray-100 rounded disabled:opacity-50"
-                            >
-                              <ChevronRight className="w-4 h-4 rotate-[90deg]" />
-                            </button>
-                            <button
-                              onClick={() => toggleBlock(block.id)}
-                              className="p-1 hover:bg-gray-100 rounded"
-                            >
-                              {block.isEnabled ? <Eye className="w-4 h-4" /> : <X className="w-4 h-4" />}
-                            </button>
-                            <button
-                              onClick={() => removeBlock(block.id)}
-                              className="p-1 hover:bg-red-50 rounded text-red-500"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
+                </div>
+              </div>
             </TabsContent>
 
             {/* Style Tab */}
@@ -532,123 +1794,6 @@ export default function WebsiteBuilderPage() {
                 </CardContent>
               </Card>
 
-              {/* Domain Configuration Card */}
-              <Card className="mt-4">
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Globe className="w-4 h-4" />
-                    Tên miền & SSL
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Tên miền tùy chỉnh</label>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Input
-                        value={domainInput}
-                        onChange={(e) => setDomainInput(e.target.value)}
-                        placeholder="VD: khachsanabc.vn"
-                      />
-                      <Button 
-                        onClick={handleVerifyDomain}
-                        disabled={!domainInput.trim() || isVerifying}
-                        variant="outline"
-                      >
-                        {isVerifying ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          'Xác minh'
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Domain Status */}
-                  <div className="flex items-center gap-2">
-                    {getDomainStatusBadge()}
-                    {settings?.sslEnabled && (
-                      <Badge variant="success" className="gap-1">
-                        <Shield className="w-3 h-3" /> SSL Active
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Verification Result */}
-                  {verificationResult && (
-                    <Alert variant={verificationResult.success ? 'success' : 'destructive'}>
-                      <AlertDescription>
-                        <p className="font-medium mb-2">{verificationResult.data?.message || verificationResult.message}</p>
-                        
-                        {verificationResult.data?.instructions && (
-                          <div className="mt-3 text-sm bg-gray-50 p-3 rounded-lg">
-                            <p className="font-medium mb-2">Hướng dẫn cấu hình DNS:</p>
-                            <pre className="whitespace-pre-wrap text-xs">
-                              {verificationResult.data.instructions.join('\n')}
-                            </pre>
-                          </div>
-                        )}
-                        
-                        {verificationResult.data?.details && (
-                          <div className="mt-2 text-xs text-gray-500">
-                            <p>Record Type: {verificationResult.data.details.recordType}</p>
-                            {verificationResult.data.details.expectedValue && (
-                              <p>Giá trị mong đợi: {verificationResult.data.details.expectedValue}</p>
-                            )}
-                            {verificationResult.data.details.actualValue && (
-                              <p>Giá trị hiện tại: {verificationResult.data.details.actualValue}</p>
-                            )}
-                          </div>
-                        )}
-                      </AlertDescription>
-                    </Alert>
-                  )}
-
-                  {/* SSL Provisioning */}
-                  {settings?.customDomain && settings?.domainVerificationStatus === 'verified' && !settings?.sslEnabled && (
-                    <div className="pt-2">
-                      <Button 
-                        onClick={handleProvisionSSL}
-                        disabled={isProvisioningSSL}
-                        className="w-full"
-                      >
-                        {isProvisioningSSL ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Đang cấp phát SSL...
-                          </>
-                        ) : (
-                          <>
-                            <Shield className="w-4 h-4 mr-2" />
-                            Cấp phát SSL miễn phí
-                          </>
-                        )}
-                      </Button>
-                      <p className="text-xs text-gray-500 mt-2 text-center">
-                        SSL sẽ được tự động kích hoạt trong vài giây
-                      </p>
-                    </div>
-                  )}
-
-                  {/* SSL Status */}
-                  {settings?.sslEnabled && sslStatus && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                      <div className="flex items-center gap-2 text-green-700">
-                        <Shield className="w-5 h-5" />
-                        <span className="font-medium">SSL đã kích hoạt</span>
-                      </div>
-                      <div className="mt-2 text-sm text-green-600">
-                        <p>Domain: {settings.customDomain}</p>
-                        <p>Provider: {sslStatus.provider || settings.sslProvider || 'Digistay Auto SSL'}</p>
-                        {sslStatus.expiresAt && (
-                          <p>Hết hạn: {new Date(sslStatus.expiresAt).toLocaleDateString('vi-VN')}</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Publish Card */}
               <Card className="mt-4">
                 <CardHeader>
                   <CardTitle>Xuất bản</CardTitle>
@@ -672,21 +1817,6 @@ export default function WebsiteBuilderPage() {
                       {settings?.isPublished ? 'Gỡ xuất bản' : 'Xuất bản ngay'}
                     </Button>
                   </div>
-                  
-                  {settings?.isPublished && settings?.customDomain && (
-                    <div className="mt-3 pt-3 border-t">
-                      <p className="text-sm text-gray-500 mb-2">Website của bạn:</p>
-                      <a 
-                        href={`https://${settings.customDomain}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline flex items-center gap-1"
-                      >
-                        https://{settings.customDomain}
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -694,40 +1824,79 @@ export default function WebsiteBuilderPage() {
         </div>
 
         {/* Preview Area */}
-        <div className="lg:col-span-3">
-          <Card className="overflow-hidden">
-            <div className={`bg-gray-100 border-b p-4 ${previewMode === 'mobile' ? 'max-w-[375px] mx-auto' : ''}`}>
-              <div className="bg-white rounded-lg overflow-hidden shadow-lg">
-                {/* Simulated browser header */}
-                <div className="bg-gray-100 px-4 py-2 flex items-center gap-2">
+        <div className="xl:col-span-3">
+          <Card className="overflow-hidden shadow-lg border-slate-200">
+            <div className={`bg-gradient-to-b from-slate-100 to-slate-50 border-b border-slate-200 p-4 ${previewMode === 'mobile' ? 'max-w-[420px] mx-auto' : ''}`}>
+              {/* Browser Chrome */}
+              <div className="bg-white rounded-t-xl shadow-sm border border-slate-200 overflow-hidden">
+                {/* Traffic Lights */}
+                <div className="bg-slate-100 px-4 py-2.5 flex items-center gap-3 border-b border-slate-200">
                   <div className="flex gap-1.5">
                     <div className="w-3 h-3 rounded-full bg-red-400"></div>
                     <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
                     <div className="w-3 h-3 rounded-full bg-green-400"></div>
                   </div>
-                  <div className="flex-1 bg-white rounded px-3 py-1 text-sm text-gray-500">
-                    {settings?.customDomain || `${propertyId}.digistay.vn`}
-                    {settings?.sslEnabled && <span className="ml-1">🔒</span>}
+                  <div className="flex-1 bg-slate-50 rounded-lg px-4 py-1.5 text-sm text-slate-500 flex items-center gap-2">
+                    <Globe className="w-3.5 h-3.5" />
+                    {settings?.customDomain || `${propertyId.slice(0, 8)}...digistay.vn`}
+                    {settings?.sslEnabled && <Shield className="w-3.5 h-3.5 text-emerald-500" />}
                   </div>
                 </div>
                 
                 {/* Website Preview Content */}
-                <div className={`p-8 ${previewMode === 'mobile' ? 'text-sm' : ''}`}>
-                  {blocks.length === 0 ? (
-                    <div className="text-center py-12 text-gray-400">
-                      <Layout className="w-12 h-12 mx-auto mb-4" />
-                      <p>Chưa có khối nào được thêm</p>
-                      <p className="text-sm">Thêm các khối từ panel bên trái để xem trước</p>
+                <div className={`min-h-[600px] bg-white ${previewMode === 'mobile' ? 'max-h-[700px] overflow-y-auto' : ''}`}>
+                  {/* Dragging indicator */}
+                  {isDragging && (
+                    <div className="sticky top-0 z-50 bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-4 py-2 text-sm font-medium flex items-center gap-2 shadow-lg">
+                      <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
+                      Đang kéo thả... Di chuyển khối đến vị trí mong muốn
+                    </div>
+                  )}
+                  
+                  {previewBlocks.length === 0 && !isDragging ? (
+                    <div className="flex flex-col items-center justify-center h-full py-20 text-center px-6">
+                      <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center mb-4">
+                        <LayoutGrid className="w-10 h-10 text-slate-400" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-slate-600 mb-2">Chưa có khối nào</h3>
+                      <p className="text-sm text-slate-400 max-w-xs mb-4">
+                        Thêm các khối từ panel bên trái hoặc chọn template để bắt đầu
+                      </p>
+                      <Button onClick={() => setShowTemplateModal(true)} className="gap-2">
+                        <Wand2 className="w-4 h-4" />
+                        Chọn Template
+                      </Button>
                     </div>
                   ) : (
-                    <div className="space-y-8">
-                      {blocks.filter(b => b.isEnabled).map((block) => (
-                        <div key={block.id} className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center">
-                          <Layout className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                          <p className="font-medium text-gray-600">{block.name}</p>
-                          <p className="text-sm text-gray-400">Preview của khối {block.type}</p>
+                    <div className="space-y-4 p-4">
+                      {(isDragging ? previewBlocks : blocks).filter(b => b.isEnabled).map((block, index) => {
+                        const isBeingDragged = isDragging && activeId === block.id
+                        
+                        return (
+                          <div 
+                            key={block.id} 
+                            className={`
+                              rounded-xl border-2 transition-all duration-300
+                              ${isBeingDragged 
+                                ? 'border-indigo-400 bg-indigo-50 scale-95 opacity-50' 
+                                : 'border-transparent hover:border-slate-200 hover:bg-slate-50/50'
+                              }
+                            `}
+                          >
+                            <PreviewBlock 
+                              block={block} 
+                              propertyData={propertyData}
+                              index={index}
+                            />
+                          </div>
+                        )
+                      })}
+                      
+                      {(isDragging ? previewBlocks : blocks).filter(b => b.isEnabled).length === 0 && (
+                        <div className="text-center py-12">
+                          <p className="text-slate-400">Tất cả các khối đang bị ẩn</p>
                         </div>
-                      ))}
+                      )}
                     </div>
                   )}
                 </div>
@@ -736,6 +1905,24 @@ export default function WebsiteBuilderPage() {
           </Card>
         </div>
       </div>
+
+      {/* Block Configuration Modal */}
+      {selectedBlock && (
+        <BlockConfigPanel
+          block={selectedBlock}
+          onUpdate={(config) => updateBlockConfig(selectedBlock.id, config)}
+          onClose={() => setSelectedBlockId(null)}
+          propertyData={propertyData}
+        />
+      )}
+
+      {/* Template Selection Modal */}
+      {showTemplateModal && (
+        <TemplateModal
+          onSelect={applyTemplate}
+          onClose={() => setShowTemplateModal(false)}
+        />
+      )}
     </PageContainer>
   )
 }

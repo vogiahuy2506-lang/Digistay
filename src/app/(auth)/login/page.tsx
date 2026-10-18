@@ -333,7 +333,7 @@ export default function LoginPage() {
 
                 {/* Submit Primary CTA */}
                 <button 
-                  className={`w-full py-3.5 px-6 rounded-xl text-white font-bold text-sm tracking-wide shadow-glow-terra hover:shadow-lg transition-all flex items-center justify-center gap-2 group mt-2 ${isLoading ? 'bg-emerald-600' : 'bg-terracotta hover:bg-primary-hover'}`}
+                  className={`w-full py-3.5 px-6 rounded-xl text-white font-bold text-sm tracking-wide shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 group mt-2 ${isLoading ? 'bg-emerald-600' : 'bg-terracotta hover:bg-terracotta-600'}`}
                   id="submit-btn" 
                   type="submit"
                   disabled={isLoading}

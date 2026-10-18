@@ -14,7 +14,7 @@ export default function Error({
         <p className="text-gray-600 mb-4">{error.message}</p>
         <button
           onClick={reset}
-          className="px-4 py-2 bg-terracotta text-white rounded-xl font-semibold hover:bg-primary-hover transition"
+          className="px-4 py-2 bg-terracotta text-white rounded-xl font-semibold hover:bg-terracotta-600 transition"
         >
           Thử lại
         </button>

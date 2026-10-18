@@ -71,6 +71,7 @@ const config: Config = {
 
         // Terracotta palette (from HTML design)
         terracotta: {
+          DEFAULT: '#d95338',
           50: '#fdf6f3',
           100: '#fbe9e3',
           200: '#f8d4c9',

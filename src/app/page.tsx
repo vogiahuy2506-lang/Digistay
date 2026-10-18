@@ -1314,13 +1314,12 @@ export default function LandingPage() {
       </div>
 
       <div className="flex items-center gap-3 md:gap-4">
-        <a href="/login">
-          <MagneticButton className="cursor-pointer" strength={0.15} glowColor="rgba(169, 49, 25, 0.2)">
-            <span className="hidden sm:inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-on-surface font-label-lg text-label-lg hover:bg-surface-container-high transition-all duration-300 hover:scale-105">
-              Đăng Nhập
-            </span>
-          </MagneticButton>
-        </a>
+        <Link 
+          href="/login"
+          className="inline-flex items-center justify-center px-4 py-2.5 rounded-lg text-on-surface font-label-lg text-label-lg hover:bg-surface-container-high transition-all duration-300 hover:scale-105"
+        >
+          Đăng Nhập
+        </Link>
         <MagneticButton strength={0.2} glowColor="rgba(169, 49, 25, 0.4)">
           <RippleButton className="inline-flex items-center justify-center px-5 py-2.5 rounded-lg bg-primary text-on-primary font-label-lg text-label-lg hover:bg-primary-container transition-all duration-300 shadow-[0_4px_16px_-4px_rgba(169,49,25,0.4)] hover:scale-105 hover:shadow-[0_8px_32px_-4px_rgba(169,49,25,0.5)]">
             <span>Trải Nghiệm Miễn Phí 14 Ngày</span>

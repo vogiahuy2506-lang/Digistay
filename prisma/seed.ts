@@ -53,7 +53,7 @@ async function main() {
     where: { email: 'admin@digistay.vn' },
     update: {},
     create: {
-      name: 'Nguyễn Văn Admin',
+      name: 'Trần Minh Đức',
       email: 'admin@digistay.vn',
       password: hashedPassword,
       role: 'USER',

@@ -35,7 +35,7 @@ export default function PublicSiteError({
         </p>
         <button
           onClick={reset}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-terracotta text-white rounded-lg text-sm font-semibold hover:bg-primary-hover transition"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-terracotta text-white rounded-lg text-sm font-semibold hover:bg-terracotta-600 transition"
         >
           <RefreshCw className="w-4 h-4" />
           Thử lại

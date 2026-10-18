@@ -125,7 +125,7 @@ export default function DailyReportPage() {
     <PageContainer>
       <Header
         title="Sổ Quỹ"
-        description={`Ngày ${formatDate(selectedDate)}`}
+        description={formatDate(selectedDate)}
         actions={
           <div className="flex items-center gap-4">
             <Input

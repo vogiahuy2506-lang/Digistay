@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 
+// Force dynamic rendering - required because we use auth() which calls headers()
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/reports/daily?propertyId=...&date=YYYY-MM-DD
  *
@@ -177,7 +180,9 @@ export async function GET(request: NextRequest) {
         id: p.id,
         type: isRefund ? 'OUT' : 'IN',
         category: isRefund ? 'Hoàn tiền' : 'Thanh toán',
-        description: `${p.booking.bookingCode} — ${p.booking.guestName}`,
+        description: p.booking
+          ? `${p.booking.bookingCode} — ${p.booking.guestName}`
+          : `Thanh toán #${p.id}`,
         amount: p.amount,
         paymentMethod: methodLabel(p.method),
         createdAt: time,

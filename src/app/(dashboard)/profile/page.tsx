@@ -326,7 +326,7 @@ export default function ProfilePage() {
                 </div>
                 
                 {/* Camera overlay */}
-                <label className="absolute bottom-0 right-0 w-10 h-10 bg-primary rounded-full flex items-center justify-center cursor-pointer hover:bg-primary-hover transition shadow-lg border-2 border-white">
+                <label className="absolute bottom-0 right-0 w-10 h-10 bg-primary rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/80 transition shadow-lg border-2 border-white">
                   {isUploadingAvatar ? (
                     <Loader2 className="w-4 h-4 text-white animate-spin" />
                   ) : (
