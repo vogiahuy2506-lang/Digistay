@@ -80,7 +80,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       where: { id },
       data: {
         status: 'NO_SHOW',
-        paymentStatus: booking.depositAmount > 0 ? 'PARTIAL' : 'PENDING',
+        paymentStatus: (booking.depositAmount > 0
+          ? 'PARTIAL'
+          : 'PENDING') as 'PARTIAL' | 'PENDING',
       },
       include: {
         bookingItems: true,

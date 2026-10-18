@@ -678,6 +678,8 @@ export default function RoomTypesPage() {
             ))}
           </div>
         )}
+          </>
+        )}
       </PageContainer>
 
       {/* Create Modal */}

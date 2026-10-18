@@ -19,6 +19,12 @@ export interface UploadOptions {
   folder?: string
   resourceType?: 'image' | 'video' | 'raw'
   maxFileSize?: number
+  /**
+   * Optional transformation parameters. Kept loose on purpose — this
+   * module is a stub right now, and we don't want to pin callers to
+   * the full Cloudinary shape until the real implementation lands.
+   */
+  transformation?: Record<string, unknown>
 }
 
 /**

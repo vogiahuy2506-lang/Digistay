@@ -143,7 +143,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       where: { id },
       data: {
         status: 'CANCELLED',
-        paymentStatus: totalPaid > 0 && finalRefundAmount < totalPaid ? 'PARTIAL' : 'REFUNDED',
+        paymentStatus: (totalPaid > 0 && finalRefundAmount < totalPaid
+          ? 'PARTIAL'
+          : 'REFUNDED') as 'PARTIAL' | 'REFUNDED',
       },
       include: {
         bookingItems: true,

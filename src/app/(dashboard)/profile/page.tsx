@@ -352,7 +352,7 @@ export default function ProfilePage() {
               {/* User Info Summary */}
               <div className="w-full mt-6 pt-6 border-t border-gray-100 space-y-3">
                 <div className="flex items-center gap-2 text-sm">
-                  <Badge variant={profile?.role === 'SUPER_ADMIN' ? 'default' : profile?.role === 'ADMIN' ? 'default' : 'secondary'}>
+                  <Badge variant={profile?.role === 'SUPER_ADMIN' || profile?.role === 'ADMIN' ? 'primary' : 'secondary'}>
                     {profile?.role === 'SUPER_ADMIN' ? 'Super Admin' : profile?.role === 'ADMIN' ? 'Admin' : 'Người dùng'}
                   </Badge>
                 </div>

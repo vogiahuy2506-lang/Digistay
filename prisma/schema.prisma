@@ -257,7 +257,8 @@ model RoomType {
   id          String   @id @default(cuid())
   propertyId  String
   property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  
+  roomLocks   RoomLock[]
+
   name        String
   slug        String
   
@@ -685,11 +686,12 @@ model RoomLock {
   id              String   @id @default(cuid())
   bookingId       String?
   booking         Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-  
+
   propertyId      String
   property        Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  
+
   roomTypeId      String
+  roomType        RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
   
   // Lock period
   lockStart       DateTime
@@ -702,8 +704,9 @@ model RoomLock {
   sessionId       String?
   customerInfo    String?
   
-  expiresAt       DateTime  // Lock expires at this time
-  
+  expiresAt       DateTime?  // Lock expires at this time (null for maintenance locks)
+  notes           String?
+
   createdAt       DateTime @default(now())
 
   @@map("room_locks")
