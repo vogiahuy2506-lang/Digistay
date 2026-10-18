@@ -1,0 +1,110 @@
+name: digistay
+
+services:
+  # --------------------------------------------------------------
+  # Next.js 14 app (standalone build)
+  # --------------------------------------------------------------
+  app:
+    image: ghcr.io/${GHCR_OWNER:-senna}/digistay:latest
+    container_name: digistay-app
+    env_file:
+      - .env.production
+    environment:
+      # Talk to the in-network postgres by service name.
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set in .env.production}
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+      NEXT_TELEMETRY_DISABLED: "1"
+    networks:
+      - digistay_net
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    # The container itself only listens on the bridge network; nginx
+    # publishes 80/443 to the host. No host port mapping here so the
+    # app is reachable only via the proxy.
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # --------------------------------------------------------------
+  # Postgres (persistent on VPS)
+  # --------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: digistay-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-digistay}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      POSTGRES_DB: ${POSTGRES_DB:-digistay}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - digistay_net
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${POSTGRES_USER:-digistay} -d ${POSTGRES_DB:-digistay}
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    # Only the app on the bridge can reach postgres — not exposed to host.
+    # (No ports: section ⇒ no host publishing.)
+
+  # --------------------------------------------------------------
+  # Nginx — reverse proxy + TLS termination
+  # --------------------------------------------------------------
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: digistay-nginx
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # HTTP-only config that handles ACME + 301→HTTPS.
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      # TLS material produced by certbot.
+      - certbot_conf:/etc/letsencrypt:ro
+      - certbot_www:/var/www/certbot:ro
+    networks:
+      - digistay_net
+
+  # --------------------------------------------------------------
+  # Certbot — only used the first time via `--profile init`.
+  # --------------------------------------------------------------
+  certbot:
+    image: certbot/certbot:latest
+    container_name: digistay-certbot
+    profiles:
+      - init
+    volumes:
+      - certbot_conf:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    networks:
+      - digistay_net
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do sleep 6h & wait $${!}; done'"
+
+networks:
+  digistay_net:
+    driver: bridge
+    name: digistay_net
+
+volumes:
+  postgres_data:
+    name: digistay_postgres_data
+  certbot_conf:
+    name: digistay_certbot_conf
+  certbot_www:
+    name: digistay_certbot_www

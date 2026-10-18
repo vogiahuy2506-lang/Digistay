@@ -1,0 +1,74 @@
+# ============================================================
+# HTTPS server block for digistay.vn
+# Domain placeholders are resolved by `envsubst` on container start.
+# ============================================================
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+
+    server_name ${DOMAIN} www.${DOMAIN};
+
+    # ---- TLS material (certbot volume) ----
+    ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+    ssl_trusted_certificate /etc/letsencrypt/live/${DOMAIN}/chain.pem;
+
+    # ---- TLS hardening ----
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+
+    ssl_stapling on;
+    ssl_stapling_verify on;
+    resolver 1.1.1.1 8.8.8.8 valid=300s;
+    resolver_timeout 5s;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options            "SAMEORIGIN"                always;
+    add_header X-Content-Type-Options     "nosniff"                   always;
+    add_header Referrer-Policy            "strict-origin-when-cross-origin" always;
+
+    # ---- Body size (mirror next.config experimental.serverActions.bodySizeLimit) ----
+    client_max_body_size 12m;
+
+    # ---- Reverse proxy → app ----
+    location / {
+        proxy_pass http://app:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host  $host;
+        proxy_set_header X-Forwarded-Port  $server_port;
+        proxy_set_header Upgrade           $http_upgrade;
+        proxy_set_header Connection        "upgrade";
+
+        proxy_read_timeout  60s;
+        proxy_send_timeout  60s;
+        proxy_connect_timeout 10s;
+        proxy_redirect off;
+    }
+
+    # ---- Long-cache hashed bundles emitted by Next.js ----
+    location /_next/static/ {
+        proxy_pass http://app:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_cache_valid 200 365d;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        access_log off;
+    }
+
+    # ---- Other static assets ----
+    location /static/ {
+        proxy_pass http://app:3000;
+        proxy_set_header Host $host;
+        proxy_cache_valid 200 30d;
+        add_header Cache-Control "public, max-age=2592000";
+    }
+}

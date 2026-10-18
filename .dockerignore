@@ -1,0 +1,53 @@
+# ---- Node / Next.js ----
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ---- Build output ----
+.next
+out
+build
+
+# ---- Tests / coverage ----
+coverage
+tests
+**/__tests__/**
+*.test.ts
+*.test.tsx
+vitest-report.json
+.vitest-cache
+
+# ---- Git / IDE ----
+.git
+.gitignore
+.gitattributes
+.github
+.husky
+.vscode
+.idea
+
+# ---- Env / secrets ----
+.env
+.env.local
+.env.*.local
+.env.production
+
+# ---- Docker artefacts (mounted at runtime) ----
+docker/nginx/conf.d/app-secure.conf
+docker/certbot/conf
+
+# ---- OS junk ----
+.DS_Store
+*.pem
+
+# ---- TS cache ----
+*.tsbuildinfo
+next-env.d.ts
+
+# ---- Prisma local db ----
+prisma/*.db
+prisma/*.db-journal
+
+# ---- Vercel ----
+.vercel
