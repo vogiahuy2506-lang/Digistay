@@ -1,8 +1,10 @@
 name: Deploy to VPS
 
-# Deploys only an image that CI built and tested: runs after the CI workflow
-# succeeds for a push to main. "Run workflow" (manual) redeploys the current
-# tip of main, whose image CI must already have built.
+# Deploys only an image that CI built and tested. After CI is green on a
+# push to main, this workflow fires; it skips itself once main moves to
+# a newer commit (that newer run will deploy instead). "Run workflow"
+# redeploys the current tip of main, whose image CI must already have
+# built.
 on:
   workflow_run:
     workflows: [CI]
@@ -20,7 +22,7 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     if: >
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
@@ -33,6 +35,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           CANDIDATE: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: |
+          set -euo pipefail
           MAIN_SHA="$(gh api "repos/${{ github.repository }}/commits/main" --jq .sha)"
           echo "sha=$CANDIDATE" >> "$GITHUB_OUTPUT"
           if [ "$CANDIDATE" != "$MAIN_SHA" ]; then
@@ -43,22 +46,113 @@ jobs:
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Deploy to VPS
+      # --------------------------------------------------------------
+      # Probe 1: SSH + OS basics. Catches secrets/firewall/wrong user
+      # before we try anything else. Runs a one-shot script that exits
+      # non-zero on the first failure it sees.
+      # --------------------------------------------------------------
+      - name: Probe SSH + VPS environment
         if: steps.target.outputs.skip != 'true'
         uses: appleboy/ssh-action@v1
         env:
-          DEPLOY_SHA: ${{ steps.target.outputs.sha }}
+          SHA: ${{ steps.target.outputs.sha }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           port: ${{ secrets.VPS_PORT }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: DEPLOY_SHA
-          command_timeout: 12m
-          # `set -e`: a failing deploy must turn this step red. Without it the
-          # script's exit code was lost and a failed `git pull` showed green.
-          # VPS_DEPLOY_CMD = sudo /usr/local/bin/digistay-deploy.sh
+          command_timeout: 5m
+          envs: SHA
           script: |
-            set -e
-            echo "Deploying $DEPLOY_SHA"
-            ${{ secrets.VPS_DEPLOY_CMD }} "$DEPLOY_SHA"
+            set -euo pipefail
+            echo '== whoami =='
+            whoami
+            echo '== id =='
+            id
+            echo '== os =='
+            (cat /etc/os-release 2>/dev/null || true)
+            echo '== docker --version =='
+            docker --version
+            echo '== docker compose version =='
+            docker compose version
+            echo '== /opt/digistay =='
+            ls -la /opt/digistay | head -20
+            echo '== current deployed tag =='
+            (sudo grep '^APP_TAG=' /opt/digistay/.env 2>/dev/null || echo 'APP_TAG unset')
+            echo '== deploy script =='
+            ls -l /usr/local/bin/digistay-deploy.sh
+            echo '== if you need to start over =='
+            echo 'Re-run this workflow after fixing the line marked FAIL above.'
+
+      # --------------------------------------------------------------
+      # Probe 2: confirm the GHCR image exists for this SHA, and that the
+      # VPS can `docker pull` it. Catches the case where CI built but
+      # did not push (e.g. GHCR perms), or the VPS creds have expired.
+      # --------------------------------------------------------------
+      - name: Probe GHCR image pull
+        if: steps.target.outputs.skip != 'true'
+        uses: appleboy/ssh-action@v1
+        env:
+          SHA: ${{ steps.target.outputs.sha }}
+          IMAGE_REPO: ghcr.io/${{ github.repository_owner }}/digistay
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 5m
+          envs: SHA,IMAGE_REPO
+          script: |
+            set -euo pipefail
+            echo "== verifying $IMAGE_REPO:$SHA exists on GHCR (manifest only) =="
+            if ! docker buildx imagetools inspect "$IMAGE_REPO:$SHA" >/dev/null 2>&1; then
+              echo "::error::Image $IMAGE_REPO:$SHA is not pullable. CI built but did not push, or creds expired."
+              exit 1
+            fi
+            echo "OK: $IMAGE_REPO:$SHA is reachable"
+
+      - name: Deploy to VPS
+        if: steps.target.outputs.skip != 'true'
+        uses: appleboy/ssh-action@v1
+        env:
+          SHA: ${{ steps.target.outputs.sha }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: SHA
+          command_timeout: 18m
+          # `set -e`: a failing deploy must turn this step red. Without it
+          # the script's exit code was lost and a failed `git pull` showed
+          # green.
+          script: |
+            set -euo pipefail
+            echo "Deploying $SHA"
+            sudo /usr/local/bin/digistay-deploy.sh "$SHA"
+
+      - name: Post-deploy smoke test
+        if: steps.target.outputs.skip != 'true' && success()
+        uses: appleboy/ssh-action@v1
+        env:
+          SHA: ${{ steps.target.outputs.sha }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: SHA
+          command_timeout: 3m
+          script: |
+            set -euo pipefail
+            # docker/deploy.sh already waited for /api/health to report
+            # this SHA. We re-check from the host to confirm the right
+            # container is still the one answering after compose has
+            # settled.
+            cd /opt/digistay
+            HEALTH="$(sudo -E curl -fsS http://127.0.0.1/api/health || true)"
+            echo "/api/health => $HEALTH"
+            if ! grep -q "\"version\":\"$SHA\"" <<<"$HEALTH"; then
+              echo "::error::Health did not report expected version $SHA"
+              exit 1
+            fi
