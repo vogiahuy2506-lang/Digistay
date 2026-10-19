@@ -195,15 +195,45 @@ sudo -u deploy docker compose -f /opt/digistay/docker-compose.yml \
 
 ## Bước 8 — Migration database lần đầu
 
+Image production có sẵn Prisma CLI đúng phiên bản trong `package-lock.json`. **Không dùng
+`npx prisma`** trong container: image không có lệnh `prisma` nên `npx` sẽ tải bản mới nhất
+(khác major) từ internet.
+
 ```bash
 cd /opt/digistay
 sudo -u deploy docker compose up -d postgres
 # đợi ~5s cho postgres healthy
 
-sudo -u deploy docker compose run --rm app npx prisma migrate deploy
+sudo -u deploy docker compose run --rm app node node_modules/prisma/build/index.js migrate deploy
 ```
 
 Nếu fail với "Can't reach database", đợi thêm 5s rồi chạy lại.
+
+### DB đã có bảng từ `prisma db push` (dựng trước khi có `prisma/migrations`)
+
+`migrate deploy` lên DB này dừng với lỗi `P3005 The database schema is not empty` và
+không đụng vào dữ liệu. Baseline **một lần**:
+
+```bash
+cd /opt/digistay
+PRISMA="sudo -u deploy docker compose run --rm app node node_modules/prisma/build/index.js"
+
+# 1. Backup trước khi làm gì
+sudo -u deploy docker compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -Fc "$POSTGRES_DB"' \
+  > ~/digistay-before-baseline-$(date +%F).dump
+
+# 2. DB phải khớp schema hiện tại — exit 0 mới được đi tiếp.
+#    Khác 0: DỪNG, không baseline, gửi output cho người review.
+sudo -u deploy docker compose run --rm app sh -c \
+  'node node_modules/prisma/build/index.js migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --exit-code'
+echo "exit=$?"
+
+# 3. Đánh dấu migration gốc là đã chạy (không chạy SQL nào)
+$PRISMA migrate resolve --applied 0_init
+
+# 4. Kiểm tra — phải in "Database schema is up to date!"
+$PRISMA migrate status
+```
 
 ---
 
@@ -255,6 +285,7 @@ sudo -u deploy docker compose -f /opt/digistay/docker-compose.yml \
 | `curl https://digistay.vn` → connection refused | DNS chưa trỏ, hoặc firewall chặn. Check lại bước 1+2. |
 | `certbot` exit Unauthorized | Port 80 chưa mở ra internet, hoặc DNS chưa lan. |
 | `prisma migrate deploy` → Can't reach DB | Postgres chưa healthy. `docker compose ps` xem status. |
+| `prisma migrate deploy` → `P3005 schema is not empty` | DB dựng bằng `db push`. Baseline theo bước 8. |
 | App exit ngay khi start | `docker compose logs app` — thường do sai env var. |
 | Deploy SSH step hangs | `VPS_SSH_KEY` paste thiếu newline. Re-paste nguyên cụm. |
 | `permission denied` writing volumes | Lần đầu chạy với quyền khác. `sudo chown -R deploy:deploy /opt/digistay` rồi retry. |

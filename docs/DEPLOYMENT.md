@@ -173,12 +173,18 @@ After the cert is in place and DNS is good, run Prisma migrations once:
 gcloud compute ssh digistay-vm --zone=asia-southeast1-b --command \
   'cd /opt/digistay && \
    sudo -u deploy docker compose up -d postgres && \
-   sudo -u deploy docker compose run --rm app npx prisma migrate deploy && \
+   sudo -u deploy docker compose run --rm app node node_modules/prisma/build/index.js migrate deploy && \
    sudo -u deploy docker compose up -d'
 ```
 
 This brings up `postgres` + `app`, applies migrations against the `postgres`
-service, then starts the rest of the stack.
+service, then starts the rest of the stack. The image ships the Prisma CLI at
+the lockfile's version; do not use `npx prisma` in the container (it would
+download the latest major).
+
+If the database was created earlier with `prisma db push`, `migrate deploy`
+stops with `P3005` without touching data: baseline it once as described in
+`docs/RUNBOOK.md`, step 8.
 
 Seed data (optional):
 

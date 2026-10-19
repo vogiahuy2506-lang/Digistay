@@ -13,8 +13,9 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['src/**/*.{test,spec}.{ts,tsx}'],
-    exclude: ['node_modules', '.next', 'dist'],
+    include: ['src/**/*.{test,spec}.{ts,tsx}', 'scripts/**/*.test.mjs'],
+    // *.int.test.ts need a real Postgres: run them with `npm run test:int`.
+    exclude: ['node_modules', '.next', 'dist', 'src/**/*.int.test.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
