@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     
     const propertyId = searchParams.get('propertyId')
+    const workspaceId = searchParams.get('workspaceId')
     const status = searchParams.get('status')
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
@@ -54,8 +55,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
     }
 
-    // Build where clause
-    const where: any = {}
+    // Always restrict to properties in workspaces the user owns or belongs
+    // to. Without this, a call without propertyId returned every property's
+    // bookings. Another tenant's workspaceId just yields an empty list.
+    const where: any = {
+      property: {
+        workspace: {
+          OR: [
+            { ownerId: session.user.id },
+            { members: { some: { userId: session.user.id } } },
+          ],
+        },
+        ...(workspaceId && { workspaceId }),
+      },
+    }
 
     if (propertyId) {
       // Check access to property
