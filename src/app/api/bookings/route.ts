@@ -94,11 +94,7 @@ export async function GET(request: NextRequest) {
       prisma.booking.findMany({
         where,
         include: {
-          bookingItems: {
-            include: {
-              // Room type info loaded below
-            },
-          },
+          bookingItems: true,
           property: {
             select: {
               id: true,

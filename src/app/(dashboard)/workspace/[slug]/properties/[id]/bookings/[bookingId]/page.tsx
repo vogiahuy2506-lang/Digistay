@@ -8,7 +8,7 @@ import { routes } from '@/lib/utils/routes'
 import { 
   ArrowLeft, Calendar, Clock, Users, CreditCard, FileText, 
   CheckCircle, XCircle, Printer, Mail, User, AlertTriangle,
-  CalendarPlus, Ban, UserX
+  CalendarPlus, Ban, UserX, Loader2
 } from 'lucide-react'
 import { format, addDays } from 'date-fns'
 
@@ -18,7 +18,7 @@ interface Booking {
   guestName: string
   guestEmail: string
   guestPhone: string
-  guestNote: string
+  guestNote: string | null
   checkInDate: string
   checkOutDate: string
   numAdults: number
@@ -30,10 +30,12 @@ interface Booking {
   totalAmount: number
   depositAmount: number
   paymentStatus: string
-  actualCheckIn: string
-  actualCheckOut: string
-  vatCompany: string
-  vatTaxCode: string
+  actualCheckIn: string | null
+  actualCheckOut: string | null
+  vatCompany: string | null
+  vatTaxCode: string | null
+  vatAddress: string | null
+  vatEmail: string | null
   source: string
   createdAt: string
   bookingItems: any[]
@@ -42,11 +44,11 @@ interface Booking {
     name: string
     subdomain: string
     address: string
-    phone: string
+    phone: string | null
     policy: {
-      checkInTime: string
-      checkOutTime: string
-    }
+      checkInTime: string | null
+      checkOutTime: string | null
+    } | null
   }
   payments: any[]
   invoices: any[]
@@ -75,10 +77,12 @@ export default function BookingDetailPage() {
   // Modals
   const [showCancelModal, setShowCancelModal] = React.useState(false)
   const [showExtendModal, setShowExtendModal] = React.useState(false)
+  const [showPaymentModal, setShowPaymentModal] = React.useState(false)
   const [cancelReason, setCancelReason] = React.useState('')
   const [extendDate, setExtendDate] = React.useState('')
   const [actionLoading, setActionLoading] = React.useState('')
   const [error, setError] = React.useState('')
+  const [successMessage, setSuccessMessage] = React.useState('')
 
   React.useEffect(() => {
     fetchBooking()
@@ -234,6 +238,96 @@ export default function BookingDetailPage() {
       }
     } catch (err) {
       console.error('Update room number failed:', err)
+    }
+  }
+
+  const handlePrintBooking = () => {
+    if (!booking) return
+    
+    // Open print dialog for booking details
+    const printContent = `
+      <html>
+        <head>
+          <title>Phieu dat phong - ${booking.bookingCode}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h1 { font-size: 24px; }
+            .section { margin: 20px 0; }
+            .label { color: #666; font-size: 12px; }
+            .value { font-size: 16px; font-weight: bold; }
+            table { width: 100%; border-collapse: collapse; }
+            td { padding: 8px 0; }
+          </style>
+        </head>
+        <body>
+          <h1>PHIẾU ĐẶT PHÒNG</h1>
+          <div class="section">
+            <div class="label">Mã đặt phòng</div>
+            <div class="value">${booking.bookingCode}</div>
+          </div>
+          <div class="section">
+            <h2>Thông tin khách</h2>
+            <table>
+              <tr><td class="label">Tên</td><td>${booking.guestName}</td></tr>
+              <tr><td class="label">Điện thoại</td><td>${booking.guestPhone}</td></tr>
+              <tr><td class="label">Email</td><td>${booking.guestEmail}</td></tr>
+            </table>
+          </div>
+          <div class="section">
+            <h2>Thông tin phòng</h2>
+            <table>
+              <tr><td class="label">Nhận phòng</td><td>${formatDate(booking.checkInDate)}</td></tr>
+              <tr><td class="label">Trả phòng</td><td>${formatDate(booking.checkOutDate)}</td></tr>
+              <tr><td class="label">Số khách</td><td>${booking.numAdults} NL${booking.numChildren > 0 ? ` + ${booking.numChildren} TE` : ''}</td></tr>
+              <tr><td class="label">Số phòng</td><td>${roomNumber || 'Chưa gán'}</td></tr>
+            </table>
+          </div>
+          <div class="section">
+            <h2>Thông tin thanh toán</h2>
+            <table>
+              <tr><td class="label">Tổng tiền</td><td style="font-size: 20px;">${formatCurrency(booking.totalAmount)}</td></tr>
+              <tr><td class="label">Đã thanh toán</td><td>${formatCurrency(booking.depositAmount)}</td></tr>
+            </table>
+          </div>
+          <div class="section">
+            <p><strong>Cơ sở:</strong> ${booking.property.name}</p>
+            <p><strong>Địa chỉ:</strong> ${booking.property.address}</p>
+            <p><strong>Điện thoại:</strong> ${booking.property.phone}</p>
+          </div>
+        </body>
+      </html>
+    `
+    
+    const printWindow = window.open('', '_blank')
+    if (printWindow) {
+      printWindow.document.write(printContent)
+      printWindow.document.close()
+      printWindow.focus()
+      setTimeout(() => {
+        printWindow.print()
+        printWindow.close()
+      }, 250)
+    }
+  }
+
+  const handleSendConfirmation = async () => {
+    setActionLoading('email')
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}/send-confirmation`, {
+        method: 'POST',
+      })
+      const data = await response.json()
+      if (data.success) {
+        setSuccessMessage('Đã gửi email xác nhận thành công!')
+        setTimeout(() => setSuccessMessage(''), 3000)
+      } else {
+        alert(data.error || 'Không thể gửi email')
+      }
+    } catch (err) {
+      console.error('Send email failed:', err)
+      alert('Lỗi khi gửi email')
+    } finally {
+      setActionLoading('')
     }
   }
 
@@ -418,8 +512,8 @@ export default function BookingDetailPage() {
                     <p className="text-sm text-gray-500">Giờ nhận phòng</p>
                     <p className="font-semibold text-lg">{booking.property.policy?.checkInTime || '14:00'}</p>
                     {booking.actualCheckIn && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        Thực tế: {formatDate(booking.actualCheckIn)}
+                      <p className="text-xs text-green-600 mt-1">
+                        ✓ Đã nhận: {formatDate(booking.actualCheckIn)}
                       </p>
                     )}
                   </div>
@@ -427,8 +521,8 @@ export default function BookingDetailPage() {
                     <p className="text-sm text-gray-500">Giờ trả phòng</p>
                     <p className="font-semibold text-lg">{booking.property.policy?.checkOutTime || '12:00'}</p>
                     {booking.actualCheckOut && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        Thực tế: {formatDate(booking.actualCheckOut)}
+                      <p className="text-xs text-blue-600 mt-1">
+                        ✓ Đã trả: {formatDate(booking.actualCheckOut)}
                       </p>
                     )}
                   </div>
@@ -456,6 +550,18 @@ export default function BookingDetailPage() {
                     <p className="text-sm text-gray-500">Mã số thuế</p>
                     <p className="font-medium">{booking.vatTaxCode}</p>
                   </div>
+                  {booking.vatAddress && (
+                    <div className="col-span-2">
+                      <p className="text-sm text-gray-500">Địa chỉ công ty</p>
+                      <p className="font-medium">{booking.vatAddress}</p>
+                    </div>
+                  )}
+                  {booking.vatEmail && (
+                    <div>
+                      <p className="text-sm text-gray-500">Email công ty</p>
+                      <p className="font-medium">{booking.vatEmail}</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -530,15 +636,30 @@ export default function BookingDetailPage() {
               )}
 
               <div className="border-t border-gray-100 pt-3">
-                <Button variant="outline" className="w-full">
+                <Button variant="outline" className="w-full" onClick={handlePrintBooking}>
                   <Printer className="w-4 h-4 mr-2" />
                   In phiếu
                 </Button>
-                <Button variant="outline" className="w-full mt-2">
-                  <Mail className="w-4 h-4 mr-2" />
+                <Button 
+                  variant="outline" 
+                  className="w-full mt-2" 
+                  onClick={handleSendConfirmation}
+                  disabled={actionLoading === 'email'}
+                >
+                  {actionLoading === 'email' ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Mail className="w-4 h-4 mr-2" />
+                  )}
                   Gửi email xác nhận
                 </Button>
               </div>
+              
+              {successMessage && (
+                <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 text-center">
+                  {successMessage}
+                </div>
+              )}
             </CardContent>
           </Card>
 

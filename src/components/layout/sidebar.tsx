@@ -463,7 +463,7 @@ interface HeaderProps {
 
 export function Header({ title, description, actions }: HeaderProps) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 shrink-0">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 shrink-0 ml-2">
       <div className="min-w-0 flex-1">
         <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
         {description && (
@@ -482,7 +482,7 @@ interface PageContainerProps {
 
 export function PageContainer({ children, className }: PageContainerProps) {
   return (
-    <div className={cn('p-4 lg:p-6 max-w-7xl mx-auto', className)}>
+    <div className={cn('px-4 lg:px-6 py-4 lg:py-6 max-w-7xl mx-auto pl-6 lg:pl-8', className)}>
       {children}
     </div>
   )

@@ -232,6 +232,7 @@ model Property {
   roomLocks      RoomLock[]
   extraServices   ExtraService[]
   dailyRevenues   DailyRevenue[]
+  policy      Policy?
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -447,6 +448,7 @@ model RoomTypeImage {
 model Policy {
   id          String   @id @default(cuid())
   propertyId  String   @unique
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   
   // Check-in/Check-out
   checkInTime     String  @default("14:00")

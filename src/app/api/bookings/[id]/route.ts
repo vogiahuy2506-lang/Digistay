@@ -29,20 +29,24 @@ export async function GET(
       include: {
         bookingItems: true,
         property: {
-          select: {
-            id: true,
-            name: true,
-            subdomain: true,
-            address: true,
-            phone: true,
+          include: {
             workspace: {
               select: {
                 id: true,
                 ownerId: true,
+                owner: {
+                  select: { email: true, name: true },
+                },
                 members: {
                   where: { userId: session.user.id },
                   select: { role: true },
                 },
+              },
+            },
+            policy: {
+              select: {
+                checkInTime: true,
+                checkOutTime: true,
               },
             },
           },
