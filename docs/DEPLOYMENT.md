@@ -204,28 +204,40 @@ push to main
     ▼
 ┌─────────────────────────────────────────────────────────┐
 │ CI (ci.yml)                                            │
-│   ├─ vitest (66 tests)                                  │
+│   ├─ vitest unit tests                                  │
 │   ├─ tsc --noEmit                                       │
+│   ├─ migration checks + integration tests (Postgres)    │
 │   ├─ eslint (if script exists)                          │
-│   └─ docker buildx → ghcr.io/<owner>/digistay:latest   │
-│                       ghcr.io/<owner>/digistay:<sha>    │
+│   └─ docker buildx → ghcr.io/<owner>/digistay:<sha>    │
+│                       ghcr.io/<owner>/digistay:latest   │
 └─────────────────────────────────────────────────────────┘
-    │  workflow_run (only on success, push, branch=main)
+    │  workflow_run (only on success, push, branch=main,
+    │  and only if that commit is still the tip of main)
     ▼
 ┌─────────────────────────────────────────────────────────┐
-│ CD (deploy.yml)                                         │
-│   └─ SSH to VPS, run docker/deploy.sh                   │
-│        docker compose pull app                          │
-│        docker compose up -d --no-deps app               │
-│        docker image prune -f                            │
+│ CD (deploy.yml) → sudo /usr/local/bin/digistay-deploy.sh <sha>
+│   ├─ git checkout <sha> in /opt/digistay                │
+│   └─ docker/deploy.sh <sha>                             │
+│        1. docker compose pull app (APP_TAG=<sha>)       │
+│        2. docker/backup.sh pre-deploy (dump + restore check)
+│        3. prisma migrate deploy with the NEW image      │
+│           (old app still serving; failure stops here)   │
+│        4. docker compose up -d --no-deps app            │
+│        5. wait for /api/health to report <sha>;         │
+│           otherwise roll back to the previous tag, exit 1
 └─────────────────────────────────────────────────────────┘
 ```
 
 Image tags produced:
 
-- `latest` — always points at the most recent successful main build.
-- `<short-sha>` — every build is also tagged immutably by commit SHA, so
-  rollback = `docker compose pull app:<sha>`.
+- `<sha>` — full 40-character commit SHA, immutable. This is what gets
+  deployed; the deployed tag is recorded as `APP_TAG` in `/opt/digistay/.env`.
+- `latest` — most recent successful main build (not used by deploys).
+
+Manual rollback to an earlier build: run `sudo /usr/local/bin/digistay-deploy.sh <older-sha>`
+on the VPS. Migrations are not reverted, so each migration must work with the
+previous release's code (see CLAUDE.md, "Migration"). One-time VPS setup,
+backups and restore: `docs/RUNBOOK.md`.
 
 ---
 

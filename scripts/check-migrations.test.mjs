@@ -92,6 +92,45 @@ describe('checkMigrations', () => {
     expect(problems[0]).toMatch(/append-only/)
   })
 
+  describe('fixing a migration that failed in production', () => {
+    const fixed = {
+      ...files,
+      'prisma/migrations/5_failed/migration.sql':
+        '-- fixed-after-failed-deploy: deploy abc123 failed on a missing table, never applied\nSELECT 1;',
+      'prisma/migrations/6_failed_drop/migration.sql':
+        '-- fixed-after-failed-deploy: deploy abc123 failed, never applied\nALTER TABLE "u" DROP COLUMN "nick";',
+      'prisma/migrations/7_marker_empty/migration.sql': '-- fixed-after-failed-deploy:\nSELECT 1;',
+    }
+    const read = (p) => fixed[p]
+
+    it('allows modifying it in place when it carries the marker', () => {
+      expect(checkMigrations({ nameStatusOutput: 'M\tprisma/migrations/5_failed/migration.sql', readFile: read })).toEqual(
+        []
+      )
+    })
+
+    it('still applies the destructive-SQL check to the fixed content', () => {
+      const problems = checkMigrations({
+        nameStatusOutput: 'M\tprisma/migrations/6_failed_drop/migration.sql',
+        readFile: read,
+      })
+      expect(problems).toHaveLength(1)
+      expect(problems[0]).toMatch(/DROP COLUMN/)
+    })
+
+    it('requires a reason on the marker line', () => {
+      expect(
+        checkMigrations({ nameStatusOutput: 'M\tprisma/migrations/7_marker_empty/migration.sql', readFile: read })[0]
+      ).toMatch(/append-only/)
+    })
+
+    it('never allows deleting a migration, marker or not', () => {
+      expect(
+        checkMigrations({ nameStatusOutput: 'D\tprisma/migrations/5_failed/migration.sql', readFile: read })[0]
+      ).toMatch(/append-only/)
+    })
+  })
+
   it('fails for unacknowledged destructive SQL and passes once acknowledged', () => {
     expect(checkMigrations({ nameStatusOutput: 'A\tprisma/migrations/3_drop/migration.sql', readFile })[0]).toMatch(
       /DROP COLUMN/

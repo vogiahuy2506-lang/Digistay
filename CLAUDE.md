@@ -5,9 +5,9 @@ Hướng dẫn cho Claude Code trong repo Digistay. File này được nạp và
 
 ## Git — đọc trước khi commit
 
-- **Push vào `main` là deploy production.** Workflow `Deploy to VPS` chạy ngay khi có push vào
-  `main` và không chờ CI xanh. Không push thẳng `main`; làm trên nhánh `feat|fix|chore/<mô-tả>`
-  rồi mở PR. Không merge PR khi CI đỏ, kể cả PR của Dependabot.
+- **Merge vào `main` là deploy production.** Workflow `Deploy to VPS` chạy ngay sau khi CI xanh
+  trên `main` (chỉ commit mới nhất). Không push thẳng `main`; làm trên nhánh
+  `feat|fix|chore/<mô-tả>` rồi mở PR. Không merge PR khi CI đỏ, kể cả PR của Dependabot.
 - **Chỉ commit file mình tạo hoặc sửa.** Không `git add -A` / `git add .`. Trước mỗi commit:
   `git status --short` và `git diff --cached --stat`. Lý do: `git commit` lấy *toàn bộ*
   staging area, không chỉ file vừa add — repo Founder AI từng kéo 6 file đang làm dở của
@@ -47,7 +47,12 @@ DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54329/digistay_test" npm 
 - Đổi `prisma/schema.prisma` thì **phải** có migration đi kèm (`npm run db:migrate`), commit
   cả hai. CI đỏ nếu schema và `prisma/migrations` lệch nhau.
 - **Không sửa, xoá hay đổi tên migration đã có** — có thể nó đã chạy trên production. Cần
-  sửa thì tạo migration mới. CI chặn việc này.
+  sửa thì tạo migration mới. CI chặn việc này. Ngoại lệ duy nhất: migration đã **fail** khi
+  deploy, sửa tại chỗ kèm dòng `-- fixed-after-failed-deploy: <lý do>` (RUNBOOK).
+- **Migration phải chạy được với code của bản trước.** Deploy chạy migration trước khi đổi
+  container, và khi rollback thì code cũ chạy trên schema mới — migration không được rollback.
+  Thêm cột: nullable hoặc có `DEFAULT`, code dùng ở release sau. Xoá/đổi tên cột: ngừng dùng
+  trong code ở một release, xoá ở release kế tiếp.
 - SQL có thể mất dữ liệu (`DROP`, `RENAME`, đổi kiểu, `SET NOT NULL`, cột `NOT NULL` không
   `DEFAULT`) phải có dòng `-- destructive-ok: <lý do>` trong file, viết sau khi đã kiểm dữ
   liệu production. Thường nên tách: thêm cột nullable → backfill → `SET NOT NULL`.
@@ -63,8 +68,9 @@ DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54329/digistay_test" npm 
 - `middleware.ts` rewrite subdomain `<slug>.digistay.vn` → `/<slug>` và **bỏ qua `/api`**:
   không có lớp nào chặn trước API, mỗi route tự kiểm tra đăng nhập.
 - Biến môi trường khai báo và kiểm tra ở `src/lib/env.ts`; thêm biến thì cập nhật cả `.env.example`.
-- Deploy **chưa** tự chạy migration (sẽ làm ở Phần 3c). Migration mới phải chạy tay theo
-  `docs/RUNBOOK.md` bước 8, trước khi thay container app.
+- Deploy (`docker/deploy.sh`, gọi qua `docker/vps/digistay-deploy.sh` trên VPS): backup →
+  migration bằng image mới trong khi app cũ vẫn chạy → đổi container → chờ `/api/health` báo
+  đúng SHA; không đạt thì tự quay về bản trước và job đỏ. Vận hành VPS: `docs/RUNBOOK.md`.
 
 ## Luật bảo mật cho API
 
@@ -116,9 +122,9 @@ dùng duyệt rồi mới làm, trên nhánh riêng. Cập nhật trạng thái 
 2. File quy trình: `.gitattributes`, `CLAUDE.md`, `dependabot.yml` — xong (`chore/part-2-process-files`)
 3. Chuyển sang `prisma migrate`, kèm: deploy an toàn (chỉ deploy khi CI xanh, chạy migration
    bằng image mới trước khi thay container, kiểm `/api/health` sau deploy), integration test
-   với Postgres thật trong CI, backup database định kỳ (lưu ngoài VPS: bucket GCS).
-   3a migrate + 3b integration test — xong (`chore/part-3-prisma-migrate`); 3c deploy và
-   3d backup — chờ thống nhất cách deploy với người đang làm deploy
+   với Postgres thật trong CI, backup database định kỳ (lưu ngoài VPS: bucket GCS) — code xong
+   (`chore/part-3-prisma-migrate`); còn các bước cài một lần trên VPS và GCP trong RUNBOOK
+   ("Deploy an toàn", "Backup & khôi phục")
 4. Bảo mật nền: chặn dò mật khẩu, 2FA, header bảo mật, mã hoá khoá bên thứ ba; test chính sách
    route (route không kiểm tra đăng nhập phải nằm trong danh sách công khai), quét secret trên PR
 5. Thanh toán PayOS hoặc SePay, mỗi khách sạn một bộ khoá; sửa nhánh tiền mặt đang đặt

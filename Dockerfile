@@ -41,6 +41,11 @@ RUN npm run build
 FROM node:20-alpine AS runner
 WORKDIR /app
 
+# Git SHA of this build, reported by /api/health so a deploy can confirm the
+# new container is the one answering. CI passes --build-arg APP_VERSION=<sha>.
+ARG APP_VERSION=dev
+ENV APP_VERSION=$APP_VERSION
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000

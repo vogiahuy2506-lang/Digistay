@@ -267,14 +267,179 @@ git push origin main
 ```
 
 Vào https://github.com/vogiahuy2506-lang/Digistay/actions — bạn sẽ thấy:
-- **CI** chạy test + tsc + build image (mất ~2–4 phút)
-- **Deploy** tự fire sau khi CI xanh (mất ~30s để SSH + pull + restart)
+- **CI** chạy test + tsc + integration test + build image (mất ~3–5 phút)
+- **Deploy to VPS** tự chạy sau khi CI xanh: backup DB, chạy migration, đổi container, chờ
+  `/api/health` báo đúng commit (~1 phút). Deploy hỏng thì job **đỏ** và app tự quay về bản trước.
 
 Check trên VM sau khi Deploy xong:
 ```bash
 sudo -u deploy docker compose -f /opt/digistay/docker-compose.yml \
   logs --tail=50 app
 ```
+
+---
+
+## Deploy an toàn — cài đặt một lần trên VPS đang chạy
+
+Người làm: người có quyền `gcloud` vào VM. Làm **sau khi** nhánh Phần 3 đã merge vào `main`.
+Luồng deploy: GitHub Actions → `sudo /usr/local/bin/digistay-deploy.sh <sha>` (secret
+`VPS_DEPLOY_CMD`) → checkout đúng commit đó → `docker/deploy.sh <sha>`.
+
+**1. Cho user `deploy` đọc được repo private** (sửa lỗi `Host key verification failed`):
+
+```bash
+sudo -u deploy ssh-keygen -t ed25519 -N '' -C digistay-vps -f /home/deploy/.ssh/github_deploy
+sudo cat /home/deploy/.ssh/github_deploy.pub
+# → GitHub repo → Settings → Deploy keys → Add (KHÔNG tick "Allow write access")
+
+sudo -u deploy sh -c 'ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts'
+sudo -u deploy ssh-keygen -lf /home/deploy/.ssh/known_hosts
+# So fingerprint với trang "GitHub's SSH key fingerprints" trên docs.github.com — phải khớp.
+
+sudo -u deploy git -C /opt/digistay config core.sshCommand \
+  "ssh -i /home/deploy/.ssh/github_deploy -o IdentitiesOnly=yes"
+sudo -u deploy git -C /opt/digistay remote set-url origin git@github.com:vogiahuy2506-lang/Digistay.git
+sudo -u deploy git -C /opt/digistay fetch origin main   # phải chạy được, không hỏi gì
+```
+
+**2. Cho VPS kéo được image private từ GHCR.** Deploy chạy bằng `sudo`, nên đăng nhập cho
+root, bằng một classic token chỉ có quyền `read:packages`:
+
+```bash
+sudo docker login ghcr.io -u <github-username>   # dán token khi được hỏi
+```
+
+**3. Đưa `/opt/digistay` lên `main` mới, cài script deploy:**
+
+```bash
+sudo -u deploy git -C /opt/digistay checkout --detach origin/main
+sudo install -m 0755 -o root -g root \
+  /opt/digistay/docker/vps/digistay-deploy.sh /usr/local/bin/digistay-deploy.sh
+sudo -u deploy docker compose -f /opt/digistay/docker-compose.yml up -d nginx   # nếu nginx chưa chạy
+```
+
+`APP_TAG` trong `/opt/digistay/.env` do `docker/deploy.sh` tự ghi — không sửa tay. Biến
+`GHCR_OWNER` cũ không còn dùng (mặc định đã là `vogiahuy2506-lang`).
+
+**4. Deploy lần đầu:** GitHub → Actions → **Deploy to VPS** → **Run workflow**. DB production
+đang trống nên bước migration sẽ tạo toàn bộ bảng. Kiểm tra:
+
+```bash
+sudo docker exec digistay-app wget -qO- http://127.0.0.1:3000/api/health
+# {"status":"ok","version":"<sha của main>"}
+```
+
+Sửa `docker/vps/digistay-deploy.sh` thì phải chạy lại lệnh `install` ở bước 3.
+
+---
+
+## Backup & khôi phục
+
+`docker/backup.sh` chạy mỗi đêm 03:00 (giờ VN) và trước mỗi lần deploy: `pg_dump`, **khôi
+phục thử** vào DB tạm để chắc bản dump dùng được, giữ 14 ngày ở `/var/backups/digistay`, và
+(bản hằng đêm) chép lên Google Cloud Storage.
+
+### Cài đặt một lần
+
+**1. Bucket GCS và service account riêng cho VM** (chạy trên máy có `gcloud`):
+
+```bash
+PROJECT_ID=$(gcloud config get-value project)
+ZONE=asia-southeast1-c
+BUCKET=gs://digistay-db-backups-$PROJECT_ID
+
+gcloud storage buckets create "$BUCKET" --location=asia-southeast1 \
+  --uniform-bucket-level-access --public-access-prevention
+echo '{"rule":[{"action":{"type":"Delete"},"condition":{"age":30}}]}' > /tmp/lifecycle.json
+gcloud storage buckets update "$BUCKET" --lifecycle-file=/tmp/lifecycle.json   # tự xoá sau 30 ngày
+
+# Service account riêng: chỉ được TẠO object trong bucket này — không đọc, không xoá được,
+# nên VPS có bị chiếm cũng không xoá được backup. (Service account mặc định của GCE có quyền
+# Editor cả project — đừng dùng nó.)
+gcloud iam service-accounts create digistay-vm --display-name="Digistay VM"
+SA=digistay-vm@$PROJECT_ID.iam.gserviceaccount.com
+gcloud storage buckets add-iam-policy-binding "$BUCKET" \
+  --member="serviceAccount:$SA" --role=roles/storage.objectCreator
+```
+
+Gắn service account vào VM **cần tắt VM vài phút**. Trước đó, chắc chắn IP ngoài là IP tĩnh,
+nếu không tắt/bật sẽ đổi IP và DNS trỏ sai:
+
+```bash
+gcloud compute instances describe digistay --zone=$ZONE \
+  --format='value(networkInterfaces[0].accessConfigs[0].natIP)'
+gcloud compute addresses list --filter="address=<IP vừa in>"   # trống = IP tạm → giữ lại:
+gcloud compute addresses create digistay-ip --region=asia-southeast1 --addresses=<IP vừa in>
+
+gcloud compute instances stop digistay --zone=$ZONE
+gcloud compute instances set-service-account digistay --zone=$ZONE \
+  --service-account="$SA" --scopes=cloud-platform
+gcloud compute instances start digistay --zone=$ZONE
+```
+
+**2. Trên VM:**
+
+```bash
+sudo mkdir -p /etc/digistay
+echo "BACKUP_GCS_BUCKET=gs://digistay-db-backups-<PROJECT_ID>" | sudo tee /etc/digistay/backup.env
+sudo chmod 600 /etc/digistay/backup.env
+
+sudo cp /opt/digistay/docker/systemd/digistay-backup.{service,timer} /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now digistay-backup.timer
+
+sudo systemctl start digistay-backup.service        # chạy thử ngay
+sudo journalctl -u digistay-backup -n 20 --no-pager # phải có "restore check OK" và "uploading"
+systemctl list-timers digistay-backup.timer         # lần chạy kế tiếp
+```
+
+### Khôi phục
+
+Đã diễn tập với Postgres 16. Khôi phục vào DB **mới** trước, kiểm tra, rồi mới đổi tên — DB
+hỏng được giữ lại để điều tra.
+
+```bash
+cd /opt/digistay
+ls -lt /var/backups/digistay/ | head          # hoặc lấy từ GCS:
+# gcloud storage ls gs://digistay-db-backups-<PROJECT_ID>/
+# gcloud storage cp gs://digistay-db-backups-<PROJECT_ID>/<file>.dump /tmp/
+DUMP=/var/backups/digistay/<file>.dump
+
+sudo docker compose stop app                  # không ai ghi vào DB trong lúc khôi phục
+sudo docker compose exec -T postgres sh -c 'createdb -U "$POSTGRES_USER" digistay_restored'
+sudo docker compose exec -T postgres sh -c \
+  'pg_restore -U "$POSTGRES_USER" -d digistay_restored --no-owner --exit-on-error' < "$DUMP"
+# Kiểm tra vài bảng trong digistay_restored, rồi đổi tên:
+sudo docker compose exec -T postgres psql -U digistay -d postgres \
+  -c 'ALTER DATABASE digistay RENAME TO digistay_before_restore'
+sudo docker compose exec -T postgres psql -U digistay -d postgres \
+  -c 'ALTER DATABASE digistay_restored RENAME TO digistay'
+sudo docker compose up -d app
+sudo docker exec digistay-app wget -qO- http://127.0.0.1:3000/api/health
+```
+
+---
+
+## Migration fail khi deploy (`P3018`, sau đó `P3009`)
+
+Deploy dừng ở bước 3/5, **trước** khi đổi container: bản cũ vẫn phục vụ. Nhưng Prisma ghi
+migration đó là "failed" và **chặn mọi lần deploy sau** (`P3009`) cho tới khi xử lý:
+
+1. Xem log deploy, xác định migration nào fail và nó đã làm được gì (Postgres thường huỷ cả
+   câu lệnh lỗi; kiểm tra lại các bảng liên quan). Cần thì khôi phục từ bản
+   `pre-deploy-<sha>` trong `/var/backups/digistay`.
+2. Đánh dấu nó đã rollback (chạy bằng image đang chạy, không cần file migration):
+
+   ```bash
+   cd /opt/digistay
+   sudo docker compose run --rm --no-deps app \
+     node node_modules/prisma/build/index.js migrate resolve --rolled-back <ten_migration>
+   ```
+
+3. Sửa **chính file migration đó** (giữ nguyên tên thư mục) trong một PR, thêm dòng
+   `-- fixed-after-failed-deploy: <deploy nào fail, vì sao chưa từng chạy được>`. CI chỉ cho
+   sửa migration cũ khi có dòng này; người review phải xác nhận nó chưa chạy thành công ở đâu.
+4. Merge → deploy chạy lại migration đã sửa.
 
 ---
 
@@ -286,6 +451,10 @@ sudo -u deploy docker compose -f /opt/digistay/docker-compose.yml \
 | `certbot` exit Unauthorized | Port 80 chưa mở ra internet, hoặc DNS chưa lan. |
 | `prisma migrate deploy` → Can't reach DB | Postgres chưa healthy. `docker compose ps` xem status. |
 | `prisma migrate deploy` → `P3005 schema is not empty` | DB dựng bằng `db push`. Baseline theo bước 8. |
+| Deploy đỏ ở bước 3/5, `P3018` hoặc `P3009` | Migration fail. Xem mục "Migration fail khi deploy". |
+| Deploy đỏ ở bước 5/5 "did not become healthy" | App mới không lên; script đã tự quay về bản trước. Log `[app]` ngay trong job. |
+| Deploy đỏ ở bước 1/5 `denied` / `unauthorized` | VPS chưa `docker login ghcr.io` (mục "Deploy an toàn", bước 2). |
+| Deploy đỏ ngay đầu: `Host key verification failed` | User `deploy` chưa đọc được repo (mục "Deploy an toàn", bước 1). |
 | App exit ngay khi start | `docker compose logs app` — thường do sai env var. |
 | Deploy SSH step hangs | `VPS_SSH_KEY` paste thiếu newline. Re-paste nguyên cụm. |
 | `permission denied` writing volumes | Lần đầu chạy với quyền khác. `sudo chown -R deploy:deploy /opt/digistay` rồi retry. |

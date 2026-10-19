@@ -1,7 +1,12 @@
 name: Deploy to VPS
 
+# Deploys only an image that CI built and tested: runs after the CI workflow
+# succeeds for a push to main. "Run workflow" (manual) redeploys the current
+# tip of main, whose image CI must already have built.
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
@@ -9,24 +14,51 @@ concurrency:
   group: production
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
 
     steps:
+      - name: Resolve the commit to deploy
+        id: target
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          MAIN_SHA="$(gh api "repos/${{ github.repository }}/commits/main" --jq .sha)"
+          echo "sha=$CANDIDATE" >> "$GITHUB_OUTPUT"
+          if [ "$CANDIDATE" != "$MAIN_SHA" ]; then
+            # A newer commit landed on main; its own CI run will deploy it.
+            echo "::notice::Skipping $CANDIDATE: main is now at $MAIN_SHA."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Deploy to VPS
+        if: steps.target.outputs.skip != 'true'
         uses: appleboy/ssh-action@v1
+        env:
+          DEPLOY_SHA: ${{ steps.target.outputs.sha }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           port: ${{ secrets.VPS_PORT }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          command_timeout: 10m
+          envs: DEPLOY_SHA
+          command_timeout: 12m
+          # `set -e`: a failing deploy must turn this step red. Without it the
+          # script's exit code was lost and a failed `git pull` showed green.
+          # VPS_DEPLOY_CMD = sudo /usr/local/bin/digistay-deploy.sh
           script: |
-            echo "=== [$(date)] Deploy triggered by GitHub Action ==="
-            echo "Path: ${{ secrets.VPS_DEPLOY_PATH }}"
-            echo "Command: ${{ secrets.VPS_DEPLOY_CMD }}"
-            cd ${{ secrets.VPS_DEPLOY_PATH }}
-            ${{ secrets.VPS_DEPLOY_CMD }} 2>&1
-            echo "=== [$(date)] Deploy finished ==="
+            set -e
+            echo "Deploying $DEPLOY_SHA"
+            ${{ secrets.VPS_DEPLOY_CMD }} "$DEPLOY_SHA"

@@ -7,6 +7,13 @@
  * 1. Append-only: a migration that exists on the base ref must not be
  *    modified, deleted or renamed. It may already be applied in production;
  *    editing it changes nothing there and makes environments drift.
+ *    One exception, Prisma's recovery path for a migration that FAILED in
+ *    production (`migrate resolve --rolled-back`, then fix the same file):
+ *    a modified file may carry
+ *
+ *      -- fixed-after-failed-deploy: <which deploy failed, why it never applied>
+ *
+ *    The reviewer must confirm it never applied anywhere (RUNBOOK).
  * 2. Destructive SQL in a NEW migration (DROP, RENAME, TRUNCATE, type
  *    changes, SET NOT NULL, NOT NULL column without default...) needs an
  *    explicit acknowledgement line in the file:
@@ -40,6 +47,7 @@ const DESTRUCTIVE_PATTERNS = [
 // The reason must be on the marker line itself ([ \t], not \s, so an empty
 // marker cannot borrow the next SQL line as its "reason").
 const ACK_RE = /^--[ \t]*destructive-ok:[ \t]*\S+/m
+const FIXED_RE = /^--[ \t]*fixed-after-failed-deploy:[ \t]*\S+/m
 
 /** Removes `--` line comments and block comments so they cannot trigger or hide matches. */
 export function stripSqlComments(sql) {
@@ -54,6 +62,10 @@ export function findDestructiveOperations(sql) {
 
 export function hasDestructiveAck(sql) {
   return ACK_RE.test(sql)
+}
+
+export function isFixedAfterFailedDeploy(sql) {
+  return FIXED_RE.test(sql)
 }
 
 /**
@@ -82,15 +94,22 @@ export function classifyMigrationChanges(nameStatusOutput) {
 export function checkMigrations({ nameStatusOutput, readFile }) {
   const problems = []
   const { changedExisting, added } = classifyMigrationChanges(nameStatusOutput)
+  const newSql = added.filter((p) => p.endsWith('.sql'))
 
   for (const { status, path } of changedExisting) {
+    if (status === 'M' && path.endsWith('.sql') && isFixedAfterFailedDeploy(readFile(path))) {
+      newSql.push(path) // its new content still gets the destructive-SQL check
+      continue
+    }
     problems.push(
       `${path}: existing migration changed (git status ${status}). ` +
-        'Migrations are append-only — create a new migration instead (npm run db:migrate).'
+        'Migrations are append-only — create a new migration instead (npm run db:migrate). ' +
+        'Only a migration that failed in production may be fixed in place, with a ' +
+        '"-- fixed-after-failed-deploy: <reason>" line (docs/RUNBOOK.md).'
     )
   }
 
-  for (const path of added.filter((p) => p.endsWith('.sql'))) {
+  for (const path of newSql) {
     const sql = readFile(path)
     const ops = findDestructiveOperations(sql)
     if (ops.length > 0 && !hasDestructiveAck(sql)) {
