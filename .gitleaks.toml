@@ -1,0 +1,44 @@
+# gitleaks configuration — run in CI by .github/workflows/secret-scan.yml.
+#
+# .env.production.template was committed with real values (ea21ad2/afbb04e,
+# 2026-10-19: Postgres password, its copy in DATABASE_URL, NEXTAUTH_SECRET, a
+# 7-character SMTP password) next to placeholders. Self-chosen passwords have
+# no recognizable shape, so the default rules missed most of them; the two
+# rules below catch every real value and none of the placeholders (checked
+# against those commits). Minimum length 6 because of that SMTP password.
+# Locally:  docker run --rm -v "$PWD:/repo" -w /repo zricethezav/gitleaks:v8.30.1 \
+#             git . --log-opts="origin/main..HEAD" --redact --no-banner
+
+title = "Digistay"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "env-assigned-secret"
+description = "Value assigned to a *PASSWORD / *SECRET / *TOKEN / *API_KEY variable"
+regex = '''(?im)^\s*(?:export\s+)?[A-Z0-9_]*(?:PASSWORD|SECRET|TOKEN|API_KEY|PRIVATE_KEY)[A-Z0-9_]*[ \t]*=[ \t]*["']?([^\s"'#]{6,})'''
+secretGroup = 1
+keywords = ["password", "secret", "token", "api_key", "private_key"]
+
+[[rules]]
+id = "connection-string-password"
+description = "Password inside a postgres / redis / mysql URL"
+regex = '''(?i)\b(?:postgres(?:ql)?|rediss?|mysql)://[^:/\s@]+:([^@\s/]{6,})@'''
+secretGroup = 1
+keywords = ["postgres", "redis", "mysql"]
+
+[allowlist]
+description = "Placeholders, variable references and throwaway local test credentials"
+regexTarget = "secret"
+regexes = [
+  '''(?i)change[_-]?me''',
+  '''(?i)replace[_-]?me''',
+  '''^\$''',                        # ${VAR} / $VAR references in scripts
+  '''^<[^>]*>$''',                  # <placeholder> in docs
+  '''(?i)^(?:your|paste|enter|put)[_-]''',  # your-secret-here, PASTE_..._SECRET
+  '''^(?:postgres|password|rehearsal)$''',  # local Docker test databases only
+]
+# Do NOT allowlist "uppercase-looking" values: allowlist regexes are matched
+# case-insensitively, so a pattern like ^[A-Z0-9_]+$ hid every real
+# alphanumeric secret (verified against ea21ad2 while writing this file).

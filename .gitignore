@@ -17,16 +17,25 @@
 # Misc
 .DS_Store
 *.pem
+*.key
+*.p12
+# Google Cloud service-account key files
+*-service-account*.json
+gen-lang-client-*.json
 
 # Debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Local env files
+# Env files: only templates holding placeholders may be committed (a real
+# .env.production.template was committed on 2026-10-19 and had to be
+# rotated). gitleaks also scans every PR and push to main.
 .env
-.env*.local
-.env.production
+.env.*
+!.env.example
+!.env.*.example
+!.env.production.template
 
 # Vercel
 .vercel

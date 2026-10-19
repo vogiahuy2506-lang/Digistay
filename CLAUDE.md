@@ -74,11 +74,13 @@ DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54329/digistay_test" npm 
 
 ## Luật bảo mật cho API
 
-Rút ra từ các lỗ hổng đã sửa ở Phần 1 (webhook giả, PUT không đăng nhập, API trả dữ liệu của
-mọi khách sạn).
+Rút ra từ các lỗ hổng đã sửa (webhook giả, PUT không đăng nhập, API trả dữ liệu của mọi khách
+sạn, đặt lại mật khẩu chỉ cần email, email trong phiên do client tự đặt).
 
 1. Mọi route gọi `auth()` hoặc `requireSession()` trước khi đọc DB, trừ route công khai có chủ
-   đích (trang public, webhook có kiểm tra chữ ký).
+   đích. `src/app/api/route-policy.test.ts` bắt buộc điều này: handler nào không gọi hàm kiểm
+   tra đăng nhập phải nằm trong `PUBLIC_HANDLERS` kèm lý do, nếu không CI đỏ. Thêm route công
+   khai mới = thêm một dòng ở đó để người review thấy.
 2. Truy vấn danh sách luôn lọc theo workspace của người dùng:
    `property: { workspace: { OR: [{ ownerId: userId }, { members: { some: { userId } } }] } }`.
    `propertyId` / `bookingId` từ client chỉ được *cộng thêm* vào điều kiện, không thay thế nó.
@@ -89,6 +91,17 @@ mọi khách sạn).
    khoá dòng booking (`SELECT ... FOR UPDATE`), và ghi `activityLog`.
 5. Webhook thanh toán đang **tắt** (`/api/payments/webhook` trả 404) cho tới Phần 5. Không bật
    lại khi chưa kiểm tra chữ ký.
+6. Không tin dữ liệu client gửi vào phiên: callback `jwt` khi `update()` đọc lại từ DB.
+   `session.user.email` được dùng để phân quyền (khách của đơn, lời mời).
+7. Mã một lần (OTP) và token đặt lại mật khẩu chỉ đi qua `src/lib/auth/otp.ts` (lưu dạng băm,
+   theo mục đích, 5 lần thử, dùng một lần). **Không bao giờ ghi mã hay token vào log.**
+8. Endpoint công khai hoặc kiểm mật khẩu/mã phải có giới hạn tần suất: dùng
+   `src/lib/security/rate-limit.ts`, số liệu tập trung ở `limits.ts`. IP chỉ lấy qua
+   `getClientIp()` (tin `X-Real-IP` từ nginx, không đọc `X-Forwarded-For`).
+9. Đổi/đặt lại mật khẩu thì gọi `revokeSessions()` (đăng xuất mọi thiết bị).
+10. Không commit secret. Chỉ `.env.example`, `.env.*.example`, `.env.production.template` (giá
+    trị `CHANGE_ME`) được commit. gitleaks (`.gitleaks.toml`) quét mọi PR và push vào `main`;
+    lỡ commit secret thì **đổi secret trước**, rồi mới thêm vào `.gitleaksignore`.
 
 ## Test — báo đúng những gì đã kiểm
 
@@ -125,8 +138,10 @@ dùng duyệt rồi mới làm, trên nhánh riêng. Cập nhật trạng thái 
    với Postgres thật trong CI, backup database định kỳ (lưu ngoài VPS: bucket GCS) — code xong
    (`chore/part-3-prisma-migrate`); còn các bước cài một lần trên VPS và GCP trong RUNBOOK
    ("Deploy an toàn", "Backup & khôi phục")
-4. Bảo mật nền: chặn dò mật khẩu, 2FA, header bảo mật, mã hoá khoá bên thứ ba; test chính sách
-   route (route không kiểm tra đăng nhập phải nằm trong danh sách công khai), quét secret trên PR
+4. Bảo mật nền — 4a vá chiếm tài khoản (PR #2), 4b giới hạn tần suất + khoá tài khoản + đăng
+   xuất khi đổi mật khẩu (PR #3), 4c test chính sách route + gitleaks + `.gitignore` — xong.
+   Còn: 4d header bảo mật + giới hạn host ảnh, 4e tiện ích mã hoá khoá bên thứ ba, 4f 2FA
+   (TOTP, **không bắt buộc** — người dùng tự bật)
 5. Thanh toán PayOS hoặc SePay, mỗi khách sạn một bộ khoá; sửa nhánh tiền mặt đang đặt
    `PAID` bất kể số tiền và không cập nhật `depositAmount`
 6. Hoá đơn điện tử Mắt Bão

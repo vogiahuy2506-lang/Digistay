@@ -1,0 +1,11 @@
+# Historical findings, accepted 2026-10-19 (see .gitleaks.toml):
+# - ea21ad2 / afbb04e: .env.production.template held real values; they were
+#   rotated on the VPS and replaced with CHANGE_ME in PR #1.
+# - 8cf735d: example password in docs/RUNBOOK.md, now a <placeholder>.
+# Never add a finding here without rotating the secret first.
+afbb04e801e80dc5b69dc49be3e4bd365c1b43ac:.env.production.template:env-assigned-secret:35
+ea21ad2e13eabdca310c3be64db7cd772128f0dd:.env.production.template:env-assigned-secret:9
+ea21ad2e13eabdca310c3be64db7cd772128f0dd:.env.production.template:env-assigned-secret:18
+ea21ad2e13eabdca310c3be64db7cd772128f0dd:.env.production.template:connection-string-password:14
+8cf735d3fc4a628483e131ae1e53a0c5411a1eb7:docs/RUNBOOK.md:connection-string-password:162
+8cf735d3fc4a628483e131ae1e53a0c5411a1eb7:docs/RUNBOOK.md:env-assigned-secret:158
