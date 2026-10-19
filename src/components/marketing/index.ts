@@ -1,3 +1,3 @@
-export { GlassNav } from './GlassNav'
-export { GlassFooter } from './GlassFooter'
-export { GradientBackground, GlassCard, GradientButton, GlassInput } from './GradientBackground'
+export { AuthNav } from './AuthNav'
+export { AuthFooter } from './AuthFooter'
+export { GlassCard, GradientButton, GlassInput } from './GradientBackground'
