@@ -28,6 +28,12 @@ const schema = z.object({
     .string()
     .min(16, 'NEXTAUTH_SECRET must be at least 16 characters (use `openssl rand -hex 32`)'),
 
+  // Third-party secrets stored in the DB: `<keyId>:<base64 32 bytes>`,
+  // comma-separated, newest first. Optional until a feature stores one;
+  // the format is checked by src/lib/security/secret-box.ts (and
+  // /api/health), not here.
+  DATA_ENCRYPTION_KEYS: z.string().optional(),
+
   // Cache — optional; falls back to in-memory stub when missing
   REDIS_URL: z.string().optional(),
 

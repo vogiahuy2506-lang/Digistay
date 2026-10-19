@@ -420,6 +420,50 @@ sudo docker exec digistay-app wget -qO- http://127.0.0.1:3000/api/health
 
 ---
 
+## Khoá mã hoá dữ liệu
+
+Khoá bên thứ ba lưu trong DB (khoá thanh toán của từng khách sạn, tài khoản hoá đơn điện tử,
+secret 2FA) được mã hoá bằng `DATA_ENCRYPTION_KEYS` (`src/lib/security/secret-box.ts`).
+Backup chỉ chứa bản đã mã hoá, nên:
+
+- **Mất khoá** thì backup không cứu được các giá trị đó: mọi khách sạn phải nhập lại.
+- **Lộ khoá cùng với DB hoặc một bản backup** thì coi như lộ hết các khoá bên thứ ba.
+
+Vì vậy khoá nằm ở đúng hai nơi: `.env.production` trên VPS, và trình quản lý mật khẩu
+(Bitwarden/1Password) của **hai người**. Không để trong bucket backup, không gửi qua chat
+hay email, không commit.
+
+### Cài đặt một lần
+
+```bash
+cd /opt/digistay
+sudo grep -c '^DATA_ENCRYPTION_KEYS=' .env.production   # phải là 0
+printf '\nDATA_ENCRYPTION_KEYS=1:%s\n' "$(openssl rand -base64 32)" \
+  | sudo tee -a .env.production >/dev/null
+sudo grep -c '^DATA_ENCRYPTION_KEYS=' .env.production   # phải là 1: hai dòng thì máy lấy dòng cuối
+sudo sed -n 's/^DATA_ENCRYPTION_KEYS=1://p' .env.production | base64 -d | wc -c   # phải là 32
+```
+
+Chép giá trị (`sudo grep '^DATA_ENCRYPTION_KEYS=' .env.production`) vào trình quản lý mật
+khẩu của hai người. Khoá có hiệu lực từ lần deploy kế tiếp. Sau deploy,
+`curl -s https://digistay.vn/api/health` phải có `"status":"ok"`. Khoá sai định dạng làm
+health trả 503 và deploy thất bại; xem lý do (log không in khoá):
+`sudo docker logs digistay-app 2>&1 | grep -m1 DATA_ENCRYPTION_KEYS`.
+
+### Đổi khoá (định kỳ, hoặc khi nghi lộ)
+
+1. Tạo khoá mới với **mã mới** và đặt **lên đầu**, giữ khoá cũ phía sau:
+   `DATA_ENCRYPTION_KEYS=2:<khoá mới>,1:<khoá cũ>`. Cập nhật cả hai bản sao.
+2. Deploy. Giá trị mới mã hoá bằng khoá 2; giá trị cũ vẫn giải mã bằng khoá 1.
+3. Mã hoá lại dữ liệu cũ bằng script (có từ Phần 5, khi đã có bảng lưu khoá).
+4. Chỉ khi script báo không còn giá trị nào dùng khoá 1 mới bỏ `,1:<khoá cũ>` và deploy lại.
+   Bỏ sớm hơn thì các giá trị đó không giải mã được nữa.
+
+Không bao giờ dùng lại một mã khoá cho khoá khác. Nghi lộ khoá: làm như trên, **và** nhờ các
+khách sạn tạo lại khoá ở nhà cung cấp, vì ai có DB cũ và khoá cũ vẫn đọc được giá trị cũ.
+
+---
+
 ## Migration fail khi deploy (`P3018`, sau đó `P3009`)
 
 Deploy dừng ở bước 3/5, **trước** khi đổi container: bản cũ vẫn phục vụ. Nhưng Prisma ghi

@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitest/config'
 import path from 'path'
+import { randomBytes } from 'crypto'
 
 /**
  * Integration tests: real Postgres, real Prisma client, mocked session only.
@@ -11,6 +12,9 @@ import path from 'path'
 export default defineConfig({
   test: {
     globals: true,
+    // A fresh key per run (never a committed one): code that stores
+    // secrets works in tests without each file setting it up.
+    env: { DATA_ENCRYPTION_KEYS: `test:${randomBytes(32).toString('base64')}` },
     environment: 'node',
     include: ['src/**/*.int.test.ts'],
     globalSetup: ['./src/test/integration/global-setup.ts'],
