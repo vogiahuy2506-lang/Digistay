@@ -6,6 +6,9 @@ FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
+# Copy prisma schema first so the postinstall hook (prisma generate)
+# can find it. The actual client binary is regenerated in the builder stage.
+COPY prisma ./prisma
 # Copy lockfiles first for maximum cache reuse.
 COPY package.json package-lock.json* ./
 RUN npm ci
