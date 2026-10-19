@@ -2,8 +2,9 @@ import NextAuth, { NextAuthOptions, getServerSession } from 'next-auth'
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import GoogleProvider from 'next-auth/providers/google'
-import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
+import { authorizeWithPassword } from './credentials'
+import { isSessionRevoked, SessionRevokedError } from './session-revocation'
 
 export { getServerSession }
 
@@ -32,61 +33,41 @@ export const authOptions: NextAuthOptions = {
         username: { label: 'Tên đăng nhập', type: 'text' },
         password: { label: 'Mật khẩu', type: 'password' },
       },
-      async authorize(credentials) {
-        if (!credentials?.username || !credentials?.password) {
-          throw new Error('Vui lòng nhập tên đăng nhập và mật khẩu')
-        }
-
-        const username = credentials.username as string
-        const password = credentials.password as string
-
-        // Find user by username or email
-        const user = await prisma.user.findFirst({
-          where: {
-            OR: [
-              { username: username },
-              { email: username },
-            ],
-          },
-        })
-
-        if (!user || !user.password) {
-          throw new Error('Tên đăng nhập hoặc mật khẩu không chính xác')
-        }
-
-        const isPasswordValid = await bcrypt.compare(password, user.password)
-
-        if (!isPasswordValid) {
-          throw new Error('Tên đăng nhập hoặc mật khẩu không chính xác')
-        }
-
-        // Require email verification
-        if (!user.emailVerified) {
-          throw new Error('Vui lòng xác thực email trước khi đăng nhập. Kiểm tra hộp thư đến của bạn.')
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-          role: user.role,
-        }
+      // Brute-force limits and account lock: see ./credentials.ts
+      async authorize(credentials, req) {
+        return authorizeWithPassword(credentials, req?.headers)
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id
         token.role = user.role
+        // Sign-in time, compared with password changes (session-revocation.ts).
+        token.authTime = Date.now()
       }
 
-      // Handle session update
-      if (trigger === 'update' && session) {
-        token.name = session.name
-        token.email = session.email
-        token.image = session.image
+      // Throwing here makes next-auth clear the cookie: the user is signed out.
+      if (token.id && (await isSessionRevoked(token.id as string, Number(token.authTime ?? 0)))) {
+        throw new SessionRevokedError()
+      }
+
+      // Session update (useSession().update()): reload from the database and
+      // ignore whatever the client sent. next-auth passes the body of
+      // POST /api/auth/session straight in as `session`, and token.email is
+      // used for authorization (booking guest and invitation checks), so
+      // copying it let any user claim any email.
+      if (trigger === 'update' && token.id) {
+        const fresh = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { name: true, email: true, image: true },
+        })
+        if (fresh) {
+          token.name = fresh.name
+          token.email = fresh.email
+          token.image = fresh.image
+        }
       }
 
       return token

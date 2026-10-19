@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { z } from 'zod'
 import { v4 as uuidv4 } from 'uuid'
+import { getClientIp } from '@/lib/security/client-ip'
+import { LIMITS } from '@/lib/security/limits'
+import { hit, tooManyRequests } from '@/lib/security/rate-limit'
 
 const lockSchema = z.object({
   propertyId: z.string(),
@@ -16,6 +19,13 @@ const LOCK_DURATION_MINUTES = 15 // Lock for 15 minutes
 
 export async function POST(request: NextRequest) {
   try {
+    // Public endpoint and the session id is client-chosen, so without a
+    // per-IP cap one client could hold every free room, again and again.
+    const byIp = await hit(LIMITS.roomLockIp, getClientIp(request.headers))
+    if (!byIp.allowed) {
+      return tooManyRequests('Bạn thao tác quá nhanh. Vui lòng thử lại sau ít phút.', byIp.retryAfterSec)
+    }
+
     const session = await request.headers.get('x-session-id') || uuidv4()
     const body = await request.json()
 

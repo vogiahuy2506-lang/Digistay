@@ -1,0 +1,26 @@
+import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/db'
+
+// Must run on every request: a statically rendered health check would
+// report the build-time result forever.
+export const dynamic = 'force-dynamic'
+
+const NO_STORE = { 'Cache-Control': 'no-store' }
+
+/**
+ * GET /api/health — public, for deploys and uptime checks.
+ *
+ * `version` is the git SHA baked into the image (APP_VERSION build arg), so
+ * docker/deploy.sh can confirm the NEW container is the one answering.
+ * Errors are never detailed here: this endpoint is public.
+ */
+export async function GET() {
+  const version = process.env.APP_VERSION || 'dev'
+  try {
+    await prisma.$queryRaw`SELECT 1`
+    return NextResponse.json({ status: 'ok', version }, { headers: NO_STORE })
+  } catch (error) {
+    console.error('Health check failed:', error)
+    return NextResponse.json({ status: 'error', version }, { status: 503, headers: NO_STORE })
+  }
+}

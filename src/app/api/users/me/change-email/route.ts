@@ -4,6 +4,8 @@ import { auth } from '@/lib/auth'
 import { redis } from '@/lib/db/redis'
 import { sendEmailChangeEmail } from '@/lib/email'
 import { randomBytes } from 'crypto'
+import { LIMITS } from '@/lib/security/limits'
+import { isBlocked, recordFailure, tooManyRequests } from '@/lib/security/rate-limit'
 
 function generateToken(): string {
   return randomBytes(32).toString('hex')
@@ -46,6 +48,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Shares the wrong-password budget with password changes (per user).
+    const blocked = await isBlocked(LIMITS.passwordCheckUser, session.user.id)
+    if (!blocked.allowed) {
+      return tooManyRequests('Bạn đã nhập sai mật khẩu quá nhiều lần. Vui lòng thử lại sau.', blocked.retryAfterSec)
+    }
+
     // Verify current password (re-auth for sensitive action)
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -62,6 +70,7 @@ export async function POST(request: NextRequest) {
     const bcrypt = await import('bcryptjs')
     const isValid = await bcrypt.compare(password, user.password || '')
     if (!isValid) {
+      await recordFailure(LIMITS.passwordCheckUser, session.user.id)
       return NextResponse.json(
         { success: false, error: 'Mật khẩu không đúng' },
         { status: 400 }

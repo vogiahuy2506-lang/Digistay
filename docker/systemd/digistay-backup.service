@@ -1,0 +1,11 @@
+# Daily database backup — see docker/backup.sh.
+# Install: docs/RUNBOOK.md, "Backup & khôi phục".
+[Unit]
+Description=Digistay database backup (pg_dump + restore check + GCS copy)
+Wants=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/digistay
+ExecStart=/usr/bin/bash /opt/digistay/docker/backup.sh daily

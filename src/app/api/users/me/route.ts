@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { updateProfileSchema } from '@/lib/validations'
+import { PASSWORD_MIN_LENGTH, PASSWORD_TOO_SHORT, updateProfileSchema } from '@/lib/validations'
 import { sendPasswordChangedEmail } from '@/lib/email'
+import { revokeSessions } from '@/lib/auth/session-revocation'
+import { LIMITS } from '@/lib/security/limits'
+import { clearLimit, isBlocked, recordFailure, tooManyRequests } from '@/lib/security/rate-limit'
 
 export async function GET() {
   try {
@@ -135,11 +138,15 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    if (newPassword.length < 6) {
-      return NextResponse.json(
-        { success: false, error: 'Mật khẩu mới phải có ít nhất 6 ký tự' },
-        { status: 400 }
-      )
+    if (newPassword.length < PASSWORD_MIN_LENGTH) {
+      return NextResponse.json({ success: false, error: PASSWORD_TOO_SHORT }, { status: 400 })
+    }
+
+    // Wrong current passwords per user: a stolen session must not be able
+    // to guess the password.
+    const blocked = await isBlocked(LIMITS.passwordCheckUser, session.user.id)
+    if (!blocked.allowed) {
+      return tooManyRequests('Bạn đã nhập sai mật khẩu quá nhiều lần. Vui lòng thử lại sau.', blocked.retryAfterSec)
     }
 
     // Get user with password
@@ -158,6 +165,7 @@ export async function PUT(request: NextRequest) {
     // Verify current password
     const isValidPassword = await bcrypt.compare(currentPassword, user.password)
     if (!isValidPassword) {
+      await recordFailure(LIMITS.passwordCheckUser, session.user.id)
       return NextResponse.json(
         { success: false, error: 'Mật khẩu hiện tại không đúng' },
         { status: 400 }
@@ -170,6 +178,11 @@ export async function PUT(request: NextRequest) {
       where: { id: session.user.id },
       data: { password: hashedPassword },
     })
+    await clearLimit(LIMITS.passwordCheckUser, session.user.id)
+
+    // Sign out every device, this one included (decision 2026-10-19): the
+    // client should send the user to /login.
+    await revokeSessions(session.user.id)
 
     // Notify user via email (fire and forget)
     if (user.email) {
@@ -181,7 +194,8 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Đổi mật khẩu thành công',
+      message: 'Đổi mật khẩu thành công. Vui lòng đăng nhập lại.',
+      signedOut: true,
     })
   } catch (error) {
     console.error('Change password error:', error)

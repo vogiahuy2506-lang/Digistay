@@ -5,7 +5,10 @@ services:
   # Next.js 14 app (standalone build)
   # --------------------------------------------------------------
   app:
-    image: ghcr.io/${GHCR_OWNER:-senna}/digistay:latest
+    # APP_TAG is the git SHA of the deployed build. docker/deploy.sh records
+    # it in .env, so manual `docker compose` commands keep the same version.
+    # IMAGE_REPO only needs setting to use another registry.
+    image: ${IMAGE_REPO:-ghcr.io/vogiahuy2506-lang/digistay}:${APP_TAG:-latest}
     container_name: digistay-app
     env_file:
       - .env.production
@@ -30,7 +33,8 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
+        # /api/health also checks the database; `/` only proved Next.js was up.
+        - wget --quiet --tries=1 --spider http://127.0.0.1:3000/api/health || exit 1
       interval: 30s
       timeout: 5s
       retries: 5

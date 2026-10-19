@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the Digistay database backup every night
+
+[Timer]
+OnCalendar=*-*-* 03:00:00 Asia/Ho_Chi_Minh
+# Run at the next boot if the VPS was off at 03:00.
+Persistent=true
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target

@@ -1,5 +1,9 @@
 import { z } from 'zod'
 
+/** Minimum length for NEW passwords; existing ones keep working. */
+export const PASSWORD_MIN_LENGTH = 8
+export const PASSWORD_TOO_SHORT = `Mật khẩu phải có ít nhất ${PASSWORD_MIN_LENGTH} ký tự`
+
 // Auth Validations
 export const loginSchema = z.object({
   username: z.string().min(1, 'Vui lòng nhập tên đăng nhập'),
@@ -14,7 +18,7 @@ export const registerSchema = z.object({
     .regex(/^[a-zA-Z0-9_]+$/, 'Chỉ chứa chữ, số và dấu gạch dưới'),
   email: z.string().email('Email không hợp lệ'),
   phone: z.string().optional(),
-  password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+  password: z.string().min(PASSWORD_MIN_LENGTH, PASSWORD_TOO_SHORT),
 })
 
 export const forgotPasswordSchema = z.object({
@@ -24,7 +28,7 @@ export const forgotPasswordSchema = z.object({
 export const resetPasswordSchema = z.object({
   email: z.string().email('Email không hợp lệ'),
   otp: z.string().length(6, 'Mã OTP gồm 6 chữ số'),
-  password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+  password: z.string().min(PASSWORD_MIN_LENGTH, PASSWORD_TOO_SHORT),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Mật khẩu không khớp',

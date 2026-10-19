@@ -81,6 +81,7 @@ export default function PaymentsPage() {
   const [bookings, setBookings] = React.useState<Booking[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [isCreating, setIsCreating] = React.useState(false)
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [selectedPayment, setSelectedPayment] = React.useState<Payment | null>(null)
   const [copiedId, setCopiedId] = React.useState<string | null>(null)
   
@@ -246,6 +247,7 @@ export default function PaymentsPage() {
 
     setCreateError('')
     setCreateSuccess('')
+    setIsSubmitting(true)
 
     try {
       const res = await fetch('/api/payments', {
@@ -273,7 +275,7 @@ export default function PaymentsPage() {
     } catch (err) {
       setCreateError('Có lỗi xảy ra, vui lòng thử lại')
     } finally {
-      setIsCreating(false)
+      setIsSubmitting(false)
     }
   }
 
@@ -288,12 +290,18 @@ export default function PaymentsPage() {
   }
 
   const handleConfirmPayment = async (paymentId: string) => {
+    if (!confirm('Xác nhận đã nhận đủ tiền cho khoản thanh toán này? Thao tác sẽ được ghi lại tên bạn.')) {
+      return
+    }
     try {
       const res = await fetch(`/api/payments/${paymentId}/confirm`, {
         method: 'POST',
       })
       const data = await res.json()
       if (data.success) {
+        if (data.warning) {
+          alert(data.warning)
+        }
         if (selectedProperty) {
           fetchPayments(selectedProperty)
         }
@@ -660,7 +668,7 @@ export default function PaymentsPage() {
               <Button variant="secondary" onClick={() => setIsCreating(false)}>
                 Hủy bỏ
               </Button>
-              <Button onClick={handleCreatePayment} isLoading={isCreating} disabled={isCreating} className="gap-2">
+              <Button onClick={handleCreatePayment} isLoading={isSubmitting} disabled={isSubmitting} className="gap-2">
                 <Plus className="w-4 h-4" />
                 Tạo thanh toán
               </Button>

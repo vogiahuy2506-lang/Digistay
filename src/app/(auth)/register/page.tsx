@@ -69,8 +69,8 @@ export default function RegisterPage() {
       setError('Vui lòng nhập email')
       return
     }
-    if (form.password.length < 6) {
-      setError('Mật khẩu phải có ít nhất 6 ký tự')
+    if (form.password.length < 8) {
+      setError('Mật khẩu phải có ít nhất 8 ký tự')
       return
     }
     if (form.password !== form.confirmPassword) {
@@ -372,7 +372,7 @@ export default function RegisterPage() {
                       icon="lock"
                       type={showPassword ? 'text' : 'password'}
                       value={form.password}
-                      placeholder="Ít nhất 6 ký tự"
+                      placeholder="Ít nhất 8 ký tự"
                       onChange={(v) => setForm({ ...form, password: v })}
                       rightSlot={
                         <button

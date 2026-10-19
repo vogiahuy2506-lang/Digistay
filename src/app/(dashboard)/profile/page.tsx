@@ -201,8 +201,8 @@ export default function ProfilePage() {
       setError('Vui lòng nhập mật khẩu mới')
       return
     }
-    if (passwordForm.newPassword.length < 6) {
-      setError('Mật khẩu mới phải có ít nhất 6 ký tự')
+    if (passwordForm.newPassword.length < 8) {
+      setError('Mật khẩu mới phải có ít nhất 8 ký tự')
       return
     }
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
@@ -227,8 +227,12 @@ export default function ProfilePage() {
       const data = await res.json()
 
       if (data.success) {
-        setSuccess('Đổi mật khẩu thành công! Bạn sẽ nhận email xác nhận.')
+        setSuccess('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.')
         setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+        // The server signed out every device, this one included.
+        if (data.signedOut) {
+          setTimeout(() => signOut({ callbackUrl: '/login' }), 1500)
+        }
       } else {
         setError(data.error || 'Lỗi khi đổi mật khẩu')
       }
@@ -641,7 +645,7 @@ export default function ProfilePage() {
                     value={passwordForm.newPassword}
                     onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
                     className="w-full px-4 py-3 bg-stone-50/70 border border-stone-200 rounded-xl text-sm font-medium text-charcoal placeholder-stone-400 focus-visible:bg-white focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 transition-all outline-none pr-12"
-                    placeholder="Nhập mật khẩu mới (ít nhất 6 ký tự)"
+                    placeholder="Nhập mật khẩu mới (ít nhất 8 ký tự)"
                   />
                   <button
                     type="button"
@@ -652,7 +656,7 @@ export default function ProfilePage() {
                   </button>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Tối thiểu 6 ký tự
+                  Tối thiểu 8 ký tự
                 </p>
               </div>
 

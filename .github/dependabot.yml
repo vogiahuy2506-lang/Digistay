@@ -1,0 +1,82 @@
+# Dependabot version updates: weekly, Monday 02:00 Vietnam time.
+#
+# - Minor + patch for each ecosystem are grouped into ONE pull request.
+# - Major versions are ignored for npm and Docker: the repo is 20+ majors
+#   behind (Next, React, Prisma, Tailwind, Zod...), and those are planned
+#   migrations, not bumps. GitHub Actions majors are allowed (see below).
+#   `update-types` only affects version updates, so security updates for
+#   majors still come through once "Dependabot security updates" is enabled
+#   in the repo settings (it cannot be enabled from this file).
+# - Never auto-merge: merging to main deploys to production.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "02:00"
+      timezone: Asia/Ho_Chi_Minh
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      npm-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "02:00"
+      timezone: Asia/Ho_Chi_Minh
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(ci)"
+    # Majors allowed here, unlike npm/docker: an action major is a one-line
+    # bump, and runner deprecations (e.g. Node 20 → 24) only ship as majors.
+    groups:
+      actions-minor-patch:
+        update-types: [minor, patch]
+
+  # Dockerfile (node base image).
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "02:00"
+      timezone: Asia/Ho_Chi_Minh
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(docker)"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      docker-minor-patch:
+        update-types: [minor, patch]
+
+  # docker-compose.yml (postgres, nginx; certbot is pinned to `latest`,
+  # which Dependabot cannot track).
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "02:00"
+      timezone: Asia/Ho_Chi_Minh
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(docker)"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      compose-minor-patch:
+        update-types: [minor, patch]

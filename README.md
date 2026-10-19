@@ -60,11 +60,11 @@ NEXTAUTH_SECRET="your-super-secret-key-change-in-production"
 ### 4. Khởi tạo database
 
 ```bash
-# Push schema vào database
-npx prisma db push
+# Tạo bảng từ prisma/migrations
+npm run db:deploy
 
 # (Tùy chọn) Chạy seed để tạo dữ liệu demo
-npx prisma db seed
+npm run db:seed
 ```
 
 ### 5. Chạy ứng dụng

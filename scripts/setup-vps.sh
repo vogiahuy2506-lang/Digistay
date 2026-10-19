@@ -99,7 +99,7 @@ if [[ ! -f "$APP_DIR/.env.production" ]]; then
   NEXTAUTH_SECRET=$(openssl rand -hex 32)
   ENV_BLOCK=$(cat <<EOF
 DOMAIN=digistay.vn
-GHCR_OWNER=senna
+# APP_TAG (deployed git SHA) is written here by docker/deploy.sh.
 
 # --- App / NextAuth ---
 NEXTAUTH_URL=https://digistay.vn
@@ -136,6 +136,13 @@ EOF
   say "  >>> so the password matches POSTGRES_PASSWORD."
 fi
 
+# -------- deploy entrypoint + nightly backup --------
+say "Installing /usr/local/bin/digistay-deploy.sh and the backup timer ..."
+install -m 0755 -o root -g root "$APP_DIR/docker/vps/digistay-deploy.sh" /usr/local/bin/digistay-deploy.sh
+cp "$APP_DIR"/docker/systemd/digistay-backup.{service,timer} /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now digistay-backup.timer
+
 # -------- fin --------
 say "Bootstrap complete."
 cat <<'NEXT'
@@ -154,12 +161,11 @@ cat <<'NEXT'
      point at this VM's external IP.
   4. From your laptop, first-time cert issuance:
        gcloud compute ssh digistay-vm -- sudo bash /opt/digistay/docker/certbot/init-cert.sh
-  5. First-time DB migration:
-       gcloud compute ssh digistay-vm -- 'cd /opt/digistay && \
-         sudo -u deploy docker compose run --rm app npx prisma migrate deploy'
-  6. Bring the stack up:
-       gcloud compute ssh digistay-vm -- 'cd /opt/digistay && \
-         sudo -u deploy docker compose up -d'
+  5. Give the deploy user read access to the repo and the VPS access to
+     GHCR, then run the first deploy (it applies migrations):
+     docs/RUNBOOK.md, "Deploy an toàn".
+  6. Set up off-VPS backups (GCS bucket, /etc/digistay/backup.env):
+     docs/RUNBOOK.md, "Backup & khôi phục".
 
   See docs/DEPLOYMENT.md for the full guide.
 ============================================================

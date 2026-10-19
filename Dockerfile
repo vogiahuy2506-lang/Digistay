@@ -41,6 +41,11 @@ RUN npm run build
 FROM node:20-alpine AS runner
 WORKDIR /app
 
+# Git SHA of this build, reported by /api/health so a deploy can confirm the
+# new container is the one answering. CI passes --build-arg APP_VERSION=<sha>.
+ARG APP_VERSION=dev
+ENV APP_VERSION=$APP_VERSION
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
@@ -58,11 +63,16 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Copy public/ so user assets remain accessible.
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-# Prisma schema + engine binary — needed by the runtime client when
-# running prisma migrate deploy from inside the container.
+# Prisma schema + migrations, the generated client and the engines.
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
+# Prisma CLI at the lockfile's version, so migrations run from this exact
+# image before the app container is swapped:
+#   node node_modules/prisma/build/index.js migrate deploy
+# The standalone build does not include it (the app never imports it), and
+# `npx prisma` would download the latest major instead.
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
 
 USER nextjs
 EXPOSE 3000

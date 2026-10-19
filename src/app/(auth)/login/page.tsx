@@ -40,6 +40,8 @@ export default function LoginPage() {
           setError(errMsg) // Already Vietnamese
         } else if (errMsg.includes('không chính xác') || errMsg.includes('not match')) {
           setError('Tên đăng nhập hoặc mật khẩu không chính xác')
+        } else if (errMsg.includes('quá nhiều lần') || errMsg.includes('tạm khoá')) {
+          setError(errMsg) // brute-force limits, already Vietnamese
         } else {
           setError('Đã xảy ra lỗi, vui lòng thử lại')
         }

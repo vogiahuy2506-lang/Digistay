@@ -1,0 +1,23 @@
+# Normalize every text file to LF, in the repo and in the working tree.
+# Added while the repo had zero CRLF files, so no per-file exceptions needed.
+* text=auto eol=lf
+
+# Shell scripts run on the Linux VPS (deploy workflow: `bash docker/deploy.sh`).
+# A CRLF here breaks the deploy with "$'\r': command not found".
+*.sh text eol=lf
+
+# Binary: never diff or convert.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.avif  binary
+*.ico   binary
+*.pdf   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary
+*.zip   binary
+*.xlsx  binary

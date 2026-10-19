@@ -114,10 +114,14 @@ async function send(
   const transport = await getTransport()
 
   // --- Stub: log to console ---
+  // The body may hold one-time codes or links, so it is only printed in
+  // development; production logs must never contain them.
   if (transport.mode === 'stub') {
+    const body =
+      process.env.NODE_ENV === 'development' ? plain : '(body hidden outside development)'
     console.log(
       `[email:stub] Would send "${subject}" from ${from} to ${to.email}\n` +
-        `--- TEXT ---\n${plain}\n---`
+        `--- TEXT ---\n${body}\n---`
     )
     return { success: true, sent: false, error: 'Email service not configured' }
   }
