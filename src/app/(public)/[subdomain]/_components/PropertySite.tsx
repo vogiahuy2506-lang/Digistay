@@ -122,8 +122,8 @@ export function PropertySite({
   const headingFont = settings?.headingFont ?? 'Inter'
 
   // Inject brand colors + fonts as CSS custom properties so blocks can use them.
+  // eslint-disable-next-line
   const themeStyle: React.CSSProperties = {
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     ['--brand-primary' as any]: primary,
     ['--brand-secondary' as any]: settings?.secondaryColor ?? '#10B981',
     ['--brand-accent' as any]: settings?.accentColor ?? '#F59E0B',

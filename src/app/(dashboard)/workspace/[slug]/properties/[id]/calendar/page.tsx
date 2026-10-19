@@ -1636,7 +1636,7 @@ export default function CalendarPage() {
             <footer className="px-7 py-4 bg-amber-50/50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
               <div className="flex items-center gap-2 text-xs text-slate-500">
                 <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span>Điền thông tin và nhấn "Tạo đơn" để hoàn tất</span>
+                <span>Điền thông tin và nhấn &quot;Tạo đơn&quot; để hoàn tất</span>
               </div>
               <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
                 {/* Nút Hủy */}

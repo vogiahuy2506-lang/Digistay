@@ -33,7 +33,7 @@ export function ReviewsBlock({ block }: Props) {
                 style={{ color: 'var(--brand-primary)' }}
               />
               <p className="text-gray-700 mb-4 italic">
-                "Dịch vụ tuyệt vời, phòng sạch đẹp, nhân viên nhiệt tình. Sẽ quay lại!"
+                &quot;Dịch vụ tuyệt vời, phòng sạch đẹp, nhân viên nhiệt tình. Sẽ quay lại!&quot;
               </p>
               <div className="flex items-center gap-3">
                 <div

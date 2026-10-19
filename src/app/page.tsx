@@ -1475,7 +1475,7 @@ export default function LandingPage() {
                           <div className="w-7 h-7 rounded-lg bg-tertiary text-on-tertiary flex items-center justify-center font-bold text-xs">LA</div>
                           <div>
                             <span className="font-label-caps text-label-caps uppercase text-on-surface-variant block">Đang hiệu chỉnh</span>
-                            <span className="font-label-lg text-label-lg font-bold text-on-surface">L'Atelier Dalat Villa</span>
+                            <span className="font-label-lg text-label-lg font-bold text-on-surface">L&apos;Atelier Dalat Villa</span>
                           </div>
                         </div>
                         <span className="px-2 py-0.5 rounded-full bg-tertiary/15 text-tertiary font-label-caps text-label-caps font-bold">12 Phòng</span>
