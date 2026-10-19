@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { consumeOtp, issueResetToken, normalizeEmail } from '@/lib/auth/otp'
+import { getClientIp } from '@/lib/security/client-ip'
+import { LIMITS } from '@/lib/security/limits'
+import { isBlocked, recordFailure, tooManyRequests } from '@/lib/security/rate-limit'
 
 /**
  * POST /api/auth/otp/verify
@@ -30,8 +33,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Wrong codes per IP across all emails (each code also allows only 5 tries).
+    const ip = getClientIp(request.headers)
+    const byIp = await isBlocked(LIMITS.otpVerifyIp, ip)
+    if (!byIp.allowed) {
+      return tooManyRequests('Bạn đã nhập sai quá nhiều lần. Vui lòng thử lại sau.', byIp.retryAfterSec)
+    }
+
     const normalizedEmail = normalizeEmail(email)
     const check = await consumeOtp('forgot_password', normalizedEmail, otp)
+    if (check !== 'ok') await recordFailure(LIMITS.otpVerifyIp, ip)
     if (check === 'too_many_attempts') {
       return NextResponse.json(
         { success: false, error: 'Bạn đã nhập sai quá nhiều lần. Vui lòng yêu cầu mã mới.' },

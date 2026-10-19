@@ -5,6 +5,9 @@ import { registerSchema } from '@/lib/validations'
 import { generateSlug } from '@/lib/utils'
 import { sendOtpEmail } from '@/lib/email'
 import { consumeOtp, issueOtp, normalizeEmail, OtpCooldownError } from '@/lib/auth/otp'
+import { getClientIp } from '@/lib/security/client-ip'
+import { LIMITS } from '@/lib/security/limits'
+import { hit, isBlocked, recordFailure, tooManyRequests } from '@/lib/security/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,8 +25,15 @@ export async function POST(request: NextRequest) {
         )
       }
 
+      const ip = getClientIp(request.headers)
+      const byIp = await isBlocked(LIMITS.otpVerifyIp, ip)
+      if (!byIp.allowed) {
+        return tooManyRequests('Bạn đã nhập sai quá nhiều lần. Vui lòng thử lại sau.', byIp.retryAfterSec)
+      }
+
       const normalizedEmail = normalizeEmail(email)
       const check = await consumeOtp('register', normalizedEmail, otp)
+      if (check !== 'ok') await recordFailure(LIMITS.otpVerifyIp, ip)
       if (check === 'too_many_attempts') {
         return NextResponse.json(
           { success: false, error: 'Bạn đã nhập sai quá nhiều lần. Vui lòng yêu cầu mã mới.' },
@@ -70,6 +80,12 @@ export async function POST(request: NextRequest) {
     }
 
     const { name, username, email: userEmail, phone, password } = validation.data
+
+    // Account creation per IP (each one also sends an email).
+    const byIp = await hit(LIMITS.registerIp, getClientIp(request.headers))
+    if (!byIp.allowed) {
+      return tooManyRequests('Bạn đã tạo quá nhiều tài khoản. Vui lòng thử lại sau.', byIp.retryAfterSec)
+    }
 
     // Check if username already exists
     const existingUsername = await prisma.user.findUnique({

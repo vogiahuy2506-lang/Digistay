@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { sendOtpEmail } from '@/lib/email'
 import { issueOtp, normalizeEmail, OtpCooldownError } from '@/lib/auth/otp'
+import { getClientIp } from '@/lib/security/client-ip'
+import { LIMITS } from '@/lib/security/limits'
+import { hit, tooManyRequests } from '@/lib/security/rate-limit'
 
 /**
  * POST /api/auth/resend-verification
@@ -18,6 +21,12 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Vui lòng nhập email' },
         { status: 400 }
       )
+    }
+
+    // Shares the per-IP budget with /api/auth/otp/send.
+    const byIp = await hit(LIMITS.otpSendIp, getClientIp(request.headers))
+    if (!byIp.allowed) {
+      return tooManyRequests('Bạn đã yêu cầu quá nhiều mã. Vui lòng thử lại sau.', byIp.retryAfterSec)
     }
 
     const normalizedEmail = normalizeEmail(email)

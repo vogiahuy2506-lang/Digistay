@@ -151,8 +151,8 @@ export default function ForgotPasswordPage() {
   const resetPassword = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (passwordForm.newPassword.length < 6) {
-      setError('Mật khẩu phải có ít nhất 6 ký tự')
+    if (passwordForm.newPassword.length < 8) {
+      setError('Mật khẩu phải có ít nhất 8 ký tự')
       return
     }
 
@@ -404,7 +404,7 @@ export default function ForgotPasswordPage() {
                         type={showPassword ? 'text' : 'password'}
                         value={passwordForm.newPassword}
                         onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                        placeholder="Ít nhất 6 ký tự"
+                        placeholder="Ít nhất 8 ký tự"
                         autoComplete="new-password"
                         className="w-full pl-12 pr-12 py-3 rounded-xl bg-surface-container-low border border-outline-variant text-body-md text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                         autoFocus

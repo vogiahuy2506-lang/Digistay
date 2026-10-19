@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
 import { consumeResetToken } from '@/lib/auth/otp'
+import { unlockAccount } from '@/lib/auth/credentials'
+import { revokeSessions } from '@/lib/auth/session-revocation'
+import { PASSWORD_MIN_LENGTH, PASSWORD_TOO_SHORT } from '@/lib/validations'
 
 /**
  * POST /api/auth/reset-password
@@ -25,11 +28,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate before consuming the token, so a rejected password can be retried.
-    if (newPassword.length < 6) {
-      return NextResponse.json(
-        { success: false, error: 'Mật khẩu phải có ít nhất 6 ký tự' },
-        { status: 400 }
-      )
+    if (newPassword.length < PASSWORD_MIN_LENGTH) {
+      return NextResponse.json({ success: false, error: PASSWORD_TOO_SHORT }, { status: 400 })
     }
 
     const userId = await consumeResetToken(resetToken)
@@ -46,6 +46,11 @@ export async function POST(request: NextRequest) {
       data: { password: hashedPassword },
       select: { email: true, name: true },
     })
+
+    // Sign out every device (a stolen session must not survive the reset)
+    // and lift a brute-force lock: the user just proved they own the email.
+    await revokeSessions(userId)
+    await unlockAccount(userId)
 
     // Notify user (non-blocking)
     const { sendPasswordChangedEmail } = await import('@/lib/email')
