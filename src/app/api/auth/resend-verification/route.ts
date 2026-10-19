@@ -1,22 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { redis } from '@/lib/db/redis'
 import { sendOtpEmail } from '@/lib/email'
-
-function generateOTP(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString()
-}
-
-async function storeOTP(key: string, otp: string): Promise<boolean> {
-  try {
-    const store = await redis
-    await store.set(`otp:register:${key}`, otp, 'EX', 600) // 10 minutes for verification
-    return true
-  } catch {
-    console.log(`[OTP:dev] Would store OTP ${otp} for register:${key}`)
-    return true
-  }
-}
+import { issueOtp, normalizeEmail, OtpCooldownError } from '@/lib/auth/otp'
 
 /**
  * POST /api/auth/resend-verification
@@ -35,7 +20,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const normalizedEmail = email.trim().toLowerCase()
+    const normalizedEmail = normalizeEmail(email)
     const user = await prisma.user.findUnique({
       where: { email: normalizedEmail },
     })
@@ -55,8 +40,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const otp = generateOTP()
-    await storeOTP(normalizedEmail, otp)
+    let otp: string
+    try {
+      otp = await issueOtp('register', normalizedEmail)
+    } catch (err) {
+      if (err instanceof OtpCooldownError) {
+        return NextResponse.json(
+          { success: false, error: 'Vui lòng đợi 60 giây trước khi yêu cầu mã mới.', cooldown: true },
+          { status: 429 }
+        )
+      }
+      throw err
+    }
 
     const emailResult = await sendOtpEmail({
       recipientEmail: normalizedEmail,

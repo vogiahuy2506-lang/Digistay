@@ -17,6 +17,8 @@ export default function ForgotPasswordPage() {
 
   const [emailForm, setEmailForm] = React.useState({ email: '' })
   const [otp, setOtp] = React.useState(['', '', '', '', '', ''])
+  // Single-use token from /api/auth/otp/verify; reset-password requires it.
+  const [resetToken, setResetToken] = React.useState('')
   const [resendCooldown, setResendCooldown] = React.useState(0)
   const [passwordForm, setPasswordForm] = React.useState({
     newPassword: '',
@@ -108,6 +110,7 @@ export default function ForgotPasswordPage() {
 
       const data = await res.json()
       if (data.success) {
+        setResetToken(data.resetToken)
         setStep('password')
         setInfo('')
       } else {
@@ -166,7 +169,7 @@ export default function ForgotPasswordPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: emailForm.email,
+          resetToken,
           newPassword: passwordForm.newPassword,
         }),
       })

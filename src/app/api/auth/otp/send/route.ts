@@ -2,41 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { redis } from '@/lib/db/redis'
 import { sendOtpEmail } from '@/lib/email'
+import { issueOtp, normalizeEmail, OtpCooldownError, OTP_PURPOSES, type OtpPurpose } from '@/lib/auth/otp'
 
-// Generate 6-digit OTP
-function generateOTP(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString()
-}
-
-async function getOTPStore() {
-  try {
-    return await redis
-  } catch {
-    return null
-  }
-}
-
-async function storeOTP(key: string, otp: string): Promise<boolean> {
-  try {
-    const store = await getOTPStore()
-    if (!store) {
-      console.log(`[OTP:dev] Would store OTP ${otp} for ${key}`)
-      return true
-    }
-    await store.set(`otp:${key}`, otp, 'EX', 300)
-    return true
-  } catch (err) {
-    console.error('Redis OTP store error:', err)
-    return false
-  }
-}
-
+// Codes sent per email per 15 minutes (verify attempts are limited in @/lib/auth/otp).
 async function checkOTPAttempts(key: string): Promise<{ allowed: boolean; attempts: number }> {
   try {
-    const store = await getOTPStore()
-    if (!store) return { allowed: true, attempts: 0 }
+    const store = redis
 
-    const attemptKey = `otp_attempts:${key}`
+    const attemptKey = `otp_send_count:${key}`
     const attempts = await store.incr(attemptKey)
 
     if (attempts === 1) {
@@ -60,7 +33,7 @@ function isValidEmail(email: string): boolean {
 /**
  * POST /api/auth/otp/send
  * Send OTP to user's email
- * body: { email, purpose?: 'register' | 'forgot_password' | 'login' }
+ * body: { email, purpose?: 'register' | 'forgot_password' }
  */
 export async function POST(request: NextRequest) {
   try {
@@ -74,7 +47,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const normalizedEmail = email.trim().toLowerCase()
+    if (!OTP_PURPOSES.includes(purpose)) {
+      return NextResponse.json(
+        { success: false, error: 'Mục đích gửi mã không hợp lệ' },
+        { status: 400 }
+      )
+    }
+
+    const normalizedEmail = normalizeEmail(email)
 
     if (!isValidEmail(normalizedEmail)) {
       return NextResponse.json(
@@ -118,13 +98,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const otp = generateOTP()
-    const stored = await storeOTP(normalizedEmail, otp)
-    if (!stored) {
-      return NextResponse.json(
-        { success: false, error: 'Không thể lưu mã OTP' },
-        { status: 500 }
-      )
+    let otp: string
+    try {
+      otp = await issueOtp(purpose as OtpPurpose, normalizedEmail)
+    } catch (err) {
+      if (err instanceof OtpCooldownError) {
+        return NextResponse.json(
+          { success: false, error: 'Vui lòng đợi 60 giây trước khi yêu cầu mã mới.', cooldown: true },
+          { status: 429 }
+        )
+      }
+      throw err
     }
 
     // Get user name if exists (for personalized email)
@@ -135,7 +119,7 @@ export async function POST(request: NextRequest) {
       recipientEmail: normalizedEmail,
       recipientName: existingUser?.name || undefined,
       otp,
-      purpose: purpose as 'register' | 'forgot_password' | 'login',
+      purpose: purpose as OtpPurpose,
     })
 
     if (!result.success) {
@@ -149,7 +133,6 @@ export async function POST(request: NextRequest) {
     }
 
     const isDev = process.env.NODE_ENV === 'development'
-    console.log(`[OTP] Sent to ${normalizedEmail}: ${otp}`)
 
     return NextResponse.json({
       success: true,

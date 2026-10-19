@@ -76,17 +76,27 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id
         token.role = user.role
       }
 
-      // Handle session update
-      if (trigger === 'update' && session) {
-        token.name = session.name
-        token.email = session.email
-        token.image = session.image
+      // Session update (useSession().update()): reload from the database and
+      // ignore whatever the client sent. next-auth passes the body of
+      // POST /api/auth/session straight in as `session`, and token.email is
+      // used for authorization (booking guest and invitation checks), so
+      // copying it let any user claim any email.
+      if (trigger === 'update' && token.id) {
+        const fresh = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { name: true, email: true, image: true },
+        })
+        if (fresh) {
+          token.name = fresh.name
+          token.email = fresh.email
+          token.image = fresh.image
+        }
       }
 
       return token

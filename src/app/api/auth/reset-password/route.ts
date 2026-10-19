@@ -1,24 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
+import { consumeResetToken } from '@/lib/auth/otp'
 
 /**
  * POST /api/auth/reset-password
- * Reset password using email (after OTP verification)
- * body: { email, newPassword }
+ * body: { resetToken, newPassword }
+ *
+ * resetToken comes from POST /api/auth/otp/verify after a correct
+ * forgot-password code; it is single-use and names the user. The previous
+ * version took { email, newPassword } with no proof at all, so anyone who
+ * knew an email could take over that account.
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { email, newPassword } = body
+    const body = await request.json().catch(() => ({}))
+    const { resetToken, newPassword } = body as { resetToken?: unknown; newPassword?: unknown }
 
-    if (!email || !newPassword) {
+    if (typeof resetToken !== 'string' || !resetToken || typeof newPassword !== 'string' || !newPassword) {
       return NextResponse.json(
-        { success: false, error: 'Vui lòng nhập email và mật khẩu mới' },
+        { success: false, error: 'Vui lòng xác thực mã OTP rồi nhập mật khẩu mới' },
         { status: 400 }
       )
     }
 
+    // Validate before consuming the token, so a rejected password can be retried.
     if (newPassword.length < 6) {
       return NextResponse.json(
         { success: false, error: 'Mật khẩu phải có ít nhất 6 ký tự' },
@@ -26,27 +32,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const normalizedEmail = email.trim().toLowerCase()
-
-    // Find user by email
-    const user = await prisma.user.findUnique({
-      where: { email: normalizedEmail },
-    })
-
-    if (!user) {
+    const userId = await consumeResetToken(resetToken)
+    if (!userId) {
       return NextResponse.json(
-        { success: false, error: 'Không tìm thấy tài khoản với email này' },
-        { status: 404 }
+        { success: false, error: 'Phiên đặt lại mật khẩu không hợp lệ hoặc đã hết hạn. Vui lòng làm lại.' },
+        { status: 400 }
       )
     }
 
-    // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 12)
-
-    // Update password
-    await prisma.user.update({
-      where: { id: user.id },
+    const user = await prisma.user.update({
+      where: { id: userId },
       data: { password: hashedPassword },
+      select: { email: true, name: true },
     })
 
     // Notify user (non-blocking)
