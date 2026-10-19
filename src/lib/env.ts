@@ -59,6 +59,7 @@ const schema = z.object({
   EMAIL_SERVER_PORT: z.string().optional(),
   EMAIL_SERVER_USER: z.string().optional(),
   EMAIL_SERVER_PASSWORD: z.string().optional(),
+  EMAIL_TLS_REJECT_UNAUTHORIZED: z.enum(['true', 'false']).optional(),
 
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 })

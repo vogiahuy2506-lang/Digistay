@@ -21,6 +21,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: unless-stopped
     # The container itself only listens on the bridge network; nginx
     # publishes 80/443 to the host. No host port mapping here so the
@@ -96,6 +98,27 @@ services:
       - digistay_net
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do sleep 6h & wait $${!}; done'"
 
+  # --------------------------------------------------------------
+  # Redis — shared cache (session, rate-limit, app cache)
+  # --------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: digistay-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - digistay_net
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - redis-cli ping | grep PONG
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
 networks:
   digistay_net:
     driver: bridge
@@ -108,3 +131,5 @@ volumes:
     name: digistay_certbot_conf
   certbot_www:
     name: digistay_certbot_www
+  redis_data:
+    name: digistay_redis_data

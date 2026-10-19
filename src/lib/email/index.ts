@@ -1,9 +1,15 @@
 /**
- * Email service for Digistay (Stub).
- * 
- * In production, this would be backed by Resend (https://resend.com)
- * For development, emails are logged to console.
+ * Email service for Digistay.
+ *
+ * Supported transports (chosen at runtime based on env):
+ *   1. SMTP via nodemailer — when EMAIL_SERVER_HOST is set
+ *   2. Resend — when RESEND_API_KEY is set
+ *   3. Stub — logs to console (dev / unconfigured)
+ *
+ * Priority: SMTP > Resend > Stub.
  */
+
+import nodemailer, { type Transporter } from 'nodemailer'
 
 export interface EmailRecipient {
   email: string
@@ -17,7 +23,72 @@ export interface SendResult {
   error?: string
 }
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+// ============================================
+//  Transport selection
+// ============================================
+
+let cachedTransport: Transporter | null = null
+let transportMode: 'smtp' | 'resend' | 'stub' = 'stub'
+
+function buildSmtpTransport(): Transporter | null {
+  const host = process.env.EMAIL_SERVER_HOST
+  const port = process.env.EMAIL_SERVER_PORT
+  const user = process.env.EMAIL_SERVER_USER
+  const pass = process.env.EMAIL_SERVER_PASSWORD
+
+  if (!host || !port || !user || !pass) return null
+
+  const portNum = Number(port)
+  const isSecure = portNum === 465
+
+  return nodemailer.createTransport({
+    host,
+    port: portNum,
+    secure: isSecure, // true for 465, false for 587 (STARTTLS)
+    auth: { user, pass },
+    tls: {
+      // Required when using self-signed certs on internal SMTP
+      rejectUnauthorized: process.env.EMAIL_TLS_REJECT_UNAUTHORIZED !== 'false',
+    },
+  })
+}
+
+async function buildResendClient() {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) return null
+  // Lazy import to avoid bundling when unused
+  const { Resend } = await import('resend')
+  return new Resend(apiKey)
+}
+
+async function getTransport(): Promise<
+  | { mode: 'smtp'; smtp: Transporter }
+  | { mode: 'resend'; resend: Awaited<ReturnType<typeof buildResendClient>> }
+  | { mode: 'stub' }
+> {
+  if (process.env.EMAIL_SERVER_HOST) {
+    if (!cachedTransport) {
+      cachedTransport = buildSmtpTransport()
+    }
+    if (cachedTransport) {
+      transportMode = 'smtp'
+      return { mode: 'smtp', smtp: cachedTransport }
+    }
+  }
+
+  const resend = await buildResendClient()
+  if (resend) {
+    transportMode = 'resend'
+    return { mode: 'resend', resend }
+  }
+
+  transportMode = 'stub'
+  return { mode: 'stub' }
+}
+
+function getFromAddress(): string {
+  return process.env.EMAIL_FROM ?? 'Digistay <noreply@digistay.vn>'
+}
 
 async function send(
   to: EmailRecipient,
@@ -25,20 +96,60 @@ async function send(
   html: string,
   text?: string
 ): Promise<SendResult> {
-  // Dev fallback: log to console so developers can see the email.
-  console.log(
-    `[email:dev] Would send "${subject}" to ${to.email}\n` +
-      `--- TEXT ---\n${text ?? html}\n---`
-  )
-  return { success: true, sent: false, error: 'Email service not configured' }
-}
+  const from = getFromAddress()
+  const plain = text ?? html
 
-function stripHtml(html: string): string {
-  return html
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-    .replace(/<[^>]+>/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
+  const transport = await getTransport()
+
+  // --- Stub: log to console ---
+  if (transport.mode === 'stub') {
+    console.log(
+      `[email:stub] Would send "${subject}" from ${from} to ${to.email}\n` +
+        `--- TEXT ---\n${plain}\n---`
+    )
+    return { success: true, sent: false, error: 'Email service not configured' }
+  }
+
+  // --- SMTP ---
+  if (transport.mode === 'smtp') {
+    try {
+      const info = await transport.smtp.sendMail({
+        from,
+        to: to.name ? `"${to.name}" <${to.email}>` : to.email,
+        subject,
+        text: plain,
+        html,
+      })
+      return { success: true, sent: true, id: info.messageId }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown SMTP error'
+      console.error(`[email:smtp] Failed to send to ${to.email}: ${message}`)
+      return { success: false, sent: false, error: message }
+    }
+  }
+
+  // --- Resend ---
+  if (transport.mode === 'resend' && transport.resend) {
+    try {
+      const result = await transport.resend.emails.send({
+        from,
+        to: to.email,
+        subject,
+        text: plain,
+        html,
+      })
+      if (result.error) {
+        return { success: false, sent: false, error: result.error.message }
+      }
+      return { success: true, sent: true, id: result.data?.id }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown Resend error'
+      console.error(`[email:resend] Failed to send to ${to.email}: ${message}`)
+      return { success: false, sent: false, error: message }
+    }
+  }
+
+  return { success: false, sent: false, error: 'No transport available' }
 }
 
 // ============================================
