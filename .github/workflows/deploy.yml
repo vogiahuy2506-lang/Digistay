@@ -29,6 +29,40 @@ jobs:
        github.event.workflow_run.event == 'push')
 
     steps:
+      # --------------------------------------------------------------
+      # Diagnose secrets first, before any SSH attempt. drone-ssh prints
+      # `ssh: no key found` when the PEM body is malformed (missing
+      # header, trailing whitespace, public-key pasted by accident). This
+      # step prints metadata that is safe to show in logs.
+      # --------------------------------------------------------------
+      - name: Inspect VPS_SSH_KEY (metadata only)
+        id: key-probe
+        env:
+          KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$KEY" > /tmp/key.pem
+          echo "lines=$(wc -l < /tmp/key.pem | tr -d ' ')"
+          echo "bytes=$(wc -c < /tmp/key.pem | tr -d ' ')"
+          echo "first_line=$(head -n 1 /tmp/key.pem)"
+          echo "last_line=$(tail -n 1 /tmp/key.pem)"
+          echo "has_begin=$(grep -cE '^-----BEGIN' /tmp/key.pem || true)"
+          echo "has_end=$(grep -cE '^-----END' /tmp/key.pem || true)"
+          echo "key_type_hint=$(grep -oE '^-----BEGIN [A-Z ]+PRIVATE KEY-----' /tmp/key.pem || echo 'NO_HEADER')"
+          # Whitespace sanity: secrets pasted from a CMS often pick up
+          # trailing newlines or leading spaces.
+          printf 'first_byte=0x%x\n' "$(head -c 1 /tmp/key.pem | od -An -tx1 | tr -d ' ')"
+          printf 'last_byte=0x%x\n'  "$(tail -c 1 /tmp/key.pem | od -An -tx1 | tr -d ' ')"
+          # Soft warnings: surface without failing the step so users see
+          # them but the deploy can still run.
+          if ! grep -qE '^-----BEGIN ' /tmp/key.pem; then
+            echo "::warning::VPS_SSH_KEY does not start with -----BEGIN — key will be rejected."
+          fi
+          if [ "$(tail -c 1 /tmp/key.pem | wc -l)" = "0" ] && [ -n "$(tail -c 1 /tmp/key.pem)" ]; then
+            echo "::warning::VPS_SSH_KEY does not end with a newline before EOF — may confuse some parsers."
+          fi
+          rm -f /tmp/key.pem
+
       - name: Resolve the commit to deploy
         id: target
         env:
