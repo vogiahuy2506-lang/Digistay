@@ -3,7 +3,6 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { redis } from '@/lib/db/redis'
 
-// Get Redis client (for OTP storage)
 async function getOTPStore() {
   try {
     return await redis
@@ -12,17 +11,15 @@ async function getOTPStore() {
   }
 }
 
-// Verify OTP from Redis
-async function verifyOTPFromStore(phone: string, otp: string): Promise<boolean> {
+async function verifyOTPFromStore(key: string, otp: string): Promise<boolean> {
   try {
     const store = await getOTPStore()
     if (!store) {
-      // Fallback: accept any 6-digit OTP in dev
-      console.log(`[OTP:dev] Would verify OTP ${otp} for ${phone}`)
-      return otp.length === 6
+      // Dev fallback: accept any 6-digit OTP
+      console.log(`[OTP:dev] Would verify OTP ${otp} for ${key}`)
+      return /^\d{6}$/.test(otp)
     }
-    const key = `otp:${phone}`
-    const storedOTP = await store.get(key)
+    const storedOTP = await store.get(`otp:${key}`)
     return storedOTP === otp
   } catch (err) {
     console.error('Redis OTP verify error:', err)
@@ -30,13 +27,11 @@ async function verifyOTPFromStore(phone: string, otp: string): Promise<boolean> 
   }
 }
 
-// Delete OTP after verification
-async function deleteOTP(phone: string): Promise<void> {
+async function deleteOTP(key: string): Promise<void> {
   try {
     const store = await getOTPStore()
     if (store) {
-      const key = `otp:${phone}`
-      await store.del(key)
+      await store.del(`otp:${key}`)
     }
   } catch (err) {
     console.error('Redis OTP delete error:', err)
@@ -45,57 +40,58 @@ async function deleteOTP(phone: string): Promise<void> {
 
 /**
  * POST /api/auth/otp/verify
- * Verify OTP and optionally link phone to user
+ * Verify OTP sent to email
+ * body: { email, otp, linkToAccount? }
  */
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
     const body = await request.json()
-    const { phone, otp, linkToAccount } = body
+    const { email, otp, linkToAccount } = body
 
-    if (!phone || !otp) {
+    if (!email || !otp) {
       return NextResponse.json(
-        { success: false, error: 'Missing phone and OTP' },
+        { success: false, error: 'Vui lòng nhập email và mã OTP' },
         { status: 400 }
       )
     }
 
-    if (otp.length !== 6 || !/^\d+$/.test(otp)) {
+    if (!/^\d{6}$/.test(otp)) {
       return NextResponse.json(
-        { success: false, error: 'OTP must be 6 digits' },
+        { success: false, error: 'Mã OTP phải gồm 6 chữ số' },
         { status: 400 }
       )
     }
 
-    // Verify OTP
-    const isValid = await verifyOTPFromStore(phone, otp)
+    const normalizedEmail = email.trim().toLowerCase()
+
+    const isValid = await verifyOTPFromStore(normalizedEmail, otp)
     if (!isValid) {
       return NextResponse.json(
-        { success: false, error: 'Invalid or expired OTP' },
+        { success: false, error: 'Mã OTP không hợp lệ hoặc đã hết hạn' },
         { status: 400 }
       )
     }
 
-    // Delete OTP after successful verification
-    await deleteOTP(phone)
+    await deleteOTP(normalizedEmail)
 
-    // If user is logged in and wants to link phone
+    // If user logged in and wants to link email (no-op currently since email is already on user)
     if (session?.user?.id && linkToAccount) {
       await prisma.user.update({
         where: { id: session.user.id },
-        data: { phone },
+        data: { email: normalizedEmail },
       })
     }
 
     return NextResponse.json({
       success: true,
-      message: 'OTP verified successfully',
-      phone,
+      message: 'Xác thực OTP thành công',
+      email: normalizedEmail,
     })
   } catch (error) {
     console.error('Verify OTP error:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to verify OTP' },
+      { success: false, error: 'Đã xảy ra lỗi khi xác thực' },
       { status: 500 }
     )
   }

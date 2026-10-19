@@ -2,18 +2,19 @@ import { z } from 'zod'
 
 // Auth Validations
 export const loginSchema = z.object({
-  email: z.string().email('Email không hợp lệ'),
-  password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+  username: z.string().min(1, 'Vui lòng nhập tên đăng nhập'),
+  password: z.string().min(1, 'Vui lòng nhập mật khẩu'),
 })
 
 export const registerSchema = z.object({
   name: z.string().min(2, 'Tên phải có ít nhất 2 ký tự'),
+  username: z.string()
+    .min(3, 'Tên đăng nhập phải có ít nhất 3 ký tự')
+    .max(30, 'Tên đăng nhập không quá 30 ký tự')
+    .regex(/^[a-zA-Z0-9_]+$/, 'Chỉ chứa chữ, số và dấu gạch dưới'),
   email: z.string().email('Email không hợp lệ'),
+  phone: z.string().optional(),
   password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Mật khẩu không khớp',
-  path: ['confirmPassword'],
 })
 
 export const forgotPasswordSchema = z.object({
@@ -21,6 +22,8 @@ export const forgotPasswordSchema = z.object({
 })
 
 export const resetPasswordSchema = z.object({
+  email: z.string().email('Email không hợp lệ'),
+  otp: z.string().length(6, 'Mã OTP gồm 6 chữ số'),
   password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {

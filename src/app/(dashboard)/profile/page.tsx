@@ -63,6 +63,12 @@ export default function ProfilePage() {
   const [showCurrentPassword, setShowCurrentPassword] = React.useState(false)
   const [showNewPassword, setShowNewPassword] = React.useState(false)
 
+  // Email change state
+  const [emailForm, setEmailForm] = React.useState({ newEmail: '', password: '' })
+  const [isChangingEmail, setIsChangingEmail] = React.useState(false)
+  const [emailChangeInfo, setEmailChangeInfo] = React.useState('')
+  const [showNewEmailPassword, setShowNewEmailPassword] = React.useState(false)
+
   React.useEffect(() => {
     fetchProfile()
   }, [])
@@ -221,7 +227,7 @@ export default function ProfilePage() {
       const data = await res.json()
 
       if (data.success) {
-        setSuccess('Đổi mật khẩu thành công!')
+        setSuccess('Đổi mật khẩu thành công! Bạn sẽ nhận email xác nhận.')
         setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
       } else {
         setError(data.error || 'Lỗi khi đổi mật khẩu')
@@ -234,11 +240,81 @@ export default function ProfilePage() {
     }
   }
 
+  const handleChangeEmail = async () => {
+    if (!emailForm.newEmail) {
+      setError('Vui lòng nhập email mới')
+      return
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailForm.newEmail)) {
+      setError('Email không hợp lệ')
+      return
+    }
+    if (!emailForm.password) {
+      setError('Vui lòng nhập mật khẩu để xác nhận')
+      return
+    }
+
+    setIsChangingEmail(true)
+    setError('')
+    setSuccess('')
+    setEmailChangeInfo('')
+
+    try {
+      const res = await fetch('/api/users/me/change-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          newEmail: emailForm.newEmail,
+          password: emailForm.password,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (data.success) {
+        setEmailChangeInfo(data.message)
+        setEmailForm({ newEmail: '', password: '' })
+        setSuccess('Đã gửi email xác nhận. Vui lòng kiểm tra hộp thư mới.')
+      } else {
+        setError(data.error || 'Lỗi khi đổi email')
+      }
+    } catch (err) {
+      console.error('Change email error:', err)
+      setError('Đã xảy ra lỗi khi đổi email')
+    } finally {
+      setIsChangingEmail(false)
+    }
+  }
+
   const handleLogout = () => {
     if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
       signOut({ callbackUrl: '/login' })
     }
   }
+
+  // Handle email change redirect messages
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const status = params.get('email_change')
+    if (status === 'success') {
+      setSuccess('Đổi email thành công! Vui lòng đăng nhập lại.')
+      fetchProfile()
+      window.history.replaceState({}, '', '/profile')
+    } else if (status === 'expired') {
+      setError('Link xác nhận đã hết hạn. Vui lòng thử lại.')
+      window.history.replaceState({}, '', '/profile')
+    } else if (status === 'taken') {
+      setError('Email này đã được sử dụng bởi tài khoản khác.')
+      window.history.replaceState({}, '', '/profile')
+    } else if (status === 'unauthorized') {
+      setError('Bạn cần đăng nhập để xác nhận đổi email.')
+      window.history.replaceState({}, '', '/profile')
+    } else if (status === 'error') {
+      setError('Đã xảy ra lỗi khi xác nhận đổi email.')
+      window.history.replaceState({}, '', '/profile')
+    }
+  }, [])
 
   if (isLoading) {
     return (
@@ -384,7 +460,7 @@ export default function ProfilePage() {
                   value={profile?.email || ''}
                   disabled
                   icon={<Mail className="w-4 h-4" />}
-                  hint="Email không thể thay đổi"
+                  hint="Vào tab Bảo mật để thay đổi email"
                 />
 
                 <Input
@@ -460,6 +536,67 @@ export default function ProfilePage() {
       {/* Security Tab */}
       {activeTab === 'security' && (
         <div className="max-w-2xl space-y-6">
+          {/* Email change */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Mail className="w-5 h-5" />
+                Đổi địa chỉ email
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Hiện tại: <span className="font-semibold text-gray-900">{profile?.email}</span>
+              </p>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Email mới
+                </label>
+                <input
+                  type="email"
+                  value={emailForm.newEmail}
+                  onChange={(e) => setEmailForm({ ...emailForm, newEmail: e.target.value })}
+                  className="w-full px-4 py-3 bg-stone-50/70 border border-stone-200 rounded-xl text-sm font-medium text-charcoal placeholder-stone-400 focus-visible:bg-white focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 transition-all outline-none"
+                  placeholder="email-moi@example.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Nhập mật khẩu để xác nhận
+                </label>
+                <div className="relative">
+                  <input
+                    type={showNewEmailPassword ? 'text' : 'password'}
+                    value={emailForm.password}
+                    onChange={(e) => setEmailForm({ ...emailForm, password: e.target.value })}
+                    className="w-full px-4 py-3 pr-12 bg-stone-50/70 border border-stone-200 rounded-xl text-sm font-medium text-charcoal placeholder-stone-400 focus-visible:bg-white focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 transition-all outline-none"
+                    placeholder="Mật khẩu hiện tại"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewEmailPassword(!showNewEmailPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showNewEmailPassword ? '🙈' : '👁️'}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Một email xác nhận sẽ được gửi đến địa chỉ mới. Vui lòng nhấp vào link trong email để hoàn tất.
+                </p>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <Button onClick={handleChangeEmail} isLoading={isChangingEmail}>
+                  <Mail className="w-4 h-4 mr-2" />
+                  Gửi email xác nhận
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Password change */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

@@ -10,6 +10,18 @@
  */
 
 import nodemailer, { type Transporter } from 'nodemailer'
+import {
+  otpEmailTemplate,
+  welcomeEmailTemplate,
+  passwordChangedTemplate,
+  emailChangeTemplate,
+  bookingConfirmationTemplate,
+  workspaceInviteTemplate,
+  invoiceEmailTemplate,
+  type OtpEmailTemplateProps,
+  type BookingConfirmationTemplateProps,
+  type WorkspaceInviteTemplateProps,
+} from './templates'
 
 export interface EmailRecipient {
   email: string
@@ -156,29 +168,13 @@ async function send(
 //  Booking confirmation
 // ============================================
 
-export interface BookingConfirmationData {
-  guestName: string
-  guestEmail: string
-  bookingCode: string
-  propertyName: string
-  propertyAddress: string
-  propertyPhone: string | null
-  checkIn: string
-  checkOut: string
-  numAdults: number
-  numChildren: number
-  totalAmount: number
-  currency?: string
-  manageUrl: string
-}
+export type BookingConfirmationData = BookingConfirmationTemplateProps
 
 export async function sendBookingConfirmation(
   data: BookingConfirmationData
 ): Promise<SendResult> {
-  const { guestName, guestEmail, bookingCode, propertyName } = data
-  const subject = `[${bookingCode}] Xac nhan dat phong tai ${propertyName}`
-  const text = `Xac nhan dat phong: ${bookingCode}\nKhach san: ${propertyName}\nNgay: ${data.checkIn} - ${data.checkOut}`
-  return send({ email: guestEmail, name: guestName }, subject, text, text)
+  const { html, text, subject } = bookingConfirmationTemplate(data)
+  return send({ email: data.guestEmail, name: data.guestName }, subject, text, html)
 }
 
 // ============================================
@@ -203,8 +199,8 @@ export interface OwnerNewBookingData {
 export async function sendOwnerNewBooking(
   data: OwnerNewBookingData
 ): Promise<SendResult> {
-  const subject = `Don dat phong moi #${data.bookingCode} - ${data.propertyName}`
-  const text = `Don dat phong: ${data.bookingCode}\nKhach: ${data.guestName}\nNgay: ${data.checkIn} - ${data.checkOut}`
+  const subject = `Đơn đặt phòng mới #${data.bookingCode} - ${data.propertyName}`
+  const text = `Đơn đặt phòng: ${data.bookingCode}\nKhách: ${data.guestName}\nNgày: ${data.checkIn} - ${data.checkOut}`
   return send({ email: data.ownerEmail, name: data.ownerName }, subject, text, text)
 }
 
@@ -212,22 +208,48 @@ export async function sendOwnerNewBooking(
 //  Workspace invitation
 // ============================================
 
-export interface WorkspaceInviteData {
-  recipientEmail: string
-  recipientName?: string
-  inviterName: string
-  workspaceName: string
-  role: string
-  inviteUrl: string
-  expiresAt: Date
-}
+export type WorkspaceInviteData = WorkspaceInviteTemplateProps
 
 export async function sendWorkspaceInvite(
   data: WorkspaceInviteData
 ): Promise<SendResult> {
-  const subject = `${data.inviterName} moi ban tham gia ${data.workspaceName}`
-  const text = `Loi moi tu: ${data.inviterName}\nWorkspace: ${data.workspaceName}\nVai tro: ${data.role}`
-  return send({ email: data.recipientEmail, name: data.recipientName }, subject, text, text)
+  const { html, text, subject } = workspaceInviteTemplate(data)
+  return send({ email: data.recipientEmail, name: data.recipientName }, subject, text, html)
+}
+
+// ============================================
+//  OTP verification (email-based)
+// ============================================
+
+export type OtpEmailData = OtpEmailTemplateProps
+
+export async function sendOtpEmail(data: OtpEmailData): Promise<SendResult> {
+  const { html, text, subject } = otpEmailTemplate(data)
+  return send({ email: data.recipientEmail, name: data.recipientName }, subject, text, html)
+}
+
+// ============================================
+//  Welcome (after email verified)
+// ============================================
+export function sendWelcomeEmail(props: { recipientEmail: string; recipientName?: string; loginUrl?: string }): Promise<SendResult> {
+  const { html, text, subject } = welcomeEmailTemplate(props)
+  return send({ email: props.recipientEmail, name: props.recipientName }, subject, text, html)
+}
+
+// ============================================
+//  Password changed notification
+// ============================================
+export function sendPasswordChangedEmail(props: { recipientEmail: string; recipientName?: string; supportUrl?: string }): Promise<SendResult> {
+  const { html, text, subject } = passwordChangedTemplate(props)
+  return send({ email: props.recipientEmail, name: props.recipientName }, subject, text, html)
+}
+
+// ============================================
+//  Email change verification link
+// ============================================
+export function sendEmailChangeEmail(props: { recipientEmail: string; recipientName?: string; newEmail: string; changeUrl: string; expiresInHours?: number }): Promise<SendResult> {
+  const { html, text, subject } = emailChangeTemplate(props)
+  return send({ email: props.recipientEmail, name: props.recipientName }, subject, text, html)
 }
 
 // ============================================
@@ -248,7 +270,6 @@ export interface InvoiceEmailData {
 }
 
 export async function sendInvoiceEmail(data: InvoiceEmailData): Promise<SendResult> {
-  const subject = `[${data.invoiceNumber}] Hoa don tu ${data.propertyName}`
-  const text = `Hoa don: ${data.invoiceNumber}\nBooking: ${data.bookingCode}\nSo tien: ${data.totalAmount}`
-  return send({ email: data.customerEmail, name: data.customerName }, subject, text, text)
+  const { html, text, subject } = invoiceEmailTemplate(data)
+  return send({ email: data.customerEmail, name: data.customerName }, subject, text, html)
 }

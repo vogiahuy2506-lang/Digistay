@@ -25,33 +25,44 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
       allowDangerousEmailAccountLinking: true,
     }),
-    // Credentials Provider (Email/Password)
+    // Credentials Provider (Username/Password login)
     CredentialsProvider({
       name: 'credentials',
       credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
+        username: { label: 'Tên đăng nhập', type: 'text' },
+        password: { label: 'Mật khẩu', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error('Vui lòng nhập email và mật khẩu')
+        if (!credentials?.username || !credentials?.password) {
+          throw new Error('Vui lòng nhập tên đăng nhập và mật khẩu')
         }
 
-        const email = credentials.email as string
+        const username = credentials.username as string
         const password = credentials.password as string
 
-        const user = await prisma.user.findUnique({
-          where: { email },
+        // Find user by username or email
+        const user = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { username: username },
+              { email: username },
+            ],
+          },
         })
 
         if (!user || !user.password) {
-          throw new Error('Email hoặc mật khẩu không chính xác')
+          throw new Error('Tên đăng nhập hoặc mật khẩu không chính xác')
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password)
 
         if (!isPasswordValid) {
-          throw new Error('Email hoặc mật khẩu không chính xác')
+          throw new Error('Tên đăng nhập hoặc mật khẩu không chính xác')
+        }
+
+        // Require email verification
+        if (!user.emailVerified) {
+          throw new Error('Vui lòng xác thực email trước khi đăng nhập. Kiểm tra hộp thư đến của bạn.')
         }
 
         return {

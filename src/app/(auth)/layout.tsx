@@ -6,9 +6,5 @@ export default function AuthLayout({
 }: {
   children: React.ReactNode
 }) {
-  return (
-    <div className="min-h-screen">
-      <Suspense fallback={<Loading />}>{children}</Suspense>
-    </div>
-  )
+  return <Suspense fallback={<Loading />}>{children}</Suspense>
 }

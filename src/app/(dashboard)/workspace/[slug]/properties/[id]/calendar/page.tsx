@@ -4,8 +4,8 @@ import * as React from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, Button, Badge, Input, Modal, Loading } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
-import {
-  Calendar as CalendarIcon, ChevronLeft, ChevronRight,
+import { 
+  Calendar as CalendarIcon, ChevronLeft, ChevronRight, 
   Bed, Users, BedDouble, Plus, DoorOpen, Bell, Receipt,
   Search, HelpCircle, Building2, User,
   PieChart, RotateCw, CheckCircle, Key, 
@@ -67,25 +67,25 @@ function isSameDay(a: Date, b: Date) {
 }
 
 function buildMonthGrid(date: Date): { date: Date; isCurrentMonth: boolean }[] {
-  const year = date.getFullYear()
-  const month = date.getMonth()
-  const firstDay = new Date(year, month, 1)
+    const year = date.getFullYear()
+    const month = date.getMonth()
+    const firstDay = new Date(year, month, 1)
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const startingDay = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1
 
   const days: { date: Date; isCurrentMonth: boolean }[] = []
-  for (let i = 0; i < startingDay; i++) {
+    for (let i = 0; i < startingDay; i++) {
     days.push({ date: new Date(year, month, -startingDay + i + 1), isCurrentMonth: false })
-  }
-  for (let i = 1; i <= daysInMonth; i++) {
-    days.push({ date: new Date(year, month, i), isCurrentMonth: true })
-  }
+    }
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push({ date: new Date(year, month, i), isCurrentMonth: true })
+    }
   const remaining = 42 - days.length
   for (let i = 1; i <= remaining; i++) {
-    days.push({ date: new Date(year, month + 1, i), isCurrentMonth: false })
+      days.push({ date: new Date(year, month + 1, i), isCurrentMonth: false })
+    }
+    return days
   }
-  return days
-}
 
 const ROOM_TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   ota: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-800' },
@@ -446,7 +446,7 @@ export default function CalendarPage() {
               <div class="summary-item"><strong>Đã nhận:</strong> ${reportData.summary.checkedInBookings}</div>
               <div class="summary-item"><strong>Đã trả:</strong> ${reportData.summary.checkedOutBookings}</div>
               <div class="summary-item"><strong>Công suất:</strong> ${reportData.summary.occupancyRate}%</div>
-            </div>
+          </div>
             <table>
               <thead>
                 <tr>
@@ -902,7 +902,7 @@ export default function CalendarPage() {
               <div className="flex items-baseline gap-2 mt-0.5">
                 <span className="text-2xl font-black text-[#1e1715]">{stats.totalRooms}</span>
                 <span className="text-[11px] text-gray-400 font-medium">phòng vật lý</span>
-              </div>
+            </div>
               <div className="text-[11px] text-emerald-700 font-semibold mt-0.5 flex items-center gap-1">
                 <PieChart className="w-3 h-3 text-emerald-600" />
                 <span>Công suất tháng: <strong className="text-[#d95338]">76.4%</strong></span>
@@ -920,7 +920,7 @@ export default function CalendarPage() {
               <div className="flex items-baseline gap-2 mt-0.5">
                 <span className="text-2xl font-black text-emerald-700">{stats.checkedIn}</span>
                 <span className="text-[11px] text-gray-400 font-medium">/ {stats.totalRooms} phòng</span>
-              </div>
+            </div>
               <div className="text-[11px] text-gray-600 font-medium mt-0.5 flex items-center gap-1">
                 <Users className="w-3 h-3 text-emerald-600" />
                 <span>{stats.checkedIn * 2} khách lưu trú thực tế</span>
@@ -938,7 +938,7 @@ export default function CalendarPage() {
               <div className="flex items-baseline gap-2 mt-0.5">
                 <span className="text-2xl font-black text-amber-700">{todayCheckIns.length}</span>
                 <span className="text-[11px] text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded font-bold border border-amber-200">Lượt check-in</span>
-              </div>
+            </div>
               <div className="text-[11px] text-amber-700 font-medium mt-0.5 flex items-center gap-1">
                 <Clock className="w-3 h-3" />
                 <span>{todayCheckIns.filter(b => b.status === 'PENDING').length} cọc VietQR chờ duyệt</span>
@@ -958,11 +958,11 @@ export default function CalendarPage() {
                 <span className="text-[11px] text-emerald-700 font-bold bg-emerald-50 px-1 rounded border border-emerald-200">
                   <TrendingUp className="w-3 h-3 inline" /> +18% MoM
                 </span>
-              </div>
+            </div>
               <div className="text-[11px] text-gray-500 font-medium mt-0.5 flex items-center gap-1">
                 <CheckCircle className="w-3 h-3 text-[#d95338]" />
                 <span>{stats.activeBookings} booking đã xác nhận</span>
-              </div>
+      </div>
             </div>
             <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-700 border border-purple-100 flex items-center justify-center text-base shrink-0">
               <Receipt className="w-5 h-5" />
@@ -979,7 +979,7 @@ export default function CalendarPage() {
               <div className="flex items-center gap-2">
                 <span className="font-bold text-xs text-gray-800">Lưới Lịch Đặt Buồng Theo Tháng</span>
                 <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full font-medium">35 ngày hiển thị</span>
-              </div>
+                  </div>
               <div className="flex items-center gap-2 text-[11px] text-gray-500">
                 <span className="inline-flex items-center gap-1 font-medium">
                   <span className="w-2 h-2 rounded-sm bg-emerald-500" /> OTA Agoda/Booking
@@ -997,8 +997,8 @@ export default function CalendarPage() {
             <div className="grid grid-cols-7 border-b border-[#eae6de] bg-[#f8f6f2] text-center text-xs font-bold text-gray-600 divide-x divide-[#ece7de]">
               {['Thứ 2 (T2)', 'Thứ 3 (T3)', 'Thứ 4 (T4)', 'Thứ 5 (T5)', 'Thứ 6 (T6)', 'Thứ 7 (T7)', 'Chủ Nhật (CN)'].map((day, i) => (
                 <div key={day} className={`py-2 ${i >= 5 ? 'text-[#d95338]' : ''}`}>{day}</div>
-              ))}
-            </div>
+                ))}
+              </div>
 
             {/* Calendar Grid */}
             {isLoading ? (
@@ -1017,8 +1017,8 @@ export default function CalendarPage() {
                   const isPastMonth = !day.isCurrentMonth
 
                   return (
-                    <div
-                      key={index}
+                  <div
+                    key={index}
                       className={`
                         p-2 flex flex-col justify-between min-h-[96px]
                         ${isToday ? 'bg-[#fff5f2]/50 ring-2 ring-[#d95338] ring-inset shadow-sm' : ''}
@@ -1035,7 +1035,7 @@ export default function CalendarPage() {
                             weekend && day.isCurrentMonth ? 'text-[#d95338]' : 
                             isPastMonth ? 'text-gray-400' : 'text-gray-800'
                           }`}>
-                            {day.date.getDate()}
+                      {day.date.getDate()}
                           </span>
                           {occupancyBadge && day.isCurrentMonth && (
                             <span className={`text-[10px] px-1.5 py-0.2 rounded font-semibold border ${occupancyBadge.className}`}>
@@ -1045,7 +1045,7 @@ export default function CalendarPage() {
                           {!day.isCurrentMonth && (
                             <span className="text-[10px] text-gray-400">{formatDate(day.date, { month: 'short' })}</span>
                           )}
-                        </div>
+                    </div>
 
                         {day.isCurrentMonth && dayBookings.length > 0 && (
                           <div className="mt-1.5 space-y-1">
@@ -1065,16 +1065,16 @@ export default function CalendarPage() {
                                     P.{b.bookingItems[0].roomNumber}
                                   </span>
                                 )}
-                              </div>
-                            ))}
+                        </div>
+                      ))}
                             {dayBookings.length > 2 && (
                               <div className="text-[10px] text-gray-400 text-center">
                                 +{dayBookings.length - 2} đơn
                               </div>
-                            )}
-                          </div>
+                      )}
+                    </div>
                         )}
-                      </div>
+                  </div>
 
                       {day.isCurrentMonth && (
                         <span 
@@ -1084,10 +1084,10 @@ export default function CalendarPage() {
                           + Thêm
                         </span>
                       )}
-                    </div>
+              </div>
                   )
                 })}
-              </div>
+        </div>
             )}
           </section>
 
@@ -1115,13 +1115,13 @@ export default function CalendarPage() {
                     const empty = rt.totalRooms - occupied
                     return (
                       <div key={rt.id} className="py-2.5">
-                        <div className="flex items-center justify-between">
-                          <div>
+                          <div className="flex items-center justify-between">
+                            <div>
                             <h3 className="font-bold text-gray-900">{rt.name}</h3>
                             <p className="text-[11px] text-gray-400">
                               {rt.totalRooms} phòng • Tầng {idx + 1}-{idx + 2}
                             </p>
-                          </div>
+                            </div>
                           <div className="text-right">
                             <span className={`inline-block px-1.5 py-0.5 rounded font-bold text-[11px] border ${
                               empty === 0 ? 'bg-red-50 text-red-700 border-red-200' :
@@ -1206,10 +1206,10 @@ export default function CalendarPage() {
                         Khách Agoda
                       </span>
                     </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
 
             {/* SECTION 3: Thao tác buồng phòng nhanh */}
             <div className="bg-white rounded-xl border border-[#eae6de] p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)]">
@@ -1460,7 +1460,7 @@ export default function CalendarPage() {
                             <option key={rt.id} value={rt.id}>{rt.name} — Còn {rt.totalRooms} phòng</option>
                           ))}
                         </select>
-                      </div>
+              </div>
                       <div className="sm:col-span-4 space-y-1.5">
                         <label className="block text-xs font-semibold text-slate-700">
                           Số phòng <span className="text-slate-400 font-normal">(Tùy chọn)</span>
@@ -1470,8 +1470,8 @@ export default function CalendarPage() {
                           <option value="302">Phòng 302 (Tầng 3)</option>
                           <option value="305">Phòng 305 (Tầng 3)</option>
                         </select>
-                      </div>
-                    </div>
+        </div>
+      </div>
 
                     {/* Số lượng khách */}
                     <div className="grid grid-cols-3 gap-3 pt-1">
@@ -1496,9 +1496,9 @@ export default function CalendarPage() {
                             className="px-2.5 py-1.5 text-slate-500 hover:bg-slate-100 font-bold"
                             onClick={() => setNewBooking(prev => ({ ...prev, numAdults: Math.min(10, prev.numAdults + 1) }))}
                           >+</button>
-                        </div>
-                      </div>
-                      <div>
+            </div>
+              </div>
+                  <div>
                         <label className="block text-[11px] font-medium text-slate-600 mb-1">Trẻ em (&lt;12t)</label>
                         <div className="flex items-center border border-slate-300 rounded-lg overflow-hidden bg-white">
                           <button 
@@ -1520,14 +1520,14 @@ export default function CalendarPage() {
                             onClick={() => setNewBooking(prev => ({ ...prev, numChildren: Math.min(6, prev.numChildren + 1) }))}
                           >+</button>
                         </div>
-                      </div>
-                      <div>
+                  </div>
+                  <div>
                         <label className="block text-[11px] font-medium text-slate-600 mb-1">Extra Bed</label>
                         <select className="w-full text-xs font-medium rounded-lg border-slate-300 py-1.5 px-2 bg-white focus:ring-red-500 focus:border-red-500">
                           <option value="0">Không thêm</option>
                           <option value="1">+1 Giường (+250k)</option>
                         </select>
-                      </div>
+                  </div>
                     </div>
                   </div>
 
@@ -1540,7 +1540,7 @@ export default function CalendarPage() {
                       </div>
                     </div>
                     {/* Ghi chú / Special request */}
-                    <div>
+                  <div>
                       <label className="block text-xs font-semibold text-slate-700 mb-1">
                         Ghi chú nội bộ / Yêu cầu từ khách:
                       </label>
@@ -1551,7 +1551,7 @@ export default function CalendarPage() {
                         value={newBooking.guestNote}
                         onChange={(e) => setNewBooking(prev => ({ ...prev, guestNote: e.target.value }))}
                       ></textarea>
-                    </div>
+                  </div>
                   </div>
                 </section>
 
@@ -1561,19 +1561,19 @@ export default function CalendarPage() {
                     {/* Thẻ tóm tắt đơn phòng */}
                     <div className="bg-gradient-to-br from-amber-50/40 to-amber-50/20 rounded-xl border border-amber-200 p-4 shadow-xs">
                       <div className="flex items-start justify-between">
-                        <div>
+                  <div>
                           <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800 bg-amber-100/70 px-2 py-0.5 rounded">Chi tiết lưu trú</span>
                           <h3 className="text-base font-bold text-slate-900 mt-1">
                             {roomTypes.find(rt => rt.id === newBooking.roomTypeId)?.name || 'Chọn hạng phòng'}
                           </h3>
                           <p className="text-xs text-slate-600">Phòng • Tầng • Giường</p>
-                        </div>
+                  </div>
                         <div className="text-right">
                           <span className="text-xs text-slate-500 block">Thời gian</span>
                           <span className="text-sm font-bold text-slate-900">
                             {Math.ceil((new Date(newBooking.checkOutDate).getTime() - new Date(newBooking.checkInDate).getTime()) / (1000 * 60 * 60 * 24))} đêm
                           </span>
-                        </div>
+                </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-amber-200/60 text-xs">
                         <div>
@@ -1666,7 +1666,7 @@ export default function CalendarPage() {
                   )}
                   <span>Tạo Đơn & Xuất Phiếu</span>
                 </button>
-              </div>
+            </div>
             </footer>
           </div>
         </div>
@@ -1781,7 +1781,7 @@ export default function CalendarPage() {
                     <Key className="w-4 h-4 mr-2" />
                   )}
                   Check-in
-                </Button>
+              </Button>
               )}
               
               {selectedBooking.status === 'CHECKED_IN' && (
@@ -1844,7 +1844,7 @@ export default function CalendarPage() {
             <p className="text-xs text-amber-700 mt-1">
               Tổng đơn: {bookings.length} | Đã xác nhận: {bookings.filter(b => b.status === 'CONFIRMED' || b.status === 'CHECKED_IN').length} | Công suất: {getOccupancyPercent(today)}%
             </p>
-          </div>
+        </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Chọn định dạng xuất:</label>

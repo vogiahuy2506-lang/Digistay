@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { updateProfileSchema } from '@/lib/validations'
+import { sendPasswordChangedEmail } from '@/lib/email'
 
 export async function GET() {
   try {
@@ -144,7 +145,7 @@ export async function PUT(request: NextRequest) {
     // Get user with password
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { id: true, password: true },
+      select: { id: true, password: true, email: true, name: true },
     })
 
     if (!user || !user.password) {
@@ -169,6 +170,14 @@ export async function PUT(request: NextRequest) {
       where: { id: session.user.id },
       data: { password: hashedPassword },
     })
+
+    // Notify user via email (fire and forget)
+    if (user.email) {
+      sendPasswordChangedEmail({
+        recipientEmail: user.email,
+        recipientName: user.name || undefined,
+      }).catch((err) => console.error('Failed to send password changed email:', err))
+    }
 
     return NextResponse.json({
       success: true,

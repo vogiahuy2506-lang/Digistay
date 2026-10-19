@@ -1,120 +1,160 @@
 'use client'
 
 import * as React from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { signIn } from 'next-auth/react'
-import { Button, Input, Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui'
-import { Alert, AlertDescription, AlertIcon } from '@/components/ui/alert'
-import {
-  ArrowLeft, Mail, Lock, Check, Loader2, Shield, Phone
-} from 'lucide-react'
+import { MaterialSymbol } from '@/components/ui/material-symbol'
 
 type Step = 'email' | 'otp' | 'password' | 'success'
 
 export default function ForgotPasswordPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [step, setStep] = React.useState<Step>('email')
+  const [showPassword, setShowPassword] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(false)
   const [error, setError] = React.useState('')
-  const [success, setSuccess] = React.useState('')
-  const [countdown, setCountdown] = React.useState(0)
+  const [info, setInfo] = React.useState('')
 
   const [emailForm, setEmailForm] = React.useState({ email: '' })
-  const [otpForm, setOtpForm] = React.useState({ phone: '', otp: '' })
+  const [otp, setOtp] = React.useState(['', '', '', '', '', ''])
+  const [resendCooldown, setResendCooldown] = React.useState(0)
   const [passwordForm, setPasswordForm] = React.useState({
     newPassword: '',
     confirmPassword: '',
   })
 
-  // Countdown timer for resend
-  React.useEffect(() => {
-    if (countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000)
-      return () => clearTimeout(timer)
-    }
-  }, [countdown])
-
-  const sendOTP = async () => {
-    if (!otpForm.phone) {
-      setError('Vui lòng nhập số điện thoại')
+  const sendResetLink = async () => {
+    if (!emailForm.email) {
+      setError('Vui lòng nhập email')
       return
     }
 
     setIsLoading(true)
     setError('')
+    setInfo('')
 
     try {
       const res = await fetch('/api/auth/otp/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: otpForm.phone }),
-      })
-
-      const data = await res.json()
-
-      if (data.success) {
-        setSuccess('Mã OTP đã được gửi đến số điện thoại của bạn')
-        setCountdown(60) // 60 seconds cooldown
-        if (data.otp) {
-          // Dev mode: show OTP
-          console.log('OTP:', data.otp)
-        }
-      } else {
-        setError(data.error || 'Lỗi khi gửi OTP')
-      }
-    } catch (err) {
-      console.error('Send OTP error:', err)
-      setError('Đã xảy ra lỗi khi gửi OTP')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const verifyOTP = async () => {
-    if (!otpForm.otp || otpForm.otp.length !== 6) {
-      setError('Vui lòng nhập mã OTP 6 chữ số')
-      return
-    }
-
-    setIsLoading(true)
-    setError('')
-
-    try {
-      const res = await fetch('/api/auth/otp/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          phone: otpForm.phone,
-          otp: otpForm.otp,
+          email: emailForm.email,
+          purpose: 'forgot_password',
         }),
       })
 
       const data = await res.json()
 
       if (data.success) {
-        setStep('password')
-        setSuccess('Xác thực thành công! Vui lòng đặt mật khẩu mới')
+        setInfo('Mã OTP đã được gửi đến email. Vui lòng kiểm tra hộp thư.')
+        setStep('otp')
+        setResendCooldown(60)
       } else {
-        setError(data.error || 'Mã OTP không hợp lệ')
+        setError(data.error || 'Không thể gửi mã')
       }
-    } catch (err) {
-      console.error('Verify OTP error:', err)
-      setError('Đã xảy ra lỗi khi xác thực OTP')
+    } catch {
+      setError('Đã xảy ra lỗi khi gửi mã')
     } finally {
       setIsLoading(false)
     }
   }
 
-  const resetPassword = async () => {
+  // Resend countdown timer
+  React.useEffect(() => {
+    if (resendCooldown <= 0) return
+    const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [resendCooldown])
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return
+    const newOtp = [...otp]
+    newOtp[index] = value.slice(-1)
+    setOtp(newOtp)
+    setError('')
+
+    if (value && index < 5) {
+      const next = document.getElementById(`fotp-${index + 1}`)
+      next?.focus()
+    }
+  }
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+      const prev = document.getElementById(`fotp-${index - 1}`)
+      prev?.focus()
+    }
+  }
+
+  const verifyOtp = async (e?: React.FormEvent) => {
+    e?.preventDefault()
+    const code = otp.join('')
+    if (code.length !== 6) {
+      setError('Vui lòng nhập đầy đủ 6 chữ số')
+      return
+    }
+
+    setIsLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/auth/otp/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: emailForm.email,
+          otp: code,
+        }),
+      })
+
+      const data = await res.json()
+      if (data.success) {
+        setStep('password')
+        setInfo('')
+      } else {
+        setError(data.error || 'Mã OTP không hợp lệ')
+      }
+    } catch {
+      setError('Đã xảy ra lỗi, vui lòng thử lại')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0) return
+    setError('')
+    try {
+      const res = await fetch('/api/auth/otp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: emailForm.email,
+          purpose: 'forgot_password',
+        }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setResendCooldown(60)
+        setOtp(['', '', '', '', '', ''])
+        setInfo('Mã OTP mới đã được gửi đến email của bạn')
+      } else {
+        setError(data.error || 'Không thể gửi lại mã')
+      }
+    } catch {
+      setError('Không thể gửi lại mã')
+    }
+  }
+
+  const resetPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+
     if (passwordForm.newPassword.length < 6) {
-      setError('Mật khẩu mới phải có ít nhất 6 ký tự')
+      setError('Mật khẩu phải có ít nhất 6 ký tự')
       return
     }
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setError('Mật khẩu xác nhận không khớp')
+      setError('Mật khẩu không khớp')
       return
     }
 
@@ -122,13 +162,11 @@ export default function ForgotPasswordPage() {
     setError('')
 
     try {
-      // First sign in with magic link or just reset
-      // For this flow, we'll use a dedicated reset endpoint
       const res = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          phone: otpForm.phone,
+          email: emailForm.email,
           newPassword: passwordForm.newPassword,
         }),
       })
@@ -138,10 +176,9 @@ export default function ForgotPasswordPage() {
       if (data.success) {
         setStep('success')
       } else {
-        setError(data.error || 'Lỗi khi đặt lại mật khẩu')
+        setError(data.error || 'Đã xảy ra lỗi khi đặt lại mật khẩu')
       }
-    } catch (err) {
-      console.error('Reset password error:', err)
+    } catch {
       setError('Đã xảy ra lỗi khi đặt lại mật khẩu')
     } finally {
       setIsLoading(false)
@@ -149,239 +186,335 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col justify-between selection:bg-terracotta selection:text-white ambient-mesh" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-      {/* Header */}
-      <header className="w-full max-w-7xl mx-auto px-6 sm:px-10 py-5 flex items-center justify-between z-20">
-        <Link href="/login" className="flex items-center gap-3.5 group">
-          <div className="w-10 h-10 rounded-xl bg-charcoal flex items-center justify-center text-white shadow-md transition-transform group-hover:scale-105">
-            <span className="material-symbols-outlined text-[22px] text-terracotta">domain_add</span>
-          </div>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1.5 leading-none">
-              <span className="text-xl font-extrabold tracking-tight text-charcoal">Digi<span className="text-terracotta">Stay</span></span>
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-terracotta-700 via-primary to-terracotta-600">
+      {/* Background image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center opacity-25"
+        style={{
+          backgroundImage:
+            "url('https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=1920&q=80')",
+        }}
+      />
+      {/* Background blobs */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-20 right-20 w-96 h-96 rounded-full bg-primary-fixed/40 blur-3xl animate-pulse-slow" />
+        <div className="absolute bottom-20 left-20 w-80 h-80 rounded-full bg-terracotta-300/40 blur-3xl animate-pulse-slow animation-delay-2000" />
+        <div className="absolute top-1/2 left-1/3 w-64 h-64 rounded-full bg-primary-container/30 blur-3xl animate-pulse-slow animation-delay-4000" />
+      </div>
+
+      {/* Centered card */}
+      <div className="relative min-h-screen flex items-center justify-center p-4 sm:p-6">
+        <div className="w-full max-w-5xl bg-surface-container-lowest rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-2 animate-fade-in-up">
+          {/* Left Brand Panel */}
+          <div className="relative bg-gradient-to-br from-primary via-primary-container to-terracotta-700 p-8 lg:p-12 text-on-primary flex flex-col justify-between overflow-hidden">
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-primary-fixed blur-3xl animate-morph-1" />
+              <div className="absolute bottom-0 left-0 w-56 h-56 rounded-full bg-terracotta-300 blur-3xl animate-morph-2" />
+            </div>
+
+            <div className="relative z-10 flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-on-primary/15 backdrop-blur-md flex items-center justify-center">
+                <MaterialSymbol name="apartment" size={26} className="text-on-primary" />
+              </div>
+              <div>
+                <div className="text-lg font-bold">DigiStay</div>
+                <div className="text-xs text-on-primary/70">Hotel OS</div>
+              </div>
+            </div>
+
+            <div className="relative z-10 space-y-5 my-8 lg:my-0">
+              <h1 className="text-headline-lg-mobile lg:text-headline-xl font-display-hero leading-tight">
+                Khôi phục <span className="font-serif italic font-medium text-primary-fixed">quyền truy cập</span>
+              </h1>
+              <p className="text-body-md lg:text-body-lg text-on-primary/85">
+                Nhập email đã đăng ký để nhận mã xác thực và đặt lại mật khẩu mới một cách an toàn.
+              </p>
+              <ul className="space-y-3 pt-2">
+                <StepFeature n={1} text="Nhập email đã đăng ký" />
+                <StepFeature n={2} text="Nhận mã OTP qua email" />
+                <StepFeature n={3} text="Đặt mật khẩu mới" />
+              </ul>
+            </div>
+
+            <div className="relative z-10 text-xs text-on-primary/60">
+              © 2026 DigiStay
             </div>
           </div>
-        </Link>
-      </header>
 
-      {/* Main Content */}
-      <main className="flex-1 w-full max-w-lg mx-auto px-4 py-8 flex items-center justify-center">
-        <Card className="w-full shadow-luxury">
-          <CardHeader className="text-center pb-2">
-            <div className="w-16 h-16 rounded-full bg-terracotta/10 flex items-center justify-center mx-auto mb-4">
-              <Shield className="w-8 h-8 text-terracotta" />
-            </div>
-            <CardTitle className="text-2xl font-bold text-charcoal">
-              {step === 'email' && 'Khôi phục mật khẩu'}
-              {step === 'otp' && 'Xác thực số điện thoại'}
-              {step === 'password' && 'Đặt mật khẩu mới'}
-              {step === 'success' && 'Thành công!'}
-            </CardTitle>
-          </CardHeader>
-
-          <CardContent className="space-y-4">
-            {/* Error/Success Messages */}
-            {error && (
-              <Alert variant="destructive">
-                <AlertIcon variant="destructive" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            {success && (
-              <Alert variant="success">
-                <AlertIcon variant="success" />
-                <AlertDescription>{success}</AlertDescription>
-              </Alert>
-            )}
-
-            {/* Step 1: Email (Legacy - kept for reference) */}
-            {step === 'email' && (
-              <div className="space-y-4">
-                <p className="text-sm text-charcoal-muted text-center">
-                  Nhập địa chỉ email đã đăng ký để khôi phục mật khẩu
-                </p>
-                <Input
-                  label="Email"
-                  type="email"
-                  value={emailForm.email}
-                  onChange={(e) => setEmailForm({ email: e.target.value })}
-                  placeholder="quanly@khachsan.vn"
-                  icon={<Mail className="w-4 h-4" />}
-                />
-                <p className="text-xs text-charcoal-muted text-center">
-                  Hoặc{' '}
-                  <button
-                    type="button"
-                    onClick={() => setStep('otp')}
-                    className="text-terracotta font-medium hover:underline"
-                  >
-                    xác thực bằng số điện thoại
-                  </button>
+          {/* Right Form Panel */}
+          <div className="p-8 lg:p-12 flex flex-col justify-center bg-surface-container-lowest">
+            <div className="w-full max-w-sm mx-auto space-y-7">
+              {/* Header */}
+              <div>
+                <h2 className="text-headline-md font-bold text-on-surface">
+                  {step === 'success' ? 'Thành công!' : 'Quên mật khẩu'}
+                </h2>
+                <p className="text-body-md text-on-surface-variant mt-2">
+                  {step === 'email' && 'Nhập email đã đăng ký để nhận mã xác thực'}
+                  {step === 'otp' && 'Nhập mã OTP đã được gửi đến email của bạn'}
+                  {step === 'password' && 'Đặt mật khẩu mới cho tài khoản của bạn'}
+                  {step === 'success' && 'Mật khẩu đã được đặt lại thành công'}
                 </p>
               </div>
-            )}
 
-            {/* Step 2: OTP Verification */}
-            {step === 'otp' && (
-              <div className="space-y-4">
-                <p className="text-sm text-charcoal-muted text-center">
-                  Chúng tôi sẽ gửi mã OTP đến số điện thoại của bạn
-                </p>
-                <Input
-                  label="Số điện thoại"
-                  type="tel"
-                  value={otpForm.phone}
-                  onChange={(e) => setOtpForm({ ...otpForm, phone: e.target.value })}
-                  placeholder="VD: 0901234567"
-                  icon={<Phone className="w-4 h-4" />}
-                />
-                
-                {countdown > 0 ? (
-                  <div className="text-center text-sm text-charcoal-muted">
-                    Gửi lại mã sau <span className="font-bold text-terracotta">{countdown}s</span>
+              {error && (
+                <div className="p-3 rounded-xl bg-error-container border border-error/20 text-on-error-container text-body-sm flex items-start gap-2 animate-fade-in-up">
+                  <MaterialSymbol name="error" size={20} className="flex-shrink-0 mt-0.5" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              {info && (
+                <div className="p-3 rounded-xl bg-tertiary-fixed border border-tertiary/20 text-on-tertiary-fixed-variant text-body-sm flex items-start gap-2 animate-fade-in-up">
+                  <MaterialSymbol name="info" size={20} className="flex-shrink-0 mt-0.5" />
+                  <span>{info}</span>
+                </div>
+              )}
+
+              {/* Step 1: Email */}
+              {step === 'email' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-label-lg text-on-surface mb-1.5">Email</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">
+                        <MaterialSymbol name="mail" size={20} />
+                      </span>
+                      <input
+                        type="email"
+                        value={emailForm.email}
+                        onChange={(e) => setEmailForm({ email: e.target.value })}
+                        placeholder="email@example.com"
+                        className="w-full pl-12 pr-4 py-3 rounded-xl bg-surface-container-low border border-outline-variant text-body-md text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                        autoFocus
+                      />
+                    </div>
                   </div>
-                ) : (
-                  <Button
-                    variant="outline"
-                    onClick={sendOTP}
+                  <button
+                    onClick={sendResetLink}
                     disabled={isLoading}
-                    className="w-full"
+                    className="w-full py-3 px-4 bg-gradient-to-r from-primary to-terracotta-600 hover:from-primary-hover hover:to-terracotta-700 text-on-primary text-label-lg rounded-xl shadow-luxury hover:shadow-card-hover transition-all disabled:opacity-50 flex items-center justify-center gap-2 group"
                   >
                     {isLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      <>
+                        <span className="w-5 h-5 border-2 border-on-primary/30 border-t-on-primary rounded-full animate-spin" />
+                        Đang gửi mã...
+                      </>
                     ) : (
-                      'Gửi mã OTP'
+                      <>
+                        Gửi mã xác thực
+                        <MaterialSymbol name="arrow_forward" size={20} className="group-hover:translate-x-1 transition-transform" />
+                      </>
                     )}
-                  </Button>
-                )}
-
-                <div className="border-t border-stone-200 pt-4">
-                  <Input
-                    label="Mã OTP"
-                    type="text"
-                    maxLength={6}
-                    value={otpForm.otp}
-                    onChange={(e) => setOtpForm({ ...otpForm, otp: e.target.value.replace(/\D/g, '') })}
-                    placeholder="Nhập mã 6 chữ số"
-                    icon={<Lock className="w-4 h-4" />}
-                    className="text-center tracking-widest font-mono"
-                  />
+                  </button>
                 </div>
+              )}
 
-                <p className="text-xs text-charcoal-muted text-center">
-                  Chưa có tài khoản?{' '}
-                  <Link href="/register" className="text-terracotta font-medium hover:underline">
-                    Đăng ký ngay
+              {/* Step 2: OTP */}
+              {step === 'otp' && (
+                <form onSubmit={verifyOtp} className="space-y-5">
+                  <div>
+                    <label className="block text-label-lg text-on-surface mb-1.5">
+                      Mã xác thực
+                    </label>
+                    <p className="text-body-sm text-on-surface-variant mb-3">
+                      Mã 6 chữ số đã được gửi đến{' '}
+                      <span className="font-semibold text-on-surface">{emailForm.email}</span>
+                    </p>
+                    <div className="flex justify-center gap-2">
+                      {otp.map((digit, i) => (
+                        <input
+                          key={i}
+                          id={`fotp-${i}`}
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={1}
+                          value={digit}
+                          onChange={(e) => handleOtpChange(i, e.target.value)}
+                          onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                          className="w-12 h-14 text-center text-headline-sm font-bold rounded-xl bg-surface-container-low border-2 border-outline-variant text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                          autoFocus={i === 0}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-3 px-4 bg-gradient-to-r from-primary to-terracotta-600 hover:from-primary-hover hover:to-terracotta-700 text-on-primary text-label-lg rounded-xl shadow-luxury hover:shadow-card-hover transition-all disabled:opacity-50 flex items-center justify-center gap-2 group"
+                  >
+                    {isLoading ? (
+                      <>
+                        <span className="w-5 h-5 border-2 border-on-primary/30 border-t-on-primary rounded-full animate-spin" />
+                        Đang xác thực...
+                      </>
+                    ) : (
+                      <>
+                        Xác nhận
+                        <MaterialSymbol name="arrow_forward" size={20} className="group-hover:translate-x-1 transition-transform" />
+                      </>
+                    )}
+                  </button>
+
+                  <div className="text-center text-body-sm text-on-surface-variant">
+                    Không nhận được mã?{' '}
+                    {resendCooldown > 0 ? (
+                      <span className="text-on-surface-variant/60">
+                        Gửi lại sau {resendCooldown}s
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleResendOtp}
+                        className="text-primary hover:text-primary-hover font-semibold transition-colors"
+                      >
+                        Gửi lại
+                      </button>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep('email')
+                      setOtp(['', '', '', '', '', ''])
+                      setError('')
+                    }}
+                    className="w-full text-body-sm text-on-surface-variant hover:text-primary transition-colors"
+                  >
+                    ← Dùng email khác
+                  </button>
+                </form>
+              )}
+
+              {/* Step 3: Password */}
+              {step === 'password' && (
+                <form onSubmit={resetPassword} className="space-y-4">
+                  <div>
+                    <label className="block text-label-lg text-on-surface mb-1.5">Mật khẩu mới</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">
+                        <MaterialSymbol name="lock" size={20} />
+                      </span>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={passwordForm.newPassword}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                        placeholder="Ít nhất 6 ký tự"
+                        autoComplete="new-password"
+                        className="w-full pl-12 pr-12 py-3 rounded-xl bg-surface-container-low border border-outline-variant text-body-md text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
+                        tabIndex={-1}
+                      >
+                        <MaterialSymbol name={showPassword ? 'visibility_off' : 'visibility'} size={20} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-label-lg text-on-surface mb-1.5">Xác nhận mật khẩu</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">
+                        <MaterialSymbol name="lock_reset" size={20} />
+                      </span>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={passwordForm.confirmPassword}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                        placeholder="Nhập lại mật khẩu"
+                        autoComplete="new-password"
+                        className={`w-full pl-12 pr-12 py-3 rounded-xl bg-surface-container-low border text-body-md text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:ring-2 transition-all ${
+                          passwordForm.confirmPassword && passwordForm.confirmPassword !== passwordForm.newPassword
+                            ? 'border-error focus:border-error focus:ring-error/20'
+                            : 'border-outline-variant focus:border-primary focus:ring-primary/20'
+                        }`}
+                      />
+                      {passwordForm.confirmPassword && passwordForm.confirmPassword === passwordForm.newPassword && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                          <MaterialSymbol name="check_circle" size={20} className="text-tertiary" />
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-3 px-4 bg-gradient-to-r from-primary to-terracotta-600 hover:from-primary-hover hover:to-terracotta-700 text-on-primary text-label-lg rounded-xl shadow-luxury hover:shadow-card-hover transition-all disabled:opacity-50 flex items-center justify-center gap-2 group"
+                  >
+                    {isLoading ? (
+                      <>
+                        <span className="w-5 h-5 border-2 border-on-primary/30 border-t-on-primary rounded-full animate-spin" />
+                        Đang đặt lại...
+                      </>
+                    ) : (
+                      <>
+                        Đặt lại mật khẩu
+                        <MaterialSymbol name="check" size={20} className="group-hover:scale-110 transition-transform" />
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setStep('email')}
+                    className="w-full text-body-sm text-on-surface-variant hover:text-primary transition-colors"
+                  >
+                    ← Dùng email khác
+                  </button>
+                </form>
+              )}
+
+              {/* Step 3: Success */}
+              {step === 'success' && (
+                <div className="text-center space-y-6">
+                  <div className="w-20 h-20 rounded-2xl bg-tertiary-fixed flex items-center justify-center mx-auto animate-scale-in-center">
+                    <MaterialSymbol name="check_circle" size={48} className="text-tertiary" />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-body-md text-on-surface-variant">
+                      Mật khẩu đã được đặt lại. Bạn có thể đăng nhập ngay bây giờ.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => router.push('/login')}
+                    className="w-full py-3 px-4 bg-gradient-to-r from-primary to-terracotta-600 hover:from-primary-hover hover:to-terracotta-700 text-on-primary text-label-lg rounded-xl shadow-luxury hover:shadow-card-hover transition-all flex items-center justify-center gap-2 group"
+                  >
+                    Đăng nhập ngay
+                    <MaterialSymbol name="arrow_forward" size={20} className="group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </div>
+              )}
+
+              {step !== 'success' && (
+                <p className="text-center text-body-sm text-on-surface-variant">
+                  <Link href="/login" className="text-primary hover:text-primary-hover font-semibold inline-flex items-center gap-1 transition-colors">
+                    <MaterialSymbol name="arrow_back" size={16} />
+                    Quay lại đăng nhập
                   </Link>
                 </p>
-              </div>
-            )}
-
-            {/* Step 3: New Password */}
-            {step === 'password' && (
-              <div className="space-y-4">
-                <p className="text-sm text-charcoal-muted text-center">
-                  Nhập mật khẩu mới cho tài khoản của bạn
-                </p>
-                <Input
-                  label="Mật khẩu mới"
-                  type="password"
-                  value={passwordForm.newPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                  placeholder="Ít nhất 6 ký tự"
-                  icon={<Lock className="w-4 h-4" />}
-                />
-                <Input
-                  label="Xác nhận mật khẩu"
-                  type="password"
-                  value={passwordForm.confirmPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                  placeholder="Nhập lại mật khẩu mới"
-                  icon={<Lock className="w-4 h-4" />}
-                />
-              </div>
-            )}
-
-            {/* Step 4: Success */}
-            {step === 'success' && (
-              <div className="text-center py-4">
-                <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-                  <Check className="w-8 h-8 text-green-600" />
-                </div>
-                <p className="text-sm text-charcoal-muted mb-6">
-                  Mật khẩu của bạn đã được đặt lại thành công!
-                </p>
-              </div>
-            )}
-          </CardContent>
-
-          <CardFooter className="flex flex-col gap-3">
-            {/* Step 1: Email Submit */}
-            {step === 'email' && (
-              <Button
-                onClick={() => setStep('otp')}
-                className="w-full"
-                disabled={!emailForm.email}
-              >
-                Tiếp tục
-              </Button>
-            )}
-
-            {/* Step 2: OTP Verify */}
-            {step === 'otp' && (
-              <Button
-                onClick={verifyOTP}
-                className="w-full"
-                disabled={isLoading || otpForm.otp.length !== 6}
-              >
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                ) : (
-                  'Xác thực OTP'
-                )}
-              </Button>
-            )}
-
-            {/* Step 3: Password Submit */}
-            {step === 'password' && (
-              <Button
-                onClick={resetPassword}
-                className="w-full"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                ) : (
-                  'Đặt lại mật khẩu'
-                )}
-              </Button>
-            )}
-
-            {/* Step 4: Go to Login */}
-            {step === 'success' && (
-              <Button
-                onClick={() => router.push('/login')}
-                className="w-full"
-              >
-                Đăng nhập ngay
-              </Button>
-            )}
-
-            <Link
-              href="/login"
-              className="flex items-center justify-center gap-2 text-sm text-charcoal-muted hover:text-terracotta transition"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Quay lại đăng nhập
-            </Link>
-          </CardFooter>
-        </Card>
-      </main>
-
-      {/* Footer */}
-      <footer className="w-full max-w-7xl mx-auto px-6 py-4 text-center text-xs text-stone-400">
-        <p>© 2025 DigiStay Technology Systems JSC</p>
-      </footer>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+  )
+}
+
+function StepFeature({ n, text }: { n: number; text: string }) {
+  return (
+    <li className="flex items-center gap-3 text-body-md text-on-primary/90">
+      <span className="w-7 h-7 rounded-full bg-on-primary/20 flex items-center justify-center flex-shrink-0 text-label-lg font-semibold">
+        {n}
+      </span>
+      {text}
+    </li>
   )
 }

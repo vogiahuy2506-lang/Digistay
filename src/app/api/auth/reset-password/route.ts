@@ -4,35 +4,38 @@ import { prisma } from '@/lib/db'
 
 /**
  * POST /api/auth/reset-password
- * Reset password using phone number (after OTP verification)
+ * Reset password using email (after OTP verification)
+ * body: { email, newPassword }
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { phone, newPassword } = body
+    const { email, newPassword } = body
 
-    if (!phone || !newPassword) {
+    if (!email || !newPassword) {
       return NextResponse.json(
-        { success: false, error: 'Missing phone or password' },
+        { success: false, error: 'Vui lòng nhập email và mật khẩu mới' },
         { status: 400 }
       )
     }
 
     if (newPassword.length < 6) {
       return NextResponse.json(
-        { success: false, error: 'Password must be at least 6 characters' },
+        { success: false, error: 'Mật khẩu phải có ít nhất 6 ký tự' },
         { status: 400 }
       )
     }
 
-    // Find user by phone
-    const user = await prisma.user.findFirst({
-      where: { phone },
+    const normalizedEmail = email.trim().toLowerCase()
+
+    // Find user by email
+    const user = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
     })
 
     if (!user) {
       return NextResponse.json(
-        { success: false, error: 'User not found with this phone number' },
+        { success: false, error: 'Không tìm thấy tài khoản với email này' },
         { status: 404 }
       )
     }
@@ -46,14 +49,21 @@ export async function POST(request: NextRequest) {
       data: { password: hashedPassword },
     })
 
+    // Notify user (non-blocking)
+    const { sendPasswordChangedEmail } = await import('@/lib/email')
+    sendPasswordChangedEmail({
+      recipientEmail: user.email,
+      recipientName: user.name || undefined,
+    }).catch((err) => console.error('Password changed email failed:', err))
+
     return NextResponse.json({
       success: true,
-      message: 'Password reset successfully',
+      message: 'Đặt lại mật khẩu thành công',
     })
   } catch (error) {
     console.error('Reset password error:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to reset password' },
+      { success: false, error: 'Đã xảy ra lỗi khi đặt lại mật khẩu' },
       { status: 500 }
     )
   }
