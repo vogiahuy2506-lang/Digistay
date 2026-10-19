@@ -65,8 +65,11 @@ DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54329/digistay_test" npm 
 - Next.js 14 App Router, một app. API ở `src/app/api/**/route.ts`, gọi Prisma trực tiếp.
 - Multi-tenant: `Workspace` (chủ `ownerId` + `WorkspaceMember` vai trò ADMIN / MANAGER /
   RECEPTIONIST / USER) → nhiều `Property` (khách sạn) → `Booking`, `Payment`...
-- `middleware.ts` rewrite subdomain `<slug>.digistay.vn` → `/<slug>` và **bỏ qua `/api`**:
-  không có lớp nào chặn trước API, mỗi route tự kiểm tra đăng nhập.
+- **`middleware.ts` ở thư mục gốc KHÔNG chạy**: dự án dùng `src/`, Next.js chỉ nhận
+  `src/middleware.ts` (bản build có middleware-manifest rỗng, đo 19/10/2026). Vì vậy rewrite
+  subdomain `<slug>.digistay.vn` → `/<slug>` và chuyển `/` sang `/login` hiện không xảy ra.
+  Chuyển file sang `src/` là quyết định sản phẩm (trang marketing ở `/` đang dựa vào việc nó
+  không chạy). Dù sao không có lớp nào chặn trước API: mỗi route tự kiểm tra đăng nhập.
 - Biến môi trường khai báo và kiểm tra ở `src/lib/env.ts`; thêm biến thì cập nhật cả `.env.example`.
 - Deploy (`docker/deploy.sh`, gọi qua `docker/vps/digistay-deploy.sh` trên VPS): backup →
   migration bằng image mới trong khi app cũ vẫn chạy → đổi container → chờ `/api/health` báo
@@ -124,6 +127,11 @@ sạn, đặt lại mật khẩu chỉ cần email, email trong phiên do client
   thông báo lỗi API bằng tiếng Việt.
 - Theo pattern có sẵn trong file đang sửa; không thêm tầng hay abstraction mới khi chưa cần.
 - Mọi file text dùng LF (`.gitattributes`). Script `.sh` chạy trên VPS — CRLF làm deploy hỏng.
+- Bộ tối ưu ảnh của Next đang **tắt** (`images.unoptimized`): Next 14.x không có bản vá cho
+  lỗ hổng RCE khi giải mã ảnh AVIF. Đừng bật lại khi chưa lên Next ≥ 15.5.24; có test chặn.
+- Header bảo mật nằm ở nginx: `docker/nginx/conf.d/security-headers.inc`, include ở server
+  và ở mọi `location` có `add_header` riêng. Sửa `app-secure.conf.template`, không sửa file
+  sinh ra — `docker/deploy.sh` sinh lại và reload nginx mỗi lần deploy.
 
 ## Kế hoạch gia cố
 
@@ -140,7 +148,7 @@ dùng duyệt rồi mới làm, trên nhánh riêng. Cập nhật trạng thái 
    ("Deploy an toàn", "Backup & khôi phục")
 4. Bảo mật nền — 4a vá chiếm tài khoản (PR #2), 4b giới hạn tần suất + khoá tài khoản + đăng
    xuất khi đổi mật khẩu (PR #3), 4c test chính sách route + gitleaks + `.gitignore` — xong.
-   Còn: 4d header bảo mật + giới hạn host ảnh, 4e tiện ích mã hoá khoá bên thứ ba, 4f 2FA
+   4d header bảo mật + tắt bộ tối ưu ảnh — xong. Còn: 4e tiện ích mã hoá khoá bên thứ ba, 4f 2FA
    (TOTP, **không bắt buộc** — người dùng tự bật)
 5. Thanh toán PayOS hoặc SePay, mỗi khách sạn một bộ khoá; sửa nhánh tiền mặt đang đặt
    `PAID` bất kể số tiền và không cập nhật `depositAmount`
