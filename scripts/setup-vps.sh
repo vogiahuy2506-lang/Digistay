@@ -10,7 +10,7 @@
 # ============================================================
 set -euo pipefail
 
-REPO_URL="${REPO_URL:-git@github.com:senna/digistay.git}"   # adjust if needed
+REPO_URL="${REPO_URL:-https://github.com/vogiahuy2506-lang/Digistay.git}"   # adjust if needed
 APP_DIR="/opt/digistay"
 DEPLOY_USER="${DEPLOY_USER:-deploy}"
 SSH_PORT="${SSH_PORT:-22}"
