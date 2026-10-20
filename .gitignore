@@ -50,3 +50,7 @@ next-env.d.ts
 
 # Uploads
 /uploads
+
+# Rendered from app-secure.conf.template by docker/deploy.sh (and init-cert.sh)
+/docker/nginx/conf.d/app-secure.conf
+/docker/nginx/conf.d/*.bak

@@ -69,6 +69,41 @@ wait_for_version() {
   return 1
 }
 
+# Re-renders the HTTPS nginx config from its template and reloads nginx, so
+# changes to docker/nginx/ (headers, proxy settings) reach the VPS. The
+# rendered app-secure.conf only exists once TLS was set up (init-cert.sh).
+# An invalid config is rolled back and fails the deploy; nginx keeps
+# serving with the config it already had in memory.
+reload_nginx() {
+  local conf=docker/nginx/conf.d/app-secure.conf
+  local tpl=docker/nginx/conf.d/app-secure.conf.template
+  if ! docker compose ps --status running --services 2>/dev/null | grep -qx nginx; then
+    log "nginx is not running; config reload skipped"
+    return 0
+  fi
+  if [[ -f "$conf" ]]; then
+    local domain
+    domain="$(sed -n 's/^DOMAIN=//p' .env | tail -n 1)"
+    if [[ -z "$domain" ]]; then
+      log "WARNING: DOMAIN is not set in .env; $conf not re-rendered"
+    else
+      cp "$conf" "$conf.bak"
+      # shellcheck disable=SC2016 # envsubst gets the literal variable name
+      DOMAIN="$domain" envsubst '$DOMAIN' < "$tpl" > "$conf"
+    fi
+  fi
+  if docker compose exec -T nginx nginx -t >/dev/null 2>&1; then
+    docker compose exec -T nginx nginx -s reload
+    rm -f "$conf.bak"
+    log "nginx config checked and reloaded"
+    return 0
+  fi
+  log "ERROR: the new nginx config is invalid; restoring the previous one"
+  docker compose exec -T nginx nginx -t 2>&1 | sed 's/^/[nginx] /' || true
+  if [[ -f "$conf.bak" ]]; then mv "$conf.bak" "$conf"; fi
+  return 1
+}
+
 log "deploying $SHA (previous: ${PREV_TAG:-none})"
 export APP_TAG="$SHA"
 
@@ -101,6 +136,10 @@ if wait_for_version "$SHA"; then
     | while read -r tag; do docker image rm "$IMAGE_REPO:$tag" >/dev/null 2>&1 || true; done
   docker image prune -f >/dev/null
   log "deploy OK: $SHA is live"
+  if ! reload_nginx; then
+    log "deploy FAILED at the nginx step: the app is live, fix docker/nginx/ and redeploy"
+    exit 1
+  fi
   exit 0
 fi
 
