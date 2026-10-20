@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { createRoomTypeSchema, updateRoomTypeSchema } from '@/lib/validations'
 import { generateSlug } from '@/lib/utils'
+import { invalidatePublicSite } from '@/lib/public-site/site'
 
 // Check if user has admin access to property's workspace
 async function checkPropertyAdmin(propertyId: string, userId: string) {
@@ -173,6 +174,7 @@ export async function POST(
         })),
       })
     }
+    invalidatePublicSite(id)
 
     // Log activity
     await prisma.activityLog.create({

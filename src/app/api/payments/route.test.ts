@@ -21,7 +21,8 @@ const tx = {
 
 vi.mock('@/lib/db', () => ({
   prisma: {
-    payment: { findMany: vi.fn() },
+    // GET pages and counts in the database (src/lib/api/list-params.ts).
+    payment: { findMany: vi.fn(), count: vi.fn(async () => 0), groupBy: vi.fn(async () => []) },
     booking: { findUnique: vi.fn() },
     $transaction: vi.fn(),
   },

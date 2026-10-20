@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { normalizeHostname } from '@/lib/custom-domain'
+import { invalidatePublicSite } from '@/lib/public-site/site'
 
 // propertyId must be a string: undefined or a filter object reaching
 // Prisma would match the wrong property.
@@ -55,6 +56,7 @@ export async function GET(request: NextRequest) {
       settings = await prisma.websiteSettings.create({
         data: { propertyId },
       })
+      invalidatePublicSite(propertyId)
     }
 
     return NextResponse.json({
@@ -163,6 +165,8 @@ export async function PUT(request: NextRequest) {
     })
 
     // Log activity
+    invalidatePublicSite(propertyId)
+
     await prisma.activityLog.create({
       data: {
         userId: session.user.id,
