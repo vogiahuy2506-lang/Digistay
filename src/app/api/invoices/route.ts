@@ -2,19 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
+import { EinvoiceError } from '@/lib/einvoice/matbao'
+import { invoiceData, invoiceInputSchema } from '@/lib/einvoice/invoices'
+import type { VatCode } from '@/lib/einvoice/vat'
 
-const createInvoiceSchema = z.object({
-  bookingId: z.string(),
-  companyName: z.string().min(2),
-  companyAddress: z.string().min(5),
-  taxCode: z.string().min(10),
-  companyEmail: z.string().email().optional(),
-  customerName: z.string().min(2),
-  customerEmail: z.string().email(),
-  customerAddress: z.string().optional(),
-  subtotal: z.number().positive(),
-  taxRate: z.number().min(0).max(1).default(0.1),
-})
+// Amounts are computed on the server from the VAT-inclusive total and the
+// property's VAT code (src/lib/einvoice/invoices.ts).
+const createInvoiceSchema = z.object({ bookingId: z.string() }).and(invoiceInputSchema)
 
 function generateInvoiceNumber(): string {
   const date = new Date()
@@ -113,7 +107,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    const { bookingId, taxRate, ...invoiceData } = validation.data
+    const { bookingId, ...input } = validation.data
 
     // Get booking
     const booking = await prisma.booking.findUnique({
@@ -121,6 +115,7 @@ export async function POST(request: NextRequest) {
       include: {
         property: {
           select: {
+            einvoice: { select: { vatCode: true, verifiedAt: true } },
             workspace: {
               select: {
                 ownerId: true,
@@ -148,20 +143,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Không có quyền tạo hóa đơn' }, { status: 403 })
     }
 
-    const taxAmount = invoiceData.subtotal * taxRate
-    const totalAmount = invoiceData.subtotal + taxAmount
+    const einvoice = booking.property.einvoice
+    if (!einvoice?.verifiedAt) {
+      return NextResponse.json(
+        { success: false, error: 'Khách sạn chưa kết nối hoá đơn điện tử Mắt Bão (trang Hoá đơn → Kết nối)' },
+        { status: 400 }
+      )
+    }
 
-    const invoice = await prisma.invoice.create({
-      data: {
-        bookingId,
-        propertyId: booking.propertyId,
-        invoiceNumber: generateInvoiceNumber(),
-        ...invoiceData,
-        taxRate,
-        taxAmount,
-        totalAmount,
-        status: 'PENDING',
-      },
+    const invoice = await prisma.$transaction(async (tx) => {
+      const data = await invoiceData(tx, booking, input, einvoice.vatCode as VatCode)
+      return tx.invoice.create({
+        data: {
+          bookingId,
+          propertyId: booking.propertyId,
+          invoiceNumber: generateInvoiceNumber(),
+          ...data,
+          status: 'PENDING',
+        },
+      })
     })
 
     // Log activity
@@ -182,6 +182,9 @@ export async function POST(request: NextRequest) {
       message: 'Tạo hóa đơn thành công',
     })
   } catch (error) {
+    if (error instanceof EinvoiceError) {
+      return NextResponse.json({ success: false, error: error.message }, { status: error.status })
+    }
     console.error('Create invoice error:', error)
     return NextResponse.json({ success: false, error: 'Lỗi khi tạo hóa đơn' }, { status: 500 })
   }

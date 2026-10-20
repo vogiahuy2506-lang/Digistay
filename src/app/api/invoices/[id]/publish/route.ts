@@ -1,99 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { auth } from '@/lib/auth'
+import { requireSession, getWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { EinvoiceError, publishInvoice } from '@/lib/einvoice/matbao'
 
 interface RouteParams {
   params: Promise<{ id: string }>
 }
 
-export async function POST(request: NextRequest, props: RouteParams) {
-  const params = await props.params
+/**
+ * POST /api/invoices/[id]/publish — issue the invoice through the
+ * property's Mắt Bão account (Part 6). Staff (owner, ADMIN, MANAGER,
+ * RECEPTIONIST) only: an issued invoice is a legal document. Safe to call
+ * again after a failure; see src/lib/einvoice/matbao.ts.
+ */
+export async function POST(_request: NextRequest, props: RouteParams) {
+  const { id } = await props.params
+  const sess = await requireSession()
+  if (!sess.ok) return sess.response
+
+  const invoice = await prisma.invoice.findUnique({
+    where: { id },
+    select: { property: { select: { workspaceId: true } } },
+  })
+  const role = invoice ? await getWorkspaceRole(invoice.property.workspaceId, sess.session.user.id) : null
+  if (!invoice || !role) {
+    return NextResponse.json({ success: false, error: 'Không tìm thấy hóa đơn' }, { status: 404 })
+  }
+  if (!(WorkspaceRoles.STAFF_AND_UP as readonly string[]).includes(role)) {
+    return NextResponse.json({ success: false, error: 'Không có quyền phát hành hóa đơn' }, { status: 403 })
+  }
+
   try {
-    const { id } = params
-    const session = await auth()
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
-    }
-
-    // Get invoice
-    const invoice = await prisma.invoice.findUnique({
-      where: { id },
-      include: {
-        booking: {
-          include: {
-            property: {
-              select: {
-                workspace: {
-                  select: {
-                    ownerId: true,
-                    members: {
-                      where: { userId: session.user.id },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    })
-
-    if (!invoice) {
-      return NextResponse.json({ success: false, error: 'Không tìm thấy hóa đơn' }, { status: 404 })
-    }
-
-    // Check access
-    const workspace = invoice.booking.property.workspace
-    const isOwner = workspace.ownerId === session.user.id
-    const isStaff = workspace.members.length > 0
-
-    if (!isOwner && !isStaff) {
-      return NextResponse.json({ success: false, error: 'Không có quyền phát hành hóa đơn' }, { status: 403 })
-    }
-
-    // Check if invoice can be published
-    if (invoice.status === 'PUBLISHED') {
-      return NextResponse.json({ success: false, error: 'Hóa đơn đã được phát hành' }, { status: 400 })
-    }
-
-    if (invoice.status === 'CANCELLED') {
-      return NextResponse.json({ success: false, error: 'Hóa đơn đã bị hủy' }, { status: 400 })
-    }
-
-    // Generate invoice code (simulated - in production, this would call the e-invoice provider API)
-    const invoiceCode = `CODE${Date.now()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`
-    
-    // Update invoice to published status
-    const publishedInvoice = await prisma.invoice.update({
-      where: { id },
-      data: {
-        status: 'PUBLISHED',
-        publishedAt: new Date(),
-        invoiceCode,
-        invoicePattern: '01GTKT',
-        invoiceSeries: 'NC',
-      },
-    })
-
-    // Log activity
-    await prisma.activityLog.create({
-      data: {
-        userId: session.user.id,
-        propertyId: invoice.propertyId,
-        action: 'PUBLISH',
-        entityType: 'INVOICE',
-        entityId: invoice.id,
-        metadata: { invoiceNumber: invoice.invoiceNumber },
-      },
-    })
-
-    return NextResponse.json({
-      success: true,
-      data: publishedInvoice,
-      message: 'Phát hành hóa đơn thành công',
-    })
+    const published = await publishInvoice(id, sess.session.user.id)
+    return NextResponse.json({ success: true, data: published, message: 'Phát hành hóa đơn thành công' })
   } catch (error) {
+    if (error instanceof EinvoiceError) {
+      return NextResponse.json({ success: false, error: error.message }, { status: error.status })
+    }
     console.error('Publish invoice error:', error)
     return NextResponse.json({ success: false, error: 'Lỗi khi phát hành hóa đơn' }, { status: 500 })
   }

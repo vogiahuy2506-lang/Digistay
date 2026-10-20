@@ -1,22 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { z } from 'zod'
+import { EinvoiceError } from '@/lib/einvoice/matbao'
+import { assertEditable, invoiceData, invoiceInputSchema } from '@/lib/einvoice/invoices'
+import { isVatCode, type VatCode } from '@/lib/einvoice/vat'
 
-const updateInvoiceSchema = z.object({
-  companyName: z.string().min(2).optional(),
-  companyAddress: z.string().min(5).optional(),
-  taxCode: z.string().min(10).optional(),
-  companyEmail: z.string().email().optional().nullable(),
-  customerName: z.string().min(2).optional(),
-  customerEmail: z.string().email().optional(),
-  customerAddress: z.string().optional().nullable(),
-  subtotal: z.number().positive().optional(),
-  taxRate: z.number().min(0).max(1).optional(),
-  eInvoiceProvider: z.enum(['MISA', 'VNPT', 'VIETTAX', 'FAST', 'BASE']).optional().nullable(),
-  invoicePattern: z.string().optional().nullable(),
-  invoiceSeries: z.string().optional().nullable(),
-})
+// The whole buyer and amount, as when creating; amounts are recomputed on
+// the server. Provider, template and series come from the property.
+const updateInvoiceSchema = invoiceInputSchema
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -111,10 +102,7 @@ export async function PUT(request: NextRequest, props: RouteParams) {
       return NextResponse.json({ success: false, error: 'Không có quyền chỉnh sửa hóa đơn' }, { status: 403 })
     }
 
-    // Check if invoice can be edited
-    if (invoice.status === 'PUBLISHED') {
-      return NextResponse.json({ success: false, error: 'Hóa đơn đã phát hành không thể chỉnh sửa' }, { status: 400 })
-    }
+    assertEditable(invoice)
 
     const validation = updateInvoiceSchema.safeParse(body)
     if (!validation.success) {
@@ -124,20 +112,27 @@ export async function PUT(request: NextRequest, props: RouteParams) {
       }, { status: 400 })
     }
 
-    const updateData = validation.data
-
-    // Recalculate totals if subtotal or taxRate changed
-    let finalUpdateData: any = { ...updateData }
-    if (updateData.subtotal !== undefined || updateData.taxRate !== undefined) {
-      const newSubtotal = updateData.subtotal ?? invoice.subtotal
-      const newTaxRate = updateData.taxRate ?? invoice.taxRate
-      finalUpdateData.taxAmount = newSubtotal * newTaxRate
-      finalUpdateData.totalAmount = newSubtotal + finalUpdateData.taxAmount
+    const config = await prisma.propertyEinvoice.findUnique({
+      where: { propertyId: invoice.propertyId },
+      select: { vatCode: true },
+    })
+    const vatCode = isVatCode(invoice.vatCode) ? invoice.vatCode : config?.vatCode
+    if (vatCode == null) {
+      return NextResponse.json(
+        { success: false, error: 'Khách sạn chưa kết nối hoá đơn điện tử Mắt Bão (trang Hoá đơn → Kết nối)' },
+        { status: 400 }
+      )
     }
 
-    const updatedInvoice = await prisma.invoice.update({
-      where: { id },
-      data: finalUpdateData,
+    const updatedInvoice = await prisma.$transaction(async (tx) => {
+      const data = await invoiceData(tx, invoice.booking, validation.data, vatCode as VatCode, invoice.id)
+      // Conditional: a publish started meanwhile wins.
+      const updated = await tx.invoice.updateMany({
+        where: { id, status: { in: ['DRAFT', 'PENDING'] }, lookupCode: null },
+        data,
+      })
+      if (updated.count === 0) throw new EinvoiceError('Hoá đơn vừa được phát hành, không sửa được nữa', 409)
+      return tx.invoice.findUniqueOrThrow({ where: { id } })
     })
 
     // Log activity
@@ -158,6 +153,9 @@ export async function PUT(request: NextRequest, props: RouteParams) {
       message: 'Cập nhật hóa đơn thành công',
     })
   } catch (error) {
+    if (error instanceof EinvoiceError) {
+      return NextResponse.json({ success: false, error: error.message }, { status: error.status })
+    }
     console.error('Update invoice error:', error)
     return NextResponse.json({ success: false, error: 'Lỗi khi cập nhật hóa đơn' }, { status: 500 })
   }
@@ -209,14 +207,14 @@ export async function DELETE(request: NextRequest, props: RouteParams) {
       return NextResponse.json({ success: false, error: 'Không có quyền xóa hóa đơn' }, { status: 403 })
     }
 
-    // Check if invoice can be deleted
-    if (invoice.status === 'PUBLISHED') {
-      return NextResponse.json({ success: false, error: 'Hóa đơn đã phát hành không thể xóa' }, { status: 400 })
-    }
+    assertEditable(invoice)
 
-    await prisma.invoice.delete({
-      where: { id },
+    const deleted = await prisma.invoice.deleteMany({
+      where: { id, status: { in: ['DRAFT', 'PENDING', 'CANCELLED'] }, lookupCode: null },
     })
+    if (deleted.count === 0) {
+      return NextResponse.json({ success: false, error: 'Hoá đơn vừa được phát hành, không xoá được' }, { status: 409 })
+    }
 
     // Log activity
     await prisma.activityLog.create({
@@ -235,6 +233,9 @@ export async function DELETE(request: NextRequest, props: RouteParams) {
       message: 'Xóa hóa đơn thành công',
     })
   } catch (error) {
+    if (error instanceof EinvoiceError) {
+      return NextResponse.json({ success: false, error: error.message }, { status: error.status })
+    }
     console.error('Delete invoice error:', error)
     return NextResponse.json({ success: false, error: 'Lỗi khi xóa hóa đơn' }, { status: 500 })
   }

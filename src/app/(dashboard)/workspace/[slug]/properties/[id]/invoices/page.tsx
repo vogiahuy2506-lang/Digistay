@@ -10,6 +10,14 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
+import { EinvoiceCard, type EinvoiceStatus } from './einvoice-card'
+import {
+  EMPTY_INVOICE_FORM,
+  InvoiceFormFields,
+  invoiceFormBody,
+  validateInvoiceForm,
+  type InvoiceFormValue,
+} from './invoice-form'
 
 interface Invoice {
   id: string
@@ -35,6 +43,10 @@ interface Invoice {
   publishedAt: string | null
   xmlUrl: string | null
   pdfUrl: string | null
+  buyerType: string
+  lookupCode: string | null
+  einvoiceNumber: string | null
+  publishError: string | null
   createdAt: string
   updatedAt: string
   booking: {
@@ -59,24 +71,18 @@ interface Booking {
   id: string
   bookingCode: string
   guestName: string
+  guestEmail?: string | null
   totalAmount: number
 }
 
 const invoiceStatusConfig: Record<string, { label: string; color: string; bgColor: string; icon: any }> = {
   DRAFT: { label: 'Nháp', color: 'text-gray-600', bgColor: 'bg-gray-50', icon: FileText },
   PENDING: { label: 'Chờ phát hành', color: 'text-amber-600', bgColor: 'bg-amber-50', icon: Clock },
+  PUBLISHING: { label: 'Đang phát hành', color: 'text-blue-600', bgColor: 'bg-blue-50', icon: Clock },
   PUBLISHED: { label: 'Đã phát hành', color: 'text-green-600', bgColor: 'bg-green-50', icon: CheckCircle },
   CANCELLED: { label: 'Đã hủy', color: 'text-red-600', bgColor: 'bg-red-50', icon: XCircle },
   REPLACED: { label: 'Đã thay thế', color: 'text-blue-600', bgColor: 'bg-blue-50', icon: AlertCircle },
 }
-
-const eInvoiceProviders = [
-  { value: 'MISA', label: 'MISA' },
-  { value: 'VNPT', label: 'VNPT' },
-  { value: 'VIETTAX', label: 'VietTax' },
-  { value: 'FAST', label: 'Fast' },
-  { value: 'BASE', label: 'Base' },
-]
 
 export default function InvoicesPage() {
   const [invoices, setInvoices] = React.useState<Invoice[]>([])
@@ -97,19 +103,13 @@ export default function InvoicesPage() {
   const [dateTo, setDateTo] = React.useState('')
   
   // Create/Edit form
-  const [formData, setFormData] = React.useState({
+  const [formData, setFormData] = React.useState<InvoiceFormValue & { bookingId: string }>({
     bookingId: '',
-    companyName: '',
-    companyAddress: '',
-    taxCode: '',
-    companyEmail: '',
-    customerName: '',
-    customerEmail: '',
-    customerAddress: '',
-    subtotal: '',
-    taxRate: '0.1',
-    eInvoiceProvider: '',
+    ...EMPTY_INVOICE_FORM,
   })
+  // Separate from the dialogs' open flags: an error keeps the dialog open.
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [einvoice, setEinvoice] = React.useState<EinvoiceStatus | null>(null)
   const [formError, setFormError] = React.useState('')
   const [formSuccess, setFormSuccess] = React.useState('')
   const [editingId, setEditingId] = React.useState<string | null>(null)
@@ -148,7 +148,7 @@ export default function InvoicesPage() {
     }
   }
 
-  const fetchInvoices = async (propertyId: string) => {
+  const fetchInvoices = async (propertyId: string): Promise<Invoice[]> => {
     setIsLoading(true)
     try {
       const res = await fetch(`/api/invoices?propertyId=${propertyId}`)
@@ -156,12 +156,14 @@ export default function InvoicesPage() {
       if (data.success) {
         setInvoices(data.data)
         calculateStats(data.data)
+        return data.data
       }
     } catch (err) {
       console.error('Failed to fetch invoices:', err)
     } finally {
       setIsLoading(false)
     }
+    return []
   }
 
   const fetchBookings = async (propertyId: string) => {
@@ -236,19 +238,7 @@ export default function InvoicesPage() {
   }
 
   const resetForm = () => {
-    setFormData({
-      bookingId: '',
-      companyName: '',
-      companyAddress: '',
-      taxCode: '',
-      companyEmail: '',
-      customerName: '',
-      customerEmail: '',
-      customerAddress: '',
-      subtotal: '',
-      taxRate: '0.1',
-      eInvoiceProvider: '',
-    })
+    setFormData({ bookingId: '', ...EMPTY_INVOICE_FORM })
     setFormError('')
     setFormSuccess('')
     setEditingId(null)
@@ -266,6 +256,7 @@ export default function InvoicesPage() {
     setEditingId(invoice.id)
     setFormData({
       bookingId: invoice.bookingId,
+      buyerType: (invoice.buyerType as InvoiceFormValue['buyerType']) || 'company',
       companyName: invoice.companyName,
       companyAddress: invoice.companyAddress,
       taxCode: invoice.taxCode,
@@ -273,9 +264,7 @@ export default function InvoicesPage() {
       customerName: invoice.customerName,
       customerEmail: invoice.customerEmail,
       customerAddress: invoice.customerAddress || '',
-      subtotal: invoice.subtotal.toString(),
-      taxRate: invoice.taxRate.toString(),
-      eInvoiceProvider: invoice.eInvoiceProvider || '',
+      totalAmount: invoice.totalAmount.toString(),
     })
     setFormError('')
     setFormSuccess('')
@@ -285,23 +274,20 @@ export default function InvoicesPage() {
   const handleSelectBooking = (bookingId: string) => {
     const booking = bookings.find((b) => b.id === bookingId)
     if (booking) {
+      // The booking total includes VAT: it is the invoice total.
       setFormData({
         ...formData,
         bookingId,
-        subtotal: booking.totalAmount.toString(),
+        totalAmount: booking.totalAmount.toString(),
+        customerName: formData.customerName || booking.guestName,
+        customerEmail: formData.customerEmail || booking.guestEmail || '',
       })
     }
   }
 
   const validateForm = () => {
     if (!formData.bookingId) return 'Vui lòng chọn đơn đặt phòng'
-    if (!formData.companyName || formData.companyName.length < 2) return 'Vui lòng nhập tên công ty'
-    if (!formData.companyAddress || formData.companyAddress.length < 5) return 'Vui lòng nhập địa chỉ công ty'
-    if (!formData.taxCode || formData.taxCode.length < 10) return 'Vui lòng nhập mã số thuế hợp lệ'
-    if (!formData.customerName || formData.customerName.length < 2) return 'Vui lòng nhập tên khách hàng'
-    if (!formData.customerEmail || !formData.customerEmail.includes('@')) return 'Vui lòng nhập email khách hàng'
-    if (!formData.subtotal || parseFloat(formData.subtotal) <= 0) return 'Vui lòng nhập số tiền hợp lệ'
-    return null
+    return validateInvoiceForm(formData)
   }
 
   const handleCreateInvoice = async () => {
@@ -313,24 +299,13 @@ export default function InvoicesPage() {
 
     setFormError('')
     setFormSuccess('')
-    setIsCreating(true)
+    setIsSubmitting(true)
 
     try {
       const res = await fetch('/api/invoices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bookingId: formData.bookingId,
-          companyName: formData.companyName,
-          companyAddress: formData.companyAddress,
-          taxCode: formData.taxCode,
-          companyEmail: formData.companyEmail || undefined,
-          customerName: formData.customerName,
-          customerEmail: formData.customerEmail,
-          customerAddress: formData.customerAddress || undefined,
-          subtotal: parseFloat(formData.subtotal),
-          taxRate: parseFloat(formData.taxRate),
-        }),
+        body: JSON.stringify({ bookingId: formData.bookingId, ...invoiceFormBody(formData) }),
       })
       const data = await res.json()
 
@@ -348,7 +323,7 @@ export default function InvoicesPage() {
     } catch (err) {
       setFormError('Có lỗi xảy ra, vui lòng thử lại')
     } finally {
-      setIsCreating(false)
+      setIsSubmitting(false)
     }
   }
 
@@ -363,24 +338,13 @@ export default function InvoicesPage() {
 
     setFormError('')
     setFormSuccess('')
-    setIsEditing(true)
+    setIsSubmitting(true)
 
     try {
       const res = await fetch(`/api/invoices/${editingId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          companyName: formData.companyName,
-          companyAddress: formData.companyAddress,
-          taxCode: formData.taxCode,
-          companyEmail: formData.companyEmail || undefined,
-          customerName: formData.customerName,
-          customerEmail: formData.customerEmail,
-          customerAddress: formData.customerAddress || undefined,
-          subtotal: parseFloat(formData.subtotal),
-          taxRate: parseFloat(formData.taxRate),
-          eInvoiceProvider: formData.eInvoiceProvider || undefined,
-        }),
+        body: JSON.stringify(invoiceFormBody(formData)),
       })
       const data = await res.json()
 
@@ -399,7 +363,7 @@ export default function InvoicesPage() {
     } catch (err) {
       setFormError('Có lỗi xảy ra, vui lòng thử lại')
     } finally {
-      setIsEditing(false)
+      setIsSubmitting(false)
     }
   }
 
@@ -430,21 +394,30 @@ export default function InvoicesPage() {
   }
 
   const handlePublishInvoice = async (invoiceId: string) => {
+    const where = einvoice?.environment === 'PRODUCTION' ? 'CHÍNH THỨC' : 'thử nghiệm'
+    if (!confirm(`Phát hành hoá đơn điện tử qua Mắt Bão (môi trường ${where})? Hoá đơn đã phát hành không sửa hay xoá được.`)) {
+      return
+    }
+    setIsSubmitting(true)
     try {
       const res = await fetch(`/api/invoices/${invoiceId}/publish`, {
         method: 'POST',
       })
       const data = await res.json()
-
       if (data.success) {
-        if (selectedProperty) {
-          fetchInvoices(selectedProperty)
-        }
+        setSelectedInvoice((current) => (current && current.id === invoiceId ? { ...current, ...data.data } : current))
       } else {
         alert(data.error || 'Có lỗi xảy ra')
       }
     } catch (err) {
       alert('Có lỗi xảy ra')
+    } finally {
+      setIsSubmitting(false)
+      // Also shows the reason a failed attempt left on the invoice.
+      if (selectedProperty) {
+        const list = await fetchInvoices(selectedProperty)
+        setSelectedInvoice((current) => (current ? list.find((i) => i.id === current.id) ?? current : current))
+      }
     }
   }
 
@@ -475,9 +448,6 @@ export default function InvoicesPage() {
     setTimeout(() => setCopiedId(null), 2000)
   }
 
-  const taxAmount = formData.subtotal ? parseFloat(formData.subtotal) * parseFloat(formData.taxRate || '0') : 0
-  const totalAmount = formData.subtotal ? parseFloat(formData.subtotal) + taxAmount : 0
-
   return (
     <div>
       <Header
@@ -504,6 +474,7 @@ export default function InvoicesPage() {
       />
 
       <PageContainer>
+        {selectedProperty && <EinvoiceCard key={selectedProperty} propertyId={selectedProperty} onStatus={setEinvoice} />}
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
           <Card>
@@ -745,104 +716,16 @@ export default function InvoicesPage() {
                 ]}
               />
 
-              <div className="border-t pt-4 mt-4">
-                <h4 className="font-medium text-gray-900 mb-3">Thông tin công ty xuất hóa đơn</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    label="Tên công ty"
-                    required
-                    value={formData.companyName}
-                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                    placeholder="Công ty ABC"
-                  />
-                  <Input
-                    label="Mã số thuế"
-                    required
-                    value={formData.taxCode}
-                    onChange={(e) => setFormData({ ...formData, taxCode: e.target.value })}
-                    placeholder="0123456789"
-                  />
-                  <div className="col-span-2">
-                    <Input
-                      label="Địa chỉ công ty"
-                      required
-                      value={formData.companyAddress}
-                      onChange={(e) => setFormData({ ...formData, companyAddress: e.target.value })}
-                      placeholder="123 Đường ABC, Quận 1, TP.HCM"
-                    />
-                  </div>
-                  <Input
-                    label="Email công ty"
-                    type="email"
-                    value={formData.companyEmail}
-                    onChange={(e) => setFormData({ ...formData, companyEmail: e.target.value })}
-                    placeholder="finance@company.com"
-                  />
+              {!einvoice?.connected && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
+                  Khách sạn chưa kết nối hoá đơn điện tử Mắt Bão (thẻ phía trên trang), nên chưa tạo được hoá đơn.
                 </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <h4 className="font-medium text-gray-900 mb-3">Thông tin khách hàng</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    label="Tên khách hàng"
-                    required
-                    value={formData.customerName}
-                    onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                    placeholder="Nguyễn Văn A"
-                  />
-                  <Input
-                    label="Email khách hàng"
-                    required
-                    type="email"
-                    value={formData.customerEmail}
-                    onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
-                    placeholder="customer@email.com"
-                  />
-                  <div className="col-span-2">
-                    <Input
-                      label="Địa chỉ khách hàng"
-                      value={formData.customerAddress}
-                      onChange={(e) => setFormData({ ...formData, customerAddress: e.target.value })}
-                      placeholder="456 Đường XYZ, Quận 2, TP.HCM"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <h4 className="font-medium text-gray-900 mb-3">Thông tin thanh toán</h4>
-                <div className="grid grid-cols-3 gap-4">
-                  <Input
-                    label="Số tiền (VNĐ)"
-                    required
-                    type="number"
-                    min="0"
-                    step="1000"
-                    value={formData.subtotal}
-                    onChange={(e) => setFormData({ ...formData, subtotal: e.target.value })}
-                    placeholder="0"
-                  />
-                  <Input
-                    label="Thuế suất (%)"
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    value={(parseFloat(formData.taxRate) * 100).toString()}
-                    onChange={(e) => setFormData({ ...formData, taxRate: (parseFloat(e.target.value) / 100).toString() })}
-                  />
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Tổng cộng</label>
-                    <div className="p-2 bg-gray-100 rounded-lg font-semibold text-lg">
-                      {formatPrice(totalAmount)}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Thuế: {formatPrice(taxAmount)}
-                    </p>
-                  </div>
-                </div>
-              </div>
+              )}
+              <InvoiceFormFields
+                value={formData}
+                onChange={(v) => setFormData({ ...formData, ...v })}
+                vatCode={einvoice?.vatCode}
+              />
 
               {formError && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
@@ -854,7 +737,7 @@ export default function InvoicesPage() {
               <Button variant="secondary" onClick={() => setIsCreating(false)}>
                 Hủy
               </Button>
-              <Button onClick={handleCreateInvoice} isLoading={isCreating} disabled={isCreating}>
+              <Button onClick={handleCreateInvoice} isLoading={isSubmitting} disabled={isSubmitting}>
                 Tạo hóa đơn
               </Button>
             </ModalFooter>
@@ -881,105 +764,11 @@ export default function InvoicesPage() {
         ) : (
           <>
             <div className="space-y-4">
-              <div className="border-t pt-4">
-                <h4 className="font-medium text-gray-900 mb-3">Thông tin công ty xuất hóa đơn</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    label="Tên công ty"
-                    required
-                    value={formData.companyName}
-                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                  />
-                  <Input
-                    label="Mã số thuế"
-                    required
-                    value={formData.taxCode}
-                    onChange={(e) => setFormData({ ...formData, taxCode: e.target.value })}
-                  />
-                  <div className="col-span-2">
-                    <Input
-                      label="Địa chỉ công ty"
-                      required
-                      value={formData.companyAddress}
-                      onChange={(e) => setFormData({ ...formData, companyAddress: e.target.value })}
-                    />
-                  </div>
-                  <Input
-                    label="Email công ty"
-                    type="email"
-                    value={formData.companyEmail}
-                    onChange={(e) => setFormData({ ...formData, companyEmail: e.target.value })}
-                  />
-                  <Select
-                    label="Nhà cung cấp hóa đơn điện tử"
-                    value={formData.eInvoiceProvider}
-                    onChange={(e) => setFormData({ ...formData, eInvoiceProvider: e.target.value })}
-                    options={[
-                      { value: '', label: 'Chọn nhà cung cấp' },
-                      ...eInvoiceProviders,
-                    ]}
-                  />
-                </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <h4 className="font-medium text-gray-900 mb-3">Thông tin khách hàng</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    label="Tên khách hàng"
-                    required
-                    value={formData.customerName}
-                    onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                  />
-                  <Input
-                    label="Email khách hàng"
-                    required
-                    type="email"
-                    value={formData.customerEmail}
-                    onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
-                  />
-                  <div className="col-span-2">
-                    <Input
-                      label="Địa chỉ khách hàng"
-                      value={formData.customerAddress}
-                      onChange={(e) => setFormData({ ...formData, customerAddress: e.target.value })}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <h4 className="font-medium text-gray-900 mb-3">Thông tin thanh toán</h4>
-                <div className="grid grid-cols-3 gap-4">
-                  <Input
-                    label="Số tiền (VNĐ)"
-                    required
-                    type="number"
-                    min="0"
-                    step="1000"
-                    value={formData.subtotal}
-                    onChange={(e) => setFormData({ ...formData, subtotal: e.target.value })}
-                  />
-                  <Input
-                    label="Thuế suất (%)"
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    value={(parseFloat(formData.taxRate) * 100).toString()}
-                    onChange={(e) => setFormData({ ...formData, taxRate: (parseFloat(e.target.value) / 100).toString() })}
-                  />
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Tổng cộng</label>
-                    <div className="p-2 bg-gray-100 rounded-lg font-semibold text-lg">
-                      {formatPrice(totalAmount)}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Thuế: {formatPrice(taxAmount)}
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <InvoiceFormFields
+                value={formData}
+                onChange={(v) => setFormData({ ...formData, ...v })}
+                vatCode={einvoice?.vatCode}
+              />
 
               {formError && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
@@ -991,7 +780,7 @@ export default function InvoicesPage() {
               <Button variant="secondary" onClick={() => setIsEditing(false)}>
                 Hủy
               </Button>
-              <Button onClick={handleUpdateInvoice} isLoading={isEditing} disabled={isEditing}>
+              <Button onClick={handleUpdateInvoice} isLoading={isSubmitting} disabled={isSubmitting}>
                 Lưu thay đổi
               </Button>
             </ModalFooter>
@@ -1039,8 +828,20 @@ export default function InvoicesPage() {
                       Phát hành: {format(new Date(selectedInvoice.publishedAt), 'dd/MM/yyyy HH:mm')}
                     </p>
                   )}
+                  {selectedInvoice.einvoiceNumber && (
+                    <p className="text-sm font-semibold text-gray-900 mt-1">
+                      Số hoá đơn: {selectedInvoice.einvoiceNumber}
+                      {selectedInvoice.invoiceSeries && ` · Ký hiệu ${selectedInvoice.invoiceSeries}`}
+                    </p>
+                  )}
                 </div>
               </div>
+
+              {selectedInvoice.publishError && selectedInvoice.status !== 'PUBLISHED' && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                  Lần phát hành trước không thành công: {selectedInvoice.publishError}
+                </div>
+              )}
 
               {/* Amount */}
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 text-center">
@@ -1145,7 +946,7 @@ export default function InvoicesPage() {
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div>
                       <span className="text-gray-500">Nhà cung cấp:</span>
-                      <p className="font-medium">{selectedInvoice.eInvoiceProvider}</p>
+                      <p className="font-medium">{selectedInvoice.eInvoiceProvider === 'MATBAO' ? 'Mắt Bão' : selectedInvoice.eInvoiceProvider}</p>
                     </div>
                     {selectedInvoice.invoicePattern && (
                       <div>
@@ -1167,8 +968,8 @@ export default function InvoicesPage() {
               <Button variant="secondary" onClick={() => setSelectedInvoice(null)}>
                 Đóng
               </Button>
-              {selectedInvoice.pdfUrl && (
-                <Button variant="outline" onClick={() => window.open(selectedInvoice.pdfUrl || '', '_blank')}>
+              {selectedInvoice.status === 'PUBLISHED' && (
+                <Button variant="outline" onClick={() => window.open(`/api/invoices/${selectedInvoice.id}/pdf`, '_blank')}>
                   <Download className="w-4 h-4 mr-2" />
                   Tải PDF
                 </Button>
@@ -1191,9 +992,9 @@ export default function InvoicesPage() {
                     <XCircle className="w-4 h-4 mr-2" />
                     Hủy hóa đơn
                   </Button>
-                  <Button onClick={() => handlePublishInvoice(selectedInvoice.id)}>
+                  <Button onClick={() => handlePublishInvoice(selectedInvoice.id)} isLoading={isSubmitting}>
                     <Send className="w-4 h-4 mr-2" />
-                    Phát hành
+                    {selectedInvoice.publishError ? 'Phát hành lại' : 'Phát hành'}
                   </Button>
                 </>
               )}
