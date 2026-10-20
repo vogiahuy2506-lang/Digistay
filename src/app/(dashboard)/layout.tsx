@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { Suspense } from 'react'
 import { Loading } from '@/components/ui/loading'
+import { ToastProvider } from '@/components/ui/toast'
 
 export default async function DashboardLayout({
   children,
@@ -18,6 +19,13 @@ export default async function DashboardLayout({
   // Workspace-scoped routes (under /workspace/[slug]) have their own
   // layout (WorkspaceShell) that handles its own sidebar.
   // This layout just passes children through.
-  // Wrap in Suspense for useSearchParams support
-  return <Suspense fallback={<Loading />}>{children}</Suspense>
+  // Wrap in Suspense for useSearchParams support.
+  // ToastProvider listens for toast.success()/error() from every dashboard
+  // page; it lives here, not in the root layout, so toasts follow the
+  // dashboard's theme.
+  return (
+    <ToastProvider>
+      <Suspense fallback={<Loading />}>{children}</Suspense>
+    </ToastProvider>
+  )
 }

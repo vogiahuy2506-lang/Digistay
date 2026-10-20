@@ -1,5 +1,30 @@
 import { type ClassValue, clsx } from 'clsx'
-import { twMerge } from 'tailwind-merge'
+import { extendTailwindMerge } from 'tailwind-merge'
+import { typeScale } from '@/styles/tokens'
+
+// Custom theme keys from tailwind.config.ts. Without them tailwind-merge reads
+// `text-small` as a text color and drops it next to `text-muted`.
+// cn.test.ts fails when tailwind.config.ts gains a key missing here.
+export const customFontSizes = [
+  ...Object.keys(typeScale),
+  'display-hero', 'display-hero-mobile', 'headline-xl', 'headline-xl-mobile', 'headline-lg',
+  'headline-lg-mobile', 'headline-md', 'headline-sm', 'title-md', 'body-lg', 'body-md', 'body-sm',
+  'label-lg', 'label-md', 'label-caps',
+]
+export const customRadii = ['ctl', 'box']
+export const customShadows = ['luxury', 'subtle', 'card', 'card-hover', 'glow', 'lift', 'drawer']
+export const customEasings = ['ds']
+
+const twMerge = extendTailwindMerge({
+  extend: {
+    classGroups: {
+      'font-size': [{ text: customFontSizes }],
+      rounded: [{ rounded: customRadii }],
+      shadow: [{ shadow: customShadows }],
+      ease: [{ ease: customEasings }],
+    },
+  },
+})
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))

@@ -115,6 +115,22 @@ export const radii = {
   site: { ctl: '2px', box: '2px' },
 } as const
 
+/**
+ * Type scale (system page 1c). Headings use font-serif on the hotel website;
+ * the dashboard stays on font-sans. Also read by `cn()` so tailwind-merge knows
+ * `text-small` is a size, not a color.
+ */
+export const typeScale = {
+  display: ['80px', { lineHeight: '88px', letterSpacing: '-0.025em' }],
+  h1: ['52px', { lineHeight: '60px', letterSpacing: '-0.02em' }],
+  h2: ['36px', { lineHeight: '44px' }],
+  h3: ['24px', { lineHeight: '32px' }],
+  lead: ['17px', { lineHeight: '28px' }],
+  body: ['15px', { lineHeight: '24px' }],
+  small: ['13px', { lineHeight: '20px' }],
+  label: ['11px', { lineHeight: '16px', letterSpacing: '0.14em' }],
+} satisfies Record<string, [string, { lineHeight: string; letterSpacing?: string }]>
+
 /** "#A93119" -> "169 49 25", the form Tailwind needs for opacity modifiers. */
 export function hexToChannels(hex: string): string {
   const m = /^#([0-9a-f]{6})$/i.exec(hex)

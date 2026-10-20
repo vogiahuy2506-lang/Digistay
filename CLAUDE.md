@@ -165,7 +165,15 @@ sạn, đặt lại mật khẩu chỉ cần email, email trong phiên do client
   phải khác rõ màu nhấn; `tokens.test.ts` kiểm tương phản và khoảng cách màu.
 - Bo góc theo bề mặt: `rounded-ctl` (nút, ô nhập), `rounded-box` (thẻ, panel); `data-surface="site"`
   đổi sang góc gần vuông của website khách sạn.
-- Thứ tự làm: (1) token màu + font — xong (`feat/ui-tokens`); (2) thành phần dùng chung;
+- Thêm cỡ chữ / bo góc / bóng mới vào `tailwind.config.ts` thì thêm tên vào `src/lib/utils/index.ts`,
+  không thì `cn()` (tailwind-merge) xoá mất class đó khi đi cùng một màu; `cn.test.ts` sẽ báo.
+- Nhãn trạng thái đặt phòng / thanh toán: `BookingStatusBadge`, `PaymentStatusBadge` (chữ và màu ở
+  `src/lib/booking-status.ts`), không tự viết bảng màu riêng trong trang.
+- Modal và `SidePanel` render tại chỗ, không portal, để ăn theo `data-theme` gần nhất. Esc chỉ đóng
+  lớp trên cùng (`dialog-behavior.ts`); menu bên trong gọi `preventDefault()` để giữ phím Esc cho mình.
+- Toast (`toast.success()`…) chỉ hiện trong trang quản lý: `ToastProvider` nằm ở `(dashboard)/layout.tsx`.
+- Thứ tự làm: (1) token màu + font — xong (`feat/ui-tokens`); (2) thành phần dùng chung — xong
+  (`feat/ui-components`);
   (3) khung trang quản lý + danh sách đặt phòng + panel chi tiết; (4) các trang quản lý còn
   lại; (5) website khách sạn. Bản thiết kế: file Claude Design "Digistay hotel booking platform".
 

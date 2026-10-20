@@ -8,21 +8,18 @@ interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: 'default' | 'destructive' | 'success' | 'warning'
 }
 
-export function Alert({ className, variant = 'default', children, ...props }: AlertProps) {
-  const variants = {
-    default: 'bg-blue-50 border-blue-200 text-blue-800',
-    destructive: 'bg-red-50 border-red-200 text-red-800',
-    success: 'bg-green-50 border-green-200 text-green-800',
-    warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
-  }
+const variants = {
+  default: 'bg-info-soft border-info/20 text-info',
+  destructive: 'bg-err-soft border-err/20 text-err',
+  success: 'bg-ok-soft border-ok/20 text-ok',
+  warning: 'bg-warn-soft border-warn/20 text-warn',
+}
 
+export function Alert({ className, variant = 'default', children, ...props }: AlertProps) {
   return (
     <div
-      className={cn(
-        'rounded-lg border p-4',
-        variants[variant],
-        className
-      )}
+      role={variant === 'destructive' ? 'alert' : 'status'}
+      className={cn('rounded-ctl border p-4', variants[variant], className)}
       {...props}
     >
       {children}
@@ -34,7 +31,7 @@ interface AlertDescriptionProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function AlertDescription({ className, children, ...props }: AlertDescriptionProps) {
   return (
-    <div className={cn('text-sm', className)} {...props}>
+    <div className={cn('text-small', className)} {...props}>
       {children}
     </div>
   )
@@ -49,5 +46,5 @@ export function AlertIcon({ variant }: { variant?: 'default' | 'destructive' | '
     warning: AlertCircle,
   }
   const Icon = icons[variant || 'default']
-  return <Icon className="h-4 w-4 mr-2 inline" />
+  return <Icon className="h-4 w-4 mr-2 inline" aria-hidden="true" />
 }
