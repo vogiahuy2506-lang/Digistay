@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
+import { useSiteHref } from '../_components/site-base'
 
 interface RoomType {
   id: string
@@ -65,6 +66,7 @@ const BED_LABELS: Record<string, string> = {
 export default function SearchPage({ params }: { params: Promise<{ subdomain: string }> }) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const siteHref = useSiteHref()
   
   const [subdomain, setSubdomain] = React.useState<string>('')
   const [property, setProperty] = React.useState<Property | null>(null)
@@ -128,11 +130,20 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
     try {
       const res = await fetch(`/api/properties/public?subdomain=${subdomain}`)
       const data = await res.json()
-      if (data.success && data.data.length > 0) {
-        setProperty(data.data[0])
+      // The API returns one property object. This used to expect an array
+      // (data.data.length), never set the property, and the page spun on
+      // "Đang tìm kiếm phòng trống..." forever.
+      const found = Array.isArray(data.data) ? data.data[0] : data.data
+      if (data.success && found) {
+        setProperty(found)
+      } else {
+        setError(data.error || 'Không tìm thấy cơ sở')
+        setIsLoading(false)
       }
     } catch (err) {
       console.error('Failed to fetch property:', err)
+      setError('Lỗi kết nối')
+      setIsLoading(false)
     }
   }
 
@@ -168,7 +179,7 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
       setError('Ngày trả phòng phải sau ngày nhận phòng')
       return
     }
-    router.push(`/${subdomain}/search?checkIn=${checkIn}&checkOut=${checkOut}&guests=${guests}`)
+    router.push(siteHref(`/search?checkIn=${checkIn}&checkOut=${checkOut}&guests=${guests}`))
   }
 
   const handleSelectRoom = async (roomType: RoomType) => {
@@ -288,7 +299,7 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
               <p className="text-sm text-gray-500">Đặt phòng trực tuyến</p>
             </div>
             <a
-              href={`/${subdomain}`}
+              href={siteHref('/')}
               className="text-sm text-gray-500 hover:text-gray-900 flex items-center gap-1"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -466,7 +477,7 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
                           <div className="flex gap-2">
                             <Button
                               variant="outline"
-                              onClick={() => router.push(`/${subdomain}/rooms/${roomType.id}?checkIn=${checkIn}&checkOut=${checkOut}`)}
+                              onClick={() => router.push(siteHref(`/rooms/${roomType.id}?checkIn=${checkIn}&checkOut=${checkOut}`))}
                             >
                               Xem chi tiết
                             </Button>
@@ -773,7 +784,7 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
                     }}>
                       Đặt thêm phòng
                     </Button>
-                    <Button onClick={() => router.push(`/${subdomain}`)}>
+                    <Button onClick={() => router.push(siteHref('/'))}>
                       Quay về trang chủ
                     </Button>
                   </div>

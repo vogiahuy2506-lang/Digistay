@@ -59,7 +59,7 @@ export function HeroBlock({ block, property }: Props) {
 
         {showSearchBar && (
           <div className="mt-8">
-            <SearchBar subdomain={property.id} />
+            <SearchBar />
           </div>
         )}
       </div>
