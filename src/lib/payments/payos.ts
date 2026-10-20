@@ -37,7 +37,9 @@ const ORDER_CODE_MIN = 10 ** 15
 const ORDER_CODE_SPAN = 2 ** 48 - 1
 
 /** Payments in these statuses become PAID when PayOS reports the money. */
-const PAYABLE_STATUSES = ['PENDING', 'PROCESSING', 'CANCELLED', 'EXPIRED', 'FAILED'] as const
+// Not PROCESSING: only a partial refund at booking cancel sets it, and a late
+// or repeated notification must not turn refunded money back into PAID.
+const PAYABLE_STATUSES = ['PENDING', 'CANCELLED', 'EXPIRED', 'FAILED'] as const
 
 export class PayosError extends Error {
   constructor(
@@ -268,7 +270,7 @@ export async function applyPayosPaid(input: {
     })
     if (claimed.count === 0) return 'duplicate' as const
 
-    const lateLink = payment.status !== 'PENDING' && payment.status !== 'PROCESSING'
+    const lateLink = payment.status !== 'PENDING'
     await tx.payment.update({
       where: { id: payment.id },
       data: {

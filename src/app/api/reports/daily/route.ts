@@ -38,14 +38,19 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Access control: owner or member of the workspace
+    // Access control: owner, or staff (the front-desk book is the
+    // receptionist's own report); not plain USER members.
     const property = await prisma.property.findFirst({
       where: {
         id: propertyId,
         workspace: {
           OR: [
             { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id } } },
+            {
+              members: {
+                some: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER', 'RECEPTIONIST'] } },
+              },
+            },
           ],
         },
       },

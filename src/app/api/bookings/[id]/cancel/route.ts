@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { lockBooking } from '@/lib/payments/booking-payments'
 import { z } from 'zod'
 
 const cancelSchema = z.object({
@@ -54,10 +56,6 @@ export async function POST(request: NextRequest, props: RouteParams) {
             },
           },
         },
-        payments: {
-          where: { status: 'PAID' },
-          orderBy: { paidAt: 'desc' },
-        },
       },
     })
 
@@ -65,102 +63,110 @@ export async function POST(request: NextRequest, props: RouteParams) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
     }
 
-    // Check access: owner, admin/manager, or the guest who made the booking
+    // Staff only: the refund amount comes from the request. Guests used to
+    // be let in and could choose their own refund; no guest page calls this.
     const workspace = booking.property.workspace
     const isOwner = workspace.ownerId === session.user.id
     const isStaff = workspace.members.some(m =>
       ['ADMIN', 'MANAGER', 'RECEPTIONIST'].includes(m.role)
     )
-    const isGuest = booking.guestEmail === session.user.email
 
-    if (!isOwner && !isStaff && !isGuest) {
+    if (!isOwner && !isStaff) {
       return NextResponse.json({ success: false, error: 'Không có quyền hủy đơn' }, { status: 403 })
     }
 
-    // Check if booking can be cancelled
-    if (['CANCELLED', 'CHECKED_OUT'].includes(booking.status)) {
+    const policy = await prisma.policy.findUnique({
+      where: { propertyId: booking.propertyId },
+    })
+
+    // Under the booking lock, like every other path that moves money: two
+    // cancels at once refund once, and the second one gets 400.
+    const result = await prisma.$transaction(async (tx) => {
+      await lockBooking(tx, id)
+      const current = await tx.booking.findUniqueOrThrow({ where: { id }, select: { status: true } })
+      if (['CANCELLED', 'CHECKED_OUT'].includes(current.status)) return null
+
+      const payments = await tx.payment.findMany({
+        where: { bookingId: id, status: 'PAID' },
+        orderBy: { paidAt: 'desc' },
+      })
+      const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0)
+
+      // How much to give back
+      let toRefund = 0
+      if (totalPaid > 0) {
+        const hoursUntilCheckIn = Math.floor(
+          (new Date(booking.checkInDate).getTime() - Date.now()) / (1000 * 60 * 60)
+        )
+        const freeCancellationHours = policy?.cancellationHours ?? 24
+
+        if (hoursUntilCheckIn >= freeCancellationHours) {
+          // Free cancellation available
+          toRefund = fullRefund ? totalPaid : (refundAmount ?? totalPaid)
+        } else if (current.status === 'CHECKED_IN') {
+          // Already checked in - refund is at discretion
+          toRefund = fullRefund ? totalPaid : (refundAmount ?? 0)
+        } else {
+          // Within penalty window - partial/no refund
+          toRefund = refundAmount ?? 0
+        }
+        toRefund = Math.min(toRefund, totalPaid)
+      }
+
+      // Newest payments first. A partly refunded payment is PROCESSING, which
+      // no gateway path will mark PAID again (payos.ts PAYABLE_STATUSES).
+      let refunded = 0
+      const refundedAt = new Date().toISOString()
+      for (const payment of payments) {
+        if (refunded >= toRefund) break
+        const part = Math.min(payment.amount, toRefund - refunded)
+        const metadata =
+          payment.metadata && typeof payment.metadata === 'object' && !Array.isArray(payment.metadata)
+            ? (payment.metadata as Prisma.JsonObject)
+            : {}
+        await tx.payment.update({
+          where: { id: payment.id },
+          data: {
+            status: part >= payment.amount ? 'REFUNDED' : 'PROCESSING',
+            // Merged: the gateway's own fields (PayOS order, flags) stay.
+            metadata: { ...metadata, refundReason: reason ?? null, refundedAt, refundedAmount: part },
+          },
+        })
+        refunded += part
+      }
+
+      const updatedBooking = await tx.booking.update({
+        where: { id },
+        data: {
+          status: 'CANCELLED',
+          // Nothing paid: unchanged. All of it returned: REFUNDED. Money
+          // kept, in part or in full: PARTIAL, as before.
+          ...(totalPaid > 0 && { paymentStatus: refunded >= totalPaid ? 'REFUNDED' : 'PARTIAL' }),
+        },
+        include: {
+          bookingItems: true,
+          payments: { where: { status: { in: ['PAID', 'REFUNDED', 'PROCESSING'] } } },
+          property: {
+            select: { id: true, name: true },
+          },
+        },
+      })
+
+      // Remove room locks
+      await tx.roomLock.deleteMany({
+        where: { bookingId: id },
+      })
+
+      return { updatedBooking, totalPaid, refunded }
+    })
+
+    if (!result) {
       return NextResponse.json({
         success: false,
         error: 'Đơn đặt phòng không thể hủy ở trạng thái hiện tại',
       }, { status: 400 })
     }
-
-    // If already checked in, only owner/admin can cancel
-    if (booking.status === 'CHECKED_IN' && !isOwner && !isStaff) {
-      return NextResponse.json({
-        success: false,
-        error: 'Chỉ quản lý mới có thể hủy đơn đã nhận phòng',
-      }, { status: 403 })
-    }
-
-    // Calculate refund
-    const totalPaid = booking.payments.reduce((sum, p) => sum + p.amount, 0)
-    let finalRefundAmount = 0
-
-    if (totalPaid > 0) {
-      // Check cancellation policy
-      const policy = await prisma.policy.findUnique({
-        where: { propertyId: booking.propertyId },
-      })
-
-      const hoursUntilCheckIn = Math.floor(
-        (new Date(booking.checkInDate).getTime() - Date.now()) / (1000 * 60 * 60)
-      )
-
-      // If cancellation is free (enough hours notice), full refund
-      // If within free cancellation window, no refund
-      const freeCancellationHours = policy?.cancellationHours ?? 24
-
-      if (hoursUntilCheckIn >= freeCancellationHours) {
-        // Free cancellation available
-        finalRefundAmount = fullRefund ? totalPaid : (refundAmount ?? totalPaid)
-      } else if (booking.status === 'CHECKED_IN') {
-        // Already checked in - refund is at discretion
-        finalRefundAmount = fullRefund ? totalPaid : (refundAmount ?? 0)
-      } else {
-        // Within penalty window - partial/no refund
-        finalRefundAmount = refundAmount ?? 0
-      }
-
-      // Mark payments as refunded
-      if (finalRefundAmount > 0) {
-        for (const payment of booking.payments) {
-          const paymentRefund = Math.min(payment.amount, finalRefundAmount)
-          await prisma.payment.update({
-            where: { id: payment.id },
-            data: {
-              status: paymentRefund >= payment.amount ? 'REFUNDED' : 'PROCESSING',
-              metadata: { refundReason: reason, refundedAt: new Date().toISOString() },
-            },
-          })
-          finalRefundAmount -= paymentRefund
-          if (finalRefundAmount <= 0) break
-        }
-      }
-    }
-
-    // Update booking status
-    const updatedBooking = await prisma.booking.update({
-      where: { id },
-      data: {
-        status: 'CANCELLED',
-        paymentStatus: (totalPaid > 0 && finalRefundAmount < totalPaid
-          ? 'PARTIAL'
-          : 'REFUNDED') as 'PARTIAL' | 'REFUNDED',
-      },
-      include: {
-        bookingItems: true,
-        payments: { where: { status: { in: ['PAID', 'REFUNDED', 'PROCESSING'] } } },
-        property: {
-          select: { id: true, name: true },
-        },
-      },
-    })
-
-    // Remove room locks
-    await prisma.roomLock.deleteMany({
-      where: { bookingId: id },
-    })
+    const { updatedBooking, totalPaid, refunded } = result
 
     // Log activity
     await prisma.activityLog.create({
@@ -173,12 +179,11 @@ export async function POST(request: NextRequest, props: RouteParams) {
         changes: {
           status: 'CANCELLED',
           reason,
-          refundAmount: totalPaid > 0 ? totalPaid - finalRefundAmount : 0,
+          refundAmount: refunded,
         },
         metadata: {
           bookingCode: booking.bookingCode,
           cancelledBy: session.user.id,
-          isGuestCancel: isGuest && !isOwner && !isStaff,
         },
       },
     })
@@ -188,7 +193,7 @@ export async function POST(request: NextRequest, props: RouteParams) {
       data: updatedBooking,
       message: 'Hủy đặt phòng thành công',
       refundInfo: totalPaid > 0
-        ? { totalPaid, refundAmount: totalPaid - finalRefundAmount }
+        ? { totalPaid, refundAmount: refunded }
         : null,
     })
   } catch (error) {

@@ -24,8 +24,10 @@ async function userCanManageBankAccount(
           workspace: {
             select: {
               ownerId: true,
+              // ADMIN only, like creating an account and PayOS: the account
+              // number decides where guests' QR transfers go.
               members: {
-                where: { userId, role: { in: ['ADMIN', 'MANAGER'] } },
+                where: { userId, role: 'ADMIN' },
                 select: { id: true },
               },
             },

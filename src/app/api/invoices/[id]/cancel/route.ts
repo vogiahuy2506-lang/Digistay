@@ -27,8 +27,9 @@ export async function POST(request: NextRequest, props: RouteParams) {
                 workspace: {
                   select: {
                     ownerId: true,
+                    // Staff only, like publishing (STAFF_AND_UP)
                     members: {
-                      where: { userId: session.user.id },
+                      where: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER', 'RECEPTIONIST'] } },
                     },
                   },
                 },
