@@ -1,5 +1,6 @@
-import { Phone, Mail, MapPin, MessageCircle } from 'lucide-react'
+import { Mail, MapPin, MessageCircle, Phone } from 'lucide-react'
 import type { PublicBlock, PublicProperty } from '../PropertySite'
+import { Eyebrow, Section, SectionTitle, cfgText } from '../site-ui'
 
 interface Props {
   block: PublicBlock
@@ -8,96 +9,55 @@ interface Props {
 
 export function ContactBlock({ block, property }: Props) {
   const cfg = block.config || {}
-  const title = cfg.title ?? 'Liên hệ đặt phòng'
-
+  const title = cfgText(cfg, 'contactTitle', 'title') ?? 'Liên hệ đặt phòng'
+  const phone = cfgText(cfg, 'contactPhone') ?? property.phone
+  const email = cfgText(cfg, 'contactEmail') ?? property.email
+  const address = cfgText(cfg, 'contactAddress') ?? [property.address, property.city].filter(Boolean).join(', ')
   // Vietnamese phone numbers → zalo.me/<phone>
-  const zaloLink = property.phone
-    ? `https://zalo.me/${property.phone.replace(/[^0-9]/g, '')}`
-    : null
+  const zaloLink = phone ? `https://zalo.me/${phone.replace(/[^0-9]/g, '')}` : null
+
+  const rows = [
+    phone && { icon: Phone, label: 'Điện thoại', value: phone, href: `tel:${phone.replace(/[^\d+]/g, '')}` },
+    email && { icon: Mail, label: 'Email', value: email, href: `mailto:${email}` },
+    zaloLink && { icon: MessageCircle, label: 'Zalo', value: 'Nhắn tin Zalo', href: zaloLink, external: true },
+    address && { icon: MapPin, label: 'Địa chỉ', value: address },
+  ].filter(Boolean) as { icon: typeof Phone; label: string; value: string; href?: string; external?: boolean }[]
 
   return (
-    <section id="contact" className="py-16 px-4">
-      <div className="max-w-4xl mx-auto">
-        <h2
-          className="text-3xl md:text-4xl font-bold text-center mb-4"
-          style={{ fontFamily: 'var(--brand-font-heading)' }}
-        >
-          {title}
-        </h2>
-        <p className="text-center text-gray-600 mb-12">
-          Liên hệ với chúng tôi qua bất kỳ kênh nào dưới đây
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {property.phone && (
-            <a
-              href={`tel:${property.phone}`}
-              className="flex items-center gap-4 p-5 rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-md transition"
-            >
-              <div
-                className="w-12 h-12 rounded-lg flex items-center justify-center text-white flex-shrink-0"
-                style={{ backgroundColor: 'var(--brand-primary)' }}
-              >
-                <Phone className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-xs text-gray-500">Điện thoại</p>
-                <p className="font-semibold text-gray-900">{property.phone}</p>
-              </div>
-            </a>
-          )}
-
-          {property.email && (
-            <a
-              href={`mailto:${property.email}`}
-              className="flex items-center gap-4 p-5 rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-md transition"
-            >
-              <div
-                className="w-12 h-12 rounded-lg flex items-center justify-center text-white flex-shrink-0"
-                style={{ backgroundColor: 'var(--brand-primary)' }}
-              >
-                <Mail className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-xs text-gray-500">Email</p>
-                <p className="font-semibold text-gray-900">{property.email}</p>
-              </div>
-            </a>
-          )}
-
-          <div className="flex items-center gap-4 p-5 rounded-xl border border-gray-200">
-            <div
-              className="w-12 h-12 rounded-lg flex items-center justify-center text-white flex-shrink-0"
-              style={{ backgroundColor: 'var(--brand-primary)' }}
-            >
-              <MapPin className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Địa chỉ</p>
-              <p className="font-semibold text-gray-900">
-                {property.address}, {property.city}
-              </p>
-            </div>
-          </div>
-
-          {zaloLink && (
-            <a
-              href={zaloLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-4 p-5 rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-md transition"
-            >
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center text-white flex-shrink-0 bg-[#0068FF]">
-                <MessageCircle className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-xs text-gray-500">Zalo</p>
-                <p className="font-semibold text-gray-900">Nhắn tin Zalo</p>
-              </div>
-            </a>
-          )}
+    <Section id="contact">
+      <div className="grid gap-10 lg:grid-cols-[1fr_520px]">
+        <div>
+          <Eyebrow>Liên hệ</Eyebrow>
+          <SectionTitle>{title}</SectionTitle>
+          <p className="mt-4 max-w-md text-body text-muted">Liên hệ trực tiếp với khách sạn qua các kênh dưới đây.</p>
         </div>
+        <ul className="border-t border-line">
+          {rows.map(({ icon: Icon, label, value, href, external }) => {
+            const body = (
+              <>
+                <Icon className="h-4 w-4 shrink-0 text-acc" aria-hidden="true" />
+                <span className="w-24 shrink-0 text-small text-muted">{label}</span>
+                <span className="min-w-0 break-words text-body text-fg">{value}</span>
+              </>
+            )
+            return (
+              <li key={label} className="border-b border-line">
+                {href ? (
+                  <a
+                    href={href}
+                    {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                    className="flex items-center gap-4 py-4 hover:text-acc"
+                  >
+                    {body}
+                  </a>
+                ) : (
+                  <div className="flex items-center gap-4 py-4">{body}</div>
+                )}
+              </li>
+            )
+          })}
+        </ul>
       </div>
-    </section>
+    </Section>
   )
 }

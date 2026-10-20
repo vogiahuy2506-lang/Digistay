@@ -1,23 +1,73 @@
 import type { PublicBlock, PublicProperty } from '../PropertySite'
+import type { SiteSection } from '../SiteHeader'
+import { Container } from '../site-ui'
 
 interface Props {
   block: PublicBlock
   property: PublicProperty
+  sections?: SiteSection[]
 }
 
-export function FooterBlock({ property }: Props) {
+/** Footer (redesign 3a). Digistay's own color appears only in "Vận hành bởi Digistay". */
+export function FooterBlock({ property, sections = [] }: Props) {
   const year = new Date().getFullYear()
+  const address = [property.address, property.district, property.city].filter(Boolean).join(', ')
+
   return (
-    <footer className="bg-gray-900 text-white py-10">
-      <div className="max-w-7xl mx-auto px-4 text-center">
-        <p className="text-gray-300 text-lg font-semibold mb-2">{property.name}</p>
-        <p className="text-gray-400 text-sm mb-1">{property.address}, {property.city}</p>
-        {property.phone && <p className="text-gray-400 text-sm">ĐT: {property.phone}</p>}
-        <p className="text-gray-500 text-xs mt-6">
-          © {year} {property.name}. Tất cả quyền được bảo lưu.
-        </p>
-        <p className="text-gray-600 text-xs mt-2">Powered by Digistay</p>
-      </div>
+    <footer className="border-t border-line pt-14 pb-8">
+      <Container>
+        <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr]">
+          <div>
+            <p className="font-site text-[28px] leading-9 text-fg">{property.name}</p>
+            <p className="mt-3 text-small text-muted">{address}</p>
+          </div>
+          <div>
+            <p className="text-label uppercase text-muted">Liên hệ</p>
+            <ul className="mt-4 space-y-2 text-small text-fg">
+              {property.phone && (
+                <li>
+                  <a href={`tel:${property.phone.replace(/[^\d+]/g, '')}`} className="hover:text-acc">
+                    {property.phone}
+                  </a>
+                </li>
+              )}
+              {property.email && (
+                <li>
+                  <a href={`mailto:${property.email}`} className="hover:text-acc break-all">
+                    {property.email}
+                  </a>
+                </li>
+              )}
+            </ul>
+          </div>
+          {sections.length > 0 && (
+            <div>
+              <p className="text-label uppercase text-muted">Khám phá</p>
+              <ul className="mt-4 space-y-2 text-small text-fg">
+                {sections.map((s) => (
+                  <li key={s.id}>
+                    <a href={`#${s.id}`} className="hover:text-acc">
+                      {s.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+        <div className="mt-12 flex flex-col gap-3 border-t border-line pt-6 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
+          <p>
+            © {year} {property.name}
+          </p>
+          <p className="flex items-center gap-2">
+            Vận hành bởi
+            <span className="inline-flex items-center gap-1.5 font-semibold text-brand">
+              <span className="h-2.5 w-2.5 rounded-[2px] bg-brand" aria-hidden="true" />
+              Digistay
+            </span>
+          </p>
+        </div>
+      </Container>
     </footer>
   )
 }

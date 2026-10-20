@@ -1,4 +1,5 @@
 import type { PublicBlock, PublicProperty } from '../PropertySite'
+import { Eyebrow, Section, SectionTitle, cfgText } from '../site-ui'
 
 interface Props {
   block: PublicBlock
@@ -7,24 +8,18 @@ interface Props {
 
 export function AboutBlock({ block, property }: Props) {
   const cfg = block.config || {}
-  const title = cfg.title ?? 'Về chúng tôi'
-  const description = cfg.description ?? property.description
+  const title = cfgText(cfg, 'aboutTitle', 'title') ?? 'Về chúng tôi'
+  const description = cfgText(cfg, 'aboutContent', 'description') ?? property.description
 
   if (!description) return null
 
   return (
-    <section id="about" className="py-16 px-4 bg-gray-50">
-      <div className="max-w-4xl mx-auto">
-        <h2
-          className="text-3xl md:text-4xl font-bold text-center mb-6"
-          style={{ fontFamily: 'var(--brand-font-heading)' }}
-        >
-          {title}
-        </h2>
-        <p className="text-lg text-gray-700 leading-relaxed text-center whitespace-pre-line">
-          {description}
-        </p>
+    <Section id="about">
+      <div className="max-w-3xl">
+        <Eyebrow>Giới thiệu</Eyebrow>
+        <SectionTitle>{title}</SectionTitle>
+        <p className="mt-6 text-lead text-muted whitespace-pre-line">{description}</p>
       </div>
-    </section>
+    </Section>
   )
 }

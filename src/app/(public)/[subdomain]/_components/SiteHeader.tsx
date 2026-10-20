@@ -1,80 +1,93 @@
-import { Star, Phone } from 'lucide-react'
-import type { PublicProperty } from './PropertySite'
+import { Menu, Phone } from 'lucide-react'
+import { SiteLink } from './site-base'
+import { Container, propertyTypeLabel } from './site-ui'
 
-export function SiteHeader({ property }: { property: PublicProperty }) {
-  return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-gray-100 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {property.logo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={property.logo}
-              alt={property.name}
-              className="w-10 h-10 rounded-lg object-cover"
-            />
-          ) : (
-            <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-xl"
-              style={{ backgroundColor: 'var(--brand-primary)' }}
-            >
-              {property.name.charAt(0).toUpperCase()}
-            </div>
-          )}
-          <div>
-            <h1
-              className="font-semibold text-gray-900"
-              style={{ fontFamily: 'var(--brand-font-heading)' }}
-            >
-              {property.name}
-            </h1>
-            <div className="flex items-center gap-1 text-sm text-gray-500">
-              <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-              <span className="font-medium">{propertyTypeLabel(property.type)}</span>
-              <span>·</span>
-              <span>{property.city}</span>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          {property.phone && (
-            <a
-              href={`tel:${property.phone}`}
-              className="hidden md:flex items-center gap-2 text-gray-600 hover:opacity-80"
-              style={{ color: 'var(--brand-primary)' }}
-            >
-              <Phone className="w-5 h-5" />
-              <span>{property.phone}</span>
-            </a>
-          )}
-          <a
-            href="#booking"
-            className="text-white px-4 py-2 rounded-lg font-medium hover:opacity-90 transition"
-            style={{ backgroundColor: 'var(--brand-primary)' }}
-          >
-            Đặt phòng
-          </a>
-        </div>
-      </div>
-    </header>
-  )
+export interface SiteSection {
+  id: string
+  label: string
 }
 
-function propertyTypeLabel(type: string): string {
-  switch (type) {
-    case 'HOTEL':
-      return 'Khách sạn'
-    case 'HOMESTAY':
-      return 'Homestay'
-    case 'RESORT':
-      return 'Resort'
-    case 'RESTAURANT':
-      return 'Nhà hàng'
-    case 'VILLA':
-      return 'Villa'
-    case 'MOTEL':
-      return 'Motel'
-    default:
-      return 'Cơ sở lưu trú'
-  }
+interface Props {
+  property: { name: string; type: string; city: string; phone: string | null }
+  /** Sections of the home page shown in the menu ("Phòng", "Tiện ích"...). */
+  sections: SiteSection[]
+  /** On the home page the menu scrolls; elsewhere it links back to it. */
+  onHome?: boolean
+}
+
+/** Hotel website header (redesign 3a): wordmark, section menu, phone, "Đặt phòng". */
+export function SiteHeader({ property, sections, onHome = true }: Props) {
+  const sectionPath = (id: string) => (onHome ? `#${id}` : `/#${id}`)
+  const bookPath = onHome ? '#booking' : '/search'
+  const linkClass = 'text-small text-fg hover:text-acc transition-colors duration-160 focus:outline-none focus-visible:text-acc'
+
+  return (
+    <header className="sticky top-0 z-40 border-b border-line bg-page/95 backdrop-blur">
+      <Container className="flex h-16 sm:h-20 items-center gap-6">
+        <SiteLink path="/" className="min-w-0 shrink focus:outline-none focus-visible:underline">
+          <span className="block font-site text-[20px] sm:text-[24px] leading-tight text-fg truncate">{property.name}</span>
+          <span className="block text-[10px] uppercase tracking-[0.18em] text-muted truncate">
+            {propertyTypeLabel(property.type)} · {property.city}
+          </span>
+        </SiteLink>
+
+        {sections.length > 0 && (
+          <nav aria-label="Các mục" className="hidden lg:flex flex-1 justify-center gap-8">
+            {sections.map((s) =>
+              onHome ? (
+                <a key={s.id} href={sectionPath(s.id)} className={linkClass}>
+                  {s.label}
+                </a>
+              ) : (
+                <SiteLink key={s.id} path={sectionPath(s.id)} className={linkClass}>
+                  {s.label}
+                </SiteLink>
+              )
+            )}
+          </nav>
+        )}
+
+        <div className="ml-auto flex items-center gap-3 sm:gap-5 shrink-0">
+          {property.phone && (
+            <a href={`tel:${property.phone.replace(/[^\d+]/g, '')}`} className={`hidden md:inline-flex items-center gap-2 ${linkClass}`}>
+              <Phone className="h-4 w-4" aria-hidden="true" />
+              {property.phone}
+            </a>
+          )}
+          {onHome ? (
+            <a href={bookPath} className="inline-flex h-11 items-center rounded-ctl bg-ink px-5 text-small font-medium text-on-ink hover:bg-ink/90 transition-colors">
+              Đặt phòng
+            </a>
+          ) : (
+            <SiteLink path={bookPath} className="inline-flex h-11 items-center rounded-ctl bg-ink px-5 text-small font-medium text-on-ink hover:bg-ink/90 transition-colors">
+              Đặt phòng
+            </SiteLink>
+          )}
+          {sections.length > 0 && (
+            <details className="relative lg:hidden">
+              <summary
+                aria-label="Mở menu"
+                className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-ctl text-fg hover:bg-fg/5 [&::-webkit-details-marker]:hidden"
+              >
+                <Menu className="h-5 w-5" aria-hidden="true" />
+              </summary>
+              <nav aria-label="Các mục" className="absolute right-0 top-12 z-50 min-w-[200px] border border-line bg-raised py-2 shadow-lift">
+                {sections.map((s) =>
+                  onHome ? (
+                    <a key={s.id} href={sectionPath(s.id)} className="block px-4 py-3 text-body text-fg hover:bg-fg/5">
+                      {s.label}
+                    </a>
+                  ) : (
+                    <SiteLink key={s.id} path={sectionPath(s.id)} className="block px-4 py-3 text-body text-fg hover:bg-fg/5">
+                      {s.label}
+                    </SiteLink>
+                  )
+                )}
+              </nav>
+            </details>
+          )}
+        </div>
+      </Container>
+    </header>
+  )
 }

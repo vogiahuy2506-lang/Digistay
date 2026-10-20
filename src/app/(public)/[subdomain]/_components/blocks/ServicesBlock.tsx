@@ -1,7 +1,6 @@
-import { Sparkles } from 'lucide-react'
-import { formatCurrency } from '@/lib/utils'
+import { formatVnd } from '@/lib/bookings/display'
 import type { PublicBlock, PublicService } from '../PropertySite'
-import { EmptyState } from './EmptyState'
+import { Section, SectionHeader, cfgText } from '../site-ui'
 
 interface Props {
   block: PublicBlock
@@ -10,74 +9,35 @@ interface Props {
 
 export function ServicesBlock({ block, services }: Props) {
   const cfg = block.config || {}
-  const title = cfg.title ?? 'Dịch vụ tiện ích'
-
-  if (services.length === 0) {
-    return (
-      <section id="services" className="py-16 px-4">
-        <div className="max-w-7xl mx-auto">
-          <h2
-            className="text-3xl md:text-4xl font-bold text-center mb-4"
-            style={{ fontFamily: 'var(--brand-font-heading)' }}
-          >
-            {title}
-          </h2>
-          <EmptyState
-            icon={<Sparkles className="h-6 w-6" />}
-            title="Danh sách dịch vụ đang được cập nhật"
-            description="Các dịch vụ kèm theo sẽ sớm được bổ sung."
-          />
-        </div>
-      </section>
-    )
-  }
+  const title = cfgText(cfg, 'servicesTitle', 'title') ?? 'Dịch vụ thêm'
 
   return (
-    <section id="services" className="py-16 px-4">
-      <div className="max-w-7xl mx-auto">
-        <h2
-          className="text-3xl md:text-4xl font-bold text-center mb-4"
-          style={{ fontFamily: 'var(--brand-font-heading)' }}
-        >
-          {title}
-        </h2>
-        <p className="text-center text-gray-600 mb-12">
-          Các dịch vụ kèm theo giúp kỳ nghỉ của bạn trọn vẹn hơn
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <Section id="services">
+      <SectionHeader eyebrow="Dịch vụ" title={title} aside={services.length > 0 ? 'Chọn thêm khi đặt phòng.' : undefined} />
+      {services.length === 0 ? (
+        <p className="text-body text-muted">Danh sách dịch vụ đang được cập nhật.</p>
+      ) : (
+        <ul className="grid border-t border-line sm:grid-cols-2 sm:gap-x-10 lg:grid-cols-3">
           {services.map((service) => (
-            <div
-              key={service.id}
-              className="p-5 rounded-xl border border-gray-200 hover:shadow-md transition"
-            >
-              <h3 className="font-semibold text-gray-900 mb-1">{service.name}</h3>
-              {service.description && (
-                <p className="text-sm text-gray-600 mb-3">{service.description}</p>
-              )}
-              <p
-                className="font-bold"
-                style={{ color: 'var(--brand-primary)' }}
-              >
-                {formatCurrency(service.price)}
-                <span className="text-xs text-gray-500 font-normal ml-1">
-                  {priceTypeLabel(service.priceType, service.perPerson)}
-                </span>
+            <li key={service.id} className="flex items-start justify-between gap-4 border-b border-line py-5">
+              <div className="min-w-0">
+                <h3 className="text-body font-medium text-fg">{service.name}</h3>
+                {service.description && <p className="mt-1 text-small text-muted">{service.description}</p>}
+              </div>
+              <p className="shrink-0 text-right text-body font-semibold tabular-nums text-fg">
+                {service.price > 0 ? formatVnd(service.price) : 'Miễn phí'}
+                {service.price > 0 && <span className="block text-xs font-normal text-muted">{priceTypeLabel(service.priceType, service.perPerson)}</span>}
               </p>
-            </div>
+            </li>
           ))}
-        </div>
-      </div>
-    </section>
+        </ul>
+      )}
+    </Section>
   )
 }
 
+/** "/đêm", "/người", "/đêm /người"; never "/người /người" as before. */
 function priceTypeLabel(type: string, perPerson: boolean): string {
-  const base =
-    type === 'PER_NIGHT'
-      ? '/đêm'
-      : type === 'PER_PERSON'
-        ? '/người'
-        : ''
-  return perPerson ? `${base} /người` : base
+  const unit = type === 'PER_NIGHT' ? '/đêm' : type === 'PER_PERSON' ? '/người' : 'một lần'
+  return perPerson && type !== 'PER_PERSON' ? `${unit} /người` : unit
 }

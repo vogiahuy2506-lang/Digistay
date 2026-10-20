@@ -9,7 +9,9 @@ import { FooterBlock } from './blocks/FooterBlock'
 import { ReviewsBlock } from './blocks/ReviewsBlock'
 import { RestaurantMenuBlock } from './blocks/RestaurantMenuBlock'
 import { ServicesBlock } from './blocks/ServicesBlock'
-import { SiteHeader } from './SiteHeader'
+import { SiteHeader, type SiteSection } from './SiteHeader'
+import { SiteLink } from './site-base'
+import { Container, cfgText } from './site-ui'
 
 type BlockType =
   | 'HERO'
@@ -108,39 +110,29 @@ interface Props {
   settings: PublicSettings | null
 }
 
-export function PropertySite({
-  property,
-  images,
-  amenities,
-  roomTypes,
-  services,
-  blocks,
-  settings,
-}: Props) {
-  const primary = settings?.primaryColor ?? '#3B82F6'
-  const bodyFont = settings?.fontFamily ?? 'Inter'
-  const headingFont = settings?.headingFont ?? 'Inter'
+const SECTION_LABELS: Partial<Record<BlockType, { id: string; label: string }>> = {
+  ROOMS: { id: 'rooms', label: 'Phòng' },
+  AMENITIES: { id: 'amenities', label: 'Tiện ích' },
+  GALLERY: { id: 'gallery', label: 'Hình ảnh' },
+  SERVICES: { id: 'services', label: 'Dịch vụ' },
+  MAP: { id: 'map', label: 'Vị trí' },
+  CONTACT: { id: 'contact', label: 'Liên hệ' },
+}
 
-  // Inject brand colors + fonts as CSS custom properties so blocks can use them.
-  // eslint-disable-next-line
-  const themeStyle: React.CSSProperties = {
-    ['--brand-primary' as any]: primary,
-    ['--brand-secondary' as any]: settings?.secondaryColor ?? '#10B981',
-    ['--brand-accent' as any]: settings?.accentColor ?? '#F59E0B',
-    ['--brand-font-body' as any]: bodyFont,
-    ['--brand-font-heading' as any]: headingFont,
-  }
+/**
+ * A hotel's home page, built from the blocks it set up in the website
+ * builder (redesign 3a). Colors, fonts and corners come from
+ * [subdomain]/layout.tsx; `settings` is kept in the props for callers.
+ */
+export function PropertySite({ property, images, amenities, roomTypes, services, blocks }: Props) {
+  const types = new Set(blocks.map((b) => b.type))
+  const sections: SiteSection[] = (Object.keys(SECTION_LABELS) as BlockType[])
+    .filter((t) => types.has(t) && !(t === 'GALLERY' && images.length === 0))
+    .map((t) => SECTION_LABELS[t]!)
 
   return (
-    <div
-      className="min-h-screen bg-white"
-      style={{
-        fontFamily: `var(--brand-font-body), system-ui, sans-serif`,
-        ...themeStyle,
-      }}
-    >
-      <SiteHeader property={property} />
-
+    <>
+      <SiteHeader property={property} sections={sections} />
       <main>
         {blocks.map((block) => (
           <BlockRenderer
@@ -151,10 +143,12 @@ export function PropertySite({
             amenities={amenities}
             roomTypes={roomTypes}
             services={services}
+            sections={sections}
+            hasMap={types.has('MAP')}
           />
         ))}
       </main>
-    </div>
+    </>
   )
 }
 
@@ -165,6 +159,8 @@ function BlockRenderer(props: {
   amenities: PublicAmenity[]
   roomTypes: PublicRoomType[]
   services: PublicService[]
+  sections: SiteSection[]
+  hasMap: boolean
 }) {
   const { block } = props
   switch (block.type as BlockType) {
@@ -191,25 +187,41 @@ function BlockRenderer(props: {
     case 'SERVICES':
       return <ServicesBlock {...props} />
     case 'CTA':
-      return <CtaFallback {...props} />
+      return <CtaBlock {...props} />
     default:
       return null
   }
 }
 
-function CtaFallback({ block }: { block: PublicBlock }) {
+/** Call to action: a dark band with one button (ctaTitle / ctaSubtitle / ctaButtonText / ctaButtonLink). */
+function CtaBlock({ block }: { block: PublicBlock }) {
+  const cfg = block.config || {}
+  const title = cfgText(cfg, 'ctaTitle', 'title') ?? 'Đặt phòng ngay'
+  const subtitle = cfgText(cfg, 'ctaSubtitle', 'subtitle')
+  const label = cfgText(cfg, 'ctaButtonText', 'buttonText') ?? 'Đặt phòng'
+  const link = cfgText(cfg, 'ctaButtonLink') ?? '#booking'
+  const buttonClass =
+    'mt-8 inline-flex h-12 items-center rounded-ctl bg-page px-6 text-body font-medium text-fg hover:bg-page/90 transition-colors'
+
   return (
-    <section className="py-12 px-4" style={{ backgroundColor: 'var(--brand-primary)' }}>
-      <div className="max-w-4xl mx-auto text-center text-white">
-        <h2 className="text-3xl font-bold mb-4">{block.config?.title ?? 'Đặt phòng ngay'}</h2>
-        <p className="mb-6 opacity-90">{block.config?.subtitle ?? 'Trải nghiệm dịch vụ tuyệt vời'}</p>
-        <a
-          href="#booking"
-          className="inline-block bg-white text-gray-900 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition"
-        >
-          {block.config?.buttonText ?? 'Đặt ngay'}
-        </a>
-      </div>
+    <section className="bg-ink py-16 sm:py-20 text-on-ink">
+      <Container className="max-w-3xl text-center">
+        <h2 className="font-site text-[32px] leading-[40px] sm:text-h2">{title}</h2>
+        {subtitle && <p className="mt-4 text-lead text-on-ink/80">{subtitle}</p>}
+        {link.startsWith('/') ? (
+          <SiteLink path={link} className={buttonClass}>
+            {label}
+          </SiteLink>
+        ) : /^(#|https?:\/\/)/.test(link) ? (
+          <a href={link} className={buttonClass} {...(link.startsWith('http') ? { rel: 'noopener noreferrer' } : {})}>
+            {label}
+          </a>
+        ) : (
+          <a href="#booking" className={buttonClass}>
+            {label}
+          </a>
+        )}
+      </Container>
     </section>
   )
 }

@@ -286,21 +286,19 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
   const formatPrice = (price: number) => formatCurrency(price)
   const formatDate = (date: string) => format(new Date(date), 'EEE, dd/MM', { locale: vi })
 
-  const primaryColor = '#3B82F6'
-
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+      <header className="bg-page/95 backdrop-blur border-b border-line sticky top-0 z-50">
+        <div className="mx-auto w-full max-w-[1280px] px-4 sm:px-8 lg:px-12 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">{property?.name || 'Tìm phòng'}</h1>
-              <p className="text-sm text-gray-500">Đặt phòng trực tuyến</p>
+              <h1 className="font-site text-[22px] leading-tight text-fg">{property?.name || 'Tìm phòng'}</h1>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-muted">Đặt phòng trực tuyến</p>
             </div>
             <a
               href={siteHref('/')}
-              className="text-sm text-gray-500 hover:text-gray-900 flex items-center gap-1"
+              className="text-sm text-muted hover:text-fg flex items-center gap-1"
             >
               <ChevronLeft className="w-4 h-4" />
               Quay lại
@@ -309,39 +307,39 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="mx-auto w-full max-w-[1280px] px-4 sm:px-8 lg:px-12 py-8">
         {/* Search Form */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+        <div className="bg-panel rounded-box shadow-lg p-6 mb-8">
           <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nhận phòng</label>
+              <label className="block text-sm font-medium text-fg mb-1">Nhận phòng</label>
               <input
                 type="date"
                 value={checkIn}
                 min={format(new Date(), 'yyyy-MM-dd')}
                 onChange={(e) => setCheckIn(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-line rounded-ctl focus:ring-2 focus:ring-acc/30 focus:border-transparent"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Trả phòng</label>
+              <label className="block text-sm font-medium text-fg mb-1">Trả phòng</label>
               <input
                 type="date"
                 value={checkOut}
                 min={checkIn || format(new Date(), 'yyyy-MM-dd')}
                 onChange={(e) => setCheckOut(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-line rounded-ctl focus:ring-2 focus:ring-acc/30 focus:border-transparent"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Số khách</label>
-              <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+              <label className="block text-sm font-medium text-fg mb-1">Số khách</label>
+              <div className="flex items-center border border-line rounded-ctl overflow-hidden">
                 <button
                   type="button"
                   onClick={() => setGuests(Math.max(1, guests - 1))}
-                  className="px-4 py-2 hover:bg-gray-100 border-r"
+                  className="px-4 py-2 hover:bg-fg/5 border-r"
                 >
                   −
                 </button>
@@ -352,7 +350,7 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
                 <button
                   type="button"
                   onClick={() => setGuests(Math.min(20, guests + 1))}
-                  className="px-4 py-2 hover:bg-gray-100 border-l"
+                  className="px-4 py-2 hover:bg-fg/5 border-l"
                 >
                   +
                 </button>
@@ -369,25 +367,25 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
 
         {/* Results */}
         {error && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-            <p className="text-yellow-700">{error}</p>
+          <div className="bg-warn-soft border border-warn/30 rounded-ctl p-4 mb-6">
+            <p className="text-warn">{error}</p>
           </div>
         )}
 
         {isLoading ? (
           <div className="text-center py-12">
-            <div className="animate-spin w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4" />
-            <p className="text-gray-500">Đang tìm kiếm phòng trống...</p>
+            <div className="animate-spin w-10 h-10 border-4 border-line border-t-fg rounded-full mx-auto mb-4" />
+            <p className="text-muted">Đang tìm kiếm phòng trống...</p>
           </div>
         ) : (
           <>
             {/* Summary */}
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">
+                <h2 className="text-xl font-bold text-fg">
                   {roomTypes.length} hạng phòng có sẵn
                 </h2>
-                <p className="text-gray-500">
+                <p className="text-muted">
                   {formatDate(checkIn)} → {formatDate(checkOut)} • {calculateNights()} đêm • {guests} khách
                 </p>
               </div>
@@ -402,8 +400,8 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
                 return (
                   <div
                     key={roomType.id}
-                    className={`bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all ${
-                      isSelected ? 'ring-2 ring-blue-500' : ''
+                    className={`bg-panel rounded-box overflow-hidden shadow-sm hover:shadow-md transition-all ${
+                      isSelected ? 'ring-2 ring-info/30' : ''
                     }`}
                   >
                     <div className="md:flex">
@@ -416,8 +414,8 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                            <span className="text-gray-400">No image</span>
+                          <div className="w-full h-full bg-fg/10 flex items-center justify-center">
+                            <span className="text-muted">No image</span>
                           </div>
                         )}
                       </div>
@@ -426,17 +424,17 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
                       <div className="flex-1 p-6">
                         <div className="flex items-start justify-between">
                           <div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-2">{roomType.name}</h3>
-                            <div className="flex flex-wrap gap-2 text-sm text-gray-600 mb-3">
-                              <span className="px-2 py-1 bg-gray-100 rounded">{BED_LABELS[roomType.bedType] || roomType.bedType}</span>
-                              {roomType.area && <span className="px-2 py-1 bg-gray-100 rounded">{roomType.area}m²</span>}
-                              <span className="px-2 py-1 bg-gray-100 rounded">Tối đa {roomType.maxOccupancy} khách</span>
+                            <h3 className="text-xl font-bold text-fg mb-2">{roomType.name}</h3>
+                            <div className="flex flex-wrap gap-2 text-sm text-muted mb-3">
+                              <span className="px-2 py-1 bg-fg/5 rounded">{BED_LABELS[roomType.bedType] || roomType.bedType}</span>
+                              {roomType.area && <span className="px-2 py-1 bg-fg/5 rounded">{roomType.area}m²</span>}
+                              <span className="px-2 py-1 bg-fg/5 rounded">Tối đa {roomType.maxOccupancy} khách</span>
                             </div>
                             
                             {/* Amenities */}
                             <div className="flex flex-wrap gap-2 mb-3">
                               {roomType.amenities.slice(0, 5).map((a) => (
-                                <span key={a.id} className="text-xs text-gray-500 flex items-center gap-1">
+                                <span key={a.id} className="text-xs text-muted flex items-center gap-1">
                                   {AMENITY_ICONS[a.icon] || <Sparkles className="w-3 h-3" />}
                                   {a.name}
                                 </span>
@@ -446,32 +444,33 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
                             {/* Availability */}
                             <div className="flex items-center gap-2">
                               {roomType.availableRooms > 0 ? (
-                                <span className="text-sm text-green-600 flex items-center gap-1">
+                                <span className="text-sm text-ok flex items-center gap-1">
                                   <Check className="w-4 h-4" />
                                   {roomType.availableRooms} phòng trống
                                 </span>
                               ) : (
-                                <span className="text-sm text-red-600">Hết phòng</span>
+                                <span className="text-sm text-err">Hết phòng</span>
                               )}
                             </div>
                           </div>
 
                           {/* Price */}
                           <div className="text-right ml-4">
-                            <p className="text-2xl font-bold" style={{ color: primaryColor }}>
+                            <p className="text-2xl font-bold text-acc">
                               {formatPrice(pricing.subtotal)}
                             </p>
-                            <p className="text-sm text-gray-500">{calculateNights()} đêm</p>
-                            <p className="text-xs text-gray-400 mt-1">
+                            <p className="text-sm text-muted">{calculateNights()} đêm</p>
+                            <p className="text-xs text-muted mt-1">
                               {formatPrice(roomType.pricing.weekdayPrice)}/đêm thường
                             </p>
                           </div>
                         </div>
 
                         {/* Actions */}
-                        <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-                          <p className="text-sm text-gray-500">
-                            {pricing.weekdayTotal > 0 && `${pricing.weekdayTotal / calculateNights() * Math.max(1, calculateNights() - Math.ceil(calculateNights() * 0.4))}đ ngày thường`}
+                        <div className="mt-4 pt-4 border-t border-line flex items-center justify-between">
+                          <p className="text-sm text-muted">
+                            {/* Used to print a made-up figure (total / nights × an arbitrary 0.4 factor). */}
+                            {pricing.weekdayTotal > 0 && `${formatPrice(pricing.weekdayTotal)} ngày thường`}
                             {pricing.weekendTotal > 0 && ` + ${formatPrice(pricing.weekendTotal)} cuối tuần`}
                           </p>
                           <div className="flex gap-2">
@@ -501,12 +500,12 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
       {/* Booking Modal */}
       {showBookingForm && selectedRoomType && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-panel rounded-box max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
+            <div className="sticky top-0 bg-panel border-b border-line p-4 flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-bold">Đặt phòng: {selectedRoomType.name}</h3>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted">
                   {formatDate(checkIn)} - {formatDate(checkOut)} • {calculateNights()} đêm
                 </p>
               </div>
@@ -515,7 +514,7 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
                   setShowBookingForm(false)
                   setSelectedRoomType(null)
                 }}
-                className="p-2 hover:bg-gray-100 rounded-lg"
+                className="p-2 hover:bg-fg/5 rounded-ctl"
               >
                 ✕
               </button>
@@ -523,12 +522,12 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
 
             {/* Lock Warning */}
             {lockInfo && (
-              <div className="bg-blue-50 border-b border-blue-200 p-3 text-center text-sm text-blue-700">
+              <div className="bg-info-soft border-b border-info/30 p-3 text-center text-sm text-info">
                 ⏰ Phòng được giữ trong 15 phút. Vui lòng hoàn tất đặt phòng.
               </div>
             )}
             {lockError && (
-              <div className="bg-red-50 border-b border-red-200 p-3 text-center text-sm text-red-700">
+              <div className="bg-err-soft border-b border-err/30 p-3 text-center text-sm text-err">
                 {lockError}
               </div>
             )}
@@ -541,45 +540,45 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
                   <h4 className="font-semibold mb-4">Thông tin khách hàng</h4>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Họ tên *</label>
+                      <label className="block text-sm font-medium text-fg mb-1">Họ tên *</label>
                       <input
                         type="text"
                         value={guestInfo.name}
                         onChange={(e) => setGuestInfo({ ...guestInfo, name: e.target.value })}
                         placeholder="Nguyễn Văn A"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2 border border-line rounded-ctl focus:ring-2 focus:ring-acc/30"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại *</label>
+                      <label className="block text-sm font-medium text-fg mb-1">Số điện thoại *</label>
                       <input
                         type="tel"
                         value={guestInfo.phone}
                         onChange={(e) => setGuestInfo({ ...guestInfo, phone: e.target.value })}
                         placeholder="0912345678"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2 border border-line rounded-ctl focus:ring-2 focus:ring-acc/30"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <label className="block text-sm font-medium text-fg mb-1">Email</label>
                       <input
                         type="email"
                         value={guestInfo.email}
                         onChange={(e) => setGuestInfo({ ...guestInfo, email: e.target.value })}
                         placeholder="email@example.com"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2 border border-line rounded-ctl focus:ring-2 focus:ring-acc/30"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
+                      <label className="block text-sm font-medium text-fg mb-1">Ghi chú</label>
                       <textarea
                         value={guestInfo.note}
                         onChange={(e) => setGuestInfo({ ...guestInfo, note: e.target.value })}
                         placeholder="Yêu cầu đặc biệt..."
                         rows={3}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2 border border-line rounded-ctl focus:ring-2 focus:ring-acc/30"
                       />
                     </div>
                   </div>
@@ -596,12 +595,12 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
                 /* Step 2: Services & Summary */
                 <div>
                   <h4 className="font-semibold mb-4">Dịch vụ kèm theo (tùy chọn)</h4>
-                  <p className="text-sm text-gray-500 mb-4">
+                  <p className="text-sm text-muted mb-4">
                     Chọn các dịch vụ bổ sung để có trải nghiệm tốt hơn
                   </p>
                   
                   <div className="space-y-3 mb-6">
-                    <label className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <label className="flex items-center justify-between p-4 border border-line rounded-ctl hover:bg-fg/[0.03] cursor-pointer">
                       <div className="flex items-center gap-3">
                         <input
                           type="checkbox"
@@ -613,17 +612,17 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
                               setSelectedServices(selectedServices.filter(s => s.id !== 'breakfast'))
                             }
                           }}
-                          className="w-5 h-5 text-blue-600"
+                          className="w-5 h-5 text-info"
                         />
                         <div>
                           <p className="font-medium">Ăn sáng buffet</p>
-                          <p className="text-sm text-gray-500">150.000đ/người/ngày</p>
+                          <p className="text-sm text-muted">150.000đ/người/ngày</p>
                         </div>
                       </div>
                       <span className="font-semibold">{formatPrice(150000 * calculateNights() * guests)}</span>
                     </label>
                     
-                    <label className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <label className="flex items-center justify-between p-4 border border-line rounded-ctl hover:bg-fg/[0.03] cursor-pointer">
                       <div className="flex items-center gap-3">
                         <input
                           type="checkbox"
@@ -635,11 +634,11 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
                               setSelectedServices(selectedServices.filter(s => s.id !== 'airport'))
                             }
                           }}
-                          className="w-5 h-5 text-blue-600"
+                          className="w-5 h-5 text-info"
                         />
                         <div>
                           <p className="font-medium">Đưa đón sân bay</p>
-                          <p className="text-sm text-gray-500">300.000đ/chuyến</p>
+                          <p className="text-sm text-muted">300.000đ/chuyến</p>
                         </div>
                       </div>
                       <span className="font-semibold">{formatPrice(300000)}</span>
@@ -647,7 +646,7 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
                   </div>
 
                   {/* Summary */}
-                  <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                  <div className="bg-fg/[0.03] rounded-ctl p-4 mb-6">
                     <h5 className="font-medium mb-3">Tóm tắt đặt phòng</h5>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
@@ -662,15 +661,15 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
                       ))}
                       <div className="flex justify-between font-bold text-base pt-2 border-t">
                         <span>Tổng cộng</span>
-                        <span style={{ color: primaryColor }}>{formatPrice(calculatePrice(selectedRoomType).total)}</span>
+                        <span className="text-acc">{formatPrice(calculatePrice(selectedRoomType).total)}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Cancellation Policy */}
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                    <h5 className="font-medium text-yellow-800 mb-2">Chính sách hủy</h5>
-                    <ul className="text-sm text-yellow-700 space-y-1">
+                  <div className="bg-warn-soft border border-warn/30 rounded-ctl p-4 mb-6">
+                    <h5 className="font-medium text-warn mb-2">Chính sách hủy</h5>
+                    <ul className="text-sm text-warn space-y-1">
                       <li>• Hủy miễn phí trước 24 giờ check-in</li>
                       <li>• Hủy trong vòng 24h: mất 50% tiền cọc</li>
                       <li>• Không đến: mất toàn bộ tiền cọc</li>
@@ -696,18 +695,18 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
                   <h4 className="font-semibold mb-4">Thanh toán</h4>
                   
                   <div className="space-y-3 mb-6">
-                    <label className="flex items-center justify-between p-4 border-2 border-blue-500 bg-blue-50 rounded-lg cursor-pointer">
+                    <label className="flex items-center justify-between p-4 border-2 border-info/30 bg-info-soft rounded-ctl cursor-pointer">
                       <div className="flex items-center gap-3">
                         <input
                           type="radio"
                           name="payment"
                           value="CASH"
                           defaultChecked
-                          className="w-5 h-5 text-blue-600"
+                          className="w-5 h-5 text-info"
                         />
                         <div>
                           <p className="font-medium">Thanh toán tại quầy</p>
-                          <p className="text-sm text-gray-500">Tiền mặt hoặc chuyển khoản khi nhận phòng</p>
+                          <p className="text-sm text-muted">Tiền mặt hoặc chuyển khoản khi nhận phòng</p>
                         </div>
                       </div>
                       <span className="text-2xl">💵</span>
@@ -715,7 +714,7 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
                   </div>
 
                   {/* Final Summary */}
-                  <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                  <div className="bg-fg/[0.03] rounded-ctl p-4 mb-6">
                     <h5 className="font-medium mb-3">Chi tiết thanh toán</h5>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
@@ -730,13 +729,13 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
                       ))}
                       <div className="flex justify-between font-bold text-lg pt-2 border-t">
                         <span>Tổng cộng</span>
-                        <span style={{ color: primaryColor }}>{formatPrice(calculatePrice(selectedRoomType).total)}</span>
+                        <span className="text-acc">{formatPrice(calculatePrice(selectedRoomType).total)}</span>
                       </div>
                     </div>
                   </div>
 
                   {bookingError && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700 mb-4">
+                    <div className="bg-err-soft border border-err/30 rounded-ctl p-3 text-sm text-err mb-4">
                       {bookingError}
                     </div>
                   )}
@@ -756,20 +755,20 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
               {bookingStep === 4 && bookingResult && (
                 /* Step 4: Success */
                 <div className="text-center py-8">
-                  <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
-                    <Check className="w-10 h-10 text-green-600" />
+                  <div className="w-20 h-20 rounded-full bg-ok-soft flex items-center justify-center mx-auto mb-6">
+                    <Check className="w-10 h-10 text-ok" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Đặt phòng thành công!</h3>
-                  <p className="text-gray-500 mb-4">
+                  <h3 className="text-2xl font-bold text-fg mb-2">Đặt phòng thành công!</h3>
+                  <p className="text-muted mb-4">
                     Mã đặt phòng của bạn là
                   </p>
-                  <p className="text-3xl font-mono font-bold text-blue-600 mb-6">
+                  <p className="text-3xl font-mono font-bold text-info mb-6">
                     {bookingResult.bookingCode}
                   </p>
-                  <p className="text-sm text-gray-500 mb-6">
+                  <p className="text-sm text-muted mb-6">
                     Vui lòng ghi nhớ mã đặt phòng này để check-in
                   </p>
-                  <div className="bg-gray-50 rounded-lg p-4 text-left text-sm mb-6">
+                  <div className="bg-fg/[0.03] rounded-ctl p-4 text-left text-sm mb-6">
                     <p className="font-medium mb-2">Thông tin đặt phòng:</p>
                     <p>• Khách sạn: {property?.name}</p>
                     <p>• Nhận phòng: {formatDate(checkIn)}</p>
