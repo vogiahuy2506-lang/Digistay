@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { CheckCircle2, FileCheck2 } from 'lucide-react'
+import { CheckCircle2, Copy, FileCheck2 } from 'lucide-react'
 import { Badge, Button, Card, CardContent, Input, Select } from '@/components/ui'
 import { VAT_CODES, VAT_LABELS } from '@/lib/einvoice/vat'
 
@@ -15,6 +15,8 @@ export interface EinvoiceStatus {
   vatCode?: number
   remainingNumbers?: number | null
   verifiedAt?: string | null
+  /** owners/ADMINs only: contains a secret */
+  webhookUrl?: string
 }
 
 const yearPrefix = `C${String(new Date().getFullYear()).slice(-2)}`
@@ -146,6 +148,26 @@ export function EinvoiceCard({
             </div>
           )}
         </div>
+
+        {status.connected && status.webhookUrl && !editing && (
+          <div className="text-xs text-gray-500 border-t pt-3">
+            <p>
+              Để nhận trạng thái từ cơ quan thuế (đã cấp mã / bị từ chối), gửi địa chỉ này cho bộ phận hỗ trợ Mắt
+              Bão. Địa chỉ có mã bí mật: không chia sẻ nơi khác.
+            </p>
+            <div className="mt-1 flex items-center gap-2">
+              <code className="truncate bg-gray-100 px-1.5 py-0.5 rounded">{status.webhookUrl}</code>
+              <button
+                type="button"
+                onClick={() => navigator.clipboard.writeText(status.webhookUrl!)}
+                className="text-gray-400 hover:text-gray-600"
+                aria-label="Sao chép địa chỉ"
+              >
+                <Copy className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {editing && (
           <div className="border-t pt-4 space-y-3">

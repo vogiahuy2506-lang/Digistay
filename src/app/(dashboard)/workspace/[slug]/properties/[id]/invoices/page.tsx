@@ -11,6 +11,7 @@ import {
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { EinvoiceCard, type EinvoiceStatus } from './einvoice-card'
+import { CQT_LABELS } from '@/lib/einvoice/cqt-labels'
 import {
   EMPTY_INVOICE_FORM,
   InvoiceFormFields,
@@ -47,6 +48,8 @@ interface Invoice {
   lookupCode: string | null
   einvoiceNumber: string | null
   publishError: string | null
+  cqtStatus: number | null
+  cqtNote: string | null
   createdAt: string
   updatedAt: string
   booking: {
@@ -832,6 +835,14 @@ export default function InvoicesPage() {
                     <p className="text-sm font-semibold text-gray-900 mt-1">
                       Số hoá đơn: {selectedInvoice.einvoiceNumber}
                       {selectedInvoice.invoiceSeries && ` · Ký hiệu ${selectedInvoice.invoiceSeries}`}
+                    </p>
+                  )}
+                  {selectedInvoice.cqtStatus != null && (
+                    <p
+                      className={`text-xs mt-1 ${selectedInvoice.cqtStatus === 6 ? 'text-red-600 font-semibold' : selectedInvoice.cqtStatus === 4 ? 'text-green-700' : 'text-gray-500'}`}
+                    >
+                      {CQT_LABELS[selectedInvoice.cqtStatus] ?? `Cơ quan thuế: mã ${selectedInvoice.cqtStatus}`}
+                      {selectedInvoice.cqtNote && ` — ${selectedInvoice.cqtNote}`}
                     </p>
                   )}
                 </div>

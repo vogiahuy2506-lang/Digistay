@@ -19,6 +19,7 @@
  * Lessons from Founder AI (one platform account there): CLAUDE.md, "Quy ước
  * code", Hoá đơn điện tử.
  */
+import { randomBytes } from 'crypto'
 import type { Invoice, Prisma, PropertyEinvoice } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { decryptSecret, encryptSecret, secretContext } from '@/lib/security/secret-box'
@@ -41,6 +42,12 @@ export class EinvoiceError extends Error {
 }
 
 const passwordCtx = (propertyId: string) => secretContext('property_einvoice', propertyId, 'password')
+export const webhookTokenCtx = (propertyId: string) => secretContext('property_einvoice', propertyId, 'webhookToken')
+
+/** The URL Mắt Bão support registers for tax-office status (matbao-webhook.ts). */
+export function einvoiceWebhookUrl(propertyId: string, token: string): string {
+  return `${process.env.NEXTAUTH_URL}/api/webhooks/matbao/${propertyId}/${token}`
+}
 
 function clientFor(config: PropertyEinvoice): MatbaoClient {
   return new MatbaoClient({
@@ -55,11 +62,19 @@ export function lookupCodeFor(invoice: Pick<Invoice, 'invoiceNumber' | 'lookupCo
   return invoice.lookupCode ?? `DS${invoice.invoiceNumber}`
 }
 
-export async function getEinvoiceStatus(propertyId: string) {
+/**
+ * The settings, never the password. The webhook URL contains a secret:
+ * only owners/ADMINs get it (they send it to Mắt Bão support).
+ */
+export async function getEinvoiceStatus(propertyId: string, { includeWebhookUrl = false } = {}) {
   const row = await prisma.propertyEinvoice.findUnique({ where: { propertyId } })
   if (!row) return { connected: false as const }
-  const { password: _password, connectedById: _by, ...visible } = row
-  return { connected: Boolean(row.verifiedAt), ...visible }
+  const { password: _password, connectedById: _by, webhookToken, ...visible } = row
+  const webhookUrl =
+    includeWebhookUrl && webhookToken
+      ? einvoiceWebhookUrl(propertyId, decryptSecret(webhookToken, webhookTokenCtx(propertyId)))
+      : undefined
+  return { connected: Boolean(row.verifiedAt), ...visible, ...(webhookUrl && { webhookUrl }) }
 }
 
 export interface EinvoiceSettings {
@@ -88,6 +103,8 @@ export async function connectEinvoice(propertyId: string, input: EinvoiceSetting
     verifiedAt: null,
     remainingNumbers: null,
     connectedById: userId,
+    // Kept across changes: Mắt Bão support has the URL.
+    webhookToken: previous?.webhookToken ?? encryptSecret(randomBytes(24).toString('hex'), webhookTokenCtx(propertyId)),
   }
   const row = await prisma.propertyEinvoice.upsert({ where: { propertyId }, create: { propertyId, ...data }, update: data })
 
@@ -108,7 +125,7 @@ export async function connectEinvoice(propertyId: string, input: EinvoiceSetting
       where: { propertyId },
       data: { verifiedAt: new Date(), remainingNumbers: match.remaining },
       select: { propertyId: true },
-    }).then(() => getEinvoiceStatus(propertyId))
+    }).then(() => getEinvoiceStatus(propertyId, { includeWebhookUrl: true }))
   } catch (error) {
     if (previous) {
       const { createdAt: _c, updatedAt: _u, propertyId: _p, ...restore } = previous

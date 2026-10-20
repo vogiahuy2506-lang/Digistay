@@ -175,6 +175,9 @@ sạn, đặt lại mật khẩu chỉ cần email, email trong phiên do client
   - **Hoá đơn đã phát hành không huỷ trong app**: phải lập mẫu 04/SS-HĐĐT trên cổng Mắt Bão.
   - **Ký hiệu đổi theo năm**: sang năm mới phải sửa ký hiệu trong thẻ Mắt Bão.
   - **Môi trường Chính thức** là hoá đơn thật, có giá trị pháp lý.
+  - Trạng thái từ cơ quan thuế về qua webhook `/api/webhooks/matbao/<propertyId>/<token>`. Mắt
+    Bão không ký callback, nên token bí mật trong URL chính là thứ xác thực: token được mã hoá, và
+    chỉ owner/ADMIN thấy URL. Trạng thái cuối (4, 6, 9) không bị thông báo đến muộn ghi đè.
   - `MATBAO_BASE_URL` chỉ dùng cho test (Mắt Bão giả ở `src/test/integration/fake-matbao.ts`).
 - Xác thực hai lớp (`src/lib/auth/two-factor.ts`) là **tuỳ chọn, không bao giờ bắt buộc**. Khi
   đã bật, mật khẩu đúng hoặc Google đúng **không tạo phiên**: chỉ trả "vé" chờ nhập mã, provider
@@ -240,8 +243,8 @@ dùng duyệt rồi mới làm, trên nhánh riêng. Cập nhật trạng thái 
 5. Thanh toán PayOS, mỗi khách sạn một bộ khoá; sửa các nhánh tiền mặt đặt `PAID` bất kể số
    tiền và không cập nhật `depositAmount` — xong; có thêm đối soát định kỳ 10 phút. Còn: SePay
    (nếu khách sạn cần), khách tự trả cọc trên site công khai.
-6. Hoá đơn điện tử Mắt Bão, mỗi khách sạn một tài khoản — xong. Còn: webhook trạng thái từ
-   cơ quan thuế (phải gửi URL cho hỗ trợ Mắt Bão), hoá đơn điều chỉnh/thay thế, tự gửi email
-   hoá đơn cho khách, tự xuất hoá đơn khi đơn thanh toán xong.
+6. Hoá đơn điện tử Mắt Bão, mỗi khách sạn một tài khoản, kèm trạng thái từ cơ quan thuế — xong.
+   Còn: hoá đơn điều chỉnh/thay thế, tự gửi email hoá đơn cho khách, tự xuất hoá đơn khi đơn
+   thanh toán xong.
 
 Tài liệu deploy: `docs/DEPLOYMENT.md`, `docs/RUNBOOK.md`.
