@@ -34,7 +34,7 @@ const HOUR = 60 * 60 * 1000
 const REPEAT_MS: Record<Severity, number> = { critical: 6 * HOUR, warning: 24 * HOUR }
 const MAX_LINES = 10
 /** The jobs whose failures are alerted; ops-alerts itself is not (it would be the one telling). */
-export const WATCHED_JOBS = ['payos-reconcile', 'einvoice-jobs', 'backup'] as const
+export const WATCHED_JOBS = ['payos-reconcile', 'einvoice-jobs', 'email-outbox', 'backup'] as const
 /** A RUNNING row this old means the process died mid-run. */
 const STUCK_RUN_MS = HOUR
 /** The daily backup timer runs once a day; a day and a bit without a good one is late. */
@@ -148,6 +148,30 @@ async function einvoiceEmailGaveUp(now: Date): Promise<Finding[]> {
   ]
 }
 
+async function outboxGaveUp(now: Date): Promise<Finding[]> {
+  const failed = await prisma.emailOutbox.findMany({
+    where: { status: 'FAILED', nextAt: null, updatedAt: { gt: new Date(now.getTime() - 7 * 24 * HOUR) } },
+    orderBy: { updatedAt: 'desc' },
+    take: 50,
+    select: { id: true, kind: true, toEmail: true, error: true },
+  })
+  if (failed.length === 0) return []
+  const kinds: Record<string, string> = {
+    booking_confirmation: 'xác nhận đặt phòng',
+    owner_new_booking: 'báo đơn mới cho chủ',
+    workspace_invite: 'lời mời',
+  }
+  return [
+    {
+      key: 'email_gave_up',
+      severity: 'warning',
+      title: `${failed.length} email (đặt phòng, lời mời) đã thử hết số lần mà không gửi được`,
+      lines: failed.map((e) => `${kinds[e.kind] ?? e.kind} · ${e.toEmail} · ${e.error ?? ''}`),
+      fingerprint: fingerprintOf(failed.map((e) => e.id)),
+    },
+  ]
+}
+
 async function payosFlags(now: Date): Promise<Finding[]> {
   const since = (hours: number) => ({ gt: new Date(now.getTime() - hours * HOUR) })
   const meta = (l: { metadata: unknown }) => (l.metadata ?? {}) as Record<string, unknown>
@@ -195,7 +219,7 @@ async function payosFlags(now: Date): Promise<Finding[]> {
 }
 
 export async function findProblems(now = new Date()): Promise<Finding[]> {
-  const groups = await Promise.all([jobFailures(now), backupStale(now), einvoiceStuck(now), einvoiceEmailGaveUp(now), payosFlags(now)])
+  const groups = await Promise.all([jobFailures(now), backupStale(now), einvoiceStuck(now), einvoiceEmailGaveUp(now), outboxGaveUp(now), payosFlags(now)])
   return groups.flat().map((f) => ({ ...f, lines: f.lines.slice(0, MAX_LINES).concat(f.lines.length > MAX_LINES ? [`… và ${f.lines.length - MAX_LINES} mục khác`] : []) }))
 }
 

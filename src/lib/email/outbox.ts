@@ -1,0 +1,160 @@
+/**
+ * Emails sent after the request, kept until sent (email_outbox).
+ *
+ * The booking and invitation emails used to be fire-and-forget: send()
+ * reports a failure instead of throwing, so a refused or unconfigured SMTP
+ * lost them without a trace. Now the request renders the email and stores
+ * it (encrypted: an invitation carries its token), sends it right after the
+ * response (after()), and the scheduled job (/api/internal/email-outbox)
+ * retries what failed: 10 min, 30 min, 2 h, 6 h, then gives up and the ops
+ * alerts say so. One conditional update claims a row, so the fast path and
+ * the job never send it twice.
+ *
+ * Emails the person is waiting for (sign-in codes) stay direct: they need
+ * to know at once if it failed.
+ */
+import { randomUUID } from 'crypto'
+import { after } from 'next/server'
+import type { Prisma } from '@prisma/client'
+import { prisma } from '@/lib/db'
+import { decryptSecret, encryptSecret, secretContext } from '@/lib/security/secret-box'
+import { sendRendered, type EmailRecipient } from './index'
+import {
+  bookingConfirmationTemplate,
+  workspaceInviteTemplate,
+  type BookingConfirmationTemplateProps,
+  type WorkspaceInviteTemplateProps,
+} from './templates'
+
+export const OUTBOX_MAX_ATTEMPTS = 5
+const LEASE_MS = 3 * 60 * 1000
+const BACKOFF_MS = [10, 30, 120, 360].map((minutes) => minutes * 60 * 1000)
+const KEEP_SENT_MS = 30 * 24 * 60 * 60 * 1000
+
+type Kind = 'booking_confirmation' | 'owner_new_booking' | 'workspace_invite'
+interface Message {
+  to: EmailRecipient
+  subject: string
+  text: string
+  html: string
+}
+
+const messageCtx = (id: string) => secretContext('email_outbox', id, 'message')
+type Db = Prisma.TransactionClient | typeof prisma
+
+/** Stores a rendered email for sending; returns its id. */
+export async function queueEmail(kind: Kind, message: Message, refId?: string, db: Db = prisma) {
+  const id = randomUUID()
+  await db.emailOutbox.create({
+    data: {
+      id,
+      kind,
+      toEmail: message.to.email,
+      message: encryptSecret(JSON.stringify(message), messageCtx(id)),
+      refId: refId ?? null,
+    },
+  })
+  return id
+}
+
+export function queueBookingConfirmation(data: BookingConfirmationTemplateProps, bookingId: string, db?: Db) {
+  return queueEmail('booking_confirmation', { to: { email: data.guestEmail, name: data.guestName }, ...bookingConfirmationTemplate(data) }, bookingId, db)
+}
+
+export interface OwnerNewBookingData {
+  ownerEmail: string
+  ownerName?: string
+  bookingCode: string
+  guestName: string
+  guestPhone: string
+  guestEmail: string
+  propertyName: string
+  checkIn: string
+  checkOut: string
+  /** the booking in the dashboard */
+  manageUrl: string
+}
+
+export function queueOwnerNewBooking(data: OwnerNewBookingData, bookingId: string, db?: Db) {
+  const subject = `Đơn đặt phòng mới #${data.bookingCode} - ${data.propertyName}`
+  const text = [
+    `Đơn đặt phòng: ${data.bookingCode}`,
+    `Khách: ${data.guestName} · ${data.guestPhone} · ${data.guestEmail}`,
+    `Ngày: ${data.checkIn.slice(0, 10)} - ${data.checkOut.slice(0, 10)}`,
+    `Xem đơn: ${data.manageUrl}`,
+  ].join('\n')
+  return queueEmail('owner_new_booking', { to: { email: data.ownerEmail, name: data.ownerName }, subject, text, html: text.replace(/\n/g, '<br/>') }, bookingId, db)
+}
+
+export function queueWorkspaceInvite(data: WorkspaceInviteTemplateProps, invitationId: string, db?: Db) {
+  return queueEmail('workspace_invite', { to: { email: data.recipientEmail, name: data.recipientName }, ...workspaceInviteTemplate(data) }, invitationId, db)
+}
+
+export type OutboxOutcome = 'sent' | 'failed' | 'not-due'
+
+/** Sends one queued email if it is due. Safe to call any number of times. */
+export async function sendQueuedEmail(id: string, now = new Date()): Promise<{ outcome: OutboxOutcome; error?: string }> {
+  const claimed = await prisma.emailOutbox.updateMany({
+    where: {
+      id,
+      OR: [{ status: 'PENDING' }, { status: { in: ['FAILED', 'SENDING'] }, nextAt: { lte: now } }],
+    },
+    data: { status: 'SENDING', nextAt: new Date(now.getTime() + LEASE_MS) },
+  })
+  if (claimed.count === 0) return { outcome: 'not-due' }
+
+  const row = await prisma.emailOutbox.findUniqueOrThrow({ where: { id } })
+  const attempts = row.attempts + 1
+  let error: string
+  try {
+    const message = JSON.parse(decryptSecret(row.message, messageCtx(id))) as Message
+    const result = await sendRendered(message.to, message)
+    if (result.sent) {
+      await prisma.emailOutbox.updateMany({
+        where: { id, status: 'SENDING' },
+        data: { status: 'SENT', attempts, sentAt: now, nextAt: null, error: null },
+      })
+      return { outcome: 'sent' }
+    }
+    error = result.success ? 'Máy chủ chưa cấu hình gửi email (SMTP)' : `Không gửi được email: ${result.error}`
+  } catch (e) {
+    error = `Không gửi được email: ${(e as Error).message}`
+  }
+  const next = attempts < OUTBOX_MAX_ATTEMPTS ? new Date(now.getTime() + BACKOFF_MS[attempts - 1]) : null
+  await prisma.emailOutbox.updateMany({
+    where: { id, status: 'SENDING' },
+    data: { status: 'FAILED', attempts, nextAt: next, error: error.slice(0, 500) },
+  })
+  console.warn(`[email] ${row.kind} ${id} failed (attempt ${attempts}): ${error}`)
+  return { outcome: 'failed', error }
+}
+
+/** Sends the email once the response has gone out; outside a request the job sends it. */
+export function sendAfterResponse(ids: string[]) {
+  try {
+    after(async () => {
+      for (const id of ids) await sendQueuedEmail(id).catch((e) => console.error('[email] outbox send failed:', e))
+    })
+  } catch {
+    // Not in a request: /api/internal/email-outbox picks them up.
+  }
+}
+
+/** The scheduled job: everything due, then old sent rows dropped. */
+export async function sendDueEmails(now = new Date()) {
+  const due = await prisma.emailOutbox.findMany({
+    where: { OR: [{ status: 'PENDING' }, { status: { in: ['FAILED', 'SENDING'] }, nextAt: { lte: now } }] },
+    orderBy: { createdAt: 'asc' },
+    take: 50,
+    select: { id: true },
+  })
+  const summary = { sent: 0, failed: 0 }
+  for (const { id } of due) {
+    const { outcome } = await sendQueuedEmail(id, now)
+    if (outcome !== 'not-due') summary[outcome]++
+  }
+  const { count: pruned } = await prisma.emailOutbox.deleteMany({
+    where: { status: 'SENT', sentAt: { lt: new Date(now.getTime() - KEEP_SENT_MS) } },
+  })
+  return { ...summary, pruned }
+}

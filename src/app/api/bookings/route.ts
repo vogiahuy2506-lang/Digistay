@@ -2,6 +2,67 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
+import type { Prisma } from '@prisma/client'
+import { queueBookingConfirmation, queueOwnerNewBooking, sendAfterResponse } from '@/lib/email/outbox'
+
+type BookingForEmails = Prisma.BookingGetPayload<{
+  include: {
+    property: {
+      select: {
+        id: true; name: true; subdomain: true; address: true; phone: true; city: true
+        workspace: { select: { slug: true; owner: { select: { email: true; name: true } } } }
+      }
+    }
+  }
+}>
+
+/** The guest's confirmation and the owner's notice, queued (src/lib/email/outbox.ts). */
+async function queueBookingEmails(tx: Prisma.TransactionClient, booking: BookingForEmails) {
+  const site = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+  const prop = booking.property
+  const ids = [
+    await queueBookingConfirmation(
+      {
+        guestName: booking.guestName,
+        guestEmail: booking.guestEmail,
+        bookingCode: booking.bookingCode,
+        propertyName: prop.name,
+        propertyAddress: `${prop.address}, ${prop.city}`,
+        propertyPhone: prop.phone,
+        checkIn: booking.checkInDate.toISOString(),
+        checkOut: booking.checkOutDate.toISOString(),
+        numAdults: booking.numAdults,
+        numChildren: booking.numChildren,
+        totalAmount: booking.totalAmount,
+        propertyUrl: `${site}/${prop.subdomain}`,
+      },
+      booking.id,
+      tx
+    ),
+  ]
+  const owner = prop.workspace?.owner
+  if (owner?.email) {
+    ids.push(
+      await queueOwnerNewBooking(
+        {
+          ownerEmail: owner.email,
+          ownerName: owner.name ?? undefined,
+          bookingCode: booking.bookingCode,
+          guestName: booking.guestName,
+          guestPhone: booking.guestPhone,
+          guestEmail: booking.guestEmail,
+          propertyName: prop.name,
+          checkIn: booking.checkInDate.toISOString(),
+          checkOut: booking.checkOutDate.toISOString(),
+          manageUrl: `${site}/workspace/${prop.workspace.slug}/properties/${prop.id}/bookings/${booking.id}`,
+        },
+        booking.id,
+        tx
+      )
+    )
+  }
+  return ids
+}
 
 class BookingCapacityError extends Error {
   constructor(message: string) {
@@ -241,6 +302,7 @@ export async function POST(request: NextRequest) {
       ],
     }
 
+    let emailIds: string[] = []
     const booking = await prisma.$transaction(async (tx) => {
       const [activeBookings, activeLocks] = await Promise.all([
         tx.booking.count({
@@ -268,7 +330,7 @@ export async function POST(request: NextRequest) {
         throw new BookingCapacityError('Phòng đã hết trong khoảng ngày này')
       }
 
-      return tx.booking.create({
+      const created = await tx.booking.create({
         data: {
           bookingCode: generateBookingCode(),
           propertyId: data.propertyId,
@@ -327,6 +389,7 @@ export async function POST(request: NextRequest) {
               workspace: {
                 select: {
                   ownerId: true,
+                  slug: true,
                   owner: { select: { email: true, name: true } },
                 },
               },
@@ -334,53 +397,11 @@ export async function POST(request: NextRequest) {
           },
         },
       })
+      // In the same transaction: a booking never exists without its emails.
+      emailIds = await queueBookingEmails(tx, created)
+      return created
     })
-
-    // Fire-and-forget emails: booking confirmation to guest, new-booking
-    // notification to property owner. Errors are logged but do not break
-    // the booking flow.
-    const manageUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/bookings/${booking.id}`
-    const prop = booking.property
-
-    void (async () => {
-      try {
-        const {
-          sendBookingConfirmation,
-          sendOwnerNewBooking,
-        } = await import('@/lib/email')
-        await sendBookingConfirmation({
-          guestName: booking.guestName,
-          guestEmail: booking.guestEmail,
-          bookingCode: booking.bookingCode,
-          propertyName: prop.name,
-          propertyAddress: `${prop.address}, ${prop.city}`,
-          propertyPhone: prop.phone,
-          checkIn: booking.checkInDate.toISOString(),
-          checkOut: booking.checkOutDate.toISOString(),
-          numAdults: booking.numAdults,
-          numChildren: booking.numChildren,
-          totalAmount: booking.totalAmount,
-          manageUrl,
-        })
-        if (prop.workspace?.owner?.email) {
-          await sendOwnerNewBooking({
-            ownerEmail: prop.workspace.owner.email,
-            ownerName: prop.workspace.owner.name ?? undefined,
-            bookingCode: booking.bookingCode,
-            guestName: booking.guestName,
-            guestPhone: booking.guestPhone,
-            guestEmail: booking.guestEmail,
-            propertyName: prop.name,
-            checkIn: booking.checkInDate.toISOString(),
-            checkOut: booking.checkOutDate.toISOString(),
-            totalAmount: booking.totalAmount,
-            manageUrl: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/workspace/_/properties/${prop.id}/bookings/${booking.id}`,
-          })
-        }
-      } catch (err) {
-        console.error('[booking] Email send failed:', err)
-      }
-    })()
+    sendAfterResponse(emailIds)
 
     // Log activity
     await prisma.activityLog.create({
