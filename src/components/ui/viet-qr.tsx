@@ -78,7 +78,7 @@ export function VietQR({
   if (isLoading) {
     return (
       <div
-        className="bg-gray-100 rounded-lg animate-pulse"
+        className="bg-fg/5 rounded-lg animate-pulse"
         style={{ width: size, height: size }}
       />
     )
@@ -87,10 +87,10 @@ export function VietQR({
   if (!qrDataUrl) {
     return (
       <div
-        className="bg-gray-100 rounded-lg flex items-center justify-center"
+        className="bg-fg/5 rounded-lg flex items-center justify-center"
         style={{ width: size, height: size }}
       >
-        <span className="text-gray-400 text-sm text-center p-4">
+        <span className="text-muted text-sm text-center p-4">
           QR sẽ hiển thị ở đây
         </span>
       </div>

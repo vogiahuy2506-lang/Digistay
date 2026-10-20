@@ -12,7 +12,7 @@ interface ModalProps {
   title?: string
   description?: string
   children: React.ReactNode
-  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full'
 }
 
 const sizes = {
@@ -21,6 +21,8 @@ const sizes = {
   lg: 'max-w-2xl',
   xl: 'max-w-4xl',
   '2xl': 'max-w-2xl',
+  /** wide forms with two columns (the calendar's create-booking dialog) */
+  full: 'max-w-6xl',
 }
 
 // ModalHeader registers its id so the dialog is named by its header text.
@@ -45,8 +47,12 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
         aria-label={title}
         aria-labelledby={title ? undefined : labelId}
         tabIndex={-1}
+        // overflow-y-auto, not hidden: most dialogs put their content straight
+        // in here (no ModalBody), and a tall one lost its footer buttons below
+        // the 92vh limit with no way to scroll to them. With ModalBody the body
+        // scrolls and header / footer stay in view, as before.
         className={cn(
-          'relative bg-raised text-fg rounded-box border border-line shadow-lift w-full max-h-[92vh] flex flex-col z-10 overflow-hidden focus:outline-none',
+          'relative bg-raised text-fg rounded-box border border-line shadow-lift w-full max-h-[92vh] flex flex-col z-10 overflow-y-auto overscroll-contain focus:outline-none',
           sizes[size]
         )}
       >
