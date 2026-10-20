@@ -1154,3 +1154,38 @@ model ActivityLog {
   @@index([propertyId])
   @@index([userId])
 }
+
+/// One run of a scheduled job (src/lib/ops/job-runs.ts): the jobs under
+/// /api/internal/ and docker/backup.sh (which writes its row with psql).
+/// Kept 30 days.
+model JobRun {
+  id         String    @id @default(cuid())
+  /// payos-reconcile, einvoice-jobs, ops-alerts, backup
+  job        String
+  /// RUNNING, SUCCESS, FAILURE
+  status     String
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  summary    Json?
+  error      String?
+
+  @@index([job, startedAt])
+  @@map("job_runs")
+}
+
+/// What the ops alert job last saw for one rule (src/lib/ops/alerts.ts),
+/// so the same problem is emailed once and then only as a reminder.
+model AlertState {
+  key         String    @id
+  /// critical or warning
+  severity    String
+  /// the items the alert was about; a new item means a new email
+  fingerprint String
+  title       String
+  firstSeenAt DateTime  @default(now())
+  lastSentAt  DateTime?
+  resolvedAt  DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  @@map("alert_states")
+}

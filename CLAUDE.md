@@ -166,6 +166,11 @@ sạn, đặt lại mật khẩu chỉ cần email, email trong phiên do client
 - Job định kỳ nằm ở `/api/internal/*`: kiểm `checkCronSecret()` (header `CRON_SECRET`), nginx
   không mở ra ngoài, và timer `digistay-reconcile` gọi từ bên trong container app qua
   `docker/systemd/scheduled-jobs.sh` (thêm job mới = thêm tên vào vòng lặp trong script đó).
+  Bọc job bằng `recordJobRun()` (`src/lib/ops/job-runs.ts`) để có lịch sử và cảnh báo khi lỗi.
+- **Giám sát** (`src/lib/ops/`): `/api/health` đỏ khi DB thiếu migration của bản đang chạy (sự cố
+  20/10/2026: DB trống mà health vẫn ok). Cảnh báo vận hành gửi email cho `ALERT_EMAILS` hoặc
+  `SUPER_ADMIN`; thêm luật mới trong `alerts.ts`, mỗi luật trả về fingerprint các mục để không gửi
+  lặp. RUNBOOK, "Giám sát và cảnh báo".
 - **Hoá đơn điện tử** (`src/lib/einvoice/`): mỗi khách sạn tự gắn tài khoản Mắt Bão của mình,
   hoá đơn xuất dưới mã số thuế của khách sạn.
   - **Giá phòng đã gồm VAT**: tổng hoá đơn = số khách trả; chưa thuế và thuế được tách ra bằng

@@ -539,6 +539,42 @@ trang Tài khoản ngân hàng để đăng ký lại).
 
 ---
 
+## Giám sát và cảnh báo
+
+**`/api/health`** trả 200 `{"status":"ok","version":"<sha>","redis":"ok"}` khi app chạy được:
+DB trả lời, khoá mã hoá hợp lệ, và **DB đã có mọi migration của bản đang chạy**. Thiếu migration
+(ví dụ DB trống) thì trả 503 và log ghi tên migration thiếu, nên `docker/deploy.sh` sẽ quay về
+bản trước. Redis chết chỉ hiện `"redis":"down"`, không làm health đỏ.
+
+**Kiểm tra từ bên ngoài** (cài một lần): tạo monitor HTTP miễn phí (UptimeRobot, Better Stack…)
+cho `https://digistay.vn/api/health`, 5 phút/lần, báo khi mã khác 200 hoặc nội dung không có
+`"status":"ok"`. Đây là thứ duy nhất báo được khi chính app hoặc VPS chết.
+
+**Email cảnh báo** (`src/lib/ops/alerts.ts`): job `ops-alerts` chạy cuối mỗi lượt 10 phút của
+`scheduled-jobs.sh`, gửi cho `ALERT_EMAILS` (trong `.env.production`, cách nhau dấu phẩy) hoặc
+mọi user `SUPER_ADMIN`. Cần SMTP. Một vấn đề được gửi một lần, nhắc lại mỗi 6 giờ (nghiêm trọng)
+hoặc 24 giờ (cảnh báo) tới khi hết; có mục mới thì gửi ngay.
+
+| Cảnh báo | Mức | Xử lý |
+|---|---|---|
+| Job `payos-reconcile` / `einvoice-jobs` / `backup` lỗi hoặc chạy dở quá 1 giờ | cảnh báo (backup: nghiêm trọng) | `journalctl -u digistay-reconcile` hoặc `-u digistay-backup`; log app |
+| Chưa có / quá 30 giờ không có backup hằng ngày | nghiêm trọng | "Backup & khôi phục" |
+| Backup chỉ nằm trên VPS | cảnh báo | đặt `BACKUP_GCS_BUCKET` |
+| Hoá đơn điện tử kẹt (`PUBLISHING` > 10 phút, chưa rõ kết quả > 1 giờ) | nghiêm trọng | mở hoá đơn, bấm phát hành lại (Mắt Bão trả 304, không xuất trùng) |
+| Email hoá đơn đã thử hết lần | cảnh báo | kiểm SMTP, bấm "Gửi lại email" |
+| PayOS về sai số tiền | nghiêm trọng | khoản đó **không** được ghi nhận: liên hệ khách, hoàn hoặc ghi tay |
+| PayOS trả vào link đã huỷ/hết hạn hay đơn đã đóng | cảnh báo | đã ghi nhận; nhân viên quyết hoàn hay giữ |
+| PayOS chỉ được ghi nhận nhờ đối soát | cảnh báo | webhook của khách sạn đó hỏng: "Đổi khoá" ở trang Tài khoản ngân hàng |
+
+Lịch sử chạy job nằm ở bảng `job_runs` (giữ 30 ngày); `backup.sh` cũng ghi vào đó.
+
+```bash
+docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c \
+  "SELECT job, status, \"startedAt\", error FROM job_runs ORDER BY \"startedAt\" DESC LIMIT 20"'
+```
+
+---
+
 ## Gia hạn chứng chỉ HTTPS
 
 Chứng chỉ Let's Encrypt chỉ có hạn 90 ngày. Trước đây **không có gì tự gia hạn**: dịch vụ

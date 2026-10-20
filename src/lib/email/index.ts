@@ -18,6 +18,7 @@ import {
   bookingConfirmationTemplate,
   workspaceInviteTemplate,
   invoiceEmailTemplate,
+  opsAlertTemplate,
   type OtpEmailTemplateProps,
   type BookingConfirmationTemplateProps,
   type WorkspaceInviteTemplateProps,
@@ -295,4 +296,16 @@ export async function sendInvoiceEmail({ to, pdf, ...data }: InvoiceEmailData): 
   return send({ email: to, name: data.customerName }, subject, text, html, [
     { ...pdf, contentType: 'application/pdf' },
   ])
+}
+
+// ============================================
+//  Ops alerts (src/lib/ops/alerts.ts)
+// ============================================
+
+export async function sendOpsAlertEmail(
+  to: string,
+  findings: Parameters<typeof opsAlertTemplate>[0]
+): Promise<SendResult> {
+  const { html, text, subject } = opsAlertTemplate(findings)
+  return send({ email: to }, subject, text, html)
 }

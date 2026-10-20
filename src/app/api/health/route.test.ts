@@ -3,8 +3,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 vi.mock('@/lib/db', () => ({
   prisma: { $queryRaw: vi.fn() },
 }))
+vi.mock('@/lib/ops/health-checks', () => ({
+  missingMigrations: vi.fn(async () => []),
+  redisState: vi.fn(async () => 'ok'),
+}))
 
 import { prisma } from '@/lib/db'
+import { missingMigrations, redisState } from '@/lib/ops/health-checks'
 import { GET, dynamic } from './route'
 
 const mockQueryRaw = prisma.$queryRaw as unknown as ReturnType<typeof vi.fn>
@@ -28,7 +33,25 @@ describe('GET /api/health', () => {
     const res = await GET()
     expect(res.status).toBe(200)
     expect(res.headers.get('cache-control')).toBe('no-store')
-    expect(await res.json()).toEqual({ status: 'ok', version: 'abc123' })
+    expect(await res.json()).toEqual({ status: 'ok', version: 'abc123', redis: 'ok' })
+  })
+
+  it('returns 503 when the database lacks a migration of this build', async () => {
+    mockQueryRaw.mockResolvedValueOnce([{ '?column?': 1 }])
+    vi.mocked(missingMigrations).mockResolvedValueOnce(['20261020090000_add_user_two_factor'])
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const res = await GET()
+    expect(res.status).toBe(503)
+    expect(await res.json()).toEqual({ status: 'error', version: 'abc123' })
+    spy.mockRestore()
+  })
+
+  it('stays ok when Redis is down, and says so', async () => {
+    mockQueryRaw.mockResolvedValueOnce([{ '?column?': 1 }])
+    vi.mocked(redisState).mockResolvedValueOnce('down')
+    const res = await GET()
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ status: 'ok', version: 'abc123', redis: 'down' })
   })
 
   it('returns 503 without error details when the database is down', async () => {
