@@ -567,6 +567,28 @@ docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -
 
 ---
 
+## Kiểm thử trình duyệt (e2e)
+
+Workflow `E2E` (`.github/workflows/e2e.yml`) chạy Playwright mỗi đêm lúc 03:00 trên `main`, với bản
+build production; PayOS, Mắt Bão và SMTP là bản giả (`e2e/fakes.ts`). Kịch bản ở `e2e/specs/`:
+đăng nhập, xác thực hai lớp, PayOS (kết nối → link → webhook → tiền cọc), hoá đơn (phát hành → email
+kèm PDF → điều chỉnh giảm → tự xuất khi đơn trả đủ), trang Hệ thống, và vài kiểm tra cơ bản (health,
+404 thay vì 500). Đỏ thì tải artifact `playwright-report` trong lần chạy đó (có trace và ảnh).
+Chạy cho một nhánh: Actions → E2E → Run workflow.
+
+Chạy trên máy (cần Postgres và Redis; database **phải** tên `*_e2e` vì mọi bảng bị xoá):
+
+```bash
+docker exec digistay-test-pg psql -U postgres -c "CREATE DATABASE digistay_e2e"
+export DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54329/digistay_e2e" REDIS_URL=redis://127.0.0.1:6379
+npx prisma migrate deploy
+npm run build && npm run e2e:prepare
+npx playwright install chromium   # một lần
+npm run e2e
+```
+
+---
+
 ## Gia hạn chứng chỉ HTTPS
 
 Chứng chỉ Let's Encrypt chỉ có hạn 90 ngày. Trước đây **không có gì tự gia hạn**: dịch vụ
