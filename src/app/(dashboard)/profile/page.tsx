@@ -439,7 +439,7 @@ export default function ProfilePage() {
                   </Badge>
                   {/* /api/admin/system checks the role again, in the database. */}
                   {profile?.role === 'SUPER_ADMIN' && (
-                    <Link href="/admin/system" className="text-xs font-medium text-primary underline">
+                    <Link href="/admin/system" className="text-xs font-medium text-acc underline">
                       Trang Hệ thống
                     </Link>
                   )}
