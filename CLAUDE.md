@@ -151,6 +151,24 @@ sạn, đặt lại mật khẩu chỉ cần email, email trong phiên do client
   `two-factor` mới tạo phiên. Thêm cách đăng nhập mới thì phải đi qua bước này. Không có đường
   tắt 2FA qua email; đặt lại theo RUNBOOK, "Đặt lại xác thực hai lớp".
 
+## Giao diện mới (thiết kế lại 2026)
+
+- Màu đặt theo **vai trò** trong `src/styles/tokens.ts` (`bg-page`, `bg-panel`, `bg-raised`,
+  `text-fg`, `text-muted`, `border-line`, `bg-ink text-on-ink`, `text-acc`, `bg-ok-soft text-ok`…).
+  Trang mới hoặc trang đang chuyển: chỉ dùng các tên này, không `bg-white` / `text-gray-*` /
+  `[#hex]`, không cần `dark:` — biến CSS tự đổi theo theme. Tên kiểu Material cũ (`primary`,
+  `surface`…) chờ xoá khi mọi trang đã chuyển.
+- Theme tối chỉ bật theo vùng bằng `data-theme="dark"` (trang quản lý), không theo cài đặt hệ
+  điều hành: trang chưa chuyển vẫn dùng màu viết cứng, tự đổi theo OS sẽ vỡ nửa chừng.
+- `text-acc` là màu nhấn theo ngữ cảnh: màu Digistay trong trang quản lý, màu khách sạn trên
+  website khách sạn. `text-brand` chỉ cho logo và "Vận hành bởi Digistay". Màu lỗi (`err`)
+  phải khác rõ màu nhấn; `tokens.test.ts` kiểm tương phản và khoảng cách màu.
+- Bo góc theo bề mặt: `rounded-ctl` (nút, ô nhập), `rounded-box` (thẻ, panel); `data-surface="site"`
+  đổi sang góc gần vuông của website khách sạn.
+- Thứ tự làm: (1) token màu + font — xong (`feat/ui-tokens`); (2) thành phần dùng chung;
+  (3) khung trang quản lý + danh sách đặt phòng + panel chi tiết; (4) các trang quản lý còn
+  lại; (5) website khách sạn. Bản thiết kế: file Claude Design "Digistay hotel booking platform".
+
 ## Kế hoạch gia cố
 
 Làm từng phần, theo thứ tự, lấy repo Founder AI (UKNOW) làm tham khảo. Mỗi phần: đọc cách
