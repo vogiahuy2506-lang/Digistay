@@ -104,11 +104,14 @@ export default function CalendarPage() {
   const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(null)
   const [isActionLoading, setIsActionLoading] = React.useState(false)
   const [actionLoadingType, setActionLoadingType] = React.useState('')
-  const [currentTime, setCurrentTime] = React.useState(new Date())
+  // Set in the browser only: the server's clock (UTC on the VPS) never matches
+  // the guest's, and the mismatch broke hydration (React error #418).
+  const [currentTime, setCurrentTime] = React.useState<Date | null>(null)
   const [exportType, setExportType] = React.useState<'pdf' | 'excel' | 'csv'>('pdf')
 
   // Update time every minute
   React.useEffect(() => {
+    setCurrentTime(new Date())
     const timer = setInterval(() => setCurrentTime(new Date()), 60000)
     return () => clearInterval(timer)
   }, [])
@@ -700,7 +703,9 @@ export default function CalendarPage() {
             {/* Live Indicator */}
             <div className="hidden xl:flex items-center gap-2 px-3 py-1 bg-ok-soft border border-ok/30 rounded-lg text-ok text-[11px] font-medium">
               <span className="w-2 h-2 rounded-full bg-ok animate-pulse" />
-              <span>Trực tuyến: <strong>{formatDate(currentTime, { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}</strong> • {formatDate(currentTime, { hour: '2-digit', minute: '2-digit' })}</span>
+              {currentTime && (
+                <span>Trực tuyến: <strong>{formatDate(currentTime, { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}</strong> • {formatDate(currentTime, { hour: '2-digit', minute: '2-digit' })}</span>
+              )}
             </div>
           </div>
         </div>
