@@ -38,6 +38,7 @@ import { POST as webhook } from '@/app/api/webhooks/payos/[propertyId]/route'
 import { POST as syncRoute } from '@/app/api/payments/[id]/sync/route'
 import { POST as cancelRoute } from '@/app/api/payments/[id]/cancel/route'
 import { POST as extendRoute } from '@/app/api/bookings/[id]/extend/route'
+import { POST as reconcileRoute } from '@/app/api/internal/payos-reconcile/route'
 
 const fake = new FakePayos()
 const ACCOUNT_A: FakeAccount = { clientId: 'client-a', apiKey: 'api-key-a', checksumKey: 'checksum-key-a' }
@@ -372,5 +373,57 @@ describe('cash and extensions keep the booking right', () => {
     const payment = await prisma.payment.findFirstOrThrow({ where: { bookingId: booking.id, amount: additionalCharge } })
     expect(payment).toMatchObject({ method: 'CASH', status: 'PAID' })
     expect((await bookingOf(booking.id)).depositAmount).toBe(1_000_000 + additionalCharge)
+  })
+})
+
+describe('scheduled reconcile', () => {
+  const run = (secret?: string) =>
+    reconcileRoute(
+      new NextRequest('http://digistay.test/api/internal/payos-reconcile', {
+        method: 'POST',
+        headers: secret ? { 'x-cron-secret': secret } : {},
+      })
+    )
+  const SECRET = 'cron-secret-for-tests-0123456789abcdef'
+
+  it('needs the secret, then applies what PayOS says for every property', async () => {
+    const a = await connectedTenant(ACCOUNT_A)
+    const paid = await createPayosPayment(a.booking.id, 300_000)
+    const expired = await createPayosPayment(a.booking.id, 200_000)
+    const waiting = await createPayosPayment(a.booking.id, 100_000)
+    await fake.pay(Number(paid.body.data.gatewayOrderCode)) // its webhook never arrives
+    fake.links.get(Number(expired.body.data.gatewayOrderCode))!.status = 'EXPIRED'
+
+    const b = await connectedTenant(ACCOUNT_B)
+    await createPayosPayment(b.booking.id, 100_000)
+    await prisma.propertyPayos.delete({ where: { propertyId: b.property.id } }) // disconnected since
+
+    const previous = process.env.CRON_SECRET
+    try {
+      delete process.env.CRON_SECRET
+      expect((await run(SECRET)).status).toBe(503)
+      process.env.CRON_SECRET = SECRET
+      expect((await run()).status).toBe(401)
+      expect((await run('wrong-secret-of-the-same-length-000000')).status).toBe(401)
+
+      const warn = vi.mocked(console.warn)
+      const res = await run(SECRET)
+      expect(res.status).toBe(200)
+      expect((await res.json()).data).toEqual({ checked: 4, paid: 1, expired: 1, cancelled: 0, errors: 1 })
+      expect(warn.mock.calls.some(([m]) => String(m).includes('paid without a webhook'))).toBe(true)
+
+      const status = (id: string) => prisma.payment.findUniqueOrThrow({ where: { id } }).then((p) => p.status)
+      expect(await status(paid.body.data.id)).toBe('PAID')
+      expect(await status(expired.body.data.id)).toBe('EXPIRED')
+      expect(await status(waiting.body.data.id)).toBe('PENDING')
+      expect((await bookingOf(a.booking.id)).depositAmount).toBe(300_000)
+
+      // Running again changes nothing and checks only what is still pending.
+      expect((await (await run(SECRET)).json()).data).toEqual({ checked: 2, paid: 0, expired: 0, cancelled: 0, errors: 1 })
+      expect(await prisma.activityLog.count({ where: { action: 'PAYOS_PAID' } })).toBe(1)
+    } finally {
+      if (previous === undefined) delete process.env.CRON_SECRET
+      else process.env.CRON_SECRET = previous
+    }
   })
 })

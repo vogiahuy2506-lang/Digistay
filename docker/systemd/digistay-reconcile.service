@@ -1,0 +1,12 @@
+# PayOS reconcile every 10 minutes — see src/lib/payments/payos-reconcile.ts.
+# Install: docs/RUNBOOK.md, "Đối soát PayOS định kỳ".
+# Runs inside the app container (CRON_SECRET comes from .env.production);
+# nginx does not route /api/internal/, so this is the only way in.
+[Unit]
+Description=Digistay PayOS reconcile (catches missed webhooks)
+Wants=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/docker exec digistay-app sh -c 'wget -q -O- --header "x-cron-secret: $CRON_SECRET" --post-data "" http://127.0.0.1:3000/api/internal/payos-reconcile'
