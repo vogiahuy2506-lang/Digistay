@@ -142,7 +142,7 @@ jobs:
         uses: appleboy/ssh-action@v1
         env:
           SHA: ${{ steps.target.outputs.sha }}
-          REPO: ${{ github.server_url }}/${{ github.repository }}.git
+          REPO: git@github.com:${{ github.repository }}.git
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
@@ -158,10 +158,15 @@ jobs:
             ls -la /opt/digistay | head -20
             echo '== deploy script =='
             ls -l /usr/local/bin/digistay-deploy.sh
-            echo "== git ls-remote $REPO (first 3 lines) =="
-            sudo -u deploy bash -c "cd /opt/digistay && git ls-remote $REPO refs/heads/main 2>&1 | head -3"
+            echo "== git ls-remote via SSH =="
+            # The repo on /opt/digistay was originally cloned by hotro_digibook.
+            # Run ls-remote as the file owner so git does not refuse with
+            # 'dubious ownership'. We resolve the owner dynamically.
+            OWNER="$(stat -c '%U:%G' /opt/digistay/.git)"
+            echo "owner=$OWNER"
+            sudo -u "${OWNER%:*}" bash -c "cd /opt/digistay && git ls-remote $REPO refs/heads/main 2>&1 | head -3"
             echo '== current HEAD =='
-            sudo -u deploy bash -c "cd /opt/digistay && git rev-parse HEAD"
+            sudo -u "${OWNER%:*}" bash -c "cd /opt/digistay && git rev-parse HEAD"
 
       - name: Deploy to VPS
         if: steps.target.outputs.skip != 'true'
