@@ -7,6 +7,7 @@ import { signOut } from 'next-auth/react'
 import { Modal, ModalFooter, Input, Textarea } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
 import { routes } from '@/lib/utils/routes'
+import { roleLabels, type WorkspaceRole } from '@/components/layout/nav'
 import {
   Building2,
   Plus,
@@ -19,33 +20,12 @@ import {
   Check,
   X,
   Layers,
-  Bell,
   PlusCircle,
   LogOut,
-  ShieldCheck,
   Search,
-  SlidersHorizontal,
-  LayoutGrid,
-  List,
-  Globe,
   Clock,
-  Bed,
-  TrendingUp,
   Hotel,
-  Coins,
-  Percent,
   MailCheck,
-  CreditCard,
-  UserCheck,
-  RefreshCw,
-  Activity,
-  HelpCircle,
-  PhoneCall,
-  Sparkles,
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
-  Maximize2,
 } from 'lucide-react'
 
 interface Workspace {
@@ -65,7 +45,7 @@ interface Workspace {
     properties: number
     members: number
   }
-  role?: 'ADMIN' | 'MANAGER' | 'RECEPTIONIST' | 'USER'
+  members?: { userId: string; role: WorkspaceRole }[]
 }
 
 interface User {
@@ -86,22 +66,19 @@ interface Invitation {
   }
   role: string
   status: 'PENDING' | 'ACCEPTED' | 'DECLINED'
-  invitedBy: {
+  // /api/users/me/invitations includes the sender as `sender`.
+  sender: {
     id: string
     name: string | null
     email: string
-    role?: string
   }
   message?: string
   createdAt: string
 }
 
-const roleBadges: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  ADMIN: { label: 'Chủ sở hữu', color: 'bg-ink text-on-ink border-acc', icon: <Crown className="w-3 h-3 text-warn-soft" /> },
-  MANAGER: { label: 'Quản lý', color: 'bg-warn-soft text-warn border-warn/30', icon: <Sparkles className="w-3 h-3 text-warn" /> },
-  RECEPTIONIST: { label: 'Lễ tân', color: 'bg-ok-soft text-ok border-ok/30', icon: <Users className="w-3 h-3 text-ok" /> },
-  USER: { label: 'Thành viên', color: 'bg-fg/5 text-fg border-line', icon: <Building2 className="w-3 h-3 text-muted" /> },
-}
+/** Invitation roles come from the API as plain strings. */
+const roleLabel = (role: string) =>
+  Object.prototype.hasOwnProperty.call(roleLabels, role) ? roleLabels[role as WorkspaceRole] : role
 
 export default function WorkspacesPage() {
   const router = useRouter()
@@ -110,8 +87,7 @@ export default function WorkspacesPage() {
   const [currentUser, setCurrentUser] = React.useState<User | null>(null)
   const [invitations, setInvitations] = React.useState<Invitation[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
-  const [filterTab, setFilterTab] = React.useState<'all' | 'owned' | 'invited' | 'archived'>('all')
-  const [viewMode, setViewMode] = React.useState<'grid' | 'list'>('grid')
+  const [filterTab, setFilterTab] = React.useState<'all' | 'owned' | 'invited'>('all')
   const [searchQuery, setSearchQuery] = React.useState('')
 
   const [isCreateOpen, setIsCreateOpen] = React.useState(false)
@@ -130,17 +106,6 @@ export default function WorkspacesPage() {
   const [isEditOpen, setIsEditOpen] = React.useState(false)
   const [isUpdating, setIsUpdating] = React.useState(false)
   const [selected, setSelected] = React.useState<Workspace | null>(null)
-
-  // Image editor modal state
-  const [isImageEditorOpen, setIsImageEditorOpen] = React.useState(false)
-  const [imageTransform, setImageTransform] = React.useState({
-    scale: 1,
-    positionX: 0,
-    positionY: 0,
-  })
-  const [isDragging, setIsDragging] = React.useState(false)
-  const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 })
-  const [imagePositionStart, setImagePositionStart] = React.useState({ x: 0, y: 0 })
 
   // Check URL params for prefill data
   React.useEffect(() => {
@@ -463,26 +428,6 @@ export default function WorkspacesPage() {
 
             {/* Right: Actions and User Menu */}
             <div className="flex items-center gap-3 md:gap-4">
-              {/* Cloud Status */}
-              <div className="hidden xl:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-ok-soft/80 border border-ok/30 text-ok text-xs font-semibold">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ok opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-ok" />
-                </span>
-                <span>Cloud Active</span>
-              </div>
-
-              {/* Notification Bell */}
-              <button
-                aria-label="Thông báo hệ thống"
-                className="relative p-2.5 text-muted hover:text-fg hover:bg-fg/5 rounded-xl transition border border-transparent hover:border-line"
-              >
-                <Bell className="w-4 h-4" />
-                <span className="absolute top-1.5 right-1.5 min-w-[18px] h-[18px] px-1 bg-ink text-on-ink text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-panel">
-                  3
-                </span>
-              </button>
-
               {/* Create Workspace Button */}
               <button
                 onClick={() => setIsCreateOpen(true)}
@@ -490,9 +435,6 @@ export default function WorkspacesPage() {
               >
                 <PlusCircle className="w-4 h-4 stroke-[2.5]" />
                 <span>Tạo workspace mới</span>
-                <kbd className="hidden lg:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono bg-on-ink/15 rounded border border-on-ink/30 text-on-ink">
-                  ⌘N
-                </kbd>
               </button>
 
               <div className="h-6 w-px bg-fg/10 hidden md:block" />
@@ -509,10 +451,9 @@ export default function WorkspacesPage() {
                   <span className="text-xs font-bold text-fg leading-tight">
                     {currentUser?.name || 'Người dùng'}
                   </span>
-                  <span className="text-[10px] font-semibold text-acc mt-0.5 flex items-center gap-1">
-                    <ShieldCheck className="w-2.5 h-2.5" />
-                    Super Admin / Owner
-                  </span>
+                  {currentUser?.email && (
+                    <span className="text-[10px] text-muted mt-0.5 truncate max-w-[180px]">{currentUser.email}</span>
+                  )}
                 </div>
                 <button
                   onClick={async () => {
@@ -537,8 +478,6 @@ export default function WorkspacesPage() {
           <div className="inline-flex items-center gap-2.5 px-3.5 py-1 bg-acc-soft/90 border border-acc/30 text-acc text-xs font-bold rounded-full mb-3.5 shadow-sm">
             <span className="w-2 h-2 rounded-full bg-ink animate-pulse" />
             Hệ điều hành vận hành khách sạn &amp; chuỗi Boutique
-            <span className="text-acc">•</span>
-            <span className="text-muted font-medium">Boutique OS v4.2</span>
           </div>
           <h1 className="text-3xl md:text-4xl lg:text-[42px] font-serif font-bold text-fg tracking-tight flex items-center gap-3 leading-tight">
             Chào mừng bạn quay lại, {currentUser?.name?.split(' ').pop() || 'bạn'}{' '}
@@ -601,19 +540,9 @@ export default function WorkspacesPage() {
                 {invitedCount}
               </span>
             </button>
-            <button
-              onClick={() => setFilterTab('archived')}
-              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition ${
-                filterTab === 'archived'
-                  ? 'bg-panel text-fg shadow-sm border border-line/80'
-                  : 'text-muted hover:text-muted hover:bg-panel/60'
-              }`}
-            >
-              <span>Lưu trữ</span>
-            </button>
           </div>
 
-          {/* Quick Search & View Toggle */}
+          {/* Quick Search */}
           <div className="w-full lg:w-auto flex flex-wrap sm:flex-nowrap items-center gap-3">
             <div className="relative w-full sm:w-72">
               <Search className="w-4 h-4 text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -621,44 +550,9 @@ export default function WorkspacesPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-12 py-2 text-xs md:text-sm bg-panel border border-line rounded-xl focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 outline-none placeholder:text-muted shadow-sm transition"
+                className="w-full pl-10 pr-4 py-2 text-xs md:text-sm bg-panel border border-line rounded-xl focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 outline-none placeholder:text-muted shadow-sm transition"
                 placeholder="Tìm nhanh workspace..."
               />
-              <kbd className="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-mono bg-fg/5 text-muted rounded border border-line pointer-events-none">
-                ⌘K
-              </kbd>
-            </div>
-
-            {/* Filter Button */}
-            <button className="inline-flex items-center gap-1.5 px-3 py-2 bg-panel border border-line text-fg hover:text-fg rounded-xl hover:border-muted transition text-xs font-semibold shadow-sm">
-              <SlidersHorizontal className="w-3.5 h-3.5 text-muted" />
-              <span>Bộ lọc</span>
-            </button>
-
-            {/* View Mode Switcher */}
-            <div className="flex items-center bg-fg/5 p-1 rounded-xl border border-line">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded-lg transition ${
-                  viewMode === 'grid'
-                    ? 'bg-panel text-acc shadow-sm border border-line/80'
-                    : 'text-muted hover:text-fg'
-                }`}
-                title="Dạng lưới (Grid)"
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-1.5 rounded-lg transition ${
-                  viewMode === 'list'
-                    ? 'bg-panel text-acc shadow-sm border border-line/80'
-                    : 'text-muted hover:text-fg'
-                }`}
-                title="Dạng danh sách (List)"
-              >
-                <List className="w-4 h-4" />
-              </button>
             </div>
           </div>
         </div>
@@ -672,9 +566,8 @@ export default function WorkspacesPage() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-7">
               {filteredWorkspaces.map((ws) => {
-                const role = roleBadges[ws.role || 'USER']
                 const isOwner = ws.ownerId === currentUser?.id
-                const isBoutiquePro = isOwner && ws._count.properties >= 3
+                const memberRole = ws.members?.find((m) => m.userId === currentUser?.id)?.role
 
                 return (
                   <article
@@ -700,23 +593,15 @@ export default function WorkspacesPage() {
                           ) : (
                             <>
                               <Building2 className="w-3 h-3 text-warn" />
-                              Thành viên
+                              {memberRole ? roleLabels[memberRole] : 'Thành viên'}
                             </>
                           )}
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-ok bg-ok-soft/95 backdrop-blur-md px-2.5 py-1 rounded-md border border-ok/30 shadow-sm">
-                          <span className="w-1.5 h-1.5 rounded-full bg-ok animate-pulse" />
-                          VietQR Active
                         </span>
                       </div>
 
                       {/* Monogram */}
                       <div className="absolute -bottom-4 left-5 flex items-end gap-3 z-10">
-                        <div className={`w-12 h-12 rounded-xl ring-4 ring-panel border shadow-md flex items-center justify-center font-serif font-bold text-xl ${
-                          isBoutiquePro
-                            ? 'bg-warn-soft border-warn/30 text-warn'
-                            : 'bg-panel border-line text-acc'
-                        }`}>
+                        <div className="w-12 h-12 rounded-xl ring-4 ring-panel border shadow-md flex items-center justify-center font-serif font-bold text-xl bg-panel border-line text-acc">
                           {ws.name.charAt(0).toUpperCase()}
                         </div>
                       </div>
@@ -725,17 +610,9 @@ export default function WorkspacesPage() {
                     <div className="pt-6 p-6 flex-1 flex flex-col justify-between">
                       <div>
                         <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <h3 className="font-bold text-lg text-fg group-hover:text-acc transition-colors leading-snug">
-                              {ws.name}
-                            </h3>
-                            <div className={`flex items-center gap-1.5 text-xs mt-1 font-mono ${
-                              isOwner ? 'text-acc font-medium' : 'text-muted'
-                            }`}>
-                              <Globe className="w-3.5 h-3.5 text-muted" />
-                              <span>{isOwner ? `${ws.slug}.digistay.vn` : `/${ws.slug}`}</span>
-                            </div>
-                          </div>
+                          <h3 className="font-bold text-lg text-fg group-hover:text-acc transition-colors leading-snug">
+                            {ws.name}
+                          </h3>
                           {isOwner && (
                             <div className="relative z-10">
                               <button
@@ -785,11 +662,7 @@ export default function WorkspacesPage() {
                         )}
 
                         {/* Key Metrics Stats Grid */}
-                        <div className={`grid grid-cols-2 gap-2 mt-4 p-3 rounded-xl border ${
-                          isBoutiquePro
-                            ? 'bg-warn-soft/40 border-warn/30'
-                            : 'bg-fg/[0.03] border-line/80'
-                        }`}>
+                        <div className="grid grid-cols-2 gap-2 mt-4 p-3 rounded-xl border bg-fg/[0.03] border-line/80">
                           <div className="flex items-center gap-2">
                             <div className="w-7 h-7 rounded-lg bg-panel border border-line flex items-center justify-center text-muted shrink-0">
                               <Hotel className="w-3.5 h-3.5" />
@@ -812,68 +685,11 @@ export default function WorkspacesPage() {
                               </div>
                             </div>
                           </div>
-                          {isBoutiquePro && (
-                            <>
-                              <div className="flex items-center gap-2 pt-1 border-t border-warn/30">
-                                <div className="w-7 h-7 rounded-lg bg-panel border border-line flex items-center justify-center text-muted shrink-0">
-                                  <Coins className="w-3.5 h-3.5" />
-                                </div>
-                                <div>
-                                  <div className="text-[10px] text-muted uppercase font-semibold">Doanh thu T3</div>
-                                  <div className="text-xs font-bold text-acc">--</div>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2 pt-1 border-t border-warn/30">
-                                <div className="w-7 h-7 rounded-lg bg-ok-soft border border-ok/30 text-ok flex items-center justify-center shrink-0">
-                                  <Percent className="w-3.5 h-3.5" />
-                                </div>
-                                <div>
-                                  <div className="text-[10px] text-muted uppercase font-semibold">Lấp đầy</div>
-                                  <div className="text-xs font-bold text-ok">--</div>
-                                </div>
-                              </div>
-                            </>
-                          )}
-                          {!isBoutiquePro && (
-                            <>
-                              <div className="flex items-center gap-2 pt-1 border-t border-line/50">
-                                <div className="w-7 h-7 rounded-lg bg-panel border border-line flex items-center justify-center text-muted shrink-0">
-                                  <Bed className="w-3.5 h-3.5" />
-                                </div>
-                                <div>
-                                  <div className="text-[10px] text-muted uppercase font-semibold">Quy mô</div>
-                                  <div className="text-xs font-bold text-fg">
-                                    {ws._count.properties * 4} phòng
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2 pt-1 border-t border-line/50">
-                                <div className="w-7 h-7 rounded-lg bg-ok-soft border border-ok/30 text-ok flex items-center justify-center shrink-0">
-                                  <TrendingUp className="w-3.5 h-3.5" />
-                                </div>
-                                <div>
-                                  <div className="text-[10px] text-muted uppercase font-semibold">Lấp đầy</div>
-                                  <div className="text-xs font-bold text-ok">--</div>
-                                </div>
-                              </div>
-                            </>
-                          )}
                         </div>
                       </div>
 
                       {/* Card Footer CTA */}
-                      <div className="mt-5 pt-3.5 border-t border-line/80 flex items-center justify-between">
-                        {isBoutiquePro ? (
-                          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-ok bg-ok-soft px-2.5 py-0.5 rounded-full border border-ok/30">
-                            <span className="w-1.5 h-1.5 rounded-full bg-ok" />
-                            Đồng bộ OTA Live
-                          </span>
-                        ) : (
-                          <span className="text-[11px] text-muted font-medium flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5 text-muted" />
-                            Hoạt động hôm nay
-                          </span>
-                        )}
+                      <div className="mt-5 pt-3.5 border-t border-line/80 flex items-center justify-end">
                         <Link
                           href={routes.workspace(ws.slug)}
                           className="inline-flex items-center gap-1.5 text-xs font-bold text-acc hover:text-on-ink bg-acc-soft hover:bg-ink px-3 py-1.5 rounded-lg group-hover:translate-x-1 transition-all shadow-sm"
@@ -899,7 +715,7 @@ export default function WorkspacesPage() {
                   Khởi tạo Workspace mới
                 </h3>
                 <p className="mt-2 text-xs md:text-sm text-muted max-w-[260px] leading-relaxed">
-                  Mở rộng chuỗi khách sạn, khu nghỉ dưỡng sinh thái, villa hoặc homestay mới với tên miền và cổng thanh toán riêng.
+                  Mở rộng chuỗi khách sạn, khu nghỉ dưỡng sinh thái, villa hoặc homestay mới.
                 </p>
                 <div className="mt-6 inline-flex items-center gap-2 text-xs font-bold text-acc group-hover:text-on-ink bg-panel group-hover:bg-ink px-4 py-2 rounded-xl border border-line group-hover:border-acc shadow-sm transition-all">
                   <span>Bắt đầu thiết lập</span>
@@ -908,182 +724,83 @@ export default function WorkspacesPage() {
               </button>
             </div>
 
-            {/* Auxiliary Sections */}
-            <div className="mt-12 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
-              {/* Pending Invitation Box */}
-              <section className="lg:col-span-5 bg-panel rounded-2xl border border-line/90 p-6 shadow-card flex flex-col justify-between relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-acc" />
-                <div>
-                  <div className="flex items-center justify-between pb-4 border-b border-line">
-                    <h4 className="font-bold text-sm text-fg flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-acc-soft text-acc flex items-center justify-center">
-                        <MailCheck className="w-4 h-4" />
-                      </div>
-                      <span>Lời mời cộng tác mới</span>
-                    </h4>
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold bg-warn-soft text-warn border border-warn/30">
-                      <span className="w-1.5 h-1.5 rounded-full bg-warn animate-ping" />
-                      {pendingInvitationsCount} chờ xử lý
-                    </span>
+            {/* Pending invitations */}
+            <section className="mt-12 bg-panel rounded-2xl border border-line/90 p-6 shadow-card relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-acc" />
+              <div className="flex items-center justify-between pb-4 border-b border-line">
+                <h4 className="font-bold text-sm text-fg flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-acc-soft text-acc flex items-center justify-center">
+                    <MailCheck className="w-4 h-4" />
                   </div>
+                  <span>Lời mời cộng tác mới</span>
+                </h4>
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold bg-warn-soft text-warn border border-warn/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-warn animate-ping" />
+                  {pendingInvitationsCount} chờ xử lý
+                </span>
+              </div>
 
-                  {pendingInvitationsCount > 0 ? (
-                    invitations.map((invitation) => (
-                      <div key={invitation.id} className="mt-4 p-4 rounded-xl bg-fg/[0.03] border border-line/80 flex flex-col gap-3.5">
-                        <div className="flex items-start gap-3.5">
-                          <div className="w-11 h-11 rounded-xl bg-panel border border-line font-serif font-bold text-lg text-fg flex items-center justify-center shadow-sm shrink-0">
-                            {invitation.workspace.name.charAt(0).toUpperCase()}
+              {pendingInvitationsCount > 0 ? (
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {invitations.map((invitation) => (
+                    <div key={invitation.id} className="p-4 rounded-xl bg-fg/[0.03] border border-line/80 flex flex-col gap-3.5">
+                      <div className="flex items-start gap-3.5">
+                        <div className="w-11 h-11 rounded-xl bg-panel border border-line font-serif font-bold text-lg text-fg flex items-center justify-center shadow-sm shrink-0">
+                          {invitation.workspace.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h5 className="text-xs sm:text-sm font-bold text-fg truncate">{invitation.workspace.name}</h5>
+                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-acc-soft text-acc shrink-0">Mới</span>
                           </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h5 className="text-xs sm:text-sm font-bold text-fg">{invitation.workspace.name}</h5>
-                              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-acc-soft text-acc">Mới</span>
-                            </div>
-                            <p className="text-xs text-muted mt-0.5">
-                              Vai trò đề xuất: <span className="font-bold text-fg">{invitation.role}</span>
-                            </p>
-                            <div className="text-[11px] text-muted mt-0.5 flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              <span>Gửi từ: {invitation.invitedBy.name || invitation.invitedBy.email}</span>
-                            </div>
+                          <p className="text-xs text-muted mt-0.5">
+                            Vai trò đề xuất: <span className="font-bold text-fg">{roleLabel(invitation.role)}</span>
+                          </p>
+                          <div className="text-[11px] text-muted mt-0.5 flex items-center gap-1 min-w-0">
+                            <Clock className="w-3 h-3 shrink-0" />
+                            <span className="truncate">Gửi từ: {invitation.sender?.name || invitation.sender?.email}</span>
                           </div>
                         </div>
-                        {invitation.message && (
-                          <div className="p-3 bg-panel rounded-lg border border-line text-xs text-muted italic leading-relaxed">
-                            &quot;{invitation.message}&quot;
-                          </div>
-                        )}
                       </div>
-                    ))
-                  ) : (
-                    <div className="mt-4 p-4 rounded-xl bg-fg/[0.03] border border-line/80 text-center">
-                      <div className="w-12 h-12 rounded-xl bg-panel border border-line flex items-center justify-center mx-auto mb-3 shadow-sm">
-                        <MailCheck className="w-6 h-6 text-muted" />
+                      {invitation.message && (
+                        <div className="p-3 bg-panel rounded-lg border border-line text-xs text-muted italic leading-relaxed">
+                          &quot;{invitation.message}&quot;
+                        </div>
+                      )}
+                      <div className="mt-auto flex items-center gap-3">
+                        <button
+                          onClick={() => handleAcceptInvitation(invitation.id)}
+                          className="flex-1 py-2.5 px-4 text-xs font-bold text-on-ink bg-ink hover:bg-ink/90 rounded-xl transition shadow-sm text-center flex items-center justify-center gap-1.5"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          Chấp nhận lời mời
+                        </button>
+                        <button
+                          onClick={() => handleDeclineInvitation(invitation.id)}
+                          className="py-2.5 px-4 text-xs font-bold text-muted hover:text-fg bg-fg/5 hover:bg-fg/10 rounded-xl transition text-center border border-line"
+                        >
+                          Từ chối
+                        </button>
                       </div>
-                      <p className="text-sm text-muted">Không có lời mời cộng tác nào</p>
                     </div>
-                  )}
+                  ))}
                 </div>
-
-                {pendingInvitationsCount > 0 && (
-                  <div className="mt-5 pt-3.5 flex items-center gap-3">
-                    <button
-                      onClick={() => handleAcceptInvitation(invitations[0].id)}
-                      className="flex-1 py-2.5 px-4 text-xs font-bold text-on-ink bg-ink hover:bg-ink/90 rounded-xl transition shadow-sm text-center flex items-center justify-center gap-1.5"
-                    >
-                      <Check className="w-3.5 h-3.5" />
-                      Chấp nhận lời mời
-                    </button>
-                    <button
-                      onClick={() => handleDeclineInvitation(invitations[0].id)}
-                      className="py-2.5 px-4 text-xs font-bold text-muted hover:text-fg bg-fg/5 hover:bg-fg/10 rounded-xl transition text-center border border-line"
-                    >
-                      Từ chối
-                    </button>
+              ) : (
+                <div className="mt-4 p-4 rounded-xl bg-fg/[0.03] border border-line/80 text-center">
+                  <div className="w-12 h-12 rounded-xl bg-panel border border-line flex items-center justify-center mx-auto mb-3 shadow-sm">
+                    <MailCheck className="w-6 h-6 text-muted" />
                   </div>
-                )}
-              </section>
-
-              {/* System Quick Insights & Recent Activity */}
-              <section className="lg:col-span-7 bg-panel rounded-2xl border border-line/90 p-6 shadow-card">
-                <div className="flex items-center justify-between pb-4 border-b border-line">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-ok-soft text-ok flex items-center justify-center">
-                      <Activity className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-sm text-fg">Hoạt động thời gian thực (Live Stream)</h4>
-                    </div>
-                  </div>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted bg-fg/5 px-2.5 py-1 rounded-full border border-line">
-                    <span className="w-2 h-2 rounded-full bg-ok animate-pulse" />
-                    Đồng bộ tự động
-                  </span>
+                  <p className="text-sm text-muted">Không có lời mời cộng tác nào</p>
                 </div>
-                <div className="mt-4 space-y-3">
-                  {/* Activity Item 1 */}
-                  <div className="flex items-center justify-between p-3.5 rounded-xl hover:bg-fg/[0.03] transition border border-line hover:border-line group">
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-9 h-9 rounded-xl bg-ok-soft text-ok border border-ok/30 flex items-center justify-center shrink-0">
-                        <CreditCard className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <p className="text-xs sm:text-sm font-bold text-fg group-hover:text-ok transition-colors">
-                          Đặt phòng trực tiếp thành công (#BK-8902)
-                        </p>
-                        <p className="text-[11px] sm:text-xs text-muted mt-0.5">
-                          <span className="font-semibold text-fg">{workspaces[0]?.name || 'Workspace'}</span> • Phòng Deluxe King • <span className="font-bold text-ok">4.250.000 đ</span> qua VietQR
-                        </p>
-                      </div>
-                    </div>
-                    <span className="text-[11px] text-muted font-mono whitespace-nowrap pl-2">8 phút trước</span>
-                  </div>
-                  {/* Activity Item 2 */}
-                  <div className="flex items-center justify-between p-3.5 rounded-xl hover:bg-fg/[0.03] transition border border-line hover:border-line group">
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-9 h-9 rounded-xl bg-acc-soft text-acc border border-acc/30 flex items-center justify-center shrink-0">
-                        <UserCheck className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <p className="text-xs sm:text-sm font-bold text-fg group-hover:text-acc transition-colors">
-                          Cập nhật phân quyền nhân sự ca sáng
-                        </p>
-                        <p className="text-[11px] sm:text-xs text-muted mt-0.5">
-                          <span className="font-semibold text-fg">{workspaces[1]?.name || 'Workspace'}</span> • Cấp quyền Lễ tân tiếp đón cho nhân viên: <span className="font-medium text-fg">Tran Thu Hang</span>
-                        </p>
-                      </div>
-                    </div>
-                    <span className="text-[11px] text-muted font-mono whitespace-nowrap pl-2">2 giờ trước</span>
-                  </div>
-                  {/* Activity Item 3 */}
-                  <div className="flex items-center justify-between p-3.5 rounded-xl hover:bg-fg/[0.03] transition border border-line hover:border-line group">
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-9 h-9 rounded-xl bg-info-soft text-info border border-info/30 flex items-center justify-center shrink-0">
-                        <RefreshCw className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <p className="text-xs sm:text-sm font-bold text-fg group-hover:text-info transition-colors">
-                          Đồng bộ giá phòng 2 chiều OTA Booking.com
-                        </p>
-                        <p className="text-[11px] sm:text-xs text-muted mt-0.5">
-                          <span className="font-semibold text-fg">{workspaces[0]?.name || 'Workspace'}</span> • Đã cập nhật bảng giá cuối tuần (All 38 Inventory Units)
-                        </p>
-                      </div>
-                    </div>
-                    <span className="text-[11px] text-muted font-mono whitespace-nowrap pl-2">4 giờ trước</span>
-                  </div>
-                </div>
-              </section>
-            </div>
+              )}
+            </section>
           </>
         )}
       </main>
 
       {/* Footer */}
       <footer className="mt-auto border-t border-line bg-panel/90 backdrop-blur-md py-6 text-xs text-muted z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ok opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-ok" />
-            </span>
-            <span className="font-medium text-fg">Hệ thống máy chủ DigiStay Cloud:</span>
-            <span className="text-ok font-bold bg-ok-soft px-2 py-0.5 rounded border border-ok/30">
-              99.98% Hoạt động ổn định
-            </span>
-          </div>
-          <div className="flex items-center gap-6">
-            <a className="hover:text-acc transition flex items-center gap-1.5 font-medium" href="#help">
-              <HelpCircle className="w-3.5 h-3.5" />
-              Trung tâm hỗ trợ
-            </a>
-            <a className="hover:text-acc transition flex items-center gap-1.5 font-medium" href="#hotline">
-              <PhoneCall className="w-3.5 h-3.5" />
-              Hotline 24/7: 1900 8922
-            </a>
-            <span className="text-muted">© 2026 DigiStay Boutique OS. All rights reserved.</span>
-          </div>
-        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center sm:text-left">© 2026 Digistay</div>
       </footer>
 
       {/* Create Modal */}
@@ -1124,7 +841,6 @@ export default function WorkspacesPage() {
               <label className="text-xs font-bold text-fg uppercase tracking-wide">
                 Tên Workspace / Thương hiệu <span className="text-acc">*</span>
               </label>
-              <span className="text-[11px] text-muted">Hiển thị trên booking &amp; hóa đơn</span>
             </div>
             <input
               type="text"
@@ -1139,7 +855,7 @@ export default function WorkspacesPage() {
               <div className="flex items-center gap-1.5 font-mono text-[11px] sm:text-xs text-muted truncate">
                 <span className="text-muted">slug:</span>
                 <span className="text-acc font-semibold">
-                  {formData.slug ? `digistay.vn/${formData.slug}` : 'Nhập tên để tạo slug...'}
+                  {formData.slug || 'Nhập tên để tạo slug...'}
                 </span>
               </div>
               <button 
@@ -1229,12 +945,7 @@ export default function WorkspacesPage() {
                   <img
                     src={formData.logo}
                     alt="Logo"
-                    className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
-                    onClick={() => {
-                      // Reset transform when opening
-                      setImageTransform({ scale: 1, positionX: 0, positionY: 0 })
-                      setIsImageEditorOpen(true)
-                    }}
+                    className="w-full h-full object-cover"
                   />
                 ) : (
                   <span className="text-acc font-serif font-bold text-2xl">
@@ -1338,13 +1049,7 @@ export default function WorkspacesPage() {
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-4 bg-fg/[0.03] border-t border-line/90 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-1.5 text-[11px] text-muted font-medium">
-            <svg className="w-3.5 h-3.5 text-ok shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <span>Bảo mật đa tenant cô lập chuẩn ISO 27001</span>
-          </div>
+        <div className="px-6 py-4 bg-fg/[0.03] border-t border-line/90 flex flex-col sm:flex-row items-center justify-end gap-3">
           <div className="flex items-center gap-2.5 w-full sm:w-auto">
             <button
               type="button"
@@ -1441,109 +1146,6 @@ export default function WorkspacesPage() {
           z-index: 0;
         }
       `}</style>
-
-      {/* Image Editor Modal */}
-      <Modal isOpen={isImageEditorOpen} onClose={() => setIsImageEditorOpen(false)} size="lg">
-        <div className="px-6 py-4 border-b border-line/90 flex items-center justify-between bg-fg/[0.03]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-acc text-on-ink flex items-center justify-center shadow-md shrink-0">
-              <Maximize2 className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-fg">Chỉnh sửa Logo</h3>
-              <p className="text-xs text-muted">Thu/phóng và di chuyển để chọn bố cục đẹp nhất</p>
-            </div>
-          </div>
-          <button
-            onClick={() => setIsImageEditorOpen(false)}
-            className="w-8 h-8 rounded-lg text-muted hover:text-fg hover:bg-fg/5 flex items-center justify-center transition border border-transparent hover:border-line"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Image Preview Area */}
-        <div className="relative">
-          <div
-            className="w-full h-80 bg-ink/5 overflow-hidden cursor-move flex items-center justify-center select-none"
-            onMouseDown={(e) => {
-              setIsDragging(true)
-              setDragStart({ x: e.clientX, y: e.clientY })
-              setImagePositionStart({ x: imageTransform.positionX, y: imageTransform.positionY })
-            }}
-            onMouseMove={(e) => {
-              if (!isDragging) return
-              const deltaX = e.clientX - dragStart.x
-              const deltaY = e.clientY - dragStart.y
-              setImageTransform(prev => ({
-                ...prev,
-                positionX: imagePositionStart.x + deltaX,
-                positionY: imagePositionStart.y + deltaY,
-              }))
-            }}
-            onMouseUp={() => setIsDragging(false)}
-            onMouseLeave={() => setIsDragging(false)}
-          >
-            <div
-              className="w-40 h-40 rounded-2xl overflow-hidden border-4 border-panel shadow-2xl"
-              style={{
-                transform: `translate(${imageTransform.positionX}px, ${imageTransform.positionY}px) scale(${imageTransform.scale})`,
-                transition: isDragging ? 'none' : 'transform 0.2s ease',
-              }}
-            >
-              <img
-                src={formData.logo!}
-                alt="Logo Preview"
-                className="w-full h-full object-cover pointer-events-none"
-                draggable={false}
-              />
-            </div>
-          </div>
-
-          {/* Transform Info */}
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-sm">
-            Zoom: {Math.round(imageTransform.scale * 100)}%
-          </div>
-        </div>
-
-        {/* Controls */}
-        <div className="px-6 py-4 border-t border-line/90 bg-fg/[0.03]">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <button
-              onClick={() => setImageTransform(prev => ({ ...prev, scale: Math.max(0.5, prev.scale - 0.1) }))}
-              className="w-10 h-10 rounded-xl bg-panel border border-line text-fg hover:bg-fg/5 hover:border-acc flex items-center justify-center transition shadow-sm"
-              title="Thu nhỏ"
-            >
-              <ZoomOut className="w-4 h-4" />
-            </button>
-            <div className="w-32 h-1 bg-fg/10 rounded-full mx-2 overflow-hidden">
-              <div
-                className="h-full bg-ink rounded-full transition-all"
-                style={{ width: `${((imageTransform.scale - 0.5) / 1.5) * 100}%` }}
-              />
-            </div>
-            <button
-              onClick={() => setImageTransform(prev => ({ ...prev, scale: Math.min(2, prev.scale + 0.1) }))}
-              className="w-10 h-10 rounded-xl bg-panel border border-line text-fg hover:bg-fg/5 hover:border-acc flex items-center justify-center transition shadow-sm"
-              title="Phóng lớn"
-            >
-              <ZoomIn className="w-4 h-4" />
-            </button>
-            <div className="w-px h-8 bg-fg/15 mx-2" />
-            <button
-              onClick={() => setImageTransform({ scale: 1, positionX: 0, positionY: 0 })}
-              className="px-4 py-2 rounded-xl bg-panel border border-line text-fg hover:bg-fg/5 hover:border-acc flex items-center gap-2 transition shadow-sm"
-              title="Đặt lại"
-            >
-              <RotateCcw className="w-4 h-4" />
-              <span className="text-xs font-bold">Đặt lại</span>
-            </button>
-          </div>
-          <p className="text-center text-xs text-muted">
-            Kéo để di chuyển • Cuộn chuột hoặc dùng nút để zoom
-          </p>
-        </div>
-      </Modal>
     </div>
   )
 }
