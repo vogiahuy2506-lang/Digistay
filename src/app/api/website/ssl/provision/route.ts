@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+
+const memberOf = (userId: string) => ({
+  workspace: { OR: [{ ownerId: userId }, { members: { some: { userId } } }] },
+})
 
 /**
  * POST /api/website/ssl/provision
@@ -10,8 +15,9 @@ import { auth } from '@/lib/auth'
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
-    const body = await request.json()
-    const { propertyId } = body
+    const body = await request.json().catch(() => null)
+    // A string only: a filter object would match another property in Prisma
+    const propertyId = typeof body?.propertyId === 'string' ? body.propertyId : null
 
     if (!session?.user?.id) {
       return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
@@ -40,6 +46,9 @@ export async function POST(request: NextRequest) {
     if (!property) {
       return NextResponse.json({ success: false, error: 'Không có quyền truy cập' }, { status: 403 })
     }
+
+    const access = await requireWorkspaceRole(property.workspaceId, WorkspaceRoles.ADMINS_AND_MANAGERS)
+    if (!access.ok) return access.response
 
     const settings = property.websiteSettings
 
@@ -88,7 +97,7 @@ export async function POST(request: NextRequest) {
 
     // Update settings
     const updatedSettings = await prisma.websiteSettings.update({
-      where: { propertyId },
+      where: { propertyId: property.id },
       data: {
         sslEnabled: true,
         sslVerifiedAt: new Date(),
@@ -101,7 +110,7 @@ export async function POST(request: NextRequest) {
     await prisma.activityLog.create({
       data: {
         userId: session.user.id,
-        propertyId,
+        propertyId: property.id,
         action: 'SSL_PROVISION',
         entityType: 'WEBSITE_SETTINGS',
         entityId: updatedSettings.id,
@@ -147,8 +156,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Thiếu propertyId' }, { status: 400 })
     }
 
-    const settings = await prisma.websiteSettings.findUnique({
-      where: { propertyId },
+    // Only for a property the caller belongs to (any id used to answer)
+    const settings = await prisma.websiteSettings.findFirst({
+      where: { propertyId, property: memberOf(session.user.id) },
     })
 
     if (!settings) {
@@ -216,8 +226,11 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Không có quyền truy cập' }, { status: 403 })
     }
 
+    const access = await requireWorkspaceRole(property.workspaceId, WorkspaceRoles.ADMINS_AND_MANAGERS)
+    if (!access.ok) return access.response
+
     await prisma.websiteSettings.update({
-      where: { propertyId },
+      where: { propertyId: property.id },
       data: {
         sslEnabled: false,
         sslVerifiedAt: null,

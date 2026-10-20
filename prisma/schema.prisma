@@ -569,7 +569,7 @@ model WebsiteSettings {
   metaKeywords    String?
   
   // Custom domain
-  customDomain    String?
+  customDomain    String?  @unique // lowercase ASCII; set only by /api/website/domain/verify
   domainVerificationStatus String?  // pending, verified, mismatch, not_found, a_record, dns_error
   domainVerifiedAt DateTime?
   
