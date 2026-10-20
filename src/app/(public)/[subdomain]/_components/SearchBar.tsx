@@ -4,9 +4,11 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Search, Users } from 'lucide-react'
 import { Input, Button } from '@/components/ui'
+import { useSiteHref } from './site-base'
 
-export function SearchBar({ subdomain }: { subdomain: string }) {
+export function SearchBar() {
   const router = useRouter()
+  const href = useSiteHref()
   const [checkIn, setCheckIn] = useState('')
   const [checkOut, setCheckOut] = useState('')
   const [guests, setGuests] = useState(2)
@@ -21,7 +23,7 @@ export function SearchBar({ subdomain }: { subdomain: string }) {
       checkOut,
       guests: String(guests),
     })
-    router.push(`/${subdomain}/search?${params.toString()}`)
+    router.push(href(`/search?${params.toString()}`))
   }
 
   return (
