@@ -281,55 +281,78 @@ sudo -u deploy docker compose -f /opt/digistay/docker-compose.yml \
 
 ## Deploy an toàn — cài đặt một lần trên VPS đang chạy
 
-Người làm: người có quyền `gcloud` vào VM. Làm **sau khi** nhánh Phần 3 đã merge vào `main`.
-Luồng deploy: GitHub Actions → `sudo /usr/local/bin/digistay-deploy.sh <sha>` (secret
-`VPS_DEPLOY_CMD`) → checkout đúng commit đó → `docker/deploy.sh <sha>`.
+Người làm: người có quyền `gcloud` vào VM. Luồng deploy: GitHub Actions →
+`sudo /usr/local/bin/digistay-deploy.sh <sha>` → khoá (mỗi lúc một deploy) → checkout đúng commit
+đó → `docker/deploy.sh <sha>`: **build image ngay trên VPS** (`digistay-app:<sha>`) → backup →
+migration bằng image mới trong khi app cũ vẫn chạy → đổi container → chờ `/api/health` báo đúng
+SHA, không đạt thì tự quay về image trước. Không còn kéo image từ GHCR.
 
-**1. Cho user `deploy` đọc được repo private** (sửa lỗi `Host key verification failed`):
+Bước nào làm rồi thì bỏ qua. `OWNER` dưới đây là người sở hữu bản checkout (VPS hiện tại:
+`hotro_digibook`):
 
 ```bash
-sudo -u deploy ssh-keygen -t ed25519 -N '' -C digistay-vps -f /home/deploy/.ssh/github_deploy
-sudo cat /home/deploy/.ssh/github_deploy.pub
+OWNER="$(stat -c '%U' /opt/digistay/.git)"; echo "$OWNER"
+```
+
+**1. `OWNER` đọc được repo private** (lỗi `Host key verification failed` / `Permission denied`).
+Thử trước: `sudo -u "$OWNER" git -C /opt/digistay fetch origin main` chạy được, không hỏi gì, thì
+sang bước 2. Chưa được thì tạo deploy key cho `OWNER`:
+
+```bash
+sudo -u "$OWNER" ssh-keygen -t ed25519 -N '' -C digistay-vps -f ~"$OWNER"/.ssh/github_deploy
+sudo cat ~"$OWNER"/.ssh/github_deploy.pub
 # → GitHub repo → Settings → Deploy keys → Add (KHÔNG tick "Allow write access")
 
-sudo -u deploy sh -c 'ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts'
-sudo -u deploy ssh-keygen -lf /home/deploy/.ssh/known_hosts
+sudo -u "$OWNER" sh -c 'ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts'
+sudo -u "$OWNER" ssh-keygen -lf ~"$OWNER"/.ssh/known_hosts
 # So fingerprint với trang "GitHub's SSH key fingerprints" trên docs.github.com — phải khớp.
 
-sudo -u deploy git -C /opt/digistay config core.sshCommand \
-  "ssh -i /home/deploy/.ssh/github_deploy -o IdentitiesOnly=yes"
-sudo -u deploy git -C /opt/digistay remote set-url origin git@github.com:vogiahuy2506-lang/Digistay.git
-sudo -u deploy git -C /opt/digistay fetch origin main   # phải chạy được, không hỏi gì
+sudo -u "$OWNER" git -C /opt/digistay config core.sshCommand \
+  "ssh -i ~$OWNER/.ssh/github_deploy -o IdentitiesOnly=yes"
+sudo -u "$OWNER" git -C /opt/digistay remote set-url origin git@github.com:vogiahuy2506-lang/Digistay.git
+sudo -u "$OWNER" git -C /opt/digistay fetch origin main   # phải chạy được, không hỏi gì
 ```
 
-**2. Cho VPS kéo được image private từ GHCR.** Deploy chạy bằng `sudo`, nên đăng nhập cho
-root, bằng một classic token chỉ có quyền `read:packages`:
+**2. Cài script deploy** (thay script đang có ở `/usr/local/bin`, kể cả bản viết tay trên VPS):
 
 ```bash
-sudo docker login ghcr.io -u <github-username>   # dán token khi được hỏi
-```
-
-**3. Đưa `/opt/digistay` lên `main` mới, cài script deploy:**
-
-```bash
-sudo -u deploy git -C /opt/digistay checkout --detach origin/main
+sudo -u "$OWNER" git -C /opt/digistay checkout --detach origin/main
 sudo install -m 0755 -o root -g root \
   /opt/digistay/docker/vps/digistay-deploy.sh /usr/local/bin/digistay-deploy.sh
-sudo -u deploy docker compose -f /opt/digistay/docker-compose.yml up -d nginx   # nếu nginx chưa chạy
 ```
 
-`APP_TAG` trong `/opt/digistay/.env` do `docker/deploy.sh` tự ghi — không sửa tay. Biến
-`GHCR_OWNER` cũ không còn dùng (mặc định đã là `vogiahuy2506-lang`).
+Sửa `docker/vps/digistay-deploy.sh` thì phải chạy lại lệnh `install` này.
 
-**4. Deploy lần đầu:** GitHub → Actions → **Deploy to VPS** → **Run workflow**. DB production
-đang trống nên bước migration sẽ tạo toàn bộ bảng. Kiểm tra:
+**3. Đo DB production trước lần deploy đầu** (deploy sẽ chạy migration):
+
+```bash
+cd /opt/digistay
+sudo docker compose run --rm --no-deps app node node_modules/prisma/build/index.js migrate status
+sudo docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "\dt"'
+```
+
+- `\dt` in `Did not find any relations.`: DB trống, sang bước 4 — migration sẽ tạo toàn bộ bảng.
+- `migrate status` in `Database schema is up to date!`: đã migrate rồi, sang bước 4.
+- `\dt` có bảng nhưng `migrate status` báo chưa áp dụng migration nào: DB dựng bằng `db push`.
+  **Dừng**, làm "Bước 8 → DB đã có bảng từ `prisma db push`" trước (deploy sẽ fail `P3005`).
+
+**4. Deploy:** GitHub → Actions → **Deploy to VPS** → **Run workflow**, hoặc trên VPS
+`sudo /usr/local/bin/digistay-deploy.sh <sha của main>`. Kiểm tra:
 
 ```bash
 sudo docker exec digistay-app wget -qO- http://127.0.0.1:3000/api/health
 # {"status":"ok","version":"<sha của main>"}
 ```
 
-Sửa `docker/vps/digistay-deploy.sh` thì phải chạy lại lệnh `install` ở bước 3.
+Luật khi vận hành:
+- Deploy tay **chỉ** qua `sudo /usr/local/bin/digistay-deploy.sh <sha>`: script giữ khoá, deploy
+  thứ hai lúc đang có deploy sẽ dừng ngay ("another deploy is running"). Đừng chạy
+  `docker compose build/up app` tay cùng lúc: 20/10/2026 hai lệnh chồng nhau làm deploy hỏng
+  ("removal of container ... is already in progress").
+- `APP_TAG` trong `/opt/digistay/.env` do `docker/deploy.sh` tự ghi — không sửa tay. Image
+  `digistay-app:<sha>` của bản đang chạy và bản trước được giữ lại để quay về; `digistay-app:latest`
+  là image dựng trước khi có tag theo commit (lần deploy đầu quay về nó nếu bản mới hỏng).
+- Không cần `docker login ghcr.io` nữa; biến `GHCR_OWNER` không còn dùng.
 
 ---
 
@@ -527,7 +550,8 @@ migration đó là "failed" và **chặn mọi lần deploy sau** (`P3009`) cho 
 | `prisma migrate deploy` → `P3005 schema is not empty` | DB dựng bằng `db push`. Baseline theo bước 8. |
 | Deploy đỏ ở bước 3/5, `P3018` hoặc `P3009` | Migration fail. Xem mục "Migration fail khi deploy". |
 | Deploy đỏ ở bước 5/5 "did not become healthy" | App mới không lên; script đã tự quay về bản trước. Log `[app]` ngay trong job. |
-| Deploy đỏ ở bước 1/5 `denied` / `unauthorized` | VPS chưa `docker login ghcr.io` (mục "Deploy an toàn", bước 2). |
+| Deploy đỏ ở bước 1/5 (build image) | Đọc log build ngay trong job. Hết đĩa/RAM: `sudo docker system df`, `sudo docker builder prune`. App cũ vẫn chạy. |
+| Deploy đỏ ngay đầu: `another deploy is running` | Đang có deploy khác (CI hoặc tay). Chờ nó xong rồi chạy lại. |
 | Deploy đỏ ngay đầu: `Host key verification failed` | User `deploy` chưa đọc được repo (mục "Deploy an toàn", bước 1). |
 | App exit ngay khi start | `docker compose logs app` — thường do sai env var. |
 | Deploy SSH step hangs | `VPS_SSH_KEY` paste thiếu newline. Re-paste nguyên cụm. |

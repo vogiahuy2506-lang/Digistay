@@ -9,7 +9,7 @@ the order the steps run.**
 |---|---------------------------------|-----------------------------------------------------------------|
 | 1 | `Resolve the commit to deploy`  | GitHub API; almost never fails unless `permissions` is wrong.   |
 | 2 | `Probe SSH + VPS environment`   | SSH key, port, firewall, deploy user, /opt/digistay, `digistay-deploy.sh`. |
-| 3 | `Probe GHCR image pull`         | GHCR login on the VPS, image actually pushed by CI.             |
+| 3 | `Probe VPS + git reachability`  | The checkout's owner can fetch the repo; current HEAD.          |
 | 4 | `Deploy to VPS`                 | The real deploy. `docker/deploy.sh` on the VPS.                 |
 | 5 | `Post-deploy smoke test`        | `/api/health` confirms the new SHA is what answered.            |
 
@@ -57,34 +57,13 @@ Always check step 2 first — it's the one we added to catch 90% of
 
 ---
 
-## Step 3 red — GHCR image pull
+## Step 3 red — VPS + git reachability
 
-**Likely causes:**
-
-1. CI is still building, or its `Build & push image` step was skipped.
-   Open the matching `CI` run and confirm the `build-image` job is
-   green and has `pushed=true` in its log.
-
-2. The VPS lost its GHCR credentials.
-   ```
-   sudo cat /root/.docker/config.json
-   ```
-   On a fresh GCE VM SSHed to as the GitHub runner, this is usually a
-   short-lived token; if the workflow did a round-trip it should
-   persist. If empty, run on the VPS:
-   ```
-   sudo docker login ghcr.io -u vogiahuy2506-lang-lang
-   ```
-   and paste a token from <https://github.com/settings/tokens> with
-   `read:packages`.
-
-3. The image was tagged but not pushed (rare on `push` to `main`,
-   possible if a fork PR opened a green CI without push access — CI
-   detects this and skips `build-image`).
-
-4. `IMAGE_REPO` was overridden in `.env.production` but doesn't match
-   the build output. The build tag is
-   `ghcr.io/<owner>/digistay`, so keep `IMAGE_REPO` aligned.
+The VPS builds the image itself from the checked-out commit (no GHCR
+pull, no `docker login`). This step only checks that the owner of
+`/opt/digistay` (`stat -c '%U' /opt/digistay/.git`; currently
+`hotro_digibook`, not `deploy`) can `git ls-remote` the repo. If not,
+follow RUNBOOK → "Deploy an toàn", step 1.
 
 ---
 
@@ -94,13 +73,19 @@ This step runs `sudo /usr/local/bin/digistay-deploy.sh <sha>`. Almost
 all failure modes are inside `docker/deploy.sh` on the VPS.
 
 ### 4a. `git fetch` / `git checkout` failed
-- The `deploy` user can't read the repo (SSH key in deploy's
-  `authorized_keys` doesn't match, or token expired). Re-add the key.
+- The checkout's owner can't read the repo (deploy key missing or
+  removed). RUNBOOK → "Deploy an toàn", step 1.
+- `<sha> is not on origin/main; refusing`: only commits on `main` are
+  deployed. Deploy a `main` commit.
+- `another deploy is running`: a deploy (CI or manual) holds the lock.
+  Wait for it to finish, then re-run.
 - The repo URL moved and `setup-vps.sh` still has the old one.
   `grep REPO_URL scripts/setup-vps.sh`.
 
-### 4b. `docker compose pull app` timed out or 401/403
-Same as step 3b. Authentication is read once per session.
+### 4b. `docker compose build app` failed
+- Read the build output in the job log; the old app keeps serving.
+- Out of disk or memory on the VPS: `sudo docker system df`,
+  `sudo docker builder prune`, then re-run.
 
 ### 4c. Migration step (`node … migrate deploy`) failed
 - Read the SQL it printed — `prisma/migrations/<id>/migration.sql`.
@@ -129,12 +114,15 @@ Same as step 3b. Authentication is read once per session.
 
 Means deploy itself succeeded but `/api/health` does not echo the new
 SHA from outside the container.
-- `sudo -E curl -i http://127.0.0.1/api/health` from the VPS.
+- From the VPS, the way the step asks (port 80 only answers `/healthz`
+  and redirects everything else, so plain `http://127.0.0.1` gets a 301):
+  `curl -i --resolve "$DOMAIN:443:127.0.0.1" "https://$DOMAIN/api/health"`
+  with `DOMAIN` from `/opt/digistay/.env`.
 - 503 with `status:"error"` → DB connection broken (probably
   `DATABASE_URL` wrong inside the new app).
-- Connection refused → nginx isn't routing `/api/*` to the app; check
-  `docker/nginx/conf.d/app.conf` (or the `*-secure.conf.template`
-  variant if TLS is on).
+- Connection refused / TLS error → nginx isn't serving 443 for that
+  name; check `docker/nginx/conf.d/app-secure.conf` (rendered from its
+  template by `docker/deploy.sh`).
 
 ---
 
@@ -150,8 +138,7 @@ sudo bash -c '
   echo "== images ==" ; docker image ls | head
   echo "== /opt/digistay ==" ; ls -la /opt/digistay
   echo "== current APP_TAG ==" ; grep "^APP_TAG=" /opt/digistay/.env || echo none
-  echo "== health ==" ; curl -fsS http://127.0.0.1/api/health || echo "no response"
-  echo "== ghcr login ==" ; docker login --get-password ghcr.io 2>&1 | head -1 || true
+  echo "== health ==" ; docker exec digistay-app wget -qO- http://127.0.0.1:3000/api/health || echo "no response"
 '
 ```
 
