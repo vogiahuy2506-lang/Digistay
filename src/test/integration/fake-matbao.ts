@@ -44,8 +44,9 @@ export class FakeMatbao {
   private lastNLap = new Map<string, string>()
   private server = http.createServer((req, res) => this.handle(req, res))
 
-  async start() {
-    await new Promise<void>((resolve) => this.server.listen(0, '127.0.0.1', resolve))
+  /** Port 0 picks a free one; the browser tests (e2e/fakes.ts) use fixed ports. */
+  async start(port = 0) {
+    await new Promise<void>((resolve) => this.server.listen(port, '127.0.0.1', resolve))
     this.url = `http://127.0.0.1:${(this.server.address() as AddressInfo).port}`
     return this
   }

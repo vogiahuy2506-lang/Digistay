@@ -54,3 +54,8 @@ next-env.d.ts
 # Rendered from app-secure.conf.template by docker/deploy.sh (and init-cert.sh)
 /docker/nginx/conf.d/app-secure.conf
 /docker/nginx/conf.d/*.bak
+
+# Browser tests (Playwright): run state and reports
+/e2e/.state/
+/playwright-report/
+/test-results/

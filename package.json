@@ -16,7 +16,9 @@
     "test": "vitest run",
     "test:int": "vitest run --config vitest.integration.config.ts",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "e2e:prepare": "cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",
@@ -53,6 +55,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/nodemailer": "^6.4.17",

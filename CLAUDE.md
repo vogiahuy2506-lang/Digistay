@@ -128,6 +128,10 @@ sạn, đặt lại mật khẩu chỉ cần email, email trong phiên do client
 - Sửa logic bảo mật hoặc tiền: gỡ thử chính điều kiện vừa thêm, xác nhận có test đỏ, rồi
   khôi phục. Không có test nào đỏ nghĩa là test chưa bảo vệ điều kiện đó.
 
+Test trình duyệt (Playwright, `e2e/`): chạy hằng đêm trên CI với bản build production
+(`npm run e2e`, RUNBOOK "Kiểm thử trình duyệt (e2e)"). Thêm tính năng có giao diện thì thêm một
+kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes.ts`, không gọi thật.
+
 ## Quy ước code
 
 - Comment và tên test bằng tiếng Anh, khớp code hiện có. Chuỗi hiển thị cho người dùng và
