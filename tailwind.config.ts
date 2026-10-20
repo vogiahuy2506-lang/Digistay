@@ -1,6 +1,27 @@
 import type { Config } from 'tailwindcss'
+import plugin from 'tailwindcss/plugin'
+import { cssVar, radii, roles, themeVariables } from './src/styles/tokens'
+
+// Role colors from src/styles/tokens.ts: `bg-panel`, `text-muted`, `border-line`,
+// `bg-ok-soft text-ok`, ... Values live in CSS variables, so they follow the
+// nearest `data-theme` and keep opacity modifiers (`bg-fg/5`).
+const roleColors = Object.fromEntries(
+  roles.map((role) => [role, `rgb(var(${cssVar(role)}) / <alpha-value>)`]),
+)
+
+const themeBase = plugin(({ addBase }) => {
+  addBase({
+    ':root, [data-theme="light"]': themeVariables('light'),
+    '[data-theme="dark"]': themeVariables('dark'),
+    ':root, [data-surface="admin"]': { '--ds-r-ctl': radii.admin.ctl, '--ds-r-box': radii.admin.box },
+    '[data-surface="site"]': { '--ds-r-ctl': radii.site.ctl, '--ds-r-box': radii.site.box },
+  })
+})
 
 const config: Config = {
+  // Dark mode is opt-in per subtree (the dashboard), never from the OS setting:
+  // pages that still use hard-coded colors must not flip half-way.
+  darkMode: ['selector', '[data-theme="dark"]'],
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -9,6 +30,8 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        ...roleColors,
+
         // Primary
         'primary': '#a93119',
         'on-primary': '#ffffff',
@@ -98,6 +121,9 @@ const config: Config = {
         },
       },
       fontFamily: {
+        // Loaded with next/font in src/app/layout.tsx.
+        sans: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-jetbrains-mono)', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
         'display-hero': ['Plus Jakarta Sans', 'sans-serif'],
         'headline-xl': ['Plus Jakarta Sans', 'sans-serif'],
         'headline-xl-mobile': ['Plus Jakarta Sans', 'sans-serif'],
@@ -112,9 +138,20 @@ const config: Config = {
         'label-lg': ['Plus Jakarta Sans', 'sans-serif'],
         'label-md': ['Plus Jakarta Sans', 'sans-serif'],
         'label-caps': ['Plus Jakarta Sans', 'sans-serif'],
-        serif: ['Playfair Display', 'Georgia', 'serif'],
+        serif: ['var(--font-playfair)', 'Playfair Display', 'Georgia', 'serif'],
       },
       fontSize: {
+        // Redesign type scale (system page 1c). Headings use font-serif on the
+        // hotel website; the dashboard stays on font-sans.
+        display: ['80px', { lineHeight: '88px', letterSpacing: '-0.025em' }],
+        h1: ['52px', { lineHeight: '60px', letterSpacing: '-0.02em' }],
+        h2: ['36px', { lineHeight: '44px' }],
+        h3: ['24px', { lineHeight: '32px' }],
+        lead: ['17px', { lineHeight: '28px' }],
+        body: ['15px', { lineHeight: '24px' }],
+        small: ['13px', { lineHeight: '20px' }],
+        label: ['11px', { lineHeight: '16px', letterSpacing: '0.14em' }],
+
         'display-hero': ['56px', { lineHeight: '64px', letterSpacing: '-0.03em', fontWeight: '700' }],
         'display-hero-mobile': ['36px', { lineHeight: '44px', letterSpacing: '-0.02em', fontWeight: '700' }],
         'headline-xl': ['40px', { lineHeight: '48px', letterSpacing: '-0.025em', fontWeight: '700' }],
@@ -138,6 +175,9 @@ const config: Config = {
         '2xl': '1rem',
         '3xl': '1.5rem',
         'full': '9999px',
+        // Buttons and inputs / cards and panels; values depend on data-surface.
+        'ctl': 'var(--ds-r-ctl)',
+        'box': 'var(--ds-r-box)',
       },
       spacing: {
         'space-xs': '0.25rem',
@@ -172,6 +212,18 @@ const config: Config = {
         'card': '0 4px 20px -2px rgba(60, 42, 30, 0.05), 0 2px 6px -1px rgba(0,0,0,0.02)',
         'card-hover': '0 18px 36px -4px rgba(217, 83, 56, 0.12), 0 8px 18px -4px rgba(60, 42, 30, 0.06)',
         'glow': '0 0 25px -4px rgba(217, 83, 56, 0.35)',
+        // Not `raised` / `panel`: those are color names, and `shadow-<color>`
+        // would also match the shadow-color utility.
+        'lift': 'var(--ds-shadow-raised)',
+        'drawer': '-24px 0 48px -32px rgb(0 0 0 / 0.35)',
+      },
+      transitionDuration: {
+        '160': '160ms',
+        '250': '250ms',
+      },
+      transitionTimingFunction: {
+        // One curve for the whole system (system page 1c, "Chuyển động").
+        'ds': 'cubic-bezier(0.2, 0.7, 0.2, 1)',
       },
       animation: {
         'ping': 'ping 1s cubic-bezier(0, 0, 0.2, 1) infinite',
@@ -193,6 +245,6 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [themeBase],
 }
 export default config
