@@ -6,6 +6,7 @@
  */
 import { describe, it, expect, vi, beforeAll, beforeEach, afterAll } from 'vitest'
 import { NextRequest } from 'next/server'
+import { randomBytes } from 'crypto'
 
 const store = vi.hoisted(() => {
   const data = new Map<string, string>()
@@ -384,7 +385,7 @@ describe('scheduled reconcile', () => {
         headers: secret ? { 'x-cron-secret': secret } : {},
       })
     )
-  const SECRET = 'cron-secret-for-tests-0123456789abcdef'
+  const SECRET = randomBytes(24).toString('hex')
 
   it('needs the secret, then applies what PayOS says for every property', async () => {
     const a = await connectedTenant(ACCOUNT_A)
@@ -404,7 +405,7 @@ describe('scheduled reconcile', () => {
       expect((await run(SECRET)).status).toBe(503)
       process.env.CRON_SECRET = SECRET
       expect((await run()).status).toBe(401)
-      expect((await run('wrong-secret-of-the-same-length-000000')).status).toBe(401)
+      expect((await run(randomBytes(24).toString('hex'))).status).toBe(401) // same length, wrong value
 
       const warn = vi.mocked(console.warn)
       const res = await run(SECRET)
