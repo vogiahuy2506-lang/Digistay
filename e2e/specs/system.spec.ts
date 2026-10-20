@@ -4,13 +4,14 @@
  */
 import { test, expect } from '@playwright/test'
 import { E2E } from '../env'
-import { failOnPageErrors, ids, leftLogin, signIn } from '../helpers'
+import { failOnPageErrors, leftLogin, signIn } from '../helpers'
 
 test('a hotel admin does not see it', async ({ page }) => {
   await page.goto('/admin/system')
   await expect(page.getByRole('heading', { name: 'Không tìm thấy trang' })).toBeVisible()
-  await page.goto(`/workspace/${ids().ws}`)
-  await expect(page.getByRole('link', { name: /Hệ thống/ })).toHaveCount(0)
+  await page.goto('/profile')
+  await expect(page.getByText('Thông tin cá nhân').first()).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Trang Hệ thống' })).toHaveCount(0)
 })
 
 test.describe('as SUPER_ADMIN', () => {
@@ -25,8 +26,8 @@ test.describe('as SUPER_ADMIN', () => {
 
     await signIn(page, E2E.users.root.username)
     await leftLogin(page)
-    await page.goto(`/workspace/${ids().ws}`)
-    await page.getByRole('link', { name: /Hệ thống/ }).click()
+    await page.goto('/profile')
+    await page.getByRole('link', { name: 'Trang Hệ thống' }).click()
     await expect(page.getByRole('heading', { name: 'Hệ thống' })).toBeVisible()
     await expect(page.getByText('Đủ', { exact: true })).toBeVisible() // migrations
     const jobs = page.locator('section', { has: page.getByRole('heading', { name: 'Job định kỳ' }) })

@@ -554,7 +554,7 @@ docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -
   "UPDATE users SET role = '"'"'SUPER_ADMIN'"'"' WHERE email = '"'"'ban@digistay.vn'"'"'"'
 ```
 
-Đăng xuất rồi đăng nhập lại để link "Hệ thống" hiện ở góc dưới sidebar.
+Link "Trang Hệ thống" hiện ở trang Tài khoản của tôi (`/profile`), cạnh nhãn Super Admin.
 
 Email xác nhận đặt phòng, báo đơn mới cho chủ và lời mời đi qua hàng đợi `email_outbox` (nội dung
 mã hoá): gửi ngay sau request, lỗi thì job `email-outbox` thử lại sau 10 phút, 30 phút, 2 giờ,
