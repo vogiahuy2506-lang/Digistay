@@ -44,15 +44,16 @@ jobs:
           printf '%s' "$KEY" > /tmp/key.pem
           echo "lines=$(wc -l < /tmp/key.pem | tr -d ' ')"
           echo "bytes=$(wc -c < /tmp/key.pem | tr -d ' ')"
-          echo "first_line=$(head -n 1 /tmp/key.pem)"
-          echo "last_line=$(tail -n 1 /tmp/key.pem)"
+          echo "first_line_len=$(head -n 1 /tmp/key.pem | wc -c)"
+          echo "last_line_len=$(tail -n 1 /tmp/key.pem | wc -c)"
           echo "has_begin=$(grep -cE '^-----BEGIN' /tmp/key.pem || true)"
           echo "has_end=$(grep -cE '^-----END' /tmp/key.pem || true)"
           echo "key_type_hint=$(grep -oE '^-----BEGIN [A-Z ]+PRIVATE KEY-----' /tmp/key.pem || echo 'NO_HEADER')"
-          # Whitespace sanity: secrets pasted from a CMS often pick up
-          # trailing newlines or leading spaces.
-          printf 'first_byte=0x%x\n' "$(head -c 1 /tmp/key.pem | od -An -tx1 | tr -d ' ')"
-          printf 'last_byte=0x%x\n'  "$(tail -c 1 /tmp/key.pem | od -An -tx1 | tr -d ' ')"
+          # Fix: od -tx1 on Linux outputs "2d" (no 0x), so pass raw hex bytes to printf
+          FIRST_BYTE=$(head -c 1 /tmp/key.pem | od -An -tx1)
+          printf 'first_byte=0x%s\n' "$FIRST_BYTE"
+          LAST_BYTE=$(tail -c 1 /tmp/key.pem | od -An -tx1)
+          printf 'last_byte=0x%s\n' "$LAST_BYTE"
           # Soft warnings: surface without failing the step so users see
           # them but the deploy can still run.
           if ! grep -qE '^-----BEGIN ' /tmp/key.pem; then
