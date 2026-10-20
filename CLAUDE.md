@@ -70,7 +70,10 @@ DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54329/digistay_test" npm 
   subdomain `<slug>.digistay.vn` → `/<slug>` và chuyển `/` sang `/login` hiện không xảy ra.
   Chuyển file sang `src/` là quyết định sản phẩm (trang marketing ở `/` đang dựa vào việc nó
   không chạy). Dù sao không có lớp nào chặn trước API: mỗi route tự kiểm tra đăng nhập.
-- Biến môi trường khai báo và kiểm tra ở `src/lib/env.ts`; thêm biến thì cập nhật cả `.env.example`.
+- Biến môi trường khai báo ở `src/lib/env.ts`; thêm biến thì cập nhật cả `.env.example`. Lưu ý:
+  chưa file nào import `env.ts`, nên schema zod của nó **không kiểm tra gì lúc chạy** (đo
+  19/10/2026); biến nào cần kiểm thật thì kiểm ở nơi dùng (vd `DATA_ENCRYPTION_KEYS` ở
+  `secret-box.ts` và `/api/health`).
 - Deploy (`docker/deploy.sh`, gọi qua `docker/vps/digistay-deploy.sh` trên VPS): backup →
   migration bằng image mới trong khi app cũ vẫn chạy → đổi container → chờ `/api/health` báo
   đúng SHA; không đạt thì tự quay về bản trước và job đỏ. Vận hành VPS: `docs/RUNBOOK.md`.
@@ -132,6 +135,11 @@ sạn, đặt lại mật khẩu chỉ cần email, email trong phiên do client
 - Header bảo mật nằm ở nginx: `docker/nginx/conf.d/security-headers.inc`, include ở server
   và ở mọi `location` có `add_header` riêng. Sửa `app-secure.conf.template`, không sửa file
   sinh ra — `docker/deploy.sh` sinh lại và reload nginx mỗi lần deploy.
+- Khoá bên thứ ba lưu trong DB (khoá thanh toán, tài khoản hoá đơn, secret 2FA) **luôn** qua
+  `src/lib/security/secret-box.ts`: `encryptSecret(giá trị, secretContext(bảng, id, cột))`.
+  Chưa cấu hình thì lưu `null`. Không bao giờ trả giá trị đã giải mã ra trình duyệt: trả
+  `maskSecret()`, ô nhập để trống nghĩa là giữ nguyên. Khoá mã hoá: RUNBOOK, "Khoá mã hoá dữ liệu".
+- Không lưu token OAuth: chỉ dùng Google để đăng nhập (`src/lib/auth/adapter.ts`).
 
 ## Kế hoạch gia cố
 
@@ -148,8 +156,8 @@ dùng duyệt rồi mới làm, trên nhánh riêng. Cập nhật trạng thái 
    ("Deploy an toàn", "Backup & khôi phục")
 4. Bảo mật nền — 4a vá chiếm tài khoản (PR #2), 4b giới hạn tần suất + khoá tài khoản + đăng
    xuất khi đổi mật khẩu (PR #3), 4c test chính sách route + gitleaks + `.gitignore` — xong.
-   4d header bảo mật + tắt bộ tối ưu ảnh — xong. Còn: 4e tiện ích mã hoá khoá bên thứ ba, 4f 2FA
-   (TOTP, **không bắt buộc** — người dùng tự bật)
+   4d header bảo mật + tắt bộ tối ưu ảnh, 4e tiện ích mã hoá khoá bên thứ ba + bỏ lưu token
+   OAuth — xong. Còn: 4f 2FA (TOTP, **không bắt buộc** — người dùng tự bật)
 5. Thanh toán PayOS hoặc SePay, mỗi khách sạn một bộ khoá; sửa nhánh tiền mặt đang đặt
    `PAID` bất kể số tiền và không cập nhật `depositAmount`
 6. Hoá đơn điện tử Mắt Bão

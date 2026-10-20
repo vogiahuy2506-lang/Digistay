@@ -1,15 +1,16 @@
 import NextAuth, { NextAuthOptions, getServerSession } from 'next-auth'
-import { PrismaAdapter } from '@auth/prisma-adapter'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import GoogleProvider from 'next-auth/providers/google'
 import { prisma } from '@/lib/db'
+import { createAuthAdapter } from './adapter'
 import { authorizeWithPassword } from './credentials'
 import { isSessionRevoked, SessionRevokedError } from './session-revocation'
 
 export { getServerSession }
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as any,
+  // Stores no OAuth tokens: see ./adapter.ts
+  adapter: createAuthAdapter(prisma) as any,
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
