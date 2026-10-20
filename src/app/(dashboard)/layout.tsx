@@ -1,9 +1,12 @@
 import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { Suspense } from 'react'
 import { Loading } from '@/components/ui/loading'
 import { ToastProvider } from '@/components/ui/toast'
+import { ThemeRoot } from '@/components/layout/theme-root'
+import { THEME_COOKIE, parseThemePreference } from '@/lib/theme'
 
 export default async function DashboardLayout({
   children,
@@ -16,16 +19,18 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
+  const theme = parseThemePreference((await cookies()).get(THEME_COOKIE)?.value)
+
   // Workspace-scoped routes (under /workspace/[slug]) have their own
   // layout (WorkspaceShell) that handles its own sidebar.
-  // This layout just passes children through.
   // Wrap in Suspense for useSearchParams support.
   // ToastProvider listens for toast.success()/error() from every dashboard
-  // page; it lives here, not in the root layout, so toasts follow the
-  // dashboard's theme.
+  // page; it sits inside ThemeRoot so toasts follow the dashboard's theme.
   return (
-    <ToastProvider>
-      <Suspense fallback={<Loading />}>{children}</Suspense>
-    </ToastProvider>
+    <ThemeRoot initial={theme}>
+      <ToastProvider>
+        <Suspense fallback={<Loading />}>{children}</Suspense>
+      </ToastProvider>
+    </ThemeRoot>
   )
 }

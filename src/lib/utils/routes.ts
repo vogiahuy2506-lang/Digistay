@@ -43,9 +43,11 @@ export const routes = {
   propertyBankAccounts: (slug: string, id: string) =>
     `/workspace/${slug}/properties/${id}/bank-accounts`,
   propertyServices: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/services`,
+  propertyPolicies: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/policies`,
 
   // Workspace-scoped
   members: (slug: string) => `/workspace/${slug}/members`,
+  settings: (slug: string) => `/workspace/${slug}/settings`,
 
   // Public
   publicSite: (subdomain: string) => `/${subdomain}`,
