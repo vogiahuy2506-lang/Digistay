@@ -33,6 +33,8 @@ server {
     # edit this template, never the rendered file.
     server_tokens off;
     include /etc/nginx/conf.d/security-headers.inc;
+    # The guest's IP when digistay.vn is proxied by Cloudflare (no effect otherwise).
+    include /etc/nginx/conf.d/cloudflare-real-ip.inc;
 
     # ---- Body size (mirror next.config experimental.serverActions.bodySizeLimit) ----
     client_max_body_size 12m;
