@@ -31,7 +31,8 @@ export async function GET(_request: NextRequest, props: Props) {
   if (!workspaceId) return NOT_FOUND()
   const access = await requireWorkspaceRole(workspaceId, WorkspaceRoles.ALL_MEMBERS)
   if (!access.ok) return access.response
-  return NextResponse.json({ success: true, data: await getEinvoiceStatus(id) })
+  const includeWebhookUrl = access.role === 'ADMIN'
+  return NextResponse.json({ success: true, data: await getEinvoiceStatus(id, { includeWebhookUrl }) })
 }
 
 /** PUT — save and check the account. Owner/ADMIN: invoices go out under the hotel's tax code. */

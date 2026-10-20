@@ -40,6 +40,8 @@ const PUBLIC_HANDLERS: Record<string, string> = {
     'scheduled job: CRON_SECRET header (timing-safe), and nginx does not route /api/internal/',
   'GET /api/invitations/[token]': 'invitation preview; the unguessable token in the URL is the credential',
   'POST /api/payments/webhook': 'disabled: always 404; gateways use /api/webhooks/<gateway>/...',
+  'POST /api/webhooks/matbao/[propertyId]/[token]':
+    'Mắt Bão tax-office status; the per-property secret token in the URL is the credential (unsigned callbacks); per-IP limit',
   'POST /api/webhooks/payos/[propertyId]':
     "PayOS notifications; the HMAC signature, checked with that property's checksum key, is the credential; per-IP limit",
   'GET /api/properties/public': 'public property site (name, address, contact, rooms)',

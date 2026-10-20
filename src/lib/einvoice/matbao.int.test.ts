@@ -6,6 +6,23 @@ import { describe, it, expect, vi, beforeAll, beforeEach, afterAll } from 'vites
 import { NextRequest } from 'next/server'
 
 vi.mock('@/lib/auth', () => ({ auth: vi.fn() }))
+// Webhook rate limits use Redis: an in-memory one (CI has none).
+const redis = vi.hoisted(() => {
+  const data = new Map<string, string>()
+  return {
+    get: async (k: string) => data.get(k) ?? null,
+    set: async (k: string, v: string) => (data.set(k, v), 'OK'),
+    del: async (k: string) => (data.delete(k) ? 1 : 0),
+    incr: async (k: string) => {
+      const n = Number(data.get(k) ?? 0) + 1
+      data.set(k, String(n))
+      return n
+    },
+    expire: async () => 1,
+    ttl: async () => 600,
+  }
+})
+vi.mock('@/lib/db/redis', () => ({ redis }))
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
@@ -18,6 +35,8 @@ import { PUT as updateInvoiceRoute } from '@/app/api/invoices/[id]/route'
 import { POST as publishRoute } from '@/app/api/invoices/[id]/publish/route'
 import { POST as cancelRoute } from '@/app/api/invoices/[id]/cancel/route'
 import { GET as pdfRoute } from '@/app/api/invoices/[id]/pdf/route'
+import { GET as settingsRoute } from '@/app/api/properties/[id]/einvoice/route'
+import { POST as matbaoWebhook } from '@/app/api/webhooks/matbao/[propertyId]/[token]/route'
 
 const fake = new FakeMatbao()
 const year = new Date().getFullYear() % 100
@@ -289,5 +308,76 @@ describe('PDF', () => {
     signInAs(outsider.owner)
     expect((await pdfRoute(req('GET'), params(created.data.id))).status).toBe(404)
     signInAs(owner)
+  })
+})
+
+describe('tax-office webhook', () => {
+  const callback = (propertyId: string, token: string, body: object) =>
+    matbaoWebhook(new NextRequest(`http://digistay.test/api/webhooks/matbao/${propertyId}/${token}`, { method: 'POST', body: JSON.stringify(body) }), {
+      params: Promise.resolve({ propertyId, token }),
+    })
+  const payload = (fkey: string, code: number, extra: object = {}) => ({
+    InvID: 'QVh5dWZs==', No: 1, Pattern: '1', Serial: SERIES, Fkey: fkey, MCCQT: '00ABC', MaTTHDon: code, TenTTHDon: 'x', GhiChuCQT: '', Loai: 3, ...extra,
+  })
+
+  async function published() {
+    const tenant = await connectedTenant()
+    const { body: created } = await createInvoice(tenant.booking.id)
+    await publish(created.data.id)
+    const settings = await (await settingsRoute(req('GET'), params(tenant.property.id))).json()
+    const url: string = settings.data.webhookUrl
+    return { ...tenant, invoiceId: created.data.id, fkey: `DS${created.data.invoiceNumber}`, token: url.split('/').pop()! }
+  }
+
+  it('only owners/ADMINs see the webhook URL (it holds a secret)', async () => {
+    const { property, member, token } = await (async () => {
+      const t = await connectedTenant('RECEPTIONIST')
+      const s = await (await settingsRoute(req('GET'), params(t.property.id))).json()
+      return { ...t, token: s.data.webhookUrl as string }
+    })()
+    expect(token).toContain(`/api/webhooks/matbao/${property.id}/`)
+    signInAs(member!)
+    const asStaff = await (await settingsRoute(req('GET'), params(property.id))).json()
+    expect(asStaff.data.connected).toBe(true)
+    expect(asStaff.data).not.toHaveProperty('webhookUrl')
+    expect(asStaff.data).not.toHaveProperty('webhookToken')
+  })
+
+  it('records the tax-office status, refuses a wrong token, keeps final statuses', async () => {
+    const { property, invoiceId, fkey, token } = await published()
+    expect((await callback(property.id, 'wrong-token', payload(fkey, 4))).status).toBe(401)
+    expect((await prisma.invoice.findUniqueOrThrow({ where: { id: invoiceId } })).cqtStatus).toBeNull()
+
+    expect((await callback(property.id, token, payload(fkey, 4))).status).toBe(200)
+    expect(await prisma.invoice.findUniqueOrThrow({ where: { id: invoiceId } })).toMatchObject({ cqtStatus: 4, cqtCode: '00ABC' })
+
+    // A late "not sent yet" does not undo "code issued".
+    await callback(property.id, token, payload(fkey, 3))
+    expect((await prisma.invoice.findUniqueOrThrow({ where: { id: invoiceId } })).cqtStatus).toBe(4)
+  })
+
+  it('a refusal is recorded with its note and logged for staff', async () => {
+    const { property, invoiceId, fkey, token } = await published()
+    await callback(property.id, token, payload(fkey, 6, { GhiChuCQT: 'Sai mã số thuế người mua' }))
+    expect(await prisma.invoice.findUniqueOrThrow({ where: { id: invoiceId } })).toMatchObject({
+      cqtStatus: 6,
+      cqtNote: 'Sai mã số thuế người mua',
+    })
+    expect(await prisma.activityLog.count({ where: { action: 'EINVOICE_CQT_REFUSED', entityId: invoiceId } })).toBe(1)
+  })
+
+  it("another property's token or invoice changes nothing; a missing number is filled", async () => {
+    const a = await published()
+    const b = await published()
+    // B's valid token naming A's invoice: not found within B.
+    expect((await callback(b.property.id, b.token, payload(a.fkey, 6))).status).toBe(200)
+    expect((await prisma.invoice.findUniqueOrThrow({ where: { id: a.invoiceId } })).cqtStatus).toBeNull()
+    // A's token on B's URL: refused.
+    expect((await callback(b.property.id, a.token, payload(b.fkey, 4))).status).toBe(401)
+
+    await prisma.invoice.update({ where: { id: a.invoiceId }, data: { einvoiceNumber: null } })
+    await callback(a.property.id, a.token, payload(a.fkey, 4, { No: 57 }))
+    expect((await prisma.invoice.findUniqueOrThrow({ where: { id: a.invoiceId } })).einvoiceNumber).toBe('57')
+    expect((await callback(a.property.id, a.token, { Fkey: a.fkey })).status).toBe(400)
   })
 })

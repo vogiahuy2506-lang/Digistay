@@ -949,6 +949,8 @@ model PropertyEinvoice {
   verifiedAt       DateTime?
   /// numbers left in the series at the last check (CLai)
   remainingNumbers Int?
+  /// encrypted; part of the webhook URL given to Mắt Bão support
+  webhookToken     String?
   connectedById    String?
 
   createdAt DateTime @default(now())
@@ -1018,6 +1020,11 @@ model Invoice {
   einvoiceNumber  String?
   /// Why the last publish attempt failed (shown to staff)
   publishError    String?
+  /// Tax office status from Mắt Bão's webhook (MaTTHDon: 4 code issued,
+  /// 6 refused...), its note and the tax office code (MCCQT)
+  cqtStatus       Int?
+  cqtNote         String?
+  cqtCode         String?
   
   // Metadata
   metadata        Json?
