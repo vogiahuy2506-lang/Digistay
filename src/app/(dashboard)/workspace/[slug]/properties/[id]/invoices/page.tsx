@@ -63,11 +63,11 @@ interface Booking {
 }
 
 const invoiceStatusConfig: Record<string, { label: string; color: string; bgColor: string; icon: any }> = {
-  DRAFT: { label: 'Nháp', color: 'text-muted', bgColor: 'bg-fg/[0.03]', icon: FileText },
-  PENDING: { label: 'Chờ phát hành', color: 'text-warn', bgColor: 'bg-warn-soft', icon: Clock },
-  PUBLISHED: { label: 'Đã phát hành', color: 'text-ok', bgColor: 'bg-ok-soft', icon: CheckCircle },
-  CANCELLED: { label: 'Đã hủy', color: 'text-err', bgColor: 'bg-err-soft', icon: XCircle },
-  REPLACED: { label: 'Đã thay thế', color: 'text-info', bgColor: 'bg-info-soft', icon: AlertCircle },
+  DRAFT: { label: 'Nháp', color: 'text-gray-600', bgColor: 'bg-gray-50', icon: FileText },
+  PENDING: { label: 'Chờ phát hành', color: 'text-amber-600', bgColor: 'bg-amber-50', icon: Clock },
+  PUBLISHED: { label: 'Đã phát hành', color: 'text-green-600', bgColor: 'bg-green-50', icon: CheckCircle },
+  CANCELLED: { label: 'Đã hủy', color: 'text-red-600', bgColor: 'bg-red-50', icon: XCircle },
+  REPLACED: { label: 'Đã thay thế', color: 'text-blue-600', bgColor: 'bg-blue-50', icon: AlertCircle },
 }
 
 const eInvoiceProviders = [
@@ -480,54 +480,41 @@ export default function InvoicesPage() {
 
   return (
     <div>
-      <PageContainer>
-        <Header
-          title="Hóa Đơn"
-          description="Quản lý hóa đơn điện tử"
-          actions={
-            <div className="flex items-center gap-3">
-              <Select
-                value={selectedProperty}
-                onChange={(e) => handlePropertyChange(e.target.value)}
-                className="w-64"
-                options={properties.map((p) => ({ value: p.id, label: p.name }))}
-              />
-              <Button variant="secondary" onClick={handleRefresh}>
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Làm mới
-              </Button>
-              <Button onClick={handleOpenCreateModal}>
-                <Plus className="w-4 h-4 mr-2" />
-                Tạo hóa đơn
-              </Button>
-            </div>
-          }
-        />
+      <Header
+        title="Hóa Đơn"
+        description="Quản lý hóa đơn điện tử"
+        actions={
+          <div className="flex items-center gap-3">
+            <Select
+              value={selectedProperty}
+              onChange={(e) => handlePropertyChange(e.target.value)}
+              className="w-64"
+              options={properties.map((p) => ({ value: p.id, label: p.name }))}
+            />
+            <Button variant="secondary" onClick={handleRefresh}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Làm mới
+            </Button>
+            <Button onClick={handleOpenCreateModal}>
+              <Plus className="w-4 h-4 mr-2" />
+              Tạo hóa đơn
+            </Button>
+          </div>
+        }
+      />
 
+      <PageContainer>
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted">Tổng hóa đơn</p>
-                  <p className="text-2xl font-bold text-fg">{stats.totalInvoices}</p>
+                  <p className="text-sm text-gray-500">Tổng hóa đơn</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.totalInvoices}</p>
                 </div>
-                <div className="w-12 h-12 bg-info-soft rounded-full flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-info" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted">Nháp</p>
-                  <p className="text-2xl font-bold text-muted">{stats.draftCount}</p>
-                </div>
-                <div className="w-12 h-12 bg-fg/5 rounded-full flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-muted" />
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-blue-600" />
                 </div>
               </div>
             </CardContent>
@@ -536,24 +523,11 @@ export default function InvoicesPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted">Chờ phát hành</p>
-                  <p className="text-2xl font-bold text-warn">{stats.pendingCount}</p>
+                  <p className="text-sm text-gray-500">Nháp</p>
+                  <p className="text-2xl font-bold text-gray-600">{stats.draftCount}</p>
                 </div>
-                <div className="w-12 h-12 bg-warn-soft rounded-full flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-warn" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted">Đã phát hành</p>
-                  <p className="text-2xl font-bold text-ok">{stats.publishedCount}</p>
-                </div>
-                <div className="w-12 h-12 bg-ok-soft rounded-full flex items-center justify-center">
-                  <CheckCircle className="w-6 h-6 text-ok" />
+                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-gray-600" />
                 </div>
               </div>
             </CardContent>
@@ -562,11 +536,37 @@ export default function InvoicesPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted">Tổng tiền</p>
-                  <p className="text-xl font-bold text-fg">{formatPrice(stats.totalAmount)}</p>
+                  <p className="text-sm text-gray-500">Chờ phát hành</p>
+                  <p className="text-2xl font-bold text-amber-600">{stats.pendingCount}</p>
                 </div>
-                <div className="w-12 h-12 bg-refund-soft rounded-full flex items-center justify-center">
-                  <Building className="w-6 h-6 text-refund" />
+                <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-amber-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Đã phát hành</p>
+                  <p className="text-2xl font-bold text-green-600">{stats.publishedCount}</p>
+                </div>
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Tổng tiền</p>
+                  <p className="text-xl font-bold text-gray-900">{formatPrice(stats.totalAmount)}</p>
+                </div>
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                  <Building className="w-6 h-6 text-purple-600" />
                 </div>
               </div>
             </CardContent>
@@ -612,13 +612,13 @@ export default function InvoicesPage() {
           <CardContent className="p-0">
             {isLoading ? (
               <div className="p-8 text-center">
-                <div className="animate-spin w-8 h-8 border-4 border-acc border-t-transparent rounded-full mx-auto mb-4" />
-                <p className="text-muted">Đang tải...</p>
+                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+                <p className="text-gray-500">Đang tải...</p>
               </div>
             ) : filteredInvoices.length === 0 ? (
               <div className="p-8 text-center">
-                <FileText className="w-12 h-12 mx-auto text-muted mb-4" />
-                <p className="text-muted">Chưa có hóa đơn nào</p>
+                <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-500">Chưa có hóa đơn nào</p>
                 <Button onClick={handleOpenCreateModal} className="mt-4">
                   <Plus className="w-4 h-4 mr-2" />
                   Tạo hóa đơn
@@ -627,16 +627,16 @@ export default function InvoicesPage() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-fg/[0.03] border-b">
+                  <thead className="bg-gray-50 border-b">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">Mã HĐ</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">Đơn đặt phòng</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">Công ty</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">Mã số thuế</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">Tổng tiền</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">Trạng thái</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">Ngày tạo</th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-muted uppercase">Thao tác</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mã HĐ</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Đơn đặt phòng</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Công ty</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mã số thuế</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tổng tiền</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ngày tạo</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -645,18 +645,18 @@ export default function InvoicesPage() {
                       const StatusIcon = statusInfo.icon
                       
                       return (
-                        <tr key={invoice.id} className="hover:bg-fg/[0.03]">
+                        <tr key={invoice.id} className="hover:bg-gray-50">
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
                               <span className="font-mono text-sm font-medium">{invoice.invoiceNumber}</span>
                               <button
                                 onClick={() => handleCopyToClipboard(invoice.invoiceNumber, invoice.id)}
-                                className="p-1 hover:bg-fg/5 rounded"
+                                className="p-1 hover:bg-gray-100 rounded"
                               >
                                 {copiedId === invoice.id ? (
-                                  <Check className="w-3 h-3 text-ok" />
+                                  <Check className="w-3 h-3 text-green-500" />
                                 ) : (
-                                  <Copy className="w-3 h-3 text-muted" />
+                                  <Copy className="w-3 h-3 text-gray-400" />
                                 )}
                               </button>
                             </div>
@@ -667,7 +667,7 @@ export default function InvoicesPage() {
                           <td className="px-4 py-3">
                             <div>
                               <span className="font-medium">{invoice.companyName}</span>
-                              <span className="block text-xs text-muted">{invoice.customerName}</span>
+                              <span className="block text-xs text-gray-500">{invoice.customerName}</span>
                             </div>
                           </td>
                           <td className="px-4 py-3">
@@ -683,7 +683,7 @@ export default function InvoicesPage() {
                             </Badge>
                           </td>
                           <td className="px-4 py-3">
-                            <span className="text-sm text-muted">
+                            <span className="text-sm text-gray-500">
                               {format(new Date(invoice.createdAt), 'dd/MM/yyyy')}
                             </span>
                           </td>
@@ -698,7 +698,7 @@ export default function InvoicesPage() {
                                     <Edit className="w-4 h-4" />
                                   </Button>
                                   <Button size="sm" variant="ghost" onClick={() => handleDeleteInvoice(invoice.id)}>
-                                    <Trash2 className="w-4 h-4 text-err" />
+                                    <Trash2 className="w-4 h-4 text-red-500" />
                                   </Button>
                                 </>
                               )}
@@ -725,11 +725,11 @@ export default function InvoicesPage() {
       >
         {formSuccess ? (
           <div className="text-center py-6">
-            <div className="w-16 h-16 bg-ok-soft rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-8 h-8 text-ok" />
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
-            <h3 className="text-lg font-semibold text-fg mb-2">{formSuccess}</h3>
-            <p className="text-muted">Đang chuyển hướng...</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">{formSuccess}</h3>
+            <p className="text-gray-500">Đang chuyển hướng...</p>
           </div>
         ) : (
           <>
@@ -746,7 +746,7 @@ export default function InvoicesPage() {
               />
 
               <div className="border-t pt-4 mt-4">
-                <h4 className="font-medium text-fg mb-3">Thông tin công ty xuất hóa đơn</h4>
+                <h4 className="font-medium text-gray-900 mb-3">Thông tin công ty xuất hóa đơn</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <Input
                     label="Tên công ty"
@@ -782,7 +782,7 @@ export default function InvoicesPage() {
               </div>
 
               <div className="border-t pt-4">
-                <h4 className="font-medium text-fg mb-3">Thông tin khách hàng</h4>
+                <h4 className="font-medium text-gray-900 mb-3">Thông tin khách hàng</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <Input
                     label="Tên khách hàng"
@@ -811,7 +811,7 @@ export default function InvoicesPage() {
               </div>
 
               <div className="border-t pt-4">
-                <h4 className="font-medium text-fg mb-3">Thông tin thanh toán</h4>
+                <h4 className="font-medium text-gray-900 mb-3">Thông tin thanh toán</h4>
                 <div className="grid grid-cols-3 gap-4">
                   <Input
                     label="Số tiền (VNĐ)"
@@ -833,11 +833,11 @@ export default function InvoicesPage() {
                     onChange={(e) => setFormData({ ...formData, taxRate: (parseFloat(e.target.value) / 100).toString() })}
                   />
                   <div>
-                    <label className="block text-sm font-medium text-fg mb-1">Tổng cộng</label>
-                    <div className="p-2 bg-fg/5 rounded-lg font-semibold text-lg">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Tổng cộng</label>
+                    <div className="p-2 bg-gray-100 rounded-lg font-semibold text-lg">
                       {formatPrice(totalAmount)}
                     </div>
-                    <p className="text-xs text-muted mt-1">
+                    <p className="text-xs text-gray-500 mt-1">
                       Thuế: {formatPrice(taxAmount)}
                     </p>
                   </div>
@@ -845,7 +845,7 @@ export default function InvoicesPage() {
               </div>
 
               {formError && (
-                <div className="p-3 bg-err-soft border border-err/30 rounded-lg text-err text-sm">
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
                   {formError}
                 </div>
               )}
@@ -872,17 +872,17 @@ export default function InvoicesPage() {
       >
         {formSuccess ? (
           <div className="text-center py-6">
-            <div className="w-16 h-16 bg-ok-soft rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-8 h-8 text-ok" />
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
-            <h3 className="text-lg font-semibold text-fg mb-2">{formSuccess}</h3>
-            <p className="text-muted">Đang chuyển hướng...</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">{formSuccess}</h3>
+            <p className="text-gray-500">Đang chuyển hướng...</p>
           </div>
         ) : (
           <>
             <div className="space-y-4">
               <div className="border-t pt-4">
-                <h4 className="font-medium text-fg mb-3">Thông tin công ty xuất hóa đơn</h4>
+                <h4 className="font-medium text-gray-900 mb-3">Thông tin công ty xuất hóa đơn</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <Input
                     label="Tên công ty"
@@ -923,7 +923,7 @@ export default function InvoicesPage() {
               </div>
 
               <div className="border-t pt-4">
-                <h4 className="font-medium text-fg mb-3">Thông tin khách hàng</h4>
+                <h4 className="font-medium text-gray-900 mb-3">Thông tin khách hàng</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <Input
                     label="Tên khách hàng"
@@ -949,7 +949,7 @@ export default function InvoicesPage() {
               </div>
 
               <div className="border-t pt-4">
-                <h4 className="font-medium text-fg mb-3">Thông tin thanh toán</h4>
+                <h4 className="font-medium text-gray-900 mb-3">Thông tin thanh toán</h4>
                 <div className="grid grid-cols-3 gap-4">
                   <Input
                     label="Số tiền (VNĐ)"
@@ -970,11 +970,11 @@ export default function InvoicesPage() {
                     onChange={(e) => setFormData({ ...formData, taxRate: (parseFloat(e.target.value) / 100).toString() })}
                   />
                   <div>
-                    <label className="block text-sm font-medium text-fg mb-1">Tổng cộng</label>
-                    <div className="p-2 bg-fg/5 rounded-lg font-semibold text-lg">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Tổng cộng</label>
+                    <div className="p-2 bg-gray-100 rounded-lg font-semibold text-lg">
                       {formatPrice(totalAmount)}
                     </div>
-                    <p className="text-xs text-muted mt-1">
+                    <p className="text-xs text-gray-500 mt-1">
                       Thuế: {formatPrice(taxAmount)}
                     </p>
                   </div>
@@ -982,7 +982,7 @@ export default function InvoicesPage() {
               </div>
 
               {formError && (
-                <div className="p-3 bg-err-soft border border-err/30 rounded-lg text-err text-sm">
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
                   {formError}
                 </div>
               )}
@@ -1016,16 +1016,16 @@ export default function InvoicesPage() {
                     <h3 className="font-mono text-xl font-bold">{selectedInvoice.invoiceNumber}</h3>
                     <button
                       onClick={() => handleCopyToClipboard(selectedInvoice.invoiceNumber, 'invoiceNumber')}
-                      className="p-1 hover:bg-fg/5 rounded"
+                      className="p-1 hover:bg-gray-100 rounded"
                     >
                       {copiedId === 'invoiceNumber' ? (
-                        <Check className="w-4 h-4 text-ok" />
+                        <Check className="w-4 h-4 text-green-500" />
                       ) : (
-                        <Copy className="w-4 h-4 text-muted" />
+                        <Copy className="w-4 h-4 text-gray-400" />
                       )}
                     </button>
                   </div>
-                  <p className="text-sm text-muted">
+                  <p className="text-sm text-gray-500">
                     Tạo: {format(new Date(selectedInvoice.createdAt), 'dd/MM/yyyy HH:mm')}
                   </p>
                 </div>
@@ -1035,7 +1035,7 @@ export default function InvoicesPage() {
                     {invoiceStatusConfig[selectedInvoice.status]?.label}
                   </Badge>
                   {selectedInvoice.publishedAt && (
-                    <p className="text-xs text-muted mt-1">
+                    <p className="text-xs text-gray-500 mt-1">
                       Phát hành: {format(new Date(selectedInvoice.publishedAt), 'dd/MM/yyyy HH:mm')}
                     </p>
                   )}
@@ -1043,16 +1043,16 @@ export default function InvoicesPage() {
               </div>
 
               {/* Amount */}
-              <div className="bg-info-soft rounded-lg p-6 text-center">
-                <p className="text-sm text-muted mb-1">Tổng tiền hóa đơn</p>
-                <p className="text-4xl font-bold text-fg">{formatPrice(selectedInvoice.totalAmount)}</p>
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 text-center">
+                <p className="text-sm text-gray-600 mb-1">Tổng tiền hóa đơn</p>
+                <p className="text-4xl font-bold text-gray-900">{formatPrice(selectedInvoice.totalAmount)}</p>
                 <div className="flex justify-center gap-6 mt-3 text-sm">
                   <div>
-                    <span className="text-muted">Thuế ({selectedInvoice.taxRate * 100}%): </span>
+                    <span className="text-gray-500">Thuế ({selectedInvoice.taxRate * 100}%): </span>
                     <span className="font-medium">{formatPrice(selectedInvoice.taxAmount)}</span>
                   </div>
                   <div>
-                    <span className="text-muted">Tiền trước thuế: </span>
+                    <span className="text-gray-500">Tiền trước thuế: </span>
                     <span className="font-medium">{formatPrice(selectedInvoice.subtotal)}</span>
                   </div>
                 </div>
@@ -1061,26 +1061,26 @@ export default function InvoicesPage() {
               {/* Company Info */}
               <div className="grid grid-cols-2 gap-6">
                 <div className="border rounded-lg p-4">
-                  <h4 className="font-medium text-fg mb-3 flex items-center gap-2">
+                  <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
                     <Building className="w-4 h-4" />
                     Thông tin công ty
                   </h4>
                   <div className="space-y-2 text-sm">
                     <div>
-                      <span className="text-muted">Tên công ty:</span>
+                      <span className="text-gray-500">Tên công ty:</span>
                       <p className="font-medium">{selectedInvoice.companyName}</p>
                     </div>
                     <div>
-                      <span className="text-muted">Mã số thuế:</span>
+                      <span className="text-gray-500">Mã số thuế:</span>
                       <p className="font-mono font-medium">{selectedInvoice.taxCode}</p>
                     </div>
                     <div>
-                      <span className="text-muted">Địa chỉ:</span>
+                      <span className="text-gray-500">Địa chỉ:</span>
                       <p className="font-medium">{selectedInvoice.companyAddress}</p>
                     </div>
                     {selectedInvoice.companyEmail && (
                       <div>
-                        <span className="text-muted">Email:</span>
+                        <span className="text-gray-500">Email:</span>
                         <p className="font-medium">{selectedInvoice.companyEmail}</p>
                       </div>
                     )}
@@ -1088,22 +1088,22 @@ export default function InvoicesPage() {
                 </div>
 
                 <div className="border rounded-lg p-4">
-                  <h4 className="font-medium text-fg mb-3 flex items-center gap-2">
+                  <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
                     <FileText className="w-4 h-4" />
                     Thông tin khách hàng
                   </h4>
                   <div className="space-y-2 text-sm">
                     <div>
-                      <span className="text-muted">Tên khách hàng:</span>
+                      <span className="text-gray-500">Tên khách hàng:</span>
                       <p className="font-medium">{selectedInvoice.customerName}</p>
                     </div>
                     <div>
-                      <span className="text-muted">Email:</span>
+                      <span className="text-gray-500">Email:</span>
                       <p className="font-medium">{selectedInvoice.customerEmail}</p>
                     </div>
                     {selectedInvoice.customerAddress && (
                       <div>
-                        <span className="text-muted">Địa chỉ:</span>
+                        <span className="text-gray-500">Địa chỉ:</span>
                         <p className="font-medium">{selectedInvoice.customerAddress}</p>
                       </div>
                     )}
@@ -1113,26 +1113,26 @@ export default function InvoicesPage() {
 
               {/* Booking Info */}
               <div className="border rounded-lg p-4">
-                <h4 className="font-medium text-fg mb-3">Thông tin đơn đặt phòng</h4>
+                <h4 className="font-medium text-gray-900 mb-3">Thông tin đơn đặt phòng</h4>
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div>
-                    <span className="text-muted">Mã đặt phòng:</span>
+                    <span className="text-gray-500">Mã đặt phòng:</span>
                     <p className="font-medium">{selectedInvoice.booking?.bookingCode}</p>
                   </div>
                   <div>
-                    <span className="text-muted">Khách hàng:</span>
+                    <span className="text-gray-500">Khách hàng:</span>
                     <p className="font-medium">{selectedInvoice.booking?.guestName}</p>
                   </div>
                   <div>
-                    <span className="text-muted">Cơ sở:</span>
+                    <span className="text-gray-500">Cơ sở:</span>
                     <p className="font-medium">{selectedInvoice.booking?.property?.name}</p>
                   </div>
                   <div>
-                    <span className="text-muted">Nhận phòng:</span>
+                    <span className="text-gray-500">Nhận phòng:</span>
                     <p className="font-medium">{format(new Date(selectedInvoice.booking?.checkInDate), 'dd/MM/yyyy')}</p>
                   </div>
                   <div>
-                    <span className="text-muted">Trả phòng:</span>
+                    <span className="text-gray-500">Trả phòng:</span>
                     <p className="font-medium">{format(new Date(selectedInvoice.booking?.checkOutDate), 'dd/MM/yyyy')}</p>
                   </div>
                 </div>
@@ -1140,22 +1140,22 @@ export default function InvoicesPage() {
 
               {/* E-Invoice Info */}
               {selectedInvoice.eInvoiceProvider && (
-                <div className="border rounded-lg p-4 bg-warn-soft">
-                  <h4 className="font-medium text-fg mb-3">Thông tin hóa đơn điện tử</h4>
+                <div className="border rounded-lg p-4 bg-amber-50">
+                  <h4 className="font-medium text-gray-900 mb-3">Thông tin hóa đơn điện tử</h4>
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div>
-                      <span className="text-muted">Nhà cung cấp:</span>
+                      <span className="text-gray-500">Nhà cung cấp:</span>
                       <p className="font-medium">{selectedInvoice.eInvoiceProvider}</p>
                     </div>
                     {selectedInvoice.invoicePattern && (
                       <div>
-                        <span className="text-muted">Mẫu số:</span>
+                        <span className="text-gray-500">Mẫu số:</span>
                         <p className="font-medium">{selectedInvoice.invoicePattern}</p>
                       </div>
                     )}
                     {selectedInvoice.invoiceSeries && (
                       <div>
-                        <span className="text-muted">Ký hiệu:</span>
+                        <span className="text-gray-500">Ký hiệu:</span>
                         <p className="font-medium">{selectedInvoice.invoiceSeries}</p>
                       </div>
                     )}

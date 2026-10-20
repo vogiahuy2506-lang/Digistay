@@ -16,9 +16,12 @@ describe('dashboard theme', () => {
     for (const ready of ['/workspaces', '/profile', '/workspace/demo', '/workspace/demo/members', '/workspace/demo/settings', '/workspace/demo/properties', '/workspace/demo/properties/new']) {
       expect(isDarkReady(ready)).toBe(true)
     }
-    for (const ready of ['', '/bookings', '/bookings/b1', '/bookings/new', '/calendar', '/payments', '/invoices', '/reports', '/reports/daily']) {
+    for (const ready of ['', '/bookings', '/bookings/b1', '/bookings/new', '/calendar', '/reports', '/reports/daily']) {
       expect(isDarkReady(`${P}${ready}`)).toBe(true)
     }
+    // Not yet: rewritten by #41 and the PayOS / Mắt Bão chain.
+    expect(isDarkReady(`${P}/payments`)).toBe(false)
+    expect(isDarkReady(`${P}/invoices`)).toBe(false)
     for (const ready of ['/rooms', '/services', '/policies', '/bank-accounts', '/website']) {
       expect(isDarkReady(`${P}${ready}`)).toBe(true)
     }
