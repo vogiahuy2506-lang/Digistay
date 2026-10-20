@@ -301,8 +301,11 @@ function asObject(value: Prisma.JsonValue | null | undefined): Prisma.JsonObject
   return value && typeof value === 'object' && !Array.isArray(value) ? (value as Prisma.JsonObject) : {}
 }
 
-/** Issues the invoice through Mắt Bão. Safe to call again after any failure. */
-export async function publishInvoice(invoiceId: string, userId: string, now = new Date()) {
+/**
+ * Issues the invoice through Mắt Bão. Safe to call again after any failure.
+ * userId is null for the auto-issue job (jobs.ts).
+ */
+export async function publishInvoice(invoiceId: string, userId: string | null, now = new Date()) {
   const invoice = await prisma.invoice.findUnique({
     where: { id: invoiceId },
     include: {
@@ -391,6 +394,8 @@ export async function publishInvoice(invoiceId: string, userId: string, now = ne
       invoiceCode: result.maSoHDon,
       einvoiceNumber: result.soHDon,
       pdfUrl: result.pdfUrl,
+      // Emailed to the buyer by delivery.ts when the hotel has that on.
+      emailStatus: config.emailInvoices ? 'PENDING' : null,
       metadata: {
         ...asObject(invoice.metadata),
         matbao: {

@@ -1,5 +1,5 @@
 [Unit]
-Description=Run the Digistay PayOS reconcile every 10 minutes
+Description=Run the Digistay scheduled jobs (PayOS reconcile, e-invoices) every 10 minutes
 
 [Timer]
 OnBootSec=5min

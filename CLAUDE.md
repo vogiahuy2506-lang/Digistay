@@ -163,8 +163,9 @@ sạn, đặt lại mật khẩu chỉ cần email, email trong phiên do client
   `PAYOS_BASE_URL` chỉ dùng cho test (PayOS giả ở `src/test/integration/fake-payos.ts`).
   Đối soát định kỳ: timer systemd `digistay-reconcile`, 10 phút một lần, gọi
   `/api/internal/payos-reconcile` (RUNBOOK, "Đối soát PayOS định kỳ").
-- Job định kỳ nằm ở `/api/internal/*`: cần header `CRON_SECRET`, nginx không mở ra ngoài, và
-  timer systemd gọi từ bên trong container app.
+- Job định kỳ nằm ở `/api/internal/*`: kiểm `checkCronSecret()` (header `CRON_SECRET`), nginx
+  không mở ra ngoài, và timer `digistay-reconcile` gọi từ bên trong container app qua
+  `docker/systemd/scheduled-jobs.sh` (thêm job mới = thêm tên vào vòng lặp trong script đó).
 - **Hoá đơn điện tử** (`src/lib/einvoice/`): mỗi khách sạn tự gắn tài khoản Mắt Bão của mình,
   hoá đơn xuất dưới mã số thuế của khách sạn.
   - **Giá phòng đã gồm VAT**: tổng hoá đơn = số khách trả; chưa thuế và thuế được tách ra bằng
@@ -196,6 +197,14 @@ sạn, đặt lại mật khẩu chỉ cần email, email trong phiên do client
   - Trạng thái từ cơ quan thuế về qua webhook `/api/webhooks/matbao/<propertyId>/<token>`. Mắt
     Bão không ký callback, nên token bí mật trong URL chính là thứ xác thực: token được mã hoá, và
     chỉ owner/ADMIN thấy URL. Trạng thái cuối (4, 6, 9) không bị thông báo đến muộn ghi đè.
+  - **Email hoá đơn** (`delivery.ts`): phát hành xong thì `emailStatus = PENDING` (nếu khách sạn
+    bật), gửi ngay sau response (`after()`), job định kỳ gửi phần còn lại. Gửi qua SMTP của
+    Digistay, PDF lấy từ Mắt Bão đính kèm; không nhờ Mắt Bão gửi. Giành quyền gửi bằng UPDATE có
+    điều kiện (`SENDING` + lease ở `emailNextAt`), lỗi thử lại 10 phút/30 phút/2 giờ/6 giờ rồi dừng.
+  - **Tự xuất hoá đơn** (`jobs.ts`, mặc định tắt, owner/ADMIN bật): đơn **thanh toán đủ** từ lúc
+    bật, chưa có hoá đơn nào → một hoá đơn bằng tổng đơn, người mua lấy từ `vat*` của booking
+    (không có thì là khách). Tiền cọc không kích hoạt (luật không tính cọc là thời điểm lập hoá
+    đơn). Mỗi đơn một lần; thông tin công ty sai thì để `PENDING` kèm lý do cho nhân viên.
   - `MATBAO_BASE_URL` chỉ dùng cho test (Mắt Bão giả ở `src/test/integration/fake-matbao.ts`).
 - Xác thực hai lớp (`src/lib/auth/two-factor.ts`) là **tuỳ chọn, không bao giờ bắt buộc**. Khi
   đã bật, mật khẩu đúng hoặc Google đúng **không tạo phiên**: chỉ trả "vé" chờ nhập mã, provider
@@ -262,7 +271,7 @@ dùng duyệt rồi mới làm, trên nhánh riêng. Cập nhật trạng thái 
    tiền và không cập nhật `depositAmount` — xong; có thêm đối soát định kỳ 10 phút. Còn: SePay
    (nếu khách sạn cần), khách tự trả cọc trên site công khai.
 6. Hoá đơn điện tử Mắt Bão, mỗi khách sạn một tài khoản, kèm trạng thái từ cơ quan thuế — xong.
-   Thêm: hoá đơn thay thế, hoá đơn điều chỉnh tăng/giảm. Còn: tự gửi email hoá đơn cho khách, tự
-   xuất hoá đơn khi đơn thanh toán xong.
+   Thêm: hoá đơn thay thế, hoá đơn điều chỉnh tăng/giảm, tự gửi email hoá đơn (kèm PDF), tự xuất
+   hoá đơn khi đơn thanh toán đủ — xong.
 
 Tài liệu deploy: `docs/DEPLOYMENT.md`, `docs/RUNBOOK.md`.

@@ -55,6 +55,10 @@ interface Invoice {
   adjustsInvoice: { id: string; invoiceNumber: string; einvoiceNumber: string | null; invoiceSeries: string | null } | null
   adjustments: { id: string; invoiceNumber: string; einvoiceNumber: string | null; status: string; totalAmount: number }[]
   metadata: { adjustmentReason?: string } | null
+  autoIssued: boolean
+  emailStatus: string | null
+  emailedAt: string | null
+  emailError: string | null
   createdAt: string
   updatedAt: string
   booking: {
@@ -490,6 +494,22 @@ export default function InvoicesPage() {
     }
   }
 
+  // Emails the issued invoice (PDF attached) to the buyer again (src/lib/einvoice/delivery.ts).
+  const handleEmailInvoice = async (invoice: Invoice) => {
+    setIsSubmitting(true)
+    try {
+      const res = await fetch(`/api/invoices/${invoice.id}/email`, { method: 'POST' })
+      const data = await res.json().catch(() => ({}))
+      if (!data.success) alert(data.error || 'Không gửi được email')
+      if (data.data) setSelectedInvoice((current) => (current && current.id === invoice.id ? { ...current, ...data.data } : current))
+    } catch (err) {
+      alert('Có lỗi xảy ra')
+    } finally {
+      setIsSubmitting(false)
+      if (selectedProperty) fetchInvoices(selectedProperty)
+    }
+  }
+
   const handleCancelInvoice = async (invoiceId: string) => {
     if (!confirm('Bạn có chắc chắn muốn hủy hóa đơn này?')) return
 
@@ -689,6 +709,11 @@ export default function InvoicesPage() {
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
                               <span className="font-mono text-sm font-medium">{invoice.invoiceNumber}</span>
+                              {invoice.autoIssued && (
+                                <Badge className="bg-indigo-50 text-indigo-700">
+                                  Tự động
+                                </Badge>
+                              )}
                               <button
                                 onClick={() => handleCopyToClipboard(invoice.invoiceNumber, invoice.id)}
                                 className="p-1 hover:bg-gray-100 rounded"
@@ -952,6 +977,26 @@ export default function InvoicesPage() {
                 </div>
               </div>
 
+              {selectedInvoice.status === 'PUBLISHED' && selectedInvoice.emailStatus && (
+                <div
+                  className={`p-3 rounded-lg text-sm border ${
+                    selectedInvoice.emailStatus === 'SENT'
+                      ? 'bg-green-50 border-green-200 text-green-800'
+                      : selectedInvoice.emailStatus === 'FAILED' || selectedInvoice.emailStatus === 'SKIPPED'
+                        ? 'bg-red-50 border-red-200 text-red-700'
+                        : 'bg-gray-50 border-gray-200 text-gray-700'
+                  }`}
+                >
+                  {selectedInvoice.emailStatus === 'SENT'
+                    ? `Đã gửi email hoá đơn${selectedInvoice.emailedAt ? ` lúc ${format(new Date(selectedInvoice.emailedAt), 'dd/MM/yyyy HH:mm')}` : ''}`
+                    : selectedInvoice.emailStatus === 'FAILED'
+                      ? `Gửi email lỗi: ${selectedInvoice.emailError ?? ''}`
+                      : selectedInvoice.emailStatus === 'SKIPPED'
+                        ? `Không gửi email: ${selectedInvoice.emailError ?? ''}`
+                        : 'Đang chờ gửi email hoá đơn cho người mua'}
+                </div>
+              )}
+
               {selectedInvoice.publishError && selectedInvoice.status !== 'PUBLISHED' && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
                   Lần phát hành trước không thành công: {selectedInvoice.publishError}
@@ -1117,10 +1162,10 @@ export default function InvoicesPage() {
                   Tải XML
                 </Button>
               )}
-              {selectedInvoice.customerEmail && (
-                <Button variant="outline" onClick={() => window.open(`mailto:${selectedInvoice.customerEmail}`, '_blank')}>
+              {selectedInvoice.status === 'PUBLISHED' && (
+                <Button variant="outline" onClick={() => handleEmailInvoice(selectedInvoice)} isLoading={isSubmitting}>
                   <Mail className="w-4 h-4 mr-2" />
-                  Gửi Email
+                  {selectedInvoice.emailStatus === 'SENT' ? 'Gửi lại email' : 'Gửi email hoá đơn'}
                 </Button>
               )}
               {(selectedInvoice.status === 'DRAFT' || selectedInvoice.status === 'PENDING') && (
