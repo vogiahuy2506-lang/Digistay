@@ -179,7 +179,7 @@ export default function PropertiesPage() {
     return (
       <PageContainer>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-acc"></div>
         </div>
       </PageContainer>
     )
@@ -190,11 +190,11 @@ export default function PropertiesPage() {
       <PageContainer>
         <Card>
           <CardContent className="p-12 text-center">
-            <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <Building2 className="w-16 h-16 text-muted mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-fg mb-2">
               Vui lòng chọn Workspace
             </h3>
-            <p className="text-gray-500 mb-6">
+            <p className="text-muted mb-6">
               Bạn cần chọn một workspace để xem và quản lý cơ sở kinh doanh.
             </p>
             <Button onClick={() => router.push(routes.workspaces())}>
@@ -221,16 +221,16 @@ export default function PropertiesPage() {
 
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-acc"></div>
         </div>
       ) : properties.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center">
-            <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <Building2 className="w-16 h-16 text-muted mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-fg mb-2">
               Chưa có cơ sở nào
             </h3>
-            <p className="text-gray-500 mb-6">
+            <p className="text-muted mb-6">
               Tạo cơ sở kinh doanh đầu tiên trong workspace này.
             </p>
             <Button onClick={() => setIsCreateModalOpen(true)}>
@@ -246,7 +246,7 @@ export default function PropertiesPage() {
             return (
               <Card key={property.id} className="overflow-hidden hover:shadow-md transition-shadow">
                 {/* Image */}
-                <div className="relative h-48 bg-gray-100">
+                <div className="relative h-48 bg-fg/5">
                   {primaryImage ? (
                     <Image
                       src={primaryImage.url}
@@ -256,7 +256,7 @@ export default function PropertiesPage() {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Building2 className="w-12 h-12 text-gray-300" />
+                      <Building2 className="w-12 h-12 text-muted" />
                     </div>
                   )}
                   <div className="absolute top-3 left-3 flex gap-2">
@@ -271,11 +271,11 @@ export default function PropertiesPage() {
 
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-gray-900 truncate">{property.name}</h3>
+                    <h3 className="font-semibold text-fg truncate">{property.name}</h3>
                     <Dropdown
                       trigger={
-                        <button className="p-1 rounded hover:bg-gray-100">
-                          <MoreVertical className="w-5 h-5 text-gray-400" />
+                        <button className="p-1 rounded hover:bg-fg/5">
+                          <MoreVertical className="w-5 h-5 text-muted" />
                         </button>
                       }
                     >
@@ -302,18 +302,18 @@ export default function PropertiesPage() {
                     </Dropdown>
                   </div>
 
-                  <div className="flex items-center gap-1 text-sm text-gray-500 mb-3">
+                  <div className="flex items-center gap-1 text-sm text-muted mb-3">
                     <MapPin className="w-4 h-4" />
                     <span className="truncate">{property.address}, {property.city}</span>
                   </div>
 
-                  <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                  <div className="flex items-center justify-between text-sm text-muted mb-4">
                     <span>{property._count.roomTypes} hạng phòng</span>
                     <span>{property._count.images} hình ảnh</span>
                   </div>
 
-                  <div className="text-xs text-gray-400 mb-3">
-                    Subdomain: <code className="bg-gray-100 px-1 rounded">{property.subdomain}</code>
+                  <div className="text-xs text-muted mb-3">
+                    Subdomain: <code className="bg-fg/5 px-1 rounded">{property.subdomain}</code>
                   </div>
 
                   <Button 
@@ -343,7 +343,7 @@ export default function PropertiesPage() {
       >
         <form onSubmit={handleCreateProperty}>
           {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
+            <div className="mb-4 p-3 rounded-lg bg-err-soft border border-err/30 text-err text-sm">
               {error}
             </div>
           )}

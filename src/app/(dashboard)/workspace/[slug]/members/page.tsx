@@ -181,11 +181,11 @@ export default function MembersPage() {
       <PageContainer>
         <Card>
           <CardContent className="p-12 text-center">
-            <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <Users className="w-16 h-16 text-muted mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-fg mb-2">
               Vui lòng chọn Workspace
             </h3>
-            <p className="text-gray-500 mb-6">
+            <p className="text-muted mb-6">
               Bạn cần chọn một workspace để quản lý thành viên.
             </p>
             <Button onClick={() => router.push(routes.workspaces())}>
@@ -212,30 +212,30 @@ export default function MembersPage() {
 
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-acc"></div>
         </div>
       ) : (
         <div className="space-y-6">
           {/* Members List */}
           <Card>
             <CardContent className="p-0">
-              <div className="px-6 py-4 border-b border-gray-100">
-                <h2 className="font-semibold text-gray-900">
+              <div className="px-6 py-4 border-b border-line">
+                <h2 className="font-semibold text-fg">
                   Thành viên ({members.length})
                 </h2>
               </div>
               
               {members.length === 0 ? (
                 <div className="p-12 text-center">
-                  <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 mb-4">Chưa có thành viên nào</p>
+                  <Users className="w-12 h-12 text-muted mx-auto mb-4" />
+                  <p className="text-muted mb-4">Chưa có thành viên nào</p>
                   <Button onClick={() => setShowInviteModal(true)}>
                     <UserPlus className="w-4 h-4 mr-2" />
                     Mời thành viên đầu tiên
                   </Button>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-line">
                   {members.map((member) => (
                     <div key={member.id} className="p-4 flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -245,10 +245,10 @@ export default function MembersPage() {
                           size="md" 
                         />
                         <div>
-                          <p className="font-medium text-gray-900">
+                          <p className="font-medium text-fg">
                             {member.user.name || 'Chưa đặt tên'}
                           </p>
-                          <p className="text-sm text-gray-500">{member.user.email}</p>
+                          <p className="text-sm text-muted">{member.user.email}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
@@ -257,8 +257,8 @@ export default function MembersPage() {
                         {!member.isOwner && (
                           <Dropdown
                             trigger={
-                              <button className="p-1 rounded hover:bg-gray-100">
-                                <MoreVertical className="w-5 h-5 text-gray-400" />
+                              <button className="p-1 rounded hover:bg-fg/5">
+                                <MoreVertical className="w-5 h-5 text-muted" />
                               </button>
                             }
                           >
@@ -308,22 +308,22 @@ export default function MembersPage() {
           {invitations.filter(i => i.status === 'PENDING').length > 0 && (
             <Card>
               <CardContent className="p-0">
-                <div className="px-6 py-4 border-b border-gray-100">
-                  <h2 className="font-semibold text-gray-900">
+                <div className="px-6 py-4 border-b border-line">
+                  <h2 className="font-semibold text-fg">
                     Lời mời đang chờ ({invitations.filter(i => i.status === 'PENDING').length})
                   </h2>
                 </div>
                 
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-line">
                   {invitations.filter(i => i.status === 'PENDING').map((invitation) => (
                     <div key={invitation.id} className="p-4 flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                          <Mail className="w-5 h-5 text-gray-400" />
+                        <div className="w-10 h-10 rounded-full bg-fg/5 flex items-center justify-center">
+                          <Mail className="w-5 h-5 text-muted" />
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">{invitation.email}</p>
-                          <p className="text-sm text-gray-500">
+                          <p className="font-medium text-fg">{invitation.email}</p>
+                          <p className="text-sm text-muted">
                             Mời bởi {invitation.sender.name || invitation.sender.email} •
                             {' '}{formatDate(invitation.createdAt)}
                           </p>
@@ -351,7 +351,7 @@ export default function MembersPage() {
       >
         <form onSubmit={handleInvite}>
           {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
+            <div className="mb-4 p-3 rounded-lg bg-err-soft border border-err/30 text-err text-sm">
               {error}
             </div>
           )}

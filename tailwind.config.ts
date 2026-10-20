@@ -29,6 +29,9 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      // A bare `border` / `divide-y` (no color class) used Tailwind's gray-200,
+      // which turns into a glaring light line in the dark theme.
+      borderColor: { DEFAULT: `rgb(var(${cssVar('line')}) / <alpha-value>)` },
       colors: {
         ...roleColors,
 
