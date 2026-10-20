@@ -22,6 +22,15 @@ export async function resetDatabase() {
   await prisma.$executeRawUnsafe(`TRUNCATE ${tables} RESTART IDENTITY CASCADE`)
 }
 
+/** Publishes the property's website: guests see it and can book (src/lib/public-site/visibility.ts). */
+export function publishSite(propertyId: string) {
+  return prisma.websiteSettings.upsert({
+    where: { propertyId },
+    update: { isPublished: true },
+    create: { propertyId, isPublished: true, publishedAt: new Date() },
+  })
+}
+
 export function createUser(email = `u-${uid()}@example.com`) {
   return prisma.user.create({ data: { email, name: 'Test User' } })
 }
@@ -58,13 +67,6 @@ export async function createTenant(opts: { memberRole?: WorkspaceRole } = {}) {
   return { owner, workspace, property, member }
 }
 
-export function createRoomType(propertyId: string, opts: { totalRooms?: number } = {}) {
-  const id = uid()
-  return prisma.roomType.create({
-    data: { propertyId, name: `Room ${id}`, slug: `room-${id}`, bedType: 'DOUBLE', totalRooms: opts.totalRooms ?? 5 },
-  })
-}
-
 export function createBooking(
   propertyId: string,
   opts: { totalAmount?: number; status?: BookingStatus; guestEmail?: string } = {}
@@ -95,6 +97,62 @@ export function createPendingPayment(booking: { id: string; propertyId: string }
       netAmount: amount,
       method: 'BANK_TRANSFER',
       status: 'PENDING',
+    },
+  })
+}
+
+/**
+ * A bookable room type: its own price row hangs off the property's price
+ * list ("Bảng giá"), created on first use with the given surcharges.
+ */
+export async function createRoomType(
+  propertyId: string,
+  opts: {
+    name?: string
+    totalRooms?: number
+    weekdayPrice?: number | null
+    weekendPrice?: number
+    baseOccupancy?: number
+    maxAdults?: number
+    maxChildren?: number
+    maxOccupancy?: number
+    propertyExtraAdult?: number
+    propertyExtraChild?: number
+  } = {}
+) {
+  const config =
+    (await prisma.pricingConfig.findFirst({ where: { propertyId } })) ??
+    (await prisma.pricingConfig.create({
+      data: {
+        propertyId,
+        name: 'Standard',
+        weekdayPrice: 1,
+        weekendPrice: 1,
+        extraAdultPrice: opts.propertyExtraAdult ?? 0,
+        extraChildPrice: opts.propertyExtraChild ?? 0,
+      },
+    }))
+  const id = uid()
+  return prisma.roomType.create({
+    data: {
+      propertyId,
+      name: opts.name ?? `Phòng ${id}`,
+      slug: `rt-${id}`,
+      bedType: 'DOUBLE',
+      totalRooms: opts.totalRooms ?? 5,
+      baseOccupancy: opts.baseOccupancy ?? 2,
+      maxAdults: opts.maxAdults ?? 2,
+      maxChildren: opts.maxChildren ?? 0,
+      maxOccupancy: opts.maxOccupancy ?? 4,
+      ...(opts.weekdayPrice !== null && {
+        pricing: {
+          create: {
+            pricingId: config.id,
+            weekdayPrice: opts.weekdayPrice ?? 500_000,
+            weekendPrice: opts.weekendPrice ?? opts.weekdayPrice ?? 500_000,
+          },
+        },
+      }),
     },
   })
 }

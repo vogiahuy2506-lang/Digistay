@@ -12,6 +12,8 @@
  */
 import { revalidateTag, unstable_cache } from 'next/cache'
 import { prisma } from '@/lib/db'
+import { ratesFrom } from '@/lib/pricing/quote'
+import { ROOM_RATE_INCLUDE, propertyRateDefaults } from '@/lib/pricing/rates'
 
 export const PUBLIC_SITE_TTL_SECONDS = 300
 export const publicSiteTag = (propertyId: string) => `public-site:${propertyId}`
@@ -39,7 +41,7 @@ export async function loadSiteProps(propertyId: string) {
         orderBy: { createdAt: 'asc' },
         include: {
           images: { where: { isPrimary: true } },
-          pricing: { take: 1, orderBy: { createdAt: 'asc' } },
+          ...ROOM_RATE_INCLUDE,
           amenities: { include: { amenity: true } },
         },
       },
@@ -52,6 +54,8 @@ export async function loadSiteProps(propertyId: string) {
     },
   })
   if (!property) return null
+  // The same rates a booking is charged (src/lib/pricing/quote.ts).
+  const defaults = await propertyRateDefaults(prisma, propertyId)
 
   // Fall back to a "default" block layout when the property has none yet
   // so the public site is never blank for a freshly created property.
@@ -98,8 +102,8 @@ export async function loadSiteProps(propertyId: string) {
       maxChildren: rt.maxChildren,
       totalRooms: rt.totalRooms,
       image: rt.images[0]?.url ?? null,
-      fromPrice: rt.pricing[0]?.weekdayPrice ?? null,
-      weekendPrice: rt.pricing[0]?.weekendPrice ?? null,
+      fromPrice: ratesFrom(rt.pricing[0], defaults)?.weekdayPrice ?? null,
+      weekendPrice: ratesFrom(rt.pricing[0], defaults)?.weekendPrice ?? null,
       amenities: rt.amenities.map((a) => a.amenity.name),
     })),
     services: property.extraServices.map((s) => ({

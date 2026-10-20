@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { z } from 'zod'
+import { ROOM_RATE_INCLUDE, propertyRateDefaults } from '@/lib/pricing/rates'
+import { roomsTakenByType } from '@/lib/bookings/occupancy'
+import { quoteStay, ratesFrom } from '@/lib/pricing/quote'
 
 const querySchema = z.object({
   propertyId: z.string(),
@@ -30,13 +33,18 @@ export async function GET(request: NextRequest) {
     const { propertyId, checkInDate, checkOutDate, numGuests } = query.data
     const checkIn = new Date(checkInDate)
     const checkOut = new Date(checkOutDate)
+    if (Number.isNaN(checkIn.getTime()) || Number.isNaN(checkOut.getTime()) || checkOut <= checkIn) {
+      return NextResponse.json({ success: false, error: 'Ngày không hợp lệ' }, { status: 400 })
+    }
 
-    // Get all room types with pricing
+    // Room types of an active hotel that take this many guests, with their
+    // own rates (src/lib/pricing/quote.ts): the same price a booking is charged.
     const roomTypes = await prisma.roomType.findMany({
       where: {
         propertyId,
         isActive: true,
         maxOccupancy: { gte: numGuests },
+        property: { isActive: true },
       },
       include: {
         images: {
@@ -48,81 +56,22 @@ export async function GET(request: NextRequest) {
             amenity: true,
           },
         },
-        pricing: true,
+        ...ROOM_RATE_INCLUDE,
       },
     })
+    const [taken, defaults] = await Promise.all([
+      roomsTakenByType(prisma, { propertyId, checkIn, checkOut }),
+      propertyRateDefaults(prisma, propertyId),
+    ])
 
-    // Get bookings that overlap with the requested dates
-    const overlappingBookings = await prisma.booking.findMany({
-      where: {
-        propertyId,
-        status: { in: ['PENDING', 'CONFIRMED', 'CHECKED_IN'] },
-        OR: [
-          {
-            AND: [
-              { checkInDate: { lte: checkIn } },
-              { checkOutDate: { gt: checkIn } },
-            ],
-          },
-          {
-            AND: [
-              { checkInDate: { lt: checkOut } },
-              { checkOutDate: { gte: checkOut } },
-            ],
-          },
-          {
-            AND: [
-              { checkInDate: { gte: checkIn } },
-              { checkOutDate: { lte: checkOut } },
-            ],
-          },
-        ],
-      },
-      include: {
-        bookingItems: true,
-      },
-    })
+    const availability = roomTypes.flatMap((roomType) => {
+      const rates = ratesFrom(roomType.pricing[0], defaults)
+      // A room type without a price cannot be booked: not offered.
+      if (!rates) return []
+      const availableRooms = Math.max(0, roomType.totalRooms - (taken.get(roomType.id) ?? 0))
+      const quote = quoteStay({ rates, checkIn, checkOut, numAdults: numGuests, numChildren: 0, baseOccupancy: roomType.baseOccupancy })
 
-    // Get room locks
-    const roomLocks = await prisma.roomLock.findMany({
-      where: {
-        propertyId,
-        type: { in: ['HOLD', 'BOOKED'] },
-        lockStart: { lt: checkOut },
-        lockEnd: { gt: checkIn },
-      },
-    })
-
-    // Calculate availability for each room type
-    const availability = roomTypes.map(roomType => {
-      // Count booked rooms for this room type
-      const bookedRooms = overlappingBookings.reduce((count, booking) => {
-        return count + booking.bookingItems.filter(
-          item => item.roomTypeId === roomType.id
-        ).length
-      }, 0)
-
-      // Count locked rooms
-      const lockedRooms = roomLocks.filter(
-        lock => lock.roomTypeId === roomType.id
-      ).length
-
-      const availableRooms = Math.max(0, roomType.totalRooms - bookedRooms - lockedRooms)
-      const pricing = roomType.pricing[0]
-
-      // Calculate price for the stay
-      const numNights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
-      let weekendNights = 0
-      for (let d = new Date(checkIn); d < checkOut; d.setDate(d.getDate() + 1)) {
-        const day = d.getDay()
-        if (day === 0 || day === 6) weekendNights++
-      }
-      const weekdayNights = numNights - weekendNights
-
-      const basePrice = (weekdayNights * (pricing?.weekdayPrice || 0)) + 
-                        (weekendNights * (pricing?.weekendPrice || 0))
-
-      return {
+      return [{
         id: roomType.id,
         name: roomType.name,
         description: roomType.description,
@@ -140,14 +89,13 @@ export async function GET(request: NextRequest) {
           icon: a.amenity.icon,
         })),
         pricing: {
-          basePrice,
-          weekdayPrice: pricing?.weekdayPrice || 0,
-          weekendPrice: pricing?.weekendPrice || 0,
-          extraAdultPrice: pricing?.extraAdultPrice || 0,
-          extraChildPrice: pricing?.extraChildPrice || 0,
+          basePrice: quote.basePrice,
+          /** room nights + surcharges for numGuests, before services */
+          total: quote.total,
+          ...rates,
         },
-        numNights,
-      }
+        numNights: quote.nights,
+      }]
     })
 
     // Sort by availability first, then by price
@@ -164,7 +112,7 @@ export async function GET(request: NextRequest) {
         checkIn: checkInDate,
         checkOut: checkOutDate,
         numGuests,
-        numNights: Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)),
+        numNights: Math.round((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)),
       },
     })
   } catch (error) {

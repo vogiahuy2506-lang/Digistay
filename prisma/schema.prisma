@@ -621,6 +621,9 @@ model Booking {
   // Pricing
   subtotal        Float    // Tổng tiền phòng
   extraCharges    Float    @default(0)  // Phụ phí
+  /// The extra services chosen when booking, as charged (in extraCharges):
+  /// [{ serviceId, name, quantity, amount }] (src/lib/pricing/quote.ts)
+  services        Json?
   discount        Float    @default(0)  // Giảm giá
   totalAmount     Float    // Tổng cộng
   depositAmount   Float    @default(0)  // Tiền cọc đã thanh toán

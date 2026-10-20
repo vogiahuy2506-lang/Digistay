@@ -36,6 +36,10 @@ export default async function globalSetup() {
     const workspace = await prisma.workspace.findFirstOrThrow({ where: { slug: 'demo-workspace' } })
     const property = await prisma.property.findFirstOrThrow({ where: { subdomain: 'khach-san-demo' } })
     await prisma.workspaceMember.create({ data: { workspaceId: workspace.id, userId: root.id, role: 'ADMIN' } })
+    // A service a guest can add when booking (priced per night and per person).
+    await prisma.extraService.create({
+      data: { propertyId: property.id, name: 'Ăn sáng buffet', price: 120_000, priceType: 'PER_NIGHT', perPerson: true },
+    })
 
     const booking = (code: string, totalAmount: number, status: 'CONFIRMED' | 'CHECKED_OUT', extra = {}) =>
       prisma.booking.create({

@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { BookingError } from '@/lib/bookings/create-booking'
+import { NO_PRICE_MESSAGE, ROOM_RATE_INCLUDE, propertyRateDefaults } from '@/lib/pricing/rates'
+import { lockRoomType, roomsTaken } from '@/lib/bookings/occupancy'
+import { quoteStay, ratesFrom } from '@/lib/pricing/quote'
 import { auth } from '@/lib/auth'
 import { lockBooking, syncBookingPayments } from '@/lib/payments/booking-payments'
 import { z } from 'zod'
@@ -107,50 +111,51 @@ export async function POST(request: NextRequest, props: RouteParams) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy thông tin hạng phòng' }, { status: 400 })
     }
 
+    // The extra nights are priced like a booking (src/lib/pricing/quote.ts):
+    // the room type's own rates, surcharges for this booking's guests too.
     const roomType = await prisma.roomType.findFirst({
       where: { id: roomTypeId },
-      include: {
-        pricing: {
-          include: { pricing: true },
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-        },
-      },
+      include: ROOM_RATE_INCLUDE,
     })
-
-    const pricingConfig = roomType?.pricing[0]?.pricing
-    const weekdayPrice = pricingConfig?.weekdayPrice || 0
-    const weekendPrice = pricingConfig?.weekendPrice || weekdayPrice
-
-    // Calculate additional charges
-    const extraNights = Math.ceil(
-      (newCheckOut.getTime() - currentCheckOut.getTime()) / (1000 * 60 * 60 * 24)
-    )
-
-    let extraWeekendNights = 0
-    let extraWeekdayNights = 0
-    for (let d = new Date(currentCheckOut); d < newCheckOut; d.setDate(d.getDate() + 1)) {
-      const day = d.getDay()
-      if (day === 0 || day === 6) extraWeekendNights++
-      else extraWeekdayNights++
+    const rates = roomType && ratesFrom(roomType.pricing[0], await propertyRateDefaults(prisma, booking.propertyId))
+    if (!roomType || !rates) {
+      return NextResponse.json({ success: false, error: NO_PRICE_MESSAGE }, { status: 400 })
     }
-
-    const additionalCharge = (extraWeekdayNights * weekdayPrice) + (extraWeekendNights * weekendPrice)
+    const extra = quoteStay({
+      rates,
+      checkIn: currentCheckOut,
+      checkOut: newCheckOut,
+      numAdults: booking.numAdults,
+      numChildren: booking.numChildren,
+      baseOccupancy: roomType.baseOccupancy,
+    })
+    const additionalCharge = extra.total
+    const extraNights = extra.nights
     const method = paymentMethod || 'CASH'
 
     // New total, the optional payment and the payment status change together.
     const updatedBooking = await prisma.$transaction(async (tx) => {
       await lockBooking(tx, id)
+      // The extra nights must be free: extensions used to oversell.
+      await lockRoomType(tx, roomType.id)
+      const taken = await roomsTaken(tx, roomType.id, {
+        propertyId: booking.propertyId,
+        checkIn: currentCheckOut,
+        checkOut: newCheckOut,
+      })
+      if (taken >= roomType.totalRooms) throw new BookingError('Phòng đã kín trong những đêm gia hạn', 409)
       const fresh = await tx.booking.findUniqueOrThrow({
         where: { id },
-        select: { totalAmount: true, extraCharges: true },
+        select: { subtotal: true, totalAmount: true, extraCharges: true },
       })
       await tx.booking.update({
         where: { id },
         data: {
           checkOutDate: newCheckOut,
+          // Room nights to the room total, surcharges to the extra charges.
+          subtotal: fresh.subtotal + extra.basePrice,
+          extraCharges: fresh.extraCharges + extra.extraCharges,
           totalAmount: fresh.totalAmount + additionalCharge,
-          extraCharges: fresh.extraCharges + additionalCharge,
         },
       })
       if (addPayment && additionalCharge > 0) {
@@ -224,6 +229,9 @@ export async function POST(request: NextRequest, props: RouteParams) {
       newTotal: updatedBooking.totalAmount,
     })
   } catch (error) {
+    if (error instanceof BookingError) {
+      return NextResponse.json({ success: false, error: error.message }, { status: error.status })
+    }
     console.error('Extend booking error:', error)
     return NextResponse.json({ success: false, error: 'Lỗi khi gia hạn đặt phòng' }, { status: 500 })
   }

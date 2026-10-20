@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { lockRoomType, roomsTaken } from '@/lib/bookings/occupancy'
 import { z } from 'zod'
 import { randomUUID } from 'crypto'
 import { getClientIp } from '@/lib/security/client-ip'
@@ -44,91 +45,48 @@ export async function POST(request: NextRequest) {
     const lockEnd = new Date(checkOutDate)
     const expiresAt = new Date(Date.now() + LOCK_DURATION_MINUTES * 60 * 1000)
 
-    // The room type must be this property's (availability below counts by both)
+    // The room type must be this property's, of an active hotel.
     const roomType = await prisma.roomType.findFirst({
-      where: { id: roomTypeId, propertyId },
-      select: { totalRooms: true },
+      where: { id: roomTypeId, propertyId, isActive: true, property: { isActive: true } },
+      select: { id: true, totalRooms: true },
     })
 
     if (!roomType) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy hạng phòng' }, { status: 404 })
     }
-
-    // Count existing locks for this room type in the date range
-    const existingLocks = await prisma.roomLock.count({
-      where: {
-        propertyId,
-        roomTypeId,
-        type: { in: ['HOLD', 'BOOKED'] },
-        lockStart: { lt: lockEnd },
-        lockEnd: { gt: lockStart },
-        expiresAt: { gt: new Date() }, // Only count non-expired locks
-      },
-    })
-
-    // Count bookings
-    const existingBookings = await prisma.booking.count({
-      where: {
-        propertyId,
-        status: { in: ['PENDING', 'CONFIRMED', 'CHECKED_IN'] },
-        OR: [
-          {
-            AND: [
-              { checkInDate: { lte: lockStart } },
-              { checkOutDate: { gt: lockStart } },
-            ],
-          },
-          {
-            AND: [
-              { checkInDate: { lt: lockEnd } },
-              { checkOutDate: { gte: lockEnd } },
-            ],
-          },
-          {
-            AND: [
-              { checkInDate: { gte: lockStart } },
-              { checkOutDate: { lte: lockEnd } },
-            ],
-          },
-        ],
-      },
-    })
-
-    const totalOccupied = existingLocks + existingBookings
-
-    if (totalOccupied >= roomType.totalRooms) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Phòng đã hết trong khoảng thời gian này' 
-      }, { status: 400 })
+    if (Number.isNaN(lockStart.getTime()) || Number.isNaN(lockEnd.getTime()) || lockEnd <= lockStart) {
+      return NextResponse.json({ success: false, error: 'Ngày không hợp lệ' }, { status: 400 })
     }
 
-    // Remove any existing locks from this session
-    await prisma.roomLock.deleteMany({
-      where: {
-        sessionId: session,
-        type: 'HOLD',
-      },
+    // Same count as bookings (src/lib/bookings/occupancy.ts), under the room
+    // type's row lock; this session's earlier hold is replaced, not counted.
+    const lock = await prisma.$transaction(async (tx) => {
+      await lockRoomType(tx, roomType.id)
+      await tx.roomLock.deleteMany({ where: { sessionId: session, type: 'HOLD', bookingId: null } })
+      const taken = await roomsTaken(tx, roomType.id, { propertyId, checkIn: lockStart, checkOut: lockEnd })
+      if (taken >= roomType.totalRooms) return null
+      return tx.roomLock.create({
+        data: {
+          propertyId,
+          roomTypeId,
+          lockStart,
+          lockEnd,
+          type: 'HOLD',
+          sessionId: session,
+          customerInfo,
+          expiresAt,
+        },
+      })
     })
-
-    // Create new lock
-    const lock = await prisma.roomLock.create({
-      data: {
-        propertyId,
-        roomTypeId,
-        lockStart,
-        lockEnd,
-        type: 'HOLD',
-        sessionId: session,
-        customerInfo,
-        expiresAt,
-      },
-    })
+    if (!lock) {
+      return NextResponse.json({ success: false, error: 'Phòng đã hết trong khoảng thời gian này' }, { status: 409 })
+    }
 
     return NextResponse.json({
       success: true,
       data: {
         lockId: lock.id,
+        sessionId: session,
         expiresAt: lock.expiresAt,
         expiresInSeconds: LOCK_DURATION_MINUTES * 60,
       },

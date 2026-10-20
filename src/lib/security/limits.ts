@@ -26,6 +26,10 @@ export const LIMITS = {
   /** Email-change confirmations one user requests: each emails the new address. */
   emailChangeSendUser: { name: 'email-change-send-user', limit: 5, windowSec: 60 * MIN },
   roomLockIp: { name: 'room-lock-ip', limit: 30, windowSec: 10 * MIN },
+  /** Bookings guests place on hotel sites from one IP (each holds a room). */
+  guestBookingIp: { name: 'guest-booking-ip', limit: 5, windowSec: 60 * MIN },
+  /** Bookings for one guest email: each emails that address a confirmation. */
+  guestBookingEmail: { name: 'guest-booking-email', limit: 3, windowSec: 60 * MIN },
   /** Wrong two-factor codes at sign-in from one IP, across accounts (failures only). */
   twoFactorVerifyIp: { name: '2fa-verify-ip', limit: 20, windowSec: 15 * MIN },
   /** Wrong codes while turning two-factor on, per user (failures only). */

@@ -360,12 +360,21 @@ export interface BookingConfirmationTemplateProps {
    * old "manage booking" link went to a page that does not exist. */
   propertyUrl: string
   notes?: string
+  /** The hotel's check-in / check-out times (Policy); 14:00 / 12:00 when unset. */
+  checkInTime?: string
+  checkOutTime?: string
+  /**
+   * A request from the hotel's website: the hotel still has to confirm it.
+   * The email must not tell the guest the room is booked.
+   */
+  awaitingConfirmation?: boolean
 }
 
 export function bookingConfirmationTemplate(props: BookingConfirmationTemplateProps): { html: string; text: string; subject: string } {
   const {
     guestName, bookingCode, propertyName, propertyAddress, propertyPhone,
     checkIn, checkOut, numAdults, numChildren, totalAmount, currency = 'VND', propertyUrl, notes,
+    checkInTime = '14:00', checkOutTime = '12:00', awaitingConfirmation = false,
   } = props
 
   const nights = Math.max(
@@ -374,10 +383,12 @@ export function bookingConfirmationTemplate(props: BookingConfirmationTemplatePr
   )
 
   const bodyHtml = `
-    <h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: ${BRAND.text};">✅ Đặt phòng thành công</h1>
+    <h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: ${BRAND.text};">${awaitingConfirmation ? 'Đã nhận yêu cầu đặt phòng' : '✅ Đặt phòng thành công'}</h1>
     <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: ${BRAND.textMuted};">
       Xin chào <strong style="color: ${BRAND.text};">${escapeHtml(guestName)}</strong>,<br/>
-      Cảm ơn bạn đã đặt phòng. Dưới đây là thông tin chi tiết:
+      ${awaitingConfirmation
+        ? `Cảm ơn bạn đã đặt phòng. ${escapeHtml(propertyName)} sẽ liên hệ với bạn để xác nhận; phòng chỉ được giữ chắc chắn khi khách sạn xác nhận. Dưới đây là thông tin yêu cầu của bạn:`
+        : 'Cảm ơn bạn đã đặt phòng. Dưới đây là thông tin chi tiết:'}
     </p>
 
     <!-- Booking code banner -->
@@ -414,12 +425,12 @@ export function bookingConfirmationTemplate(props: BookingConfirmationTemplatePr
               <td width="50%" style="padding: 8px 0;">
                 <div style="font-size: 11px; color: ${BRAND.textMuted}; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-bottom: 4px;">Nhận phòng</div>
                 <div style="font-size: 15px; color: ${BRAND.text}; font-weight: 600;">${formatDate(checkIn)}</div>
-                <div style="font-size: 12px; color: ${BRAND.textMuted};">từ 14:00</div>
+                <div style="font-size: 12px; color: ${BRAND.textMuted};">từ ${escapeHtml(checkInTime)}</div>
               </td>
               <td width="50%" style="padding: 8px 0;">
                 <div style="font-size: 11px; color: ${BRAND.textMuted}; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-bottom: 4px;">Trả phòng</div>
                 <div style="font-size: 15px; color: ${BRAND.text}; font-weight: 600;">${formatDate(checkOut)}</div>
-                <div style="font-size: 12px; color: ${BRAND.textMuted};">trước 12:00</div>
+                <div style="font-size: 12px; color: ${BRAND.textMuted};">trước ${escapeHtml(checkOutTime)}</div>
               </td>
             </tr>
           </table>
@@ -453,7 +464,7 @@ export function bookingConfirmationTemplate(props: BookingConfirmationTemplatePr
       <tr>
         <td>
           <div style="font-size: 12px; color: ${BRAND.textMuted}; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; margin-bottom: 4px;">
-            Tổng thanh toán
+            ${awaitingConfirmation ? 'Tạm tính' : 'Tổng thanh toán'}
           </div>
           <div style="font-size: 28px; color: ${BRAND.primary}; font-weight: 800;">
             ${formatVnd(totalAmount, currency)}
@@ -475,8 +486,12 @@ export function bookingConfirmationTemplate(props: BookingConfirmationTemplatePr
 
   return {
     html: baseLayout({ previewText: `Đặt phòng ${bookingCode} tại ${propertyName}`, bodyHtml }),
-    text: `Xác nhận đặt phòng ${bookingCode}\nKhách sạn: ${propertyName}\n${formatDate(checkIn)} - ${formatDate(checkOut)}\nTổng: ${formatVnd(totalAmount, currency)}\nTrang khách sạn: ${propertyUrl}`,
-    subject: `[${bookingCode}] ✅ Xác nhận đặt phòng tại ${propertyName}`,
+    text: awaitingConfirmation
+      ? `Đã nhận yêu cầu đặt phòng ${bookingCode}\nKhách sạn: ${propertyName} (sẽ liên hệ để xác nhận)\n${formatDate(checkIn)} - ${formatDate(checkOut)}\nTạm tính: ${formatVnd(totalAmount, currency)}\nTrang khách sạn: ${propertyUrl}`
+      : `Xác nhận đặt phòng ${bookingCode}\nKhách sạn: ${propertyName}\n${formatDate(checkIn)} - ${formatDate(checkOut)}\nTổng: ${formatVnd(totalAmount, currency)}\nTrang khách sạn: ${propertyUrl}`,
+    subject: awaitingConfirmation
+      ? `[${bookingCode}] Đã nhận yêu cầu đặt phòng tại ${propertyName}`
+      : `[${bookingCode}] ✅ Xác nhận đặt phòng tại ${propertyName}`,
   }
 }
 
