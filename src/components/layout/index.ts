@@ -1,1 +1,1 @@
-export { Sidebar, Header, PageContainer } from './sidebar'
+export { Header, PageContainer } from './page-header'

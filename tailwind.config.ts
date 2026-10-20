@@ -219,15 +219,21 @@ const config: Config = {
       animation: {
         // Side panel / toast entrance (system page 1c: 250 ms, one curve).
         'panel-in': 'panel-in 250ms cubic-bezier(0.2, 0.7, 0.2, 1)',
+        'drawer-in': 'drawer-in 250ms cubic-bezier(0.2, 0.7, 0.2, 1)',
         'toast-in': 'toast-in 250ms cubic-bezier(0.2, 0.7, 0.2, 1)',
         'ping': 'ping 1s cubic-bezier(0, 0, 0.2, 1) infinite',
         'bounce': 'bounce 2s infinite',
         'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
       keyframes: {
+        // Slide only, no fade: a fading panel lets the list show through its text.
         'panel-in': {
-          from: { transform: 'translateX(24px)', opacity: '0' },
-          to: { transform: 'none', opacity: '1' },
+          from: { transform: 'translateX(100%)' },
+          to: { transform: 'none' },
+        },
+        'drawer-in': {
+          from: { transform: 'translateX(-100%)' },
+          to: { transform: 'none' },
         },
         'toast-in': {
           from: { transform: 'translateY(8px)', opacity: '0' },

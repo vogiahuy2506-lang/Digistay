@@ -1,7 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { BookingSource, BookingStatus, PaymentStatus } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { withRoomTypeNames } from '@/lib/bookings/room-type-names'
 import { z } from 'zod'
+
+const MAX_LIMIT = 100
+
+/** Returns the value when it is one of `allowed`, '' when absent, null when invalid. */
+function enumParam<T extends string>(value: string | null, allowed: readonly T[]): T | '' | null {
+  if (!value) return ''
+  return (allowed as readonly string[]).includes(value) ? (value as T) : null
+}
+
+function positiveInt(value: string | null, fallback: number): number {
+  const n = Number.parseInt(value ?? '', 10)
+  return Number.isFinite(n) && n > 0 ? n : fallback
+}
 
 class BookingCapacityError extends Error {
   constructor(message: string) {
@@ -45,14 +60,26 @@ export async function GET(request: NextRequest) {
     
     const propertyId = searchParams.get('propertyId')
     const workspaceId = searchParams.get('workspaceId')
-    const status = searchParams.get('status')
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
+    const page = positiveInt(searchParams.get('page'), 1)
+    const limit = Math.min(positiveInt(searchParams.get('limit'), 20), MAX_LIMIT)
+    // Code, guest name or phone; searched in the database so it covers every
+    // page, not just the rows on screen.
+    const q = (searchParams.get('q') ?? '').trim().slice(0, 100)
+    // counts=1: also return how many bookings each status tab holds.
+    const withCounts = searchParams.get('counts') === '1'
 
     if (!session?.user?.id) {
       return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
+    }
+
+    // An unknown enum value used to reach Prisma and come back as a 500.
+    const status = enumParam(searchParams.get('status'), Object.values(BookingStatus))
+    const paymentStatus = enumParam(searchParams.get('paymentStatus'), Object.values(PaymentStatus))
+    const source = enumParam(searchParams.get('source'), Object.values(BookingSource))
+    if (status === null || paymentStatus === null || source === null) {
+      return NextResponse.json({ success: false, error: 'Bộ lọc không hợp lệ' }, { status: 400 })
     }
 
     // Always restrict to properties in workspaces the user owns or belongs
@@ -91,8 +118,20 @@ export async function GET(request: NextRequest) {
       where.propertyId = propertyId
     }
 
-    if (status) {
-      where.status = status
+    if (paymentStatus) {
+      where.paymentStatus = paymentStatus
+    }
+
+    if (source) {
+      where.source = source
+    }
+
+    if (q) {
+      where.OR = [
+        { bookingCode: { contains: q, mode: 'insensitive' } },
+        { guestName: { contains: q, mode: 'insensitive' } },
+        { guestPhone: { contains: q.replace(/\s+/g, '') } },
+      ]
     }
 
     if (startDate) {
@@ -103,7 +142,14 @@ export async function GET(request: NextRequest) {
       where.checkOutDate = { ...where.checkOutDate, lte: new Date(endDate) }
     }
 
-    const [bookings, total] = await Promise.all([
+    // Tab counts use every filter except the status itself.
+    const countsWhere = { ...where }
+
+    if (status) {
+      where.status = status
+    }
+
+    const [rows, total, groups] = await Promise.all([
       prisma.booking.findMany({
         where,
         include: {
@@ -128,11 +174,27 @@ export async function GET(request: NextRequest) {
         take: limit,
       }),
       prisma.booking.count({ where }),
+      withCounts
+        ? prisma.booking.groupBy({ by: ['status'], where: countsWhere, _count: { _all: true } })
+        : Promise.resolve(null),
     ])
+
+    const bookings = await withRoomTypeNames(rows)
+
+    let statusCounts: Record<string, number> | undefined
+    if (groups) {
+      statusCounts = { ALL: 0 }
+      for (const status of Object.values(BookingStatus)) statusCounts[status] = 0
+      for (const group of groups) {
+        statusCounts[group.status] = group._count._all
+        statusCounts.ALL += group._count._all
+      }
+    }
 
     return NextResponse.json({
       success: true,
       data: bookings,
+      ...(statusCounts && { statusCounts }),
       pagination: {
         page,
         limit,

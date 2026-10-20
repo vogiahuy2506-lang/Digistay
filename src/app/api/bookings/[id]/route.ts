@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { withRoomTypeNames } from '@/lib/bookings/room-type-names'
 import { z } from 'zod'
 
 const updateBookingSchema = z.object({
@@ -75,7 +76,8 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Không có quyền truy cập' }, { status: 403 })
     }
 
-    return NextResponse.json({ success: true, data: booking })
+    const [data] = await withRoomTypeNames([booking])
+    return NextResponse.json({ success: true, data })
   } catch (error) {
     console.error('Get booking error:', error)
     return NextResponse.json({ success: false, error: 'Lỗi khi lấy thông tin đặt phòng' }, { status: 500 })
