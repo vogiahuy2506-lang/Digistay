@@ -1,6 +1,6 @@
 import type { Config } from 'tailwindcss'
 import plugin from 'tailwindcss/plugin'
-import { cssVar, radii, roles, themeVariables } from './src/styles/tokens'
+import { cssVar, radii, roles, themeVariables, typeScale } from './src/styles/tokens'
 
 // Role colors from src/styles/tokens.ts: `bg-panel`, `text-muted`, `border-line`,
 // `bg-ok-soft text-ok`, ... Values live in CSS variables, so they follow the
@@ -141,16 +141,7 @@ const config: Config = {
         serif: ['var(--font-playfair)', 'Playfair Display', 'Georgia', 'serif'],
       },
       fontSize: {
-        // Redesign type scale (system page 1c). Headings use font-serif on the
-        // hotel website; the dashboard stays on font-sans.
-        display: ['80px', { lineHeight: '88px', letterSpacing: '-0.025em' }],
-        h1: ['52px', { lineHeight: '60px', letterSpacing: '-0.02em' }],
-        h2: ['36px', { lineHeight: '44px' }],
-        h3: ['24px', { lineHeight: '32px' }],
-        lead: ['17px', { lineHeight: '28px' }],
-        body: ['15px', { lineHeight: '24px' }],
-        small: ['13px', { lineHeight: '20px' }],
-        label: ['11px', { lineHeight: '16px', letterSpacing: '0.14em' }],
+        ...typeScale,
 
         'display-hero': ['56px', { lineHeight: '64px', letterSpacing: '-0.03em', fontWeight: '700' }],
         'display-hero-mobile': ['36px', { lineHeight: '44px', letterSpacing: '-0.02em', fontWeight: '700' }],
@@ -226,11 +217,22 @@ const config: Config = {
         'ds': 'cubic-bezier(0.2, 0.7, 0.2, 1)',
       },
       animation: {
+        // Side panel / toast entrance (system page 1c: 250 ms, one curve).
+        'panel-in': 'panel-in 250ms cubic-bezier(0.2, 0.7, 0.2, 1)',
+        'toast-in': 'toast-in 250ms cubic-bezier(0.2, 0.7, 0.2, 1)',
         'ping': 'ping 1s cubic-bezier(0, 0, 0.2, 1) infinite',
         'bounce': 'bounce 2s infinite',
         'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
       keyframes: {
+        'panel-in': {
+          from: { transform: 'translateX(24px)', opacity: '0' },
+          to: { transform: 'none', opacity: '1' },
+        },
+        'toast-in': {
+          from: { transform: 'translateY(8px)', opacity: '0' },
+          to: { transform: 'none', opacity: '1' },
+        },
         ping: {
           '75%, 100%': { transform: 'scale(2)', opacity: '0' },
         },

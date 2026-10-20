@@ -37,7 +37,7 @@ export function Avatar({ src, alt, name, size = 'md', className }: AvatarProps) 
         alt={alt || name || 'Avatar'}
         onError={() => setImageError(true)}
         className={cn(
-          'rounded-full object-cover bg-gray-100',
+          'rounded-full object-cover bg-plain-soft',
           sizeClasses[size],
           className
         )}
@@ -47,7 +47,7 @@ export function Avatar({ src, alt, name, size = 'md', className }: AvatarProps) 
 
   return (
     <div className={cn(
-      'rounded-full bg-primary-100 text-primary-600 font-medium flex items-center justify-center',
+      'rounded-full bg-plain-soft text-fg font-medium flex items-center justify-center',
       sizeClasses[size],
       className
     )}>

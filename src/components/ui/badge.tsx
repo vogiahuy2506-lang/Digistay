@@ -2,46 +2,73 @@
 
 import * as React from 'react'
 import { cn } from '@/lib/utils'
+import { getBookingStatusMeta, getPaymentStatusMeta, type StatusMeta, type StatusTone } from '@/lib/booking-status'
+
+const tones: Record<StatusTone, string> = {
+  ok: 'bg-ok-soft text-ok',
+  warn: 'bg-warn-soft text-warn',
+  err: 'bg-err-soft text-err',
+  info: 'bg-info-soft text-info',
+  refund: 'bg-refund-soft text-refund',
+  plain: 'bg-plain-soft text-plain',
+}
+
+const variants = {
+  ...tones,
+  acc: 'bg-acc-soft text-acc',
+  outline: 'border border-line text-muted bg-transparent',
+  // Older names, kept until every caller uses the tones above.
+  primary: 'bg-acc-soft text-acc',
+  secondary: 'bg-info-soft text-info',
+  success: 'bg-ok-soft text-ok',
+  warning: 'bg-warn-soft text-warn',
+  danger: 'bg-err-soft text-err',
+  gray: 'bg-plain-soft text-plain',
+}
 
 interface BadgeProps {
-  variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'gray' | 'outline'
+  variant?: keyof typeof variants
   size?: 'sm' | 'md'
   className?: string
   textColor?: string
   children: React.ReactNode
 }
 
-export function Badge({ 
-  variant = 'primary', 
-  size = 'sm', 
-  className, 
-  textColor,
-  children 
-}: BadgeProps) {
-  const variants = {
-    primary: 'bg-primary-100 text-primary-700',
-    secondary: 'bg-secondary-100 text-secondary-700',
-    success: 'bg-green-100 text-green-700',
-    warning: 'bg-yellow-100 text-yellow-700',
-    danger: 'bg-red-100 text-red-700',
-    gray: 'bg-gray-100 text-gray-700',
-    outline: 'border border-gray-300 text-gray-700 bg-transparent',
-  }
+const sizes = {
+  sm: 'px-2 py-0.5 text-xs',
+  md: 'px-2.5 py-1 text-small',
+}
 
-  const sizes = {
-    sm: 'px-2 py-0.5 text-xs',
-    md: 'px-2.5 py-1 text-sm',
-  }
-
+export function Badge({ variant = 'primary', size = 'sm', className, textColor, children }: BadgeProps) {
   return (
-    <span className={cn(
-      'inline-flex items-center rounded-full font-medium',
-      variants[variant],
-      sizes[size],
-      textColor,
-      className
-    )}>
+    <span
+      className={cn(
+        'inline-flex items-center rounded font-medium whitespace-nowrap',
+        variants[variant],
+        sizes[size],
+        textColor,
+        className
+      )}
+    >
       {children}
     </span>
   )
+}
+
+function MetaBadge({ meta, size, className }: { meta: StatusMeta; size?: BadgeProps['size']; className?: string }) {
+  return (
+    <Badge variant={meta.tone} size={size} className={cn(meta.struck && 'line-through', className)}>
+      {meta.label}
+    </Badge>
+  )
+}
+
+/** Chip for `Booking.status` (string so API JSON can be passed straight in). */
+export function BookingStatusBadge({ status, ...rest }: { status: string; size?: BadgeProps['size']; className?: string }) {
+  return <MetaBadge meta={getBookingStatusMeta(status)} {...rest} />
+}
+
+/** Chip for `Booking.paymentStatus` and `Payment.status`. */
+export function PaymentStatusBadge({ status, ...rest }: { status: string; size?: BadgeProps['size']; className?: string }) {
+  return <MetaBadge meta={getPaymentStatusMeta(status)} {...rest} />
 }

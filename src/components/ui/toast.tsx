@@ -73,8 +73,13 @@ export function useToast() {
 function ToastContainer() {
   const { toasts, removeToast } = useToast()
 
+  // Above modals (z-50) so a save confirmation is not hidden behind one.
+  // Full width with a gutter on phones, bottom-right card from `sm` up.
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-md w-full">
+    <div
+      aria-live="polite"
+      className="fixed bottom-4 left-4 right-4 sm:left-auto z-[60] flex flex-col gap-2 sm:w-full sm:max-w-md"
+    >
       {toasts.map((toast) => (
         <Toast key={toast.id} {...toast} onClose={() => removeToast(toast.id)} />
       ))}
@@ -82,34 +87,35 @@ function ToastContainer() {
   )
 }
 
+const icons = {
+  success: <CheckCircle className="w-5 h-5 text-ok" aria-hidden="true" />,
+  error: <XCircle className="w-5 h-5 text-err" aria-hidden="true" />,
+  warning: <AlertCircle className="w-5 h-5 text-warn" aria-hidden="true" />,
+  info: <Info className="w-5 h-5 text-info" aria-hidden="true" />,
+}
+
 function Toast({ type = 'info', title, message, onClose }: ToastProps & { onClose: () => void }) {
-  const icons = {
-    success: <CheckCircle className="w-5 h-5 text-green-500" />,
-    error: <XCircle className="w-5 h-5 text-red-500" />,
-    warning: <AlertCircle className="w-5 h-5 text-yellow-500" />,
-    info: <Info className="w-5 h-5 text-blue-500" />,
-  }
-
-  const backgrounds = {
-    success: 'bg-green-50 border-green-200',
-    error: 'bg-red-50 border-red-200',
-    warning: 'bg-yellow-50 border-yellow-200',
-    info: 'bg-blue-50 border-blue-200',
-  }
-
   return (
-    <div className={cn(
-      'rounded-lg border p-4 shadow-lg animate-slide-up',
-      backgrounds[type]
-    )}>
+    <div
+      role={type === 'error' ? 'alert' : 'status'}
+      className={cn(
+        'rounded-box border border-line bg-raised text-fg p-4 shadow-lift',
+        'animate-toast-in motion-reduce:animate-none'
+      )}
+    >
       <div className="flex gap-3">
-        {icons[type]}
-        <div className="flex-1">
-          <p className="font-medium text-gray-900">{title}</p>
-          {message && <p className="mt-1 text-sm text-gray-600">{message}</p>}
+        <span className="shrink-0">{icons[type]}</span>
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-fg">{title}</p>
+          {message && <p className="mt-1 text-small text-muted">{message}</p>}
         </div>
-        <button onClick={onClose} className="p-1 hover:bg-black/5 rounded">
-          <X className="w-4 h-4 text-gray-400" />
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Đóng thông báo"
+          className="p-1 h-7 w-7 shrink-0 rounded-ctl text-muted hover:text-fg hover:bg-fg/5 flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
+        >
+          <X className="w-4 h-4" aria-hidden="true" />
         </button>
       </div>
     </div>

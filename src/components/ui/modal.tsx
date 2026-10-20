@@ -2,98 +2,83 @@
 
 import * as React from 'react'
 import { cn } from '@/lib/utils'
-import { X, Building2 } from 'lucide-react'
+import { X } from 'lucide-react'
+import { useDialogBehavior } from './dialog-behavior'
 
 interface ModalProps {
   isOpen: boolean
   onClose: () => void
+  /** Accessible name when the modal has no ModalHeader. */
   title?: string
   description?: string
   children: React.ReactNode
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
 }
 
-export function Modal({ 
-  isOpen, 
-  onClose, 
-  title, 
-  description, 
-  children, 
-  size = 'md' 
-}: ModalProps) {
-  React.useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = 'unset'
-    }
-    return () => {
-      document.body.style.overflow = 'unset'
-    }
-  }, [isOpen])
+const sizes = {
+  sm: 'max-w-md',
+  md: 'max-w-lg',
+  lg: 'max-w-2xl',
+  xl: 'max-w-4xl',
+  '2xl': 'max-w-2xl',
+}
 
-  React.useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose()
-      }
-    }
-    window.addEventListener('keydown', handleEscape)
-    return () => window.removeEventListener('keydown', handleEscape)
-  }, [isOpen, onClose])
+// ModalHeader registers its id so the dialog is named by its header text.
+const ModalLabelContext = React.createContext<string | undefined>(undefined)
+
+export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalProps) {
+  const dialogRef = React.useRef<HTMLDivElement>(null)
+  const labelId = React.useId()
+  useDialogBehavior(dialogRef, isOpen, { onEscape: onClose, modal: true })
 
   if (!isOpen) return null
-
-  const sizes = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
-    '2xl': 'max-w-2xl',
-  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto">
       {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
-      />
-      
-      {/* Modal */}
-      <div className={cn(
-        'relative bg-white rounded-2xl shadow-2xl border border-sand-200 w-full max-h-[92vh] flex flex-col z-10 overflow-hidden transform transition-all',
-        sizes[size]
-      )}>
-        {children}
+      <div className="fixed inset-0 bg-black/50 transition-opacity" onClick={onClose} aria-hidden="true" />
+
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        aria-labelledby={title ? undefined : labelId}
+        tabIndex={-1}
+        className={cn(
+          'relative bg-raised text-fg rounded-box border border-line shadow-lift w-full max-h-[92vh] flex flex-col z-10 overflow-hidden focus:outline-none',
+          sizes[size]
+        )}
+      >
+        <ModalLabelContext.Provider value={labelId}>{children}</ModalLabelContext.Provider>
       </div>
     </div>
   )
 }
 
-export function ModalHeader({ 
-  className, 
-  children, 
-  onClose 
-}: { 
-  className?: string; 
+export function ModalHeader({
+  className,
+  children,
+  onClose,
+}: {
+  className?: string
   children: React.ReactNode
   onClose?: () => void
 }) {
+  const labelId = React.useContext(ModalLabelContext)
   return (
-    <div className={cn(
-      'px-6 py-4 border-b border-sand-200/90 flex items-center justify-between bg-gradient-to-r from-sand-50/90 via-white to-sand-50/60',
-      className
-    )}>
-      <div className="flex items-center gap-3">
+    <div className={cn('px-6 py-4 border-b border-line flex items-center justify-between gap-3', className)}>
+      <div id={labelId} className="flex items-center gap-3 min-w-0">
         {children}
       </div>
       {onClose && (
         <button
+          type="button"
           onClick={onClose}
-          className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-sand-100 flex items-center justify-center transition border border-transparent hover:border-sand-200"
+          aria-label="Đóng"
+          className="w-8 h-8 shrink-0 rounded-ctl text-muted hover:text-fg hover:bg-fg/5 flex items-center justify-center transition-colors duration-160 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
         >
-          <X className="w-4 h-4" />
+          <X className="w-4 h-4" aria-hidden="true" />
         </button>
       )}
     </div>
@@ -106,10 +91,12 @@ export function ModalBody({ className, children }: { className?: string; childre
 
 export function ModalFooter({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
-    <div className={cn(
-      'px-6 py-4 bg-sand-50/90 border-t border-sand-200/90 flex flex-col sm:flex-row items-center justify-between gap-3',
-      className
-    )}>
+    <div
+      className={cn(
+        'px-6 py-4 bg-page/60 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-3',
+        className
+      )}
+    >
       {children}
     </div>
   )
