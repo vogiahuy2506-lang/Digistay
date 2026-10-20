@@ -24,6 +24,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { normalizeFont } from '@/lib/public-site/font-stack'
 import {
   Monitor, Smartphone, Eye, Save, Globe, Palette, Type, Image,
   Plus, Trash2, GripVertical, Settings, Layout, Search, ArrowRight,
@@ -1740,26 +1741,26 @@ export default function WebsiteBuilderPage() {
                   <div>
                     <label className="text-sm font-medium text-fg">Phông chữ chính</label>
                     <select
-                      value={settings?.fontFamily || 'Inter'}
+                      value={normalizeFont(settings?.fontFamily, 'body')}
                       onChange={(e) => setSettings({ ...settings!, fontFamily: e.target.value })}
                       className="w-full mt-1 px-3 py-2 border rounded-lg"
                     >
                       <option value="Inter">Inter - Hiện đại</option>
                       <option value="Roboto">Roboto - Phổ biến</option>
                       <option value="Open Sans">Open Sans - Dễ đọc</option>
-                      <option value="Lato">Lato - Thanh lịch</option>
+                      <option value="Nunito Sans">Nunito Sans - Thanh lịch</option>
                     </select>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-fg">Phông chữ tiêu đề</label>
                     <select
-                      value={settings?.headingFont || 'Playfair Display'}
+                      value={normalizeFont(settings?.headingFont, 'heading')}
                       onChange={(e) => setSettings({ ...settings!, headingFont: e.target.value })}
                       className="w-full mt-1 px-3 py-2 border rounded-lg"
                     >
                       <option value="Playfair Display">Playfair Display - Sang trọng</option>
                       <option value="Merriweather">Merriweather - Truyền thống</option>
-                      <option value="Poppins">Poppins - Trẻ trung</option>
+                      <option value="Be Vietnam Pro">Be Vietnam Pro - Trẻ trung</option>
                       <option value="Montserrat">Montserrat - Năng động</option>
                     </select>
                   </div>
