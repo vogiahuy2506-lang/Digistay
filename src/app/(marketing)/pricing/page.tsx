@@ -1,7 +1,8 @@
 'use client'
 
 import * as React from 'react'
-import { GlassCard, GradientButton } from '@/components/marketing/GradientBackground'
+import Link from 'next/link'
+import { MaterialSymbol } from '@/components/ui/material-symbol'
 
 const plans = [
   {
@@ -71,41 +72,25 @@ const addOns = [
     name: 'Extra Property',
     description: 'Thêm 1 khách sạn',
     price: '500.000đ/tháng',
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-      </svg>
-    ),
+    icon: 'apartment',
   },
   {
     name: 'Extra Rooms',
     description: 'Thêm 10 phòng',
     price: '200.000đ/tháng',
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-      </svg>
-    ),
+    icon: 'meeting_room',
   },
   {
     name: 'SMS Marketing',
     description: '1000 SMS/tháng',
     price: '300.000đ/tháng',
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-      </svg>
-    ),
+    icon: 'chat',
   },
   {
     name: 'API Access',
     description: 'Truy cập API đầy đủ',
     price: '500.000đ/tháng',
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-      </svg>
-    ),
+    icon: 'code',
   },
 ]
 
@@ -139,15 +124,15 @@ export default function PricingPage() {
   return (
     <>
       {/* Hero */}
-      <section className="pt-32 pb-16 md:pt-40 md:pb-24 relative">
-        <div className="max-w-4xl mx-auto px-4 md:px-8 text-center">
-          <span className="inline-block px-4 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-sm font-medium mb-6">
+      <section className="pt-8 pb-12 sm:pt-12 sm:pb-16 lg:pt-16 lg:pb-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <span className="inline-block px-4 py-1.5 rounded-full bg-primary-fixed/20 text-on-primary-fixed-variant text-sm font-semibold mb-6">
             Bảng Giá
           </span>
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6">
             Chọn Gói Phù Hợp
             <br />
-            <span className="bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary-fixed to-terracotta-300 bg-clip-text text-transparent">
               Với Ngân Sách Của Bạn
             </span>
           </h1>
@@ -156,12 +141,12 @@ export default function PricingPage() {
           </p>
 
           {/* Billing Toggle */}
-          <div className="inline-flex items-center gap-4 p-1.5 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10">
+          <div className="inline-flex items-center gap-2 p-1.5 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10">
             <button
               onClick={() => setAnnual(false)}
               className={`px-6 py-2.5 rounded-xl font-medium transition-all ${
                 !annual 
-                  ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg' 
+                  ? 'bg-primary-fixed text-on-primary-fixed-variant shadow-lg' 
                   : 'text-white/60 hover:text-white'
               }`}
             >
@@ -171,7 +156,7 @@ export default function PricingPage() {
               onClick={() => setAnnual(true)}
               className={`px-6 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2 ${
                 annual 
-                  ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg' 
+                  ? 'bg-primary-fixed text-on-primary-fixed-variant shadow-lg' 
                   : 'text-white/60 hover:text-white'
               }`}
             >
@@ -185,20 +170,21 @@ export default function PricingPage() {
       </section>
 
       {/* Pricing Cards */}
-      <section className="pb-20 md:pb-32 relative">
-        <div className="max-w-6xl mx-auto px-4 md:px-8">
+      <section className="pb-16 sm:pb-24 lg:pb-32 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
             {plans.map((plan) => (
-              <GlassCard
+              <div
                 key={plan.name}
-                className={`relative p-8 ${
-                  plan.highlight ? 'ring-2 ring-orange-500/50' : ''
+                className={`relative p-8 rounded-2xl backdrop-blur-xl border ${
+                  plan.highlight 
+                    ? 'bg-primary-fixed/10 border-primary-fixed/50 ring-2 ring-primary-fixed/30' 
+                    : 'bg-white/5 border-white/10'
                 }`}
-                variant={plan.highlight ? 'highlight' : 'default'}
               >
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <span className="px-4 py-1.5 rounded-full bg-gradient-to-r from-orange-500 to-red-500 text-white text-sm font-bold shadow-lg">
+                    <span className="px-4 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-sm font-bold shadow-lg">
                       Phổ Biến Nhất
                     </span>
                   </div>
@@ -212,13 +198,13 @@ export default function PricingPage() {
                 <div className="mb-6">
                   <div className="flex items-baseline gap-1">
                     <span className="text-4xl md:text-5xl font-bold text-white">
-                      {annual ? plan.price.replace('.000', '.000') : parseInt(plan.price).toLocaleString()}
+                      {plan.price}
                     </span>
                     <span className="text-white/60">đ/{plan.period}</span>
                   </div>
                   {annual && (
                     <p className="text-emerald-400 text-sm mt-1">
-                      Tiết kiệm {Math.round(parseInt(plan.price) * 0.2 / 1000)}00.000đ/năm
+                      Tiết kiệm {Math.round(parseInt(plan.price.replace(/\./g, '')) * 0.2 / 1000) * 1000}đ/năm
                     </p>
                   )}
                 </div>
@@ -226,40 +212,39 @@ export default function PricingPage() {
                 <ul className="space-y-3 mb-8">
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex items-start gap-3 text-white/80">
-                      <svg className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
+                      <MaterialSymbol name="check" className="text-emerald-400 text-xl shrink-0 mt-0.5" />
                       {feature}
                     </li>
                   ))}
                   {plan.limitations?.map((limitation) => (
                     <li key={limitation} className="flex items-start gap-3 text-white/40">
-                      <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
+                      <MaterialSymbol name="close" className="text-white/30 text-xl shrink-0 mt-0.5" />
                       {limitation}
                     </li>
                   ))}
                 </ul>
 
-                <GradientButton 
-                  href="/register" 
-                  variant={plan.highlight ? 'primary' : 'outline'} 
-                  className="w-full"
+                <Link
+                  href="/register"
+                  className={`w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-semibold transition-all duration-300 ${
+                    plan.highlight
+                      ? 'bg-primary-fixed text-on-primary-fixed-variant shadow-lg hover:bg-primary-container hover:scale-[1.02]'
+                      : 'bg-white/10 text-white border border-white/20 hover:bg-white/20'
+                  }`}
                 >
                   Bắt Đầu Dùng Thử
-                </GradientButton>
-              </GlassCard>
+                </Link>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
       {/* Add-ons */}
-      <section className="pb-20 md:pb-32 relative">
-        <div className="max-w-6xl mx-auto px-4 md:px-8">
+      <section className="pb-16 sm:pb-24 lg:pb-32 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
               Tiện Ích Bổ Sung
             </h2>
             <p className="text-white/60">
@@ -267,75 +252,85 @@ export default function PricingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {addOns.map((addon) => (
-              <GlassCard key={addon.name} className="p-6">
-                <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-400 mb-4">
-                  {addon.icon}
+              <div key={addon.name} className="p-6 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10">
+                <div className="w-12 h-12 rounded-xl bg-primary-fixed/10 flex items-center justify-center text-primary-fixed mb-4">
+                  <MaterialSymbol name={addon.icon} className="text-2xl" />
                 </div>
                 <h4 className="text-lg font-bold text-white mb-1">{addon.name}</h4>
                 <p className="text-white/60 text-sm mb-3">{addon.description}</p>
-                <p className="text-orange-400 font-bold">{addon.price}</p>
-              </GlassCard>
+                <p className="text-primary-fixed font-bold">{addon.price}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
       {/* FAQ */}
-      <section className="pb-20 md:pb-32 relative">
-        <div className="max-w-3xl mx-auto px-4 md:px-8">
+      <section className="pb-16 sm:pb-24 lg:pb-32 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
               Câu Hỏi Thường Gặp
             </h2>
           </div>
 
           <div className="space-y-4">
             {faqs.map((faq, index) => (
-              <GlassCard key={index} className="overflow-hidden">
+              <div key={index} className="rounded-2xl overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10">
                 <button
                   onClick={() => setOpenFaq(openFaq === index ? null : index)}
                   className="w-full flex items-center justify-between p-6 text-left"
                 >
                   <span className="text-lg font-medium text-white pr-4">{faq.question}</span>
-                  <svg 
-                    className={`w-5 h-5 text-white/60 shrink-0 transition-transform ${openFaq === index ? 'rotate-180' : ''}`}
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+                  <MaterialSymbol 
+                    name={openFaq === index ? 'expand_less' : 'expand_more'} 
+                    className="text-white/60 text-2xl shrink-0" 
+                  />
                 </button>
                 {openFaq === index && (
                   <div className="px-6 pb-6 text-white/60">
                     {faq.answer}
                   </div>
                 )}
-              </GlassCard>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="pb-20 md:pb-32 relative">
-        <div className="max-w-4xl mx-auto px-4 md:px-8">
-          <GlassCard className="p-12 md:p-16 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-              Cần Tư Vấn Thêm?
-            </h2>
-            <p className="text-lg text-white/60 mb-8 max-w-xl mx-auto">
-              Đội ngũ của chúng tôi sẵn sàng hỗ trợ bạn chọn gói phù hợp nhất
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <GradientButton href="/contact" size="lg">
-                Liên Hệ Tư Vấn
-              </GradientButton>
-              <GradientButton href="/register" variant="outline" size="lg">
-                Dùng Thử Miễn Phí
-              </GradientButton>
+      <section className="pb-16 sm:pb-24 lg:pb-32 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="p-12 sm:p-16 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 text-center relative overflow-hidden">
+            {/* Background decoration */}
+            <div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-br from-primary-fixed/20 to-transparent rounded-full blur-3xl" />
+            <div className="absolute bottom-0 right-0 w-48 h-48 bg-gradient-to-br from-terracotta-400/20 to-transparent rounded-full blur-3xl" />
+            
+            <div className="relative z-10">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6">
+                Cần Tư Vấn Thêm?
+              </h2>
+              <p className="text-lg text-white/60 mb-8 max-w-xl mx-auto">
+                Đội ngũ của chúng tôi sẵn sàng hỗ trợ bạn chọn gói phù hợp nhất
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Link
+                  href="/contact"
+                  className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-primary-fixed text-on-primary-fixed-variant font-bold text-lg shadow-xl hover:bg-primary-container hover:scale-105 transition-all duration-300"
+                >
+                  Liên Hệ Tư Vấn
+                </Link>
+                <Link
+                  href="/register"
+                  className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-white/10 text-white font-semibold border border-white/20 hover:bg-white/20 transition-all duration-300"
+                >
+                  Dùng Thử Miễn Phí
+                </Link>
+              </div>
             </div>
-          </GlassCard>
+          </div>
         </div>
       </section>
     </>

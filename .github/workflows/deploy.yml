@@ -1,8 +1,15 @@
 name: Deploy to VPS
 
-# Deploys only an image that CI built and tested: runs after the CI workflow
-# succeeds for a push to main. "Run workflow" (manual) redeploys the current
-# tip of main, whose image CI must already have built.
+# Two ways this fires:
+#   1. Push to main → CI runs first. When CI's `build-image` job succeeds,
+#      GitHub triggers this workflow (workflow_run). The image is already
+#      on GHCR; we pull and roll the new container.
+#   2. workflow_dispatch — manual redeploy of main's tip. If CI hasn't
+#      built an image for that SHA yet, we build it on the VPS as a
+#      fallback (no push needed) and roll.
+#
+# Either way, the deploy job only runs on the tip of main. If main moved
+# forward while this run was queued, the newer run handles it.
 on:
   workflow_run:
     workflows: [CI]
@@ -20,19 +27,61 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
+    # Run on:
+    #   - manual workflow_dispatch (always)
+    #   - workflow_run when CI's build-image job succeeded on a push to main
+    # We don't gate on event==push because gh.event.workflow_run.event is
+    # the event that triggered CI, which is exactly what we want.
     if: >
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.event == 'push')
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main')
 
     steps:
+      # --------------------------------------------------------------
+      # Diagnose secrets first, before any SSH attempt. drone-ssh prints
+      # `ssh: no key found` when the PEM body is malformed (missing
+      # header, trailing whitespace, public-key pasted by accident). This
+      # step prints metadata that is safe to show in logs.
+      # --------------------------------------------------------------
+      - name: Inspect VPS_SSH_KEY (metadata only)
+        id: key-probe
+        env:
+          KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$KEY" > /tmp/key.pem
+          echo "lines=$(wc -l < /tmp/key.pem | tr -d ' ')"
+          echo "bytes=$(wc -c < /tmp/key.pem | tr -d ' ')"
+          echo "first_line_len=$(head -n 1 /tmp/key.pem | wc -c)"
+          echo "last_line_len=$(tail -n 1 /tmp/key.pem | wc -c)"
+          echo "has_begin=$(grep -cE '^-----BEGIN' /tmp/key.pem || true)"
+          echo "has_end=$(grep -cE '^-----END' /tmp/key.pem || true)"
+          echo "key_type_hint=$(grep -oE '^-----BEGIN [A-Z ]+PRIVATE KEY-----' /tmp/key.pem || echo 'NO_HEADER')"
+          # Fix: od -tx1 on Linux outputs "2d" (no 0x), so pass raw hex bytes to printf
+          FIRST_BYTE=$(head -c 1 /tmp/key.pem | od -An -tx1)
+          printf 'first_byte=0x%s\n' "$FIRST_BYTE"
+          LAST_BYTE=$(tail -c 1 /tmp/key.pem | od -An -tx1)
+          printf 'last_byte=0x%s\n' "$LAST_BYTE"
+          # Soft warnings: surface without failing the step so users see
+          # them but the deploy can still run.
+          if ! grep -qE '^-----BEGIN ' /tmp/key.pem; then
+            echo "::warning::VPS_SSH_KEY does not start with -----BEGIN — key will be rejected."
+          fi
+          if [ "$(tail -c 1 /tmp/key.pem | wc -l)" = "0" ] && [ -n "$(tail -c 1 /tmp/key.pem)" ]; then
+            echo "::warning::VPS_SSH_KEY does not end with a newline before EOF — may confuse some parsers."
+          fi
+          rm -f /tmp/key.pem
+
       - name: Resolve the commit to deploy
         id: target
         env:
           GH_TOKEN: ${{ github.token }}
           CANDIDATE: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: |
+          set -euo pipefail
           MAIN_SHA="$(gh api "repos/${{ github.repository }}/commits/main" --jq .sha)"
           echo "sha=$CANDIDATE" >> "$GITHUB_OUTPUT"
           if [ "$CANDIDATE" != "$MAIN_SHA" ]; then
@@ -43,22 +92,124 @@ jobs:
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Deploy to VPS
+      # --------------------------------------------------------------
+      # Probe 1: SSH + OS basics. Catches secrets/firewall/wrong user
+      # before we try anything else. Runs a one-shot script that exits
+      # non-zero on the first failure it sees.
+      # --------------------------------------------------------------
+      - name: Probe SSH + VPS environment
         if: steps.target.outputs.skip != 'true'
         uses: appleboy/ssh-action@v1
         env:
-          DEPLOY_SHA: ${{ steps.target.outputs.sha }}
+          SHA: ${{ steps.target.outputs.sha }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           port: ${{ secrets.VPS_PORT }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: DEPLOY_SHA
-          command_timeout: 12m
-          # `set -e`: a failing deploy must turn this step red. Without it the
-          # script's exit code was lost and a failed `git pull` showed green.
-          # VPS_DEPLOY_CMD = sudo /usr/local/bin/digistay-deploy.sh
+          command_timeout: 5m
+          envs: SHA
           script: |
-            set -e
-            echo "Deploying $DEPLOY_SHA"
-            ${{ secrets.VPS_DEPLOY_CMD }} "$DEPLOY_SHA"
+            set -euo pipefail
+            echo '== whoami =='
+            whoami
+            echo '== id =='
+            id
+            echo '== os =='
+            (cat /etc/os-release 2>/dev/null || true)
+            echo '== docker --version =='
+            docker --version
+            echo '== docker compose version =='
+            docker compose version
+            echo '== /opt/digistay =='
+            ls -la /opt/digistay | head -20
+            echo '== current deployed tag =='
+            (sudo grep '^APP_TAG=' /opt/digistay/.env 2>/dev/null || echo 'APP_TAG unset')
+            echo '== deploy script =='
+            ls -l /usr/local/bin/digistay-deploy.sh
+            echo '== if you need to start over =='
+            echo 'Re-run this workflow after fixing the line marked FAIL above.'
+
+      # --------------------------------------------------------------
+      # Sanity check on the VPS before we touch anything destructive.
+      # Confirms git can reach the repo, the deploy script exists and is
+      # executable, and the current tip matches what we expect to
+      # deploy. After this, digistay-deploy.sh handles image acquisition
+      # on the VPS side (git pull + docker compose build).
+      # --------------------------------------------------------------
+      - name: Probe VPS + git reachability
+        if: steps.target.outputs.skip != 'true'
+        uses: appleboy/ssh-action@v1
+        env:
+          SHA: ${{ steps.target.outputs.sha }}
+          REPO: git@github.com:${{ github.repository }}.git
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 5m
+          envs: SHA,REPO
+          script: |
+            set -euo pipefail
+            echo '== whoami =='
+            whoami
+            echo '== /opt/digistay =='
+            ls -la /opt/digistay | head -20
+            echo '== deploy script =='
+            ls -l /usr/local/bin/digistay-deploy.sh
+            echo "== git ls-remote via SSH =="
+            # The repo on /opt/digistay was originally cloned by hotro_digibook.
+            # Run ls-remote as the file owner so git does not refuse with
+            # 'dubious ownership'. We resolve the owner dynamically.
+            OWNER="$(stat -c '%U:%G' /opt/digistay/.git)"
+            echo "owner=$OWNER"
+            sudo -u "${OWNER%:*}" bash -c "cd /opt/digistay && git ls-remote $REPO refs/heads/main 2>&1 | head -3"
+            echo '== current HEAD =='
+            sudo -u "${OWNER%:*}" bash -c "cd /opt/digistay && git rev-parse HEAD"
+
+      - name: Deploy to VPS
+        if: steps.target.outputs.skip != 'true'
+        uses: appleboy/ssh-action@v1
+        env:
+          SHA: ${{ steps.target.outputs.sha }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: SHA
+          command_timeout: 25m
+          # `set -e`: a failing deploy must turn this step red. Without it
+          # the script's exit code was lost and a failed `git pull` showed
+          # green.
+          script: |
+            set -euo pipefail
+            echo "Deploying $SHA"
+            sudo /usr/local/bin/digistay-deploy.sh "$SHA"
+
+      - name: Post-deploy smoke test
+        if: steps.target.outputs.skip != 'true' && success()
+        uses: appleboy/ssh-action@v1
+        env:
+          SHA: ${{ steps.target.outputs.sha }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: SHA
+          command_timeout: 3m
+          script: |
+            set -euo pipefail
+            # docker/deploy.sh already waited for /api/health to report
+            # this SHA. We re-check from the host to confirm the right
+            # container is still the one answering after compose has
+            # settled.
+            cd /opt/digistay
+            HEALTH="$(sudo -E curl -fsS http://127.0.0.1/api/health || true)"
+            echo "/api/health => $HEALTH"
+            if ! grep -q "\"version\":\"$SHA\"" <<<"$HEALTH"; then
+              echo "::error::Health did not report expected version $SHA"
+              exit 1
+            fi

@@ -22,7 +22,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
     }
 
-    const where: any = {}
+    // Always the caller's workspaces; propertyId only narrows it.
+    const where: any = {
+      property: {
+        workspace: {
+          OR: [
+            { ownerId: session.user.id },
+            { members: { some: { userId: session.user.id } } },
+          ],
+        },
+      },
+    }
     if (propertyId) {
       where.propertyId = propertyId
     }

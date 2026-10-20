@@ -5,10 +5,19 @@ services:
   # Next.js 14 app (standalone build)
   # --------------------------------------------------------------
   app:
-    # APP_TAG is the git SHA of the deployed build. docker/deploy.sh records
-    # it in .env, so manual `docker compose` commands keep the same version.
-    # IMAGE_REPO only needs setting to use another registry.
-    image: ${IMAGE_REPO:-ghcr.io/vogiahuy2506-lang/digistay}:${APP_TAG:-latest}
+    # `build` is what the VPS deploy path uses: the deploy script checks out
+    # the target SHA into /opt/digistay and runs `docker compose build app`,
+    # so the image is produced on the host from the checked-out source. No
+    # registry push/pull is involved, which keeps private-repo credentials
+    # out of the VPS entirely.
+    #
+    # `image` still names the local tag so `docker compose` records it and
+    # the running container is traceable to a build. docker/deploy.sh and
+    # any manual `docker compose` invocation keep working unchanged.
+    image: digistay-app:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: digistay-app
     env_file:
       - .env.production

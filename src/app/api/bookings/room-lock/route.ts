@@ -12,7 +12,9 @@ const lockSchema = z.object({
   checkInDate: z.string(),
   checkOutDate: z.string(),
   customerInfo: z.string().optional(),
-  bookingId: z.string().optional(),
+  // No bookingId: this endpoint is public, and locks tied to a booking are
+  // written server-side (bookings/[id]/extend). A client value could tie a
+  // hold to any hotel's booking.
 })
 
 const LOCK_DURATION_MINUTES = 15 // Lock for 15 minutes
@@ -37,14 +39,14 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    const { propertyId, roomTypeId, checkInDate, checkOutDate, customerInfo, bookingId } = validation.data
+    const { propertyId, roomTypeId, checkInDate, checkOutDate, customerInfo } = validation.data
     const lockStart = new Date(checkInDate)
     const lockEnd = new Date(checkOutDate)
     const expiresAt = new Date(Date.now() + LOCK_DURATION_MINUTES * 60 * 1000)
 
-    // Check if room type has availability
-    const roomType = await prisma.roomType.findUnique({
-      where: { id: roomTypeId },
+    // The room type must be this property's (availability below counts by both)
+    const roomType = await prisma.roomType.findFirst({
+      where: { id: roomTypeId, propertyId },
       select: { totalRooms: true },
     })
 
@@ -119,7 +121,6 @@ export async function POST(request: NextRequest) {
         type: 'HOLD',
         sessionId: session,
         customerInfo,
-        bookingId,
         expiresAt,
       },
     })
@@ -152,11 +153,15 @@ export async function DELETE(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Delete by lockId or by sessionId
+    // Delete by lockId or by sessionId. Only guest holds: maintenance and
+    // booked locks belong to the hotel and have their own staff routes.
     if (lockId) {
-      await prisma.roomLock.delete({
-        where: { id: lockId },
+      const { count } = await prisma.roomLock.deleteMany({
+        where: { id: lockId, type: 'HOLD' },
       })
+      if (count === 0) {
+        return NextResponse.json({ success: false, error: 'Không tìm thấy lượt giữ phòng' }, { status: 404 })
+      }
     } else if (session) {
       await prisma.roomLock.deleteMany({
         where: {
