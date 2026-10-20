@@ -147,6 +147,9 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
   - Tạo đơn: chỉ qua `src/lib/bookings/create-booking.ts` (nhân viên `POST /api/bookings`, khách
     `POST /api/public/bookings`), dưới khoá dòng hạng phòng. `subtotal` = tiền phòng,
     `extraCharges` = phụ thu + dịch vụ, `totalAmount` = tổng.
+  - Phí trả phòng muộn: `src/lib/bookings/late-checkout.ts`, tính từ giờ trả phòng của khách sạn
+    (Chính sách) vào **ngày trả đã đặt**, giờ Việt Nam. Cộng vào tổng hiện có (không dựng lại tổng
+    từ `subtotal`, sẽ mất giảm giá).
 - **Site công khai của khách sạn được cache** theo khách sạn (`src/lib/public-site/site.ts`, tối
   đa 5 phút). Handler nào ghi dữ liệu site hiển thị (khách sạn, ảnh, tiện ích, hạng phòng, giá,
   dịch vụ, website) phải gọi `invalidatePublicSite(propertyId)`; `public-site-cache.test.ts` chặn.
