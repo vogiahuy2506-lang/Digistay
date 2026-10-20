@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { normalizeHostname } from '@/lib/custom-domain'
+
+// propertyId must be a string: undefined or a filter object reaching
+// Prisma would match the wrong property.
+const putSchema = z.object({
+  propertyId: z.string().min(1),
+  settings: z.record(z.any()),
+})
 
 /**
  * GET /api/website/settings?propertyId=xxx
@@ -65,17 +74,21 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const session = await auth()
-    const body = await request.json()
-    const { propertyId, settings } = body
 
     if (!session?.user?.id) {
       return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
     }
 
+    const body = putSchema.safeParse(await request.json().catch(() => null))
+    if (!body.success) {
+      return NextResponse.json({ success: false, error: 'Dữ liệu không hợp lệ' }, { status: 400 })
+    }
+    const { settings } = body.data
+
     // Check property access
     const property = await prisma.property.findFirst({
       where: {
-        id: propertyId,
+        id: body.data.propertyId,
         workspace: {
           OR: [
             { ownerId: session.user.id },
@@ -88,6 +101,36 @@ export async function PUT(request: NextRequest) {
     if (!property) {
       return NextResponse.json({ success: false, error: 'Không có quyền chỉnh sửa' }, { status: 403 })
     }
+    const propertyId = property.id
+
+    // The form sends the domain back unchanged, or empty to remove it. A new
+    // domain is attached only by /api/website/domain/verify, after the DNS
+    // proves this workspace owns it (saving it here once kept "verified"
+    // on any domain typed in).
+    const current = await prisma.websiteSettings.findUnique({
+      where: { propertyId },
+      select: { customDomain: true },
+    })
+    const requested = settings.customDomain
+    const removeDomain = (requested === null || requested === '') && current?.customDomain != null
+    const unchanged = requested === current?.customDomain || normalizeHostname(requested) === current?.customDomain
+    if (typeof requested === 'string' && requested !== '' && !unchanged) {
+      return NextResponse.json(
+        { success: false, error: 'Gắn tên miền riêng bằng nút "Xác minh tên miền" (cần thêm bản ghi DNS).' },
+        { status: 400 }
+      )
+    }
+    const domainFields = removeDomain
+      ? {
+          customDomain: null,
+          domainVerificationStatus: null,
+          domainVerifiedAt: null,
+          sslEnabled: false,
+          sslVerifiedAt: null,
+          sslCertificateId: null,
+          sslProvider: null,
+        }
+      : {}
 
     // Update or create settings
     const updatedSettings = await prisma.websiteSettings.upsert({
@@ -101,7 +144,7 @@ export async function PUT(request: NextRequest) {
         layout: settings.layout,
         metaTitle: settings.metaTitle,
         metaDescription: settings.metaDescription,
-        customDomain: settings.customDomain,
+        ...domainFields,
         isPublished: settings.isPublished,
         publishedAt: settings.isPublished ? new Date() : null,
       },
@@ -115,7 +158,6 @@ export async function PUT(request: NextRequest) {
         layout: settings.layout || 'modern',
         metaTitle: settings.metaTitle,
         metaDescription: settings.metaDescription,
-        customDomain: settings.customDomain,
         isPublished: settings.isPublished || false,
       },
     })

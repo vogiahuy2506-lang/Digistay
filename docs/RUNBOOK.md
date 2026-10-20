@@ -680,6 +680,47 @@ lỗi chứng chỉ không thể bỏ qua, vì HSTS đang bật `includeSubDomai
 
 ---
 
+## Tên miền riêng của khách sạn
+
+Khách sạn gắn tên miền của mình (vd `www.khachsan.vn`) bằng nút xác minh tên miền
+(`POST /api/website/domain/verify`, chỉ ADMIN/MANAGER). Chỉ gắn được khi DNS có đủ hai thứ:
+- **Trỏ đúng site:** CNAME `www.khachsan.vn` → `<subdomain của chính site đó>.digistay.vn`. Tên miền
+  gốc (`khachsan.vn`) không đặt CNAME được: dùng bản ghi A, mọi địa chỉ phải là IP của `digistay.vn`.
+- **Chứng minh chủ sở hữu:** TXT `_digistay-verify.<tên miền>` = `digistay-verify=<mã>`. Mã do app
+  tính từ workspace + tên miền (HMAC, khoá dẫn xuất từ `NEXTAUTH_SECRET`); API trả về trong
+  `data.records.txt`.
+
+Chỉ CNAME/A là chưa đủ: khách sạn cũ rời đi mà quên xoá DNS thì tên miền vẫn trỏ về Digistay, và
+ai cũng gắn được. Đổi `NEXTAUTH_SECRET` làm đổi mọi mã: tên miền đã gắn không bị ảnh hưởng, chỉ lần
+gắn mới phải thêm TXT mới. Kiểm thất bại (kể cả DNS lỗi tạm thời) không ghi gì vào DB.
+
+**Hiện chưa phục vụ:** app chưa trả site theo tên miền riêng (middleware chỉ xử lý
+`*.digistay.vn`), và `/api/website/ssl/provision` vẫn là bản mô phỏng. Phần này chỉ bảo đảm không
+ai gắn được tên miền của người khác trước khi tính năng đó có.
+
+**Trước khi deploy migration `20261021030000_custom_domain_unique`**, đo trên production:
+```bash
+sudo docker compose exec -T postgres psql -U digistay -d digistay -c \
+  "SELECT lower(\"customDomain\"), count(*) FROM website_settings
+   WHERE \"customDomain\" IS NOT NULL AND btrim(\"customDomain\") <> ''
+   GROUP BY 1 HAVING count(*) > 1;"
+```
+Phải ra 0 dòng. Có dòng thì DỪNG: chọn site nào giữ tên miền là việc của người, không để migration
+chọn (migration sẽ fail nếu trùng đúng chữ).
+
+**Tên miền đang bị site khác giữ (API trả 409).** App không bao giờ tự gỡ khỏi site cũ. Người vận hành:
+1. Người yêu cầu thêm bản ghi TXT có trong phản hồi 409 (`data.records.txt`).
+2. Kiểm: `dig +short TXT _digistay-verify.<tên miền>` phải ra đúng giá trị đó.
+3. Gỡ khỏi site cũ, ghi lại ai yêu cầu và lúc nào:
+   ```bash
+   sudo docker compose exec -T postgres psql -U digistay -d digistay -c \
+     "UPDATE website_settings SET \"customDomain\" = NULL, \"domainVerificationStatus\" = NULL,
+      \"domainVerifiedAt\" = NULL, \"sslEnabled\" = false WHERE \"customDomain\" = '<tên miền>';"
+   ```
+4. Người yêu cầu bấm xác minh lại.
+
+---
+
 ## Đặt lại xác thực hai lớp
 
 Xác thực hai lớp (2FA) là **tuỳ chọn**, người dùng tự bật ở Hồ sơ → Bảo mật. Mất điện thoại thì
