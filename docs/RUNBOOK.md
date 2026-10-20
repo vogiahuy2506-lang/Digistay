@@ -590,6 +590,28 @@ docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -
 
 ---
 
+## Bật Cloudflare proxy (đám mây cam)
+
+DNS của digistay.vn nằm ở Cloudflare nhưng **chưa bật proxy** (response không có header `cf-ray`).
+Bật proxy thì có chống DDoS, cache file tĩnh ở biên, và giấu IP của VPS. nginx đã sẵn sàng:
+`docker/nginx/conf.d/cloudflare-real-ip.inc` lấy IP thật của khách từ `CF-Connecting-IP`, **chỉ**
+khi kết nối đến từ dải IP của Cloudflare. Không có file này, mọi khách sẽ mang IP của Cloudflare
+và giới hạn số lần thử/khoá tài khoản sẽ khoá nhầm cả đám đông.
+
+1. Deploy bản có file này. Kiểm: `curl -sI https://digistay.vn | grep -i server` vẫn ra nginx.
+2. Cloudflare → SSL/TLS: chế độ **Full (strict)** (VPS có chứng chỉ Let's Encrypt hợp lệ). Đừng
+   dùng "Flexible": Cloudflare sẽ gọi VPS bằng HTTP và nginx chuyển hướng vòng tròn.
+3. Cloudflare → DNS: bật đám mây cam cho `digistay.vn`, `www` và `*` (nếu đã có).
+4. Kiểm: `curl -sI https://digistay.vn | grep -i cf-ray` có kết quả; đăng nhập sai vài lần rồi xem
+   log app: IP trong cảnh báo là IP thật, không phải `172.64…`/`104.16…`.
+5. Gia hạn chứng chỉ dùng DNS-01 qua API Cloudflare nên không bị ảnh hưởng.
+
+Tuỳ chọn, sau khi ổn định: chặn cổng 80/443 với mọi IP ngoài dải Cloudflare (firewall GCE) để
+không ai đi vòng qua Cloudflare. Danh sách dải IP đổi rất hiếm; khi Cloudflare thông báo thay đổi:
+`bash docker/nginx/update-cloudflare-ips.sh`, xem diff, commit.
+
+---
+
 ## Kiểm thử trình duyệt (e2e)
 
 Workflow `E2E` (`.github/workflows/e2e.yml`) chạy Playwright mỗi đêm lúc 03:00 trên `main`, với bản

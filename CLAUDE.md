@@ -146,6 +146,9 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
 - `/workspace-picker/*` luôn chuyển về `/workspaces`: layout của nó nằm trên `[slug]` nên không
   bao giờ nhận được `slug` (có từ trước, Next 15 mới lộ ra khi kiểm kiểu). Dọn hay sửa là quyết
   định sản phẩm; trang lời mời đang trỏ tới đó.
+- IP khách: app chỉ tin `X-Real-IP` do nginx đặt bằng `$remote_addr`; sau Cloudflare thì
+  `cloudflare-real-ip.inc` sửa `$remote_addr` thành IP thật, chỉ với kết nối từ dải IP Cloudflare.
+  Không bao giờ thêm dải nội bộ hay `0.0.0.0/0` vào đó (`scripts/nginx-config.test.mjs` chặn).
 - Header bảo mật nằm ở nginx: `docker/nginx/conf.d/security-headers.inc`, include ở server
   và ở mọi `location` có `add_header` riêng. Sửa `app-secure.conf.template`, không sửa file
   sinh ra — `docker/deploy.sh` sinh lại và reload nginx mỗi lần deploy.
