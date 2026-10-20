@@ -108,12 +108,13 @@ function loadKeyring(): Keyring {
 }
 
 /**
- * For /api/health: throws when DATA_ENCRYPTION_KEYS is set but malformed,
- * so a deploy with a broken key fails (and rolls back) instead of failing
- * later on the first payment. Unset is fine until a feature needs it.
+ * For /api/health: throws when DATA_ENCRYPTION_KEYS is missing or
+ * malformed, so a deploy without a usable key fails (and rolls back)
+ * instead of locking out users with two-factor sign-in (required since
+ * Part 4f, which is the first feature to store secrets).
  */
-export function assertKeysValidIfSet(): void {
-  if (process.env[KEYS_ENV]?.trim()) loadKeyring()
+export function assertKeysConfigured(): void {
+  loadKeyring()
 }
 
 /**

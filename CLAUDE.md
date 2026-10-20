@@ -140,6 +140,10 @@ sạn, đặt lại mật khẩu chỉ cần email, email trong phiên do client
   Chưa cấu hình thì lưu `null`. Không bao giờ trả giá trị đã giải mã ra trình duyệt: trả
   `maskSecret()`, ô nhập để trống nghĩa là giữ nguyên. Khoá mã hoá: RUNBOOK, "Khoá mã hoá dữ liệu".
 - Không lưu token OAuth: chỉ dùng Google để đăng nhập (`src/lib/auth/adapter.ts`).
+- Xác thực hai lớp (`src/lib/auth/two-factor.ts`) là **tuỳ chọn, không bao giờ bắt buộc**. Khi
+  đã bật, mật khẩu đúng hoặc Google đúng **không tạo phiên**: chỉ trả "vé" chờ nhập mã, provider
+  `two-factor` mới tạo phiên. Thêm cách đăng nhập mới thì phải đi qua bước này. Không có đường
+  tắt 2FA qua email; đặt lại theo RUNBOOK, "Đặt lại xác thực hai lớp".
 
 ## Kế hoạch gia cố
 
@@ -157,7 +161,7 @@ dùng duyệt rồi mới làm, trên nhánh riêng. Cập nhật trạng thái 
 4. Bảo mật nền — 4a vá chiếm tài khoản (PR #2), 4b giới hạn tần suất + khoá tài khoản + đăng
    xuất khi đổi mật khẩu (PR #3), 4c test chính sách route + gitleaks + `.gitignore` — xong.
    4d header bảo mật + tắt bộ tối ưu ảnh, 4e tiện ích mã hoá khoá bên thứ ba + bỏ lưu token
-   OAuth — xong. Còn: 4f 2FA (TOTP, **không bắt buộc** — người dùng tự bật)
+   OAuth, 4f xác thực hai lớp TOTP (**không bắt buộc** — người dùng tự bật) — xong.
 5. Thanh toán PayOS hoặc SePay, mỗi khách sạn một bộ khoá; sửa nhánh tiền mặt đang đặt
    `PAID` bất kể số tiền và không cập nhật `depositAmount`
 6. Hoá đơn điện tử Mắt Bão

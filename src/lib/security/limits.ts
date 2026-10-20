@@ -22,7 +22,15 @@ export const LIMITS = {
   /** Wrong current password when changing password/email, per user (failures only). */
   passwordCheckUser: { name: 'password-check-user', limit: 5, windowSec: 15 * MIN },
   roomLockIp: { name: 'room-lock-ip', limit: 30, windowSec: 10 * MIN },
+  /** Wrong two-factor codes at sign-in from one IP, across accounts (failures only). */
+  twoFactorVerifyIp: { name: '2fa-verify-ip', limit: 20, windowSec: 15 * MIN },
+  /** Wrong codes while turning two-factor on, per user (failures only). */
+  twoFactorSetupUser: { name: '2fa-setup-user', limit: 10, windowSec: 15 * MIN },
 } satisfies Record<string, Limit>
+
+/** Wrong two-factor codes on one account before it is locked (kept in Postgres, see two-factor.ts). */
+export const TWO_FACTOR_LOCK_AFTER = 5
+export const TWO_FACTOR_LOCK_SEC = 15 * MIN
 
 /** How long an account stays locked after LIMITS.accountFailures. */
 export const ACCOUNT_LOCK_SEC = 30 * MIN

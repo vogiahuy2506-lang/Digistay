@@ -25,7 +25,8 @@ const AUTH_HELPERS = new Set(['auth', 'getServerSession', 'requireSession', 'req
 /** Reviewed public handlers. Key: "METHOD /api/path". Keep the reason specific. */
 const PUBLIC_HANDLERS: Record<string, string> = {
   'GET /api/auth/[...nextauth]': 'next-auth endpoints (session, csrf, providers); sign-in is guarded inside next-auth',
-  'POST /api/auth/[...nextauth]': 'next-auth sign-in/sign-out; credentials limits in src/lib/auth/credentials.ts',
+  'POST /api/auth/[...nextauth]':
+    'next-auth sign-in/sign-out; password limits in src/lib/auth/credentials.ts, two-factor step in two-factor-login.ts',
   'POST /api/auth/otp/send': 'sends signup/forgot-password codes; per-IP + per-email limits, same answer for unknown emails',
   'POST /api/auth/otp/verify': 'checks forgot-password codes; 5 tries per code, per-IP failure limit',
   'POST /api/auth/register': 'sign-up and signup-code check; per-IP limits',

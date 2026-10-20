@@ -5,6 +5,9 @@ import { prisma } from '@/lib/db'
 import { createAuthAdapter } from './adapter'
 import { authorizeWithPassword } from './credentials'
 import { isSessionRevoked, SessionRevokedError } from './session-revocation'
+import { requireSecondFactorIfEnabled } from './two-factor'
+import { authorizeWithSecondFactor, googleSignInGate } from './two-factor-login'
+import { TWO_FACTOR_PROVIDER } from './two-factor-shared'
 
 export { getServerSession }
 
@@ -36,11 +39,31 @@ export const authOptions: NextAuthOptions = {
       },
       // Brute-force limits and account lock: see ./credentials.ts
       async authorize(credentials, req) {
-        return authorizeWithPassword(credentials, req?.headers)
+        const user = await authorizeWithPassword(credentials, req?.headers)
+        // Two-factor on: no session yet, the login page asks for the code.
+        await requireSecondFactorIfEnabled(user.id, 'password')
+        return user
+      },
+    }),
+    // Second step of a sign-in with two-factor on: see ./two-factor.ts
+    CredentialsProvider({
+      id: TWO_FACTOR_PROVIDER,
+      name: TWO_FACTOR_PROVIDER,
+      credentials: {
+        challenge: { type: 'text' },
+        code: { label: 'Mã xác thực', type: 'text' },
+      },
+      async authorize(credentials, req) {
+        return authorizeWithSecondFactor(credentials, req?.headers)
       },
     }),
   ],
   callbacks: {
+    // Google with two-factor on: no session yet, send the user to the code step.
+    async signIn({ user, account }) {
+      if (account?.provider !== 'google') return true
+      return googleSignInGate(account, user.email)
+    },
     async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id

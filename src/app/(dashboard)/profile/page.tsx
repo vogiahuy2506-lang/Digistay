@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
+import { TwoFactorCard } from './two-factor-card'
 
 interface UserProfile {
   id: string
@@ -681,6 +682,8 @@ export default function ProfilePage() {
               </div>
             </CardContent>
           </Card>
+
+          <TwoFactorCard />
 
           {/* Security Info */}
           <Card className="border-green-200 bg-green-50/50">

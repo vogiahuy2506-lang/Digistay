@@ -3,7 +3,7 @@ import { randomBytes } from 'crypto'
 import {
   KEYS_ENV,
   SecretBoxError,
-  assertKeysValidIfSet,
+  assertKeysConfigured,
   decryptSecret,
   encryptSecret,
   maskSecret,
@@ -153,14 +153,14 @@ describe('parseKeyring', () => {
   })
 })
 
-describe('assertKeysValidIfSet', () => {
-  it('accepts an unset or valid value and rejects a malformed one', () => {
-    useKeys(undefined)
-    expect(() => assertKeysValidIfSet()).not.toThrow()
+describe('assertKeysConfigured', () => {
+  it('accepts a valid value and rejects a missing or malformed one', () => {
     useKeys(`1:${KEY_1}`)
-    expect(() => assertKeysValidIfSet()).not.toThrow()
+    expect(() => assertKeysConfigured()).not.toThrow()
+    useKeys(undefined)
+    expect(() => assertKeysConfigured()).toThrow(/is not set/)
     useKeys('1:CHANGE_ME')
-    expect(() => assertKeysValidIfSet()).toThrow(SecretBoxError)
+    expect(() => assertKeysConfigured()).toThrow(SecretBoxError)
   })
 })
 
