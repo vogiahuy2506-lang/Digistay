@@ -1,4 +1,6 @@
 import { prisma } from '@/lib/db'
+import { ratesFrom } from '@/lib/pricing/quote'
+import { ROOM_RATE_INCLUDE, propertyRateDefaults } from '@/lib/pricing/rates'
 import { notFound } from 'next/navigation'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
@@ -20,7 +22,7 @@ export default async function RoomDetailPage({ params }: PageProps) {
         where: { id: roomId, isActive: true },
         include: {
           images: { orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }] },
-          pricing: { include: { pricing: true }, take: 1, orderBy: { createdAt: 'desc' } },
+          ...ROOM_RATE_INCLUDE,
           amenities: { include: { amenity: true } },
         },
       },
@@ -33,7 +35,8 @@ export default async function RoomDetailPage({ params }: PageProps) {
   }
 
   const room = property.roomTypes[0]
-  const pricing = room.pricing[0]?.pricing
+  // The rates a booking is charged (src/lib/pricing/quote.ts); null: no price yet.
+  const pricing = ratesFrom(room.pricing[0], await propertyRateDefaults(prisma, property.id))
   const primaryColor = property.websiteSettings?.primaryColor ?? '#3B82F6'
 
   const BED_LABELS: Record<string, string> = {
@@ -146,8 +149,8 @@ export default async function RoomDetailPage({ params }: PageProps) {
               <div className="mb-4">
                 <p className="text-sm text-gray-500">Giá từ</p>
                 <p className="text-3xl font-bold" style={{ color: primaryColor }}>
-                  {formatCurrency(pricing?.weekdayPrice || 0)}
-                  <span className="text-base font-normal text-gray-400"> /đêm</span>
+                  {pricing ? formatCurrency(pricing.weekdayPrice) : 'Liên hệ'}
+                  {pricing && <span className="text-base font-normal text-gray-400"> /đêm</span>}
                 </p>
                 {pricing?.weekendPrice && pricing.weekendPrice !== pricing.weekdayPrice && (
                   <p className="text-sm text-gray-500 mt-1">
@@ -156,7 +159,8 @@ export default async function RoomDetailPage({ params }: PageProps) {
                 )}
               </div>
 
-              <form action={`/${subdomain}/booking`} method="GET">
+              {/* The search page takes the booking (there is no /booking page). */}
+              <form action={`/${subdomain}/search`} method="GET">
                 <input type="hidden" name="roomTypeId" value={room.id} />
                 <input type="hidden" name="checkIn" value={format(new Date(), 'yyyy-MM-dd')} />
                 <input type="hidden" name="checkOut" value={format(new Date(Date.now() + 86400000), 'yyyy-MM-dd')} />

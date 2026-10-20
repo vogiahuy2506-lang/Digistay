@@ -15,7 +15,7 @@ vi.mock('@/lib/email', async (importOriginal) => ({
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { createTenant, resetDatabase } from '@/test/integration/fixtures'
+import { createRoomType, createTenant, resetDatabase } from '@/test/integration/fixtures'
 import { OUTBOX_MAX_ATTEMPTS, queueEmail, sendDueEmails, sendQueuedEmail } from './outbox'
 import { findProblems } from '@/lib/ops/alerts'
 import { POST as createBooking } from '@/app/api/bookings/route'
@@ -28,11 +28,7 @@ const signInAs = (user: { id: string; email: string }) =>
   vi.mocked(auth).mockResolvedValue({ user: { id: user.id, email: user.email } } as never)
 const post = (body: object) => new NextRequest('http://digistay.test/api/x', { method: 'POST', body: JSON.stringify(body) })
 
-async function roomType(propertyId: string, totalRooms = 1) {
-  return prisma.roomType.create({
-    data: { propertyId, name: 'Deluxe', slug: `deluxe-${Math.random().toString(36).slice(2, 7)}`, bedType: 'DOUBLE', totalRooms },
-  })
-}
+const roomType = (propertyId: string, totalRooms = 1) => createRoomType(propertyId, { totalRooms })
 
 const bookingBody = (propertyId: string, roomTypeId: string) => ({
   propertyId,

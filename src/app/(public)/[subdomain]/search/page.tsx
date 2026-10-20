@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
+import { quoteStay, type PricedService } from '@/lib/pricing/quote'
 
 interface RoomType {
   id: string
@@ -34,11 +35,18 @@ interface RoomType {
   numNights: number
 }
 
+interface Service extends PricedService {
+  description: string | null
+}
+
 interface Property {
   id: string
   name: string
   subdomain: string
+  extraServices: Service[]
 }
+
+const SERVICE_UNIT: Record<string, string> = { FIXED: 'lần', PER_NIGHT: 'đêm', PER_PERSON: 'người' }
 
 const AMENITY_ICONS: Record<string, React.ReactNode> = {
   wifi: <Wifi className="w-4 h-4" />,
@@ -91,9 +99,10 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
     email: '',
     note: '',
   })
-  const [selectedServices, setSelectedServices] = React.useState<Array<{ id: string; name: string; price: number }>>([])
+  // Ids of the hotel's own services (GET /api/properties/public)
+  const [selectedServices, setSelectedServices] = React.useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = React.useState(false)
-  const [bookingResult, setBookingResult] = React.useState<{ bookingCode: string } | null>(null)
+  const [bookingResult, setBookingResult] = React.useState<{ bookingCode: string; totalAmount: number } | null>(null)
   const [bookingError, setBookingError] = React.useState('')
 
   React.useEffect(() => {
@@ -128,8 +137,9 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
     try {
       const res = await fetch(`/api/properties/public?subdomain=${subdomain}`)
       const data = await res.json()
-      if (data.success && data.data.length > 0) {
-        setProperty(data.data[0])
+      // One property (an object): the page used to expect an array and never loaded.
+      if (data.success && data.data) {
+        setProperty(data.data)
       }
     } catch (err) {
       console.error('Failed to fetch property:', err)
@@ -204,33 +214,28 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
 
   const calculateNights = () => differenceInDays(new Date(checkOut), new Date(checkIn))
 
+  // The server prices bookings with this same function (src/lib/pricing/quote.ts).
   const calculatePrice = (roomType: RoomType) => {
-    const nights = calculateNights()
-    const { weekdayPrice, weekendPrice } = roomType.pricing
-    
-    let weekdayNights = 0
-    let weekendNights = 0
-    
-    let current = new Date(checkIn)
-    while (current < new Date(checkOut)) {
-      const day = current.getDay()
-      if (day === 0 || day === 6) weekendNights++
-      else weekdayNights++
-      current = addDays(current, 1)
-    }
-    
+    const services = (property?.extraServices ?? []).filter((sv) => selectedServices.includes(sv.id))
+    const quote = quoteStay({
+      rates: roomType.pricing,
+      checkIn: new Date(checkIn),
+      checkOut: new Date(checkOut),
+      numAdults: guests,
+      numChildren: 0,
+      baseOccupancy: roomType.baseOccupancy,
+      services: services.map((service) => ({ service, quantity: 1 })),
+    })
     return {
-      weekdayTotal: weekdayNights * weekdayPrice,
-      weekendTotal: weekendNights * weekendPrice,
-      subtotal: weekdayNights * weekdayPrice + weekendNights * weekendPrice,
-      serviceTotal: selectedServices.reduce((sum, s) => sum + s.price, 0),
-      total: weekdayNights * weekdayPrice + weekendNights * weekendPrice + selectedServices.reduce((sum, s) => sum + s.price, 0),
+      ...quote,
+      /** the room, extra guests included */
+      subtotal: quote.basePrice + quote.extraAdultCharge + quote.extraChildCharge,
     }
   }
 
   const handleSubmitBooking = async () => {
-    if (!guestInfo.name || !guestInfo.phone) {
-      setBookingError('Vui lòng nhập đầy đủ thông tin')
+    if (!guestInfo.name || !guestInfo.phone || !guestInfo.email) {
+      setBookingError('Vui lòng nhập họ tên, số điện thoại và email (để nhận xác nhận)')
       return
     }
     
@@ -238,7 +243,7 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
     setBookingError('')
     
     try {
-      const res = await fetch('/api/bookings', {
+      const res = await fetch('/api/public/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -252,14 +257,16 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
           checkOutDate: checkOut,
           numAdults: guests,
           numChildren: 0,
-          extraServices: selectedServices.map(s => ({ serviceId: s.id, quantity: 1 })),
+          services: selectedServices.map((serviceId) => ({ serviceId, quantity: 1 })),
+          // Our hold: released by the booking instead of blocking it.
+          ...(lockInfo?.lockId && { holdId: lockInfo.lockId }),
         }),
       })
       
       const data = await res.json()
       
       if (data.success) {
-        setBookingResult({ bookingCode: data.data.bookingCode })
+        setBookingResult({ bookingCode: data.data.bookingCode, totalAmount: data.data.totalAmount })
         setBookingStep(4)
       } else {
         setBookingError(data.error || 'Đặt phòng thất bại')
@@ -460,8 +467,9 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
                         {/* Actions */}
                         <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
                           <p className="text-sm text-gray-500">
-                            {pricing.weekdayTotal > 0 && `${pricing.weekdayTotal / calculateNights() * Math.max(1, calculateNights() - Math.ceil(calculateNights() * 0.4))}đ ngày thường`}
-                            {pricing.weekendTotal > 0 && ` + ${formatPrice(pricing.weekendTotal)} cuối tuần`}
+                            {pricing.weekdayNights > 0 && `${pricing.weekdayNights} đêm ngày thường`}
+                            {pricing.weekendNights > 0 && `${pricing.weekdayNights > 0 ? ' + ' : ''}${pricing.weekendNights} đêm cuối tuần (${formatPrice(roomType.pricing.weekendPrice)}/đêm)`}
+                            {pricing.extraAdults > 0 && ` · phụ thu ${pricing.extraAdults} người lớn`}
                           </p>
                           <div className="flex gap-2">
                             <Button
@@ -590,49 +598,36 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
                   </p>
                   
                   <div className="space-y-3 mb-6">
-                    <label className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={selectedServices.some(s => s.id === 'breakfast')}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedServices([...selectedServices, { id: 'breakfast', name: 'Ăn sáng', price: 150000 * calculateNights() }])
-                            } else {
-                              setSelectedServices(selectedServices.filter(s => s.id !== 'breakfast'))
-                            }
-                          }}
-                          className="w-5 h-5 text-blue-600"
-                        />
-                        <div>
-                          <p className="font-medium">Ăn sáng buffet</p>
-                          <p className="text-sm text-gray-500">150.000đ/người/ngày</p>
-                        </div>
-                      </div>
-                      <span className="font-semibold">{formatPrice(150000 * calculateNights() * guests)}</span>
-                    </label>
-                    
-                    <label className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={selectedServices.some(s => s.id === 'airport')}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedServices([...selectedServices, { id: 'airport', name: 'Đưa đón sân bay', price: 300000 }])
-                            } else {
-                              setSelectedServices(selectedServices.filter(s => s.id !== 'airport'))
-                            }
-                          }}
-                          className="w-5 h-5 text-blue-600"
-                        />
-                        <div>
-                          <p className="font-medium">Đưa đón sân bay</p>
-                          <p className="text-sm text-gray-500">300.000đ/chuyến</p>
-                        </div>
-                      </div>
-                      <span className="font-semibold">{formatPrice(300000)}</span>
-                    </label>
+                    {(property?.extraServices ?? []).length === 0 && (
+                      <p className="text-sm text-gray-500">Khách sạn chưa có dịch vụ kèm theo để đặt trước.</p>
+                    )}
+                    {(property?.extraServices ?? []).map((service) => {
+                      const line = calculatePrice(selectedRoomType).services.find((l) => l.serviceId === service.id)
+                      return (
+                        <label key={service.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedServices.includes(service.id)}
+                              onChange={(e) =>
+                                setSelectedServices(
+                                  e.target.checked ? [...selectedServices, service.id] : selectedServices.filter((id) => id !== service.id)
+                                )
+                              }
+                              className="w-5 h-5 text-blue-600"
+                            />
+                            <div>
+                              <p className="font-medium">{service.name}</p>
+                              <p className="text-sm text-gray-500">
+                                {formatPrice(service.price)}/{SERVICE_UNIT[service.priceType] ?? 'lần'}
+                                {service.perPerson && service.priceType !== 'PER_PERSON' && '/người'}
+                              </p>
+                            </div>
+                          </div>
+                          {line && <span className="font-semibold">{formatPrice(line.amount)}</span>}
+                        </label>
+                      )
+                    })}
                   </div>
 
                   {/* Summary */}
@@ -643,10 +638,10 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
                         <span>Phòng ({calculateNights()} đêm)</span>
                         <span>{formatPrice(calculatePrice(selectedRoomType).subtotal)}</span>
                       </div>
-                      {selectedServices.map(s => (
-                        <div key={s.id} className="flex justify-between">
-                          <span>{s.name}</span>
-                          <span>{formatPrice(s.price)}</span>
+                      {calculatePrice(selectedRoomType).services.map((line) => (
+                        <div key={line.serviceId} className="flex justify-between">
+                          <span>{line.name}</span>
+                          <span>{formatPrice(line.amount)}</span>
                         </div>
                       ))}
                       <div className="flex justify-between font-bold text-base pt-2 border-t">
@@ -711,10 +706,10 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
                         <span>{selectedRoomType.name} ({calculateNights()} đêm)</span>
                         <span>{formatPrice(calculatePrice(selectedRoomType).subtotal)}</span>
                       </div>
-                      {selectedServices.map(s => (
-                        <div key={s.id} className="flex justify-between">
-                          <span>{s.name}</span>
-                          <span>{formatPrice(s.price)}</span>
+                      {calculatePrice(selectedRoomType).services.map((line) => (
+                        <div key={line.serviceId} className="flex justify-between">
+                          <span>{line.name}</span>
+                          <span>{formatPrice(line.amount)}</span>
                         </div>
                       ))}
                       <div className="flex justify-between font-bold text-lg pt-2 border-t">
@@ -748,7 +743,7 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
                   <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
                     <Check className="w-10 h-10 text-green-600" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Đặt phòng thành công!</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Đã gửi yêu cầu đặt phòng</h3>
                   <p className="text-gray-500 mb-4">
                     Mã đặt phòng của bạn là
                   </p>
@@ -756,7 +751,8 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
                     {bookingResult.bookingCode}
                   </p>
                   <p className="text-sm text-gray-500 mb-6">
-                    Vui lòng ghi nhớ mã đặt phòng này để check-in
+                    Khách sạn sẽ liên hệ để xác nhận. Email xác nhận đã được gửi tới {guestInfo.email}; vui lòng giữ mã
+                    đặt phòng này để nhận phòng.
                   </p>
                   <div className="bg-gray-50 rounded-lg p-4 text-left text-sm mb-6">
                     <p className="font-medium mb-2">Thông tin đặt phòng:</p>
@@ -764,6 +760,7 @@ export default function SearchPage({ params }: { params: Promise<{ subdomain: st
                     <p>• Nhận phòng: {formatDate(checkIn)}</p>
                     <p>• Trả phòng: {formatDate(checkOut)}</p>
                     <p>• Phòng: {selectedRoomType?.name}</p>
+                    <p>• Tổng tiền: {formatPrice(bookingResult.totalAmount)} (đã gồm VAT)</p>
                   </div>
                   <div className="flex gap-3 justify-center">
                     <Button variant="outline" onClick={() => {

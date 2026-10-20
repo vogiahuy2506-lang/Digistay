@@ -11,6 +11,7 @@ import {
   Filter
 } from 'lucide-react'
 import { format, addDays, differenceInDays } from 'date-fns'
+import { quoteStay, type Rates } from '@/lib/pricing/quote'
 import { routes } from '@/lib/utils/routes'
 
 interface RoomType {
@@ -27,7 +28,8 @@ interface RoomType {
   size?: number
   floorRange?: string
   amenities?: string[]
-  pricing: { weekdayPrice: number; weekendPrice: number }[]
+  /** from /api/bookings/availability: the rates bookings are charged */
+  pricing: Rates & { basePrice: number; total: number }
 }
 
 interface Room {
@@ -197,43 +199,19 @@ export default function WalkinBookingPage() {
     return differenceInDays(new Date(checkOutDate), new Date(checkInDate))
   }
 
-  const calculatePrice = (): { subtotal: number; vat: number; total: number; breakdown: Array<{label: string; amount: number}> } => {
-    if (!selectedRoomType) return { subtotal: 0, vat: 0, total: 0, breakdown: [] }
-    
-    const nights = calculateNights()
-    const pricing = selectedRoomType.pricing[0]
-    if (!pricing) return { subtotal: 0, vat: 0, total: 0, breakdown: [] }
-    
-    let weekdayNights = 0
-    let weekendNights = 0
-    
-    let current = new Date(checkInDate)
-    while (current < new Date(checkOutDate)) {
-      const day = current.getDay()
-      if (day === 0 || day === 6) {
-        weekendNights++
-      } else {
-        weekdayNights++
-      }
-      current = addDays(current, 1)
-    }
-    
-    const weekdayTotal = weekdayNights * pricing.weekdayPrice
-    const weekendTotal = weekendNights * pricing.weekendPrice
-    const subtotal = weekdayTotal + weekendTotal
-    const vat = Math.round(subtotal * 0.08)
-    const total = subtotal + vat
-    
-    return {
-      subtotal,
-      vat,
-      total,
-      breakdown: [
-        { label: `${weekdayNights} đêm ngày thường x ${formatPrice(pricing.weekdayPrice)}`, amount: weekdayTotal },
-        { label: `${weekendNights} đêm cuối tuần x ${formatPrice(pricing.weekendPrice)}`, amount: weekendTotal },
-        { label: 'Thuế GTGT (VAT 8%) & Phí dịch vụ', amount: vat },
-      ],
-    }
+  // The server charges exactly this (src/lib/pricing/quote.ts). Prices include
+  // VAT: the estimate used to add 8% on top, which the booking never charged.
+  const calculatePrice = () => {
+    if (!selectedRoomType) return { subtotal: 0, surcharges: 0, total: 0 }
+    const quote = quoteStay({
+      rates: selectedRoomType.pricing,
+      checkIn: new Date(checkInDate),
+      checkOut: new Date(checkOutDate),
+      numAdults: parseInt(numAdults) || 1,
+      numChildren: parseInt(numChildren) || 0,
+      baseOccupancy: selectedRoomType.baseOccupancy,
+    })
+    return { subtotal: quote.basePrice, surcharges: quote.extraAdultCharge + quote.extraChildCharge, total: quote.total }
   }
 
   const formatPrice = (price: number) => {
@@ -629,7 +607,7 @@ export default function WalkinBookingPage() {
                             {/* Pricing */}
                             <div className="text-right shrink-0">
                               <div className="text-lg font-black text-orange-600">
-                                {formatPrice(roomType.pricing[0]?.weekdayPrice || 0)}
+                                {formatPrice(roomType.pricing.weekdayPrice)}
                               </div>
                               <div className="text-[10px] font-medium text-gray-400">/ đêm</div>
                             </div>
@@ -792,24 +770,18 @@ export default function WalkinBookingPage() {
                         <span className="">Tiền phòng ({calculateNights()} đêm x {selectedRoomType.name}):</span>
                         <span className="font-semibold text-gray-900">{formatPrice(pricing.subtotal)}</span>
                       </div>
-                      <div className="flex justify-between text-gray-600">
-                        <span className="flex items-center gap-1">
-                          Buffet sáng tiêu chuẩn ({parseInt(numAdults)} khách):
-                        </span>
-                        <span className="font-semibold text-emerald-600">Miễn phí tặng kèm</span>
-                      </div>
+                      {pricing.surcharges > 0 && (
+                        <div className="flex justify-between text-gray-600">
+                          <span>Phụ thu khách thêm:</span>
+                          <span className="font-semibold text-gray-900">{formatPrice(pricing.surcharges)}</span>
+                        </div>
+                      )}
                     </>
-                  )}
-                  {pricing.vat > 0 && (
-                    <div className="flex justify-between text-gray-600">
-                      <span className="">Thuế GTGT (VAT 8%) & Phí dịch vụ:</span>
-                      <span className="font-semibold text-gray-900">{formatPrice(pricing.vat)}</span>
-                    </div>
                   )}
                   <div className="pt-2 border-t border-dashed border-gray-200 flex justify-between items-baseline">
                     <div>
                       <span className="text-sm font-black text-gray-900 block">Tổng tiền thanh toán</span>
-                      <span className="text-[10px] text-gray-400">Đã bao gồm tất cả chi phí</span>
+                      <span className="text-[10px] text-gray-400">Giá đã gồm VAT</span>
                     </div>
                     <span className="text-xl font-black text-orange-600 tracking-tight">{formatPrice(pricing.total)}</span>
                   </div>

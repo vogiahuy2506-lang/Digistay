@@ -2,79 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
-import type { Prisma } from '@prisma/client'
-import { queueBookingConfirmation, queueOwnerNewBooking, sendAfterResponse } from '@/lib/email/outbox'
-
-type BookingForEmails = Prisma.BookingGetPayload<{
-  include: {
-    property: {
-      select: {
-        id: true; name: true; subdomain: true; address: true; phone: true; city: true
-        workspace: { select: { slug: true; owner: { select: { email: true; name: true } } } }
-      }
-    }
-  }
-}>
-
-/** The guest's confirmation and the owner's notice, queued (src/lib/email/outbox.ts). */
-async function queueBookingEmails(tx: Prisma.TransactionClient, booking: BookingForEmails) {
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
-  const prop = booking.property
-  const ids = [
-    await queueBookingConfirmation(
-      {
-        guestName: booking.guestName,
-        guestEmail: booking.guestEmail,
-        bookingCode: booking.bookingCode,
-        propertyName: prop.name,
-        propertyAddress: `${prop.address}, ${prop.city}`,
-        propertyPhone: prop.phone,
-        checkIn: booking.checkInDate.toISOString(),
-        checkOut: booking.checkOutDate.toISOString(),
-        numAdults: booking.numAdults,
-        numChildren: booking.numChildren,
-        totalAmount: booking.totalAmount,
-        propertyUrl: `${site}/${prop.subdomain}`,
-      },
-      booking.id,
-      tx
-    ),
-  ]
-  const owner = prop.workspace?.owner
-  if (owner?.email) {
-    ids.push(
-      await queueOwnerNewBooking(
-        {
-          ownerEmail: owner.email,
-          ownerName: owner.name ?? undefined,
-          bookingCode: booking.bookingCode,
-          guestName: booking.guestName,
-          guestPhone: booking.guestPhone,
-          guestEmail: booking.guestEmail,
-          propertyName: prop.name,
-          checkIn: booking.checkInDate.toISOString(),
-          checkOut: booking.checkOutDate.toISOString(),
-          manageUrl: `${site}/workspace/${prop.workspace.slug}/properties/${prop.id}/bookings/${booking.id}`,
-        },
-        booking.id,
-        tx
-      )
-    )
-  }
-  return ids
-}
-
-class BookingCapacityError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = 'BookingCapacityError'
-  }
-}
+import { sendAfterResponse } from '@/lib/email/outbox'
+import { BookingError, createBooking } from '@/lib/bookings/create-booking'
 
 const createBookingSchema = z.object({
   propertyId: z.string(),
   guestName: z.string().min(2, 'Tên khách phải có ít nhất 2 ký tự'),
-  guestEmail: z.string().email('Email không hợp lệ'),
+  // Optional for staff: a walk-in may have none (then no confirmation email).
+  guestEmail: z.string().trim().email('Email không hợp lệ').optional().or(z.literal('')),
   guestPhone: z.string().min(10, 'Số điện thoại không hợp lệ'),
   guestNote: z.string().optional(),
   checkInDate: z.string(),
@@ -92,12 +27,6 @@ const createBookingSchema = z.object({
   vatAddress: z.string().optional(),
   vatEmail: z.string().optional(),
 })
-
-function generateBookingCode(): string {
-  const timestamp = Date.now().toString(36).toUpperCase()
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase()
-  return `DS${timestamp}${random}`
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -207,9 +136,17 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * POST /api/bookings — staff create a booking for one of their properties.
+ * Priced and checked by src/lib/bookings/create-booking.ts, the same path
+ * as guests' bookings on the hotel's site (POST /api/public/bookings).
+ */
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
+    if (!session?.user?.id) {
+      return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
+    }
     const body = await request.json()
 
     const validation = createBookingSchema.safeParse(body)
@@ -222,29 +159,18 @@ export async function POST(request: NextRequest) {
 
     const data = validation.data
 
-    // Verify property access
+    // Only members of the property's workspace.
     const property = await prisma.property.findFirst({
       where: {
         id: data.propertyId,
         workspace: {
           OR: [
-            { ownerId: session?.user?.id || '' },
-            { members: { some: { userId: session?.user?.id || '' } } },
+            { ownerId: session.user.id },
+            { members: { some: { userId: session.user.id } } },
           ],
         },
       },
-      include: {
-        roomTypes: {
-          where: { id: data.roomTypeId },
-          include: {
-            pricing: {
-              include: { pricing: true },
-              orderBy: { createdAt: 'desc' },
-              take: 1,
-            },
-          },
-        },
-      },
+      select: { id: true },
     })
 
     if (!property) {
@@ -253,160 +179,31 @@ export async function POST(request: NextRequest) {
 
     const checkIn = new Date(data.checkInDate)
     const checkOut = new Date(data.checkOutDate)
-
-    // Check room availability
-    const roomType = property.roomTypes[0]
-    if (!roomType) {
-      return NextResponse.json({ success: false, error: 'Không tìm thấy hạng phòng' }, { status: 404 })
+    if (Number.isNaN(checkIn.getTime()) || Number.isNaN(checkOut.getTime())) {
+      return NextResponse.json({ success: false, error: 'Ngày không hợp lệ' }, { status: 400 })
     }
 
-    // -----------------------------------------------------------------
-    // Calculate pricing BEFORE the transaction so values are ready when
-    // the booking is created inside the transaction.
-    // -----------------------------------------------------------------
-    const numNights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
-    const pricingConfig = roomType.pricing[0]?.pricing
-    const weekdayPrice = pricingConfig?.weekdayPrice || 0
-    const weekendPrice = pricingConfig?.weekendPrice || weekdayPrice
-    const extraAdultPricePerNight = pricingConfig?.extraAdultPrice || 0
-    const extraChildPricePerNight = pricingConfig?.extraChildPrice || 0
-
-    // Calculate weekend nights
-    let weekendNights = 0
-    for (let d = new Date(checkIn); d < checkOut; d.setDate(d.getDate() + 1)) {
-      const day = d.getDay()
-      if (day === 0 || day === 6) weekendNights++
-    }
-    const weekdayNights = numNights - weekendNights
-
-    const basePrice = (weekdayNights * weekdayPrice) + (weekendNights * weekendPrice)
-    const extraAdults = Math.max(0, data.numAdults - roomType.baseOccupancy)
-    const extraChildren = Math.max(0, data.numChildren)
-    const extraCharges = (extraAdults * extraAdultPricePerNight * numNights) + 
-                         (extraChildren * extraChildPricePerNight * numNights)
-    const subtotal = basePrice + extraCharges
-    const totalAmount = subtotal // discount can be added later if needed
-
-    // -----------------------------------------------------------------
-    // Transactionally reserve the room: count overlapping bookings +
-    // room locks, then create the booking + lock. Without the
-    // transaction two concurrent POSTs can both pass the count check
-    // and over-sell the room.
-    // -----------------------------------------------------------------
-    const overlappingWhere = {
+    const { booking, emailIds } = await createBooking({
       propertyId: data.propertyId,
-      OR: [
-        { checkInDate: { lte: checkIn }, checkOutDate: { gt: checkIn } },
-        { checkInDate: { lt: checkOut }, checkOutDate: { gte: checkOut } },
-        { checkInDate: { gte: checkIn }, checkOutDate: { lte: checkOut } },
-      ],
-    }
-
-    let emailIds: string[] = []
-    const booking = await prisma.$transaction(async (tx) => {
-      const [activeBookings, activeLocks] = await Promise.all([
-        tx.booking.count({
-          where: {
-            ...overlappingWhere,
-            status: { in: ['PENDING', 'CONFIRMED', 'CHECKED_IN'] },
-          },
-        }),
-        tx.roomLock.count({
-          where: {
-            propertyId: data.propertyId,
-            roomTypeId: data.roomTypeId,
-            expiresAt: { gt: new Date() },
-            OR: [
-              { lockStart: { lte: checkIn }, lockEnd: { gt: checkIn } },
-              { lockStart: { lt: checkOut }, lockEnd: { gte: checkOut } },
-              { lockStart: { gte: checkIn }, lockEnd: { lte: checkOut } },
-            ],
-          },
-        }),
-      ])
-
-      if (activeBookings + activeLocks >= roomType.totalRooms) {
-        // Throw to roll back the (would-be) write
-        throw new BookingCapacityError('Phòng đã hết trong khoảng ngày này')
-      }
-
-      const created = await tx.booking.create({
-        data: {
-          bookingCode: generateBookingCode(),
-          propertyId: data.propertyId,
-          guestName: data.guestName,
-          guestEmail: data.guestEmail,
-          guestPhone: data.guestPhone,
-          guestNote: data.guestNote,
-          checkInDate: checkIn,
-          checkOutDate: checkOut,
-          numAdults: data.numAdults,
-          numChildren: data.numChildren,
-          status: 'PENDING',
-          subtotal,
-          extraCharges,
-          totalAmount,
-          depositAmount: 0,
-          source: 'DIRECT',
-          createdById: session?.user?.id,
-          vatCompany: data.vatCompany,
-          vatTaxCode: data.vatTaxCode,
-          vatAddress: data.vatAddress,
-          vatEmail: data.vatEmail,
-          bookingItems: {
-            create: {
-              roomTypeId: data.roomTypeId,
-              roomNumber: data.roomNumber,
-              checkInDate: checkIn,
-              checkOutDate: checkOut,
-              basePrice,
-              extraAdultPrice: extraAdults * extraAdultPricePerNight * numNights,
-              extraChildPrice: extraChildren * extraChildPricePerNight * numNights,
-              totalPrice: totalAmount,
-            },
-          },
-          roomLocks: {
-            create: {
-              propertyId: data.propertyId,
-              roomTypeId: data.roomTypeId,
-              lockStart: checkIn,
-              lockEnd: checkOut,
-              type: 'HOLD',
-              expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 min hold
-            },
-          },
-        },
-        include: {
-          bookingItems: true,
-          property: {
-            select: {
-              id: true,
-              name: true,
-              subdomain: true,
-              address: true,
-              phone: true,
-              city: true,
-              workspace: {
-                select: {
-                  ownerId: true,
-                  slug: true,
-                  owner: { select: { email: true, name: true } },
-                },
-              },
-            },
-          },
-        },
-      })
-      // In the same transaction: a booking never exists without its emails.
-      emailIds = await queueBookingEmails(tx, created)
-      return created
+      roomTypeId: data.roomTypeId,
+      guestName: data.guestName,
+      guestEmail: data.guestEmail ?? '',
+      guestPhone: data.guestPhone,
+      guestNote: data.guestNote,
+      checkIn,
+      checkOut,
+      numAdults: data.numAdults,
+      numChildren: data.numChildren,
+      roomNumber: data.roomNumber,
+      vat: { company: data.vatCompany, taxCode: data.vatTaxCode, address: data.vatAddress, email: data.vatEmail },
+      services: data.extraServices,
+      createdById: session.user.id,
     })
     sendAfterResponse(emailIds)
 
-    // Log activity
     await prisma.activityLog.create({
       data: {
-        userId: session?.user?.id,
+        userId: session.user.id,
         propertyId: data.propertyId,
         action: 'CREATE',
         entityType: 'BOOKING',
@@ -421,8 +218,8 @@ export async function POST(request: NextRequest) {
       message: 'Tạo đơn đặt phòng thành công',
     })
   } catch (error) {
-    if (error instanceof BookingCapacityError) {
-      return NextResponse.json({ success: false, error: error.message }, { status: 409 })
+    if (error instanceof BookingError) {
+      return NextResponse.json({ success: false, error: error.message }, { status: error.status })
     }
     console.error('Create booking error:', error)
     return NextResponse.json({ success: false, error: 'Lỗi khi tạo đặt phòng' }, { status: 500 })

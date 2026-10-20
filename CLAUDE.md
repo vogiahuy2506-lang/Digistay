@@ -137,6 +137,16 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
 - **API danh sách** dùng `src/lib/api/list-params.ts`: `page`/`limit` (tối đa 100), enum và ngày
   sai trả 400 (đừng để Prisma ném 500), tìm kiếm và lọc chạy trong DB để phủ mọi trang. Thẻ
   thống kê đếm bằng `groupBy` trên server, không cộng ở trình duyệt.
+- **Giá và phòng trống — một nguồn duy nhất:**
+  - Giá: `src/lib/pricing/quote.ts` (`ratesFrom`, `quoteStay`). Giá phòng là giá **riêng của hạng
+    phòng** (trang "Hạng phòng"); Bảng giá chung chỉ cấp phụ thu mặc định. Hạng phòng chưa có giá
+    thì không đặt được. Ngày cuối tuần tính theo giờ Việt Nam. Giá đã gồm VAT. Trang nào báo giá
+    (site, trang tìm phòng, ước tính của nhân viên) cũng gọi đúng hàm này; đừng tự tính lại.
+  - Phòng trống: `src/lib/bookings/occupancy.ts` (`roomsTaken`): đếm theo hạng phòng, khoá gắn với
+    đơn không đếm lại, khoá bảo trì/chặn luôn tính, khoá giữ phòng của chính khách không chặn họ.
+  - Tạo đơn: chỉ qua `src/lib/bookings/create-booking.ts` (nhân viên `POST /api/bookings`, khách
+    `POST /api/public/bookings`), dưới khoá dòng hạng phòng. `subtotal` = tiền phòng,
+    `extraCharges` = phụ thu + dịch vụ, `totalAmount` = tổng.
 - **Site công khai của khách sạn được cache** theo khách sạn (`src/lib/public-site/site.ts`, tối
   đa 5 phút). Handler nào ghi dữ liệu site hiển thị (khách sạn, ảnh, tiện ích, hạng phòng, giá,
   dịch vụ, website) phải gọi `invalidatePublicSite(propertyId)`; `public-site-cache.test.ts` chặn.
