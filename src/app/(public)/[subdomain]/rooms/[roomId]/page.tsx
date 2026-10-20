@@ -1,6 +1,8 @@
+import { headers } from 'next/headers'
 import { prisma } from '@/lib/db'
 import { ratesFrom } from '@/lib/pricing/quote'
 import { ROOM_RATE_INCLUDE, propertyRateDefaults } from '@/lib/pricing/rates'
+import { siteBasePath, siteHref } from '@/lib/public-site/paths'
 import { notFound } from 'next/navigation'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
@@ -34,6 +36,7 @@ export default async function RoomDetailPage({ params }: PageProps) {
     notFound()
   }
 
+  const base = siteBasePath(subdomain, (await headers()).get('host'))
   const room = property.roomTypes[0]
   // The rates a booking is charged (src/lib/pricing/quote.ts); null: no price yet.
   const pricing = ratesFrom(room.pricing[0], await propertyRateDefaults(prisma, property.id))
@@ -61,7 +64,7 @@ export default async function RoomDetailPage({ params }: PageProps) {
             <p className="text-sm text-gray-500">{property.name}</p>
           </div>
           <a
-            href={`/${subdomain}`}
+            href={siteHref(base, '/')}
             className="text-sm text-gray-500 hover:text-gray-900"
           >
             ← Quay lại
@@ -159,11 +162,11 @@ export default async function RoomDetailPage({ params }: PageProps) {
                 )}
               </div>
 
-              {/* The search page takes the booking (there is no /booking page). */}
-              <form action={`/${subdomain}/search`} method="GET">
+              <form action={siteHref(base, '/search')} method="GET">
                 <input type="hidden" name="roomTypeId" value={room.id} />
                 <input type="hidden" name="checkIn" value={format(new Date(), 'yyyy-MM-dd')} />
                 <input type="hidden" name="checkOut" value={format(new Date(Date.now() + 86400000), 'yyyy-MM-dd')} />
+                <input type="hidden" name="guests" value={Math.max(1, room.maxAdults)} />
 
                 <button
                   type="submit"
