@@ -157,6 +157,21 @@ sạn, đặt lại mật khẩu chỉ cần email, email trong phiên do client
   thắng), và số tiền phải khớp đúng. Tiền về cho link đã huỷ/hết hạn vẫn được ghi nhận và gắn cờ;
   khoản `REFUNDED` không bao giờ sống lại. Return URL không bao giờ đánh dấu đã trả.
   `PAYOS_BASE_URL` chỉ dùng cho test (PayOS giả ở `src/test/integration/fake-payos.ts`).
+- **Hoá đơn điện tử** (`src/lib/einvoice/`): mỗi khách sạn tự gắn tài khoản Mắt Bão của mình,
+  hoá đơn xuất dưới mã số thuế của khách sạn.
+  - **Giá phòng đã gồm VAT**: tổng hoá đơn = số khách trả; chưa thuế và thuế được tách ra bằng
+    `splitGross`. Không cộng VAT lên trên.
+  - **Thuế suất** do kế toán của khách sạn chọn, và được chụp lại vào từng hoá đơn lúc tạo.
+  - **Tổng các hoá đơn của một đơn không vượt quá tổng của đơn.**
+  - **Chống xuất trùng:** `MaTraCuu = DS<invoiceNumber>` cố định cho mỗi hoá đơn. Phát hành
+    lại sau timeout thì Mắt Bão trả 304, không xuất lần hai. Trạng thái `PUBLISHING` được giành
+    bằng một UPDATE có điều kiện.
+  - **Sau một lần phát hành chưa rõ kết quả** (`lookupCode` đã có), không cho sửa, xoá hay huỷ
+    cho tới khi phát hành lại xong.
+  - **Hoá đơn đã phát hành không huỷ trong app**: phải lập mẫu 04/SS-HĐĐT trên cổng Mắt Bão.
+  - **Ký hiệu đổi theo năm**: sang năm mới phải sửa ký hiệu trong thẻ Mắt Bão.
+  - **Môi trường Chính thức** là hoá đơn thật, có giá trị pháp lý.
+  - `MATBAO_BASE_URL` chỉ dùng cho test (Mắt Bão giả ở `src/test/integration/fake-matbao.ts`).
 - Xác thực hai lớp (`src/lib/auth/two-factor.ts`) là **tuỳ chọn, không bao giờ bắt buộc**. Khi
   đã bật, mật khẩu đúng hoặc Google đúng **không tạo phiên**: chỉ trả "vé" chờ nhập mã, provider
   `two-factor` mới tạo phiên. Thêm cách đăng nhập mới thì phải đi qua bước này. Không có đường
@@ -184,6 +199,8 @@ dùng duyệt rồi mới làm, trên nhánh riêng. Cập nhật trạng thái 
    tiền và không cập nhật `depositAmount` — xong. Còn: SePay (nếu khách sạn cần), job đối soát
    định kỳ (hiện đối soát khi mở trang Thanh toán và nút "Kiểm tra ngay"), khách tự trả cọc trên
    site công khai.
-6. Hoá đơn điện tử Mắt Bão
+6. Hoá đơn điện tử Mắt Bão, mỗi khách sạn một tài khoản — xong. Còn: webhook trạng thái từ
+   cơ quan thuế (phải gửi URL cho hỗ trợ Mắt Bão), hoá đơn điều chỉnh/thay thế, tự gửi email
+   hoá đơn cho khách, tự xuất hoá đơn khi đơn thanh toán xong.
 
 Tài liệu deploy: `docs/DEPLOYMENT.md`, `docs/RUNBOOK.md`.

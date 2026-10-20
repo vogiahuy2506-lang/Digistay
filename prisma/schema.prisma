@@ -256,6 +256,7 @@ model Property {
   websiteSettings WebsiteSettings?
   bankAccounts   BankAccount[]
   payos          PropertyPayos?
+  einvoice       PropertyEinvoice?
   roomLocks      RoomLock[]
   extraServices   ExtraService[]
   dailyRevenues   DailyRevenue[]
@@ -924,6 +925,38 @@ model PropertyPayos {
   @@map("property_payos")
 }
 
+/// The property's own Mắt Bão e-invoice account (Part 6): invoices are issued
+/// under the hotel's tax code. The password is encrypted with
+/// src/lib/security/secret-box.ts.
+model PropertyEinvoice {
+  propertyId       String    @id
+  property         Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  /// DEMO (demo-api-hddt.matbao.in) or PRODUCTION: invoices issued in
+  /// production are legal documents
+  environment      String
+  /// Mã số thuế of the hotel (seller), as Mắt Bão knows it
+  taxCode          String
+  username         String
+  /// encrypted
+  password         String
+  /// KHMSHDon, e.g. "1"
+  templateCode     String
+  /// KHHDon, e.g. "C26TAA" (changes every calendar year)
+  series           String
+  /// Mắt Bão TSuat: 10, 8, 5, 0, -1 (KCT), -2 (KKKNT); set by the hotel's accountant
+  vatCode          Int
+  /// set when login and the series check last succeeded
+  verifiedAt       DateTime?
+  /// numbers left in the series at the last check (CLai)
+  remainingNumbers Int?
+  connectedById    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("property_einvoice")
+}
+
 // ============================================
 // INVOICE (Hóa đơn điện tử)
 // ============================================
@@ -951,9 +984,15 @@ model Invoice {
   customerEmail   String
   customerAddress String?
   
-  // Totals
+  /// company | personal | consumer (khách lẻ không lấy hoá đơn)
+  buyerType       String   @default("company")
+
+  // Totals: totalAmount is what the guest pays (VAT included); subtotal
+  // and taxAmount are split from it (src/lib/einvoice/vat.ts)
   subtotal        Float
   taxRate         Float    @default(0.1)
+  /// Mắt Bão TSuat at creation (10, 8, 5, 0, -1 KCT, -2 KKKNT)
+  vatCode         Int?
   taxAmount       Float
   totalAmount     Float
   
@@ -972,6 +1011,13 @@ model Invoice {
   publishedAt     DateTime?
   xmlUrl          String?
   pdfUrl          String?
+  /// Mắt Bão MaTraCuu: fixed per invoice, so publishing again never
+  /// issues a second one (src/lib/einvoice/matbao.ts)
+  lookupCode      String?  @unique
+  /// Số hoá đơn assigned by Mắt Bão
+  einvoiceNumber  String?
+  /// Why the last publish attempt failed (shown to staff)
+  publishError    String?
   
   // Metadata
   metadata        Json?
@@ -987,12 +1033,14 @@ model Invoice {
 enum InvoiceStatus {
   DRAFT           // Nháp
   PENDING         // Chờ phát hành
+  PUBLISHING      // Đang gửi sang nhà cung cấp
   PUBLISHED       // Đã phát hành
   CANCELLED       // Đã hủy
   REPLACED        // Thay thế
 }
 
 enum EInvoiceProvider {
+  MATBAO
   MISA
   VNPT
   VIETTAX
