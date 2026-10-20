@@ -207,6 +207,14 @@ async function main() {
 
   console.log(`Created demo property: ${demoProperty.name}`)
 
+  // Published, so the demo site is public like a live hotel's (an unpublished
+  // site is only shown to signed-in members).
+  await prisma.websiteSettings.upsert({
+    where: { propertyId: demoProperty.id },
+    update: {},
+    create: { propertyId: demoProperty.id, isPublished: true, publishedAt: new Date() },
+  })
+
   // Create default policy
   await prisma.policy.upsert({
     where: { propertyId: demoProperty.id },

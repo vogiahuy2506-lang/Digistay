@@ -22,6 +22,15 @@ export async function resetDatabase() {
   await prisma.$executeRawUnsafe(`TRUNCATE ${tables} RESTART IDENTITY CASCADE`)
 }
 
+/** Publishes the property's website: guests see it and can book (src/lib/public-site/visibility.ts). */
+export function publishSite(propertyId: string) {
+  return prisma.websiteSettings.upsert({
+    where: { propertyId },
+    update: { isPublished: true },
+    create: { propertyId, isPublished: true, publishedAt: new Date() },
+  })
+}
+
 export function createUser(email = `u-${uid()}@example.com`) {
   return prisma.user.create({ data: { email, name: 'Test User' } })
 }

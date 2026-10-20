@@ -8,6 +8,7 @@ import { Container, bedLabel, roomMeta } from '../../_components/site-ui'
 import { getIcon } from '../../_components/icon-map'
 import { formatVnd } from '@/lib/bookings/display'
 import { BookingBox } from './BookingBox'
+import { loadVisibleSite } from '@/lib/public-site/visibility'
 
 interface PageProps {
   params: Promise<{ subdomain: string; roomId: string }>
@@ -30,8 +31,11 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
   const { subdomain, roomId } = await params
   const query = await searchParams
 
-  const property = await prisma.property.findFirst({
-    where: { subdomain, isActive: true },
+  const site = await loadVisibleSite(subdomain)
+  if (!site) notFound()
+
+  const property = await prisma.property.findUnique({
+    where: { id: site.propertyId },
     select: {
       id: true,
       name: true,

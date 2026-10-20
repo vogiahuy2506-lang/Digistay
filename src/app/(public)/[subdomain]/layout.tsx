@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db'
 import { siteBasePath } from '@/lib/public-site/paths'
 import { hotelAccentVariables } from '@/lib/public-site/accent'
 import { fontStack } from '@/lib/public-site/font-stack'
+import { loadVisibleSite } from '@/lib/public-site/visibility'
 import { SiteBaseProvider } from './_components/site-base'
 import { siteFontVariables } from './fonts'
 
@@ -23,7 +24,10 @@ const loadSiteFrame = cache((subdomain: string) =>
 )
 
 export async function generateMetadata({ params }: { params: Promise<{ subdomain: string }> }): Promise<Metadata> {
-  const site = await loadSiteFrame((await params).subdomain)
+  const { subdomain } = await params
+  // An unpublished site is a 404: its title must not give the hotel away.
+  if (!(await loadVisibleSite(subdomain))) return {}
+  const site = await loadSiteFrame(subdomain)
   if (!site) return {}
   // Hotel pages used to carry Digistay's own title ("DigiStay - Nền Tảng No-Code...").
   return {
@@ -47,6 +51,7 @@ export default async function HotelSiteLayout({
   const { subdomain } = await params
   const host = (await headers()).get('host')
   const settings = (await loadSiteFrame(subdomain))?.websiteSettings
+  const preview = (await loadVisibleSite(subdomain))?.preview ?? false
 
   const style = {
     ...hotelAccentVariables(settings?.primaryColor),
@@ -65,6 +70,11 @@ export default async function HotelSiteLayout({
       className={`${siteFontVariables} min-h-screen bg-page text-fg font-site-body antialiased`}
       style={style}
     >
+      {preview && (
+        <p className="bg-ink px-4 py-2 text-center text-small text-on-ink">
+          Bản xem trước: website chưa xuất bản, chỉ thành viên của khách sạn đang đăng nhập mới xem được.
+        </p>
+      )}
       <SiteBaseProvider base={siteBasePath(subdomain, host)}>{children}</SiteBaseProvider>
     </div>
   )

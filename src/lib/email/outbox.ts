@@ -18,6 +18,7 @@ import { after } from 'next/server'
 import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { decryptSecret, encryptSecret, secretContext } from '@/lib/security/secret-box'
+import { escapeHtml } from '@/lib/utils/escape-html'
 import { sendRendered, type EmailRecipient } from './index'
 import {
   bookingConfirmationTemplate,
@@ -73,17 +74,24 @@ export interface OwnerNewBookingData {
   checkOut: string
   /** the booking in the dashboard */
   manageUrl: string
+  /** A request from the hotel's website, waiting for the hotel to confirm. */
+  fromWebsite?: boolean
 }
 
 export function queueOwnerNewBooking(data: OwnerNewBookingData, bookingId: string, db?: Db) {
-  const subject = `Đơn đặt phòng mới #${data.bookingCode} - ${data.propertyName}`
+  const subject = data.fromWebsite
+    ? `Yêu cầu đặt phòng mới từ website #${data.bookingCode} - ${data.propertyName}`
+    : `Đơn đặt phòng mới #${data.bookingCode} - ${data.propertyName}`
   const text = [
+    ...(data.fromWebsite ? ['Khách đặt qua website, đang chờ bạn xác nhận.'] : []),
     `Đơn đặt phòng: ${data.bookingCode}`,
     `Khách: ${data.guestName} · ${data.guestPhone} · ${data.guestEmail}`,
     `Ngày: ${data.checkIn.slice(0, 10)} - ${data.checkOut.slice(0, 10)}`,
     `Xem đơn: ${data.manageUrl}`,
   ].join('\n')
-  return queueEmail('owner_new_booking', { to: { email: data.ownerEmail, name: data.ownerName }, subject, text, html: text.replace(/\n/g, '<br/>') }, bookingId, db)
+  // The guest's name and contact come from a public form: escape them for the HTML part.
+  const html = escapeHtml(text).replace(/\n/g, '<br/>')
+  return queueEmail('owner_new_booking', { to: { email: data.ownerEmail, name: data.ownerName }, subject, text, html }, bookingId, db)
 }
 
 export function queueWorkspaceInvite(data: WorkspaceInviteTemplateProps, invitationId: string, db?: Db) {

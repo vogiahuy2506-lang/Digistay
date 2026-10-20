@@ -284,6 +284,10 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
   font qua `fontStack`, tiêu đề trang). Link nội bộ luôn qua `SiteLink` / `useSiteHref` (có hay không
   tiền tố `/<subdomain>` tùy host). Nội dung khối đọc khóa của trình dựng trước (`heroTitle`,
   `roomsTitle`…) qua `cfgText`. Không hiển thị nội dung bịa (đánh giá mẫu, chính sách mẫu). Bản thiết kế: file Claude Design "Digistay hotel booking platform".
+  Website chỉ công khai khi đã xuất bản: trang nào của website (trừ trang trả về PayOS) cũng qua
+  `loadVisibleSite`, API công khai qua `siteVisibility` (`src/lib/public-site/visibility.ts`);
+  chưa xuất bản thì 404 với khách, thành viên đã đăng nhập thấy bản xem trước. Đặt phòng công
+  khai chỉ nhận website đã xuất bản. Test tích hợp đặt phòng của khách: gọi `publishSite()` trước.
 
 ## Kế hoạch gia cố
 

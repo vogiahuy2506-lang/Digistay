@@ -67,12 +67,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Chưa nhận đặt phòng xa đến vậy' }, { status: 400 })
   }
 
-  // Only an active hotel, and a room type of it that takes this many guests.
+  // Only an active hotel whose site is published (an unpublished site is a 404
+  // for guests, src/lib/public-site/visibility.ts), and a room type of it
+  // that takes this many guests.
   const roomType = await prisma.roomType.findFirst({
-    where: { id: data.roomTypeId, propertyId: data.propertyId, isActive: true, property: { isActive: true } },
-    select: { maxAdults: true, maxChildren: true, maxOccupancy: true },
+    where: {
+      id: data.roomTypeId,
+      propertyId: data.propertyId,
+      isActive: true,
+      property: { isActive: true, websiteSettings: { isPublished: true } },
+    },
+    select: { maxAdults: true, maxChildren: true, maxOccupancy: true, property: { select: { policy: { select: { childrenAllowed: true } } } } },
   })
   if (!roomType) return NextResponse.json({ success: false, error: 'Không tìm thấy hạng phòng' }, { status: 404 })
+  if (data.numChildren > 0 && roomType.property.policy?.childrenAllowed === false) {
+    return NextResponse.json({ success: false, error: 'Khách sạn không nhận trẻ em' }, { status: 400 })
+  }
   if (
     data.numAdults > roomType.maxAdults ||
     data.numChildren > roomType.maxChildren ||

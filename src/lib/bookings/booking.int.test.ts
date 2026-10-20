@@ -34,7 +34,8 @@ const redis = vi.hoisted(() => {
 vi.mock('@/lib/db/redis', () => ({ redis }))
 
 import { prisma } from '@/lib/db'
-import { createRoomType, createTenant, resetDatabase } from '@/test/integration/fixtures'
+import { createRoomType, createTenant, publishSite, resetDatabase } from '@/test/integration/fixtures'
+import { decryptSecret, secretContext } from '@/lib/security/secret-box'
 import { quoteStay } from '@/lib/pricing/quote'
 import { POST as staffBooking } from '@/app/api/bookings/route'
 import { POST as guestBooking } from '@/app/api/public/bookings/route'
@@ -100,6 +101,7 @@ describe('prices', () => {
 
   it('what the site quotes is what the guest is charged: weekend, extra adult, services', async () => {
     const { property } = await createTenant()
+    await publishSite(property.id)
     const room = await createRoomType(property.id, { weekdayPrice: 900_000, weekendPrice: 1_100_000, baseOccupancy: 2, maxAdults: 3, propertyExtraAdult: 150_000 })
     const breakfast = await prisma.extraService.create({
       data: { propertyId: property.id, name: 'Ăn sáng', price: 100_000, priceType: 'PER_NIGHT', perPerson: true },
@@ -161,6 +163,7 @@ describe('rooms', () => {
 
   it("a guest's hold keeps the room from others and is used by their own booking", async () => {
     const { property } = await createTenant()
+    await publishSite(property.id)
     const room = await createRoomType(property.id, { totalRooms: 1 })
     const hold = await call(holdRoom(json({ propertyId: property.id, roomTypeId: room.id, ...WEEKDAYS }, { ...freshIp(), 'x-session-id': 'guest-a' })))
     expect(hold.status).toBe(200)
@@ -175,6 +178,7 @@ describe('rooms', () => {
 
   it('three guests at once for the last room: one booking', async () => {
     const { property } = await createTenant()
+    await publishSite(property.id)
     for (let round = 0; round < 3; round++) {
       const room = await createRoomType(property.id, { totalRooms: 1 })
       const results = await Promise.all(
@@ -214,6 +218,7 @@ describe('rooms', () => {
 describe('the public booking route', () => {
   it('is PENDING, records no payment, queues the emails, and tells the guest only what they need', async () => {
     const { property } = await createTenant()
+    await publishSite(property.id)
     const room = await createRoomType(property.id)
     const res = await call(guestBooking(json({ propertyId: property.id, roomTypeId: room.id, ...guest(), ...WEEKDAYS, numAdults: 2 }, freshIp())))
     expect(res.status).toBe(200)
@@ -226,7 +231,9 @@ describe('the public booking route', () => {
 
   it('refuses what a stranger should not send', async () => {
     const { property } = await createTenant()
+    await publishSite(property.id)
     const other = await createTenant()
+    await publishSite(other.property.id)
     const room = await createRoomType(property.id, { maxAdults: 2, maxOccupancy: 3 })
     const foreignService = await prisma.extraService.create({ data: { propertyId: other.property.id, name: 'Spa', price: 1 } })
     const base = { propertyId: property.id, roomTypeId: room.id, ...guest(), ...WEEKDAYS, numAdults: 2 }
@@ -244,6 +251,7 @@ describe('the public booking route', () => {
 
   it('is rate-limited per IP and per guest email', async () => {
     const { property } = await createTenant()
+    await publishSite(property.id)
     const room = await createRoomType(property.id, { totalRooms: 20 })
     const body = (email: string) => ({ propertyId: property.id, roomTypeId: room.id, guestName: 'Khách', guestEmail: email, guestPhone: '0912345678', ...WEEKDAYS, numAdults: 2 })
     const ip = { 'x-real-ip': '198.51.100.7' }
@@ -254,5 +262,49 @@ describe('the public booking route', () => {
     const sameEmail = []
     for (let i = 0; i < 4; i++) sameEmail.push((await call(guestBooking(json(body('same@example.com'), freshIp())))).status)
     expect(sameEmail).toEqual([200, 200, 200, 429])
+  })
+
+  it('takes no booking for an unpublished site, nor children where the hotel takes none', async () => {
+    const { property } = await createTenant()
+    const room = await createRoomType(property.id, { maxChildren: 2 })
+    const base = { propertyId: property.id, roomTypeId: room.id, ...guest(), ...WEEKDAYS, numAdults: 2 }
+    const send = async (body: object) => (await call(guestBooking(json(body, freshIp())))).status
+
+    expect(await send(base)).toBe(404) // never published
+    await publishSite(property.id)
+    await prisma.websiteSettings.update({ where: { propertyId: property.id }, data: { isPublished: false } })
+    expect(await send(base)).toBe(404) // unpublished again
+
+    await publishSite(property.id)
+    await prisma.policy.create({ data: { propertyId: property.id, childrenAllowed: false } })
+    expect(await send({ ...base, numChildren: 1 })).toBe(400)
+    expect(await send(base)).toBe(200)
+  })
+
+  it("tells the guest it awaits the hotel, with the hotel's times, and escapes the guest in the owner's email", async () => {
+    const { property } = await createTenant()
+    await publishSite(property.id)
+    await prisma.policy.create({ data: { propertyId: property.id, checkInTime: '15:00', checkOutTime: '11:00' } })
+    const room = await createRoomType(property.id)
+    const name = 'Hoa <a href="https://x.example">bấm</a>'
+    const res = await call(
+      guestBooking(json({ propertyId: property.id, roomTypeId: room.id, ...guest(), guestName: name, ...WEEKDAYS, numAdults: 2 }, freshIp()))
+    )
+    expect(res.status).toBe(200)
+    const booking = await prisma.booking.findFirstOrThrow({ where: { bookingCode: res.body.data.bookingCode } })
+    const mail = async (kind: string) => {
+      const row = await prisma.emailOutbox.findFirstOrThrow({ where: { refId: booking.id, kind } })
+      return JSON.parse(decryptSecret(row.message, secretContext('email_outbox', row.id, 'message'))) as { subject: string; html: string; text: string }
+    }
+    const guestMail = await mail('booking_confirmation')
+    // It said "✅ Đặt phòng thành công" before the hotel had seen the request.
+    expect(guestMail.subject).toContain('Đã nhận yêu cầu đặt phòng')
+    expect(guestMail.html).not.toContain('Đặt phòng thành công')
+    expect(guestMail.html).toContain('từ 15:00')
+    expect(guestMail.html).toContain('trước 11:00')
+    const ownerMail = await mail('owner_new_booking')
+    expect(ownerMail.subject).toContain('từ website')
+    expect(ownerMail.html).not.toContain('<a href="https://x.example">')
+    expect(ownerMail.html).toContain('&lt;a href=')
   })
 })

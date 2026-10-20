@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { SITE_VISIBILITY_SELECT, siteVisibility } from '@/lib/public-site/visibility'
 
 /**
  * GET /api/properties/public
@@ -25,6 +26,7 @@ export async function GET(request: NextRequest) {
     const property = await prisma.property.findFirst({
       where,
       select: {
+        ...SITE_VISIBILITY_SELECT,
         id: true,
         name: true,
         subdomain: true,
@@ -57,16 +59,20 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    if (!property) {
+    // An unpublished hotel is not found, except by its own signed-in members
+    // previewing the site (src/lib/public-site/visibility.ts).
+    if (!property || !(await siteVisibility(property))) {
       return NextResponse.json(
         { success: false, error: 'Không tìm thấy cơ sở' },
         { status: 404 }
       )
     }
+    // Read to decide, not sent (undefined keys are left out of the JSON).
+    const data = { ...property, workspaceId: undefined, websiteSettings: undefined }
 
     return NextResponse.json({
       success: true,
-      data: property,
+      data,
     })
   } catch (error) {
     console.error('Get public property error:', error)

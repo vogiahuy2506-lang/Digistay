@@ -3,6 +3,8 @@
 import * as React from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { PageContainer } from '@/components/layout'
+import { toast } from '@/components/ui/toast'
+import { useProperty } from '@/lib/hooks/use-property'
 import { Card, CardContent, CardHeader, CardTitle, Button, Input, Badge, Tabs, TabsList, TabsTrigger, TabsContent, Alert, AlertDescription } from '@/components/ui'
 import {
   DndContext,
@@ -1222,6 +1224,7 @@ export default function WebsiteBuilderPage() {
   const router = useRouter()
   const params = useParams()
   const propertyId = params.id as string
+  const { property } = useProperty()
 
   const [settings, setSettings] = React.useState<WebsiteSettings | null>(null)
   const [blocks, setBlocks] = React.useState<Block[]>([])
@@ -1310,27 +1313,49 @@ export default function WebsiteBuilderPage() {
     }
   }
 
-  const handleSave = async () => {
+  /**
+   * Saves the blocks and the settings. Failures used to be silent; and
+   * publishing only flipped a local switch until "Lưu thay đổi" was
+   * pressed, which matters now that an unpublished site is hidden from
+   * guests (src/lib/public-site/visibility.ts).
+   */
+  const handleSave = async (next: WebsiteSettings | null = settings, successMessage = 'Đã lưu thay đổi') => {
     setIsSaving(true)
     try {
-      await fetch('/api/website/blocks', {
+      const blocksRes = await fetch('/api/website/blocks', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ propertyId, blocks }),
       })
-
-      if (settings) {
-        await fetch('/api/website/settings', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ propertyId, settings }),
-        })
+      const settingsRes = next
+        ? await fetch('/api/website/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ propertyId, settings: next }),
+          })
+        : null
+      const failed = [blocksRes, settingsRes].find((r) => r && !r.ok)
+      if (failed) {
+        const body = await failed.json().catch(() => null)
+        toast.error(body?.error || 'Không lưu được. Vui lòng thử lại.')
+        return false
       }
+      if (next) setSettings(next)
+      toast.success(successMessage)
+      return true
     } catch (err) {
       console.error('Save failed:', err)
+      toast.error('Mất kết nối, chưa lưu được.')
+      return false
     } finally {
       setIsSaving(false)
     }
+  }
+
+  const togglePublish = () => {
+    if (!settings) return
+    const publish = !settings.isPublished
+    void handleSave({ ...settings, isPublished: publish }, publish ? 'Website đã được xuất bản' : 'Đã gỡ xuất bản website')
   }
 
   const addBlock = (type: string, name: string) => {
@@ -1519,7 +1544,10 @@ export default function WebsiteBuilderPage() {
           <Button 
             variant="outline"
             size="sm"
-            onClick={() => window.open(`/${settings?.customDomain || propertyId}`, '_blank')}
+            // The site lives at /<subdomain> (it opened /<property id>, a 404).
+            // Before publishing, only signed-in members see it, as a preview.
+            onClick={() => property && window.open(`/${property.subdomain}`, '_blank')}
+            disabled={!property}
             className="gap-2"
           >
             <Eye className="w-4 h-4" />
@@ -1527,7 +1555,7 @@ export default function WebsiteBuilderPage() {
           </Button>
           
           <Button 
-            onClick={handleSave} 
+            onClick={() => handleSave()}
             disabled={isSaving}
             size="sm"
             className="gap-2 shadow-lg"
@@ -1804,13 +1832,14 @@ export default function WebsiteBuilderPage() {
                         {settings?.isPublished ? 'Đã xuất bản' : 'Chưa xuất bản'}
                       </p>
                       <p className="text-sm text-muted">
-                        {settings?.isPublished 
-                          ? 'Website đang hoạt động công khai' 
-                          : 'Website chỉ hiển thị khi bạn xuất bản'}
+                        {settings?.isPublished
+                          ? 'Khách xem và đặt phòng được trên website.'
+                          : 'Chỉ thành viên đã đăng nhập xem được (bản xem trước); khách chưa đặt phòng được.'}
                       </p>
                     </div>
-                    <Button 
-                      onClick={() => setSettings({ ...settings!, isPublished: !settings?.isPublished })}
+                    <Button
+                      onClick={togglePublish}
+                      disabled={isSaving || !settings}
                       variant={settings?.isPublished ? 'danger' : 'primary'}
                     >
                       {settings?.isPublished ? 'Gỡ xuất bản' : 'Xuất bản ngay'}

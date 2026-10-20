@@ -94,6 +94,7 @@ const BOOKING_EMAIL_INCLUDE = {
       address: true,
       phone: true,
       city: true,
+      policy: { select: { checkInTime: true, checkOutTime: true } },
       workspace: { select: { slug: true, owner: { select: { email: true, name: true } } } },
     },
   },
@@ -105,6 +106,9 @@ type BookingForEmails = Prisma.BookingGetPayload<{ include: typeof BOOKING_EMAIL
 async function queueBookingEmails(tx: Tx, booking: BookingForEmails) {
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
   const prop = booking.property
+  // No staff member: the guest booked on the hotel's site, and the hotel has
+  // not confirmed yet. The emails must not say the room is booked.
+  const fromWebsite = booking.createdById === null
   const ids: string[] = []
   // A walk-in booked by staff may have no email.
   if (booking.guestEmail) ids.push(
@@ -122,6 +126,9 @@ async function queueBookingEmails(tx: Tx, booking: BookingForEmails) {
         numChildren: booking.numChildren,
         totalAmount: booking.totalAmount,
         propertyUrl: `${site}/${prop.subdomain}`,
+        checkInTime: prop.policy?.checkInTime,
+        checkOutTime: prop.policy?.checkOutTime,
+        awaitingConfirmation: fromWebsite,
       },
       booking.id,
       tx
@@ -142,6 +149,7 @@ async function queueBookingEmails(tx: Tx, booking: BookingForEmails) {
           checkIn: booking.checkInDate.toISOString(),
           checkOut: booking.checkOutDate.toISOString(),
           manageUrl: `${site}/workspace/${prop.workspace.slug}/properties/${prop.id}/bookings/${booking.id}`,
+          fromWebsite,
         },
         booking.id,
         tx
