@@ -1025,6 +1025,12 @@ model Invoice {
   cqtStatus       Int?
   cqtNote         String?
   cqtCode         String?
+
+  /// Replacement invoice (TCHDon 1): the issued invoice this one replaces;
+  /// that one becomes REPLACED once this is issued
+  replacesInvoiceId String?
+  replacesInvoice   Invoice?  @relation("InvoiceReplacement", fields: [replacesInvoiceId], references: [id])
+  replacements      Invoice[] @relation("InvoiceReplacement")
   
   // Metadata
   metadata        Json?

@@ -13,6 +13,15 @@ import { isVatCode, splitGross, type VatCode } from './vat'
 
 type Tx = Prisma.TransactionClient
 
+/** INV + yymmdd + 4 random characters; unique column, so a clash fails loudly. */
+export function generateInvoiceNumber(date = new Date()): string {
+  const year = date.getFullYear().toString().slice(-2)
+  const month = (date.getMonth() + 1).toString().padStart(2, '0')
+  const day = date.getDate().toString().padStart(2, '0')
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase()
+  return `INV${year}${month}${day}${random}`
+}
+
 const TAX_CODE_RE = /^\d{10}(-\d{3})?$/
 
 export const invoiceInputSchema = z
@@ -66,7 +75,13 @@ export async function invoiceData(
   if (!isVatCode(vatCode)) throw new EinvoiceError('Thuế suất của khách sạn không hợp lệ')
   await lockBooking(tx, booking.id)
   const others = await tx.invoice.aggregate({
-    where: { bookingId: booking.id, status: { notIn: ['CANCELLED', 'REPLACED'] }, ...(excludeInvoiceId && { id: { not: excludeInvoiceId } }) },
+    where: {
+      bookingId: booking.id,
+      status: { notIn: ['CANCELLED', 'REPLACED'] },
+      ...(excludeInvoiceId && { id: { not: excludeInvoiceId } }),
+      // An invoice being replaced counts once: through its replacement.
+      NOT: { replacements: { some: { status: { notIn: ['CANCELLED'] } } } },
+    },
     _sum: { totalAmount: true },
   })
   const invoiced = others._sum.totalAmount ?? 0

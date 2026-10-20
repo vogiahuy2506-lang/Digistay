@@ -50,6 +50,8 @@ interface Invoice {
   publishError: string | null
   cqtStatus: number | null
   cqtNote: string | null
+  replacesInvoice: { id: string; invoiceNumber: string; einvoiceNumber: string | null; invoiceSeries: string | null } | null
+  replacements: { id: string; invoiceNumber: string; einvoiceNumber: string | null; status: string }[]
   createdAt: string
   updatedAt: string
   booking: {
@@ -422,6 +424,27 @@ export default function InvoicesPage() {
         setSelectedInvoice((current) => (current ? list.find((i) => i.id === current.id) ?? current : current))
       }
     }
+  }
+
+  // An issued invoice with a mistake: a corrected copy that, once issued,
+  // replaces it on Mắt Bão (src/lib/einvoice/replacement.ts).
+  const handleReplaceInvoice = async (invoice: Invoice) => {
+    if (
+      !confirm(
+        `Lập hoá đơn thay thế cho hoá đơn số ${invoice.einvoiceNumber}? Bản nháp sẽ chép dữ liệu hoá đơn này để bạn sửa rồi phát hành; khi phát hành, hoá đơn số ${invoice.einvoiceNumber} chuyển sang "Đã thay thế". Nên hỏi kế toán trước (có thể cần văn bản thoả thuận với người mua).`
+      )
+    ) {
+      return
+    }
+    const res = await fetch(`/api/invoices/${invoice.id}/replace`, { method: 'POST' })
+    const data = await res.json().catch(() => ({}))
+    if (!data.success) {
+      alert(data.error || 'Có lỗi xảy ra')
+      return
+    }
+    setSelectedInvoice(null)
+    if (selectedProperty) await fetchInvoices(selectedProperty)
+    handleOpenEditModal({ ...data.data, booking: invoice.booking, replacesInvoice: null, replacements: [] })
   }
 
   const handleCancelInvoice = async (invoiceId: string) => {
@@ -837,6 +860,17 @@ export default function InvoicesPage() {
                       {selectedInvoice.invoiceSeries && ` · Ký hiệu ${selectedInvoice.invoiceSeries}`}
                     </p>
                   )}
+                  {selectedInvoice.replacesInvoice && (
+                    <p className="text-xs text-blue-700 mt-1">
+                      Thay thế cho hoá đơn số {selectedInvoice.replacesInvoice.einvoiceNumber}
+                      {selectedInvoice.replacesInvoice.invoiceSeries && ` (ký hiệu ${selectedInvoice.replacesInvoice.invoiceSeries})`}
+                    </p>
+                  )}
+                  {selectedInvoice.replacements?.length > 0 && (
+                    <p className="text-xs text-blue-700 mt-1">
+                      Có hoá đơn thay thế: {selectedInvoice.replacements.map((r) => r.einvoiceNumber ?? `${r.invoiceNumber} (nháp)`).join(', ')}
+                    </p>
+                  )}
                   {selectedInvoice.cqtStatus != null && (
                     <p
                       className={`text-xs mt-1 ${selectedInvoice.cqtStatus === 6 ? 'text-red-600 font-semibold' : selectedInvoice.cqtStatus === 4 ? 'text-green-700' : 'text-gray-500'}`}
@@ -979,6 +1013,14 @@ export default function InvoicesPage() {
               <Button variant="secondary" onClick={() => setSelectedInvoice(null)}>
                 Đóng
               </Button>
+              {selectedInvoice.status === 'PUBLISHED' &&
+                selectedInvoice.eInvoiceProvider === 'MATBAO' &&
+                !selectedInvoice.replacements?.length && (
+                  <Button variant="outline" onClick={() => handleReplaceInvoice(selectedInvoice)}>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Lập hoá đơn thay thế
+                  </Button>
+                )}
               {selectedInvoice.status === 'PUBLISHED' && (
                 <Button variant="outline" onClick={() => window.open(`/api/invoices/${selectedInvoice.id}/pdf`, '_blank')}>
                   <Download className="w-4 h-4 mr-2" />

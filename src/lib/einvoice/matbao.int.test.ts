@@ -37,6 +37,7 @@ import { POST as cancelRoute } from '@/app/api/invoices/[id]/cancel/route'
 import { GET as pdfRoute } from '@/app/api/invoices/[id]/pdf/route'
 import { GET as settingsRoute } from '@/app/api/properties/[id]/einvoice/route'
 import { POST as matbaoWebhook } from '@/app/api/webhooks/matbao/[propertyId]/[token]/route'
+import { POST as replaceRoute } from '@/app/api/invoices/[id]/replace/route'
 
 const fake = new FakeMatbao()
 const year = new Date().getFullYear() % 100
@@ -379,5 +380,77 @@ describe('tax-office webhook', () => {
     await callback(a.property.id, a.token, payload(a.fkey, 4, { No: 57 }))
     expect((await prisma.invoice.findUniqueOrThrow({ where: { id: a.invoiceId } })).einvoiceNumber).toBe('57')
     expect((await callback(a.property.id, a.token, { Fkey: a.fkey })).status).toBe(400)
+  })
+})
+
+describe('replacement invoices', () => {
+  const replace = async (id: string) => {
+    const res = await replaceRoute(req('POST'), params(id))
+    return { res, body: await res.json() }
+  }
+
+  async function issued() {
+    const tenant = await connectedTenant('USER')
+    const { body: created } = await createInvoice(tenant.booking.id, { ...COMPANY, totalAmount: 2_160_000 })
+    const { body: published } = await publish(created.data.id)
+    return { ...tenant, original: published.data }
+  }
+
+  it('a corrected copy, issued as TCHDon 1 naming the original, which becomes REPLACED', async () => {
+    const { original, booking } = await issued()
+    const { res, body: draft } = await replace(original.id)
+    expect(res.status).toBe(200)
+    expect(draft.data).toMatchObject({ status: 'PENDING', replacesInvoiceId: original.id, totalAmount: 2_160_000, taxCode: COMPANY.taxCode })
+
+    // The booking is fully invoiced by the original; its replacement may still hold the whole amount.
+    const fixed = await updateInvoiceRoute(req('PUT', { ...COMPANY, taxCode: '0301112223', totalAmount: 2_160_000 }), params(draft.data.id))
+    expect(fixed.status).toBe(200)
+    // ...but no third invoice fits.
+    expect((await createInvoice(booking.id, { ...COMPANY, totalAmount: 1_000 })).res.status).toBe(400)
+
+    const { res: pub, body: issuedReplacement } = await publish(draft.data.id)
+    expect(pub.status).toBe(200)
+    const sent = fake.createCalls.at(-1)!
+    expect(sent).toMatchObject({
+      TCHDon: 1,
+      MSHDonDCLQuan: original.invoiceCode,
+      KHMSHDCLQuan: '1',
+      KHHDCLQuan: SERIES,
+      SHDCLQuan: original.einvoiceNumber,
+      NMua_MST: '0301112223',
+    })
+    expect(sent.NLHDCLQuan).toBe(formatNLap(new Date(original.publishedAt)))
+    expect(sent.GChu).toContain(`số ${original.einvoiceNumber}`)
+    expect(issuedReplacement.data.status).toBe('PUBLISHED')
+    expect((await prisma.invoice.findUniqueOrThrow({ where: { id: original.id } })).status).toBe('REPLACED')
+    expect(await prisma.activityLog.count({ where: { action: 'INVOICE_REPLACED', entityId: original.id } })).toBe(1)
+  })
+
+  it('one active replacement per invoice, only for issued invoices, only by staff', async () => {
+    const { original, booking, member, owner } = await issued()
+    expect((await replace(original.id)).res.status).toBe(200)
+    const second = await replace(original.id)
+    expect(second.res.status).toBe(409)
+    expect(second.body.error).toContain('đã có hoá đơn thay thế')
+
+    const { body: pending } = await createInvoice(booking.id, { ...COMPANY, totalAmount: 1_000 }).catch(() => ({ body: null as any }))
+    expect(pending?.success).toBe(false) // fully invoiced already
+
+    const other = await createInvoice((await createBooking(original.propertyId, { totalAmount: 500_000 })).id, {
+      ...COMPANY,
+      totalAmount: 500_000,
+    })
+    expect((await replace(other.body.data.id)).res.status).toBe(409) // not issued
+
+    signInAs(member!)
+    expect((await replace(original.id)).res.status).toBe(403)
+    signInAs(owner)
+  })
+
+  it('a cancelled draft frees the invoice for another replacement', async () => {
+    const { original } = await issued()
+    const { body: draft } = await replace(original.id)
+    expect((await cancelRoute(req('POST'), params(draft.data.id))).status).toBe(200)
+    expect((await replace(original.id)).res.status).toBe(200)
   })
 })
