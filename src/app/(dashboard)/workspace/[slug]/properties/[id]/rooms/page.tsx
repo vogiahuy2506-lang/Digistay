@@ -372,29 +372,29 @@ export default function RoomTypesPage() {
 
   return (
     <div>
-      <Header
-        title="Hạng Phòng & Kho Phòng"
-        description="Quản lý hạng phòng, sức chứa và hình ảnh"
-        actions={
-          <div className="flex items-center gap-3">
-            <Select
-              value={selectedProperty}
-              onChange={(e) => setSelectedProperty(e.target.value)}
-              className="w-64"
-            >
-              {properties.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </Select>
-            <Button onClick={() => setIsCreateModalOpen(true)} disabled={!selectedProperty}>
-              <Plus className="w-4 h-4 mr-2" />
-              Thêm Hạng Phòng Mới
-            </Button>
-          </div>
-        }
-      />
-
       <PageContainer>
+        <Header
+          title="Hạng Phòng & Kho Phòng"
+          description="Quản lý hạng phòng, sức chứa và hình ảnh"
+          actions={
+            <div className="flex items-center gap-3">
+              <Select
+                value={selectedProperty}
+                onChange={(e) => setSelectedProperty(e.target.value)}
+                className="w-64"
+              >
+                {properties.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </Select>
+              <Button onClick={() => setIsCreateModalOpen(true)} disabled={!selectedProperty}>
+                <Plus className="w-4 h-4 mr-2" />
+                Thêm Hạng Phòng Mới
+              </Button>
+            </div>
+          }
+        />
+
         {/* Tabs */}
         <div className="flex items-center gap-4 mb-6">
           <button

@@ -22,8 +22,11 @@ const darkReadyPaths: RegExp[] = [
   /^\/workspace\/[^/]+\/?$/,
   /^\/workspace\/[^/]+\/(members|settings)\/?$/,
   /^\/workspace\/[^/]+\/properties(\/new)?\/?$/,
-  /^\/workspace\/[^/]+\/properties\/[^/]+\/bookings\/?$/,
-  /^\/workspace\/[^/]+\/properties\/[^/]+\/bookings\/(?!new\/?$)[^/]+\/?$/,
+  /^\/workspace\/[^/]+\/properties\/[^/]+\/?$/,
+  /^\/workspace\/[^/]+\/properties\/[^/]+\/bookings(\/[^/]+)?\/?$/,
+  // Payments and invoices wait for #41 and the PayOS / Mắt Bão chain, which
+  // rewrite both pages; they move to role colors after those merge.
+  /^\/workspace\/[^/]+\/properties\/[^/]+\/(calendar|reports(\/daily)?)\/?$/,
 ]
 
 export function isDarkReady(pathname: string | null | undefined): boolean {

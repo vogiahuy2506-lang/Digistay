@@ -81,8 +81,8 @@ export default function ReportsPage() {
         />
         <Card>
           <CardContent className="p-12 text-center">
-            <TrendingUp className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 mb-4">Vui lòng chọn cơ sở để xem báo cáo</p>
+            <TrendingUp className="w-12 h-12 text-muted mx-auto mb-4" />
+            <p className="text-muted mb-4">Vui lòng chọn cơ sở để xem báo cáo</p>
             <Button onClick={() => router.push(routes.properties(params.slug))}>
               Chọn cơ sở
             </Button>
@@ -119,7 +119,7 @@ export default function ReportsPage() {
 
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-acc"></div>
         </div>
       ) : report ? (
         <div className="space-y-6">
@@ -129,17 +129,17 @@ export default function ReportsPage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Tổng doanh thu</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-1">
+                    <p className="text-sm font-medium text-muted">Tổng doanh thu</p>
+                    <p className="text-2xl font-bold text-fg mt-1">
                       {formatCurrency(report.summary.totalRevenue)}
                     </p>
-                    <p className="text-sm text-green-600 mt-1 flex items-center">
+                    <p className="text-sm text-ok mt-1 flex items-center">
                       <TrendingUp className="w-4 h-4 mr-1" />
                       {dateRange} ngày qua
                     </p>
                   </div>
-                  <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
-                    <DollarSign className="w-6 h-6 text-green-600" />
+                  <div className="w-12 h-12 rounded-lg bg-ok-soft flex items-center justify-center">
+                    <DollarSign className="w-6 h-6 text-ok" />
                   </div>
                 </div>
               </CardContent>
@@ -149,16 +149,16 @@ export default function ReportsPage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Số đơn đặt phòng</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-1">
+                    <p className="text-sm font-medium text-muted">Số đơn đặt phòng</p>
+                    <p className="text-2xl font-bold text-fg mt-1">
                       {report.summary.totalBookings}
                     </p>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-muted mt-1">
                       TB: {formatCurrency(report.summary.averageBookingValue)}/đơn
                     </p>
                   </div>
-                  <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
-                    <Calendar className="w-6 h-6 text-blue-600" />
+                  <div className="w-12 h-12 rounded-lg bg-info-soft flex items-center justify-center">
+                    <Calendar className="w-6 h-6 text-info" />
                   </div>
                 </div>
               </CardContent>
@@ -168,16 +168,16 @@ export default function ReportsPage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Số phòng</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-1">
+                    <p className="text-sm font-medium text-muted">Số phòng</p>
+                    <p className="text-2xl font-bold text-fg mt-1">
                       {report.summary.totalRooms}
                     </p>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-muted mt-1">
                       Tỷ lệ lấp đầy: {report.summary.occupancyRate}%
                     </p>
                   </div>
-                  <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center">
-                    <Building2 className="w-6 h-6 text-purple-600" />
+                  <div className="w-12 h-12 rounded-lg bg-refund-soft flex items-center justify-center">
+                    <Building2 className="w-6 h-6 text-refund" />
                   </div>
                 </div>
               </CardContent>
@@ -187,13 +187,13 @@ export default function ReportsPage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Doanh thu trung bình/ngày</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-1">
+                    <p className="text-sm font-medium text-muted">Doanh thu trung bình/ngày</p>
+                    <p className="text-2xl font-bold text-fg mt-1">
                       {formatCurrency(report.summary.totalRevenue / parseInt(dateRange))}
                     </p>
                   </div>
-                  <div className="w-12 h-12 rounded-lg bg-yellow-100 flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-yellow-600" />
+                  <div className="w-12 h-12 rounded-lg bg-warn-soft flex items-center justify-center">
+                    <TrendingUp className="w-6 h-6 text-warn" />
                   </div>
                 </div>
               </CardContent>
@@ -213,11 +213,11 @@ export default function ReportsPage() {
                   return (
                     <div key={day.date} className="flex-1 flex flex-col items-center gap-2">
                       <div 
-                        className="w-full bg-primary rounded-t transition-all hover:bg-primary-600"
+                        className="w-full bg-ink rounded-t transition-all hover:bg-ink"
                         style={{ height: `${Math.max(height, 4)}%` }}
                         title={formatCurrency(day.revenue)}
                       />
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-muted">
                         {formatDate(day.date, { day: '2-digit', month: '2-digit' })}
                       </span>
                     </div>
@@ -243,9 +243,9 @@ export default function ReportsPage() {
                       <span>Chuyển khoản</span>
                       <span className="font-medium">{formatCurrency(report.summary.bankRevenue)}</span>
                     </div>
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-2 bg-fg/5 rounded-full overflow-hidden">
                       <div 
-                        className="h-full bg-blue-500 rounded-full"
+                        className="h-full bg-info rounded-full"
                         style={{ width: `${(report.summary.bankRevenue / report.summary.totalRevenue) * 100}%` }}
                       />
                     </div>
@@ -255,9 +255,9 @@ export default function ReportsPage() {
                       <span>QR VietQR</span>
                       <span className="font-medium">{formatCurrency(report.summary.qrRevenue)}</span>
                     </div>
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-2 bg-fg/5 rounded-full overflow-hidden">
                       <div 
-                        className="h-full bg-green-500 rounded-full"
+                        className="h-full bg-ok rounded-full"
                         style={{ width: `${(report.summary.qrRevenue / report.summary.totalRevenue) * 100}%` }}
                       />
                     </div>
@@ -267,9 +267,9 @@ export default function ReportsPage() {
                       <span>Thẻ</span>
                       <span className="font-medium">{formatCurrency(report.summary.cardRevenue)}</span>
                     </div>
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-2 bg-fg/5 rounded-full overflow-hidden">
                       <div 
-                        className="h-full bg-purple-500 rounded-full"
+                        className="h-full bg-refund rounded-full"
                         style={{ width: `${(report.summary.cardRevenue / report.summary.totalRevenue) * 100}%` }}
                       />
                     </div>
@@ -279,9 +279,9 @@ export default function ReportsPage() {
                       <span>Tiền mặt</span>
                       <span className="font-medium">{formatCurrency(report.summary.cashRevenue)}</span>
                     </div>
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-2 bg-fg/5 rounded-full overflow-hidden">
                       <div 
-                        className="h-full bg-yellow-500 rounded-full"
+                        className="h-full bg-warn rounded-full"
                         style={{ width: `${(report.summary.cashRevenue / report.summary.totalRevenue) * 100}%` }}
                       />
                     </div>
@@ -298,15 +298,15 @@ export default function ReportsPage() {
               <CardContent>
                 <div className="space-y-3 max-h-80 overflow-y-auto">
                   {report.daily.slice().reverse().slice(0, 10).map((day) => (
-                    <div key={day.date} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div key={day.date} className="flex items-center justify-between p-3 bg-fg/[0.03] rounded-lg">
                       <div>
                         <p className="font-medium">{formatDate(day.date, { day: '2-digit', month: '2-digit' })}</p>
-                        <p className="text-sm text-gray-500">{day.bookings} đơn</p>
+                        <p className="text-sm text-muted">{day.bookings} đơn</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold text-green-600">{formatCurrency(day.revenue)}</p>
+                        <p className="font-semibold text-ok">{formatCurrency(day.revenue)}</p>
                         {day.checkedIn > 0 && (
-                          <p className="text-sm text-gray-500">{day.checkedIn} đã nhận</p>
+                          <p className="text-sm text-muted">{day.checkedIn} đã nhận</p>
                         )}
                       </div>
                     </div>
@@ -319,7 +319,7 @@ export default function ReportsPage() {
       ) : (
         <Card>
           <CardContent className="p-12 text-center">
-            <p className="text-gray-500">Không có dữ liệu báo cáo</p>
+            <p className="text-muted">Không có dữ liệu báo cáo</p>
           </CardContent>
         </Card>
       )}
