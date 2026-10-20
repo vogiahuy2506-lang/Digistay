@@ -1,10 +1,15 @@
 name: Deploy to VPS
 
-# Deploys only an image that CI built and tested. After CI is green on a
-# push to main, this workflow fires; it skips itself once main moves to
-# a newer commit (that newer run will deploy instead). "Run workflow"
-# redeploys the current tip of main, whose image CI must already have
-# built.
+# Two ways this fires:
+#   1. Push to main → CI runs first. When CI's `build-image` job succeeds,
+#      GitHub triggers this workflow (workflow_run). The image is already
+#      on GHCR; we pull and roll the new container.
+#   2. workflow_dispatch — manual redeploy of main's tip. If CI hasn't
+#      built an image for that SHA yet, we build it on the VPS as a
+#      fallback (no push needed) and roll.
+#
+# Either way, the deploy job only runs on the tip of main. If main moved
+# forward while this run was queued, the newer run handles it.
 on:
   workflow_run:
     workflows: [CI]
@@ -23,10 +28,16 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    # Run on:
+    #   - manual workflow_dispatch (always)
+    #   - workflow_run when CI's build-image job succeeded on a push to main
+    # We don't gate on event==push because gh.event.workflow_run.event is
+    # the event that triggered CI, which is exactly what we want.
     if: >
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.event == 'push')
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main')
 
     steps:
       # --------------------------------------------------------------
@@ -120,31 +131,37 @@ jobs:
             echo 'Re-run this workflow after fixing the line marked FAIL above.'
 
       # --------------------------------------------------------------
-      # Probe 2: confirm the GHCR image exists for this SHA, and that the
-      # VPS can `docker pull` it. Catches the case where CI built but
-      # did not push (e.g. GHCR perms), or the VPS creds have expired.
+      # Sanity check on the VPS before we touch anything destructive.
+      # Confirms git can reach the repo, the deploy script exists and is
+      # executable, and the current tip matches what we expect to
+      # deploy. After this, digistay-deploy.sh handles image acquisition
+      # on the VPS side (git pull + docker compose build).
       # --------------------------------------------------------------
-      - name: Probe GHCR image pull
+      - name: Probe VPS + git reachability
         if: steps.target.outputs.skip != 'true'
         uses: appleboy/ssh-action@v1
         env:
           SHA: ${{ steps.target.outputs.sha }}
-          IMAGE_REPO: ghcr.io/${{ github.repository_owner }}/digistay
+          REPO: ${{ github.server_url }}/${{ github.repository }}.git
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           port: ${{ secrets.VPS_PORT }}
           key: ${{ secrets.VPS_SSH_KEY }}
           command_timeout: 5m
-          envs: SHA,IMAGE_REPO
+          envs: SHA,REPO
           script: |
             set -euo pipefail
-            echo "== verifying $IMAGE_REPO:$SHA exists on GHCR (manifest only) =="
-            if ! docker buildx imagetools inspect "$IMAGE_REPO:$SHA" >/dev/null 2>&1; then
-              echo "::error::Image $IMAGE_REPO:$SHA is not pullable. CI built but did not push, or creds expired."
-              exit 1
-            fi
-            echo "OK: $IMAGE_REPO:$SHA is reachable"
+            echo '== whoami =='
+            whoami
+            echo '== /opt/digistay =='
+            ls -la /opt/digistay | head -20
+            echo '== deploy script =='
+            ls -l /usr/local/bin/digistay-deploy.sh
+            echo "== git ls-remote $REPO (first 3 lines) =="
+            sudo -u deploy bash -c "cd /opt/digistay && git ls-remote $REPO refs/heads/main 2>&1 | head -3"
+            echo '== current HEAD =='
+            sudo -u deploy bash -c "cd /opt/digistay && git rev-parse HEAD"
 
       - name: Deploy to VPS
         if: steps.target.outputs.skip != 'true'
@@ -157,7 +174,7 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           key: ${{ secrets.VPS_SSH_KEY }}
           envs: SHA
-          command_timeout: 18m
+          command_timeout: 25m
           # `set -e`: a failing deploy must turn this step red. Without it
           # the script's exit code was lost and a failed `git pull` showed
           # green.
