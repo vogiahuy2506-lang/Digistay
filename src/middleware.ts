@@ -20,5 +20,9 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   // Not the API (webhooks need their own paths), build assets or root files.
-  matcher: ['/((?!api|_next/static|_next/image|favicon\\.ico|robots\\.txt|sitemap\\.xml).*)'],
+  // Whole path segments only: a bare `api` prefix also skipped /api-hotel,
+  // which then rendered property "api-hotel" on another hotel's subdomain.
+  matcher: [
+    '/((?!api(?:/|$)|_next/static/|_next/image(?:/|$)|favicon\\.ico$|robots\\.txt$|sitemap\\.xml$).*)',
+  ],
 }
