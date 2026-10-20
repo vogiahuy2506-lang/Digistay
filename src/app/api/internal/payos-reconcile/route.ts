@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { reconcilePendingPayos } from '@/lib/payments/payos-reconcile'
 import { checkCronSecret } from '@/lib/security/cron-secret'
+import { recordJobRun } from '@/lib/ops/job-runs'
 
 /**
  * POST /api/internal/payos-reconcile — the scheduled PayOS reconcile, called
@@ -12,7 +13,7 @@ export async function POST(request: NextRequest) {
   const refused = checkCronSecret(request)
   if (refused) return refused
 
-  const summary = await reconcilePendingPayos()
+  const summary = await recordJobRun('payos-reconcile', reconcilePendingPayos)
   console.log(`[payos] reconcile ${JSON.stringify(summary)}`)
   return NextResponse.json({ success: true, data: summary })
 }

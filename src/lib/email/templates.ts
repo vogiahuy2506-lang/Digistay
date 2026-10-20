@@ -635,3 +635,33 @@ export function invoiceEmailTemplate(props: {
     subject: `Hóa đơn điện tử số ${einvoiceNumber} - ${propertyName}`,
   }
 }
+
+// ============================================
+//  Ops alerts (src/lib/ops/alerts.ts), for the people running Digistay
+// ============================================
+export function opsAlertTemplate(
+  findings: { severity: 'critical' | 'warning'; title: string; lines: string[] }[]
+): { html: string; text: string; subject: string } {
+  const critical = findings.filter((f) => f.severity === 'critical').length
+  const label = (s: string) => (s === 'critical' ? 'NGHIÊM TRỌNG' : 'Cảnh báo')
+  const bodyHtml = `
+    <h1 style="margin: 0 0 16px; font-size: 20px; font-weight: 700; color: ${BRAND.text};">Cảnh báo vận hành Digistay</h1>
+    ${findings
+      .map(
+        (f) => `
+    <div style="margin: 0 0 16px; padding: 12px 14px; border: 1px solid ${BRAND.border}; border-radius: 8px;">
+      <p style="margin: 0 0 6px; font-size: 14px; font-weight: 700; color: ${f.severity === 'critical' ? '#b42318' : BRAND.text};">
+        ${label(f.severity)}: ${escapeHtml(f.title)}
+      </p>
+      ${f.lines.map((l) => `<p style="margin: 0; font-size: 13px; line-height: 1.6; color: ${BRAND.textMuted};">${escapeHtml(l)}</p>`).join('')}
+    </div>`
+      )
+      .join('')}
+    <p style="margin: 0; font-size: 12px; color: ${BRAND.textMuted};">Email này nhắc lại mỗi 6 giờ (nghiêm trọng) hoặc 24 giờ (cảnh báo) cho tới khi vấn đề hết. Xử lý: docs/RUNBOOK.md.</p>
+  `
+  return {
+    html: baseLayout({ previewText: findings[0]?.title ?? 'Cảnh báo vận hành', bodyHtml }),
+    text: findings.map((f) => [`${label(f.severity)}: ${f.title}`, ...f.lines.map((l) => `  - ${l}`)].join('\n')).join('\n\n'),
+    subject: `[Digistay] ${critical > 0 ? `${critical} nghiêm trọng, ` : ''}${findings.length} cảnh báo: ${findings[0]?.title ?? ''}`.slice(0, 200),
+  }
+}

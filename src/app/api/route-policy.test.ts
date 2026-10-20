@@ -38,6 +38,8 @@ const PUBLIC_HANDLERS: Record<string, string> = {
   'GET /api/health': 'deploy and uptime checks; returns only status and image version',
   'POST /api/internal/einvoice-jobs':
     'scheduled job: checkCronSecret (CRON_SECRET header, timing-safe), and nginx does not route /api/internal/',
+  'POST /api/internal/ops-alerts':
+    'scheduled job: checkCronSecret (CRON_SECRET header, timing-safe), and nginx does not route /api/internal/',
   'POST /api/internal/payos-reconcile':
     'scheduled job: checkCronSecret (CRON_SECRET header, timing-safe), and nginx does not route /api/internal/',
   'GET /api/invitations/[token]': 'invitation preview; the unguessable token in the URL is the credential',

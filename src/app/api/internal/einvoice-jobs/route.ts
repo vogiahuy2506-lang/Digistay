@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { runEinvoiceJobs } from '@/lib/einvoice/jobs'
 import { checkCronSecret } from '@/lib/security/cron-secret'
+import { recordJobRun } from '@/lib/ops/job-runs'
 
 /**
  * POST /api/internal/einvoice-jobs — auto-issue, uncertain publishes and
@@ -11,7 +12,7 @@ export async function POST(request: NextRequest) {
   const refused = checkCronSecret(request)
   if (refused) return refused
 
-  const summary = await runEinvoiceJobs()
+  const summary = await recordJobRun('einvoice-jobs', () => runEinvoiceJobs())
   console.log(`[einvoice] jobs ${JSON.stringify(summary)}`)
   return NextResponse.json({ success: true, data: summary })
 }
