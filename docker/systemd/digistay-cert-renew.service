@@ -1,0 +1,10 @@
+# Let's Encrypt renewal — see docker/certbot/renew.sh.
+# Install: docs/RUNBOOK.md, "Gia hạn chứng chỉ HTTPS".
+[Unit]
+Description=Digistay certificate renewal (certbot renew + nginx reload)
+Wants=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/bash /opt/digistay/docker/certbot/renew.sh

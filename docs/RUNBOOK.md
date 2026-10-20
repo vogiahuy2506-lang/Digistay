@@ -495,6 +495,75 @@ trang Tài khoản ngân hàng để đăng ký lại).
 
 ---
 
+## Gia hạn chứng chỉ HTTPS
+
+Chứng chỉ Let's Encrypt chỉ có hạn 90 ngày. Trước đây **không có gì tự gia hạn**: dịch vụ
+`certbot` trong compose chỉ chạy `sleep`. Timer `digistay-cert-renew` chạy
+`docker/certbot/renew.sh` mỗi ngày; certbot chỉ gia hạn khi chứng chỉ còn dưới 30 ngày, rồi
+script reload nginx.
+
+### Cài đặt một lần
+
+```bash
+cd /opt/digistay
+sudo docker run --rm -v digistay_certbot_conf:/etc/letsencrypt certbot/dns-cloudflare:v5.8.0 certificates
+#   → xem "Expiry Date" của chứng chỉ hiện tại
+sudo bash docker/certbot/renew.sh --dry-run    # thử với máy chủ staging, không đổi gì
+
+sudo cp docker/systemd/digistay-cert-renew.{service,timer} /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now digistay-cert-renew.timer
+systemctl list-timers digistay-cert-renew.timer
+```
+
+Nếu VPS đã có cron gia hạn riêng (ngoài repo) thì bỏ cron đó, để không chạy hai nơi.
+
+---
+
+## Subdomain cho site khách sạn
+
+Site công khai của khách sạn luôn có ở `digistay.vn/<subdomain>`. Phần dưới đây bật thêm địa
+chỉ `<subdomain>.digistay.vn`:
+- **Code:** đã sẵn sàng. `src/middleware.ts` chuyển request sang đúng site; nginx đã có
+  `*.digistay.vn` trong `server_name`; app tự lấy tên miền gốc từ `NEXTAUTH_URL`.
+- **Còn thiếu:** chứng chỉ wildcard và bản ghi DNS.
+
+**Làm đúng thứ tự: chứng chỉ trước, DNS sau.** Nếu thêm DNS trước, khách vào subdomain sẽ gặp
+lỗi chứng chỉ không thể bỏ qua, vì HSTS đang bật `includeSubDomains`.
+
+1. **API token Cloudflare** (DNS của digistay.vn ở Cloudflare): My Profile → API Tokens →
+   Create Token → mẫu "Edit zone DNS", Zone Resources = chỉ `digistay.vn`.
+2. **Trên VPS:**
+
+   ```bash
+   sudo install -m 600 /dev/null /etc/digistay/cloudflare.ini
+   echo 'dns_cloudflare_api_token = <token>' | sudo tee /etc/digistay/cloudflare.ini >/dev/null
+   ```
+
+3. **Cấp lại chứng chỉ** cùng tên, gồm cả `*.digistay.vn`. Chạy thử trước bằng `--dry-run`, ổn
+   rồi chạy lại không có cờ đó:
+
+   ```bash
+   cd /opt/digistay
+   sudo docker run --rm -v digistay_certbot_conf:/etc/letsencrypt \
+     -v /etc/digistay/cloudflare.ini:/etc/digistay/cloudflare.ini:ro \
+     certbot/dns-cloudflare:v5.8.0 certonly --non-interactive --dry-run \
+     --dns-cloudflare --dns-cloudflare-credentials /etc/digistay/cloudflare.ini \
+     --cert-name digistay.vn -d digistay.vn -d '*.digistay.vn' \
+     --email <email> --agree-tos --no-eff-email
+   sudo docker compose exec -T nginx nginx -s reload
+   ```
+
+   Không ghi thêm `www.digistay.vn`: wildcard đã gồm nó, và Let's Encrypt từ chối tên trùng.
+   Từ đó `renew.sh` gia hạn cả chứng chỉ này qua DNS (file `cloudflare.ini` phải còn đó).
+4. **DNS trên Cloudflare:** bản ghi `A`, tên `*`, trỏ về IP của VPS, **DNS only** (mây xám). Bật
+   proxy (mây cam) sẽ làm hỏng cách lấy IP thật của các giới hạn tần suất.
+5. **Kiểm tra:** `curl -sI https://<subdomain của một khách sạn>.digistay.vn` trả `200`. Subdomain
+   không tồn tại trả `404`. Các tên dành riêng (`www`, `api`, `login`...) không bao giờ thành site
+   khách sạn.
+
+---
+
 ## Đặt lại xác thực hai lớp
 
 Xác thực hai lớp (2FA) là **tuỳ chọn**, người dùng tự bật ở Hồ sơ → Bảo mật. Mất điện thoại thì

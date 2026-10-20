@@ -67,11 +67,13 @@ DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54329/digistay_test" npm 
   (server) hoặc `React.use(params)` (client component).
 - Multi-tenant: `Workspace` (chủ `ownerId` + `WorkspaceMember` vai trò ADMIN / MANAGER /
   RECEPTIONIST / USER) → nhiều `Property` (khách sạn) → `Booking`, `Payment`...
-- **`middleware.ts` ở thư mục gốc KHÔNG chạy**: dự án dùng `src/`, Next.js chỉ nhận
-  `src/middleware.ts` (bản build có middleware-manifest rỗng, đo 19/10/2026). Vì vậy rewrite
-  subdomain `<slug>.digistay.vn` → `/<slug>` và chuyển `/` sang `/login` hiện không xảy ra.
-  Chuyển file sang `src/` là quyết định sản phẩm (trang marketing ở `/` đang dựa vào việc nó
-  không chạy). Dù sao không có lớp nào chặn trước API: mỗi route tự kiểm tra đăng nhập.
+- `src/middleware.ts` chỉ làm một việc: chuyển `<subdomain>.digistay.vn/...` sang
+  `/<subdomain>/...` (site công khai). Nó không đụng tới `/api` và không chặn gì: mỗi route API
+  tự kiểm tra đăng nhập, còn `/` là trang giới thiệu.
+  - Tên miền gốc lấy từ `ROOT_DOMAIN`, nếu không có thì từ `NEXTAUTH_URL`.
+  - Tên subdomain dành riêng nằm ở `src/lib/subdomains.ts`. Thêm route cấp một mới trong
+    `src/app` thì thêm tên đó vào danh sách này.
+  - Trước 20/10/2026 file nằm ở thư mục gốc nên không bao giờ chạy.
 - Biến môi trường khai báo ở `src/lib/env.ts`; thêm biến thì cập nhật cả `.env.example`. Lưu ý:
   chưa file nào import `env.ts`, nên schema zod của nó **không kiểm tra gì lúc chạy** (đo
   19/10/2026); biến nào cần kiểm thật thì kiểm ở nơi dùng (vd `DATA_ENCRYPTION_KEYS` ở
@@ -135,6 +137,8 @@ sạn, đặt lại mật khẩu chỉ cần email, email trong phiên do client
 - Bộ tối ưu ảnh của Next đang **tắt** (`images.unoptimized`), để server không phải giải mã ảnh lạ
   (lỗ hổng RCE AVIF chỉ được vá từ Next 15.5.24; đang dùng 15.5.28). Muốn bật lại thì chỉ với
   `remotePatterns` liệt kê đúng host của mình, không bao giờ `**`; có test chặn.
+- Chứng chỉ HTTPS gia hạn bằng timer `digistay-cert-renew` (RUNBOOK). Trước đó không có gì
+  gia hạn.
 - `/workspace-picker/*` luôn chuyển về `/workspaces`: layout của nó nằm trên `[slug]` nên không
   bao giờ nhận được `slug` (có từ trước, Next 15 mới lộ ra khi kiểm kiểu). Dọn hay sửa là quyết
   định sản phẩm; trang lời mời đang trỏ tới đó.
