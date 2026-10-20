@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { invalidatePublicSite } from '@/lib/public-site/site'
+import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 
 export async function GET(request: NextRequest) {
   try {
@@ -112,12 +113,17 @@ export async function PUT(request: NextRequest) {
           ],
         },
       },
-      select: { id: true },
+      select: { id: true, workspaceId: true },
     })
 
     if (!property) {
       return NextResponse.json({ success: false, error: 'Không có quyền chỉnh sửa' }, { status: 403 })
     }
+    // Owners, ADMIN and MANAGER edit the site, like the custom domain and SSL
+    // routes and the sidebar (receptionists and USER never see the builder).
+    // Publishing decides whether guests see the site and can book.
+    const access = await requireWorkspaceRole(property.workspaceId, WorkspaceRoles.ADMINS_AND_MANAGERS)
+    if (!access.ok) return access.response
 
     // One transaction: a failure keeps the current layout instead of none.
     await prisma.$transaction([
