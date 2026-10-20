@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # ============================================================
-# Deploys one CI-built image to this VPS, safely.
+# Deploys one commit to this VPS, safely.
 #
 #   bash docker/deploy.sh <40-char git sha>
 #
 # Called by /usr/local/bin/digistay-deploy.sh (source: docker/vps/) after it
-# has checked out that same commit. Steps:
-#   1. pull the image CI built and tested for this SHA
+# has checked out that same commit (CI already tested it). Steps:
+#   1. build the image from the checked-out source: digistay-app:<sha>,
+#      with that SHA as the version /api/health reports
 #   2. back up the database (docker/backup.sh, local copy)
 #   3. run migrations with the NEW image while the old app keeps serving;
 #      a failing migration stops the deploy here, nothing is swapped
@@ -29,8 +30,28 @@ APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$APP_DIR"
 HEALTH_TIMEOUT="${HEALTH_TIMEOUT:-120}"
 APP_CONTAINER=digistay-app
+IMAGE_REPO=digistay-app # docker-compose.yml: image digistay-app:${APP_TAG}
+LOCK_FILE="${DEPLOY_LOCK_FILE:-/var/lock/digistay-deploy.lock}"
 
 log() { echo "[deploy] $(date -u +%Y-%m-%dT%H:%M:%SZ) $*"; }
+
+# One deploy at a time. Two at once (a manual run during a CI run) failed
+# on 2026-10-20 with "removal of container ... is already in progress".
+# The VPS wrapper takes the lock before its checkout and passes it down.
+if [[ "${DIGISTAY_DEPLOY_LOCK_HELD:-}" != 1 ]]; then
+  exec 9>"$LOCK_FILE"
+  if ! flock -n 9; then
+    log "FATAL: another deploy is running (lock $LOCK_FILE); wait for it, then retry"
+    exit 1
+  fi
+fi
+
+# Build exactly what was reviewed: the wrapper checked out $SHA.
+HEAD_SHA="$(git -c safe.directory="$APP_DIR" rev-parse HEAD)"
+if [[ "$HEAD_SHA" != "$SHA" ]]; then
+  log "FATAL: $APP_DIR is at $HEAD_SHA, not $SHA"
+  exit 1
+fi
 
 for f in .env .env.production; do
   if [[ ! -f "$f" ]]; then
@@ -39,8 +60,12 @@ for f in .env .env.production; do
   fi
 done
 
-# The version deployed right now (empty on the first deploy): rollback target.
+# The version deployed right now: rollback target. Before per-commit tags,
+# the running image was digistay-app:latest.
 PREV_TAG="$(sed -n 's/^APP_TAG=//p' .env | tail -n 1)"
+if [[ -z "$PREV_TAG" ]] && docker image inspect "$IMAGE_REPO:latest" >/dev/null 2>&1; then
+  PREV_TAG=latest
+fi
 
 # Records the deployed tag in .env, which compose reads for every command,
 # so a manual `docker compose up -d` keeps this version. `cat >` keeps the
@@ -107,8 +132,8 @@ reload_nginx() {
 log "deploying $SHA (previous: ${PREV_TAG:-none})"
 export APP_TAG="$SHA"
 
-log "1/5 pulling the image"
-docker compose pull app
+log "1/5 building $IMAGE_REPO:$SHA (the old app keeps serving)"
+docker compose build app
 
 # Backing services (postgres, redis, ...): everything except the app itself
 # and nginx, whose depends_on would start the app before migrations ran.
@@ -124,13 +149,13 @@ docker compose run --rm --no-deps -e CHECKPOINT_DISABLE=1 app \
   node node_modules/prisma/build/index.js migrate deploy
 
 log "4/5 starting the new app container"
-docker compose up -d --no-deps app
+# --no-build: never build here; a missing image must fail, not be rebuilt.
+docker compose up -d --no-deps --no-build app
 
 log "5/5 waiting for /api/health to report $SHA (up to ${HEALTH_TIMEOUT}s)"
 if wait_for_version "$SHA"; then
   record_tag "$SHA"
   # Keep the current and previous images for rollback; drop older ones.
-  IMAGE_REPO="$(docker compose config --images | sed -n "s/:$SHA\$//p" | head -n 1)"
   docker image ls "$IMAGE_REPO" --format '{{.Tag}}' \
     | { grep -vxE "$SHA|${PREV_TAG:-<none>}|latest" || true; } \
     | while read -r tag; do docker image rm "$IMAGE_REPO:$tag" >/dev/null 2>&1 || true; done
@@ -147,7 +172,9 @@ log "ERROR: $SHA did not become healthy"
 docker logs --tail 50 "$APP_CONTAINER" 2>&1 | sed 's/^/[app] /' || true
 if [[ -n "$PREV_TAG" ]]; then
   log "rolling back to $PREV_TAG"
-  APP_TAG="$PREV_TAG" docker compose up -d --no-deps app
+  # --no-build: if that image were gone, compose would build THIS commit
+  # under the old tag and "roll back" to the broken code.
+  APP_TAG="$PREV_TAG" docker compose up -d --no-deps --no-build app
   if wait_for_version "$PREV_TAG"; then
     log "rollback OK: $PREV_TAG is serving again (this deploy still FAILED)"
   else

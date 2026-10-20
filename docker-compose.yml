@@ -5,19 +5,19 @@ services:
   # Next.js 14 app (standalone build)
   # --------------------------------------------------------------
   app:
-    # `build` is what the VPS deploy path uses: the deploy script checks out
-    # the target SHA into /opt/digistay and runs `docker compose build app`,
-    # so the image is produced on the host from the checked-out source. No
-    # registry push/pull is involved, which keeps private-repo credentials
-    # out of the VPS entirely.
+    # Built on the VPS: docker/deploy.sh checks out the target SHA into
+    # /opt/digistay and runs `docker compose build app`. No registry
+    # push/pull, so no private-repo credentials on the VPS.
     #
-    # `image` still names the local tag so `docker compose` records it and
-    # the running container is traceable to a build. docker/deploy.sh and
-    # any manual `docker compose` invocation keep working unchanged.
-    image: digistay-app:latest
+    # One tag per commit (APP_TAG, recorded in .env by docker/deploy.sh), so
+    # the previous image is still there to roll back to. `latest` is the
+    # image built before tags existed.
+    image: digistay-app:${APP_TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        APP_VERSION: ${APP_TAG:-dev}
     container_name: digistay-app
     env_file:
       - .env.production
@@ -28,6 +28,9 @@ services:
       PORT: "3000"
       HOSTNAME: "0.0.0.0"
       NEXT_TELEMETRY_DISABLED: "1"
+      # What /api/health reports, and what deploy.sh waits for. Set here so a
+      # stray APP_VERSION in .env.production cannot override it.
+      APP_VERSION: ${APP_TAG:-dev}
     networks:
       - digistay_net
     depends_on:

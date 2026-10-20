@@ -203,11 +203,17 @@ jobs:
           script: |
             set -euo pipefail
             # docker/deploy.sh already waited for /api/health to report
-            # this SHA. We re-check from the host to confirm the right
-            # container is still the one answering after compose has
-            # settled.
+            # this SHA inside the container. Re-check the way visitors
+            # arrive: through nginx and TLS. Plain http://127.0.0.1 cannot
+            # work: port 80 only answers /healthz and redirects the rest.
             cd /opt/digistay
-            HEALTH="$(sudo -E curl -fsS http://127.0.0.1/api/health || true)"
+            DOMAIN="$(sudo sed -n 's/^DOMAIN=//p' .env | tail -n 1)"
+            if [ -n "$DOMAIN" ]; then
+              HEALTH="$(curl -fsS --resolve "$DOMAIN:443:127.0.0.1" "https://$DOMAIN/api/health" || true)"
+            else
+              echo "::warning::DOMAIN is not set in /opt/digistay/.env; checking inside the app container instead"
+              HEALTH="$(sudo docker exec digistay-app wget -qO- http://127.0.0.1:3000/api/health || true)"
+            fi
             echo "/api/health => $HEALTH"
             if ! grep -q "\"version\":\"$SHA\"" <<<"$HEALTH"; then
               echo "::error::Health did not report expected version $SHA"
