@@ -182,7 +182,15 @@ sạn, đặt lại mật khẩu chỉ cần email, email trong phiên do client
       hiệu, số và ngày của hoá đơn gốc; hoá đơn gốc chuyển sang `REPLACED`.
     - Mỗi hoá đơn chỉ có một bản thay thế còn hiệu lực.
     - Khi tính tổng tiền đã xuất cho một đơn, hoá đơn gốc không bị tính hai lần.
-    - Hoá đơn điều chỉnh (TCHDon 2–5) chưa hỗ trợ.
+  - **Điều chỉnh** (`adjustment.ts`, TCHDon 2 tăng / 3 giảm): hoá đơn mới chỉ ghi phần chênh
+    lệch, có dấu: `totalAmount` âm là điều chỉnh giảm (NĐ 123 Điều 19: "ghi dấu âm"). Hoá đơn
+    gốc vẫn `PUBLISHED`. Mỗi lúc chỉ một bản nháp điều chỉnh; giảm không quá giá trị hiện tại của
+    hoá đơn gốc; một hoá đơn hoặc bị thay thế, hoặc được điều chỉnh, không cả hai.
+    - Tài liệu Mắt Bão không nói dấu của số tiền: đang **giả định số âm** (Mắt Bão giả kiểm theo
+      giả định này). Phải phát hành thử một điều chỉnh giảm trên DEMO trước khi dùng Chính thức.
+    - Điều chỉnh thông tin (TCHDon 4) không hỗ trợ: sai thông tin người mua thì thay thế.
+    - Khi tính tổng đã xuất của một đơn, bản nháp điều chỉnh giảm chưa được trừ cho tới khi
+      phát hành (`invoicedTotal`).
   - **Ký hiệu đổi theo năm**: sang năm mới phải sửa ký hiệu trong thẻ Mắt Bão.
   - **Môi trường Chính thức** là hoá đơn thật, có giá trị pháp lý.
   - Trạng thái từ cơ quan thuế về qua webhook `/api/webhooks/matbao/<propertyId>/<token>`. Mắt
@@ -254,7 +262,7 @@ dùng duyệt rồi mới làm, trên nhánh riêng. Cập nhật trạng thái 
    tiền và không cập nhật `depositAmount` — xong; có thêm đối soát định kỳ 10 phút. Còn: SePay
    (nếu khách sạn cần), khách tự trả cọc trên site công khai.
 6. Hoá đơn điện tử Mắt Bão, mỗi khách sạn một tài khoản, kèm trạng thái từ cơ quan thuế — xong.
-   Thêm: hoá đơn thay thế. Còn: hoá đơn điều chỉnh, tự gửi email hoá đơn cho khách, tự xuất hoá
-   đơn khi đơn thanh toán xong.
+   Thêm: hoá đơn thay thế, hoá đơn điều chỉnh tăng/giảm. Còn: tự gửi email hoá đơn cho khách, tự
+   xuất hoá đơn khi đơn thanh toán xong.
 
 Tài liệu deploy: `docs/DEPLOYMENT.md`, `docs/RUNBOOK.md`.

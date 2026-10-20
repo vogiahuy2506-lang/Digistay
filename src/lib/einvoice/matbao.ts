@@ -16,7 +16,9 @@
  * - Issued invoices cannot be cancelled here: that needs a tax-office notice
  *   (mẫu 04) on Mắt Bão's portal. They can be replaced (replacement.ts):
  *   the new invoice carries TCHDon 1 and the original's identifiers, and
- *   the original becomes REPLACED once the new one is issued.
+ *   the original becomes REPLACED once the new one is issued. Or adjusted
+ *   (adjustment.ts): TCHDon 2/3 with the signed difference; the original
+ *   stays as it is.
  *
  * Lessons from Founder AI (one platform account there): CLAUDE.md, "Quy ước
  * code", Hoá đơn điện tử.
@@ -179,19 +181,33 @@ type InvoiceForPayload = Pick<
   | 'totalAmount'
 > & { booking: { bookingCode: string; checkInDate: Date; checkOutDate: Date } }
 
-/** The issued invoice a replacement points at (Mắt Bão "hoá đơn liên quan"). */
-export type ReplacedInvoice = Pick<Invoice, 'invoiceCode' | 'invoicePattern' | 'invoiceSeries' | 'einvoiceNumber' | 'publishedAt'>
+/** The issued invoice a replacement or adjustment points at (Mắt Bão "hoá đơn liên quan"). */
+export type RelatedInvoice = Pick<Invoice, 'invoiceCode' | 'invoicePattern' | 'invoiceSeries' | 'einvoiceNumber' | 'publishedAt'>
 
-function replacementFields(original: ReplacedInvoice) {
+/** replaces: TCHDon 1. adjusts: TCHDon 2, or 3 when the total is negative. */
+export interface Relation {
+  kind: 'replaces' | 'adjusts'
+  invoice: RelatedInvoice
+  reason?: string
+}
+
+function adjustmentLabel(total: number) {
+  return total < 0 ? 'Điều chỉnh giảm' : 'Điều chỉnh tăng'
+}
+
+function relatedFields({ kind, invoice: original, reason }: Relation, total: number) {
   const date = original.publishedAt!
+  const what = kind === 'replaces' ? 'Thay thế' : adjustmentLabel(total)
+  const note = `${what} cho hóa đơn mẫu số ${original.invoicePattern} ký hiệu ${original.invoiceSeries} số ${original.einvoiceNumber} ngày ${vnDate(date)}`
   return {
-    TCHDon: 1,
+    TCHDon: kind === 'replaces' ? 1 : total < 0 ? 3 : 2,
     MSHDonDCLQuan: original.invoiceCode,
     KHMSHDCLQuan: original.invoicePattern,
     KHHDCLQuan: original.invoiceSeries,
     SHDCLQuan: original.einvoiceNumber,
     NLHDCLQuan: formatNLap(date),
-    GChu: `Thay thế cho hóa đơn mẫu số ${original.invoicePattern} ký hiệu ${original.invoiceSeries} số ${original.einvoiceNumber} ngày ${vnDate(date)}`,
+    // GChu holds 255 characters.
+    GChu: (reason ? `${note}. Lý do: ${reason}` : note).slice(0, 255),
   }
 }
 
@@ -201,7 +217,7 @@ export function buildMatbaoInvoice(
   config: Pick<PropertyEinvoice, 'templateCode' | 'series'>,
   vatCode: VatCode,
   now: Date,
-  replaces?: ReplacedInvoice | null
+  related?: Relation | null
 ) {
   const { net, vat, gross } = splitGross(invoice.totalAmount, vatCode)
   const lookupCode = lookupCodeFor(invoice)
@@ -228,6 +244,7 @@ export function buildMatbaoInvoice(
         : { NMua_Ten: '', NMua_MST: '', NMua_DChi: '', NMua_HVTNMHang: 'Bán cho người tiêu dùng', NMua_DCTDTu: '' }
 
   const { bookingCode, checkInDate, checkOutDate } = invoice.booking
+  const service = `Dịch vụ lưu trú - đơn ${bookingCode} (${vnDate(checkInDate)} - ${vnDate(checkOutDate)})`
   return {
     KHMSHDon: config.templateCode,
     KHHDon: config.series,
@@ -246,7 +263,10 @@ export function buildMatbaoInvoice(
       {
         TChat: 1,
         STT: 1,
-        THHDVu: `Dịch vụ lưu trú - đơn ${bookingCode} (${vnDate(checkInDate)} - ${vnDate(checkOutDate)})`,
+        THHDVu:
+          related?.kind === 'adjusts'
+            ? `${adjustmentLabel(gross)}: ${service.charAt(0).toLowerCase()}${service.slice(1)}`
+            : service,
         DVTinh: 'Lần',
         SLuong: 1,
         DGia: net,
@@ -265,7 +285,7 @@ export function buildMatbaoInvoice(
     TgTThue: vat,
     TgTTTBSo: gross,
     TgTTTBChu: vndToWords(gross),
-    ...(replaces && replacementFields(replaces)),
+    ...(related && relatedFields(related, gross)),
   }
 }
 
@@ -288,6 +308,7 @@ export async function publishInvoice(invoiceId: string, userId: string, now = ne
     include: {
       booking: { select: { bookingCode: true, checkInDate: true, checkOutDate: true } },
       replacesInvoice: true,
+      adjustsInvoice: true,
     },
   })
   if (!invoice) throw new EinvoiceError('Không tìm thấy hoá đơn', 404)
@@ -295,6 +316,16 @@ export async function publishInvoice(invoiceId: string, userId: string, now = ne
   if (replaces && replaces.status !== 'PUBLISHED') {
     throw new EinvoiceError('Hoá đơn gốc không còn ở trạng thái đã phát hành, không thay thế được', 409)
   }
+  const adjusts = invoice.adjustsInvoice
+  if (adjusts && adjusts.status !== 'PUBLISHED') {
+    throw new EinvoiceError('Hoá đơn gốc không còn ở trạng thái đã phát hành, không điều chỉnh được', 409)
+  }
+  const reason = asObject(invoice.metadata).adjustmentReason
+  const related: Relation | null = replaces
+    ? { kind: 'replaces', invoice: replaces }
+    : adjusts
+      ? { kind: 'adjusts', invoice: adjusts, ...(typeof reason === 'string' && { reason }) }
+      : null
   if (invoice.status === 'PUBLISHED') throw new EinvoiceError('Hoá đơn đã được phát hành', 409)
   if (invoice.status === 'CANCELLED' || invoice.status === 'REPLACED') {
     throw new EinvoiceError('Hoá đơn đã huỷ, không phát hành được', 409)
@@ -331,7 +362,7 @@ export async function publishInvoice(invoiceId: string, userId: string, now = ne
   let result
   try {
     result = await clientFor(config).createInvoice(
-      buildMatbaoInvoice({ ...invoice, lookupCode }, config, vatCode, now, replaces)
+      buildMatbaoInvoice({ ...invoice, lookupCode }, config, vatCode, now, related)
     )
   } catch (error) {
     const message =
@@ -397,6 +428,18 @@ export async function publishInvoice(invoiceId: string, userId: string, now = ne
         entityType: 'INVOICE',
         entityId: replaces.id,
         metadata: { replacedBy: invoice.id, einvoiceNumber: replaces.einvoiceNumber, newNumber: result.soHDon },
+      },
+    })
+  }
+  if (adjusts) {
+    await prisma.activityLog.create({
+      data: {
+        userId,
+        propertyId: invoice.propertyId,
+        action: 'INVOICE_ADJUSTED',
+        entityType: 'INVOICE',
+        entityId: adjusts.id,
+        metadata: { adjustedBy: invoice.id, einvoiceNumber: adjusts.einvoiceNumber, newNumber: result.soHDon, amount: invoice.totalAmount },
       },
     })
   }

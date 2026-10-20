@@ -1031,6 +1031,13 @@ model Invoice {
   replacesInvoiceId String?
   replacesInvoice   Invoice?  @relation("InvoiceReplacement", fields: [replacesInvoiceId], references: [id])
   replacements      Invoice[] @relation("InvoiceReplacement")
+
+  /// Adjustment invoice (TCHDon 2 increase, 3 decrease): the issued invoice
+  /// it adjusts. totalAmount is the signed difference, negative for a
+  /// decrease; the adjusted invoice stays PUBLISHED (adjustment.ts)
+  adjustsInvoiceId  String?
+  adjustsInvoice    Invoice?  @relation("InvoiceAdjustment", fields: [adjustsInvoiceId], references: [id])
+  adjustments       Invoice[] @relation("InvoiceAdjustment")
   
   // Metadata
   metadata        Json?

@@ -44,3 +44,25 @@ describe('vndToWords', () => {
     expect(vndToWords(amount)).toBe(words)
   })
 })
+
+describe('signed amounts (adjustment invoices)', () => {
+  it('a decrease splits exactly like the same increase, negated', () => {
+    // gross / (1 + rate) never ends in exactly .5 for these rates, so
+    // rounding is symmetric and one function serves both signs.
+    for (let gross = 1; gross <= 20_000; gross += 7) {
+      for (const code of [10, 8, 5, 0, -1, -2] as const) {
+        const up = splitGross(gross, code)
+        const down = splitGross(-gross, code)
+        // Sums, not negation: 0 and -0 are the same amount.
+        expect(down.net + up.net).toBe(0)
+        expect(down.vat + up.vat).toBe(0)
+        expect(down.gross).toBe(-gross)
+      }
+    }
+  })
+
+  it('reads a negative amount as "Âm ..."', () => {
+    expect(vndToWords(-1_080_000)).toBe('Âm một triệu không trăm tám mươi nghìn đồng')
+    expect(vndToWords(1_080_000)).toBe('Một triệu không trăm tám mươi nghìn đồng')
+  })
+})
