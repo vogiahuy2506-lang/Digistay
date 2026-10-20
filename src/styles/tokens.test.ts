@@ -102,6 +102,13 @@ describe('tailwind.config.ts', () => {
     expect(css).not.toContain('prefers-color-scheme')
   })
 
+  it('gives a bare border / divide the line color, not gray-200', async () => {
+    // Both take their color from preflight's `*, ::before, ::after` rule.
+    const css = await build('border divide-y')
+    expect(css).toMatch(/::after \{[^}]*border-color: rgb\(var\(--ds-line\) \/ 1\)/)
+    expect(css).not.toMatch(/#e5e7eb/i)
+  })
+
   it('switches corner radii with data-surface', async () => {
     const css = await build('rounded-ctl rounded-box')
     expect(css).toMatch(/\[data-surface="site"\] \{[^}]*--ds-r-ctl: 2px/)

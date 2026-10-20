@@ -13,6 +13,9 @@ describe('dashboard theme', () => {
   })
 
   it('turns dark on only for pages drawn with role colors', () => {
+    for (const ready of ['/workspaces', '/profile', '/workspace/demo', '/workspace/demo/members', '/workspace/demo/settings', '/workspace/demo/properties', '/workspace/demo/properties/new']) {
+      expect(isDarkReady(ready)).toBe(true)
+    }
     expect(isDarkReady(`${P}/bookings`)).toBe(true)
     expect(isDarkReady(`${P}/bookings/b1`)).toBe(true)
     // The walk-in form still hard-codes light colors.

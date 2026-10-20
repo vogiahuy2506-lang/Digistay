@@ -82,7 +82,7 @@ export default function NewPropertyPage() {
     return (
       <PageContainer>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-acc"></div>
         </div>
       </PageContainer>
     )
@@ -92,7 +92,7 @@ export default function NewPropertyPage() {
     <PageContainer>
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-primary mb-3"
+        className="flex items-center gap-1.5 text-sm text-muted hover:text-acc mb-3"
       >
         <ArrowLeft className="w-4 h-4" />
         Quay lại
@@ -106,7 +106,7 @@ export default function NewPropertyPage() {
         <CardContent className="p-6">
           <form onSubmit={handleCreate} className="space-y-4">
             {error && (
-              <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
+              <div className="p-3 rounded-lg bg-err-soft border border-err/30 text-err text-sm">
                 {error}
               </div>
             )}

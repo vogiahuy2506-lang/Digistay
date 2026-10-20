@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Card, CardHeader, CardTitle, CardContent, Badge, Button } from '@/components/ui'
+import { Card, CardHeader, CardTitle, CardContent, Badge, BookingStatusBadge, Button } from '@/components/ui'
 import { useWorkspace } from '@/lib/hooks/use-workspace'
 import { routes } from '@/lib/utils/routes'
 import {
@@ -101,7 +101,7 @@ export default function WorkspaceDashboardPage() {
   if (wsLoading || loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-acc"></div>
       </div>
     )
   }
@@ -116,23 +116,12 @@ export default function WorkspaceDashboardPage() {
     }).format(amount)
   }
 
-  const getStatusBadge = (status: string) => {
-    const badges: Record<string, { label: string; color: string }> = {
-      PENDING: { label: 'Chờ xác nhận', color: 'bg-yellow-100 text-yellow-700' },
-      CONFIRMED: { label: 'Đã xác nhận', color: 'bg-blue-100 text-blue-700' },
-      CHECKED_IN: { label: 'Đã nhận phòng', color: 'bg-green-100 text-green-700' },
-      CHECKED_OUT: { label: 'Đã trả phòng', color: 'bg-gray-100 text-gray-700' },
-      CANCELLED: { label: 'Đã hủy', color: 'bg-red-100 text-red-700' },
-    }
-    return badges[status] || { label: status, color: 'bg-gray-100 text-gray-700' }
-  }
-
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Tổng quan</h1>
-        <p className="text-gray-500 mt-1">Xem nhanh tình trạng workspace của bạn</p>
+        <h1 className="text-2xl font-bold text-fg">Tổng quan</h1>
+        <p className="text-muted mt-1">Xem nhanh tình trạng workspace của bạn</p>
       </div>
 
       {/* Stats Cards */}
@@ -141,14 +130,14 @@ export default function WorkspaceDashboardPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Tổng cơ sở</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{stats?.totalProperties || 0}</p>
+                <p className="text-sm text-muted">Tổng cơ sở</p>
+                <p className="text-3xl font-bold text-fg mt-1">{stats?.totalProperties || 0}</p>
               </div>
-              <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-blue-600" />
+              <div className="w-12 h-12 rounded-lg bg-info-soft flex items-center justify-center">
+                <Building2 className="w-6 h-6 text-info" />
               </div>
             </div>
-            <p className="text-sm text-green-600 mt-2">
+            <p className="text-sm text-ok mt-2">
               {stats?.activeProperties || 0} đang hoạt động
             </p>
           </CardContent>
@@ -158,14 +147,14 @@ export default function WorkspaceDashboardPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Đặt phòng</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{stats?.totalBookings || 0}</p>
+                <p className="text-sm text-muted">Đặt phòng</p>
+                <p className="text-3xl font-bold text-fg mt-1">{stats?.totalBookings || 0}</p>
               </div>
-              <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-purple-600" />
+              <div className="w-12 h-12 rounded-lg bg-refund-soft flex items-center justify-center">
+                <BookOpen className="w-6 h-6 text-refund" />
               </div>
             </div>
-            <p className="text-sm text-yellow-600 mt-2">
+            <p className="text-sm text-warn mt-2">
               {stats?.pendingBookings || 0} chờ xử lý
             </p>
           </CardContent>
@@ -175,13 +164,13 @@ export default function WorkspaceDashboardPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Doanh thu tháng</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">
+                <p className="text-sm text-muted">Doanh thu tháng</p>
+                <p className="text-2xl font-bold text-fg mt-1">
                   {formatCurrency(stats?.monthlyRevenue || 0)}
                 </p>
               </div>
-              <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-green-600" />
+              <div className="w-12 h-12 rounded-lg bg-ok-soft flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-ok" />
               </div>
             </div>
           </CardContent>
@@ -191,16 +180,16 @@ export default function WorkspaceDashboardPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Thành viên</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">-</p>
+                <p className="text-sm text-muted">Thành viên</p>
+                <p className="text-3xl font-bold text-fg mt-1">-</p>
               </div>
-              <div className="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center">
-                <Users className="w-6 h-6 text-orange-600" />
+              <div className="w-12 h-12 rounded-lg bg-warn-soft flex items-center justify-center">
+                <Users className="w-6 h-6 text-warn" />
               </div>
             </div>
             <Link
               href={routes.members(workspace.slug)}
-              className="text-sm text-primary hover:underline mt-2 inline-block"
+              className="text-sm text-acc hover:underline mt-2 inline-block"
             >
               Quản lý thành viên
             </Link>
@@ -227,15 +216,15 @@ export default function WorkspaceDashboardPage() {
                   <Link
                     key={p.id}
                     href={routes.property(workspace.slug, p.id)}
-                    className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex items-center justify-between p-3 rounded-lg hover:bg-fg/[0.03] transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center">
-                        <Building2 className="w-5 h-5 text-primary" />
+                      <div className="w-10 h-10 rounded-lg bg-acc-soft flex items-center justify-center">
+                        <Building2 className="w-5 h-5 text-acc" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">{p.name}</p>
-                        <p className="text-sm text-gray-500">{p._count?.roomTypes || 0} hạng phòng</p>
+                        <p className="font-medium text-fg">{p.name}</p>
+                        <p className="text-sm text-muted">{p._count?.roomTypes || 0} hạng phòng</p>
                       </div>
                     </div>
                     <Badge variant={p.isActive ? 'success' : 'gray'}>
@@ -246,8 +235,8 @@ export default function WorkspaceDashboardPage() {
               </div>
             ) : (
               <div className="text-center py-8">
-                <Building2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 mb-3">Chưa có cơ sở nào</p>
+                <Building2 className="w-12 h-12 text-muted mx-auto mb-3" />
+                <p className="text-muted mb-3">Chưa có cơ sở nào</p>
                 <Link href={routes.properties(workspace.slug)}>
                   <Button size="sm">Tạo cơ sở đầu tiên</Button>
                 </Link>
@@ -271,24 +260,22 @@ export default function WorkspaceDashboardPage() {
                 {recentBookings.map((booking) => (
                   <div
                     key={booking.id}
-                    className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex items-center justify-between p-3 rounded-lg hover:bg-fg/[0.03] transition-colors"
                   >
                     <div>
-                      <p className="font-medium text-gray-900">{booking.customerName}</p>
-                      <p className="text-sm text-gray-500">
+                      <p className="font-medium text-fg">{booking.customerName}</p>
+                      <p className="text-sm text-muted">
                         {booking.property?.name} • {booking.bookingCode}
                       </p>
                     </div>
-                    <Badge className={getStatusBadge(booking.status).color}>
-                      {getStatusBadge(booking.status).label}
-                    </Badge>
+                    <BookingStatusBadge status={booking.status} />
                   </div>
                 ))}
               </div>
             ) : (
               <div className="text-center py-8">
-                <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">Chưa có đặt phòng nào</p>
+                <BookOpen className="w-12 h-12 text-muted mx-auto mb-3" />
+                <p className="text-muted">Chưa có đặt phòng nào</p>
               </div>
             )}
           </CardContent>
@@ -303,27 +290,27 @@ export default function WorkspaceDashboardPage() {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Link href={routes.properties(workspace.slug)}>
-              <div className="p-4 rounded-lg border hover:border-primary hover:bg-primary-50 transition-colors cursor-pointer text-center">
-                <Building2 className="w-8 h-8 text-primary mx-auto mb-2" />
-                <p className="font-medium text-gray-900">Quản lý cơ sở</p>
+              <div className="p-4 rounded-lg border hover:border-acc hover:bg-acc-soft transition-colors cursor-pointer text-center">
+                <Building2 className="w-8 h-8 text-acc mx-auto mb-2" />
+                <p className="font-medium text-fg">Quản lý cơ sở</p>
               </div>
             </Link>
             <Link href={routes.members(workspace.slug)}>
-              <div className="p-4 rounded-lg border hover:border-primary hover:bg-primary-50 transition-colors cursor-pointer text-center">
-                <Users className="w-8 h-8 text-primary mx-auto mb-2" />
-                <p className="font-medium text-gray-900">Thành viên</p>
+              <div className="p-4 rounded-lg border hover:border-acc hover:bg-acc-soft transition-colors cursor-pointer text-center">
+                <Users className="w-8 h-8 text-acc mx-auto mb-2" />
+                <p className="font-medium text-fg">Thành viên</p>
               </div>
             </Link>
             <Link href={routes.properties(workspace.slug)}>
-              <div className="p-4 rounded-lg border hover:border-primary hover:bg-primary-50 transition-colors cursor-pointer text-center">
-                <Bed className="w-8 h-8 text-primary mx-auto mb-2" />
-                <p className="font-medium text-gray-900">Hạng phòng</p>
+              <div className="p-4 rounded-lg border hover:border-acc hover:bg-acc-soft transition-colors cursor-pointer text-center">
+                <Bed className="w-8 h-8 text-acc mx-auto mb-2" />
+                <p className="font-medium text-fg">Hạng phòng</p>
               </div>
             </Link>
             <Link href={routes.properties(workspace.slug)}>
-              <div className="p-4 rounded-lg border hover:border-primary hover:bg-primary-50 transition-colors cursor-pointer text-center">
-                <Calendar className="w-8 h-8 text-primary mx-auto mb-2" />
-                <p className="font-medium text-gray-900">Lịch phòng</p>
+              <div className="p-4 rounded-lg border hover:border-acc hover:bg-acc-soft transition-colors cursor-pointer text-center">
+                <Calendar className="w-8 h-8 text-acc mx-auto mb-2" />
+                <p className="font-medium text-fg">Lịch phòng</p>
               </div>
             </Link>
           </div>

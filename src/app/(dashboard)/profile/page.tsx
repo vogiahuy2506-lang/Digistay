@@ -325,7 +325,7 @@ export default function ProfilePage() {
     return (
       <PageContainer>
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <Loader2 className="w-8 h-8 animate-spin text-acc" />
         </div>
       </PageContainer>
     )
@@ -353,13 +353,13 @@ export default function ProfilePage() {
       )}
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 mb-6 bg-gray-100 p-1 rounded-lg w-fit">
+      <div className="flex items-center gap-2 mb-6 bg-fg/5 p-1 rounded-lg w-fit">
         <button
           onClick={() => setActiveTab('profile')}
           className={`px-4 py-2 rounded-md text-sm font-medium transition flex items-center gap-2 ${
             activeTab === 'profile'
-              ? 'bg-white text-primary shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'bg-panel text-acc shadow-sm'
+              : 'text-muted hover:text-fg'
           }`}
         >
           <User className="w-4 h-4" />
@@ -369,8 +369,8 @@ export default function ProfilePage() {
           onClick={() => setActiveTab('security')}
           className={`px-4 py-2 rounded-md text-sm font-medium transition flex items-center gap-2 ${
             activeTab === 'security'
-              ? 'bg-white text-primary shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'bg-panel text-acc shadow-sm'
+              : 'text-muted hover:text-fg'
           }`}
         >
           <Shield className="w-4 h-4" />
@@ -388,7 +388,7 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent className="flex flex-col items-center">
               <div className="relative mb-4">
-                <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 border-4 border-white shadow-lg">
+                <div className="w-32 h-32 rounded-full overflow-hidden bg-fg/5 border-4 border-panel shadow-lg">
                   {profile?.image ? (
                     <Image
                       src={profile.image}
@@ -398,8 +398,8 @@ export default function ProfilePage() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-terracotta/20">
-                      <span className="text-4xl font-bold text-primary/60">
+                    <div className="w-full h-full flex items-center justify-center bg-acc-soft">
+                      <span className="text-4xl font-bold text-acc/60">
                         {profile?.name?.charAt(0)?.toUpperCase() || 'U'}
                       </span>
                     </div>
@@ -407,11 +407,11 @@ export default function ProfilePage() {
                 </div>
                 
                 {/* Camera overlay */}
-                <label className="absolute bottom-0 right-0 w-10 h-10 bg-primary rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/80 transition shadow-lg border-2 border-white">
+                <label className="absolute bottom-0 right-0 w-10 h-10 bg-ink rounded-full flex items-center justify-center cursor-pointer hover:bg-ink/80 transition shadow-lg border-2 border-panel">
                   {isUploadingAvatar ? (
-                    <Loader2 className="w-4 h-4 text-white animate-spin" />
+                    <Loader2 className="w-4 h-4 text-on-ink animate-spin" />
                   ) : (
-                    <Camera className="w-5 h-5 text-white" />
+                    <Camera className="w-5 h-5 text-on-ink" />
                   )}
                   <input
                     type="file"
@@ -423,21 +423,21 @@ export default function ProfilePage() {
                 </label>
               </div>
               
-              <p className="text-sm text-gray-500 text-center">
+              <p className="text-sm text-muted text-center">
                 Nhấn vào icon máy ảnh để thay đổi avatar
               </p>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-muted mt-1">
                 JPG, PNG (tối đa 5MB)
               </p>
 
               {/* User Info Summary */}
-              <div className="w-full mt-6 pt-6 border-t border-gray-100 space-y-3">
+              <div className="w-full mt-6 pt-6 border-t border-line space-y-3">
                 <div className="flex items-center gap-2 text-sm">
                   <Badge variant={profile?.role === 'SUPER_ADMIN' || profile?.role === 'ADMIN' ? 'primary' : 'secondary'}>
                     {profile?.role === 'SUPER_ADMIN' ? 'Super Admin' : profile?.role === 'ADMIN' ? 'Admin' : 'Người dùng'}
                   </Badge>
                 </div>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted">
                   Tham gia: {profile?.createdAt ? format(new Date(profile.createdAt), 'dd MMMM yyyy', { locale: vi }) : '-'}
                 </p>
               </div>
@@ -493,12 +493,12 @@ export default function ProfilePage() {
                 />
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label className="block text-sm font-medium text-fg mb-1.5">
                     <FileText className="w-4 h-4 inline mr-1.5" />
                     Giới thiệu bản thân
                   </label>
                   <textarea
-                    className="w-full px-4 py-3 bg-stone-50/70 border border-stone-200 rounded-xl text-sm font-medium text-charcoal placeholder-stone-400 focus-visible:bg-white focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 transition-all outline-none resize-none"
+                    className="w-full px-4 py-3 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-charcoal placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none resize-none"
                     rows={3}
                     value={formData.bio}
                     onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
@@ -516,9 +516,9 @@ export default function ProfilePage() {
             </Card>
 
             {/* Quick Actions */}
-            <Card className="border-orange-200 bg-orange-50/50">
+            <Card className="border-warn/30 bg-warn-soft/50">
               <CardHeader>
-                <CardTitle className="text-orange-700 flex items-center gap-2">
+                <CardTitle className="text-warn flex items-center gap-2">
                   <LogOut className="w-5 h-5" />
                   Tài khoản
                 </CardTitle>
@@ -527,7 +527,7 @@ export default function ProfilePage() {
                 <Button
                   variant="outline"
                   onClick={handleLogout}
-                  className="border-orange-300 text-orange-700 hover:bg-orange-100"
+                  className="border-warn/30 text-warn hover:bg-warn-soft"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
                   Đăng xuất
@@ -550,25 +550,25 @@ export default function ProfilePage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-gray-600">
-                Hiện tại: <span className="font-semibold text-gray-900">{profile?.email}</span>
+              <p className="text-sm text-muted">
+                Hiện tại: <span className="font-semibold text-fg">{profile?.email}</span>
               </p>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-fg mb-1.5">
                   Email mới
                 </label>
                 <input
                   type="email"
                   value={emailForm.newEmail}
                   onChange={(e) => setEmailForm({ ...emailForm, newEmail: e.target.value })}
-                  className="w-full px-4 py-3 bg-stone-50/70 border border-stone-200 rounded-xl text-sm font-medium text-charcoal placeholder-stone-400 focus-visible:bg-white focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 transition-all outline-none"
+                  className="w-full px-4 py-3 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-charcoal placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none"
                   placeholder="email-moi@example.com"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-fg mb-1.5">
                   Nhập mật khẩu để xác nhận
                 </label>
                 <div className="relative">
@@ -576,18 +576,18 @@ export default function ProfilePage() {
                     type={showNewEmailPassword ? 'text' : 'password'}
                     value={emailForm.password}
                     onChange={(e) => setEmailForm({ ...emailForm, password: e.target.value })}
-                    className="w-full px-4 py-3 pr-12 bg-stone-50/70 border border-stone-200 rounded-xl text-sm font-medium text-charcoal placeholder-stone-400 focus-visible:bg-white focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 transition-all outline-none"
+                    className="w-full px-4 py-3 pr-12 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-charcoal placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none"
                     placeholder="Mật khẩu hiện tại"
                   />
                   <button
                     type="button"
                     onClick={() => setShowNewEmailPassword(!showNewEmailPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-muted"
                   >
                     {showNewEmailPassword ? '🙈' : '👁️'}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted mt-1">
                   Một email xác nhận sẽ được gửi đến địa chỉ mới. Vui lòng nhấp vào link trong email để hoàn tất.
                 </p>
               </div>
@@ -610,12 +610,12 @@ export default function ProfilePage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-muted mb-4">
                 Sử dụng mật khẩu mạnh để bảo vệ tài khoản của bạn
               </p>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-fg mb-1.5">
                   Mật khẩu hiện tại
                 </label>
                 <div className="relative">
@@ -623,13 +623,13 @@ export default function ProfilePage() {
                     type={showCurrentPassword ? 'text' : 'password'}
                     value={passwordForm.currentPassword}
                     onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                    className="w-full px-4 py-3 bg-stone-50/70 border border-stone-200 rounded-xl text-sm font-medium text-charcoal placeholder-stone-400 focus-visible:bg-white focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 transition-all outline-none pr-12"
+                    className="w-full px-4 py-3 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-charcoal placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none pr-12"
                     placeholder="Nhập mật khẩu hiện tại"
                   />
                   <button
                     type="button"
                     onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-muted"
                   >
                     {showCurrentPassword ? '🙈' : '👁️'}
                   </button>
@@ -637,7 +637,7 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-fg mb-1.5">
                   Mật khẩu mới
                 </label>
                 <div className="relative">
@@ -645,31 +645,31 @@ export default function ProfilePage() {
                     type={showNewPassword ? 'text' : 'password'}
                     value={passwordForm.newPassword}
                     onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                    className="w-full px-4 py-3 bg-stone-50/70 border border-stone-200 rounded-xl text-sm font-medium text-charcoal placeholder-stone-400 focus-visible:bg-white focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 transition-all outline-none pr-12"
+                    className="w-full px-4 py-3 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-charcoal placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none pr-12"
                     placeholder="Nhập mật khẩu mới (ít nhất 8 ký tự)"
                   />
                   <button
                     type="button"
                     onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-muted"
                   >
                     {showNewPassword ? '🙈' : '👁️'}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted mt-1">
                   Tối thiểu 8 ký tự
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-fg mb-1.5">
                   Xác nhận mật khẩu mới
                 </label>
                 <input
                   type="password"
                   value={passwordForm.confirmPassword}
                   onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                  className="w-full px-4 py-3 bg-stone-50/70 border border-stone-200 rounded-xl text-sm font-medium text-charcoal placeholder-stone-400 focus-visible:bg-white focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 transition-all outline-none"
+                  className="w-full px-4 py-3 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-charcoal placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none"
                   placeholder="Nhập lại mật khẩu mới"
                 />
               </div>
@@ -686,29 +686,29 @@ export default function ProfilePage() {
           <TwoFactorCard />
 
           {/* Security Info */}
-          <Card className="border-green-200 bg-green-50/50">
+          <Card className="border-ok/30 bg-ok-soft/50">
             <CardHeader>
-              <CardTitle className="text-green-700 flex items-center gap-2">
+              <CardTitle className="text-ok flex items-center gap-2">
                 <Shield className="w-5 h-5" />
                 Bảo mật tài khoản
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-start gap-3">
-                <div className="w-2 h-2 rounded-full bg-green-500 mt-2"></div>
-                <p className="text-sm text-gray-700">
+                <div className="w-2 h-2 rounded-full bg-ok mt-2"></div>
+                <p className="text-sm text-fg">
                   Mật khẩu được mã hóa và lưu trữ an toàn
                 </p>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-2 h-2 rounded-full bg-green-500 mt-2"></div>
-                <p className="text-sm text-gray-700">
+                <div className="w-2 h-2 rounded-full bg-ok mt-2"></div>
+                <p className="text-sm text-fg">
                   Phiên đăng nhập có thời hạn và có thể bị thu hồi
                 </p>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-2 h-2 rounded-full bg-green-500 mt-2"></div>
-                <p className="text-sm text-gray-700">
+                <div className="w-2 h-2 rounded-full bg-ok mt-2"></div>
+                <p className="text-sm text-fg">
                   Khuyến nghị sử dụng mật khẩu mạnh với ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt
                 </p>
               </div>

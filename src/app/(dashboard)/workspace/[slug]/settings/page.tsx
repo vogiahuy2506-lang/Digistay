@@ -212,8 +212,8 @@ export default function WorkspaceSettingsPage() {
       <PageContainer>
         <Card>
           <CardContent className="p-12 text-center">
-            <Settings className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 mb-4">Vui lòng chọn Workspace</p>
+            <Settings className="w-16 h-16 text-muted mx-auto mb-4" />
+            <p className="text-muted mb-4">Vui lòng chọn Workspace</p>
             <Button onClick={() => router.push(routes.workspaces())}>
               Chuyển đến Workspace
             </Button>
@@ -227,7 +227,7 @@ export default function WorkspaceSettingsPage() {
     return (
       <PageContainer>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-acc"></div>
         </div>
       </PageContainer>
     )
@@ -237,7 +237,7 @@ export default function WorkspaceSettingsPage() {
     <PageContainer>
       <button
         onClick={() => router.push(routes.workspace(workspace.slug))}
-        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-primary mb-3"
+        className="flex items-center gap-1.5 text-sm text-muted hover:text-acc mb-3"
       >
         <ArrowLeft className="w-4 h-4" />
         Quay lại workspace
@@ -250,24 +250,24 @@ export default function WorkspaceSettingsPage() {
 
       {/* Success/Error Messages */}
       {success && (
-        <div className="mb-4 p-3 rounded-lg bg-green-50 border border-green-200 text-green-600 text-sm">
+        <div className="mb-4 p-3 rounded-lg bg-ok-soft border border-ok/30 text-ok text-sm">
           {success}
         </div>
       )}
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
+        <div className="mb-4 p-3 rounded-lg bg-err-soft border border-err/30 text-err text-sm">
           {error}
         </div>
       )}
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 mb-6 bg-gray-100 p-1 rounded-lg w-fit">
+      <div className="flex items-center gap-2 mb-6 bg-fg/5 p-1 rounded-lg w-fit">
         <button
           onClick={() => setActiveTab('general')}
           className={`px-4 py-2 rounded-md text-sm font-medium transition ${
             activeTab === 'general'
-              ? 'bg-white text-primary shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'bg-panel text-acc shadow-sm'
+              : 'text-muted hover:text-fg'
           }`}
         >
           <Settings className="w-4 h-4 inline mr-2" />
@@ -277,8 +277,8 @@ export default function WorkspaceSettingsPage() {
           onClick={() => setActiveTab('notifications')}
           className={`px-4 py-2 rounded-md text-sm font-medium transition ${
             activeTab === 'notifications'
-              ? 'bg-white text-primary shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'bg-panel text-acc shadow-sm'
+              : 'text-muted hover:text-fg'
           }`}
         >
           <Bell className="w-4 h-4 inline mr-2" />
@@ -288,8 +288,8 @@ export default function WorkspaceSettingsPage() {
           onClick={() => setActiveTab('security')}
           className={`px-4 py-2 rounded-md text-sm font-medium transition ${
             activeTab === 'security'
-              ? 'bg-white text-primary shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'bg-panel text-acc shadow-sm'
+              : 'text-muted hover:text-fg'
           }`}
         >
           <Shield className="w-4 h-4 inline mr-2" />
@@ -308,11 +308,11 @@ export default function WorkspaceSettingsPage() {
             <CardContent className="space-y-4">
               {/* Logo */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-fg mb-2">
                   Logo Workspace
                 </label>
                 <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden bg-gray-50">
+                  <div className="w-20 h-20 rounded-xl border-2 border-dashed border-line flex items-center justify-center overflow-hidden bg-fg/[0.03]">
                     {formData.logo ? (
                       <Image 
                         src={formData.logo} 
@@ -322,7 +322,7 @@ export default function WorkspaceSettingsPage() {
                         className="object-contain"
                       />
                     ) : (
-                      <Building2 className="w-8 h-8 text-gray-400" />
+                      <Building2 className="w-8 h-8 text-muted" />
                     )}
                   </div>
                   <div>
@@ -335,12 +335,12 @@ export default function WorkspaceSettingsPage() {
                     />
                     <label
                       htmlFor="logo-upload"
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-panel border border-line rounded-lg text-sm font-medium text-fg hover:bg-fg/[0.03] cursor-pointer"
                     >
                       <Upload className="w-4 h-4" />
                       Tải logo lên
                     </label>
-                    <p className="text-xs text-gray-500 mt-1">PNG, SVG, JPG (tối đa 2MB)</p>
+                    <p className="text-xs text-muted mt-1">PNG, SVG, JPG (tối đa 2MB)</p>
                   </div>
                 </div>
               </div>
@@ -419,50 +419,50 @@ export default function WorkspaceSettingsPage() {
             <CardTitle>Cài đặt thông báo</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-muted mb-4">
               Chọn cách bạn nhận thông báo từ hệ thống
             </p>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-fg/[0.03] rounded-lg">
                 <div className="flex items-center gap-3">
-                  <Mail className="w-5 h-5 text-gray-400" />
+                  <Mail className="w-5 h-5 text-muted" />
                   <div>
-                    <p className="font-medium text-gray-900">Thông báo qua Email</p>
-                    <p className="text-sm text-gray-500">Nhận email về booking mới và cập nhật</p>
+                    <p className="font-medium text-fg">Thông báo qua Email</p>
+                    <p className="text-sm text-muted">Nhận email về booking mới và cập nhật</p>
                   </div>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" defaultChecked className="sr-only peer" />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                  <div className="w-11 h-6 bg-fg/10 peer-focus:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-acc rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-on-ink after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-panel after:border-line after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-ink"></div>
                 </label>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-fg/[0.03] rounded-lg">
                 <div className="flex items-center gap-3">
-                  <Bell className="w-5 h-5 text-gray-400" />
+                  <Bell className="w-5 h-5 text-muted" />
                   <div>
-                    <p className="font-medium text-gray-900">Thông báo đẩy</p>
-                    <p className="text-sm text-gray-500">Nhận thông báo trên trình duyệt</p>
+                    <p className="font-medium text-fg">Thông báo đẩy</p>
+                    <p className="text-sm text-muted">Nhận thông báo trên trình duyệt</p>
                   </div>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" defaultChecked className="sr-only peer" />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                  <div className="w-11 h-6 bg-fg/10 peer-focus:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-acc rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-on-ink after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-panel after:border-line after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-ink"></div>
                 </label>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-fg/[0.03] rounded-lg">
                 <div className="flex items-center gap-3">
-                  <DollarSign className="w-5 h-5 text-gray-400" />
+                  <DollarSign className="w-5 h-5 text-muted" />
                   <div>
-                    <p className="font-medium text-gray-900">Thông báo booking mới</p>
-                    <p className="text-sm text-gray-500">Thông báo ngay khi có đặt phòng mới</p>
+                    <p className="font-medium text-fg">Thông báo booking mới</p>
+                    <p className="text-sm text-muted">Thông báo ngay khi có đặt phòng mới</p>
                   </div>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" defaultChecked className="sr-only peer" />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                  <div className="w-11 h-6 bg-fg/10 peer-focus:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-acc rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-on-ink after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-panel after:border-line after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-ink"></div>
                 </label>
               </div>
             </div>
@@ -478,46 +478,46 @@ export default function WorkspaceSettingsPage() {
               <CardTitle>Thông tin bảo mật</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="p-4 bg-fg/[0.03] rounded-lg">
                 <div className="flex items-center gap-3 mb-2">
-                  <Shield className="w-5 h-5 text-primary" />
-                  <p className="font-medium text-gray-900">Chủ sở hữu Workspace</p>
+                  <Shield className="w-5 h-5 text-acc" />
+                  <p className="font-medium text-fg">Chủ sở hữu Workspace</p>
                 </div>
-                <p className="text-sm text-gray-600 ml-8">
+                <p className="text-sm text-muted ml-8">
                   {settings?.owner.name || 'Người dùng'} ({settings?.owner.email})
                 </p>
               </div>
 
-              <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="p-4 bg-fg/[0.03] rounded-lg">
                 <div className="flex items-center gap-3 mb-2">
-                  <Users className="w-5 h-5 text-primary" />
-                  <p className="font-medium text-gray-900">Thành viên</p>
+                  <Users className="w-5 h-5 text-acc" />
+                  <p className="font-medium text-fg">Thành viên</p>
                 </div>
-                <p className="text-sm text-gray-600 ml-8">
+                <p className="text-sm text-muted ml-8">
                   {settings?._count.members || 0} thành viên
                 </p>
               </div>
 
-              <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="p-4 bg-fg/[0.03] rounded-lg">
                 <div className="flex items-center gap-3 mb-2">
-                  <Building2 className="w-5 h-5 text-primary" />
-                  <p className="font-medium text-gray-900">Cơ sở</p>
+                  <Building2 className="w-5 h-5 text-acc" />
+                  <p className="font-medium text-fg">Cơ sở</p>
                 </div>
-                <p className="text-sm text-gray-600 ml-8">
+                <p className="text-sm text-muted ml-8">
                   {settings?._count.properties || 0} cơ sở
                 </p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-red-200">
+          <Card className="border-err/30">
             <CardHeader>
-              <CardTitle className="text-red-600">Vùng nguy hiểm</CardTitle>
+              <CardTitle className="text-err">Vùng nguy hiểm</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-                <p className="font-medium text-red-700 mb-1">Xóa Workspace</p>
-                <p className="text-sm text-red-600 mb-3">
+              <div className="p-4 bg-err-soft rounded-lg border border-err/30">
+                <p className="font-medium text-err mb-1">Xóa Workspace</p>
+                <p className="text-sm text-err mb-3">
                   Khi xóa workspace, toàn bộ dữ liệu bao gồm cơ sở, đặt phòng, và thành viên sẽ bị xóa vĩnh viễn.
                 </p>
                 <Button

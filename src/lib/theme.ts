@@ -17,6 +17,11 @@ export function parseThemePreference(value: string | undefined | null): ThemePre
  * preference; add a page here once it uses only role colors.
  */
 const darkReadyPaths: RegExp[] = [
+  /^\/workspaces\/?$/,
+  /^\/profile\/?$/,
+  /^\/workspace\/[^/]+\/?$/,
+  /^\/workspace\/[^/]+\/(members|settings)\/?$/,
+  /^\/workspace\/[^/]+\/properties(\/new)?\/?$/,
   /^\/workspace\/[^/]+\/properties\/[^/]+\/bookings\/?$/,
   /^\/workspace\/[^/]+\/properties\/[^/]+\/bookings\/(?!new\/?$)[^/]+\/?$/,
 ]

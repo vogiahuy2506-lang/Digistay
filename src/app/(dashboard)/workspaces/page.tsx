@@ -97,10 +97,10 @@ interface Invitation {
 }
 
 const roleBadges: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  ADMIN: { label: 'Chủ sở hữu', color: 'bg-terracotta-600 text-white border-terracotta-500', icon: <Crown className="w-3 h-3 text-amber-300" /> },
-  MANAGER: { label: 'Quản lý', color: 'bg-amber-50 text-amber-800 border-amber-200', icon: <Sparkles className="w-3 h-3 text-amber-600" /> },
-  RECEPTIONIST: { label: 'Lễ tân', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: <Users className="w-3 h-3 text-emerald-600" /> },
-  USER: { label: 'Thành viên', color: 'bg-sand-100 text-slate-700 border-sand-200', icon: <Building2 className="w-3 h-3 text-slate-500" /> },
+  ADMIN: { label: 'Chủ sở hữu', color: 'bg-ink text-on-ink border-acc', icon: <Crown className="w-3 h-3 text-warn-soft" /> },
+  MANAGER: { label: 'Quản lý', color: 'bg-warn-soft text-warn border-warn/30', icon: <Sparkles className="w-3 h-3 text-warn" /> },
+  RECEPTIONIST: { label: 'Lễ tân', color: 'bg-ok-soft text-ok border-ok/30', icon: <Users className="w-3 h-3 text-ok" /> },
+  USER: { label: 'Thành viên', color: 'bg-fg/5 text-fg border-line', icon: <Building2 className="w-3 h-3 text-muted" /> },
 }
 
 export default function WorkspacesPage() {
@@ -421,40 +421,40 @@ export default function WorkspacesPage() {
   }
 
   return (
-    <div className="min-h-full bg-[#faf8f5] text-slate-800 antialiased selection:bg-terracotta-100 selection:text-terracotta-900 relative overflow-x-hidden">
+    <div className="min-h-full bg-page text-fg antialiased selection:bg-acc-soft selection:text-acc relative overflow-x-hidden">
       {/* Ambient Glow Background */}
       <div className="ambient-glow-1" />
       <div className="ambient-glow-2" />
 
       {/* Header */}
-      <header className="bg-white/85 backdrop-blur-xl border-b border-sand-200/90 sticky top-0 z-40 transition-all shadow-sm">
+      <header className="bg-panel/85 backdrop-blur-xl border-b border-line/90 sticky top-0 z-40 transition-all shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             {/* Left: Brand Identity */}
             <div className="flex items-center space-x-6">
               <Link href="/workspaces" className="flex items-center gap-3.5 group">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-terracotta-500 via-terracotta-600 to-terracotta-700 text-white flex items-center justify-center font-bold text-2xl shadow-md shadow-terracotta-500/25 tracking-wide ring-2 ring-white group-hover:scale-105 transition-transform duration-200">
+                <div className="w-11 h-11 rounded-xl bg-acc text-on-ink flex items-center justify-center font-bold text-2xl shadow-md tracking-wide ring-2 ring-panel group-hover:scale-105 transition-transform duration-200">
                   D
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-bold text-xl tracking-tight text-slate-900 leading-none group-hover:text-terracotta-600 transition-colors">
+                  <span className="font-bold text-xl tracking-tight text-fg leading-none group-hover:text-acc transition-colors">
                     DigiStay
                   </span>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-terracotta-600 mt-1.5 flex items-center gap-1.5">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-acc mt-1.5 flex items-center gap-1.5">
                     Boutique Hospitality OS
-                    <span className="w-1 h-1 rounded-full bg-terracotta-400" />
+                    <span className="w-1 h-1 rounded-full bg-ink" />
                   </span>
                 </div>
               </Link>
-              <div className="hidden md:block h-6 w-px bg-sand-200" />
+              <div className="hidden md:block h-6 w-px bg-fg/10" />
               {/* Breadcrumb */}
-              <div className="hidden sm:flex items-center gap-2 text-xs font-medium text-slate-600 bg-sand-100/80 px-3.5 py-1.5 rounded-full border border-sand-200/90">
-                <Layers className="w-3.5 h-3.5 text-terracotta-600" />
+              <div className="hidden sm:flex items-center gap-2 text-xs font-medium text-muted bg-fg/5 px-3.5 py-1.5 rounded-full border border-line/90">
+                <Layers className="w-3.5 h-3.5 text-acc" />
                 <span>Không gian làm việc</span>
-                <span className="text-sand-400">/</span>
-                <span className="text-slate-900 font-semibold flex items-center gap-1.5">
+                <span className="text-muted">/</span>
+                <span className="text-fg font-semibold flex items-center gap-1.5">
                   Workspace Hub
-                  <span className="px-1.5 py-0.2 bg-terracotta-100 text-terracotta-700 text-[10px] font-bold rounded">
+                  <span className="px-1.5 py-0.2 bg-acc-soft text-acc text-[10px] font-bold rounded">
                     Portal
                   </span>
                 </span>
@@ -464,10 +464,10 @@ export default function WorkspacesPage() {
             {/* Right: Actions and User Menu */}
             <div className="flex items-center gap-3 md:gap-4">
               {/* Cloud Status */}
-              <div className="hidden xl:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50/80 border border-emerald-200/80 text-emerald-700 text-xs font-semibold">
+              <div className="hidden xl:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-ok-soft/80 border border-ok/30 text-ok text-xs font-semibold">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ok opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-ok" />
                 </span>
                 <span>Cloud Active</span>
               </div>
@@ -475,10 +475,10 @@ export default function WorkspacesPage() {
               {/* Notification Bell */}
               <button
                 aria-label="Thông báo hệ thống"
-                className="relative p-2.5 text-slate-600 hover:text-slate-900 hover:bg-sand-100 rounded-xl transition border border-transparent hover:border-sand-200"
+                className="relative p-2.5 text-muted hover:text-fg hover:bg-fg/5 rounded-xl transition border border-transparent hover:border-line"
               >
                 <Bell className="w-4 h-4" />
-                <span className="absolute top-1.5 right-1.5 min-w-[18px] h-[18px] px-1 bg-terracotta-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-white">
+                <span className="absolute top-1.5 right-1.5 min-w-[18px] h-[18px] px-1 bg-ink text-on-ink text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-panel">
                   3
                 </span>
               </button>
@@ -486,30 +486,30 @@ export default function WorkspacesPage() {
               {/* Create Workspace Button */}
               <button
                 onClick={() => setIsCreateOpen(true)}
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-terracotta-500 via-terracotta-600 to-terracotta-700 hover:from-terracotta-600 hover:to-terracotta-800 text-white px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm transition shadow-sm shadow-terracotta-500/30 active:scale-[0.98] ring-1 ring-white/20"
+                className="inline-flex items-center gap-2 bg-ink hover:bg-ink/90 text-on-ink px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm transition shadow-sm active:scale-[0.98] "
               >
                 <PlusCircle className="w-4 h-4 stroke-[2.5]" />
                 <span>Tạo workspace mới</span>
-                <kbd className="hidden lg:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono bg-white/20 rounded border border-white/30 text-white">
+                <kbd className="hidden lg:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono bg-on-ink/15 rounded border border-on-ink/30 text-on-ink">
                   ⌘N
                 </kbd>
               </button>
 
-              <div className="h-6 w-px bg-sand-200 hidden md:block" />
+              <div className="h-6 w-px bg-fg/10 hidden md:block" />
 
               {/* User Menu */}
               <div className="flex items-center gap-3 pl-1">
                 <div className="relative">
-                  <div className="w-9 h-9 rounded-xl ring-2 ring-terracotta-200/90 bg-gradient-to-br from-sand-200 to-sand-300 overflow-hidden flex items-center justify-center font-bold text-xs text-slate-800 tracking-wider shadow-inner">
+                  <div className="w-9 h-9 rounded-xl ring-2 ring-acc/30 bg-fg/10 overflow-hidden flex items-center justify-center font-bold text-xs text-fg tracking-wider shadow-inner">
                     {getUserInitials(currentUser?.name || null)}
                   </div>
-                  <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-white" />
+                  <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-ok rounded-full ring-2 ring-panel" />
                 </div>
                 <div className="hidden lg:flex flex-col text-left">
-                  <span className="text-xs font-bold text-slate-900 leading-tight">
+                  <span className="text-xs font-bold text-fg leading-tight">
                     {currentUser?.name || 'Người dùng'}
                   </span>
-                  <span className="text-[10px] font-semibold text-terracotta-600 mt-0.5 flex items-center gap-1">
+                  <span className="text-[10px] font-semibold text-acc mt-0.5 flex items-center gap-1">
                     <ShieldCheck className="w-2.5 h-2.5" />
                     Super Admin / Owner
                   </span>
@@ -519,7 +519,7 @@ export default function WorkspacesPage() {
                     sessionStorage.setItem('justSignedOut', 'true')
                     await signOut({ callbackUrl: '/' })
                   }}
-                  className="text-slate-400 hover:text-terracotta-600 p-1.5 rounded-lg hover:bg-sand-100 transition"
+                  className="text-muted hover:text-acc p-1.5 rounded-lg hover:bg-fg/5 transition"
                   title="Đăng xuất"
                 >
                   <LogOut className="w-4 h-4" />
@@ -534,39 +534,39 @@ export default function WorkspacesPage() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 z-10">
         {/* Hero / Welcome Section */}
         <div className="mb-10 max-w-3xl">
-          <div className="inline-flex items-center gap-2.5 px-3.5 py-1 bg-terracotta-50/90 border border-terracotta-200/90 text-terracotta-700 text-xs font-bold rounded-full mb-3.5 shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-terracotta-500 animate-pulse" />
+          <div className="inline-flex items-center gap-2.5 px-3.5 py-1 bg-acc-soft/90 border border-acc/30 text-acc text-xs font-bold rounded-full mb-3.5 shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-ink animate-pulse" />
             Hệ điều hành vận hành khách sạn &amp; chuỗi Boutique
-            <span className="text-terracotta-400">•</span>
-            <span className="text-slate-600 font-medium">Boutique OS v4.2</span>
+            <span className="text-acc">•</span>
+            <span className="text-muted font-medium">Boutique OS v4.2</span>
           </div>
-          <h1 className="text-3xl md:text-4xl lg:text-[42px] font-serif font-bold text-slate-900 tracking-tight flex items-center gap-3 leading-tight">
+          <h1 className="text-3xl md:text-4xl lg:text-[42px] font-serif font-bold text-fg tracking-tight flex items-center gap-3 leading-tight">
             Chào mừng bạn quay lại, {currentUser?.name?.split(' ').pop() || 'bạn'}{' '}
             <span className="inline-block transform origin-bottom-right hover:rotate-12 transition-transform duration-300">
               👋
             </span>
           </h1>
-          <p className="mt-3 text-slate-600 text-base md:text-lg leading-relaxed">
+          <p className="mt-3 text-muted text-base md:text-lg leading-relaxed">
             Quản trị tập trung danh mục khách sạn, chuỗi villa và hệ thống booking trực tiếp của bạn.
             Bạn có thể mở rộng cơ sở, kiểm tra công suất phòng hoặc chuyển đổi giữa các không gian quản trị.
           </p>
         </div>
 
         {/* Toolbar */}
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 mb-8 pb-5 border-b border-sand-200/90">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 mb-8 pb-5 border-b border-line/90">
           {/* Category Segmented Pill Tabs */}
-          <div className="flex items-center gap-1.5 bg-sand-100/90 p-1 rounded-xl border border-sand-200">
+          <div className="flex items-center gap-1.5 bg-fg/5 p-1 rounded-xl border border-line">
             <button
               onClick={() => setFilterTab('all')}
               className={`px-3.5 py-1.5 text-xs font-bold rounded-lg flex items-center gap-1.5 transition ${
                 filterTab === 'all'
-                  ? 'bg-white text-slate-900 shadow-sm border border-sand-200/80'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                  ? 'bg-panel text-fg shadow-sm border border-line/80'
+                  : 'text-muted hover:text-fg hover:bg-panel/60'
               }`}
             >
               <span>Tất cả</span>
               <span className={`px-1.5 py-0.2 rounded text-[11px] font-bold ${
-                filterTab === 'all' ? 'bg-terracotta-50 text-terracotta-600' : 'bg-sand-200 text-slate-700'
+                filterTab === 'all' ? 'bg-acc-soft text-acc' : 'bg-fg/10 text-fg'
               }`}>
                 {workspaces.length}
               </span>
@@ -575,13 +575,13 @@ export default function WorkspacesPage() {
               onClick={() => setFilterTab('owned')}
               className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition ${
                 filterTab === 'owned'
-                  ? 'bg-white text-slate-900 shadow-sm border border-sand-200/80'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                  ? 'bg-panel text-fg shadow-sm border border-line/80'
+                  : 'text-muted hover:text-fg hover:bg-panel/60'
               }`}
             >
               <span>Chuỗi sở hữu</span>
               <span className={`px-1.5 py-0.2 rounded text-[11px] ${
-                filterTab === 'owned' ? 'bg-terracotta-50 text-terracotta-600 font-bold' : 'bg-sand-200 text-slate-700'
+                filterTab === 'owned' ? 'bg-acc-soft text-acc font-bold' : 'bg-fg/10 text-fg'
               }`}>
                 {ownedCount}
               </span>
@@ -590,13 +590,13 @@ export default function WorkspacesPage() {
               onClick={() => setFilterTab('invited')}
               className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition ${
                 filterTab === 'invited'
-                  ? 'bg-white text-slate-900 shadow-sm border border-sand-200/80'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                  ? 'bg-panel text-fg shadow-sm border border-line/80'
+                  : 'text-muted hover:text-fg hover:bg-panel/60'
               }`}
             >
               <span>Được mời quản lý</span>
               <span className={`px-1.5 py-0.2 rounded text-[11px] ${
-                filterTab === 'invited' ? 'bg-terracotta-50 text-terracotta-600 font-bold' : 'bg-sand-200 text-slate-700'
+                filterTab === 'invited' ? 'bg-acc-soft text-acc font-bold' : 'bg-fg/10 text-fg'
               }`}>
                 {invitedCount}
               </span>
@@ -605,8 +605,8 @@ export default function WorkspacesPage() {
               onClick={() => setFilterTab('archived')}
               className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition ${
                 filterTab === 'archived'
-                  ? 'bg-white text-slate-900 shadow-sm border border-sand-200/80'
-                  : 'text-slate-400 hover:text-slate-600 hover:bg-white/60'
+                  ? 'bg-panel text-fg shadow-sm border border-line/80'
+                  : 'text-muted hover:text-muted hover:bg-panel/60'
               }`}
             >
               <span>Lưu trữ</span>
@@ -616,33 +616,33 @@ export default function WorkspacesPage() {
           {/* Quick Search & View Toggle */}
           <div className="w-full lg:w-auto flex flex-wrap sm:flex-nowrap items-center gap-3">
             <div className="relative w-full sm:w-72">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-12 py-2 text-xs md:text-sm bg-white border border-sand-300 rounded-xl focus-visible:border-terracotta-500 focus-visible:ring-2 focus-visible:ring-terracotta-500/20 outline-none placeholder:text-slate-400 shadow-sm transition"
+                className="w-full pl-10 pr-12 py-2 text-xs md:text-sm bg-panel border border-line rounded-xl focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 outline-none placeholder:text-muted shadow-sm transition"
                 placeholder="Tìm nhanh workspace..."
               />
-              <kbd className="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-mono bg-sand-100 text-slate-500 rounded border border-sand-200 pointer-events-none">
+              <kbd className="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-mono bg-fg/5 text-muted rounded border border-line pointer-events-none">
                 ⌘K
               </kbd>
             </div>
 
             {/* Filter Button */}
-            <button className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-sand-300 text-slate-700 hover:text-slate-900 rounded-xl hover:border-slate-400 transition text-xs font-semibold shadow-sm">
-              <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
+            <button className="inline-flex items-center gap-1.5 px-3 py-2 bg-panel border border-line text-fg hover:text-fg rounded-xl hover:border-muted transition text-xs font-semibold shadow-sm">
+              <SlidersHorizontal className="w-3.5 h-3.5 text-muted" />
               <span>Bộ lọc</span>
             </button>
 
             {/* View Mode Switcher */}
-            <div className="flex items-center bg-sand-100/90 p-1 rounded-xl border border-sand-200">
+            <div className="flex items-center bg-fg/5 p-1 rounded-xl border border-line">
               <button
                 onClick={() => setViewMode('grid')}
                 className={`p-1.5 rounded-lg transition ${
                   viewMode === 'grid'
-                    ? 'bg-white text-terracotta-600 shadow-sm border border-sand-200/80'
-                    : 'text-slate-500 hover:text-slate-800'
+                    ? 'bg-panel text-acc shadow-sm border border-line/80'
+                    : 'text-muted hover:text-fg'
                 }`}
                 title="Dạng lưới (Grid)"
               >
@@ -652,8 +652,8 @@ export default function WorkspacesPage() {
                 onClick={() => setViewMode('list')}
                 className={`p-1.5 rounded-lg transition ${
                   viewMode === 'list'
-                    ? 'bg-white text-terracotta-600 shadow-sm border border-sand-200/80'
-                    : 'text-slate-500 hover:text-slate-800'
+                    ? 'bg-panel text-acc shadow-sm border border-line/80'
+                    : 'text-muted hover:text-fg'
                 }`}
                 title="Dạng danh sách (List)"
               >
@@ -666,7 +666,7 @@ export default function WorkspacesPage() {
         {/* Content */}
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-terracotta-500" />
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-acc" />
           </div>
         ) : (
           <>
@@ -679,43 +679,43 @@ export default function WorkspacesPage() {
                 return (
                   <article
                     key={ws.id}
-                    className="group relative bg-white rounded-2xl border border-sand-200 shadow-card hover:shadow-card-hover hover:border-terracotta-400 transition-all duration-300 flex flex-col overflow-hidden"
+                    className="group relative bg-panel rounded-2xl border border-line shadow-card hover:shadow-card-hover hover:border-acc transition-all duration-300 flex flex-col overflow-hidden"
                   >
-                    {/* Card Banner */}
-                    <div className="relative h-28 w-full bg-slate-900 overflow-hidden">
+                    {/* Card Banner: always dark (badges on it are drawn for a dark ground). */}
+                    <div className="relative h-28 w-full bg-ink dark:bg-raised overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
 
                       {/* Top Badges */}
                       <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
                         <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold backdrop-blur-md shadow-sm border ${
                           isOwner
-                            ? 'bg-terracotta-600 text-white border-terracotta-500'
-                            : 'bg-white/95 text-slate-700 border-white/40'
+                            ? 'bg-ink text-on-ink border-acc'
+                            : 'bg-panel/95 text-fg border-panel/40'
                         }`}>
                           {isOwner ? (
                             <>
-                              <Crown className="w-3 h-3 text-amber-300" />
+                              <Crown className="w-3 h-3 text-warn-soft" />
                               Chủ sở hữu
                             </>
                           ) : (
                             <>
-                              <Building2 className="w-3 h-3 text-amber-500" />
+                              <Building2 className="w-3 h-3 text-warn" />
                               Thành viên
                             </>
                           )}
                         </span>
-                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50/95 backdrop-blur-md px-2.5 py-1 rounded-md border border-emerald-200/70 shadow-sm">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-ok bg-ok-soft/95 backdrop-blur-md px-2.5 py-1 rounded-md border border-ok/30 shadow-sm">
+                          <span className="w-1.5 h-1.5 rounded-full bg-ok animate-pulse" />
                           VietQR Active
                         </span>
                       </div>
 
                       {/* Monogram */}
                       <div className="absolute -bottom-4 left-5 flex items-end gap-3 z-10">
-                        <div className={`w-12 h-12 rounded-xl ring-4 ring-white border shadow-md flex items-center justify-center font-serif font-bold text-xl ${
+                        <div className={`w-12 h-12 rounded-xl ring-4 ring-panel border shadow-md flex items-center justify-center font-serif font-bold text-xl ${
                           isBoutiquePro
-                            ? 'bg-amber-50 border-amber-300 text-amber-800'
-                            : 'bg-sand-50 border-sand-200 text-terracotta-600'
+                            ? 'bg-warn-soft border-warn/30 text-warn'
+                            : 'bg-panel border-line text-acc'
                         }`}>
                           {ws.name.charAt(0).toUpperCase()}
                         </div>
@@ -726,13 +726,13 @@ export default function WorkspacesPage() {
                       <div>
                         <div className="flex items-start justify-between gap-2">
                           <div>
-                            <h3 className="font-bold text-lg text-slate-900 group-hover:text-terracotta-600 transition-colors leading-snug">
+                            <h3 className="font-bold text-lg text-fg group-hover:text-acc transition-colors leading-snug">
                               {ws.name}
                             </h3>
                             <div className={`flex items-center gap-1.5 text-xs mt-1 font-mono ${
-                              isOwner ? 'text-terracotta-700 font-medium' : 'text-slate-500'
+                              isOwner ? 'text-acc font-medium' : 'text-muted'
                             }`}>
-                              <Globe className="w-3.5 h-3.5 text-slate-400" />
+                              <Globe className="w-3.5 h-3.5 text-muted" />
                               <span>{isOwner ? `${ws.slug}.digistay.vn` : `/${ws.slug}`}</span>
                             </div>
                           </div>
@@ -744,31 +744,31 @@ export default function WorkspacesPage() {
                                   const menu = e.currentTarget.nextElementSibling as HTMLElement
                                   menu?.classList.toggle('hidden')
                                 }}
-                                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-sand-100 transition"
+                                className="text-muted hover:text-fg p-1.5 rounded-lg hover:bg-fg/5 transition"
                                 aria-label="Tùy chọn"
                               >
                                 <MoreVertical className="w-4 h-4" />
                               </button>
-                              <div className="hidden absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-sand-200 py-1 min-w-[140px] z-20">
+                              <div className="hidden absolute right-0 top-full mt-1 bg-panel rounded-xl shadow-lg border border-line py-1 min-w-[140px] z-20">
                                 <button
                                   onClick={(e) => {
                                     e.preventDefault()
                                     openEdit(ws)
                                     e.currentTarget.closest('.hidden')?.classList.add('hidden')
                                   }}
-                                  className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-sand-50 flex items-center gap-2"
+                                  className="w-full px-3 py-2 text-left text-sm text-fg hover:bg-fg/[0.03] flex items-center gap-2"
                                 >
                                   <Pencil className="w-4 h-4" />
                                   Chỉnh sửa
                                 </button>
-                                <div className="border-t border-sand-200 my-1" />
+                                <div className="border-t border-line my-1" />
                                 <button
                                   onClick={(e) => {
                                     e.preventDefault()
                                     handleDelete(ws.id)
                                     e.currentTarget.closest('.hidden')?.classList.add('hidden')
                                   }}
-                                  className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                  className="w-full px-3 py-2 text-left text-sm text-err hover:bg-err-soft flex items-center gap-2"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                   Xoá workspace
@@ -779,7 +779,7 @@ export default function WorkspacesPage() {
                         </div>
 
                         {ws.description && (
-                          <p className="mt-3 text-xs md:text-sm text-slate-600 leading-relaxed line-clamp-2">
+                          <p className="mt-3 text-xs md:text-sm text-muted leading-relaxed line-clamp-2">
                             {ws.description}
                           </p>
                         )}
@@ -787,73 +787,73 @@ export default function WorkspacesPage() {
                         {/* Key Metrics Stats Grid */}
                         <div className={`grid grid-cols-2 gap-2 mt-4 p-3 rounded-xl border ${
                           isBoutiquePro
-                            ? 'bg-amber-50/40 border-amber-200/60'
-                            : 'bg-sand-50/80 border-sand-200/80'
+                            ? 'bg-warn-soft/40 border-warn/30'
+                            : 'bg-fg/[0.03] border-line/80'
                         }`}>
                           <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-lg bg-white border border-sand-200 flex items-center justify-center text-slate-600 shrink-0">
+                            <div className="w-7 h-7 rounded-lg bg-panel border border-line flex items-center justify-center text-muted shrink-0">
                               <Hotel className="w-3.5 h-3.5" />
                             </div>
                             <div>
-                              <div className="text-[10px] text-slate-400 uppercase font-semibold">Cơ sở</div>
-                              <div className="text-xs font-bold text-slate-800">
+                              <div className="text-[10px] text-muted uppercase font-semibold">Cơ sở</div>
+                              <div className="text-xs font-bold text-fg">
                                 {ws._count.properties} {ws._count.properties > 1 ? 'chi nhánh' : 'cơ sở'}
                               </div>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-lg bg-white border border-sand-200 flex items-center justify-center text-slate-600 shrink-0">
+                            <div className="w-7 h-7 rounded-lg bg-panel border border-line flex items-center justify-center text-muted shrink-0">
                               <Users className="w-3.5 h-3.5" />
                             </div>
                             <div>
-                              <div className="text-[10px] text-slate-400 uppercase font-semibold">Nhân sự</div>
-                              <div className="text-xs font-bold text-slate-800">
+                              <div className="text-[10px] text-muted uppercase font-semibold">Nhân sự</div>
+                              <div className="text-xs font-bold text-fg">
                                 {ws._count.members} thành viên
                               </div>
                             </div>
                           </div>
                           {isBoutiquePro && (
                             <>
-                              <div className="flex items-center gap-2 pt-1 border-t border-amber-200/40">
-                                <div className="w-7 h-7 rounded-lg bg-white border border-sand-200 flex items-center justify-center text-slate-600 shrink-0">
+                              <div className="flex items-center gap-2 pt-1 border-t border-warn/30">
+                                <div className="w-7 h-7 rounded-lg bg-panel border border-line flex items-center justify-center text-muted shrink-0">
                                   <Coins className="w-3.5 h-3.5" />
                                 </div>
                                 <div>
-                                  <div className="text-[10px] text-slate-400 uppercase font-semibold">Doanh thu T3</div>
-                                  <div className="text-xs font-bold text-terracotta-700">--</div>
+                                  <div className="text-[10px] text-muted uppercase font-semibold">Doanh thu T3</div>
+                                  <div className="text-xs font-bold text-acc">--</div>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2 pt-1 border-t border-amber-200/40">
-                                <div className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center shrink-0">
+                              <div className="flex items-center gap-2 pt-1 border-t border-warn/30">
+                                <div className="w-7 h-7 rounded-lg bg-ok-soft border border-ok/30 text-ok flex items-center justify-center shrink-0">
                                   <Percent className="w-3.5 h-3.5" />
                                 </div>
                                 <div>
-                                  <div className="text-[10px] text-slate-400 uppercase font-semibold">Lấp đầy</div>
-                                  <div className="text-xs font-bold text-emerald-700">--</div>
+                                  <div className="text-[10px] text-muted uppercase font-semibold">Lấp đầy</div>
+                                  <div className="text-xs font-bold text-ok">--</div>
                                 </div>
                               </div>
                             </>
                           )}
                           {!isBoutiquePro && (
                             <>
-                              <div className="flex items-center gap-2 pt-1 border-t border-sand-200/50">
-                                <div className="w-7 h-7 rounded-lg bg-white border border-sand-200 flex items-center justify-center text-slate-600 shrink-0">
+                              <div className="flex items-center gap-2 pt-1 border-t border-line/50">
+                                <div className="w-7 h-7 rounded-lg bg-panel border border-line flex items-center justify-center text-muted shrink-0">
                                   <Bed className="w-3.5 h-3.5" />
                                 </div>
                                 <div>
-                                  <div className="text-[10px] text-slate-400 uppercase font-semibold">Quy mô</div>
-                                  <div className="text-xs font-bold text-slate-800">
+                                  <div className="text-[10px] text-muted uppercase font-semibold">Quy mô</div>
+                                  <div className="text-xs font-bold text-fg">
                                     {ws._count.properties * 4} phòng
                                   </div>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2 pt-1 border-t border-sand-200/50">
-                                <div className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center shrink-0">
+                              <div className="flex items-center gap-2 pt-1 border-t border-line/50">
+                                <div className="w-7 h-7 rounded-lg bg-ok-soft border border-ok/30 text-ok flex items-center justify-center shrink-0">
                                   <TrendingUp className="w-3.5 h-3.5" />
                                 </div>
                                 <div>
-                                  <div className="text-[10px] text-slate-400 uppercase font-semibold">Lấp đầy</div>
-                                  <div className="text-xs font-bold text-emerald-700">--</div>
+                                  <div className="text-[10px] text-muted uppercase font-semibold">Lấp đầy</div>
+                                  <div className="text-xs font-bold text-ok">--</div>
                                 </div>
                               </div>
                             </>
@@ -862,21 +862,21 @@ export default function WorkspacesPage() {
                       </div>
 
                       {/* Card Footer CTA */}
-                      <div className="mt-5 pt-3.5 border-t border-sand-200/80 flex items-center justify-between">
+                      <div className="mt-5 pt-3.5 border-t border-line/80 flex items-center justify-between">
                         {isBoutiquePro ? (
-                          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-ok bg-ok-soft px-2.5 py-0.5 rounded-full border border-ok/30">
+                            <span className="w-1.5 h-1.5 rounded-full bg-ok" />
                             Đồng bộ OTA Live
                           </span>
                         ) : (
-                          <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5 text-slate-400" />
+                          <span className="text-[11px] text-muted font-medium flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5 text-muted" />
                             Hoạt động hôm nay
                           </span>
                         )}
                         <Link
                           href={routes.workspace(ws.slug)}
-                          className="inline-flex items-center gap-1.5 text-xs font-bold text-terracotta-600 hover:text-white bg-terracotta-50 hover:bg-terracotta-600 px-3 py-1.5 rounded-lg group-hover:translate-x-1 transition-all shadow-sm"
+                          className="inline-flex items-center gap-1.5 text-xs font-bold text-acc hover:text-on-ink bg-acc-soft hover:bg-ink px-3 py-1.5 rounded-lg group-hover:translate-x-1 transition-all shadow-sm"
                         >
                           <span>Vào workspace</span>
                           <ArrowRight className="w-4 h-4" />
@@ -890,18 +890,18 @@ export default function WorkspacesPage() {
               {/* Create New Workspace Card */}
               <button
                 onClick={() => setIsCreateOpen(true)}
-                className="group relative rounded-2xl border-2 border-dashed border-sand-300 hover:border-terracotta-500 bg-white/60 hover:bg-gradient-to-b hover:from-white hover:to-terracotta-50/40 backdrop-blur-sm transition-all duration-300 flex flex-col items-center justify-center p-8 text-center cursor-pointer min-h-[350px] shadow-sm hover:shadow-card-hover"
+                className="group relative rounded-2xl border-2 border-dashed border-line hover:border-acc bg-panel/60 hover:bg-acc-soft/40 backdrop-blur-sm transition-all duration-300 flex flex-col items-center justify-center p-8 text-center cursor-pointer min-h-[350px] shadow-sm hover:shadow-card-hover"
               >
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-terracotta-50 to-sand-100 group-hover:from-terracotta-500 group-hover:to-terracotta-600 border border-sand-300 group-hover:border-terracotta-600 text-terracotta-600 group-hover:text-white flex items-center justify-center transition-all duration-300 shadow-sm group-hover:shadow-glow group-hover:scale-110">
+                <div className="w-16 h-16 rounded-2xl bg-acc-soft group-hover:bg-ink border border-line group-hover:border-acc text-acc group-hover:text-on-ink flex items-center justify-center transition-all duration-300 shadow-sm group-hover:scale-110">
                   <Plus className="w-8 h-8 stroke-[2.2]" />
                 </div>
-                <h3 className="mt-6 font-bold text-lg text-slate-900 group-hover:text-terracotta-600 transition-colors">
+                <h3 className="mt-6 font-bold text-lg text-fg group-hover:text-acc transition-colors">
                   Khởi tạo Workspace mới
                 </h3>
-                <p className="mt-2 text-xs md:text-sm text-slate-500 max-w-[260px] leading-relaxed">
+                <p className="mt-2 text-xs md:text-sm text-muted max-w-[260px] leading-relaxed">
                   Mở rộng chuỗi khách sạn, khu nghỉ dưỡng sinh thái, villa hoặc homestay mới với tên miền và cổng thanh toán riêng.
                 </p>
-                <div className="mt-6 inline-flex items-center gap-2 text-xs font-bold text-terracotta-600 group-hover:text-white bg-white group-hover:bg-terracotta-600 px-4 py-2 rounded-xl border border-sand-300 group-hover:border-terracotta-600 shadow-sm transition-all">
+                <div className="mt-6 inline-flex items-center gap-2 text-xs font-bold text-acc group-hover:text-on-ink bg-panel group-hover:bg-ink px-4 py-2 rounded-xl border border-line group-hover:border-acc shadow-sm transition-all">
                   <span>Bắt đầu thiết lập</span>
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                 </div>
@@ -911,56 +911,56 @@ export default function WorkspacesPage() {
             {/* Auxiliary Sections */}
             <div className="mt-12 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
               {/* Pending Invitation Box */}
-              <section className="lg:col-span-5 bg-white rounded-2xl border border-sand-200/90 p-6 shadow-card flex flex-col justify-between relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-terracotta-500" />
+              <section className="lg:col-span-5 bg-panel rounded-2xl border border-line/90 p-6 shadow-card flex flex-col justify-between relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-acc" />
                 <div>
-                  <div className="flex items-center justify-between pb-4 border-b border-sand-200">
-                    <h4 className="font-bold text-sm text-slate-900 flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-terracotta-50 text-terracotta-600 flex items-center justify-center">
+                  <div className="flex items-center justify-between pb-4 border-b border-line">
+                    <h4 className="font-bold text-sm text-fg flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-acc-soft text-acc flex items-center justify-center">
                         <MailCheck className="w-4 h-4" />
                       </div>
                       <span>Lời mời cộng tác mới</span>
                     </h4>
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold bg-warn-soft text-warn border border-warn/30">
+                      <span className="w-1.5 h-1.5 rounded-full bg-warn animate-ping" />
                       {pendingInvitationsCount} chờ xử lý
                     </span>
                   </div>
 
                   {pendingInvitationsCount > 0 ? (
                     invitations.map((invitation) => (
-                      <div key={invitation.id} className="mt-4 p-4 rounded-xl bg-sand-50/90 border border-sand-200/80 flex flex-col gap-3.5">
+                      <div key={invitation.id} className="mt-4 p-4 rounded-xl bg-fg/[0.03] border border-line/80 flex flex-col gap-3.5">
                         <div className="flex items-start gap-3.5">
-                          <div className="w-11 h-11 rounded-xl bg-white border border-sand-300 font-serif font-bold text-lg text-slate-800 flex items-center justify-center shadow-sm shrink-0">
+                          <div className="w-11 h-11 rounded-xl bg-panel border border-line font-serif font-bold text-lg text-fg flex items-center justify-center shadow-sm shrink-0">
                             {invitation.workspace.name.charAt(0).toUpperCase()}
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <h5 className="text-xs sm:text-sm font-bold text-slate-900">{invitation.workspace.name}</h5>
-                              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-terracotta-100 text-terracotta-700">Mới</span>
+                              <h5 className="text-xs sm:text-sm font-bold text-fg">{invitation.workspace.name}</h5>
+                              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-acc-soft text-acc">Mới</span>
                             </div>
-                            <p className="text-xs text-slate-500 mt-0.5">
-                              Vai trò đề xuất: <span className="font-bold text-slate-800">{invitation.role}</span>
+                            <p className="text-xs text-muted mt-0.5">
+                              Vai trò đề xuất: <span className="font-bold text-fg">{invitation.role}</span>
                             </p>
-                            <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1">
+                            <div className="text-[11px] text-muted mt-0.5 flex items-center gap-1">
                               <Clock className="w-3 h-3" />
                               <span>Gửi từ: {invitation.invitedBy.name || invitation.invitedBy.email}</span>
                             </div>
                           </div>
                         </div>
                         {invitation.message && (
-                          <div className="p-3 bg-white rounded-lg border border-sand-200 text-xs text-slate-600 italic leading-relaxed">
+                          <div className="p-3 bg-panel rounded-lg border border-line text-xs text-muted italic leading-relaxed">
                             &quot;{invitation.message}&quot;
                           </div>
                         )}
                       </div>
                     ))
                   ) : (
-                    <div className="mt-4 p-4 rounded-xl bg-sand-50/90 border border-sand-200/80 text-center">
-                      <div className="w-12 h-12 rounded-xl bg-white border border-sand-300 flex items-center justify-center mx-auto mb-3 shadow-sm">
-                        <MailCheck className="w-6 h-6 text-sand-400" />
+                    <div className="mt-4 p-4 rounded-xl bg-fg/[0.03] border border-line/80 text-center">
+                      <div className="w-12 h-12 rounded-xl bg-panel border border-line flex items-center justify-center mx-auto mb-3 shadow-sm">
+                        <MailCheck className="w-6 h-6 text-muted" />
                       </div>
-                      <p className="text-sm text-slate-500">Không có lời mời cộng tác nào</p>
+                      <p className="text-sm text-muted">Không có lời mời cộng tác nào</p>
                     </div>
                   )}
                 </div>
@@ -969,14 +969,14 @@ export default function WorkspacesPage() {
                   <div className="mt-5 pt-3.5 flex items-center gap-3">
                     <button
                       onClick={() => handleAcceptInvitation(invitations[0].id)}
-                      className="flex-1 py-2.5 px-4 text-xs font-bold text-white bg-gradient-to-r from-terracotta-500 to-terracotta-600 hover:from-terracotta-600 hover:to-terracotta-700 rounded-xl transition shadow-sm shadow-terracotta-500/20 text-center flex items-center justify-center gap-1.5"
+                      className="flex-1 py-2.5 px-4 text-xs font-bold text-on-ink bg-ink hover:bg-ink/90 rounded-xl transition shadow-sm text-center flex items-center justify-center gap-1.5"
                     >
                       <Check className="w-3.5 h-3.5" />
                       Chấp nhận lời mời
                     </button>
                     <button
                       onClick={() => handleDeclineInvitation(invitations[0].id)}
-                      className="py-2.5 px-4 text-xs font-bold text-slate-600 hover:text-slate-900 bg-sand-100 hover:bg-sand-200 rounded-xl transition text-center border border-sand-200"
+                      className="py-2.5 px-4 text-xs font-bold text-muted hover:text-fg bg-fg/5 hover:bg-fg/10 rounded-xl transition text-center border border-line"
                     >
                       Từ chối
                     </button>
@@ -985,72 +985,72 @@ export default function WorkspacesPage() {
               </section>
 
               {/* System Quick Insights & Recent Activity */}
-              <section className="lg:col-span-7 bg-white rounded-2xl border border-sand-200/90 p-6 shadow-card">
-                <div className="flex items-center justify-between pb-4 border-b border-sand-200">
+              <section className="lg:col-span-7 bg-panel rounded-2xl border border-line/90 p-6 shadow-card">
+                <div className="flex items-center justify-between pb-4 border-b border-line">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <div className="w-7 h-7 rounded-lg bg-ok-soft text-ok flex items-center justify-center">
                       <Activity className="w-4 h-4" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-sm text-slate-900">Hoạt động thời gian thực (Live Stream)</h4>
+                      <h4 className="font-bold text-sm text-fg">Hoạt động thời gian thực (Live Stream)</h4>
                     </div>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 bg-sand-100 px-2.5 py-1 rounded-full border border-sand-200">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted bg-fg/5 px-2.5 py-1 rounded-full border border-line">
+                    <span className="w-2 h-2 rounded-full bg-ok animate-pulse" />
                     Đồng bộ tự động
                   </span>
                 </div>
                 <div className="mt-4 space-y-3">
                   {/* Activity Item 1 */}
-                  <div className="flex items-center justify-between p-3.5 rounded-xl hover:bg-sand-50 transition border border-sand-100 hover:border-sand-200 group">
+                  <div className="flex items-center justify-between p-3.5 rounded-xl hover:bg-fg/[0.03] transition border border-line hover:border-line group">
                     <div className="flex items-center gap-3.5">
-                      <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center shrink-0">
+                      <div className="w-9 h-9 rounded-xl bg-ok-soft text-ok border border-ok/30 flex items-center justify-center shrink-0">
                         <CreditCard className="w-4 h-4" />
                       </div>
                       <div>
-                        <p className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">
+                        <p className="text-xs sm:text-sm font-bold text-fg group-hover:text-ok transition-colors">
                           Đặt phòng trực tiếp thành công (#BK-8902)
                         </p>
-                        <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
-                          <span className="font-semibold text-slate-700">{workspaces[0]?.name || 'Workspace'}</span> • Phòng Deluxe King • <span className="font-bold text-emerald-700">4.250.000 đ</span> qua VietQR
+                        <p className="text-[11px] sm:text-xs text-muted mt-0.5">
+                          <span className="font-semibold text-fg">{workspaces[0]?.name || 'Workspace'}</span> • Phòng Deluxe King • <span className="font-bold text-ok">4.250.000 đ</span> qua VietQR
                         </p>
                       </div>
                     </div>
-                    <span className="text-[11px] text-slate-400 font-mono whitespace-nowrap pl-2">8 phút trước</span>
+                    <span className="text-[11px] text-muted font-mono whitespace-nowrap pl-2">8 phút trước</span>
                   </div>
                   {/* Activity Item 2 */}
-                  <div className="flex items-center justify-between p-3.5 rounded-xl hover:bg-sand-50 transition border border-sand-100 hover:border-sand-200 group">
+                  <div className="flex items-center justify-between p-3.5 rounded-xl hover:bg-fg/[0.03] transition border border-line hover:border-line group">
                     <div className="flex items-center gap-3.5">
-                      <div className="w-9 h-9 rounded-xl bg-terracotta-50 text-terracotta-600 border border-terracotta-200 flex items-center justify-center shrink-0">
+                      <div className="w-9 h-9 rounded-xl bg-acc-soft text-acc border border-acc/30 flex items-center justify-center shrink-0">
                         <UserCheck className="w-4 h-4" />
                       </div>
                       <div>
-                        <p className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-terracotta-700 transition-colors">
+                        <p className="text-xs sm:text-sm font-bold text-fg group-hover:text-acc transition-colors">
                           Cập nhật phân quyền nhân sự ca sáng
                         </p>
-                        <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
-                          <span className="font-semibold text-slate-700">{workspaces[1]?.name || 'Workspace'}</span> • Cấp quyền Lễ tân tiếp đón cho nhân viên: <span className="font-medium text-slate-800">Tran Thu Hang</span>
+                        <p className="text-[11px] sm:text-xs text-muted mt-0.5">
+                          <span className="font-semibold text-fg">{workspaces[1]?.name || 'Workspace'}</span> • Cấp quyền Lễ tân tiếp đón cho nhân viên: <span className="font-medium text-fg">Tran Thu Hang</span>
                         </p>
                       </div>
                     </div>
-                    <span className="text-[11px] text-slate-400 font-mono whitespace-nowrap pl-2">2 giờ trước</span>
+                    <span className="text-[11px] text-muted font-mono whitespace-nowrap pl-2">2 giờ trước</span>
                   </div>
                   {/* Activity Item 3 */}
-                  <div className="flex items-center justify-between p-3.5 rounded-xl hover:bg-sand-50 transition border border-sand-100 hover:border-sand-200 group">
+                  <div className="flex items-center justify-between p-3.5 rounded-xl hover:bg-fg/[0.03] transition border border-line hover:border-line group">
                     <div className="flex items-center gap-3.5">
-                      <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 border border-sky-200 flex items-center justify-center shrink-0">
+                      <div className="w-9 h-9 rounded-xl bg-info-soft text-info border border-info/30 flex items-center justify-center shrink-0">
                         <RefreshCw className="w-4 h-4" />
                       </div>
                       <div>
-                        <p className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-sky-700 transition-colors">
+                        <p className="text-xs sm:text-sm font-bold text-fg group-hover:text-info transition-colors">
                           Đồng bộ giá phòng 2 chiều OTA Booking.com
                         </p>
-                        <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
-                          <span className="font-semibold text-slate-700">{workspaces[0]?.name || 'Workspace'}</span> • Đã cập nhật bảng giá cuối tuần (All 38 Inventory Units)
+                        <p className="text-[11px] sm:text-xs text-muted mt-0.5">
+                          <span className="font-semibold text-fg">{workspaces[0]?.name || 'Workspace'}</span> • Đã cập nhật bảng giá cuối tuần (All 38 Inventory Units)
                         </p>
                       </div>
                     </div>
-                    <span className="text-[11px] text-slate-400 font-mono whitespace-nowrap pl-2">4 giờ trước</span>
+                    <span className="text-[11px] text-muted font-mono whitespace-nowrap pl-2">4 giờ trước</span>
                   </div>
                 </div>
               </section>
@@ -1060,28 +1060,28 @@ export default function WorkspacesPage() {
       </main>
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-sand-200 bg-white/90 backdrop-blur-md py-6 text-xs text-slate-500 z-10">
+      <footer className="mt-auto border-t border-line bg-panel/90 backdrop-blur-md py-6 text-xs text-muted z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ok opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-ok" />
             </span>
-            <span className="font-medium text-slate-700">Hệ thống máy chủ DigiStay Cloud:</span>
-            <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+            <span className="font-medium text-fg">Hệ thống máy chủ DigiStay Cloud:</span>
+            <span className="text-ok font-bold bg-ok-soft px-2 py-0.5 rounded border border-ok/30">
               99.98% Hoạt động ổn định
             </span>
           </div>
           <div className="flex items-center gap-6">
-            <a className="hover:text-terracotta-600 transition flex items-center gap-1.5 font-medium" href="#help">
+            <a className="hover:text-acc transition flex items-center gap-1.5 font-medium" href="#help">
               <HelpCircle className="w-3.5 h-3.5" />
               Trung tâm hỗ trợ
             </a>
-            <a className="hover:text-terracotta-600 transition flex items-center gap-1.5 font-medium" href="#hotline">
+            <a className="hover:text-acc transition flex items-center gap-1.5 font-medium" href="#hotline">
               <PhoneCall className="w-3.5 h-3.5" />
               Hotline 24/7: 1900 8922
             </a>
-            <span className="text-slate-400">© 2026 DigiStay Boutique OS. All rights reserved.</span>
+            <span className="text-muted">© 2026 DigiStay Boutique OS. All rights reserved.</span>
           </div>
         </div>
       </footer>
@@ -1089,22 +1089,22 @@ export default function WorkspacesPage() {
       {/* Create Modal */}
       <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} size="2xl">
         {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-sand-200/90 flex items-center justify-between bg-gradient-to-r from-sand-50/90 via-white to-sand-50/60">
+        <div className="px-6 py-4 border-b border-line/90 flex items-center justify-between bg-fg/[0.03]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-terracotta-500 to-terracotta-600 text-white flex items-center justify-center shadow-md shadow-terracotta-500/25 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-acc text-on-ink flex items-center justify-center shadow-md shrink-0">
               <Building2 className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+              <h3 className="text-base sm:text-lg font-bold text-fg flex items-center gap-2">
                 Tạo không gian làm việc mới 
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-terracotta-50 text-terracotta-600 border border-terracotta-200">Boutique OS</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-acc-soft text-acc border border-acc/30">Boutique OS</span>
               </h3>
-              <p className="text-xs text-slate-500">Thiết lập môi trường vận hành riêng biệt cho cơ sở hoặc chuỗi lưu trú của bạn</p>
+              <p className="text-xs text-muted">Thiết lập môi trường vận hành riêng biệt cho cơ sở hoặc chuỗi lưu trú của bạn</p>
             </div>
           </div>
           <button
             onClick={() => setIsCreateOpen(false)}
-            className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-sand-100 flex items-center justify-center transition border border-transparent hover:border-sand-200"
+            className="w-8 h-8 rounded-lg text-muted hover:text-fg hover:bg-fg/5 flex items-center justify-center transition border border-transparent hover:border-line"
           >
             <X className="w-4 h-4" />
           </button>
@@ -1113,7 +1113,7 @@ export default function WorkspacesPage() {
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-5 text-left max-h-[calc(92vh-220px)]">
           {error && (
-            <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
+            <div className="p-3 rounded-lg bg-err-soft border border-err/30 text-err text-sm">
               {error}
             </div>
           )}
@@ -1121,24 +1121,24 @@ export default function WorkspacesPage() {
           {/* Workspace Name & Slug */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-900 uppercase tracking-wide">
-                Tên Workspace / Thương hiệu <span className="text-terracotta-600">*</span>
+              <label className="text-xs font-bold text-fg uppercase tracking-wide">
+                Tên Workspace / Thương hiệu <span className="text-acc">*</span>
               </label>
-              <span className="text-[11px] text-slate-400">Hiển thị trên booking &amp; hóa đơn</span>
+              <span className="text-[11px] text-muted">Hiển thị trên booking &amp; hóa đơn</span>
             </div>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => handleNameChange(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white border border-sand-300 rounded-xl focus-visible:border-terracotta-500 focus-visible:ring-2 focus-visible:ring-terracotta-500/20 outline-none text-slate-900 shadow-sm font-medium"
+              className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-panel border border-line rounded-xl focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 outline-none text-fg shadow-sm font-medium"
               placeholder="VD: An Nam Boutique Hotel, Hoi An Retreat..."
               required
               autoFocus
             />
-            <div className="flex items-center justify-between text-xs text-slate-500 bg-sand-50 p-2.5 rounded-xl border border-sand-200/80">
-              <div className="flex items-center gap-1.5 font-mono text-[11px] sm:text-xs text-slate-600 truncate">
-                <span className="text-slate-400">slug:</span>
-                <span className="text-terracotta-600 font-semibold">
+            <div className="flex items-center justify-between text-xs text-muted bg-fg/[0.03] p-2.5 rounded-xl border border-line/80">
+              <div className="flex items-center gap-1.5 font-mono text-[11px] sm:text-xs text-muted truncate">
+                <span className="text-muted">slug:</span>
+                <span className="text-acc font-semibold">
                   {formData.slug ? `digistay.vn/${formData.slug}` : 'Nhập tên để tạo slug...'}
                 </span>
               </div>
@@ -1148,7 +1148,7 @@ export default function WorkspacesPage() {
                   const newSlug = prompt('Nhập slug tùy chỉnh:', formData.slug)
                   if (newSlug) handleSlugChange(newSlug)
                 }}
-                className="text-[11px] font-semibold text-terracotta-600 hover:text-terracotta-700 underline shrink-0 ml-2"
+                className="text-[11px] font-semibold text-acc hover:text-acc underline shrink-0 ml-2"
               >
                 Tùy chỉnh slug
               </button>
@@ -1157,11 +1157,11 @@ export default function WorkspacesPage() {
 
           {/* Business Type */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-900 uppercase tracking-wide">
-              Mô hình kinh doanh lưu trú <span className="text-terracotta-600">*</span>
+            <label className="text-xs font-bold text-fg uppercase tracking-wide">
+              Mô hình kinh doanh lưu trú <span className="text-acc">*</span>
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-              <label className={`relative flex flex-col p-3 rounded-xl border-2 cursor-pointer shadow-sm transition ${formData.businessType === 'boutique_hotel' ? 'border-terracotta-500 bg-terracotta-50/40' : 'border-sand-200 bg-white hover:border-sand-300'}`}>
+              <label className={`relative flex flex-col p-3 rounded-xl border-2 cursor-pointer shadow-sm transition ${formData.businessType === 'boutique_hotel' ? 'border-acc bg-acc-soft/40' : 'border-line bg-panel hover:border-line'}`}>
                 <input
                   type="radio"
                   name="business_type"
@@ -1171,16 +1171,16 @@ export default function WorkspacesPage() {
                   className="sr-only"
                 />
                 <div className="flex items-center justify-between mb-1">
-                  <span className="w-6 h-6 rounded-lg bg-terracotta-100 text-terracotta-600 flex items-center justify-center font-bold text-xs">🏨</span>
-                  <span className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${formData.businessType === 'boutique_hotel' ? 'border-terracotta-600' : 'border-sand-300'}`}>
-                    {formData.businessType === 'boutique_hotel' && <span className="w-1.5 h-1.5 rounded-full bg-terracotta-600"></span>}
+                  <span className="w-6 h-6 rounded-lg bg-acc-soft text-acc flex items-center justify-center font-bold text-xs">🏨</span>
+                  <span className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${formData.businessType === 'boutique_hotel' ? 'border-acc' : 'border-line'}`}>
+                    {formData.businessType === 'boutique_hotel' && <span className="w-1.5 h-1.5 rounded-full bg-ink"></span>}
                   </span>
                 </div>
-                <span className="text-xs font-bold text-slate-900">Boutique Hotel</span>
-                <span className="text-[11px] text-slate-500 mt-0.5 leading-snug">Khách sạn phố, mini hotel phong cách</span>
+                <span className="text-xs font-bold text-fg">Boutique Hotel</span>
+                <span className="text-[11px] text-muted mt-0.5 leading-snug">Khách sạn phố, mini hotel phong cách</span>
               </label>
 
-              <label className={`relative flex flex-col p-3 rounded-xl border-2 cursor-pointer shadow-sm transition ${formData.businessType === 'resort' ? 'border-terracotta-500 bg-terracotta-50/40' : 'border-sand-200 bg-white hover:border-sand-300'}`}>
+              <label className={`relative flex flex-col p-3 rounded-xl border-2 cursor-pointer shadow-sm transition ${formData.businessType === 'resort' ? 'border-acc bg-acc-soft/40' : 'border-line bg-panel hover:border-line'}`}>
                 <input
                   type="radio"
                   name="business_type"
@@ -1190,16 +1190,16 @@ export default function WorkspacesPage() {
                   className="sr-only"
                 />
                 <div className="flex items-center justify-between mb-1">
-                  <span className="w-6 h-6 rounded-lg bg-sand-100 text-slate-600 flex items-center justify-center font-bold text-xs">🏡</span>
-                  <span className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${formData.businessType === 'resort' ? 'border-terracotta-600' : 'border-sand-300'}`}>
-                    {formData.businessType === 'resort' && <span className="w-1.5 h-1.5 rounded-full bg-terracotta-600"></span>}
+                  <span className="w-6 h-6 rounded-lg bg-fg/5 text-muted flex items-center justify-center font-bold text-xs">🏡</span>
+                  <span className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${formData.businessType === 'resort' ? 'border-acc' : 'border-line'}`}>
+                    {formData.businessType === 'resort' && <span className="w-1.5 h-1.5 rounded-full bg-ink"></span>}
                   </span>
                 </div>
-                <span className="text-xs font-bold text-slate-900">Resort &amp; Biệt thự</span>
-                <span className="text-[11px] text-slate-500 mt-0.5 leading-snug">Khu nghỉ dưỡng, villa ven biển/núi</span>
+                <span className="text-xs font-bold text-fg">Resort &amp; Biệt thự</span>
+                <span className="text-[11px] text-muted mt-0.5 leading-snug">Khu nghỉ dưỡng, villa ven biển/núi</span>
               </label>
 
-              <label className={`relative flex flex-col p-3 rounded-xl border-2 cursor-pointer shadow-sm transition ${formData.businessType === 'homestay' ? 'border-terracotta-500 bg-terracotta-50/40' : 'border-sand-200 bg-white hover:border-sand-300'}`}>
+              <label className={`relative flex flex-col p-3 rounded-xl border-2 cursor-pointer shadow-sm transition ${formData.businessType === 'homestay' ? 'border-acc bg-acc-soft/40' : 'border-line bg-panel hover:border-line'}`}>
                 <input
                   type="radio"
                   name="business_type"
@@ -1209,22 +1209,22 @@ export default function WorkspacesPage() {
                   className="sr-only"
                 />
                 <div className="flex items-center justify-between mb-1">
-                  <span className="w-6 h-6 rounded-lg bg-sand-100 text-slate-600 flex items-center justify-center font-bold text-xs">🛏️</span>
-                  <span className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${formData.businessType === 'homestay' ? 'border-terracotta-600' : 'border-sand-300'}`}>
-                    {formData.businessType === 'homestay' && <span className="w-1.5 h-1.5 rounded-full bg-terracotta-600"></span>}
+                  <span className="w-6 h-6 rounded-lg bg-fg/5 text-muted flex items-center justify-center font-bold text-xs">🛏️</span>
+                  <span className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${formData.businessType === 'homestay' ? 'border-acc' : 'border-line'}`}>
+                    {formData.businessType === 'homestay' && <span className="w-1.5 h-1.5 rounded-full bg-ink"></span>}
                   </span>
                 </div>
-                <span className="text-xs font-bold text-slate-900">Chuỗi Homestay</span>
-                <span className="text-[11px] text-slate-500 mt-0.5 leading-snug">Căn hộ dịch vụ, phòng chia sẻ</span>
+                <span className="text-xs font-bold text-fg">Chuỗi Homestay</span>
+                <span className="text-[11px] text-muted mt-0.5 leading-snug">Căn hộ dịch vụ, phòng chia sẻ</span>
               </label>
             </div>
           </div>
 
           {/* Brand Identity */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-900 uppercase tracking-wide">Nhận diện thương hiệu</label>
-            <div className="flex items-center gap-4 p-3 bg-sand-50/70 rounded-xl border border-sand-200">
-              <div className="w-14 h-14 rounded-xl overflow-hidden bg-gradient-to-br from-terracotta-100 to-terracotta-200 border-2 border-terracotta-300 flex items-center justify-center shadow-inner shrink-0">
+            <label className="text-xs font-bold text-fg uppercase tracking-wide">Nhận diện thương hiệu</label>
+            <div className="flex items-center gap-4 p-3 bg-fg/[0.03] rounded-xl border border-line">
+              <div className="w-14 h-14 rounded-xl overflow-hidden bg-acc-soft border-2 border-acc flex items-center justify-center shadow-inner shrink-0">
                 {formData.logo ? (
                   <img
                     src={formData.logo}
@@ -1237,7 +1237,7 @@ export default function WorkspacesPage() {
                     }}
                   />
                 ) : (
-                  <span className="text-terracotta-700 font-serif font-bold text-2xl">
+                  <span className="text-acc font-serif font-bold text-2xl">
                     {formData.name ? formData.name.charAt(0).toUpperCase() : 'A'}
                   </span>
                 )}
@@ -1273,7 +1273,7 @@ export default function WorkspacesPage() {
                       const input = document.getElementById('logo-upload') as HTMLInputElement
                       if (input) input.click()
                     }}
-                    className="px-3 py-1.5 text-xs font-bold bg-white text-slate-800 border border-sand-300 rounded-lg hover:border-terracotta-400 hover:text-terracotta-600 shadow-sm transition cursor-pointer"
+                    className="px-3 py-1.5 text-xs font-bold bg-panel text-fg border border-line rounded-lg hover:border-acc hover:text-acc shadow-sm transition cursor-pointer"
                   >
                     Tải logo lên
                   </button>
@@ -1281,14 +1281,14 @@ export default function WorkspacesPage() {
                     <button
                       type="button"
                       onClick={() => setFormData(prev => ({ ...prev, logo: null }))}
-                      className="px-3 py-1.5 text-xs font-bold bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 hover:border-red-400 shadow-sm transition"
+                      className="px-3 py-1.5 text-xs font-bold bg-err-soft text-err border border-err/30 rounded-lg hover:bg-err-soft hover:border-err/30 shadow-sm transition"
                     >
                       Xóa logo
                     </button>
                   )}
-                  <span className="text-[11px] text-slate-400">{formData.logo ? 'Đã tải lên ✓' : 'hoặc tự sinh monogram'}</span>
+                  <span className="text-[11px] text-muted">{formData.logo ? 'Đã tải lên ✓' : 'hoặc tự sinh monogram'}</span>
                 </div>
-                <p className="text-[10px] sm:text-[11px] text-slate-400 mt-1.5">Hỗ trợ PNG, SVG, JPG (Khuyến nghị 512x512px, tối đa 2MB)</p>
+                <p className="text-[10px] sm:text-[11px] text-muted mt-1.5">Hỗ trợ PNG, SVG, JPG (Khuyến nghị 512x512px, tối đa 2MB)</p>
               </div>
             </div>
           </div>
@@ -1296,13 +1296,13 @@ export default function WorkspacesPage() {
           {/* Description */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-900 uppercase tracking-wide">Mô tả ngắn gọn &amp; Ghi chú vận hành</label>
-              <span className="text-[11px] text-slate-400 font-mono">{formData.description.length}/250</span>
+              <label className="text-xs font-bold text-fg uppercase tracking-wide">Mô tả ngắn gọn &amp; Ghi chú vận hành</label>
+              <span className="text-[11px] text-muted font-mono">{formData.description.length}/250</span>
             </div>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value.slice(0, 250) }))}
-              className="w-full px-3.5 py-2 text-xs sm:text-sm bg-white border border-sand-300 rounded-xl focus-visible:border-terracotta-500 focus-visible:ring-2 focus-visible:ring-terracotta-500/20 outline-none text-slate-800 placeholder:text-slate-400 shadow-sm transition"
+              className="w-full px-3.5 py-2 text-xs sm:text-sm bg-panel border border-line rounded-xl focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 outline-none text-fg placeholder:text-muted shadow-sm transition"
               placeholder="Mô tả định vị khách sạn, phong cách dịch vụ hoặc ghi chú cho nội bộ..."
               rows={2}
             />
@@ -1311,11 +1311,11 @@ export default function WorkspacesPage() {
           {/* Currency & Timezone */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-900 uppercase tracking-wide">Tiền tệ mặc định</label>
+              <label className="text-xs font-bold text-fg uppercase tracking-wide">Tiền tệ mặc định</label>
               <select
                 value={formData.currency}
                 onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value }))}
-                className="w-full px-3 py-2 text-xs font-semibold bg-white border border-sand-300 rounded-xl focus-visible:border-terracotta-500 outline-none text-slate-800 shadow-sm"
+                className="w-full px-3 py-2 text-xs font-semibold bg-panel border border-line rounded-xl focus-visible:border-acc outline-none text-fg shadow-sm"
               >
                 <option value="VND">VND (₫) - Đồng Việt Nam</option>
                 <option value="USD">USD ($) - US Dollar</option>
@@ -1323,11 +1323,11 @@ export default function WorkspacesPage() {
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-900 uppercase tracking-wide">Múi giờ vận hành</label>
+              <label className="text-xs font-bold text-fg uppercase tracking-wide">Múi giờ vận hành</label>
               <select
                 value={formData.timezone}
                 onChange={(e) => setFormData(prev => ({ ...prev, timezone: e.target.value }))}
-                className="w-full px-3 py-2 text-xs font-semibold bg-white border border-sand-300 rounded-xl focus-visible:border-terracotta-500 outline-none text-slate-800 shadow-sm"
+                className="w-full px-3 py-2 text-xs font-semibold bg-panel border border-line rounded-xl focus-visible:border-acc outline-none text-fg shadow-sm"
               >
                 <option value="GMT+07:00">GMT+07:00 (Hà Nội, TP.HCM)</option>
                 <option value="GMT+08:00">GMT+08:00 (Singapore, Bali)</option>
@@ -1338,9 +1338,9 @@ export default function WorkspacesPage() {
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-4 bg-sand-50/90 border-t border-sand-200/90 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
-            <svg className="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <div className="px-6 py-4 bg-fg/[0.03] border-t border-line/90 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5 text-[11px] text-muted font-medium">
+            <svg className="w-3.5 h-3.5 text-ok shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <span>Bảo mật đa tenant cô lập chuẩn ISO 27001</span>
@@ -1349,7 +1349,7 @@ export default function WorkspacesPage() {
             <button
               type="button"
               onClick={() => setIsCreateOpen(false)}
-              className="flex-1 sm:flex-none px-4 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-900 bg-white hover:bg-sand-100 rounded-xl border border-sand-300 transition shadow-sm"
+              className="flex-1 sm:flex-none px-4 py-2.5 text-xs font-bold text-muted hover:text-fg bg-panel hover:bg-fg/5 rounded-xl border border-line transition shadow-sm"
             >
               Hủy bỏ
             </button>
@@ -1357,10 +1357,10 @@ export default function WorkspacesPage() {
               type="button"
               onClick={handleCreate}
               disabled={isCreating || !formData.name}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-5 py-2.5 text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-terracotta-500 via-terracotta-600 to-terracotta-700 hover:from-terracotta-600 hover:to-terracotta-800 rounded-xl shadow-md shadow-terracotta-500/25 active:scale-[0.98] transition disabled:opacity-50"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-5 py-2.5 text-xs sm:text-sm font-bold text-on-ink bg-ink hover:bg-ink/90 rounded-xl shadow-md active:scale-[0.98] transition disabled:opacity-50"
             >
               {isCreating ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-on-ink" />
               ) : (
                 <>
                   <Plus className="w-4 h-4 stroke-[2.5]" />
@@ -1376,7 +1376,7 @@ export default function WorkspacesPage() {
       <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="Chỉnh sửa workspace">
         <form onSubmit={handleEdit}>
           {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
+            <div className="mb-4 p-3 rounded-lg bg-err-soft border border-err/30 text-err text-sm">
               {error}
             </div>
           )}
@@ -1397,7 +1397,7 @@ export default function WorkspacesPage() {
           <ModalFooter>
             <button
               type="button"
-              className="px-4 py-2 text-sm font-medium text-slate-700 bg-sand-100 hover:bg-sand-200 rounded-xl transition"
+              className="px-4 py-2 text-sm font-medium text-fg bg-fg/5 hover:bg-fg/10 rounded-xl transition"
               onClick={() => setIsEditOpen(false)}
             >
               Hủy
@@ -1405,10 +1405,10 @@ export default function WorkspacesPage() {
             <button
               type="submit"
               disabled={isUpdating}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-terracotta-500 to-terracotta-600 text-white px-4 py-2 rounded-xl font-semibold shadow-sm shadow-terracotta-500/30 hover:shadow-lg transition disabled:opacity-50"
+              className="inline-flex items-center gap-2 bg-ink hover:bg-ink/90 text-on-ink px-4 py-2 rounded-xl font-semibold shadow-sm hover:shadow-lg transition disabled:opacity-50"
             >
               {isUpdating ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-on-ink" />
               ) : (
                 <Check className="w-4 h-4" />
               )}
@@ -1444,19 +1444,19 @@ export default function WorkspacesPage() {
 
       {/* Image Editor Modal */}
       <Modal isOpen={isImageEditorOpen} onClose={() => setIsImageEditorOpen(false)} size="lg">
-        <div className="px-6 py-4 border-b border-sand-200/90 flex items-center justify-between bg-gradient-to-r from-sand-50/90 via-white to-sand-50/60">
+        <div className="px-6 py-4 border-b border-line/90 flex items-center justify-between bg-fg/[0.03]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-terracotta-500 to-terracotta-600 text-white flex items-center justify-center shadow-md shadow-terracotta-500/25 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-acc text-on-ink flex items-center justify-center shadow-md shrink-0">
               <Maximize2 className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900">Chỉnh sửa Logo</h3>
-              <p className="text-xs text-slate-500">Thu/phóng và di chuyển để chọn bố cục đẹp nhất</p>
+              <h3 className="text-base font-bold text-fg">Chỉnh sửa Logo</h3>
+              <p className="text-xs text-muted">Thu/phóng và di chuyển để chọn bố cục đẹp nhất</p>
             </div>
           </div>
           <button
             onClick={() => setIsImageEditorOpen(false)}
-            className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-sand-100 flex items-center justify-center transition border border-transparent hover:border-sand-200"
+            className="w-8 h-8 rounded-lg text-muted hover:text-fg hover:bg-fg/5 flex items-center justify-center transition border border-transparent hover:border-line"
           >
             <X className="w-4 h-4" />
           </button>
@@ -1465,7 +1465,7 @@ export default function WorkspacesPage() {
         {/* Image Preview Area */}
         <div className="relative">
           <div
-            className="w-full h-80 bg-slate-900/5 overflow-hidden cursor-move flex items-center justify-center select-none"
+            className="w-full h-80 bg-ink/5 overflow-hidden cursor-move flex items-center justify-center select-none"
             onMouseDown={(e) => {
               setIsDragging(true)
               setDragStart({ x: e.clientX, y: e.clientY })
@@ -1485,7 +1485,7 @@ export default function WorkspacesPage() {
             onMouseLeave={() => setIsDragging(false)}
           >
             <div
-              className="w-40 h-40 rounded-2xl overflow-hidden border-4 border-white shadow-2xl"
+              className="w-40 h-40 rounded-2xl overflow-hidden border-4 border-panel shadow-2xl"
               style={{
                 transform: `translate(${imageTransform.positionX}px, ${imageTransform.positionY}px) scale(${imageTransform.scale})`,
                 transition: isDragging ? 'none' : 'transform 0.2s ease',
@@ -1507,39 +1507,39 @@ export default function WorkspacesPage() {
         </div>
 
         {/* Controls */}
-        <div className="px-6 py-4 border-t border-sand-200/90 bg-sand-50/50">
+        <div className="px-6 py-4 border-t border-line/90 bg-fg/[0.03]">
           <div className="flex items-center justify-center gap-2 mb-4">
             <button
               onClick={() => setImageTransform(prev => ({ ...prev, scale: Math.max(0.5, prev.scale - 0.1) }))}
-              className="w-10 h-10 rounded-xl bg-white border border-sand-300 text-slate-700 hover:bg-sand-100 hover:border-terracotta-400 flex items-center justify-center transition shadow-sm"
+              className="w-10 h-10 rounded-xl bg-panel border border-line text-fg hover:bg-fg/5 hover:border-acc flex items-center justify-center transition shadow-sm"
               title="Thu nhỏ"
             >
               <ZoomOut className="w-4 h-4" />
             </button>
-            <div className="w-32 h-1 bg-sand-200 rounded-full mx-2 overflow-hidden">
+            <div className="w-32 h-1 bg-fg/10 rounded-full mx-2 overflow-hidden">
               <div
-                className="h-full bg-terracotta-500 rounded-full transition-all"
+                className="h-full bg-ink rounded-full transition-all"
                 style={{ width: `${((imageTransform.scale - 0.5) / 1.5) * 100}%` }}
               />
             </div>
             <button
               onClick={() => setImageTransform(prev => ({ ...prev, scale: Math.min(2, prev.scale + 0.1) }))}
-              className="w-10 h-10 rounded-xl bg-white border border-sand-300 text-slate-700 hover:bg-sand-100 hover:border-terracotta-400 flex items-center justify-center transition shadow-sm"
+              className="w-10 h-10 rounded-xl bg-panel border border-line text-fg hover:bg-fg/5 hover:border-acc flex items-center justify-center transition shadow-sm"
               title="Phóng lớn"
             >
               <ZoomIn className="w-4 h-4" />
             </button>
-            <div className="w-px h-8 bg-sand-300 mx-2" />
+            <div className="w-px h-8 bg-fg/15 mx-2" />
             <button
               onClick={() => setImageTransform({ scale: 1, positionX: 0, positionY: 0 })}
-              className="px-4 py-2 rounded-xl bg-white border border-sand-300 text-slate-700 hover:bg-sand-100 hover:border-terracotta-400 flex items-center gap-2 transition shadow-sm"
+              className="px-4 py-2 rounded-xl bg-panel border border-line text-fg hover:bg-fg/5 hover:border-acc flex items-center gap-2 transition shadow-sm"
               title="Đặt lại"
             >
               <RotateCcw className="w-4 h-4" />
               <span className="text-xs font-bold">Đặt lại</span>
             </button>
           </div>
-          <p className="text-center text-xs text-slate-400">
+          <p className="text-center text-xs text-muted">
             Kéo để di chuyển • Cuộn chuột hoặc dùng nút để zoom
           </p>
         </div>

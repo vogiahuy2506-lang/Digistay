@@ -15,7 +15,7 @@ interface Status {
 type View = 'status' | 'setup' | 'codes' | 'regenerate' | 'disable'
 
 const INPUT_CLASS =
-  'w-full px-4 py-3 bg-stone-50/70 border border-stone-200 rounded-xl text-sm font-medium text-charcoal placeholder-stone-400 focus-visible:bg-white focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 transition-all outline-none'
+  'w-full px-4 py-3 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-charcoal placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none'
 
 async function post(path: string, body?: object) {
   const res = await fetch(`/api/users/me/two-factor${path}`, {
@@ -166,19 +166,19 @@ export function TwoFactorCard() {
           <ShieldCheck className="w-5 h-5" />
           Xác thực hai lớp
           {status?.enabled && (
-            <span className="ml-2 text-xs font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
+            <span className="ml-2 text-xs font-semibold text-ok bg-ok-soft px-2 py-0.5 rounded-full">
               Đang bật
             </span>
           )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        {notice && <p className="text-sm text-green-700">{notice}</p>}
+        {error && <p className="text-sm text-err">{error}</p>}
+        {notice && <p className="text-sm text-ok">{notice}</p>}
 
         {view === 'status' && status && !status.enabled && (
           <>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted">
               Không bắt buộc. Khi bật, ngoài mật khẩu (hoặc Google) bạn cần nhập thêm mã 6 số từ ứng dụng trên
               điện thoại. Kẻ gian có được mật khẩu của bạn cũng không đăng nhập được.
             </p>
@@ -192,9 +192,9 @@ export function TwoFactorCard() {
 
         {view === 'status' && status?.enabled && (
           <>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted">
               Đã bật từ {status.enabledAt ? new Date(status.enabledAt).toLocaleDateString('vi-VN') : ''}. Còn{' '}
-              <span className={status.recoveryCodesLeft <= 2 ? 'font-semibold text-red-600' : 'font-semibold'}>
+              <span className={status.recoveryCodesLeft <= 2 ? 'font-semibold text-err' : 'font-semibold'}>
                 {status.recoveryCodesLeft} mã khôi phục
               </span>
               {status.recoveryCodesLeft <= 2 && ' — nên tạo bộ mã mới'}.
@@ -213,25 +213,25 @@ export function TwoFactorCard() {
         {view === 'setup' && setup && (
           <div className="space-y-5">
             <div>
-              <p className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+              <p className="text-sm font-semibold text-fg flex items-center gap-2">
                 <Smartphone className="w-4 h-4" /> Bước 1 — Cài ứng dụng xác thực
               </p>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-muted mt-1">
                 Google Authenticator hoặc Microsoft Authenticator (App Store, Google Play). iPhone có sẵn ứng
                 dụng Mật khẩu cũng dùng được.
               </p>
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-900">Bước 2 — Quét mã QR bằng ứng dụng đó</p>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm font-semibold text-fg">Bước 2 — Quét mã QR bằng ứng dụng đó</p>
+              <p className="text-sm text-muted mt-1">
                 Trong ứng dụng, chọn thêm tài khoản rồi quét mã. Trên iPhone, quét bằng Camera sẽ mở ứng dụng
                 Mật khẩu — vẫn đúng, cứ làm tiếp.
               </p>
               {/* eslint-disable-next-line @next/next/no-img-element -- data: URL from our API */}
               <img src={setup.qrDataUrl} alt="Mã QR xác thực hai lớp" className="w-48 h-48 mt-3 border rounded-lg" />
-              <p className="text-sm text-gray-600 mt-3">Đang mở trang này trên điện thoại? Nhập khoá này vào ứng dụng:</p>
+              <p className="text-sm text-muted mt-3">Đang mở trang này trên điện thoại? Nhập khoá này vào ứng dụng:</p>
               <div className="mt-1 flex items-center gap-2">
-                <code className="px-3 py-2 bg-stone-100 rounded-lg text-sm tracking-wider break-all">
+                <code className="px-3 py-2 bg-fg/5 rounded-lg text-sm tracking-wider break-all">
                   {setup.secret.match(/.{1,4}/g)?.join(' ')}
                 </code>
                 <Button
@@ -244,7 +244,7 @@ export function TwoFactorCard() {
               </div>
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-900">Bước 3 — Nhập mã 6 số ứng dụng hiện ra</p>
+              <p className="text-sm font-semibold text-fg">Bước 3 — Nhập mã 6 số ứng dụng hiện ra</p>
               <input
                 type="text"
                 value={code}
@@ -268,7 +268,7 @@ export function TwoFactorCard() {
 
         {view === 'codes' && (
           <div className="space-y-4">
-            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-900">
+            <div className="p-3 rounded-xl bg-warn-soft border border-warn/30 text-sm text-warn">
               <p className="font-semibold flex items-center gap-2">
                 <KeyRound className="w-4 h-4" /> Lưu các mã khôi phục này ở nơi an toàn
               </p>
@@ -279,7 +279,7 @@ export function TwoFactorCard() {
             </div>
             <div className="grid grid-cols-2 gap-2 font-mono text-sm">
               {recoveryCodes.map((c) => (
-                <span key={c} className="px-3 py-2 bg-stone-100 rounded-lg text-center">
+                <span key={c} className="px-3 py-2 bg-fg/5 rounded-lg text-center">
                   {c}
                 </span>
               ))}
@@ -292,12 +292,12 @@ export function TwoFactorCard() {
                 <Download className="w-4 h-4 mr-2" /> Tải xuống
               </Button>
             </div>
-            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+            <label className="flex items-center gap-2 text-sm text-fg cursor-pointer">
               <input type="checkbox" checked={codesSaved} onChange={(e) => setCodesSaved(e.target.checked)} />
               Tôi đã lưu các mã khôi phục
             </label>
             {signOutAfterCodes && (
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted">
                 Xác thực hai lớp đã bật. Mọi thiết bị đã được đăng xuất; hãy đăng nhập lại bằng mật khẩu và mã 6
                 số.
               </p>
@@ -312,7 +312,7 @@ export function TwoFactorCard() {
 
         {view === 'regenerate' && (
           <div className="space-y-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted">
               Bộ mã mới sẽ thay toàn bộ mã cũ (mã cũ không dùng được nữa).
             </p>
             <CodeInput value={code} onChange={setCode} />
@@ -329,7 +329,7 @@ export function TwoFactorCard() {
 
         {view === 'disable' && status && (
           <div className="space-y-4">
-            <p className="text-sm text-gray-600">Sau khi tắt, đăng nhập chỉ cần mật khẩu (hoặc Google).</p>
+            <p className="text-sm text-muted">Sau khi tắt, đăng nhập chỉ cần mật khẩu (hoặc Google).</p>
             {status.requiresPassword && (
               <input
                 type="password"
