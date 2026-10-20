@@ -36,6 +36,12 @@ server {
     client_max_body_size 12m;
 
     # ---- Reverse proxy → app ----
+    # Internal endpoints (scheduled jobs) are called from inside the app
+    # container only; never route them from the internet.
+    location /api/internal/ {
+        return 404;
+    }
+
     location / {
         proxy_pass http://app:3000;
         proxy_http_version 1.1;

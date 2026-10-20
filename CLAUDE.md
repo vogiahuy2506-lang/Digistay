@@ -157,6 +157,10 @@ sạn, đặt lại mật khẩu chỉ cần email, email trong phiên do client
   thắng), và số tiền phải khớp đúng. Tiền về cho link đã huỷ/hết hạn vẫn được ghi nhận và gắn cờ;
   khoản `REFUNDED` không bao giờ sống lại. Return URL không bao giờ đánh dấu đã trả.
   `PAYOS_BASE_URL` chỉ dùng cho test (PayOS giả ở `src/test/integration/fake-payos.ts`).
+  Đối soát định kỳ: timer systemd `digistay-reconcile`, 10 phút một lần, gọi
+  `/api/internal/payos-reconcile` (RUNBOOK, "Đối soát PayOS định kỳ").
+- Job định kỳ nằm ở `/api/internal/*`: cần header `CRON_SECRET`, nginx không mở ra ngoài, và
+  timer systemd gọi từ bên trong container app.
 - **Hoá đơn điện tử** (`src/lib/einvoice/`): mỗi khách sạn tự gắn tài khoản Mắt Bão của mình,
   hoá đơn xuất dưới mã số thuế của khách sạn.
   - **Giá phòng đã gồm VAT**: tổng hoá đơn = số khách trả; chưa thuế và thuế được tách ra bằng
@@ -234,9 +238,8 @@ dùng duyệt rồi mới làm, trên nhánh riêng. Cập nhật trạng thái 
    OAuth, 4f xác thực hai lớp TOTP (**không bắt buộc** — người dùng tự bật) — xong.
    Thêm: lên Next 15.5.28 + React 19 (hết các lỗ hổng của Next 14) — xong.
 5. Thanh toán PayOS, mỗi khách sạn một bộ khoá; sửa các nhánh tiền mặt đặt `PAID` bất kể số
-   tiền và không cập nhật `depositAmount` — xong. Còn: SePay (nếu khách sạn cần), job đối soát
-   định kỳ (hiện đối soát khi mở trang Thanh toán và nút "Kiểm tra ngay"), khách tự trả cọc trên
-   site công khai.
+   tiền và không cập nhật `depositAmount` — xong; có thêm đối soát định kỳ 10 phút. Còn: SePay
+   (nếu khách sạn cần), khách tự trả cọc trên site công khai.
 6. Hoá đơn điện tử Mắt Bão, mỗi khách sạn một tài khoản — xong. Còn: webhook trạng thái từ
    cơ quan thuế (phải gửi URL cho hỗ trợ Mắt Bão), hoá đơn điều chỉnh/thay thế, tự gửi email
    hoá đơn cho khách, tự xuất hoá đơn khi đơn thanh toán xong.

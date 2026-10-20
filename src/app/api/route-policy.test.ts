@@ -36,6 +36,8 @@ const PUBLIC_HANDLERS: Record<string, string> = {
   'POST /api/bookings/room-lock': 'guests hold a room while booking; per-IP limit',
   'DELETE /api/bookings/room-lock': "guests release their own hold by the lock/session id they were given",
   'GET /api/health': 'deploy and uptime checks; returns only status and image version',
+  'POST /api/internal/payos-reconcile':
+    'scheduled job: CRON_SECRET header (timing-safe), and nginx does not route /api/internal/',
   'GET /api/invitations/[token]': 'invitation preview; the unguessable token in the URL is the credential',
   'POST /api/payments/webhook': 'disabled: always 404; gateways use /api/webhooks/<gateway>/...',
   'POST /api/webhooks/payos/[propertyId]':

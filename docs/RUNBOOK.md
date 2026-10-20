@@ -489,6 +489,35 @@ khách sạn tạo lại khoá ở nhà cung cấp, vì ai có DB cũ và khoá 
 
 ---
 
+## Đối soát PayOS định kỳ
+
+Webhook của PayOS có thể bị lỡ, ví dụ khi site đang deploy hoặc PayOS thử lại vài lần rồi bỏ.
+Timer `digistay-reconcile` cứ 10 phút hỏi PayOS về các link đang chờ trong 3 ngày gần nhất, rồi
+ghi nhận kết quả giống hệt webhook (chạy lặp cũng không ghi hai lần). Endpoint
+`/api/internal/payos-reconcile` cần header `CRON_SECRET`, và nginx không mở `/api/internal/` ra
+ngoài.
+
+### Cài đặt một lần
+
+```bash
+cd /opt/digistay
+sudo grep -c '^CRON_SECRET=' .env.production   # phải là 0
+printf '\nCRON_SECRET=%s\n' "$(openssl rand -hex 32)" | sudo tee -a .env.production >/dev/null
+# Có hiệu lực từ lần deploy kế tiếp (container app đọc .env.production lúc khởi động).
+
+sudo cp docker/systemd/digistay-reconcile.{service,timer} /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now digistay-reconcile.timer
+sudo systemctl start digistay-reconcile.service          # chạy thử ngay
+sudo journalctl -u digistay-reconcile -n 5 --no-pager    # phải có {"success":true,...}
+```
+
+Log của app có dòng `[payos] reconcile {...}` sau mỗi lượt. Nếu thấy `paid without a webhook`
+nghĩa là webhook của khách sạn đó đang lỡ: kiểm tra URL webhook trong PayOS (bấm "Đổi khoá" ở
+trang Tài khoản ngân hàng để đăng ký lại).
+
+---
+
 ## Đặt lại xác thực hai lớp
 
 Xác thực hai lớp (2FA) là **tuỳ chọn**, người dùng tự bật ở Hồ sơ → Bảo mật. Mất điện thoại thì
