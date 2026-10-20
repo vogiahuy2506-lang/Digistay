@@ -11,6 +11,9 @@ import { randomBytes } from 'crypto'
  * cheap).
  */
 export default defineConfig({
+  // tsconfig says jsx: "preserve" (Next compiles JSX itself); Vite 8 reads
+  // it and cannot parse .tsx tests. Tests compile JSX with the React runtime.
+  oxc: { jsx: { runtime: 'automatic' } },
   test: {
     globals: true,
     // A fresh key per run (never a committed one): code that stores
