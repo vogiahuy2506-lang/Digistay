@@ -127,6 +127,9 @@ const config: Config = {
         // Loaded with next/font in src/app/layout.tsx.
         sans: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
         mono: ['var(--font-jetbrains-mono)', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        // A hotel's website: its chosen heading / body fonts ([subdomain]/layout.tsx).
+        site: ['var(--site-heading)'],
+        'site-body': ['var(--site-body)'],
         'display-hero': ['Plus Jakarta Sans', 'sans-serif'],
         'headline-xl': ['Plus Jakarta Sans', 'sans-serif'],
         'headline-xl-mobile': ['Plus Jakarta Sans', 'sans-serif'],

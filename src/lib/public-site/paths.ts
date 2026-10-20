@@ -38,5 +38,7 @@ export function siteBasePath(
 /** `base` from siteBasePath + a path inside the site ("/", "/search?…", "/rooms/x"). */
 export function siteHref(base: string, path: string): string {
   if (path === '/' || path === '') return base || '/'
+  // A section of the home page: "/may-bien#rooms", not "/may-bien/#rooms".
+  if (path.startsWith('/#')) return `${base}${base ? path.slice(1) : path}`
   return `${base}${path.startsWith('/') ? path : `/${path}`}`
 }

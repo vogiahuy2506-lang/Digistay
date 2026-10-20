@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { PublicImage } from '../PropertySite'
+import { Section, SectionHeader } from '../site-ui'
 
 interface Props {
   images: PublicImage[]
@@ -11,97 +12,59 @@ interface Props {
 
 export function GalleryClient({ images, title = 'Hình ảnh' }: Props) {
   const [current, setCurrent] = useState(0)
-
-  if (images.length === 0) {
-    return (
-      <section className="py-16 px-4">
-        <div className="max-w-7xl mx-auto">
-          <h2
-            className="text-3xl md:text-4xl font-bold text-center mb-8"
-            style={{ fontFamily: 'var(--brand-font-heading)' }}
-          >
-            {title}
-          </h2>
-          <p className="text-center text-gray-500">Chưa có hình ảnh nào.</p>
-        </div>
-      </section>
-    )
-  }
+  if (images.length === 0) return null
 
   const next = () => setCurrent((p) => (p + 1) % images.length)
   const prev = () => setCurrent((p) => (p - 1 + images.length) % images.length)
+  const arrow =
+    'absolute top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center bg-panel/90 text-fg hover:bg-panel focus:outline-none focus-visible:ring-2 focus-visible:ring-acc'
 
   return (
-    <section id="gallery" className="py-16 px-4">
-      <div className="max-w-7xl mx-auto">
-        <h2
-          className="text-3xl md:text-4xl font-bold text-center mb-8"
-          style={{ fontFamily: 'var(--brand-font-heading)' }}
-        >
-          {title}
-        </h2>
-
-        <div className="relative h-[300px] md:h-[500px] rounded-2xl overflow-hidden bg-gray-100">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={images[current].url}
-            alt={images[current].alt ?? `Image ${current + 1}`}
-            className="w-full h-full object-cover"
-          />
-          <button
-            onClick={prev}
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 hover:bg-white shadow-lg flex items-center justify-center"
-            aria-label="Ảnh trước"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          <button
-            onClick={next}
-            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 hover:bg-white shadow-lg flex items-center justify-center"
-            aria-label="Ảnh tiếp theo"
-          >
-            <ChevronRight className="w-6 h-6" />
-          </button>
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-            {images.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrent(i)}
-                className={`w-2 h-2 rounded-full transition ${
-                  i === current ? 'bg-white' : 'bg-white/50'
-                }`}
-                aria-label={`Ảnh ${i + 1}`}
-              />
-            ))}
-          </div>
-        </div>
-
+    <Section id="gallery">
+      <SectionHeader eyebrow="Thư viện ảnh" title={title} aside={`${images.length} ảnh`} />
+      <div className="relative bg-fg/[0.06]">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={images[current].url}
+          alt={images[current].alt ?? `Ảnh ${current + 1} / ${images.length}`}
+          className="h-[300px] w-full object-cover sm:h-[520px]"
+        />
         {images.length > 1 && (
-          <div className="grid grid-cols-4 md:grid-cols-6 gap-2 mt-4">
-            {images.slice(0, 6).map((img, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrent(i)}
-                className={`relative h-16 rounded-md overflow-hidden ${
-                  i === current ? 'ring-2' : 'opacity-70'
-                }`}
-                style={
-                  i === current
-                    ? { boxShadow: '0 0 0 2px var(--brand-primary)' }
-                    : undefined
-                }
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={img.thumbnail ?? img.url}
-                  alt={img.alt ? `Xem ảnh ${i + 1}: ${img.alt}` : `Xem ảnh ${i + 1}`}
-                  className="w-full h-full object-cover"
-                />
-              </button>
-            ))}
-          </div>
+          <>
+            <button type="button" onClick={prev} className={`${arrow} left-4`} aria-label="Ảnh trước">
+              <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+            </button>
+            <button type="button" onClick={next} className={`${arrow} right-4`} aria-label="Ảnh tiếp theo">
+              <ChevronRight className="h-5 w-5" aria-hidden="true" />
+            </button>
+            <p className="absolute bottom-4 right-4 bg-panel/90 px-2 py-0.5 text-xs text-fg tabular-nums" aria-live="polite">
+              {current + 1} / {images.length}
+            </p>
+          </>
         )}
       </div>
-    </section>
+      {images.length > 1 && (
+        <div className="mt-3 grid grid-cols-4 gap-3 sm:grid-cols-6">
+          {images.slice(0, 6).map((img, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setCurrent(i)}
+              aria-current={i === current || undefined}
+              className={`h-16 overflow-hidden sm:h-20 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc ${
+                i === current ? 'ring-2 ring-acc ring-offset-2 ring-offset-page' : 'opacity-70 hover:opacity-100'
+              }`}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={img.thumbnail ?? img.url}
+                alt={img.alt ? `Xem ảnh ${i + 1}: ${img.alt}` : `Xem ảnh ${i + 1}`}
+                className="h-full w-full object-cover"
+              />
+            </button>
+          ))}
+        </div>
+      )}
+    </Section>
   )
 }

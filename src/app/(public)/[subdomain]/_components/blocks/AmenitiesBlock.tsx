@@ -1,71 +1,47 @@
-import { Sparkles } from 'lucide-react'
 import { getIcon } from '../icon-map'
-import type { PublicAmenity, PublicBlock } from '../PropertySite'
-import { EmptyState } from './EmptyState'
+import type { PublicAmenity, PublicBlock, PublicImage } from '../PropertySite'
+import { Eyebrow, Section, SectionTitle, cfgText } from '../site-ui'
 
 interface Props {
   block: PublicBlock
   amenities: PublicAmenity[]
+  images: PublicImage[]
 }
 
-export function AmenitiesBlock({ block, amenities }: Props) {
+/** Amenities (redesign 3a): a ruled list next to a large photo. */
+export function AmenitiesBlock({ block, amenities, images }: Props) {
   const cfg = block.config || {}
-  const title = cfg.title ?? 'Tiện ích'
-
-  if (amenities.length === 0) {
-    // Render an empty card (instead of nothing) so the page doesn't
-    // look broken for a freshly-published workspace that hasn't added
-    // amenities yet.
-    return (
-      <section id="amenities" className="py-16 px-4">
-        <div className="max-w-7xl mx-auto">
-          <h2
-            className="text-3xl md:text-4xl font-bold text-center mb-4"
-            style={{ fontFamily: 'var(--brand-font-heading)' }}
-          >
-            {title}
-          </h2>
-          <EmptyState
-            icon={<Sparkles className="h-6 w-6" />}
-            title="Danh sách tiện ích đang được cập nhật"
-            description="Chủ cơ sở sẽ bổ sung tiện ích trong thời gian tới. Vui lòng quay lại sau."
-          />
-        </div>
-      </section>
-    )
-  }
+  const title = cfgText(cfg, 'amenitiesTitle', 'title') ?? 'Mọi thứ cần cho một kỳ nghỉ nhẹ nhàng'
+  // The hero shows the first photos; take a later one when there is one.
+  const photo = images[2] ?? images[1] ?? images[0]
 
   return (
-    <section id="amenities" className="py-16 px-4">
-      <div className="max-w-7xl mx-auto">
-        <h2
-          className="text-3xl md:text-4xl font-bold text-center mb-4"
-          style={{ fontFamily: 'var(--brand-font-heading)' }}
-        >
-          {title}
-        </h2>
-        <p className="text-center text-gray-600 mb-12">Mọi tiện nghi bạn cần</p>
-
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {amenities.map((amenity) => {
-            const Icon = getIcon(amenity.icon)
-            return (
-              <div
-                key={amenity.id}
-                className="flex items-center gap-3 p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition"
-              >
-                <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center text-white flex-shrink-0"
-                  style={{ backgroundColor: 'var(--brand-primary)' }}
-                >
-                  <Icon className="w-5 h-5" />
-                </div>
-                <span className="text-sm font-medium text-gray-700">{amenity.name}</span>
-              </div>
-            )
-          })}
+    <Section id="amenities" className="bg-fg/[0.02]">
+      <div className={photo ? 'grid gap-10 lg:grid-cols-[minmax(0,440px)_1fr] lg:gap-16' : ''}>
+        <div>
+          <Eyebrow>Tiện ích</Eyebrow>
+          <SectionTitle>{title}</SectionTitle>
+          {amenities.length === 0 ? (
+            <p className="mt-8 text-body text-muted">Danh sách tiện ích đang được cập nhật.</p>
+          ) : (
+            <ul className={`mt-8 border-t border-line ${photo ? '' : 'sm:grid sm:grid-cols-2 sm:gap-x-10'}`}>
+              {amenities.map((amenity) => {
+                const Icon = getIcon(amenity.icon)
+                return (
+                  <li key={amenity.id} className="flex items-center gap-3 border-b border-line py-4 text-body text-fg">
+                    <Icon className="h-4 w-4 shrink-0 text-acc" aria-hidden="true" />
+                    {amenity.name}
+                  </li>
+                )
+              })}
+            </ul>
+          )}
         </div>
+        {photo && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={photo.url} alt={photo.alt ?? title} loading="lazy" className="h-full min-h-[320px] w-full object-cover" />
+        )}
       </div>
-    </section>
+    </Section>
   )
 }

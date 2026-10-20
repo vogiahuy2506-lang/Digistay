@@ -181,7 +181,12 @@ sạn, đặt lại mật khẩu chỉ cần email, email trong phiên do client
 - Thứ tự làm: (1) token màu + font — xong (`feat/ui-tokens`); (2) thành phần dùng chung — xong
   (`feat/ui-components`); (3) khung + danh sách đặt phòng + panel — xong (`feat/ui-dashboard-bookings`);
   (4) các trang quản lý còn lại — xong (4a `feat/ui-workspace-pages`, 4b `feat/ui-operations-pages`,
-  4c `feat/ui-config-pages`); (5) website khách sạn. Bản thiết kế: file Claude Design "Digistay hotel booking platform".
+  4c `feat/ui-config-pages`); (5) website khách sạn — xong (`feat/ui-hotel-site`).
+- Website khách sạn: `src/app/(public)/[subdomain]/layout.tsx` đặt khung cho mọi trang (theme sáng,
+  `data-surface="site"`, màu nhấn của khách sạn qua `hotelAccentVariables` — tự làm đậm tới 4.5:1,
+  font qua `fontStack`, tiêu đề trang). Link nội bộ luôn qua `SiteLink` / `useSiteHref` (có hay không
+  tiền tố `/<subdomain>` tùy host). Nội dung khối đọc khóa của trình dựng trước (`heroTitle`,
+  `roomsTitle`…) qua `cfgText`. Không hiển thị nội dung bịa (đánh giá mẫu, chính sách mẫu). Bản thiết kế: file Claude Design "Digistay hotel booking platform".
 
 ## Kế hoạch gia cố
 

@@ -1,63 +1,77 @@
-import { MapPin } from 'lucide-react'
 import type { PublicBlock, PublicProperty } from '../PropertySite'
+import { Eyebrow, Section, SectionTitle, cfgText } from '../site-ui'
 
 interface Props {
   block: PublicBlock
   property: PublicProperty
 }
 
+function coordinate(value: unknown): number | null {
+  const n = typeof value === 'string' ? Number.parseFloat(value) : typeof value === 'number' ? value : NaN
+  return Number.isFinite(n) ? n : null
+}
+
+/** Location (redesign 3a): embedded map, the address, "Chỉ đường" and "Gọi". */
 export function MapBlock({ block, property }: Props) {
   const cfg = block.config || {}
-  const title = cfg.title ?? 'Vị trí'
+  const fullAddress =
+    cfgText(cfg, 'mapAddress') ??
+    [property.address, property.district, property.city, property.country].filter(Boolean).join(', ')
+  // The default layout titles this block "Vị trí", which is already the eyebrow: show the address instead (3a).
+  const custom = cfgText(cfg, 'title')
+  const title =
+    custom && custom.toLowerCase() !== 'vị trí' ? custom : [property.address, property.city].filter(Boolean).join(', ')
+  const lat = coordinate(cfg.mapLat) ?? property.latitude
+  const lng = coordinate(cfg.mapLng) ?? property.longitude
+  const zoom = Math.min(20, Math.max(3, Number(cfg.mapZoom) || 15))
 
-  const fullAddress = `${property.address}, ${property.district ?? ''}, ${property.city}, ${property.country}`
-    .replace(/, ,/g, ',')
-    .trim()
-  const mapboxUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`
-  const embedUrl =
-    property.latitude && property.longitude
-      ? `https://www.google.com/maps?q=${property.latitude},${property.longitude}&hl=vi&z=15&output=embed`
-      : `https://www.google.com/maps?q=${encodeURIComponent(fullAddress)}&hl=vi&z=15&output=embed`
+  const query = lat != null && lng != null ? `${lat},${lng}` : fullAddress
+  const embedUrl = `https://www.google.com/maps?q=${encodeURIComponent(query)}&hl=vi&z=${zoom}&output=embed`
+  const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(query)}`
 
   return (
-    <section id="map" className="py-16 px-4 bg-gray-50">
-      <div className="max-w-7xl mx-auto">
-        <h2
-          className="text-3xl md:text-4xl font-bold text-center mb-4"
-          style={{ fontFamily: 'var(--brand-font-heading)' }}
-        >
-          {title}
-        </h2>
-        <p className="text-center text-gray-600 mb-8 flex items-center justify-center gap-2">
-          <MapPin className="w-4 h-4" />
-          {fullAddress}
-        </p>
-
-        <div className="rounded-2xl overflow-hidden shadow-lg">
-          <iframe
-            src={embedUrl}
-            width="100%"
-            height="400"
-            style={{ border: 0 }}
-            allowFullScreen
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            title="Bản đồ vị trí"
-          />
-        </div>
-
-        <div className="text-center mt-6">
-          <a
-            href={mapboxUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block px-6 py-3 rounded-lg font-medium text-white hover:opacity-90 transition"
-            style={{ backgroundColor: 'var(--brand-primary)' }}
-          >
-            Mở Google Maps chỉ đường
-          </a>
+    <Section id="map">
+      <Eyebrow>Vị trí</Eyebrow>
+      <SectionTitle className="max-w-3xl">{title}</SectionTitle>
+      <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_400px] lg:gap-14">
+        <iframe
+          src={embedUrl}
+          className="h-[320px] sm:h-[420px] w-full border border-line"
+          allowFullScreen
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          title={`Bản đồ: ${fullAddress}`}
+        />
+        <div className="flex flex-col">
+          <dl className="border-t border-line">
+            <div className="flex justify-between gap-4 border-b border-line py-4">
+              <dt className="text-body text-fg">Địa chỉ</dt>
+              <dd className="text-right text-small text-muted">{fullAddress}</dd>
+            </div>
+            {property.phone && (
+              <div className="flex justify-between gap-4 border-b border-line py-4">
+                <dt className="text-body text-fg">Điện thoại</dt>
+                <dd className="text-small text-muted tabular-nums">{property.phone}</dd>
+              </div>
+            )}
+          </dl>
+          <div className="mt-8 flex flex-wrap items-center gap-4">
+            <a
+              href={directionsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-11 items-center rounded-ctl border border-fg px-5 text-small font-medium text-fg hover:bg-fg/5"
+            >
+              Chỉ đường
+            </a>
+            {property.phone && (
+              <a href={`tel:${property.phone.replace(/[^\d+]/g, '')}`} className="text-small font-medium text-acc hover:underline">
+                Gọi {property.phone}
+              </a>
+            )}
+          </div>
         </div>
       </div>
-    </section>
+    </Section>
   )
 }

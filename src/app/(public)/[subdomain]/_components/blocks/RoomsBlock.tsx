@@ -1,7 +1,7 @@
-import { Card, CardContent, Button } from '@/components/ui'
-import { formatCurrency } from '@/lib/utils'
-import { SiteLink } from '../site-base'
+import { formatVnd } from '@/lib/bookings/display'
 import type { PublicBlock, PublicProperty, PublicRoomType } from '../PropertySite'
+import { SiteLink } from '../site-base'
+import { PhotoPlaceholder, Section, SectionHeader, cfgText, roomMeta } from '../site-ui'
 
 interface Props {
   block: PublicBlock
@@ -9,135 +9,60 @@ interface Props {
   roomTypes: PublicRoomType[]
 }
 
-const BED_LABELS: Record<string, string> = {
-  SINGLE: '1 giường đơn',
-  DOUBLE: '1 giường đôi',
-  TWIN: '2 giường đơn',
-  TRIPLE: '3 giường đơn',
-  QUADRUPLE: '4 giường đơn',
-  KING: '1 giường King',
-  QUEEN: '1 giường Queen',
-  SUITE: 'Suite',
-  BUNK: 'Giường tầng',
-}
-
+/** Room types (redesign 3a): photo, name + price per night, one line of facts. */
 export function RoomsBlock({ block, roomTypes, property }: Props) {
   const cfg = block.config || {}
-  const title = cfg.title ?? 'Các hạng phòng'
+  const title = cfgText(cfg, 'roomsTitle', 'title') ?? 'Chọn phòng cho chuyến đi của bạn'
   const showPrice = cfg.showPrice !== false
   const showCTA = cfg.showCTA !== false
-
-  if (roomTypes.length === 0) {
-    return (
-      <section id="rooms" className="py-16 px-4">
-        <div className="max-w-7xl mx-auto">
-          <h2
-            className="text-3xl font-bold text-center mb-8"
-            style={{ fontFamily: 'var(--brand-font-heading)' }}
-          >
-            {title}
-          </h2>
-          <p className="text-center text-gray-500">
-            Chưa có hạng phòng nào. Vui lòng liên hệ trực tiếp với {property.name}.
-          </p>
-        </div>
-      </section>
-    )
-  }
+  const limit = Number(cfg.roomsLimit) > 0 ? Number(cfg.roomsLimit) : undefined
+  const rooms = roomTypes.slice(0, limit)
 
   return (
-    <section id="rooms" className="py-16 px-4 bg-gray-50">
-      <div className="max-w-7xl mx-auto">
-        <h2
-          className="text-3xl md:text-4xl font-bold text-center mb-4"
-          style={{ fontFamily: 'var(--brand-font-heading)' }}
-        >
-          {title}
-        </h2>
-        <p className="text-center text-gray-600 mb-12">
-          Chọn phòng phù hợp với nhu cầu của bạn
+    <Section id="rooms">
+      <SectionHeader
+        title={title}
+        aside={rooms.length > 0 ? `${roomTypes.length} hạng phòng tại ${property.name}.` : undefined}
+      />
+      {rooms.length === 0 ? (
+        <p className="text-body text-muted">
+          Chưa có hạng phòng nào. Vui lòng liên hệ trực tiếp với {property.name}.
         </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {roomTypes.map((room) => (
-            <Card key={room.id} className="overflow-hidden hover:shadow-xl transition-shadow">
-              <div className="relative h-48 bg-gray-200">
-                {room.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={room.image}
-                    alt={room.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    Không có ảnh
+      ) : (
+        <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {rooms.map((room) => (
+            <li key={room.id} className="flex flex-col border border-line bg-panel rounded-box overflow-hidden">
+              {room.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={room.image} alt={room.name} loading="lazy" className="aspect-[4/3] w-full object-cover" />
+              ) : (
+                <PhotoPlaceholder label="Chưa có ảnh" className="aspect-[4/3] w-full" />
+              )}
+              <div className="flex flex-1 flex-col p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="text-body font-semibold text-fg">{room.name}</h3>
+                  {showPrice && room.fromPrice != null && room.fromPrice > 0 && (
+                    <p className="shrink-0 text-right text-body font-semibold tabular-nums text-fg">
+                      {formatVnd(room.fromPrice)}
+                      <span className="text-xs font-normal text-muted">/đêm</span>
+                    </p>
+                  )}
+                </div>
+                <p className="mt-1 text-small text-muted">{roomMeta(room)}</p>
+                {showCTA && (
+                  <div className="mt-auto pt-4">
+                    <div className="border-t border-line pt-4">
+                      <SiteLink path={`/rooms/${room.id}`} className="text-small font-medium text-acc hover:underline">
+                        Xem chi tiết →
+                      </SiteLink>
+                    </div>
                   </div>
                 )}
               </div>
-              <CardContent className="p-5">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{room.name}</h3>
-                {room.description && (
-                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">{room.description}</p>
-                )}
-                <div className="flex flex-wrap gap-3 text-xs text-gray-500 mb-3">
-                  {room.area && <span>{room.area}m²</span>}
-                  {room.area && <span>•</span>}
-                  <span>{BED_LABELS[room.bedType] ?? room.bedType}</span>
-                  <span>•</span>
-                  <span>Tối đa {room.maxAdults + room.maxChildren} khách</span>
-                </div>
-                {room.amenities.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mb-4">
-                    {room.amenities.slice(0, 4).map((a, i) => (
-                      <span
-                        key={i}
-                        className="px-2 py-0.5 bg-gray-100 rounded text-xs text-gray-600"
-                      >
-                        {a}
-                      </span>
-                    ))}
-                    {room.amenities.length > 4 && (
-                      <span className="px-2 py-0.5 bg-gray-100 rounded text-xs text-gray-600">
-                        +{room.amenities.length - 4}
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                {showPrice && room.fromPrice != null && (
-                  <div className="border-t pt-3 mt-2">
-                    <p className="text-xs text-gray-500">Giá từ</p>
-                    <p
-                      className="text-2xl font-bold"
-                      style={{ color: 'var(--brand-primary)' }}
-                    >
-                      {formatCurrency(room.fromPrice)}
-                      <span className="text-sm text-gray-500 font-normal"> /đêm</span>
-                    </p>
-                    {room.weekendPrice && room.weekendPrice !== room.fromPrice && (
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        Cuối tuần: {formatCurrency(room.weekendPrice)}
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {showCTA && (
-                  // Was /<property id>/rooms/..., a 404: the route takes the subdomain.
-                  <SiteLink
-                    path={`/rooms/${room.id}`}
-                    className="mt-4 block w-full text-center text-white py-2 rounded-lg font-medium hover:opacity-90 transition"
-                    style={{ backgroundColor: 'var(--brand-primary)' }}
-                  >
-                    Xem phòng / Đặt ngay
-                  </SiteLink>
-                )}
-              </CardContent>
-            </Card>
+            </li>
           ))}
-        </div>
-      </div>
-    </section>
+        </ul>
+      )}
+    </Section>
   )
 }

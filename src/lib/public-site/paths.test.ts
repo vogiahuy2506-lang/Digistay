@@ -39,5 +39,7 @@ describe('siteHref', () => {
     expect(siteHref('/may-bien', '/rooms/r1')).toBe('/may-bien/rooms/r1')
     expect(siteHref('', '/search?checkIn=2026-11-01')).toBe('/search?checkIn=2026-11-01')
     expect(siteHref('/may-bien', 'search')).toBe('/may-bien/search')
+    expect(siteHref('/may-bien', '/#rooms')).toBe('/may-bien#rooms')
+    expect(siteHref('', '/#rooms')).toBe('/#rooms')
   })
 })

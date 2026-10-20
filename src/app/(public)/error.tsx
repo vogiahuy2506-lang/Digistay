@@ -24,18 +24,18 @@ export default function PublicSiteError({
   return (
     <div className="min-h-[40vh] flex items-center justify-center p-6">
       <div className="max-w-md w-full text-center">
-        <div className="w-12 h-12 rounded-2xl bg-amber-50 mx-auto mb-4 flex items-center justify-center">
-          <AlertTriangle className="w-6 h-6 text-amber-500" />
+        <div className="w-12 h-12 rounded-2xl bg-warn-soft mx-auto mb-4 flex items-center justify-center">
+          <AlertTriangle className="w-6 h-6 text-warn" />
         </div>
-        <h2 className="text-base font-semibold text-gray-900 mb-1">
+        <h2 className="text-base font-semibold text-fg mb-1">
           Không thể hiển thị trang này
         </h2>
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-muted mb-4">
           Đã xảy ra lỗi khi tải nội dung. Vui lòng thử lại sau ít phút.
         </p>
         <button
           onClick={reset}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-terracotta text-white rounded-lg text-sm font-semibold hover:bg-terracotta-600 transition"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-ink text-white rounded-lg text-sm font-semibold hover:bg-ink transition"
         >
           <RefreshCw className="w-4 h-4" />
           Thử lại
