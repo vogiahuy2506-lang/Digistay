@@ -2,10 +2,11 @@
  * "Log out everywhere" for JWT sessions.
  *
  * Sessions are self-contained JWTs (30 days), so the server cannot delete
- * them. Instead, changing a password records the time in Redis, and the jwt
- * callback refuses any token whose sign-in time (token.authTime, ms) is
- * older. Throwing from the jwt callback makes next-auth clear the session
- * cookie, and getServerSession() returns null.
+ * them. Instead, changing a password or turning on two-factor sign-in
+ * records the time in Redis, and the jwt callback refuses any token whose
+ * sign-in time (token.authTime, ms) is older. Throwing from the jwt
+ * callback makes next-auth clear the session cookie, and
+ * getServerSession() returns null.
  *
  * Fail-open on Redis errors, like the rate limits (decision 2026-10-19).
  */
@@ -24,7 +25,7 @@ const keyFor = (userId: string) => `auth:revoked_before:${userId}`
 
 export class SessionRevokedError extends Error {
   constructor() {
-    super('Session revoked after a password change')
+    super('Session revoked (password changed or two-factor sign-in turned on)')
   }
 }
 

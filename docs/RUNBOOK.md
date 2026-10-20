@@ -422,11 +422,13 @@ sudo docker exec digistay-app wget -qO- http://127.0.0.1:3000/api/health
 
 ## Khoá mã hoá dữ liệu
 
-Khoá bên thứ ba lưu trong DB (khoá thanh toán của từng khách sạn, tài khoản hoá đơn điện tử,
-secret 2FA) được mã hoá bằng `DATA_ENCRYPTION_KEYS` (`src/lib/security/secret-box.ts`).
-Backup chỉ chứa bản đã mã hoá, nên:
+Secret lưu trong DB (secret 2FA của người dùng, khoá thanh toán của từng khách sạn, tài khoản
+hoá đơn điện tử) được mã hoá bằng `DATA_ENCRYPTION_KEYS` (`src/lib/security/secret-box.ts`).
+**Bắt buộc từ Phần 4f:** thiếu hoặc sai định dạng thì `/api/health` báo lỗi và deploy quay về
+bản cũ, nên phải đặt khoá **trước** khi merge 4f. Backup chỉ chứa bản đã mã hoá, nên:
 
-- **Mất khoá** thì backup không cứu được các giá trị đó: mọi khách sạn phải nhập lại.
+- **Mất khoá** thì backup không cứu được các giá trị đó: người bật 2FA không đăng nhập được
+  cho tới khi được đặt lại 2FA, mọi khách sạn phải nhập lại khoá thanh toán.
 - **Lộ khoá cùng với DB hoặc một bản backup** thì coi như lộ hết các khoá bên thứ ba.
 
 Vì vậy khoá nằm ở đúng hai nơi: `.env.production` trên VPS, và trình quản lý mật khẩu
@@ -461,6 +463,34 @@ health trả 503 và deploy thất bại; xem lý do (log không in khoá):
 
 Không bao giờ dùng lại một mã khoá cho khoá khác. Nghi lộ khoá: làm như trên, **và** nhờ các
 khách sạn tạo lại khoá ở nhà cung cấp, vì ai có DB cũ và khoá cũ vẫn đọc được giá trị cũ.
+
+---
+
+## Đặt lại xác thực hai lớp
+
+Xác thực hai lớp (2FA) là **tuỳ chọn**, người dùng tự bật ở Hồ sơ → Bảo mật. Mất điện thoại thì
+họ dùng một mã khôi phục để đăng nhập, rồi tự tắt hoặc tạo bộ mã mới. Chỉ khi mất **cả** điện
+thoại **lẫn** mã khôi phục mới cần làm mục này.
+
+**Không có đường tự đặt lại qua email, và đừng đặt lại chỉ vì nhận được email hay tin nhắn**:
+email là thứ kẻ gian thường chiếm trước, đặt lại theo yêu cầu đó là mở cửa cho họ.
+
+1. Xác minh người yêu cầu đúng là chủ tài khoản: gọi vào số điện thoại đã biết từ trước hoặc
+   gọi video, và với nhân viên thì hỏi lại chủ workspace của họ.
+2. Đặt lại (ghi nhật ký `TWO_FACTOR_RESET_BY_OPERATOR`, kèm ai làm và xác minh bằng cách nào):
+
+   ```bash
+   cd /opt/digistay
+   sudo docker compose exec -T postgres psql -U digistay -d digistay \
+     -v email='nguoi@example.com' -v by='<ai làm>' -v via='<xác minh bằng cách nào>' \
+     < docker/sql/reset-two-factor.sql
+   ```
+
+   Dòng `SELECT` in ra đúng tài khoản đó, rồi `DELETE 1`. In ra 0 dòng và `DELETE 0` nghĩa là
+   sai email hoặc tài khoản không bật 2FA.
+3. Báo người dùng đăng nhập bằng mật khẩu (hoặc Google), rồi bật lại 2FA nếu muốn.
+
+Người nhập sai mã 5 lần bị khoá nhập mã 15 phút; cái đó tự hết, không cần đặt lại.
 
 ---
 

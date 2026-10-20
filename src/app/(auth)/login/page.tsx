@@ -5,6 +5,8 @@ import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { MaterialSymbol } from '@/components/ui/material-symbol'
+import { TWO_FACTOR_QUERY, TWO_FACTOR_REQUIRED } from '@/lib/auth/two-factor-shared'
+import { TwoFactorStep } from './two-factor-step'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -13,6 +15,26 @@ export default function LoginPage() {
   const [isResending, setIsResending] = React.useState(false)
   const [error, setError] = React.useState('')
   const [unverifiedEmail, setUnverifiedEmail] = React.useState('')
+  // Set when the account has two-factor on: the code step replaces the form.
+  const [challenge, setChallenge] = React.useState<string | null>(null)
+
+  // Google sign-in with two-factor on lands here with ?twoFactor=<challenge>.
+  // Read it once and drop it from the address bar and history.
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const fromGoogle = params.get(TWO_FACTOR_QUERY)
+    if (fromGoogle) {
+      setChallenge(fromGoogle)
+      params.delete(TWO_FACTOR_QUERY)
+      const rest = params.toString()
+      window.history.replaceState(null, '', `${window.location.pathname}${rest ? `?${rest}` : ''}`)
+    }
+  }, [])
+
+  const goToApp = () => {
+    router.push('/workspaces')
+    router.refresh()
+  }
 
   const [form, setForm] = React.useState({
     username: '',
@@ -32,6 +54,12 @@ export default function LoginPage() {
         redirect: false,
       })
 
+      if (result?.error?.startsWith(TWO_FACTOR_REQUIRED)) {
+        setChallenge(result.error.slice(TWO_FACTOR_REQUIRED.length))
+        setIsLoading(false)
+        return
+      }
+
       if (result?.error) {
         // Map NextAuth error messages to Vietnamese user-friendly messages
         const errMsg = result.error
@@ -49,8 +77,7 @@ export default function LoginPage() {
         return
       }
 
-      router.push('/workspaces')
-      router.refresh()
+      goToApp()
     } catch {
       setError('Đã xảy ra lỗi, vui lòng thử lại')
       setIsLoading(false)
@@ -144,6 +171,18 @@ export default function LoginPage() {
 
           {/* Right Form Panel */}
           <div className="p-8 lg:p-12 flex flex-col justify-center bg-surface-container-lowest">
+            {challenge ? (
+              <div className="w-full max-w-sm mx-auto">
+                <TwoFactorStep
+                  challenge={challenge}
+                  onSuccess={goToApp}
+                  onCancel={() => {
+                    setChallenge(null)
+                    setForm({ ...form, password: '' })
+                  }}
+                />
+              </div>
+            ) : (
             <div className="w-full max-w-sm mx-auto space-y-7">
               <div>
                 <h2 className="text-headline-md font-bold text-on-surface">Đăng nhập</h2>
@@ -290,6 +329,7 @@ export default function LoginPage() {
                 </Link>
               </p>
             </div>
+            )}
           </div>
         </div>
       </div>

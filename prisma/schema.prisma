@@ -43,11 +43,36 @@ model User {
   
   // Booking relations
   createdBookings  Booking[]
+
+  // Optional two-factor sign-in (src/lib/auth/two-factor.ts)
+  twoFactor        UserTwoFactor?
   
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   @@map("users")
+}
+
+/// Optional TOTP two-factor sign-in, one row per user (Part 4f). The user
+/// turns it on; it is never required. Deleting the row turns it off.
+model UserTwoFactor {
+  userId         String    @id
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// TOTP secret, encrypted with src/lib/security/secret-box.ts
+  secret         String
+  /// null while setting up: sign-in does not ask for a code until it is confirmed
+  enabledAt      DateTime?
+  /// sha256 of the unused recovery codes
+  recoveryCodes  String[]  @default([])
+  /// last TOTP time step accepted, so a code cannot be used twice
+  lastUsedStep   Int?
+  failedAttempts Int       @default(0)
+  lockedUntil    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_two_factor")
 }
 
 enum UserRole {
