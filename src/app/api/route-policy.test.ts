@@ -11,11 +11,15 @@
  *
  * Limits: it checks that an auth helper is *called*, not that the result
  * is used correctly (workspace scoping, roles); those still need review
- * and their own tests.
+ * and their own tests (see tenant-isolation.int.test.ts).
+ *
+ * Exports it cannot read (wrappers, re-exports, destructuring, `export *`)
+ * fail too: an unreadable handler is treated as unauthenticated.
  */
 import { describe, it, expect } from 'vitest'
 import fs from 'fs'
 import path from 'path'
+import os from 'os'
 import ts from 'typescript'
 
 const API_DIR = path.join(__dirname)
@@ -47,11 +51,14 @@ interface Handler {
   callsAuth: boolean | null
 }
 
+/** Every extension Next serves a route handler from (pageExtensions default + modules). */
+const ROUTE_FILE = /^route\.(ts|tsx|js|jsx|mts|mjs)$/
+
 function routeFiles(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const full = path.join(dir, entry.name)
     if (entry.isDirectory()) return routeFiles(full)
-    return /^route\.(ts|js)$/.test(entry.name) ? [full] : []
+    return ROUTE_FILE.test(entry.name) ? [full] : []
   })
 }
 
@@ -77,10 +84,20 @@ function callsAuthHelper(node: ts.Node): boolean {
 const isExported = (node: ts.Node) =>
   ts.canHaveModifiers(node) && !!ts.getModifiers(node)?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)
 
+/** Names bound by `const { GET, POST: { x } } = ...` or `const [GET] = ...`. */
+function boundNames(name: ts.BindingName): string[] {
+  if (ts.isIdentifier(name)) return [name.text]
+  return name.elements.flatMap((element) => (ts.isBindingElement(element) ? boundNames(element.name) : []))
+}
+
 function handlersIn(file: string): Handler[] {
   const dir = path.dirname(path.relative(API_DIR, file)).split(path.sep).join('/')
   const route = dir === '.' ? '/api' : `/api/${dir}`
-  const source = ts.createSourceFile(file, fs.readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true)
+  return handlersInSource(route, file, fs.readFileSync(file, 'utf8'))
+}
+
+function handlersInSource(route: string, fileName: string, text: string): Handler[] {
+  const source = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true)
   const found: Handler[] = []
   const add = (method: string, callsAuth: boolean | null) => found.push({ key: `${method} ${route}`, callsAuth })
 
@@ -92,7 +109,12 @@ function handlersIn(file: string): Handler[] {
     // export const GET = async () => {}  /  export const GET = withSomething(...)
     if (ts.isVariableStatement(stmt) && isExported(stmt)) {
       for (const decl of stmt.declarationList.declarations) {
-        if (!ts.isIdentifier(decl.name) || !HTTP_METHODS.has(decl.name.text)) continue
+        // export const { GET, POST } = handlers
+        if (!ts.isIdentifier(decl.name)) {
+          for (const name of boundNames(decl.name)) if (HTTP_METHODS.has(name)) add(name, null)
+          continue
+        }
+        if (!HTTP_METHODS.has(decl.name.text)) continue
         const init = decl.initializer
         const readable = init && (ts.isArrowFunction(init) || ts.isFunctionExpression(init))
         add(decl.name.text, readable ? callsAuthHelper(init) : null)
@@ -104,12 +126,55 @@ function handlersIn(file: string): Handler[] {
         if (HTTP_METHODS.has(spec.name.text)) add(spec.name.text, null)
       }
     }
+    // export * from './handlers': could export any method
+    if (ts.isExportDeclaration(stmt) && !stmt.exportClause && !stmt.isTypeOnly) {
+      add('*', null)
+    }
   }
   return found
 }
 
 const handlers = routeFiles(API_DIR).flatMap(handlersIn)
 const byKey = new Map(handlers.map((h) => [h.key, h]))
+
+describe('route policy analyzer', () => {
+  const read = (text: string) => handlersInSource('/api/x', 'route.ts', text)
+
+  it('reads plain handlers and whether they call auth', () => {
+    expect(read('export async function GET() { await auth() }\nexport const POST = async () => 1')).toEqual([
+      { key: 'GET /api/x', callsAuth: true },
+      { key: 'POST /api/x', callsAuth: false },
+    ])
+  })
+
+  it('reports exports it cannot read instead of skipping them', () => {
+    expect(read('export const { GET, POST } = handlers')).toEqual([
+      { key: 'GET /api/x', callsAuth: null },
+      { key: 'POST /api/x', callsAuth: null },
+    ])
+    expect(read("export * from './handlers'")).toEqual([{ key: '* /api/x', callsAuth: null }])
+    expect(read("export { handler as DELETE } from './handlers'")).toEqual([{ key: 'DELETE /api/x', callsAuth: null }])
+  })
+
+  it('finds route files with every extension Next serves', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'route-policy-'))
+    try {
+      for (const name of ['route.ts', 'route.tsx', 'route.js', 'route.jsx', 'route.mjs', 'page.tsx', 'route.test.ts']) {
+        fs.mkdirSync(path.join(dir, name.replace(/\W/g, '-')))
+        fs.writeFileSync(path.join(dir, name.replace(/\W/g, '-'), name), '')
+      }
+      expect(routeFiles(dir).map((file) => path.basename(file)).sort()).toEqual([
+        'route.js',
+        'route.jsx',
+        'route.mjs',
+        'route.ts',
+        'route.tsx',
+      ])
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+})
 
 describe('API route policy', () => {
   it('finds the API handlers (sanity check)', () => {
