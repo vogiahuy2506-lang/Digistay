@@ -85,19 +85,19 @@ export function PayosCard({ propertyId }: { propertyId: string }) {
       <CardContent className="p-5 space-y-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
-            <Zap className="w-5 h-5 text-amber-500 mt-0.5" />
+            <Zap className="w-5 h-5 text-warn mt-0.5" />
             <div>
-              <p className="font-semibold text-gray-900 flex items-center gap-2">
+              <p className="font-semibold text-fg flex items-center gap-2">
                 Thanh toán online (PayOS)
                 {status.connected ? <Badge variant="success">Đã kết nối</Badge> : <Badge variant="gray">Chưa kết nối</Badge>}
               </p>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-muted mt-1">
                 Khách quét mã và chuyển khoản thẳng vào tài khoản của khách sạn; thanh toán tự xác nhận,
                 không cần đối chiếu sao kê.
               </p>
               {status.connected && (
-                <p className="text-sm text-gray-700 mt-2 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                <p className="text-sm text-fg mt-2 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-ok" />
                   Tiền về: {status.accountName} · {status.accountNumber} (Client ID {status.clientIdHint})
                 </p>
               )}
@@ -119,7 +119,7 @@ export function PayosCard({ propertyId }: { propertyId: string }) {
 
         {editing && (
           <div className="border-t pt-4 space-y-3">
-            <ol className="text-sm text-gray-600 list-decimal pl-5 space-y-1">
+            <ol className="text-sm text-muted list-decimal pl-5 space-y-1">
               <li>
                 Đăng nhập <strong>my.payos.vn</strong>, tạo (hoặc chọn) kênh thanh toán gắn với tài khoản ngân
                 hàng của khách sạn.
@@ -147,18 +147,18 @@ export function PayosCard({ propertyId }: { propertyId: string }) {
               onChange={(e) => setForm({ ...form, checksumKey: e.target.value })}
               autoComplete="new-password"
             />
-            <p className="text-xs text-gray-500 flex items-center gap-1.5">
-              Địa chỉ nhận thông báo: <code className="bg-gray-100 px-1.5 py-0.5 rounded">{status.webhookUrl}</code>
+            <p className="text-xs text-muted flex items-center gap-1.5">
+              Địa chỉ nhận thông báo: <code className="bg-fg/5 px-1.5 py-0.5 rounded">{status.webhookUrl}</code>
               <button
                 type="button"
                 onClick={() => navigator.clipboard.writeText(status.webhookUrl).then(() => toast.success('Đã sao chép'))}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-muted hover:text-fg"
                 aria-label="Sao chép địa chỉ"
               >
                 <Copy className="w-3.5 h-3.5" />
               </button>
             </p>
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-err">{error}</p>}
             <div className="flex justify-end gap-2">
               <Button
                 variant="ghost"

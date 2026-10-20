@@ -137,11 +137,11 @@ export function EinvoiceCard({
   return (
     <Card className="mb-6">
       <CardContent className="p-5 space-y-4">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex items-start gap-3">
-            <FileCheck2 className="w-5 h-5 text-blue-600 mt-0.5" />
+            <FileCheck2 className="w-5 h-5 text-info mt-0.5" />
             <div>
-              <p className="font-semibold text-gray-900 flex items-center gap-2">
+              <p className="font-semibold text-fg flex items-center gap-2">
                 Hoá đơn điện tử (Mắt Bão)
                 {status.connected ? (
                   <Badge variant={status.environment === 'PRODUCTION' ? 'success' : 'warning'}>
@@ -152,16 +152,16 @@ export function EinvoiceCard({
                 )}
               </p>
               {status.connected ? (
-                <p className="text-sm text-gray-700 mt-1 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                <p className="text-sm text-fg mt-1 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-ok" />
                   MST {status.taxCode} · Mẫu {status.templateCode} · Ký hiệu {status.series} · Thuế suất{' '}
                   {VAT_LABELS[status.vatCode as keyof typeof VAT_LABELS]} ·{' '}
-                  <span className={lowNumbers ? 'text-red-600 font-semibold' : ''}>
+                  <span className={lowNumbers ? 'text-err font-semibold' : ''}>
                     còn {status.remainingNumbers ?? '?'} số
                   </span>
                 </p>
               ) : (
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-sm text-muted mt-1">
                   Phát hành hoá đơn GTGT dưới mã số thuế của khách sạn, qua tài khoản Mắt Bão của khách sạn.
                 </p>
               )}
@@ -191,8 +191,8 @@ export function EinvoiceCard({
                 onChange={(e) => setOption('autoIssue', e.target.checked)}
               />
               <span>
-                <span className="font-medium text-gray-900">Tự xuất hoá đơn khi đơn đã thanh toán đủ</span>
-                <span className="block text-xs text-gray-500">
+                <span className="font-medium text-fg">Tự xuất hoá đơn khi đơn đã thanh toán đủ</span>
+                <span className="block text-xs text-muted">
                   Áp dụng cho đơn thanh toán đủ từ lúc bật. Tiền cọc chưa đủ thì chưa xuất. Thông tin công ty không hợp
                   lệ thì hoá đơn chờ nhân viên sửa.
                 </span>
@@ -206,25 +206,25 @@ export function EinvoiceCard({
                 onChange={(e) => setOption('emailInvoices', e.target.checked)}
               />
               <span>
-                <span className="font-medium text-gray-900">Gửi hoá đơn (PDF) qua email cho người mua sau khi phát hành</span>
+                <span className="font-medium text-fg">Gửi hoá đơn (PDF) qua email cho người mua sau khi phát hành</span>
               </span>
             </label>
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-err">{error}</p>}
           </div>
         )}
 
         {status.connected && status.webhookUrl && !editing && (
-          <div className="text-xs text-gray-500 border-t pt-3">
+          <div className="text-xs text-muted border-t pt-3">
             <p>
               Để nhận trạng thái từ cơ quan thuế (đã cấp mã / bị từ chối), gửi địa chỉ này cho bộ phận hỗ trợ Mắt
               Bão. Địa chỉ có mã bí mật: không chia sẻ nơi khác.
             </p>
             <div className="mt-1 flex items-center gap-2">
-              <code className="truncate bg-gray-100 px-1.5 py-0.5 rounded">{status.webhookUrl}</code>
+              <code className="truncate bg-fg/5 px-1.5 py-0.5 rounded">{status.webhookUrl}</code>
               <button
                 type="button"
                 onClick={() => navigator.clipboard.writeText(status.webhookUrl!)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-muted hover:text-fg"
                 aria-label="Sao chép địa chỉ"
               >
                 <Copy className="w-3.5 h-3.5" />
@@ -235,7 +235,7 @@ export function EinvoiceCard({
 
         {editing && (
           <div className="border-t pt-4 space-y-3">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted">
               Lấy các thông tin này từ Mắt Bão (hoặc kế toán). Ký hiệu đổi theo năm, ví dụ {yearPrefix}TAA cho năm nay.
               Thuế suất do kế toán của khách sạn quyết định; giá phòng được coi là đã gồm thuế.
             </p>
@@ -281,7 +281,7 @@ export function EinvoiceCard({
                 ]}
               />
             </div>
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-err">{error}</p>}
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setEditing(false)}>
                 Huỷ

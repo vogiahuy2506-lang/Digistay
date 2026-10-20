@@ -88,12 +88,12 @@ interface Booking {
 }
 
 const invoiceStatusConfig: Record<string, { label: string; color: string; bgColor: string; icon: any }> = {
-  DRAFT: { label: 'Nháp', color: 'text-gray-600', bgColor: 'bg-gray-50', icon: FileText },
-  PENDING: { label: 'Chờ phát hành', color: 'text-amber-600', bgColor: 'bg-amber-50', icon: Clock },
-  PUBLISHING: { label: 'Đang phát hành', color: 'text-blue-600', bgColor: 'bg-blue-50', icon: Clock },
-  PUBLISHED: { label: 'Đã phát hành', color: 'text-green-600', bgColor: 'bg-green-50', icon: CheckCircle },
-  CANCELLED: { label: 'Đã hủy', color: 'text-red-600', bgColor: 'bg-red-50', icon: XCircle },
-  REPLACED: { label: 'Đã thay thế', color: 'text-blue-600', bgColor: 'bg-blue-50', icon: AlertCircle },
+  DRAFT: { label: 'Nháp', color: 'text-plain', bgColor: 'bg-plain-soft', icon: FileText },
+  PENDING: { label: 'Chờ phát hành', color: 'text-warn', bgColor: 'bg-warn-soft', icon: Clock },
+  PUBLISHING: { label: 'Đang phát hành', color: 'text-info', bgColor: 'bg-info-soft', icon: Clock },
+  PUBLISHED: { label: 'Đã phát hành', color: 'text-ok', bgColor: 'bg-ok-soft', icon: CheckCircle },
+  CANCELLED: { label: 'Đã hủy', color: 'text-plain', bgColor: 'bg-plain-soft', icon: XCircle },
+  REPLACED: { label: 'Đã thay thế', color: 'text-info', bgColor: 'bg-info-soft', icon: AlertCircle },
 }
 
 export default function InvoicesPage() {
@@ -521,30 +521,30 @@ export default function InvoicesPage() {
 
   return (
     <div>
-      <Header
-        title="Hóa Đơn"
-        description="Quản lý hóa đơn điện tử"
-        actions={
-          <div className="flex items-center gap-3">
-            <Select
-              value={selectedProperty}
-              onChange={(e) => handlePropertyChange(e.target.value)}
-              className="w-64"
-              options={properties.map((p) => ({ value: p.id, label: p.name }))}
-            />
-            <Button variant="secondary" onClick={handleRefresh}>
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Làm mới
-            </Button>
-            <Button onClick={handleOpenCreateModal}>
-              <Plus className="w-4 h-4 mr-2" />
-              Tạo hóa đơn
-            </Button>
-          </div>
-        }
-      />
-
       <PageContainer>
+        <Header
+          title="Hóa Đơn"
+          description="Quản lý hóa đơn điện tử"
+          actions={
+            <div className="grid grid-cols-2 gap-3 w-full [&>:first-child]:col-span-2 sm:flex sm:items-center sm:w-auto">
+              <Select
+                value={selectedProperty}
+                onChange={(e) => handlePropertyChange(e.target.value)}
+                className="sm:w-64"
+                options={properties.map((p) => ({ value: p.id, label: p.name }))}
+              />
+              <Button variant="secondary" onClick={handleRefresh}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Làm mới
+              </Button>
+              <Button onClick={handleOpenCreateModal}>
+                <Plus className="w-4 h-4 mr-2" />
+                Tạo hóa đơn
+              </Button>
+            </div>
+          }
+        />
+
         {selectedProperty && <EinvoiceCard key={selectedProperty} propertyId={selectedProperty} onStatus={setEinvoice} />}
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
@@ -552,24 +552,11 @@ export default function InvoicesPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Tổng hóa đơn</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalInvoices}</p>
+                  <p className="text-sm text-muted">Tổng hóa đơn</p>
+                  <p className="text-2xl font-bold text-fg">{stats.totalInvoices}</p>
                 </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Nháp</p>
-                  <p className="text-2xl font-bold text-gray-600">{stats.draftCount}</p>
-                </div>
-                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-gray-600" />
+                <div className="w-12 h-12 bg-info-soft rounded-full flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-info" />
                 </div>
               </div>
             </CardContent>
@@ -578,24 +565,11 @@ export default function InvoicesPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Chờ phát hành</p>
-                  <p className="text-2xl font-bold text-amber-600">{stats.pendingCount}</p>
+                  <p className="text-sm text-muted">Nháp</p>
+                  <p className="text-2xl font-bold text-muted">{stats.draftCount}</p>
                 </div>
-                <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-amber-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Đã phát hành</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.publishedCount}</p>
-                </div>
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                  <CheckCircle className="w-6 h-6 text-green-600" />
+                <div className="w-12 h-12 bg-fg/5 rounded-full flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-muted" />
                 </div>
               </div>
             </CardContent>
@@ -604,11 +578,37 @@ export default function InvoicesPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Đã phát hành (tiền)</p>
-                  <p className="text-xl font-bold text-gray-900">{formatPrice(stats.totalAmount)}</p>
+                  <p className="text-sm text-muted">Chờ phát hành</p>
+                  <p className="text-2xl font-bold text-warn">{stats.pendingCount}</p>
                 </div>
-                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                  <Building className="w-6 h-6 text-purple-600" />
+                <div className="w-12 h-12 bg-warn-soft rounded-full flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-warn" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted">Đã phát hành</p>
+                  <p className="text-2xl font-bold text-ok">{stats.publishedCount}</p>
+                </div>
+                <div className="w-12 h-12 bg-ok-soft rounded-full flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-ok" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted">Đã phát hành (tiền)</p>
+                  <p className="text-xl font-bold text-fg">{formatPrice(stats.totalAmount)}</p>
+                </div>
+                <div className="w-12 h-12 bg-acc-soft rounded-full flex items-center justify-center">
+                  <Building className="w-6 h-6 text-acc" />
                 </div>
               </div>
             </CardContent>
@@ -654,13 +654,13 @@ export default function InvoicesPage() {
           <CardContent className="p-0">
             {isLoading ? (
               <div className="p-8 text-center">
-                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
-                <p className="text-gray-500">Đang tải...</p>
+                <div className="animate-spin w-8 h-8 border-4 border-acc border-t-transparent rounded-full mx-auto mb-4" />
+                <p className="text-muted">Đang tải...</p>
               </div>
             ) : filteredInvoices.length === 0 ? (
               <div className="p-8 text-center">
-                <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-500">Chưa có hóa đơn nào</p>
+                <FileText className="w-12 h-12 mx-auto text-muted mb-4" />
+                <p className="text-muted">Chưa có hóa đơn nào</p>
                 <Button onClick={handleOpenCreateModal} className="mt-4">
                   <Plus className="w-4 h-4 mr-2" />
                   Tạo hóa đơn
@@ -669,16 +669,16 @@ export default function InvoicesPage() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50 border-b">
+                  <thead className="bg-fg/[0.03] border-b">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mã HĐ</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Đơn đặt phòng</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Công ty</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mã số thuế</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tổng tiền</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ngày tạo</th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Thao tác</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">Mã HĐ</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">Đơn đặt phòng</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">Công ty</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">Mã số thuế</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">Tổng tiền</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">Trạng thái</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">Ngày tạo</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-muted uppercase">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -687,23 +687,23 @@ export default function InvoicesPage() {
                       const StatusIcon = statusInfo.icon
                       
                       return (
-                        <tr key={invoice.id} className="hover:bg-gray-50">
+                        <tr key={invoice.id} className="hover:bg-fg/[0.03]">
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
                               <span className="font-mono text-sm font-medium">{invoice.invoiceNumber}</span>
                               {invoice.autoIssued && (
-                                <Badge className="bg-indigo-50 text-indigo-700">
+                                <Badge className="bg-info-soft text-info">
                                   Tự động
                                 </Badge>
                               )}
                               <button
                                 onClick={() => handleCopyToClipboard(invoice.invoiceNumber, invoice.id)}
-                                className="p-1 hover:bg-gray-100 rounded"
+                                className="p-1 hover:bg-fg/5 rounded"
                               >
                                 {copiedId === invoice.id ? (
-                                  <Check className="w-3 h-3 text-green-500" />
+                                  <Check className="w-3 h-3 text-ok" />
                                 ) : (
-                                  <Copy className="w-3 h-3 text-gray-400" />
+                                  <Copy className="w-3 h-3 text-muted" />
                                 )}
                               </button>
                             </div>
@@ -714,7 +714,7 @@ export default function InvoicesPage() {
                           <td className="px-4 py-3">
                             <div>
                               <span className="font-medium">{invoice.companyName}</span>
-                              <span className="block text-xs text-gray-500">{invoice.customerName}</span>
+                              <span className="block text-xs text-muted">{invoice.customerName}</span>
                             </div>
                           </td>
                           <td className="px-4 py-3">
@@ -723,7 +723,7 @@ export default function InvoicesPage() {
                           <td className="px-4 py-3">
                             <span className="font-semibold">{formatPrice(invoice.totalAmount)}</span>
                             {invoice.adjustsInvoice && (
-                              <span className="block text-xs text-indigo-600">
+                              <span className="block text-xs text-info">
                                 {invoice.totalAmount < 0 ? 'Điều chỉnh giảm' : 'Điều chỉnh tăng'} HĐ số{' '}
                                 {invoice.adjustsInvoice.einvoiceNumber}
                               </span>
@@ -736,7 +736,7 @@ export default function InvoicesPage() {
                             </Badge>
                           </td>
                           <td className="px-4 py-3">
-                            <span className="text-sm text-gray-500">
+                            <span className="text-sm text-muted">
                               {format(new Date(invoice.createdAt), 'dd/MM/yyyy')}
                             </span>
                           </td>
@@ -753,7 +753,7 @@ export default function InvoicesPage() {
                                     </Button>
                                   )}
                                   <Button size="sm" variant="ghost" onClick={() => handleDeleteInvoice(invoice.id)}>
-                                    <Trash2 className="w-4 h-4 text-red-500" />
+                                    <Trash2 className="w-4 h-4 text-err" />
                                   </Button>
                                 </>
                               )}
@@ -767,7 +767,7 @@ export default function InvoicesPage() {
               </div>
             )}
             {pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-gray-600">
+              <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted">
                 <span>
                   Trang {pagination.page} / {pagination.totalPages} · {pagination.total} hoá đơn
                 </span>
@@ -794,16 +794,16 @@ export default function InvoicesPage() {
         size="lg"
       >
         {formSuccess ? (
-          <div className="text-center py-6">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-8 h-8 text-green-600" />
+          <div className="text-center py-6 px-6">
+            <div className="w-16 h-16 bg-ok-soft rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-ok" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">{formSuccess}</h3>
-            <p className="text-gray-500">Đang chuyển hướng...</p>
+            <h3 className="text-lg font-semibold text-fg mb-2">{formSuccess}</h3>
+            <p className="text-muted">Đang chuyển hướng...</p>
           </div>
         ) : (
           <>
-            <div className="space-y-4">
+            <div className="space-y-4 p-6 overflow-y-auto">
               <Select
                 label="Đơn đặt phòng"
                 required
@@ -816,7 +816,7 @@ export default function InvoicesPage() {
               />
 
               {!einvoice?.connected && (
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
+                <div className="p-3 bg-warn-soft border border-warn/30 rounded-lg text-warn text-sm">
                   Khách sạn chưa kết nối hoá đơn điện tử Mắt Bão (thẻ phía trên trang), nên chưa tạo được hoá đơn.
                 </div>
               )}
@@ -827,7 +827,7 @@ export default function InvoicesPage() {
               />
 
               {formError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                <div className="p-3 bg-err-soft border border-err/30 rounded-lg text-err text-sm">
                   {formError}
                 </div>
               )}
@@ -853,16 +853,16 @@ export default function InvoicesPage() {
         size="lg"
       >
         {formSuccess ? (
-          <div className="text-center py-6">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-8 h-8 text-green-600" />
+          <div className="text-center py-6 px-6">
+            <div className="w-16 h-16 bg-ok-soft rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-ok" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">{formSuccess}</h3>
-            <p className="text-gray-500">Đang chuyển hướng...</p>
+            <h3 className="text-lg font-semibold text-fg mb-2">{formSuccess}</h3>
+            <p className="text-muted">Đang chuyển hướng...</p>
           </div>
         ) : (
           <>
-            <div className="space-y-4">
+            <div className="space-y-4 p-6 overflow-y-auto">
               <InvoiceFormFields
                 value={formData}
                 onChange={(v) => setFormData({ ...formData, ...v })}
@@ -870,7 +870,7 @@ export default function InvoicesPage() {
               />
 
               {formError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                <div className="p-3 bg-err-soft border border-err/30 rounded-lg text-err text-sm">
                   {formError}
                 </div>
               )}
@@ -896,7 +896,7 @@ export default function InvoicesPage() {
       >
         {selectedInvoice && (
           <>
-            <div className="space-y-6">
+            <div className="space-y-6 p-6 overflow-y-auto">
               {/* Invoice Header */}
               <div className="flex items-center justify-between">
                 <div>
@@ -904,16 +904,16 @@ export default function InvoicesPage() {
                     <h3 className="font-mono text-xl font-bold">{selectedInvoice.invoiceNumber}</h3>
                     <button
                       onClick={() => handleCopyToClipboard(selectedInvoice.invoiceNumber, 'invoiceNumber')}
-                      className="p-1 hover:bg-gray-100 rounded"
+                      className="p-1 hover:bg-fg/5 rounded"
                     >
                       {copiedId === 'invoiceNumber' ? (
-                        <Check className="w-4 h-4 text-green-500" />
+                        <Check className="w-4 h-4 text-ok" />
                       ) : (
-                        <Copy className="w-4 h-4 text-gray-400" />
+                        <Copy className="w-4 h-4 text-muted" />
                       )}
                     </button>
                   </div>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted">
                     Tạo: {format(new Date(selectedInvoice.createdAt), 'dd/MM/yyyy HH:mm')}
                   </p>
                 </div>
@@ -923,29 +923,29 @@ export default function InvoicesPage() {
                     {invoiceStatusConfig[selectedInvoice.status]?.label}
                   </Badge>
                   {selectedInvoice.publishedAt && (
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-muted mt-1">
                       Phát hành: {format(new Date(selectedInvoice.publishedAt), 'dd/MM/yyyy HH:mm')}
                     </p>
                   )}
                   {selectedInvoice.einvoiceNumber && (
-                    <p className="text-sm font-semibold text-gray-900 mt-1">
+                    <p className="text-sm font-semibold text-fg mt-1">
                       Số hoá đơn: {selectedInvoice.einvoiceNumber}
                       {selectedInvoice.invoiceSeries && ` · Ký hiệu ${selectedInvoice.invoiceSeries}`}
                     </p>
                   )}
                   {selectedInvoice.replacesInvoice && (
-                    <p className="text-xs text-blue-700 mt-1">
+                    <p className="text-xs text-info mt-1">
                       Thay thế cho hoá đơn số {selectedInvoice.replacesInvoice.einvoiceNumber}
                       {selectedInvoice.replacesInvoice.invoiceSeries && ` (ký hiệu ${selectedInvoice.replacesInvoice.invoiceSeries})`}
                     </p>
                   )}
                   {selectedInvoice.replacements?.length > 0 && (
-                    <p className="text-xs text-blue-700 mt-1">
+                    <p className="text-xs text-info mt-1">
                       Có hoá đơn thay thế: {selectedInvoice.replacements.map((r) => r.einvoiceNumber ?? `${r.invoiceNumber} (nháp)`).join(', ')}
                     </p>
                   )}
                   {selectedInvoice.adjustsInvoice && (
-                    <p className="text-xs text-indigo-700 mt-1">
+                    <p className="text-xs text-info mt-1">
                       {selectedInvoice.totalAmount < 0 ? 'Điều chỉnh giảm' : 'Điều chỉnh tăng'} cho hoá đơn số{' '}
                       {selectedInvoice.adjustsInvoice.einvoiceNumber}
                       {selectedInvoice.adjustsInvoice.invoiceSeries && ` (ký hiệu ${selectedInvoice.adjustsInvoice.invoiceSeries})`}
@@ -953,7 +953,7 @@ export default function InvoicesPage() {
                     </p>
                   )}
                   {selectedInvoice.adjustments?.length > 0 && (
-                    <p className="text-xs text-indigo-700 mt-1">
+                    <p className="text-xs text-info mt-1">
                       Đã điều chỉnh:{' '}
                       {selectedInvoice.adjustments
                         .map(
@@ -965,7 +965,7 @@ export default function InvoicesPage() {
                   )}
                   {selectedInvoice.cqtStatus != null && (
                     <p
-                      className={`text-xs mt-1 ${selectedInvoice.cqtStatus === 6 ? 'text-red-600 font-semibold' : selectedInvoice.cqtStatus === 4 ? 'text-green-700' : 'text-gray-500'}`}
+                      className={`text-xs mt-1 ${selectedInvoice.cqtStatus === 6 ? 'text-err font-semibold' : selectedInvoice.cqtStatus === 4 ? 'text-ok' : 'text-muted'}`}
                     >
                       {CQT_LABELS[selectedInvoice.cqtStatus] ?? `Cơ quan thuế: mã ${selectedInvoice.cqtStatus}`}
                       {selectedInvoice.cqtNote && ` — ${selectedInvoice.cqtNote}`}
@@ -978,10 +978,10 @@ export default function InvoicesPage() {
                 <div
                   className={`p-3 rounded-lg text-sm border ${
                     selectedInvoice.emailStatus === 'SENT'
-                      ? 'bg-green-50 border-green-200 text-green-800'
+                      ? 'bg-ok-soft border-ok/30 text-ok'
                       : selectedInvoice.emailStatus === 'FAILED' || selectedInvoice.emailStatus === 'SKIPPED'
-                        ? 'bg-red-50 border-red-200 text-red-700'
-                        : 'bg-gray-50 border-gray-200 text-gray-700'
+                        ? 'bg-err-soft border-err/30 text-err'
+                        : 'bg-fg/[0.03] border-line text-fg'
                   }`}
                 >
                   {selectedInvoice.emailStatus === 'SENT'
@@ -995,52 +995,52 @@ export default function InvoicesPage() {
               )}
 
               {selectedInvoice.publishError && selectedInvoice.status !== 'PUBLISHED' && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                <div className="p-3 bg-err-soft border border-err/30 rounded-lg text-err text-sm">
                   Lần phát hành trước không thành công: {selectedInvoice.publishError}
                 </div>
               )}
 
               {/* Amount */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 text-center">
-                <p className="text-sm text-gray-600 mb-1">
+              <div className="bg-info-soft rounded-lg p-6 text-center">
+                <p className="text-sm text-muted mb-1">
                   {selectedInvoice.adjustsInvoice ? 'Số tiền điều chỉnh (đã gồm VAT)' : 'Tổng tiền hóa đơn'}
                 </p>
-                <p className="text-4xl font-bold text-gray-900">{formatPrice(selectedInvoice.totalAmount)}</p>
+                <p className="text-4xl font-bold text-fg">{formatPrice(selectedInvoice.totalAmount)}</p>
                 <div className="flex justify-center gap-6 mt-3 text-sm">
                   <div>
-                    <span className="text-gray-500">Thuế ({selectedInvoice.taxRate * 100}%): </span>
+                    <span className="text-muted">Thuế ({selectedInvoice.taxRate * 100}%): </span>
                     <span className="font-medium">{formatPrice(selectedInvoice.taxAmount)}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">Tiền trước thuế: </span>
+                    <span className="text-muted">Tiền trước thuế: </span>
                     <span className="font-medium">{formatPrice(selectedInvoice.subtotal)}</span>
                   </div>
                 </div>
               </div>
 
               {/* Company Info */}
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="border rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                  <h4 className="font-medium text-fg mb-3 flex items-center gap-2">
                     <Building className="w-4 h-4" />
                     Thông tin công ty
                   </h4>
                   <div className="space-y-2 text-sm">
                     <div>
-                      <span className="text-gray-500">Tên công ty:</span>
+                      <span className="text-muted">Tên công ty:</span>
                       <p className="font-medium">{selectedInvoice.companyName}</p>
                     </div>
                     <div>
-                      <span className="text-gray-500">Mã số thuế:</span>
+                      <span className="text-muted">Mã số thuế:</span>
                       <p className="font-mono font-medium">{selectedInvoice.taxCode}</p>
                     </div>
                     <div>
-                      <span className="text-gray-500">Địa chỉ:</span>
+                      <span className="text-muted">Địa chỉ:</span>
                       <p className="font-medium">{selectedInvoice.companyAddress}</p>
                     </div>
                     {selectedInvoice.companyEmail && (
                       <div>
-                        <span className="text-gray-500">Email:</span>
+                        <span className="text-muted">Email:</span>
                         <p className="font-medium">{selectedInvoice.companyEmail}</p>
                       </div>
                     )}
@@ -1048,22 +1048,22 @@ export default function InvoicesPage() {
                 </div>
 
                 <div className="border rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                  <h4 className="font-medium text-fg mb-3 flex items-center gap-2">
                     <FileText className="w-4 h-4" />
                     Thông tin khách hàng
                   </h4>
                   <div className="space-y-2 text-sm">
                     <div>
-                      <span className="text-gray-500">Tên khách hàng:</span>
+                      <span className="text-muted">Tên khách hàng:</span>
                       <p className="font-medium">{selectedInvoice.customerName}</p>
                     </div>
                     <div>
-                      <span className="text-gray-500">Email:</span>
+                      <span className="text-muted">Email:</span>
                       <p className="font-medium">{selectedInvoice.customerEmail}</p>
                     </div>
                     {selectedInvoice.customerAddress && (
                       <div>
-                        <span className="text-gray-500">Địa chỉ:</span>
+                        <span className="text-muted">Địa chỉ:</span>
                         <p className="font-medium">{selectedInvoice.customerAddress}</p>
                       </div>
                     )}
@@ -1073,26 +1073,26 @@ export default function InvoicesPage() {
 
               {/* Booking Info */}
               <div className="border rounded-lg p-4">
-                <h4 className="font-medium text-gray-900 mb-3">Thông tin đơn đặt phòng</h4>
-                <div className="grid grid-cols-3 gap-4 text-sm">
+                <h4 className="font-medium text-fg mb-3">Thông tin đơn đặt phòng</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-500">Mã đặt phòng:</span>
+                    <span className="text-muted">Mã đặt phòng:</span>
                     <p className="font-medium">{selectedInvoice.booking?.bookingCode}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500">Khách hàng:</span>
+                    <span className="text-muted">Khách hàng:</span>
                     <p className="font-medium">{selectedInvoice.booking?.guestName}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500">Cơ sở:</span>
+                    <span className="text-muted">Cơ sở:</span>
                     <p className="font-medium">{selectedInvoice.booking?.property?.name}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500">Nhận phòng:</span>
+                    <span className="text-muted">Nhận phòng:</span>
                     <p className="font-medium">{format(new Date(selectedInvoice.booking?.checkInDate), 'dd/MM/yyyy')}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500">Trả phòng:</span>
+                    <span className="text-muted">Trả phòng:</span>
                     <p className="font-medium">{format(new Date(selectedInvoice.booking?.checkOutDate), 'dd/MM/yyyy')}</p>
                   </div>
                 </div>
@@ -1100,22 +1100,22 @@ export default function InvoicesPage() {
 
               {/* E-Invoice Info */}
               {selectedInvoice.eInvoiceProvider && (
-                <div className="border rounded-lg p-4 bg-amber-50">
-                  <h4 className="font-medium text-gray-900 mb-3">Thông tin hóa đơn điện tử</h4>
-                  <div className="grid grid-cols-3 gap-4 text-sm">
+                <div className="border rounded-lg p-4 bg-warn-soft">
+                  <h4 className="font-medium text-fg mb-3">Thông tin hóa đơn điện tử</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
                     <div>
-                      <span className="text-gray-500">Nhà cung cấp:</span>
+                      <span className="text-muted">Nhà cung cấp:</span>
                       <p className="font-medium">{selectedInvoice.eInvoiceProvider === 'MATBAO' ? 'Mắt Bão' : selectedInvoice.eInvoiceProvider}</p>
                     </div>
                     {selectedInvoice.invoicePattern && (
                       <div>
-                        <span className="text-gray-500">Mẫu số:</span>
+                        <span className="text-muted">Mẫu số:</span>
                         <p className="font-medium">{selectedInvoice.invoicePattern}</p>
                       </div>
                     )}
                     {selectedInvoice.invoiceSeries && (
                       <div>
-                        <span className="text-gray-500">Ký hiệu:</span>
+                        <span className="text-muted">Ký hiệu:</span>
                         <p className="font-medium">{selectedInvoice.invoiceSeries}</p>
                       </div>
                     )}
@@ -1123,7 +1123,8 @@ export default function InvoicesPage() {
                 </div>
               )}
             </div>
-            <ModalFooter>
+            {/* Up to six actions on an issued invoice: wrap instead of clipping the last ones. */}
+            <ModalFooter className="sm:flex-wrap sm:justify-end">
               <Button variant="secondary" onClick={() => setSelectedInvoice(null)}>
                 Đóng
               </Button>
@@ -1190,8 +1191,8 @@ export default function InvoicesPage() {
         description={adjusting ? `Cho hoá đơn số ${adjusting.einvoiceNumber} (${formatPrice(adjusting.totalAmount)})` : undefined}
         size="lg"
       >
-        <div className="space-y-4">
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm space-y-1">
+        <div className="space-y-4 p-6 overflow-y-auto">
+          <div className="p-3 bg-warn-soft border border-warn/30 rounded-lg text-warn text-sm space-y-1">
             <p>Hoá đơn điều chỉnh chỉ ghi phần chênh lệch; điều chỉnh giảm được ghi số âm. Hoá đơn gốc vẫn giữ nguyên.</p>
             <p>Người mua là doanh nghiệp: cần văn bản thoả thuận với người mua ghi rõ sai sót trước khi lập. Nên hỏi kế toán.</p>
             <p>Sai tên, mã số thuế hay địa chỉ người mua: dùng hoá đơn thay thế.</p>
@@ -1224,7 +1225,7 @@ export default function InvoicesPage() {
             hint="In trên hoá đơn (tối đa 150 ký tự)"
           />
           {adjustError && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">{adjustError}</div>
+            <div className="p-3 bg-err-soft border border-err/30 rounded-lg text-err text-sm">{adjustError}</div>
           )}
         </div>
         <ModalFooter>

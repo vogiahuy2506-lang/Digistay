@@ -12,9 +12,10 @@ export function parseThemePreference(value: string | undefined | null): ThemePre
 }
 
 /**
- * Dashboard pages already drawn with the role colors. Others still hard-code
- * light colors (bg-white, text-gray-900...), so they stay light whatever the
- * preference; add a page here once it uses only role colors.
+ * Dashboard pages drawn with the role colors: every workspace and property
+ * page. Others still hard-code light colors (bg-white, text-gray-900...), so
+ * they stay light whatever the preference (today only /admin/system); add a
+ * page here once it uses only role colors.
  */
 const darkReadyPaths: RegExp[] = [
   /^\/workspaces\/?$/,
@@ -24,9 +25,7 @@ const darkReadyPaths: RegExp[] = [
   /^\/workspace\/[^/]+\/properties(\/new)?\/?$/,
   /^\/workspace\/[^/]+\/properties\/[^/]+\/?$/,
   /^\/workspace\/[^/]+\/properties\/[^/]+\/bookings(\/[^/]+)?\/?$/,
-  // Payments and invoices wait for #41 and the PayOS / Mắt Bão chain, which
-  // rewrite both pages; they move to role colors after those merge.
-  /^\/workspace\/[^/]+\/properties\/[^/]+\/(calendar|reports(\/daily)?|rooms|services|policies|bank-accounts|website)\/?$/,
+  /^\/workspace\/[^/]+\/properties\/[^/]+\/(calendar|reports(\/daily)?|rooms|services|policies|bank-accounts|website|payments|invoices)\/?$/,
 ]
 
 export function isDarkReady(pathname: string | null | undefined): boolean {
