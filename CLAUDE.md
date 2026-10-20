@@ -177,6 +177,12 @@ sạn, đặt lại mật khẩu chỉ cần email, email trong phiên do client
   - **Sau một lần phát hành chưa rõ kết quả** (`lookupCode` đã có), không cho sửa, xoá hay huỷ
     cho tới khi phát hành lại xong.
   - **Hoá đơn đã phát hành không huỷ trong app**: phải lập mẫu 04/SS-HĐĐT trên cổng Mắt Bão.
+    Nhưng có thể **thay thế** (`replacement.ts`, TCHDon 1):
+    - Bản nháp chép từ hoá đơn gốc. Khi phát hành, hoá đơn mới ghi rõ thay cho mẫu số, ký
+      hiệu, số và ngày của hoá đơn gốc; hoá đơn gốc chuyển sang `REPLACED`.
+    - Mỗi hoá đơn chỉ có một bản thay thế còn hiệu lực.
+    - Khi tính tổng tiền đã xuất cho một đơn, hoá đơn gốc không bị tính hai lần.
+    - Hoá đơn điều chỉnh (TCHDon 2–5) chưa hỗ trợ.
   - **Ký hiệu đổi theo năm**: sang năm mới phải sửa ký hiệu trong thẻ Mắt Bão.
   - **Môi trường Chính thức** là hoá đơn thật, có giá trị pháp lý.
   - Trạng thái từ cơ quan thuế về qua webhook `/api/webhooks/matbao/<propertyId>/<token>`. Mắt
@@ -248,7 +254,7 @@ dùng duyệt rồi mới làm, trên nhánh riêng. Cập nhật trạng thái 
    tiền và không cập nhật `depositAmount` — xong; có thêm đối soát định kỳ 10 phút. Còn: SePay
    (nếu khách sạn cần), khách tự trả cọc trên site công khai.
 6. Hoá đơn điện tử Mắt Bão, mỗi khách sạn một tài khoản, kèm trạng thái từ cơ quan thuế — xong.
-   Còn: hoá đơn điều chỉnh/thay thế, tự gửi email hoá đơn cho khách, tự xuất hoá đơn khi đơn
-   thanh toán xong.
+   Thêm: hoá đơn thay thế. Còn: hoá đơn điều chỉnh, tự gửi email hoá đơn cho khách, tự xuất hoá
+   đơn khi đơn thanh toán xong.
 
 Tài liệu deploy: `docs/DEPLOYMENT.md`, `docs/RUNBOOK.md`.

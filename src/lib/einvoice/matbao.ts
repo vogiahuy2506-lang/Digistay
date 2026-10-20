@@ -14,7 +14,9 @@
  * - Amounts are VAT-inclusive (vat.ts); the VAT code is the one copied onto
  *   the invoice when it was created.
  * - Issued invoices cannot be cancelled here: that needs a tax-office notice
- *   (mẫu 04) on Mắt Bão's portal.
+ *   (mẫu 04) on Mắt Bão's portal. They can be replaced (replacement.ts):
+ *   the new invoice carries TCHDon 1 and the original's identifiers, and
+ *   the original becomes REPLACED once the new one is issued.
  *
  * Lessons from Founder AI (one platform account there): CLAUDE.md, "Quy ước
  * code", Hoá đơn điện tử.
@@ -177,12 +179,29 @@ type InvoiceForPayload = Pick<
   | 'totalAmount'
 > & { booking: { bookingCode: string; checkInDate: Date; checkOutDate: Date } }
 
+/** The issued invoice a replacement points at (Mắt Bão "hoá đơn liên quan"). */
+export type ReplacedInvoice = Pick<Invoice, 'invoiceCode' | 'invoicePattern' | 'invoiceSeries' | 'einvoiceNumber' | 'publishedAt'>
+
+function replacementFields(original: ReplacedInvoice) {
+  const date = original.publishedAt!
+  return {
+    TCHDon: 1,
+    MSHDonDCLQuan: original.invoiceCode,
+    KHMSHDCLQuan: original.invoicePattern,
+    KHHDCLQuan: original.invoiceSeries,
+    SHDCLQuan: original.einvoiceNumber,
+    NLHDCLQuan: formatNLap(date),
+    GChu: `Thay thế cho hóa đơn mẫu số ${original.invoicePattern} ký hiệu ${original.invoiceSeries} số ${original.einvoiceNumber} ngày ${vnDate(date)}`,
+  }
+}
+
 /** The create-invoice payload for one invoice (pure; see the shapes in matbao-client.ts). */
 export function buildMatbaoInvoice(
   invoice: InvoiceForPayload,
   config: Pick<PropertyEinvoice, 'templateCode' | 'series'>,
   vatCode: VatCode,
-  now: Date
+  now: Date,
+  replaces?: ReplacedInvoice | null
 ) {
   const { net, vat, gross } = splitGross(invoice.totalAmount, vatCode)
   const lookupCode = lookupCodeFor(invoice)
@@ -246,6 +265,7 @@ export function buildMatbaoInvoice(
     TgTThue: vat,
     TgTTTBSo: gross,
     TgTTTBChu: vndToWords(gross),
+    ...(replaces && replacementFields(replaces)),
   }
 }
 
@@ -265,9 +285,16 @@ function asObject(value: Prisma.JsonValue | null | undefined): Prisma.JsonObject
 export async function publishInvoice(invoiceId: string, userId: string, now = new Date()) {
   const invoice = await prisma.invoice.findUnique({
     where: { id: invoiceId },
-    include: { booking: { select: { bookingCode: true, checkInDate: true, checkOutDate: true } } },
+    include: {
+      booking: { select: { bookingCode: true, checkInDate: true, checkOutDate: true } },
+      replacesInvoice: true,
+    },
   })
   if (!invoice) throw new EinvoiceError('Không tìm thấy hoá đơn', 404)
+  const replaces = invoice.replacesInvoice
+  if (replaces && replaces.status !== 'PUBLISHED') {
+    throw new EinvoiceError('Hoá đơn gốc không còn ở trạng thái đã phát hành, không thay thế được', 409)
+  }
   if (invoice.status === 'PUBLISHED') throw new EinvoiceError('Hoá đơn đã được phát hành', 409)
   if (invoice.status === 'CANCELLED' || invoice.status === 'REPLACED') {
     throw new EinvoiceError('Hoá đơn đã huỷ, không phát hành được', 409)
@@ -303,7 +330,9 @@ export async function publishInvoice(invoiceId: string, userId: string, now = ne
 
   let result
   try {
-    result = await clientFor(config).createInvoice(buildMatbaoInvoice({ ...invoice, lookupCode }, config, vatCode, now))
+    result = await clientFor(config).createInvoice(
+      buildMatbaoInvoice({ ...invoice, lookupCode }, config, vatCode, now, replaces)
+    )
   } catch (error) {
     const message =
       error instanceof MatbaoError
@@ -358,6 +387,19 @@ export async function publishInvoice(invoiceId: string, userId: string, now = ne
       },
     },
   })
+  if (replaces) {
+    await prisma.invoice.updateMany({ where: { id: replaces.id, status: 'PUBLISHED' }, data: { status: 'REPLACED' } })
+    await prisma.activityLog.create({
+      data: {
+        userId,
+        propertyId: invoice.propertyId,
+        action: 'INVOICE_REPLACED',
+        entityType: 'INVOICE',
+        entityId: replaces.id,
+        metadata: { replacedBy: invoice.id, einvoiceNumber: replaces.einvoiceNumber, newNumber: result.soHDon },
+      },
+    })
+  }
   if (config.remainingNumbers != null && result.code === '200') {
     await prisma.propertyEinvoice.updateMany({
       where: { propertyId: invoice.propertyId, remainingNumbers: { gt: 0 } },

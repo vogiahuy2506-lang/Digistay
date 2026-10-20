@@ -3,21 +3,12 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { EinvoiceError } from '@/lib/einvoice/matbao'
-import { invoiceData, invoiceInputSchema } from '@/lib/einvoice/invoices'
+import { generateInvoiceNumber, invoiceData, invoiceInputSchema } from '@/lib/einvoice/invoices'
 import type { VatCode } from '@/lib/einvoice/vat'
 
 // Amounts are computed on the server from the VAT-inclusive total and the
 // property's VAT code (src/lib/einvoice/invoices.ts).
 const createInvoiceSchema = z.object({ bookingId: z.string() }).and(invoiceInputSchema)
-
-function generateInvoiceNumber(): string {
-  const date = new Date()
-  const year = date.getFullYear().toString().slice(-2)
-  const month = (date.getMonth() + 1).toString().padStart(2, '0')
-  const day = date.getDate().toString().padStart(2, '0')
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase()
-  return `INV${year}${month}${day}${random}`
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -79,6 +70,11 @@ export async function GET(request: NextRequest) {
               },
             },
           },
+        },
+        replacesInvoice: { select: { id: true, invoiceNumber: true, einvoiceNumber: true, invoiceSeries: true } },
+        replacements: {
+          where: { status: { not: 'CANCELLED' } },
+          select: { id: true, invoiceNumber: true, einvoiceNumber: true, status: true },
         },
       },
     })

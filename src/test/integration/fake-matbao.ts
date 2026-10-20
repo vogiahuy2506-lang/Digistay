@@ -22,6 +22,7 @@ export interface IssuedInvoice {
   shDon: number
   payload: Record<string, any>
   account: FakeMatbaoAccount
+  replacedBy?: string
 }
 
 type Failure = 'drop-after-issue' | 'drop-before-issue' | { errorCode: string; message: string }
@@ -108,6 +109,23 @@ export class FakeMatbao {
       if (this.lastNLap.has(key) && invoice.NLap < this.lastNLap.get(key)!) {
         return fail('333', 'Ngày lập nhỏ hơn hoá đơn trước')
       }
+      let replaced: IssuedInvoice | undefined
+      if (invoice.TCHDon === 1) {
+        // A replacement must name an issued invoice of this account exactly.
+        replaced = [...this.issued.values()].find(
+          (i) => i.account === account && i.maSoHDon === invoice.MSHDonDCLQuan
+        )
+        if (
+          !replaced ||
+          String(replaced.shDon) !== String(invoice.SHDCLQuan) ||
+          replaced.payload.KHHDon !== invoice.KHHDCLQuan ||
+          replaced.payload.KHMSHDon !== invoice.KHMSHDCLQuan ||
+          !invoice.NLHDCLQuan
+        ) {
+          return fail('341', 'Không tìm thấy hoá đơn liên quan')
+        }
+        if (replaced.replacedBy) return fail('342', 'Hoá đơn liên quan đã bị thay thế')
+      }
       const lines = (invoice.DSHHDVu ?? []).filter((l: any) => l.TChat === 1)
       const net = lines.reduce((s: number, l: any) => s + l.ThTien, 0)
       const vat = lines.reduce((s: number, l: any) => s + l.TThue, 0)
@@ -125,6 +143,7 @@ export class FakeMatbao {
         account,
       }
       this.issued.set(invoice.MaTraCuu, issued)
+      if (replaced) replaced.replacedBy = invoice.MaTraCuu
       if (failure === 'drop-after-issue') return req.socket.destroy()
       return this.send(res, 200, {
         success: true,
