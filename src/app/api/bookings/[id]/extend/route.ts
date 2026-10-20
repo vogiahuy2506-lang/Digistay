@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { lockBooking, syncBookingPayments } from '@/lib/payments/booking-payments'
 import { z } from 'zod'
 
 const extendSchema = z.object({
@@ -134,16 +135,42 @@ export async function POST(request: NextRequest, props: RouteParams) {
     }
 
     const additionalCharge = (extraWeekdayNights * weekdayPrice) + (extraWeekendNights * weekendPrice)
-    const newTotal = booking.totalAmount + additionalCharge
+    const method = paymentMethod || 'CASH'
 
-    // Update booking
-    const updatedBooking = await prisma.booking.update({
-      where: { id },
-      data: {
-        checkOutDate: newCheckOut,
-        totalAmount: newTotal,
-        extraCharges: booking.extraCharges + additionalCharge,
-      },
+    // New total, the optional payment and the payment status change together.
+    const updatedBooking = await prisma.$transaction(async (tx) => {
+      await lockBooking(tx, id)
+      const fresh = await tx.booking.findUniqueOrThrow({
+        where: { id },
+        select: { totalAmount: true, extraCharges: true },
+      })
+      await tx.booking.update({
+        where: { id },
+        data: {
+          checkOutDate: newCheckOut,
+          totalAmount: fresh.totalAmount + additionalCharge,
+          extraCharges: fresh.extraCharges + additionalCharge,
+        },
+      })
+      if (addPayment && additionalCharge > 0) {
+        await tx.payment.create({
+          data: {
+            bookingId: id,
+            propertyId: booking.propertyId,
+            amount: additionalCharge,
+            fee: 0,
+            netAmount: additionalCharge,
+            method,
+            status: method === 'CASH' ? 'PAID' : 'PENDING',
+            paidAt: method === 'CASH' ? new Date() : null,
+            expiresAt: method !== 'CASH' ? new Date(Date.now() + 30 * 60 * 1000) : null,
+          },
+        })
+      }
+      // More is owed now: a fully paid booking becomes PARTIAL until the
+      // extension is paid (it used to stay PAID), and cash counts in full.
+      await syncBookingPayments(tx, id)
+      return tx.booking.findUniqueOrThrow({ where: { id } })
     })
 
     // Update room lock
@@ -165,30 +192,6 @@ export async function POST(request: NextRequest, props: RouteParams) {
           expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // Long expiration for checked-in
         },
       })
-    }
-
-    // Create payment record if requested
-    if (addPayment && additionalCharge > 0) {
-      const paymentData: any = {
-        bookingId: id,
-        propertyId: booking.propertyId,
-        amount: additionalCharge,
-        fee: 0,
-        netAmount: additionalCharge,
-        method: paymentMethod || 'CASH',
-        status: paymentMethod === 'CASH' ? 'PAID' : 'PENDING',
-        paidAt: paymentMethod === 'CASH' ? new Date() : null,
-        expiresAt: paymentMethod !== 'CASH' ? new Date(Date.now() + 30 * 60 * 1000) : null,
-      }
-
-      if (paymentMethod === 'CASH') {
-        await prisma.booking.update({
-          where: { id },
-          data: { paymentStatus: 'PAID' },
-        })
-      }
-
-      await prisma.payment.create({ data: paymentData })
     }
 
     // Log activity
@@ -217,7 +220,7 @@ export async function POST(request: NextRequest, props: RouteParams) {
       message: `Gia hạn thành công. Thêm ${extraNights} đêm, phụ thu ${additionalCharge.toLocaleString('vi-VN')} VNĐ`,
       extraNights,
       additionalCharge,
-      newTotal,
+      newTotal: updatedBooking.totalAmount,
     })
   } catch (error) {
     console.error('Extend booking error:', error)

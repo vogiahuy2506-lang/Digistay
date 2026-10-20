@@ -146,6 +146,17 @@ sạn, đặt lại mật khẩu chỉ cần email, email trong phiên do client
   Chưa cấu hình thì lưu `null`. Không bao giờ trả giá trị đã giải mã ra trình duyệt: trả
   `maskSecret()`, ô nhập để trống nghĩa là giữ nguyên. Khoá mã hoá: RUNBOOK, "Khoá mã hoá dữ liệu".
 - Không lưu token OAuth: chỉ dùng Google để đăng nhập (`src/lib/auth/adapter.ts`).
+- **Thanh toán:** mọi chỗ ghi nhận tiền hoặc đổi số tiền phải trả của một đơn đều gọi
+  `lockBooking()` rồi `syncBookingPayments()` (`src/lib/payments/booking-payments.ts`) trong cùng
+  transaction. Hàm này tính `depositAmount` (= tổng đã trả) và `paymentStatus` từ các khoản `PAID`.
+  Đừng tự đặt `paymentStatus: 'PAID'`: các nhánh tiền mặt cũ làm vậy, khiến cọc 200k báo là trả đủ.
+- **PayOS** (`src/lib/payments/payos.ts`): mỗi khách sạn tự gắn tài khoản PayOS của mình, tiền vào
+  thẳng tài khoản khách sạn. Mỗi khách sạn có một URL webhook riêng
+  (`/api/webhooks/payos/<propertyId>`), chữ ký được kiểm bằng khoá của đúng khách sạn đó. Chuyển
+  sang `PAID` chỉ qua một UPDATE có điều kiện (webhook, đối soát hay nhân viên: ai tới trước
+  thắng), và số tiền phải khớp đúng. Tiền về cho link đã huỷ/hết hạn vẫn được ghi nhận và gắn cờ;
+  khoản `REFUNDED` không bao giờ sống lại. Return URL không bao giờ đánh dấu đã trả.
+  `PAYOS_BASE_URL` chỉ dùng cho test (PayOS giả ở `src/test/integration/fake-payos.ts`).
 - Xác thực hai lớp (`src/lib/auth/two-factor.ts`) là **tuỳ chọn, không bao giờ bắt buộc**. Khi
   đã bật, mật khẩu đúng hoặc Google đúng **không tạo phiên**: chỉ trả "vé" chờ nhập mã, provider
   `two-factor` mới tạo phiên. Thêm cách đăng nhập mới thì phải đi qua bước này. Không có đường
@@ -207,8 +218,10 @@ dùng duyệt rồi mới làm, trên nhánh riêng. Cập nhật trạng thái 
    4d header bảo mật + tắt bộ tối ưu ảnh, 4e tiện ích mã hoá khoá bên thứ ba + bỏ lưu token
    OAuth, 4f xác thực hai lớp TOTP (**không bắt buộc** — người dùng tự bật) — xong.
    Thêm: lên Next 15.5.28 + React 19 (hết các lỗ hổng của Next 14) — xong.
-5. Thanh toán PayOS hoặc SePay, mỗi khách sạn một bộ khoá; sửa nhánh tiền mặt đang đặt
-   `PAID` bất kể số tiền và không cập nhật `depositAmount`
+5. Thanh toán PayOS, mỗi khách sạn một bộ khoá; sửa các nhánh tiền mặt đặt `PAID` bất kể số
+   tiền và không cập nhật `depositAmount` — xong. Còn: SePay (nếu khách sạn cần), job đối soát
+   định kỳ (hiện đối soát khi mở trang Thanh toán và nút "Kiểm tra ngay"), khách tự trả cọc trên
+   site công khai.
 6. Hoá đơn điện tử Mắt Bão
 
 Tài liệu deploy: `docs/DEPLOYMENT.md`, `docs/RUNBOOK.md`.

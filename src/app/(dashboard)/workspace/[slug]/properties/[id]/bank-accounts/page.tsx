@@ -8,6 +8,7 @@ import { Card, CardContent, Button, Badge, Input } from '@/components/ui'
 import { VietQR, downloadQR } from '@/components/ui/viet-qr'
 import { buildVietQr } from '@/lib/vietqr'
 import { toast } from '@/components/ui/toast'
+import { PayosCard } from './payos-card'
 import {
   Building, Plus, Trash2, Edit, QrCode, Copy,
   AlertCircle, Download
@@ -238,6 +239,8 @@ export default function BankAccountsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <PayosCard propertyId={propertyId} />
 
       {/* Accounts List */}
       {isLoading ? (

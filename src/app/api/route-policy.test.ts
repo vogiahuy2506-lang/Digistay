@@ -37,7 +37,9 @@ const PUBLIC_HANDLERS: Record<string, string> = {
   'DELETE /api/bookings/room-lock': "guests release their own hold by the lock/session id they were given",
   'GET /api/health': 'deploy and uptime checks; returns only status and image version',
   'GET /api/invitations/[token]': 'invitation preview; the unguessable token in the URL is the credential',
-  'POST /api/payments/webhook': 'disabled: always 404 until a signed gateway webhook replaces it',
+  'POST /api/payments/webhook': 'disabled: always 404; gateways use /api/webhooks/<gateway>/...',
+  'POST /api/webhooks/payos/[propertyId]':
+    "PayOS notifications; the HMAC signature, checked with that property's checksum key, is the credential; per-IP limit",
   'GET /api/properties/public': 'public property site (name, address, contact, rooms)',
   'GET /api/rooms/available': 'public room search for the booking site',
 }
