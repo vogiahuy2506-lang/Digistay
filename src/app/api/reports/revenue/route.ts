@@ -26,14 +26,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Thiếu propertyId' }, { status: 400 })
     }
 
-    // Check property access
+    // Owner, ADMIN or MANAGER: revenue, and the latest bookings with guest
+    // contacts. The sidebar shows this report to those roles only.
     const property = await prisma.property.findFirst({
       where: {
         id: propertyId,
         workspace: {
           OR: [
             { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id } } },
+            { members: { some: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER'] } } } },
           ],
         },
       },

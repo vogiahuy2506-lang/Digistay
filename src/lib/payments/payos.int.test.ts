@@ -39,6 +39,7 @@ import { POST as webhook } from '@/app/api/webhooks/payos/[propertyId]/route'
 import { POST as syncRoute } from '@/app/api/payments/[id]/sync/route'
 import { POST as cancelRoute } from '@/app/api/payments/[id]/cancel/route'
 import { POST as extendRoute } from '@/app/api/bookings/[id]/extend/route'
+import { POST as cancelBookingRoute } from '@/app/api/bookings/[id]/cancel/route'
 import { POST as reconcileRoute } from '@/app/api/internal/payos-reconcile/route'
 
 const fake = new FakePayos()
@@ -247,6 +248,36 @@ describe('webhook', () => {
     const resent = await fake.pay(Number(second.body.data.gatewayOrderCode))
     expect((await postWebhook(property.id, resent)).status).toBe(200)
     expect((await prisma.payment.findUniqueOrThrow({ where: { id: second.body.data.id } })).status).toBe('REFUNDED')
+  })
+
+  it('a partial refund made at booking cancel is not undone by a repeated notification', async () => {
+    const { property, booking } = await connectedTenant()
+    // Free cancellation: check-in well ahead of now
+    await prisma.booking.update({
+      where: { id: booking.id },
+      data: { checkInDate: new Date(Date.now() + 10 * 86_400_000), checkOutDate: new Date(Date.now() + 12 * 86_400_000) },
+    })
+    const { body } = await createPayosPayment(booking.id, 2_000_000)
+    const paid = await fake.pay(Number(body.data.gatewayOrderCode))
+    expect((await postWebhook(property.id, paid)).status).toBe(200)
+    const before = await prisma.payment.findUniqueOrThrow({ where: { id: body.data.id } })
+    expect(before.status).toBe('PAID')
+
+    const cancelled = await cancelBookingRoute(
+      new NextRequest(`http://digistay.test/api/bookings/${booking.id}/cancel`, {
+        method: 'POST',
+        body: JSON.stringify({ refundAmount: 500_000 }),
+      }),
+      { params: Promise.resolve({ id: booking.id }) }
+    )
+    expect(cancelled.status).toBe(200)
+    const refunded = await prisma.payment.findUniqueOrThrow({ where: { id: body.data.id } })
+    expect(refunded.status).toBe('PROCESSING')
+    // The PayOS fields written when the link was paid are still there
+    expect(refunded.metadata).toMatchObject({ ...(before.metadata as object), refundedAmount: 500_000 })
+
+    expect((await postWebhook(property.id, paid)).status).toBe(200)
+    expect((await prisma.payment.findUniqueOrThrow({ where: { id: body.data.id } })).status).toBe('PROCESSING')
   })
 
   it('webhook and reconcile racing apply the money once', async () => {

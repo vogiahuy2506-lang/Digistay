@@ -121,8 +121,9 @@ export async function POST(request: NextRequest) {
             workspace: {
               select: {
                 ownerId: true,
+                // Staff only, like publishing (STAFF_AND_UP)
                 members: {
-                  where: { userId: session.user.id },
+                  where: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER', 'RECEPTIONIST'] } },
                 },
               },
             },
@@ -135,13 +136,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
     }
 
-    // Check access
+    // Check access. Guests are not let in: a draft of theirs also stopped
+    // auto-issue for the booking, and no guest-facing page calls this.
     const workspace = booking.property.workspace
     const isOwner = workspace.ownerId === session.user.id
     const isStaff = workspace.members.length > 0
-    const isGuest = booking.guestEmail === session.user.email
 
-    if (!isOwner && !isStaff && !isGuest) {
+    if (!isOwner && !isStaff) {
       return NextResponse.json({ success: false, error: 'Không có quyền tạo hóa đơn' }, { status: 403 })
     }
 

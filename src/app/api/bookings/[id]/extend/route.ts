@@ -71,15 +71,16 @@ export async function POST(request: NextRequest, props: RouteParams) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
     }
 
-    // Check access
+    // Staff only. Guests used to be let in too, and the payment added here
+    // defaults to CASH, recorded PAID: a guest could mark their own extra
+    // nights paid. No guest-facing page calls this route.
     const workspace = booking.property.workspace
     const isOwner = workspace.ownerId === session.user.id
     const isStaff = workspace.members.some(m =>
       ['ADMIN', 'MANAGER', 'RECEPTIONIST'].includes(m.role)
     )
-    const isGuest = booking.guestEmail === session.user.email
 
-    if (!isOwner && !isStaff && !isGuest) {
+    if (!isOwner && !isStaff) {
       return NextResponse.json({ success: false, error: 'Không có quyền gia hạn đặt phòng' }, { status: 403 })
     }
 
