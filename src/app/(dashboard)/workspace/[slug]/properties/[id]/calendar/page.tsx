@@ -1,21 +1,21 @@
 'use client'
 
 import * as React from 'react'
+import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle, Button, Badge, Input, Modal, Loading } from '@/components/ui'
+import { Button, Modal, PaymentStatusBadge } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
-import { 
-  Calendar as CalendarIcon, ChevronLeft, ChevronRight, 
+import {
+  Calendar as CalendarIcon, ChevronLeft, ChevronRight,
   Bed, Users, BedDouble, Plus, DoorOpen, Bell, Receipt,
-  Search, HelpCircle, Building2, User,
-  PieChart, RotateCw, CheckCircle, Key, 
-  Trash2, Wrench, Tag, RefreshCw,
-  TrendingUp, ArrowUpRight, Clock, ListChecks,
-  Sparkles, Package, Armchair, X, Eye,
-  Loader2, Save, XCircle
+  Building2, PieChart, CheckCircle, Key, RefreshCw,
+  Clock, ListChecks, Eye, Loader2, XCircle
 } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
-import { format, addDays } from 'date-fns'
+import { routes } from '@/lib/utils/routes'
+import { useProperty } from '@/lib/hooks/use-property'
+import { escapeHtml } from '@/lib/bookings/display'
+import { format, addDays, parseISO } from 'date-fns'
 
 interface RoomType {
   id: string
@@ -87,24 +87,16 @@ function buildMonthGrid(date: Date): { date: Date; isCurrentMonth: boolean }[] {
     return days
   }
 
-const ROOM_TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-  ota: { bg: 'bg-ok-soft', border: 'border-ok/30', text: 'text-ok' },
-  direct: { bg: 'bg-info-soft', border: 'border-info/30', text: 'text-info' },
-  group: { bg: 'bg-warn-soft', border: 'border-warn/30', text: 'text-warn' },
-}
-
 export default function CalendarPage() {
   const router = useRouter()
   const params = useParams<{ slug: string; id: string }>()
   const propertyId = params.id
+  const { property } = useProperty()
 
   const [currentDate, setCurrentDate] = React.useState(new Date())
-  const [viewMode, setViewMode] = React.useState<'month' | 'week' | 'day'>('month')
   const [roomTypes, setRoomTypes] = React.useState<RoomType[]>([])
   const [bookings, setBookings] = React.useState<Booking[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
-  const [selectedRoomTypeFilter, setSelectedRoomTypeFilter] = React.useState('all')
-  const [selectedFloorFilter, setSelectedFloorFilter] = React.useState('all')
   const [selectedDate, setSelectedDate] = React.useState<Date | null>(null)
   const [showCreateBookingModal, setShowCreateBookingModal] = React.useState(false)
   const [showBookingDetailModal, setShowBookingDetailModal] = React.useState(false)
@@ -112,11 +104,14 @@ export default function CalendarPage() {
   const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(null)
   const [isActionLoading, setIsActionLoading] = React.useState(false)
   const [actionLoadingType, setActionLoadingType] = React.useState('')
-  const [currentTime, setCurrentTime] = React.useState(new Date())
+  // Set in the browser only: the server's clock (UTC on the VPS) never matches
+  // the guest's, and the mismatch broke hydration (React error #418).
+  const [currentTime, setCurrentTime] = React.useState<Date | null>(null)
   const [exportType, setExportType] = React.useState<'pdf' | 'excel' | 'csv'>('pdf')
 
   // Update time every minute
   React.useEffect(() => {
+    setCurrentTime(new Date())
     const timer = setInterval(() => setCurrentTime(new Date()), 60000)
     return () => clearInterval(timer)
   }, [])
@@ -333,11 +328,6 @@ export default function CalendarPage() {
     }
   }
 
-  // Handle room action buttons
-  const handleRoomAction = async (action: string) => {
-    toast.info(`Tính năng "${action}" đang được phát triển`)
-  }
-
   // Handle export report
   const handleExportReport = async () => {
     setIsActionLoading(true)
@@ -358,18 +348,7 @@ export default function CalendarPage() {
       const checkedInBookings = monthBookings.filter(b => b.status === 'CHECKED_IN').length
       const checkedOutBookings = monthBookings.filter(b => b.status === 'CHECKED_OUT').length
       const cancelledBookings = monthBookings.filter(b => b.status === 'CANCELLED').length
-      
-      // Calculate occupancy
-      const daysInMonth = monthEnd.getDate()
-      const totalRoomNights = totalRooms * daysInMonth
-      let occupiedRoomNights = 0
-      
-      for (let d = new Date(monthStart); d <= monthEnd; d.setDate(d.getDate() + 1)) {
-        const dayBookings = bookingsForDay(new Date(d))
-        occupiedRoomNights += dayBookings.reduce((sum, b) => sum + b.bookingItems.length, 0)
-      }
-      
-      const occupancyRate = totalRoomNights > 0 ? Math.round((occupiedRoomNights / totalRoomNights) * 100) : 0
+      const occupancyRate = Math.round(monthOccupancy)
 
       // Generate report content
       const reportData = {
@@ -384,7 +363,7 @@ export default function CalendarPage() {
           checkedOutBookings,
           cancelledBookings,
           occupancyRate,
-          totalRevenue: stats.revenue * 1000000,
+          totalRevenue: stats.revenue,
         },
         bookings: monthBookings.map(b => ({
           bookingCode: b.bookingCode,
@@ -461,12 +440,12 @@ export default function CalendarPage() {
               <tbody>
                 ${reportData.bookings.map(b => `
                   <tr>
-                    <td>${b.bookingCode}</td>
-                    <td>${b.guestName}</td>
+                    <td>${escapeHtml(b.bookingCode)}</td>
+                    <td>${escapeHtml(b.guestName)}</td>
                     <td>${new Date(b.checkIn).toLocaleDateString('vi-VN')}</td>
                     <td>${new Date(b.checkOut).toLocaleDateString('vi-VN')}</td>
-                    <td>${b.status}</td>
-                    <td>${b.rooms}</td>
+                    <td>${escapeHtml(b.status)}</td>
+                    <td>${escapeHtml(b.rooms)}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -550,12 +529,12 @@ export default function CalendarPage() {
                 <tbody>
                   ${reportData.bookings.map(b => `
                     <tr>
-                      <td>${b.bookingCode}</td>
-                      <td>${b.guestName}</td>
+                      <td>${escapeHtml(b.bookingCode)}</td>
+                      <td>${escapeHtml(b.guestName)}</td>
                       <td>${new Date(b.checkIn).toLocaleDateString('vi-VN')}</td>
                       <td>${new Date(b.checkOut).toLocaleDateString('vi-VN')}</td>
-                      <td>${b.status}</td>
-                      <td>${b.rooms}</td>
+                      <td>${escapeHtml(b.status)}</td>
+                      <td>${escapeHtml(b.rooms)}</td>
                     </tr>
                   `).join('')}
                 </tbody>
@@ -608,15 +587,19 @@ export default function CalendarPage() {
   const stats = React.useMemo(() => {
     let activeBookings = 0
     let checkedIn = 0
+    let guestsInHouse = 0
     let pending = 0
     let revenue = 0
 
     for (const b of bookings) {
       if (b.status === 'CANCELLED' || b.status === 'NO_SHOW') continue
       activeBookings++
-      if (b.status === 'CHECKED_IN') checkedIn++
+      if (b.status === 'CHECKED_IN') {
+        checkedIn++
+        guestsInHouse += (b.numAdults ?? 0) + (b.numChildren ?? 0)
+      }
       if (b.status === 'PENDING') pending++
-      revenue += 2800000
+      revenue += Number(b.totalAmount) || 0
     }
 
     const checkInsToday = bookings.filter(b => {
@@ -624,15 +607,31 @@ export default function CalendarPage() {
       return isSameDay(new Date(b.checkInDate), today)
     }).length
 
-    return { 
-      totalRooms, 
-      activeBookings, 
-      checkedIn, 
+    return {
+      totalRooms,
+      activeBookings,
+      checkedIn,
+      guestsInHouse,
       pending,
-      revenue: Math.round(revenue / 1000000),
+      revenue,
       checkInsToday
     }
   }, [bookings, totalRooms, today])
+
+  // Booked room-nights over room-nights available in the month shown, in %.
+  const monthOccupancy = (() => {
+    const year = currentDate.getFullYear()
+    const month = currentDate.getMonth()
+    const daysInMonth = new Date(year, month + 1, 0).getDate()
+    if (totalRooms === 0) return 0
+    let occupied = 0
+    for (let d = 1; d <= daysInMonth; d++) {
+      for (const b of bookingsForDay(new Date(year, month, d))) occupied += b.bookingItems.length
+    }
+    return (occupied / (totalRooms * daysInMonth)) * 100
+  })()
+
+  const occupancyToday = occupancyForDay(today)
 
   const todayCheckIns = React.useMemo(() => {
     return bookings.filter(b => {
@@ -649,11 +648,6 @@ export default function CalendarPage() {
   }, [bookings, today])
 
   const dayOfWeekLabel = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']
-
-  const getOccupancyPercent = (day: Date) => {
-    const occupied = Array.from(occupancyForDay(day).values()).reduce((a, b) => a + b, 0)
-    return totalRooms > 0 ? Math.round((occupied / totalRooms) * 100) : 0
-  }
 
   const getOccupancyBadge = (day: Date) => {
     const occupied = Array.from(occupancyForDay(day).values()).reduce((a, b) => a + b, 0)
@@ -689,12 +683,10 @@ export default function CalendarPage() {
               <div>
                 <div className="flex items-center gap-1.5 leading-none">
                   <span className="font-bold text-sm tracking-tight text-fg">DigiStay Hotel OS</span>
-                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-acc-soft text-acc border border-acc/30">PMS Pro</span>
                 </div>
                 <div className="flex items-center gap-1 text-[11px] text-muted mt-0.5">
                   <Building2 className="w-3 h-3 text-[10px] text-muted" />
-                  <span>Khách sạn Demo Hà Nội • Chi nhánh Phố Cổ</span>
-                  <i className="fa-solid fa-chevron-down text-[8px] text-muted ml-0.5 cursor-pointer hover:text-fg" />
+                  <span>{property?.name ?? '…'}</span>
                 </div>
               </div>
             </div>
@@ -706,73 +698,22 @@ export default function CalendarPage() {
             </nav>
           </div>
 
-          {/* Center: Quick Global Search */}
-          <div className="flex-1 max-w-md hidden lg:block">
-            <div className="relative">
-              <Search className="absolute left-3 top-2.5 w-3 h-3 text-muted" />
-              <input 
-                className="w-full bg-fg/[0.03] border border-line focus:border-acc focus:bg-panel focus:ring-1 focus:ring-acc rounded-lg pl-9 pr-12 py-1.5 text-xs text-fg placeholder-muted transition-all" 
-                placeholder="Tìm tên khách, số phòng, CCCD, mã #BK / #DSM..." 
-                type="text"
-              />
-              <kbd className="absolute right-2.5 top-2 px-1.5 py-0.5 text-[10px] font-semibold text-muted bg-panel border border-line rounded">⌘K</kbd>
-            </div>
-          </div>
-
-          {/* Right: Real-time Date/Clock, Alerts & Profile */}
+          {/* Right: Real-time Date/Clock */}
           <div className="flex items-center gap-3">
             {/* Live Indicator */}
             <div className="hidden xl:flex items-center gap-2 px-3 py-1 bg-ok-soft border border-ok/30 rounded-lg text-ok text-[11px] font-medium">
               <span className="w-2 h-2 rounded-full bg-ok animate-pulse" />
-              <span>Trực tuyến: <strong>{formatDate(currentTime, { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}</strong> • {formatDate(currentTime, { hour: '2-digit', minute: '2-digit' })}</span>
-            </div>
-            <button className="w-8 h-8 rounded-lg border border-line bg-panel hover:bg-fg/[0.03] text-muted flex items-center justify-center transition-colors relative" title="Thông báo buồng phòng">
-              <Bell className="w-3 h-3" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-acc ring-2 ring-panel" />
-            </button>
-            <button className="w-8 h-8 rounded-lg border border-line bg-panel hover:bg-fg/[0.03] text-muted flex items-center justify-center transition-colors" title="Trợ giúp & Phím tắt">
-              <HelpCircle className="w-3 h-3" />
-            </button>
-            {/* Receptionist User Profile */}
-            <div className="flex items-center gap-2 pl-2 border-l border-line cursor-pointer group">
-              <div className="w-8 h-8 rounded-full bg-ink text-on-ink flex items-center justify-center font-bold text-xs ring-2 ring-transparent group-hover:ring-acc transition-all">
-                TL
-              </div>
-              <div className="hidden sm:block text-left">
-                <p className="text-xs font-bold leading-tight text-fg group-hover:text-acc transition-colors">Thùy Linh</p>
-                <p className="text-[10px] text-muted leading-tight">Lễ tân ca sáng</p>
-              </div>
-              <i className="fa-solid fa-angle-down text-[10px] text-muted ml-0.5" />
+              {currentTime && (
+                <span>Trực tuyến: <strong>{formatDate(currentTime, { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}</strong> • {formatDate(currentTime, { hour: '2-digit', minute: '2-digit' })}</span>
+              )}
             </div>
           </div>
         </div>
 
         {/* Sub Action Bar: Controls, Views & Operations */}
         <div className="px-6 py-2 bg-panel border-t border-line flex flex-wrap items-center justify-between gap-3">
-          {/* Left side of Toolbar: View tabs, Navigator, Filters */}
+          {/* Left side of Toolbar: month navigator */}
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* View Segmented Switcher */}
-            <div className="inline-flex p-0.5 bg-fg/5 rounded-lg border border-line text-xs font-semibold">
-              <button 
-                onClick={() => setViewMode('month')}
-                className={`px-3 py-1 rounded-[6px] transition-colors ${viewMode === 'month' ? 'bg-panel text-acc shadow-xs font-bold' : 'text-muted hover:text-fg'}`}
-              >
-                Tháng
-              </button>
-              <button 
-                onClick={() => setViewMode('week')}
-                className={`px-3 py-1 rounded-[6px] transition-colors ${viewMode === 'week' ? 'bg-panel text-acc shadow-xs font-bold' : 'text-muted hover:text-fg'}`}
-              >
-                Timeline Tuần
-              </button>
-              <button 
-                onClick={() => setViewMode('day')}
-                className={`px-3 py-1 rounded-[6px] transition-colors ${viewMode === 'day' ? 'bg-panel text-acc shadow-xs font-bold' : 'text-muted hover:text-fg'}`}
-              >
-                Ngày
-              </button>
-            </div>
-
             {/* Month Navigation */}
             <div className="flex items-center bg-panel border border-line rounded-lg shadow-xs p-0.5">
               <button 
@@ -801,58 +742,6 @@ export default function CalendarPage() {
             >
               Hôm nay
             </button>
-
-            <div className="h-4 w-[1px] bg-fg/5 mx-0.5 hidden sm:block" />
-
-            {/* Quick Filters */}
-            <div className="flex items-center gap-2">
-              {/* Room Type Filter */}
-              <div className="relative">
-                <select 
-                  value={selectedRoomTypeFilter}
-                  onChange={(e) => setSelectedRoomTypeFilter(e.target.value)}
-                  className="text-xs bg-panel border border-line rounded-lg pl-2.5 pr-7 py-1.5 font-medium text-fg focus:ring-1 focus:ring-acc focus:border-acc shadow-xs appearance-none cursor-pointer"
-                >
-                  <option value="all">Hạng phòng: Tất cả ({totalRooms}p)</option>
-                  {roomTypes.map(rt => (
-                    <option key={rt.id} value={rt.id}>{rt.name} ({rt.totalRooms}p)</option>
-                  ))}
-                </select>
-                <i className="fa-solid fa-chevron-down absolute right-2.5 top-2.5 text-[8px] text-muted pointer-events-none" />
-              </div>
-
-              {/* Floor Filter */}
-              <div className="relative hidden sm:block">
-                <select 
-                  value={selectedFloorFilter}
-                  onChange={(e) => setSelectedFloorFilter(e.target.value)}
-                  className="text-xs bg-panel border border-line rounded-lg pl-2.5 pr-7 py-1.5 font-medium text-fg focus:ring-1 focus:ring-acc focus:border-acc shadow-xs appearance-none cursor-pointer"
-                >
-                  <option value="all">Tất cả tầng</option>
-                  <option value="1-2">Tầng 1-2</option>
-                  <option value="3">Tầng 3</option>
-                  <option value="4">Tầng 4</option>
-                  <option value="penthouse">Tầng Penthouse</option>
-                </select>
-                <i className="fa-solid fa-chevron-down absolute right-2.5 top-2.5 text-[8px] text-muted pointer-events-none" />
-              </div>
-
-              {/* Status Indicator Quick Legend */}
-              <div className="hidden xl:flex items-center gap-3 text-[11px] font-medium text-muted pl-2">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-ok" />
-                  Đã thanh toán
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-warn" />
-                  Chờ cọc VietQR
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-ink" />
-                  Check-in hôm nay
-                </span>
-              </div>
-            </div>
           </div>
 
           {/* Right side of Toolbar: CTA Buttons */}
@@ -905,7 +794,7 @@ export default function CalendarPage() {
             </div>
               <div className="text-[11px] text-ok font-semibold mt-0.5 flex items-center gap-1">
                 <PieChart className="w-3 h-3 text-ok" />
-                <span>Công suất tháng: <strong className="text-acc">76.4%</strong></span>
+                <span>Công suất tháng: <strong className="text-acc">{monthOccupancy.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}%</strong></span>
               </div>
             </div>
             <div className="w-10 h-10 rounded-lg bg-info-soft text-info border border-info/30 flex items-center justify-center text-base shrink-0">
@@ -923,7 +812,7 @@ export default function CalendarPage() {
             </div>
               <div className="text-[11px] text-muted font-medium mt-0.5 flex items-center gap-1">
                 <Users className="w-3 h-3 text-ok" />
-                <span>{stats.checkedIn * 2} khách lưu trú thực tế</span>
+                <span>{stats.guestsInHouse} khách đang lưu trú</span>
               </div>
             </div>
             <div className="w-10 h-10 rounded-lg bg-ok-soft text-ok border border-ok/30 flex items-center justify-center text-base shrink-0">
@@ -941,7 +830,7 @@ export default function CalendarPage() {
             </div>
               <div className="text-[11px] text-warn font-medium mt-0.5 flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                <span>{todayCheckIns.filter(b => b.status === 'PENDING').length} cọc VietQR chờ duyệt</span>
+                <span>{todayCheckIns.filter(b => b.status === 'PENDING').length} đơn chờ thanh toán</span>
               </div>
             </div>
             <div className="w-10 h-10 rounded-lg bg-warn-soft text-warn border border-warn/30 flex items-center justify-center text-base shrink-0">
@@ -952,16 +841,13 @@ export default function CalendarPage() {
           {/* Card 4: Doanh thu dự kiến */}
           <div className="bg-panel rounded-xl border border-line p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)] flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">Doanh thu tháng {formatDate(currentDate, { month: 'short' })}</span>
+              <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">Doanh thu dự kiến T{currentDate.getMonth() + 1}</span>
               <div className="flex items-baseline gap-2 mt-0.5">
-                <span className="text-2xl font-black text-fg">{stats.revenue} tr</span>
-                <span className="text-[11px] text-ok font-bold bg-ok-soft px-1 rounded border border-ok/30">
-                  <TrendingUp className="w-3 h-3 inline" /> +18% MoM
-                </span>
+                <span className="text-2xl font-black text-fg">{(stats.revenue / 1_000_000).toLocaleString('vi-VN', { maximumFractionDigits: 1 })} tr</span>
             </div>
               <div className="text-[11px] text-muted font-medium mt-0.5 flex items-center gap-1">
                 <CheckCircle className="w-3 h-3 text-acc" />
-                <span>{stats.activeBookings} booking đã xác nhận</span>
+                <span>{stats.activeBookings - stats.pending} booking đã xác nhận</span>
       </div>
             </div>
             <div className="w-10 h-10 rounded-lg bg-refund-soft text-refund border border-refund/30 flex items-center justify-center text-base shrink-0">
@@ -978,19 +864,8 @@ export default function CalendarPage() {
             <div className="px-4 py-2.5 bg-panel border-b border-line flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-xs text-fg">Lưới Lịch Đặt Buồng Theo Tháng</span>
-                <span className="text-[10px] text-muted bg-fg/5 px-2 py-0.5 rounded-full font-medium">35 ngày hiển thị</span>
+                <span className="text-[10px] text-muted bg-fg/5 px-2 py-0.5 rounded-full font-medium">{days.length} ngày hiển thị</span>
                   </div>
-              <div className="flex items-center gap-2 text-[11px] text-muted">
-                <span className="inline-flex items-center gap-1 font-medium">
-                  <span className="w-2 h-2 rounded-sm bg-ok" /> OTA Agoda/Booking
-                </span>
-                <span className="inline-flex items-center gap-1 font-medium">
-                  <span className="w-2 h-2 rounded-sm bg-info" /> Khách lẻ / Trực tiếp
-                </span>
-                <span className="inline-flex items-center gap-1 font-medium">
-                  <span className="w-2 h-2 rounded-sm bg-warn" /> Khách đoàn (Group)
-                </span>
-              </div>
             </div>
 
             {/* Days of Week Header */}
@@ -1102,24 +977,24 @@ export default function CalendarPage() {
                   </div>
                   <h2 className="font-bold text-xs text-fg">Tình Trạng Hạng Phòng</h2>
                 </div>
-                <span className="text-[11px] font-semibold text-muted">{totalRooms} phòng</span>
+                <span className="text-[11px] font-semibold text-muted">{totalRooms} phòng • hôm nay</span>
               </div>
 
               <div className="divide-y divide-line text-xs">
                 {roomTypes.length === 0 ? (
                   <p className="py-4 text-center text-muted text-xs">Chưa có hạng phòng nào.</p>
                 ) : (
-                  roomTypes.map((rt, idx) => {
-                    const occupancy = stats.totalRooms > 0 ? Math.round((rt.totalRooms * 0.7) / rt.totalRooms * 100) : 0
-                    const occupied = Math.round(rt.totalRooms * 0.7)
+                  roomTypes.map((rt) => {
+                    const occupied = Math.min(rt.totalRooms, occupancyToday.get(rt.id) ?? 0)
                     const empty = rt.totalRooms - occupied
+                    const percent = rt.totalRooms > 0 ? Math.round((occupied / rt.totalRooms) * 100) : 0
                     return (
                       <div key={rt.id} className="py-2.5">
                           <div className="flex items-center justify-between">
                             <div>
                             <h3 className="font-bold text-fg">{rt.name}</h3>
                             <p className="text-[11px] text-muted">
-                              {rt.totalRooms} phòng • Tầng {idx + 1}-{idx + 2}
+                              {rt.totalRooms} phòng
                             </p>
                             </div>
                           <div className="text-right">
@@ -1130,17 +1005,17 @@ export default function CalendarPage() {
                             }`}>
                               Trống {empty}p
                             </span>
-                            <div className="text-[10px] text-muted mt-0.5">{100 - Math.round(empty / rt.totalRooms * 100)}% kín</div>
+                            <div className="text-[10px] text-muted mt-0.5">{percent}% kín</div>
                           </div>
                         </div>
                         <div className="w-full bg-fg/5 h-1.5 rounded-full mt-1.5 overflow-hidden">
                           <div 
                             className={`h-full rounded-full ${
-                              (100 - Math.round(empty / rt.totalRooms * 100)) >= 90 ? 'bg-err' :
-                              (100 - Math.round(empty / rt.totalRooms * 100)) >= 70 ? 'bg-warn' :
+                              percent >= 90 ? 'bg-err' :
+                              percent >= 70 ? 'bg-warn' :
                               'bg-ok'
-                            }`} 
-                            style={{ width: `${100 - Math.round(empty / rt.totalRooms * 100)}%` }} 
+                            }`}
+                            style={{ width: `${percent}%` }}
                           />
                         </div>
                       </div>
@@ -1159,9 +1034,12 @@ export default function CalendarPage() {
                   </div>
                   <h2 className="font-bold text-xs text-fg">Lượt Đến & Đi Hôm Nay</h2>
                 </div>
-                <span className="text-[11px] text-acc font-semibold hover:underline cursor-pointer">
+                <Link
+                  href={routes.propertyBookings(params.slug, params.id)}
+                  className="text-[11px] text-acc font-semibold hover:underline"
+                >
                   Xem tất cả ({todayCheckIns.length + todayCheckOuts.length})
-                </span>
+                </Link>
               </div>
 
               <div className="space-y-2 mt-2.5">
@@ -1178,12 +1056,10 @@ export default function CalendarPage() {
                             <span className="text-[9px] bg-ok-soft text-ok border border-ok/30 px-1 rounded font-bold">Check-in</span>
                           </div>
                           <p className="text-[11px] text-muted mt-0.5">
-                            Phòng {b.bookingItems[0]?.roomNumber || '---'} • #{b.bookingCode} • 14:00
+                            Phòng {b.bookingItems[0]?.roomNumber || '---'} • #{b.bookingCode}
                           </p>
                         </div>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-ok-soft text-ok font-semibold">
-                          {b.status === 'PENDING' ? 'Chờ cọc' : 'Đã cọc 100%'}
-                        </span>
+                        <PaymentStatusBadge status={b.paymentStatus} className="shrink-0" />
                       </div>
                     </div>
                   ))
@@ -1199,56 +1075,16 @@ export default function CalendarPage() {
                           <span className="text-[9px] bg-warn-soft text-warn border border-warn/30 px-1 rounded font-bold">Check-out</span>
                         </div>
                         <p className="text-[11px] text-muted mt-0.5">
-                          Phòng {b.bookingItems[0]?.roomNumber || '---'} • #{b.bookingCode} • 12:00
+                          Phòng {b.bookingItems[0]?.roomNumber || '---'} • #{b.bookingCode}
                         </p>
                       </div>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-fg/5 text-muted font-semibold">
-                        Khách Agoda
-                      </span>
+                      <PaymentStatusBadge status={b.paymentStatus} className="shrink-0" />
                     </div>
                         </div>
                       ))}
                     </div>
                   </div>
 
-            {/* SECTION 3: Thao tác buồng phòng nhanh */}
-            <div className="bg-panel rounded-xl border border-line p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)]">
-              <h2 className="font-bold text-[11px] text-muted uppercase tracking-wider mb-2.5">Thao tác buồng phòng</h2>
-              <div className="grid grid-cols-2 gap-2">
-                <button 
-                  onClick={() => handleRoomAction('Dọn buồng')}
-                  className="p-2 rounded-lg border border-line hover:border-acc hover:bg-acc-soft/30 text-left transition-all group"
-                >
-                  <Trash2 className="w-4 h-4 text-acc mb-1 group-hover:scale-110 transition-transform" />
-                  <span className="block text-xs font-bold text-fg">Dọn buồng</span>
-                  <span className="text-[10px] text-muted">4 phòng chờ dọn</span>
-                </button>
-                <button 
-                  onClick={() => handleRoomAction('Khóa bảo trì')}
-                  className="p-2 rounded-lg border border-line hover:border-acc hover:bg-acc-soft/30 text-left transition-all group"
-                >
-                  <Wrench className="w-4 h-4 text-warn mb-1 group-hover:scale-110 transition-transform" />
-                  <span className="block text-xs font-bold text-fg">Khóa bảo trì</span>
-                  <span className="text-[10px] text-muted">1 phòng bảo dưỡng</span>
-                </button>
-                <button 
-                  onClick={() => handleRoomAction('Giá ngày')}
-                  className="p-2 rounded-lg border border-line hover:border-acc hover:bg-acc-soft/30 text-left transition-all group"
-                >
-                  <Tag className="w-4 h-4 text-refund mb-1 group-hover:scale-110 transition-transform" />
-                  <span className="block text-xs font-bold text-fg">Giá ngày</span>
-                  <span className="text-[10px] text-muted">Cập nhật cuối tuần</span>
-                </button>
-                <button 
-                  onClick={() => handleRoomAction('Đồng bộ OTA')}
-                  className="p-2 rounded-lg border border-line hover:border-acc hover:bg-acc-soft/30 text-left transition-all group"
-                >
-                  <RefreshCw className="w-4 h-4 text-ok mb-1 group-hover:rotate-180 transition-transform" />
-                  <span className="block text-xs font-bold text-fg">Đồng bộ OTA</span>
-                  <span className="text-[10px] text-ok font-semibold">Tự động (1 phút)</span>
-                </button>
-              </div>
-            </div>
           </aside>
         </div>
       </main>
@@ -1271,9 +1107,6 @@ export default function CalendarPage() {
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-ok-soft text-ok border border-ok/30">
                       <span className="w-1.5 h-1.5 rounded-full bg-ok mr-1.5 animate-pulse"></span> Lễ tân / Walk-in
                     </span>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-muted mt-0.5">
-                    <span className="font-mono font-medium text-fg bg-fg/10 px-1.5 py-0.5 rounded">Mã dự kiến: #RES-{Date.now().toString(36).toUpperCase().slice(-6)}</span>
                   </div>
                 </div>
               </div>
@@ -1345,7 +1178,7 @@ export default function CalendarPage() {
                       {/* Email */}
                       <div className="space-y-1.5">
                         <label className="block text-xs font-semibold text-fg">
-                          Email <span className="text-xs font-normal text-muted">(Nhận mã QR check-in)</span>
+                          Email <span className="text-err">*</span> <span className="text-xs font-normal text-muted">(Nhận email xác nhận)</span>
                         </label>
                         <div className="relative rounded-lg shadow-xs">
                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted">
@@ -1354,25 +1187,10 @@ export default function CalendarPage() {
                           <input
                             className="block w-full pl-9 pr-3 py-2 text-sm text-fg rounded-lg border-line focus:ring-2 focus:ring-err/30 focus:border-err/30 transition"
                             placeholder="an.nguyen@example.com"
+                            required
                             type="email"
                             value={newBooking.guestEmail}
                             onChange={(e) => setNewBooking(prev => ({ ...prev, guestEmail: e.target.value }))}
-                          />
-                        </div>
-                      </div>
-                      {/* CCCD/Passport */}
-                      <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold text-fg">
-                          Số CCCD / Hộ chiếu <span className="text-xs font-normal text-muted">(Tùy chọn)</span>
-                        </label>
-                        <div className="relative rounded-lg shadow-xs">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2H9.17A3.001 3.001 0 0112 14z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path></svg>
-                          </div>
-                          <input
-                            className="block w-full pl-9 pr-3 py-2 text-sm text-fg rounded-lg border-line focus:ring-2 focus:ring-err/30 focus:border-err/30 transition"
-                            placeholder="00120101xxxx"
-                            type="text"
                           />
                         </div>
                       </div>
@@ -1444,8 +1262,8 @@ export default function CalendarPage() {
                     </div>
 
                     {/* Chọn hạng phòng */}
-                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 mb-4">
-                      <div className="sm:col-span-8 space-y-1.5">
+                    <div className="mb-4">
+                      <div className="space-y-1.5">
                         <label className="block text-xs font-semibold text-fg">
                           Hạng phòng <span className="text-err">*</span>
                         </label>
@@ -1457,24 +1275,14 @@ export default function CalendarPage() {
                         >
                           <option value="">Chọn hạng phòng</option>
                           {roomTypes.map(rt => (
-                            <option key={rt.id} value={rt.id}>{rt.name} — Còn {rt.totalRooms} phòng</option>
+                            <option key={rt.id} value={rt.id}>{rt.name} — {rt.totalRooms} phòng</option>
                           ))}
                         </select>
               </div>
-                      <div className="sm:col-span-4 space-y-1.5">
-                        <label className="block text-xs font-semibold text-fg">
-                          Số phòng <span className="text-muted font-normal">(Tùy chọn)</span>
-                        </label>
-                        <select className="block w-full rounded-lg border-line py-2.5 px-3 text-xs font-bold text-fg focus:ring-2 focus:ring-err/30 focus:border-err/30">
-                          <option value="">Chưa gán (Tự động)</option>
-                          <option value="302">Phòng 302 (Tầng 3)</option>
-                          <option value="305">Phòng 305 (Tầng 3)</option>
-                        </select>
-        </div>
       </div>
 
                     {/* Số lượng khách */}
-                    <div className="grid grid-cols-3 gap-3 pt-1">
+                    <div className="grid grid-cols-2 gap-3 pt-1">
                       <div>
                         <label className="block text-[11px] font-medium text-muted mb-1">Người lớn</label>
                         <div className="flex items-center border border-line rounded-lg overflow-hidden bg-panel">
@@ -1521,13 +1329,6 @@ export default function CalendarPage() {
                           >+</button>
                         </div>
                   </div>
-                  <div>
-                        <label className="block text-[11px] font-medium text-muted mb-1">Extra Bed</label>
-                        <select className="w-full text-xs font-medium rounded-lg border-line py-1.5 px-2 bg-panel focus:ring-err/30 focus:border-err/30">
-                          <option value="0">Không thêm</option>
-                          <option value="1">+1 Giường (+250k)</option>
-                        </select>
-                  </div>
                     </div>
                   </div>
 
@@ -1566,7 +1367,6 @@ export default function CalendarPage() {
                           <h3 className="text-base font-bold text-fg mt-1">
                             {roomTypes.find(rt => rt.id === newBooking.roomTypeId)?.name || 'Chọn hạng phòng'}
                           </h3>
-                          <p className="text-xs text-muted">Phòng • Tầng • Giường</p>
                   </div>
                         <div className="text-right">
                           <span className="text-xs text-muted block">Thời gian</span>
@@ -1578,46 +1378,11 @@ export default function CalendarPage() {
                       <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-warn/30 text-xs">
                         <div>
                           <span className="text-muted text-[11px] block">Nhận:</span>
-                          <span className="font-semibold text-fg">{newBooking.checkInDate ? format(new Date(newBooking.checkInDate), 'HH:mm • dd/MM/yyyy') : '--:--'} 14:00</span>
+                          <span className="font-semibold text-fg">{newBooking.checkInDate ? format(parseISO(newBooking.checkInDate), 'dd/MM/yyyy') : '--'} • 14:00</span>
                         </div>
                         <div>
                           <span className="text-muted text-[11px] block">Trả:</span>
-                          <span className="font-semibold text-fg">{newBooking.checkOutDate ? format(new Date(newBooking.checkOutDate), 'HH:mm • dd/MM/yyyy') : '--:--'} 12:00</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Bảng kê chi phí */}
-                    <div className="bg-panel rounded-xl border border-line/80 p-5 shadow-xs space-y-3.5">
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-fg flex items-center justify-between">
-                        <span>Bảng kê chi phí dự kiến</span>
-                        <span className="text-[11px] text-muted font-normal">VNĐ</span>
-                      </h3>
-                      <div className="space-y-2 text-xs divide-y divide-line">
-                        <div className="flex justify-between py-1 text-muted">
-                          <span>Tiền phòng ({Math.ceil((new Date(newBooking.checkOutDate).getTime() - new Date(newBooking.checkInDate).getTime()) / (1000 * 60 * 60 * 24))} đêm)</span>
-                          <span className="font-semibold text-fg">1.200.000₫</span>
-                        </div>
-                        <div className="flex justify-between py-1 text-muted">
-                          <span>Thuế & Phí phục vụ</span>
-                          <span className="text-fg">VAT 8% + SVC 5%</span>
-                        </div>
-                        <div className="flex justify-between py-1 text-muted items-center">
-                          <span className="flex items-center gap-1 text-err cursor-pointer hover:underline">
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path></svg>
-                            Mã ưu đãi / Voucher
-                          </span>
-                          <span className="text-muted font-mono">-0₫</span>
-                        </div>
-                      </div>
-                      {/* Tổng tiền thanh toán */}
-                      <div className="p-3 bg-fg/[0.03] rounded-lg flex items-center justify-between border border-line">
-                        <div>
-                          <span className="text-xs font-bold text-fg block">Tổng tiền phòng:</span>
-                          <span className="text-[11px] text-muted">Đã gồm thuế & phụ phí</span>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-xl font-extrabold text-err">1.200.000₫</span>
+                          <span className="font-semibold text-fg">{newBooking.checkOutDate ? format(parseISO(newBooking.checkOutDate), 'dd/MM/yyyy') : '--'} • 12:00</span>
                         </div>
                       </div>
                     </div>
@@ -1625,7 +1390,7 @@ export default function CalendarPage() {
                     {/* Quick Tip / Policy info */}
                     <div className="text-[11px] text-muted bg-fg/[0.03] px-3.5 py-2.5 rounded-lg border border-line/60 flex items-center gap-2">
                       <svg className="w-4 h-4 text-warn shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path></svg>
-                      <span>Đơn tạo ở trạng thái Chờ cọc sẽ tự động hủy sau 2 giờ nếu khách chưa thanh toán.</span>
+                      <span>Tiền phòng được tính theo giá ngày thường / cuối tuần của hạng phòng khi tạo đơn.</span>
                     </div>
                   </div>
                 </aside>
@@ -1664,7 +1429,7 @@ export default function CalendarPage() {
                       <path d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
                     </svg>
                   )}
-                  <span>Tạo Đơn & Xuất Phiếu</span>
+                  <span>Tạo đơn</span>
                 </button>
             </div>
             </footer>
@@ -1841,7 +1606,7 @@ export default function CalendarPage() {
               <strong>Báo cáo tháng {currentDate.getMonth() + 1}/{currentDate.getFullYear()}</strong>
             </p>
             <p className="text-xs text-warn mt-1">
-              Tổng đơn: {bookings.length} | Đã xác nhận: {bookings.filter(b => b.status === 'CONFIRMED' || b.status === 'CHECKED_IN').length} | Công suất: {getOccupancyPercent(today)}%
+              Tổng đơn: {bookings.length} | Đã xác nhận: {bookings.filter(b => b.status === 'CONFIRMED' || b.status === 'CHECKED_IN').length} | Công suất: {Math.round(monthOccupancy)}%
             </p>
         </div>
 
