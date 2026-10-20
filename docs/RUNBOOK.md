@@ -582,7 +582,7 @@ gắn mới phải thêm TXT mới. Kiểm thất bại (kể cả DNS lỗi t�
 `*.digistay.vn`), và `/api/website/ssl/provision` vẫn là bản mô phỏng. Phần này chỉ bảo đảm không
 ai gắn được tên miền của người khác trước khi tính năng đó có.
 
-**Trước khi deploy migration `20261021030000_custom_domain_unique`**, đo trên production:
+**Trước khi deploy migration `20261021050000_custom_domain_unique`**, đo trên production:
 ```bash
 sudo docker compose exec -T postgres psql -U digistay -d digistay -c \
   "SELECT lower(\"customDomain\"), count(*) FROM website_settings
