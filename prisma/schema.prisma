@@ -951,6 +951,13 @@ model PropertyEinvoice {
   remainingNumbers Int?
   /// encrypted; part of the webhook URL given to Mắt Bão support
   webhookToken     String?
+  /// Issue an invoice by itself once a booking is fully paid (jobs.ts).
+  /// Off by default: the hotel's accountant decides
+  autoIssue        Boolean   @default(false)
+  /// when autoIssue was last turned on: bookings paid before are left alone
+  autoIssueSince   DateTime?
+  /// email each issued invoice (PDF attached) to the buyer (delivery.ts)
+  emailInvoices    Boolean   @default(true)
   connectedById    String?
 
   createdAt DateTime @default(now())
@@ -1038,6 +1045,17 @@ model Invoice {
   adjustsInvoiceId  String?
   adjustsInvoice    Invoice?  @relation("InvoiceAdjustment", fields: [adjustsInvoiceId], references: [id])
   adjustments       Invoice[] @relation("InvoiceAdjustment")
+
+  /// created by the auto-issue job (jobs.ts), not by staff
+  autoIssued      Boolean   @default(false)
+  /// Email to the buyer once issued (delivery.ts): PENDING, SENDING, SENT,
+  /// FAILED (tried again at emailNextAt while it is set), SKIPPED
+  emailStatus     String?
+  emailAttempts   Int       @default(0)
+  /// next attempt; while SENDING, when the claim expires
+  emailNextAt     DateTime?
+  emailedAt       DateTime?
+  emailError      String?
   
   // Metadata
   metadata        Json?

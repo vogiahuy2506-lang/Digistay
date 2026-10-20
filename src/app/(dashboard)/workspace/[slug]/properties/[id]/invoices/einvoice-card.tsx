@@ -17,6 +17,11 @@ export interface EinvoiceStatus {
   verifiedAt?: string | null
   /** owners/ADMINs only: contains a secret */
   webhookUrl?: string
+  /** issue by itself once a booking is fully paid (src/lib/einvoice/jobs.ts) */
+  autoIssue?: boolean
+  autoIssueSince?: string | null
+  /** email issued invoices to the buyer (src/lib/einvoice/delivery.ts) */
+  emailInvoices?: boolean
 }
 
 const yearPrefix = `C${String(new Date().getFullYear()).slice(-2)}`
@@ -93,6 +98,33 @@ export function EinvoiceCard({
     }
   }
 
+  const setOption = async (option: 'autoIssue' | 'emailInvoices', value: boolean) => {
+    if (
+      option === 'autoIssue' &&
+      value &&
+      !confirm(
+        `Tự xuất hoá đơn: từ bây giờ, mỗi đơn đặt phòng được thanh toán đủ sẽ tự được phát hành một hoá đơn bằng tổng tiền đơn${
+          status?.environment === 'PRODUCTION' ? ' (môi trường CHÍNH THỨC: hoá đơn thật)' : ''
+        }. Người mua là công ty khách nhập khi đặt phòng, không có thì là khách. Đơn đã có hoá đơn thì không xuất thêm. Bật?`
+      )
+    ) {
+      return
+    }
+    setError('')
+    const res = await fetch(`/api/properties/${propertyId}/einvoice`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [option]: value }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!data.success) {
+      setError(data.error || 'Không lưu được')
+      return
+    }
+    setStatus(data.data)
+    onStatus(data.data)
+  }
+
   const disconnect = async () => {
     if (!confirm('Ngắt kết nối Mắt Bão? Hoá đơn đã phát hành vẫn còn trên Mắt Bão; hoá đơn mới sẽ không phát hành được.')) return
     await fetch(`/api/properties/${propertyId}/einvoice`, { method: 'DELETE' })
@@ -148,6 +180,38 @@ export function EinvoiceCard({
             </div>
           )}
         </div>
+
+        {status.connected && !editing && (
+          <div className="border-t pt-3 space-y-2 text-sm">
+            <label className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={Boolean(status.autoIssue)}
+                onChange={(e) => setOption('autoIssue', e.target.checked)}
+              />
+              <span>
+                <span className="font-medium text-gray-900">Tự xuất hoá đơn khi đơn đã thanh toán đủ</span>
+                <span className="block text-xs text-gray-500">
+                  Áp dụng cho đơn thanh toán đủ từ lúc bật. Tiền cọc chưa đủ thì chưa xuất. Thông tin công ty không hợp
+                  lệ thì hoá đơn chờ nhân viên sửa.
+                </span>
+              </span>
+            </label>
+            <label className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={status.emailInvoices !== false}
+                onChange={(e) => setOption('emailInvoices', e.target.checked)}
+              />
+              <span>
+                <span className="font-medium text-gray-900">Gửi hoá đơn (PDF) qua email cho người mua sau khi phát hành</span>
+              </span>
+            </label>
+            {error && <p className="text-sm text-red-600">{error}</p>}
+          </div>
+        )}
 
         {status.connected && status.webhookUrl && !editing && (
           <div className="text-xs text-gray-500 border-t pt-3">

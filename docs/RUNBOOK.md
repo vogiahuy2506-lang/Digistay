@@ -468,11 +468,15 @@ khách sạn tạo lại khoá ở nhà cung cấp, vì ai có DB cũ và khoá 
 
 ## Đối soát PayOS định kỳ
 
-Webhook của PayOS có thể bị lỡ, ví dụ khi site đang deploy hoặc PayOS thử lại vài lần rồi bỏ.
-Timer `digistay-reconcile` cứ 10 phút hỏi PayOS về các link đang chờ trong 3 ngày gần nhất, rồi
-ghi nhận kết quả giống hệt webhook (chạy lặp cũng không ghi hai lần). Endpoint
-`/api/internal/payos-reconcile` cần header `CRON_SECRET`, và nginx không mở `/api/internal/` ra
-ngoài.
+Timer `digistay-reconcile` cứ 10 phút chạy `docker/systemd/scheduled-jobs.sh`, gọi hai việc bên
+trong container app (cần header `CRON_SECRET`; nginx không mở `/api/internal/` ra ngoài):
+
+- `/api/internal/payos-reconcile`: webhook của PayOS có thể bị lỡ, ví dụ khi site đang deploy
+  hoặc PayOS thử lại vài lần rồi bỏ. Việc này hỏi PayOS về các link đang chờ trong 3 ngày gần
+  nhất, rồi ghi nhận kết quả giống hệt webhook (chạy lặp cũng không ghi hai lần).
+- `/api/internal/einvoice-jobs`: tự xuất hoá đơn cho đơn đã trả đủ (khách sạn nào bật), phát hành
+  lại hoá đơn tự động chưa rõ kết quả, và gửi email hoá đơn còn chờ (xem "Hoá đơn tự động và
+  email" bên dưới).
 
 ### Cài đặt một lần
 
@@ -486,12 +490,29 @@ sudo cp docker/systemd/digistay-reconcile.{service,timer} /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now digistay-reconcile.timer
 sudo systemctl start digistay-reconcile.service          # chạy thử ngay
-sudo journalctl -u digistay-reconcile -n 5 --no-pager    # phải có {"success":true,...}
+sudo journalctl -u digistay-reconcile -n 5 --no-pager    # hai dòng {"success":true,...}
 ```
 
-Log của app có dòng `[payos] reconcile {...}` sau mỗi lượt. Nếu thấy `paid without a webhook`
+Đã cài bản cũ (chỉ đối soát PayOS)? Chép lại hai file unit như trên rồi `daemon-reload`.
+
+Log của app có dòng `[payos] reconcile {...}` và `[einvoice] jobs {...}` sau mỗi lượt. Nếu thấy `paid without a webhook`
 nghĩa là webhook của khách sạn đó đang lỡ: kiểm tra URL webhook trong PayOS (bấm "Đổi khoá" ở
 trang Tài khoản ngân hàng để đăng ký lại).
+
+### Hoá đơn tự động và email
+
+- **Email hoá đơn**: hoá đơn vừa phát hành được gửi cho người mua, đính kèm PDF lấy từ Mắt Bão
+  (email công ty nếu là hoá đơn công ty). Cần SMTP (`EMAIL_SERVER_*` trong `.env.production`);
+  chưa cấu hình thì hoá đơn hiện "Gửi email lỗi: Máy chủ chưa cấu hình gửi email". Lỗi được thử
+  lại sau 10 phút, 30 phút, 2 giờ, 6 giờ rồi dừng; nhân viên bấm "Gửi lại email" bất cứ lúc nào.
+  Khách sạn tắt được việc gửi trong thẻ Mắt Bão ở trang Hoá đơn.
+- **Tự xuất hoá đơn** (mặc định tắt, owner/ADMIN bật trong thẻ Mắt Bão): đơn **thanh toán đủ** kể
+  từ lúc bật, chưa có hoá đơn nào, được xuất một hoá đơn bằng tổng tiền đơn. Người mua là công ty
+  khách nhập khi đặt phòng (`vatCompany`, `vatTaxCode`...), không có thì là khách. Thông tin công ty
+  không hợp lệ thì hoá đơn nằm ở "Chờ phát hành" kèm lý do, chờ nhân viên sửa. Mỗi đơn chỉ một lần:
+  đơn đã có hoá đơn (kể cả đã huỷ) thì để nhân viên lo; đơn trả thêm sau đó (gia hạn) thì nhân viên
+  lập điều chỉnh tăng.
+- Kiểm tra: `docker logs digistay-app --since 1h | grep '\[einvoice\]'`.
 
 ---
 

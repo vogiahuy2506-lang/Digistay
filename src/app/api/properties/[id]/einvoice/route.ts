@@ -75,6 +75,56 @@ export async function PUT(request: NextRequest, props: Props) {
   }
 }
 
+const optionsSchema = z
+  .object({ autoIssue: z.boolean().optional(), emailInvoices: z.boolean().optional() })
+  .refine((v) => v.autoIssue !== undefined || v.emailInvoices !== undefined, 'Không có gì để lưu')
+
+/**
+ * PATCH — auto-issue and invoice emails (src/lib/einvoice/jobs.ts,
+ * delivery.ts). Owner/ADMIN: auto-issue puts legal invoices out without
+ * anyone pressing a button. Turning it on applies to bookings paid from now.
+ */
+export async function PATCH(request: NextRequest, props: Props) {
+  const { id } = await props.params
+  const workspaceId = await workspaceOf(id)
+  if (!workspaceId) return NOT_FOUND()
+  const access = await requireWorkspaceRole(workspaceId, WorkspaceRoles.ADMINS)
+  if (!access.ok) return access.response
+
+  const parsed = optionsSchema.safeParse(await request.json().catch(() => ({})))
+  if (!parsed.success) {
+    return NextResponse.json({ success: false, error: parsed.error.errors[0].message }, { status: 400 })
+  }
+  const current = await prisma.propertyEinvoice.findUnique({ where: { propertyId: id } })
+  if (!current?.verifiedAt) {
+    return NextResponse.json({ success: false, error: 'Khách sạn chưa kết nối hoá đơn điện tử Mắt Bão' }, { status: 400 })
+  }
+  const { autoIssue, emailInvoices } = parsed.data
+  await prisma.propertyEinvoice.update({
+    where: { propertyId: id },
+    data: {
+      ...(emailInvoices !== undefined && { emailInvoices }),
+      ...(autoIssue !== undefined && {
+        autoIssue,
+        // Restarting the clock: bookings paid while it was off stay manual.
+        ...(autoIssue && !current.autoIssue && { autoIssueSince: new Date() }),
+      }),
+    },
+  })
+  await prisma.activityLog.create({
+    data: {
+      userId: access.userId,
+      workspaceId,
+      propertyId: id,
+      action: 'EINVOICE_OPTIONS',
+      entityType: 'PROPERTY',
+      entityId: id,
+      metadata: parsed.data,
+    },
+  })
+  return NextResponse.json({ success: true, data: await getEinvoiceStatus(id, { includeWebhookUrl: true }) })
+}
+
 /** DELETE — disconnect. Issued invoices stay on Mắt Bão. */
 export async function DELETE(_request: NextRequest, props: Props) {
   const { id } = await props.params

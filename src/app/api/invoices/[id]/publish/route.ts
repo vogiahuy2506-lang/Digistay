@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireSession, getWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { EinvoiceError, publishInvoice } from '@/lib/einvoice/matbao'
+import { emailAfterResponse } from '@/lib/einvoice/delivery'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -32,6 +33,7 @@ export async function POST(_request: NextRequest, props: RouteParams) {
 
   try {
     const published = await publishInvoice(id, sess.session.user.id)
+    if (published.emailStatus === 'PENDING') emailAfterResponse(id)
     return NextResponse.json({ success: true, data: published, message: 'Phát hành hóa đơn thành công' })
   } catch (error) {
     if (error instanceof EinvoiceError) {

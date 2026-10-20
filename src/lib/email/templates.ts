@@ -568,43 +568,42 @@ export function workspaceInviteTemplate(props: WorkspaceInviteTemplateProps): { 
 // ============================================
 export function invoiceEmailTemplate(props: {
   customerName: string
-  invoiceNumber: string
+  einvoiceNumber: string
+  series: string
+  lookupCode: string
   bookingCode: string
   propertyName: string
   totalAmount: number
   taxAmount: number
-  pdfUrl: string
-  xmlUrl?: string
+  note?: string
   currency?: string
 }): { html: string; text: string; subject: string } {
-  const { customerName, invoiceNumber, bookingCode, propertyName, totalAmount, taxAmount, pdfUrl, xmlUrl, currency = 'VND' } = props
+  const { customerName, einvoiceNumber, series, lookupCode, bookingCode, propertyName, totalAmount, taxAmount, note, currency = 'VND' } = props
+  const row = (label: string, value: string) => `
+            <tr>
+              <td style="padding: 6px 0; font-size: 13px; color: ${BRAND.textMuted};">${label}</td>
+              <td align="right" style="padding: 6px 0; font-size: 14px; color: ${BRAND.text}; font-weight: 600;">${escapeHtml(value)}</td>
+            </tr>`
 
   const bodyHtml = `
     <h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: ${BRAND.text};">🧾 Hóa đơn điện tử</h1>
     <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: ${BRAND.textMuted};">
       Xin chào <strong style="color: ${BRAND.text};">${escapeHtml(customerName)}</strong>,<br/>
-      Cảm ơn bạn đã sử dụng dịch vụ. Hóa đơn điện tử của bạn đã được phát hành.
+      ${escapeHtml(propertyName)} đã phát hành hóa đơn điện tử cho đơn đặt phòng của bạn. Bản PDF được đính kèm email này.
     </p>
 
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0; border: 1px solid ${BRAND.border}; border-radius: 12px; overflow: hidden;">
       <tr>
         <td style="padding: 20px; background-color: ${BRAND.surface};">
           <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-            <tr>
-              <td style="padding: 6px 0; font-size: 13px; color: ${BRAND.textMuted};">Số hóa đơn</td>
-              <td align="right" style="padding: 6px 0; font-size: 14px; color: ${BRAND.text}; font-weight: 600;">${escapeHtml(invoiceNumber)}</td>
-            </tr>
-            <tr>
-              <td style="padding: 6px 0; font-size: 13px; color: ${BRAND.textMuted};">Mã đặt phòng</td>
-              <td align="right" style="padding: 6px 0; font-size: 14px; color: ${BRAND.text}; font-weight: 600;">${escapeHtml(bookingCode)}</td>
-            </tr>
-            <tr>
-              <td style="padding: 6px 0; font-size: 13px; color: ${BRAND.textMuted};">Khách sạn</td>
-              <td align="right" style="padding: 6px 0; font-size: 14px; color: ${BRAND.text}; font-weight: 600;">${escapeHtml(propertyName)}</td>
-            </tr>
+            ${row('Số hóa đơn', `${einvoiceNumber} (ký hiệu ${series})`)}
+            ${row('Mã tra cứu', lookupCode)}
+            ${row('Mã đặt phòng', bookingCode)}
+            ${row('Khách sạn', propertyName)}
+            ${note ? row('Ghi chú', note) : ''}
             <tr><td colspan="2" style="padding: 8px 0;"><div style="border-top: 1px solid ${BRAND.border};"></div></td></tr>
             <tr>
-              <td style="padding: 6px 0; font-size: 13px; color: ${BRAND.textMuted};">Thuế VAT</td>
+              <td style="padding: 6px 0; font-size: 13px; color: ${BRAND.textMuted};">Thuế GTGT</td>
               <td align="right" style="padding: 6px 0; font-size: 14px; color: ${BRAND.text};">${formatVnd(taxAmount, currency)}</td>
             </tr>
             <tr>
@@ -616,25 +615,23 @@ export function invoiceEmailTemplate(props: {
       </tr>
     </table>
 
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0;">
-      <tr>
-        <td align="center">
-          <a href="${escapeHtml(pdfUrl)}" style="display: inline-block; background: linear-gradient(135deg, ${BRAND.primary} 0%, ${BRAND.primaryLight} 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-size: 15px; font-weight: 600; box-shadow: 0 4px 12px rgba(169, 49, 25, 0.25);">
-            📄 Tải hóa đơn PDF
-          </a>
-          ${xmlUrl ? `
-          <a href="${escapeHtml(xmlUrl)}" style="display: inline-block; margin-left: 8px; background-color: ${BRAND.surface}; color: ${BRAND.primary}; text-decoration: none; padding: 14px 24px; border-radius: 10px; font-size: 15px; font-weight: 600; border: 1px solid ${BRAND.primary};">
-            Tải XML
-          </a>
-          ` : ''}
-        </td>
-      </tr>
-    </table>
+    <p style="margin: 0; font-size: 13px; line-height: 1.6; color: ${BRAND.textMuted};">
+      Hóa đơn được phát hành qua Mắt Bão; có thể tra cứu trên cổng hóa đơn của Mắt Bão bằng mã tra cứu ở trên.
+    </p>
   `
 
   return {
-    html: baseLayout({ previewText: `Hóa đơn ${invoiceNumber} - ${formatVnd(totalAmount, currency)}`, bodyHtml }),
-    text: `Hóa đơn ${invoiceNumber}\nBooking: ${bookingCode}\nTổng: ${formatVnd(totalAmount, currency)}\nPDF: ${pdfUrl}${xmlUrl ? `\nXML: ${xmlUrl}` : ''}`,
-    subject: `[${invoiceNumber}] Hóa đơn từ ${propertyName}`,
+    html: baseLayout({ previewText: `Hóa đơn số ${einvoiceNumber} - ${formatVnd(totalAmount, currency)}`, bodyHtml }),
+    text: [
+      `Xin chào ${customerName},`,
+      `${propertyName} đã phát hành hóa đơn điện tử cho đơn đặt phòng của bạn (PDF đính kèm).`,
+      `Số hóa đơn: ${einvoiceNumber} (ký hiệu ${series})`,
+      `Mã tra cứu: ${lookupCode}`,
+      `Mã đặt phòng: ${bookingCode}`,
+      ...(note ? [`Ghi chú: ${note}`] : []),
+      `Thuế GTGT: ${formatVnd(taxAmount, currency)}`,
+      `Tổng cộng: ${formatVnd(totalAmount, currency)}`,
+    ].join('\n'),
+    subject: `Hóa đơn điện tử số ${einvoiceNumber} - ${propertyName}`,
   }
 }
