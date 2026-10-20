@@ -247,7 +247,7 @@ export default function ServicesPage() {
     return (
       <PageContainer>
         <div className="max-w-5xl mx-auto py-16 text-center">
-          <p className="text-gray-500">Không xác định được cơ sở.</p>
+          <p className="text-muted">Không xác định được cơ sở.</p>
         </div>
       </PageContainer>
     )
@@ -258,30 +258,30 @@ export default function ServicesPage() {
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Tiện ích & Dịch vụ</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-semibold text-fg">Tiện ích & Dịch vụ</h1>
+          <p className="text-sm text-muted mt-1">
             Quản lý tiện ích và dịch vụ cho cơ sở của bạn
           </p>
         </div>
 
         {/* Amenities Section */}
-        <section className="bg-white rounded-xl border border-gray-200 p-6">
+        <section className="bg-panel rounded-xl border border-line p-6">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="text-lg font-medium text-gray-900">Tiện ích</h2>
-              <p className="text-sm text-gray-500 mt-0.5">
+              <h2 className="text-lg font-medium text-fg">Tiện ích</h2>
+              <p className="text-sm text-muted mt-0.5">
                 {selectedCount > 0 ? `${selectedCount} tiện ích đã chọn` : 'Chọn tiện ích cho cơ sở'}
               </p>
             </div>
             <div className="flex items-center gap-3">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                 <input
                   type="text"
                   placeholder="Tìm kiếm..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 w-56"
+                  className="pl-9 pr-4 py-2 text-sm border border-line rounded-lg focus:outline-none focus:border-muted w-56"
                 />
               </div>
               <Button
@@ -298,14 +298,14 @@ export default function ServicesPage() {
           {isLoading ? (
             <div className="grid grid-cols-3 gap-3">
               {[1, 2, 3, 4, 5, 6].map(i => (
-                <div key={i} className="h-14 bg-gray-100 rounded-lg animate-pulse" />
+                <div key={i} className="h-14 bg-fg/5 rounded-lg animate-pulse" />
               ))}
             </div>
           ) : amenities.length === 0 ? (
-            <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg">
-              <p className="text-sm text-gray-500">
+            <div className="text-center py-12 border-2 border-dashed border-line rounded-lg">
+              <p className="text-sm text-muted">
                 Chưa có tiện ích. Chạy{' '}
-                <code className="bg-gray-100 px-2 py-0.5 rounded text-xs">
+                <code className="bg-fg/5 px-2 py-0.5 rounded text-xs">
                   npx tsx prisma/seed-amenities.ts
                 </code>
               </p>
@@ -314,7 +314,7 @@ export default function ServicesPage() {
             <div className="space-y-6">
               {Object.entries(groupedAmenities).map(([category, items]) => (
                 <div key={category}>
-                  <h3 className="text-sm font-medium text-gray-700 mb-3">
+                  <h3 className="text-sm font-medium text-fg mb-3">
                     {categoryLabels[category] || category}
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -328,13 +328,13 @@ export default function ServicesPage() {
                             flex items-center gap-3 px-4 py-3 rounded-lg border text-left
                             transition-colors
                             ${amenity.isSelected
-                              ? 'border-blue-500 bg-blue-50'
-                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                              ? 'border-info/30 bg-info-soft'
+                              : 'border-line hover:border-line hover:bg-fg/[0.03]'
                             }
                           `}
                         >
-                          <IconComponent className={`w-5 h-5 ${amenity.isSelected ? 'text-blue-600' : 'text-gray-500'}`} />
-                          <span className={`text-sm font-medium ${amenity.isSelected ? 'text-blue-700' : 'text-gray-700'}`}>
+                          <IconComponent className={`w-5 h-5 ${amenity.isSelected ? 'text-info' : 'text-muted'}`} />
+                          <span className={`text-sm font-medium ${amenity.isSelected ? 'text-info' : 'text-fg'}`}>
                             {amenity.name}
                           </span>
                         </button>
@@ -348,11 +348,11 @@ export default function ServicesPage() {
         </section>
 
         {/* Services Section */}
-        <section className="bg-white rounded-xl border border-gray-200 p-6">
+        <section className="bg-panel rounded-xl border border-line p-6">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="text-lg font-medium text-gray-900">Dịch vụ bổ sung</h2>
-              <p className="text-sm text-gray-500 mt-0.5">
+              <h2 className="text-lg font-medium text-fg">Dịch vụ bổ sung</h2>
+              <p className="text-sm text-muted mt-0.5">
                 {services.length > 0 ? `${services.length} dịch vụ` : 'Chưa có dịch vụ nào'}
               </p>
             </div>
@@ -368,14 +368,14 @@ export default function ServicesPage() {
           {isLoading ? (
             <div className="space-y-2">
               {[1, 2].map(i => (
-                <div key={i} className="h-16 bg-gray-100 rounded-lg animate-pulse" />
+                <div key={i} className="h-16 bg-fg/5 rounded-lg animate-pulse" />
               ))}
             </div>
           ) : services.length === 0 ? (
-            <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg">
-              <ConciergeBell className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-              <p className="text-sm text-gray-600 font-medium">Chưa có dịch vụ nào</p>
-              <p className="text-xs text-gray-400 mt-1 mb-4">Tạo dịch vụ để khách có thể đặt thêm</p>
+            <div className="text-center py-12 border-2 border-dashed border-line rounded-lg">
+              <ConciergeBell className="w-10 h-10 text-muted mx-auto mb-3" />
+              <p className="text-sm text-muted font-medium">Chưa có dịch vụ nào</p>
+              <p className="text-xs text-muted mt-1 mb-4">Tạo dịch vụ để khách có thể đặt thêm</p>
               <Button
                 variant="outline"
                 size="sm"
@@ -386,7 +386,7 @@ export default function ServicesPage() {
               </Button>
             </div>
           ) : (
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-line">
               {services.map((service) => {
                 const categoryInfo = serviceCategories.find(c => c.value === service.category)
                 return (
@@ -394,37 +394,37 @@ export default function ServicesPage() {
                     key={service.id}
                     className="flex items-center gap-4 py-4 first:pt-0 last:pb-0"
                   >
-                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center shrink-0">
-                      <ConciergeBell className="w-5 h-5 text-gray-600" />
+                    <div className="w-10 h-10 bg-fg/5 rounded-lg flex items-center justify-center shrink-0">
+                      <ConciergeBell className="w-5 h-5 text-muted" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className={`font-medium ${service.isActive ? 'text-gray-900' : 'text-gray-400'}`}>
+                        <span className={`font-medium ${service.isActive ? 'text-fg' : 'text-muted'}`}>
                           {service.name}
                         </span>
                         {!service.isActive && (
                           <Badge variant="secondary" className="text-xs">Tắt</Badge>
                         )}
                       </div>
-                      <p className="text-sm text-gray-500 mt-0.5">
+                      <p className="text-sm text-muted mt-0.5">
                         {categoryInfo?.label || 'Khác'}
                         {service.priceType === 'PER_NIGHT' && ' · Theo đêm'}
                         {service.priceType === 'PER_PERSON' && (service.perPerson ? ' · Theo người' : ' · Theo lần')}
                       </p>
                     </div>
-                    <span className="text-base font-semibold text-gray-900 tabular-nums">
+                    <span className="text-base font-semibold text-fg tabular-nums">
                       {formatPrice(service.price, service.priceType, service.perPerson)}
                     </span>
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => handleEditService(service)}
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="p-2 text-muted hover:text-muted hover:bg-fg/5 rounded-lg transition-colors"
                       >
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDeleteService(service.id)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-muted hover:text-err hover:bg-err-soft rounded-lg transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -440,19 +440,19 @@ export default function ServicesPage() {
       {/* Service Modal */}
       {showServiceModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
-            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+          <div className="bg-panel rounded-xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between p-5 border-b border-line">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-lg font-semibold text-fg">
                   {editingService ? 'Chỉnh sửa dịch vụ' : 'Dịch vụ mới'}
                 </h2>
-                <p className="text-sm text-gray-500 mt-0.5">
+                <p className="text-sm text-muted mt-0.5">
                   {editingService ? 'Cập nhật thông tin dịch vụ' : 'Tạo dịch vụ mới'}
                 </p>
               </div>
               <button
                 onClick={() => { setShowServiceModal(false); resetServiceForm() }}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 text-muted hover:text-muted hover:bg-fg/5 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -460,7 +460,7 @@ export default function ServicesPage() {
 
             <div className="p-5 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                <label className="block text-sm font-medium text-fg mb-1.5">
                   Tên dịch vụ
                 </label>
                 <Input
@@ -471,7 +471,7 @@ export default function ServicesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Danh mục</label>
+                <label className="block text-sm font-medium text-fg mb-1.5">Danh mục</label>
                 <div className="flex flex-wrap gap-2">
                   {serviceCategories.map(cat => (
                     <button
@@ -480,8 +480,8 @@ export default function ServicesPage() {
                       className={`
                         px-3 py-1.5 rounded-md text-sm font-medium transition-colors
                         ${serviceForm.category === cat.value
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          ? 'bg-info text-on-ink'
+                          : 'bg-fg/5 text-muted hover:bg-fg/10'
                         }
                       `}
                     >
@@ -493,7 +493,7 @@ export default function ServicesPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Loại giá</label>
+                  <label className="block text-sm font-medium text-fg mb-1.5">Loại giá</label>
                   <select
                     value={serviceForm.priceType}
                     onChange={(e) =>
@@ -502,7 +502,7 @@ export default function ServicesPage() {
                         priceType: e.target.value as typeof serviceForm.priceType,
                       })
                     }
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 bg-white"
+                    className="w-full px-3 py-2 text-sm border border-line rounded-lg focus:outline-none focus:border-muted bg-panel"
                   >
                     <option value="FIXED">Cố định</option>
                     <option value="PER_NIGHT">Theo đêm</option>
@@ -510,7 +510,7 @@ export default function ServicesPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Giá (₫)</label>
+                  <label className="block text-sm font-medium text-fg mb-1.5">Giá (₫)</label>
                   <Input
                     type="number"
                     value={serviceForm.price}
@@ -528,14 +528,14 @@ export default function ServicesPage() {
                     type="checkbox"
                     checked={serviceForm.perPerson}
                     onChange={(e) => setServiceForm({ ...serviceForm, perPerson: e.target.checked })}
-                    className="w-4 h-4 rounded border-gray-300 text-blue-600"
+                    className="w-4 h-4 rounded border-line text-info"
                   />
-                  <span className="text-sm text-gray-700">Tính theo số người</span>
+                  <span className="text-sm text-fg">Tính theo số người</span>
                 </label>
               )}
             </div>
 
-            <div className="flex items-center justify-end gap-3 p-5 border-t border-gray-100 bg-gray-50 rounded-b-xl">
+            <div className="flex items-center justify-end gap-3 p-5 border-t border-line bg-fg/[0.03] rounded-b-xl">
               <Button
                 variant="ghost"
                 onClick={() => { setShowServiceModal(false); resetServiceForm() }}

@@ -103,8 +103,8 @@ export default function PoliciesPage() {
         <Header title="Chính sách" description="Chính sách check-in, hủy phòng và quy định" />
         <Card>
           <CardContent className="p-12 text-center">
-            <ShieldCheck className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">Không xác định được cơ sở.</p>
+            <ShieldCheck className="w-12 h-12 text-muted mx-auto mb-4" />
+            <p className="text-muted">Không xác định được cơ sở.</p>
           </CardContent>
         </Card>
       </PageContainer>
@@ -126,12 +126,12 @@ export default function PoliciesPage() {
 
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-acc" />
         </div>
       ) : error ? (
         <Card>
           <CardContent className="p-12 text-center">
-            <p className="text-red-500 mb-4">{error}</p>
+            <p className="text-err mb-4">{error}</p>
             <Button onClick={fetchPolicy}>Thử lại</Button>
           </CardContent>
         </Card>
@@ -148,7 +148,7 @@ export default function PoliciesPage() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-fg mb-1">
                     Giờ check-in
                   </label>
                   <Input
@@ -156,12 +156,12 @@ export default function PoliciesPage() {
                     value={policy.checkInTime}
                     onChange={(e) => update('checkInTime', e.target.value)}
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted mt-1">
                     Khách có thể nhận phòng từ giờ này
                   </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-fg mb-1">
                     Giờ check-out
                   </label>
                   <Input
@@ -169,7 +169,7 @@ export default function PoliciesPage() {
                     value={policy.checkOutTime}
                     onChange={(e) => update('checkOutTime', e.target.value)}
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted mt-1">
                     Khách phải trả phòng trước giờ này
                   </p>
                 </div>
@@ -187,7 +187,7 @@ export default function PoliciesPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-fg mb-1">
                   Hủy miễn phí trước (giờ)
                 </label>
                 <Input
@@ -203,12 +203,12 @@ export default function PoliciesPage() {
                   }
                   placeholder="VD: 24 (hủy trước 24 giờ được miễn phí)"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted mt-1">
                   Để trống nếu không có chính sách hủy miễn phí
                 </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-fg mb-1">
                   Mô tả chi tiết
                 </label>
                 <textarea
@@ -216,7 +216,7 @@ export default function PoliciesPage() {
                   onChange={(e) => update('cancellationPolicy', e.target.value || null)}
                   placeholder="Mô tả chi tiết về chính sách hủy phòng, phí hủy, hoàn tiền..."
                   rows={4}
-                  className="w-full px-3 py-2 border rounded-lg focus-visible:ring-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary focus-visible:border-primary"
+                  className="w-full px-3 py-2 border rounded-lg focus-visible:ring-2 focus-visible:ring-2 focus-visible:ring-acc focus-visible:border-acc focus-visible:border-acc"
                 />
               </div>
             </CardContent>
@@ -228,12 +228,12 @@ export default function PoliciesPage() {
               <CardTitle>Quy định khác</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-start justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-start justify-between p-4 bg-fg/[0.03] rounded-lg">
                 <div className="flex items-start gap-3">
-                  <Baby className="w-5 h-5 text-gray-600 mt-0.5" />
+                  <Baby className="w-5 h-5 text-muted mt-0.5" />
                   <div>
                     <p className="font-medium">Cho phép trẻ em</p>
-                    <p className="text-sm text-gray-500">Có cho phép khách mang theo trẻ em?</p>
+                    <p className="text-sm text-muted">Có cho phép khách mang theo trẻ em?</p>
                   </div>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -243,13 +243,13 @@ export default function PoliciesPage() {
                     checked={policy.childrenAllowed}
                     onChange={(e) => update('childrenAllowed', e.target.checked)}
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary" />
+                  <div className="w-11 h-6 bg-fg/10 peer-focus:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-acc rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-on-ink after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-panel after:border-line after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-ink" />
                 </label>
               </div>
 
               {policy.childrenAllowed && (
                 <div className="ml-12">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-fg mb-1">
                     Tuổi trẻ em tối thiểu được tính giá người lớn
                   </label>
                   <Input
@@ -263,12 +263,12 @@ export default function PoliciesPage() {
                 </div>
               )}
 
-              <div className="flex items-start justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-start justify-between p-4 bg-fg/[0.03] rounded-lg">
                 <div className="flex items-start gap-3">
-                  <Dog className="w-5 h-5 text-gray-600 mt-0.5" />
+                  <Dog className="w-5 h-5 text-muted mt-0.5" />
                   <div>
                     <p className="font-medium">Cho phép thú cưng</p>
-                    <p className="text-sm text-gray-500">Có cho phép khách mang theo thú cưng?</p>
+                    <p className="text-sm text-muted">Có cho phép khách mang theo thú cưng?</p>
                   </div>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -278,16 +278,16 @@ export default function PoliciesPage() {
                     checked={policy.petsAllowed}
                     onChange={(e) => update('petsAllowed', e.target.checked)}
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary" />
+                  <div className="w-11 h-6 bg-fg/10 peer-focus:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-acc rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-on-ink after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-panel after:border-line after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-ink" />
                 </label>
               </div>
 
-              <div className="flex items-start justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-start justify-between p-4 bg-fg/[0.03] rounded-lg">
                 <div className="flex items-start gap-3">
-                  <Cigarette className="w-5 h-5 text-gray-600 mt-0.5" />
+                  <Cigarette className="w-5 h-5 text-muted mt-0.5" />
                   <div>
                     <p className="font-medium">Cho phép hút thuốc</p>
-                    <p className="text-sm text-gray-500">Có cho phép hút thuốc trong phòng?</p>
+                    <p className="text-sm text-muted">Có cho phép hút thuốc trong phòng?</p>
                   </div>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -297,7 +297,7 @@ export default function PoliciesPage() {
                     checked={policy.smokingAllowed}
                     onChange={(e) => update('smokingAllowed', e.target.checked)}
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary" />
+                  <div className="w-11 h-6 bg-fg/10 peer-focus:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-acc rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-on-ink after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-panel after:border-line after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-ink" />
                 </label>
               </div>
             </CardContent>
@@ -314,7 +314,7 @@ export default function PoliciesPage() {
                 onChange={(e) => update('additionalRules', e.target.value || null)}
                 placeholder="Các quy định khác của cơ sở (giờ yên tĩnh, quy định về khách đến thăm, ...)..."
                 rows={5}
-                className="w-full px-3 py-2 border rounded-lg focus-visible:ring-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary focus-visible:border-primary"
+                className="w-full px-3 py-2 border rounded-lg focus-visible:ring-2 focus-visible:ring-2 focus-visible:ring-acc focus-visible:border-acc focus-visible:border-acc"
               />
             </CardContent>
           </Card>
