@@ -196,13 +196,16 @@ describe('POST /api/payments — amount check', () => {
   })
 
   it('CASH for exactly the remaining amount → PAID, booking PENDING → CONFIRMED, logged with amount', async () => {
-    tx.payment.aggregate.mockResolvedValue({ _sum: { amount: 400000 } })
+    // Paid before: 400k (remaining check); after this payment: 1M (sync).
+    tx.payment.aggregate
+      .mockResolvedValueOnce({ _sum: { amount: 400000 } })
+      .mockResolvedValueOnce({ _sum: { amount: 1000000 } })
     const res = await post({ bookingId: 'bk-1', method: 'CASH', amount: 600000 })
     expect(res.status).toBe(200)
     expect(tx.payment.create.mock.calls[0][0].data).toMatchObject({ status: 'PAID', amount: 600000 })
     expect(tx.booking.update).toHaveBeenCalledWith({
       where: { id: 'bk-1' },
-      data: { paymentStatus: 'PAID', status: 'CONFIRMED' },
+      data: { depositAmount: 1000000, paymentStatus: 'PAID', status: 'CONFIRMED' },
     })
     expect(tx.activityLog.create.mock.calls[0][0].data).toMatchObject({
       userId: 'staff-1',

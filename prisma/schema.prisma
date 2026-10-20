@@ -255,6 +255,7 @@ model Property {
   websiteBlocks WebsiteBlock[]
   websiteSettings WebsiteSettings?
   bankAccounts   BankAccount[]
+  payos          PropertyPayos?
   roomLocks      RoomLock[]
   extraServices   ExtraService[]
   dailyRevenues   DailyRevenue[]
@@ -814,6 +815,11 @@ model Payment {
   // Transaction reference
   transactionId   String?   // Từ cổng thanh toán
   paymentGateway  PaymentGateway?
+  /// PayOS orderCode (16 digits, kept as text so payments stay JSON-safe),
+  /// unique across all properties (src/lib/payments/payos.ts)
+  gatewayOrderCode String?  @unique
+  /// PayOS checkout page for the guest
+  checkoutUrl     String?
   
   // Timestamps
   paidAt          DateTime?
@@ -852,6 +858,7 @@ enum PaymentStatus {
 
 enum PaymentGateway {
   VIETQR
+  PAYOS
   VNPAY
   ONEPAY
   STRIPE
@@ -891,6 +898,30 @@ model BankAccount {
 
   @@map("bank_accounts")
   @@index([propertyId])
+}
+
+/// The property's own PayOS account (Part 5): guests pay straight into the
+/// hotel's bank account and PayOS confirms the payment by webhook. Keys
+/// are encrypted with src/lib/security/secret-box.ts.
+model PropertyPayos {
+  propertyId         String    @id
+  property           Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  clientId           String
+  /// encrypted
+  apiKey             String
+  /// encrypted
+  checksumKey        String
+  /// set once PayOS accepted our webhook URL; payments need it
+  webhookConfirmedAt DateTime?
+  /// the bank account PayOS pays into, as PayOS reports it
+  accountName        String?
+  accountNumber      String?
+  connectedById      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("property_payos")
 }
 
 // ============================================

@@ -4,15 +4,16 @@ import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import type { Prisma } from '@prisma/client'
 import { WorkspaceRoles } from '@/lib/auth/rbac'
+import { lockBooking, syncBookingPayments, CLOSED_BOOKING_STATUSES } from '@/lib/payments/booking-payments'
+import { PayosError, createPayosLink, newOrderCode } from '@/lib/payments/payos'
 
+// PAYOS: a VietQR link from the property's own PayOS account, confirmed
+// automatically by webhook (src/lib/payments/payos.ts).
 const createPaymentSchema = z.object({
   bookingId: z.string(),
-  method: z.enum(['BANK_TRANSFER', 'QR_VIETQR', 'CARD', 'CREDIT_CARD', 'E_WALLET', 'CASH']),
+  method: z.enum(['BANK_TRANSFER', 'QR_VIETQR', 'CARD', 'CREDIT_CARD', 'E_WALLET', 'CASH', 'PAYOS']),
   amount: z.number().positive(),
 })
-
-// No new payments on bookings that are already closed.
-const CLOSED_BOOKING_STATUSES = ['CANCELLED', 'NO_SHOW']
 
 class PaymentRequestError extends Error {
   constructor(message: string, readonly status: number) {
@@ -107,6 +108,8 @@ export async function POST(request: NextRequest) {
             id: true,
             name: true,
             city: true,
+            subdomain: true,
+            payos: { select: { webhookConfirmedAt: true } },
             bankAccounts: {
               where: { isActive: true, qrEnabled: true },
               take: 1,
@@ -152,8 +155,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // For QR payment, get bank info
-    const bankAccount = booking.property.bankAccounts[0]
+    const viaPayos = method === 'PAYOS'
+    if (viaPayos) {
+      if (!booking.property.payos?.webhookConfirmedAt) {
+        return NextResponse.json(
+          { success: false, error: 'Khách sạn chưa kết nối PayOS (Tài khoản ngân hàng → Thanh toán online)' },
+          { status: 400 }
+        )
+      }
+      if (!Number.isInteger(amount)) {
+        return NextResponse.json({ success: false, error: 'Số tiền phải là số nguyên (đồng)' }, { status: 400 })
+      }
+    }
+
+    // For QR payment, get bank info (PayOS uses the account linked in PayOS)
+    const bankAccount = viaPayos ? undefined : booking.property.bankAccounts[0]
     const transferContent = `DS${booking.bookingCode}`
 
     // Calculate fees (for card payments)
@@ -187,9 +203,9 @@ export async function POST(request: NextRequest) {
     }
 
     const payment = await prisma.$transaction(async (tx) => {
-      // Lock the booking row so two concurrent requests (e.g. a double
-      // click) cannot both pass the amount check below.
-      await tx.$queryRaw`SELECT id FROM bookings WHERE id = ${bookingId} FOR UPDATE`
+      // Two concurrent requests (e.g. a double click) cannot both pass the
+      // amount check below.
+      await lockBooking(tx, bookingId)
 
       const current = await tx.booking.findUniqueOrThrow({
         where: { id: bookingId },
@@ -222,27 +238,23 @@ export async function POST(request: NextRequest) {
           amount,
           fee,
           netAmount,
-          method,
+          method: viaPayos ? 'QR_VIETQR' : method,
           status: method === 'CASH' ? 'PAID' : 'PENDING',
           bankCode: bankAccount?.bankCode,
           bankAccount: bankAccount?.accountNumber,
           accountHolder: bankAccount?.accountHolder,
-          transferContent,
+          transferContent: viaPayos ? null : transferContent,
           qrCodeUrl: qrString, // store the QR string; UI can render it
           paidAt: method === 'CASH' ? new Date() : null,
-          expiresAt,
+          expiresAt: viaPayos ? null : expiresAt,
+          ...(viaPayos && { paymentGateway: 'PAYOS' as const, gatewayOrderCode: String(newOrderCode()) }),
         },
       })
 
-      // If cash payment, update booking
+      // Cash is money in hand: deposit and payment status follow the
+      // amount (it used to mark the booking PAID whatever the amount).
       if (method === 'CASH') {
-        await tx.booking.update({
-          where: { id: bookingId },
-          data: {
-            paymentStatus: 'PAID',
-            status: current.status === 'PENDING' ? 'CONFIRMED' : current.status,
-          },
-        })
+        await syncBookingPayments(tx, bookingId)
       }
 
       // Log activity
@@ -260,16 +272,25 @@ export async function POST(request: NextRequest) {
       return created
     })
 
+    // The payment (with its order code) is recorded before PayOS hears of
+    // it, so a webhook can always find it.
+    const data = viaPayos
+      ? await createPayosLink(
+          payment.id,
+          `${process.env.NEXTAUTH_URL}/${booking.property.subdomain}/thanh-toan`
+        )
+      : payment
+
     return NextResponse.json({
       success: true,
       data: {
-        ...payment,
+        ...data,
         bankAccount,
       },
       message: 'Tạo thanh toán thành công',
     })
   } catch (error) {
-    if (error instanceof PaymentRequestError) {
+    if (error instanceof PaymentRequestError || error instanceof PayosError) {
       return NextResponse.json({ success: false, error: error.message }, { status: error.status })
     }
     console.error('Create payment error:', error)

@@ -26,6 +26,8 @@ export const LIMITS = {
   twoFactorVerifyIp: { name: '2fa-verify-ip', limit: 20, windowSec: 15 * MIN },
   /** Wrong codes while turning two-factor on, per user (failures only). */
   twoFactorSetupUser: { name: '2fa-setup-user', limit: 10, windowSec: 15 * MIN },
+  /** PayOS webhooks from one IP (generous: PayOS sends from few addresses). */
+  payosWebhookIp: { name: 'payos-webhook-ip', limit: 600, windowSec: 10 * MIN },
 } satisfies Record<string, Limit>
 
 /** Wrong two-factor codes on one account before it is locked (kept in Postgres, see two-factor.ts). */
