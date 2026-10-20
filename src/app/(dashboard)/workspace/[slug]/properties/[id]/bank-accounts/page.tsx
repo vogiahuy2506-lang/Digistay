@@ -204,8 +204,8 @@ export default function BankAccountsPage() {
         />
         <Card>
           <CardContent className="p-12 text-center">
-            <Building className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">Không xác định được cơ sở.</p>
+            <Building className="w-12 h-12 text-muted mx-auto mb-4" />
+            <p className="text-muted">Không xác định được cơ sở.</p>
           </CardContent>
         </Card>
       </PageContainer>
@@ -226,12 +226,12 @@ export default function BankAccountsPage() {
       />
 
       {/* Info Banner */}
-      <Card className="mb-6 bg-blue-50 border-blue-200">
+      <Card className="mb-6 bg-info-soft border-info/30">
         <CardContent className="p-4 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+          <AlertCircle className="w-5 h-5 text-info mt-0.5" />
           <div>
-            <p className="font-medium text-blue-900">Tích hợp VietQR</p>
-            <p className="text-sm text-blue-700">
+            <p className="font-medium text-info">Tích hợp VietQR</p>
+            <p className="text-sm text-info">
               Khách hàng có thể quét mã QR để thanh toán nhanh chóng.
               Hỗ trợ tất cả ngân hàng tại Việt Nam.
             </p>
@@ -242,13 +242,13 @@ export default function BankAccountsPage() {
       {/* Accounts List */}
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-acc" />
         </div>
       ) : accounts.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center">
-            <Building className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 mb-4">Chưa có tài khoản ngân hàng nào</p>
+            <Building className="w-12 h-12 text-muted mx-auto mb-4" />
+            <p className="text-muted mb-4">Chưa có tài khoản ngân hàng nào</p>
             <Button onClick={() => { resetForm(); setShowModal(true) }}>
               <Plus className="w-4 h-4 mr-2" />
               Thêm tài khoản
@@ -262,12 +262,12 @@ export default function BankAccountsPage() {
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center">
-                      <Building className="w-7 h-7 text-gray-600" />
+                    <div className="w-14 h-14 rounded-xl bg-fg/5 flex items-center justify-center">
+                      <Building className="w-7 h-7 text-muted" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{account.bankName}</h3>
-                      <p className="text-sm text-gray-500">Mã ngân hàng: {account.bankCode}</p>
+                      <h3 className="text-lg font-semibold text-fg">{account.bankName}</h3>
+                      <p className="text-sm text-muted">Mã ngân hàng: {account.bankCode}</p>
                       <div className="flex items-center gap-2 mt-2">
                         <Badge variant={account.isActive ? 'success' : 'gray'}>
                           {account.isActive ? 'Đang hoạt động' : 'Tắt'}
@@ -286,30 +286,30 @@ export default function BankAccountsPage() {
                       <Edit className="w-4 h-4" />
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => handleDelete(account.id)}>
-                      <Trash2 className="w-4 h-4 text-red-500" />
+                      <Trash2 className="w-4 h-4 text-err" />
                     </Button>
                   </div>
                 </div>
 
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <div className="mt-4 p-4 bg-fg/[0.03] rounded-lg">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-gray-500">Số tài khoản</p>
+                      <p className="text-sm text-muted">Số tài khoản</p>
                       <div className="flex items-center gap-2">
                         <p className="font-mono text-lg font-semibold">
                           {formatAccountNumber(account.accountNumber)}
                         </p>
                         <button
                           onClick={() => copyToClipboard(account.accountNumber)}
-                          className="p-1 hover:bg-gray-200 rounded"
+                          className="p-1 hover:bg-fg/10 rounded"
                           aria-label="Copy số tài khoản"
                         >
-                          <Copy className="w-4 h-4 text-gray-400" />
+                          <Copy className="w-4 h-4 text-muted" />
                         </button>
                       </div>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Tên tài khoản</p>
+                      <p className="text-sm text-muted">Tên tài khoản</p>
                       <p className="font-semibold">{account.accountHolder}</p>
                     </div>
                   </div>
@@ -339,8 +339,8 @@ export default function BankAccountsPage() {
                       </Button>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Nội dung chuyển khoản</p>
-                      <p className="font-mono text-sm bg-gray-100 px-2 py-1 rounded mt-1">
+                      <p className="text-sm text-muted">Nội dung chuyển khoản</p>
+                      <p className="font-mono text-sm bg-fg/5 px-2 py-1 rounded mt-1">
                         DIGISTAY - {account.accountNumber}
                       </p>
                     </div>
@@ -355,16 +355,16 @@ export default function BankAccountsPage() {
       {/* Add/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full">
-            <div className="p-6 border-b border-gray-100">
+          <div className="bg-panel rounded-xl max-w-md w-full">
+            <div className="p-6 border-b border-line">
               <h2 className="text-xl font-semibold">
                 {editingAccount ? 'Sửa tài khoản' : 'Thêm tài khoản ngân hàng'}
               </h2>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ngân hàng <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-fg mb-1">
+                  Ngân hàng <span className="text-err">*</span>
                 </label>
                 <select
                   value={formData.bankCode}
@@ -376,7 +376,7 @@ export default function BankAccountsPage() {
                       bankName: bank?.name || '',
                     })
                   }}
-                  className="w-full px-3 py-2 border rounded-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary"
+                  className="w-full px-3 py-2 border rounded-lg focus-visible:ring-2 focus-visible:ring-acc focus-visible:border-acc"
                 >
                   <option value="">Chọn ngân hàng</option>
                   {bankList.map((bank) => (
@@ -387,8 +387,8 @@ export default function BankAccountsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Số tài khoản <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-fg mb-1">
+                  Số tài khoản <span className="text-err">*</span>
                 </label>
                 <Input
                   value={formData.accountNumber}
@@ -397,8 +397,8 @@ export default function BankAccountsPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tên tài khoản <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-fg mb-1">
+                  Tên tài khoản <span className="text-err">*</span>
                 </label>
                 <Input
                   value={formData.accountHolder}
@@ -414,12 +414,12 @@ export default function BankAccountsPage() {
                   onChange={(e) => setFormData({ ...formData, qrEnabled: e.target.checked })}
                   className="w-4 h-4"
                 />
-                <label htmlFor="qrEnabled" className="text-sm text-gray-700">
+                <label htmlFor="qrEnabled" className="text-sm text-fg">
                   Bật thanh toán VietQR
                 </label>
               </div>
             </div>
-            <div className="p-6 border-t border-gray-100 flex justify-end gap-3">
+            <div className="p-6 border-t border-line flex justify-end gap-3">
               <Button
                 variant="outline"
                 onClick={() => { setShowModal(false); resetForm() }}

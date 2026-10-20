@@ -19,17 +19,18 @@ describe('dashboard theme', () => {
     for (const ready of ['', '/bookings', '/bookings/b1', '/bookings/new', '/calendar', '/payments', '/invoices', '/reports', '/reports/daily']) {
       expect(isDarkReady(`${P}${ready}`)).toBe(true)
     }
-    // Configuration pages still hard-code light colors (step 4c).
-    for (const notYet of ['/rooms', '/services', '/policies', '/bank-accounts', '/website']) {
-      expect(isDarkReady(`${P}${notYet}`)).toBe(false)
+    for (const ready of ['/rooms', '/services', '/policies', '/bank-accounts', '/website']) {
+      expect(isDarkReady(`${P}${ready}`)).toBe(true)
     }
+    // Not moved: it always redirects to /workspaces anyway.
+    expect(isDarkReady('/workspace-picker/demo')).toBe(false)
     expect(isDarkReady('/workspace/demo/properties/p1/reports/daily/extra')).toBe(false)
     expect(isDarkReady(null)).toBe(false)
   })
 
   it('keeps unfinished pages light whatever the preference', () => {
     expect(effectiveTheme('dark', `${P}/bookings`)).toBe('dark')
-    expect(effectiveTheme('dark', `${P}/rooms`)).toBe('light')
+    expect(effectiveTheme('dark', '/workspace-picker/demo')).toBe('light')
     expect(effectiveTheme('light', `${P}/bookings`)).toBe('light')
   })
 })

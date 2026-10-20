@@ -24,7 +24,7 @@ const darkReadyPaths: RegExp[] = [
   /^\/workspace\/[^/]+\/properties(\/new)?\/?$/,
   /^\/workspace\/[^/]+\/properties\/[^/]+\/?$/,
   /^\/workspace\/[^/]+\/properties\/[^/]+\/bookings(\/[^/]+)?\/?$/,
-  /^\/workspace\/[^/]+\/properties\/[^/]+\/(calendar|payments|invoices|reports(\/daily)?)\/?$/,
+  /^\/workspace\/[^/]+\/properties\/[^/]+\/(calendar|payments|invoices|reports(\/daily)?|rooms|services|policies|bank-accounts|website)\/?$/,
 ]
 
 export function isDarkReady(pathname: string | null | undefined): boolean {

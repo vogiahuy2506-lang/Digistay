@@ -68,13 +68,13 @@ const bedTypeOptions = [
 ]
 
 const amenityIcons: Record<string, React.ReactNode> = {
-  'pool': <Waves className="w-3 h-3 text-[#2a674c]" />,
-  'wifi': <Wifi className="w-3 h-3 text-[#545f73]" />,
-  'restaurant': <Utensils className="w-3 h-3 text-[#a93119]" />,
-  'breakfast': <Coffee className="w-3 h-3 text-[#a93119]" />,
-  'spa': <Sparkles className="w-3 h-3 text-[#2a674c]" />,
-  'bathtub': <Bath className="w-3 h-3 text-[#a93119]" />,
-  'minibar': <Wine className="w-3 h-3 text-[#a93119]" />,
+  'pool': <Waves className="w-3 h-3 text-ok" />,
+  'wifi': <Wifi className="w-3 h-3 text-muted" />,
+  'restaurant': <Utensils className="w-3 h-3 text-acc" />,
+  'breakfast': <Coffee className="w-3 h-3 text-acc" />,
+  'spa': <Sparkles className="w-3 h-3 text-ok" />,
+  'bathtub': <Bath className="w-3 h-3 text-acc" />,
+  'minibar': <Wine className="w-3 h-3 text-acc" />,
 }
 
 export default function RoomTypesPage() {
@@ -401,8 +401,8 @@ export default function RoomTypesPage() {
             onClick={() => setActiveTab('rooms')}
             className={`px-4 py-2 rounded-lg font-medium transition ${
               activeTab === 'rooms'
-                ? 'bg-primary text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-ink text-on-ink'
+                : 'bg-fg/5 text-muted hover:bg-fg/10'
             }`}
           >
             <Bed className="w-4 h-4 inline mr-2" />
@@ -415,8 +415,8 @@ export default function RoomTypesPage() {
             }}
             className={`px-4 py-2 rounded-lg font-medium transition ${
               activeTab === 'maintenance'
-                ? 'bg-primary text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-ink text-on-ink'
+                : 'bg-fg/5 text-muted hover:bg-fg/10'
             }`}
           >
             <Wrench className="w-4 h-4 inline mr-2" />
@@ -430,7 +430,7 @@ export default function RoomTypesPage() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-lg font-semibold">Lịch Bảo Trì</h3>
-                <p className="text-sm text-gray-500">Quản lý lịch bảo trì sửa chữa phòng</p>
+                <p className="text-sm text-muted">Quản lý lịch bảo trì sửa chữa phòng</p>
               </div>
               <Button onClick={() => setIsMaintenanceModalOpen(true)} disabled={!selectedProperty || roomTypes.length === 0}>
                 <Plus className="w-4 h-4 mr-2" />
@@ -440,13 +440,13 @@ export default function RoomTypesPage() {
 
             {isLoading ? (
               <div className="text-center py-12">
-                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
+                <div className="animate-spin w-8 h-8 border-4 border-acc border-t-transparent rounded-full mx-auto" />
               </div>
             ) : maintenanceLocks.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center">
-                  <Wrench className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                  <p className="text-gray-500 mb-4">Chưa có lịch bảo trì nào</p>
+                  <Wrench className="w-12 h-12 mx-auto text-muted mb-4" />
+                  <p className="text-muted mb-4">Chưa có lịch bảo trì nào</p>
                   <Button onClick={() => setIsMaintenanceModalOpen(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Thêm Lịch Bảo Trì Đầu Tiên
@@ -460,16 +460,16 @@ export default function RoomTypesPage() {
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-lg bg-yellow-100 flex items-center justify-center">
-                            <Wrench className="w-6 h-6 text-yellow-600" />
+                          <div className="w-12 h-12 rounded-lg bg-warn-soft flex items-center justify-center">
+                            <Wrench className="w-6 h-6 text-warn" />
                           </div>
                           <div>
                             <p className="font-semibold">{lock.roomType.name}</p>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-muted">
                               {format(new Date(lock.lockStart), 'dd/MM/yyyy')} - {format(new Date(lock.lockEnd), 'dd/MM/yyyy')}
                             </p>
                             {lock.customerInfo && (
-                              <p className="text-sm text-yellow-600">{lock.customerInfo}</p>
+                              <p className="text-sm text-warn">{lock.customerInfo}</p>
                             )}
                           </div>
                         </div>
@@ -478,7 +478,7 @@ export default function RoomTypesPage() {
                           size="sm"
                           onClick={() => handleDeleteMaintenance(lock.id)}
                           isLoading={isDeletingMaintenance === lock.id}
-                          className="text-red-600 border-red-200 hover:bg-red-50"
+                          className="text-err border-err/30 hover:bg-err-soft"
                         >
                           <X className="w-4 h-4 mr-2" />
                           Xóa
@@ -497,30 +497,30 @@ export default function RoomTypesPage() {
           <>
         {/* Property Info Banner */}
         {selectedPropertyData && (
-          <div className="mb-6 p-4 rounded-xl bg-white border border-gray-100 shadow-sm flex items-center justify-between">
+          <div className="mb-6 p-4 rounded-xl bg-panel border border-line shadow-sm flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-[#a93119]/10 flex items-center justify-center">
-                <Bed className="w-6 h-6 text-[#a93119]" />
+              <div className="w-12 h-12 rounded-lg bg-ink/10 flex items-center justify-center">
+                <Bed className="w-6 h-6 text-acc" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">{selectedPropertyData.name}</p>
-                <p className="font-semibold text-gray-900">{roomTypes.length} hạng phòng • {roomTypes.reduce((sum, rt) => sum + rt.totalRooms, 0)} phòng</p>
+                <p className="text-sm text-muted">{selectedPropertyData.name}</p>
+                <p className="font-semibold text-fg">{roomTypes.length} hạng phòng • {roomTypes.reduce((sum, rt) => sum + rt.totalRooms, 0)} phòng</p>
               </div>
             </div>
             <div className="flex items-center gap-6 text-sm">
               <div className="text-center">
-                <p className="text-gray-500">Tổng số phòng</p>
-                <p className="font-bold text-gray-900">{roomTypes.reduce((sum, rt) => sum + rt.totalRooms, 0)}</p>
+                <p className="text-muted">Tổng số phòng</p>
+                <p className="font-bold text-fg">{roomTypes.reduce((sum, rt) => sum + rt.totalRooms, 0)}</p>
               </div>
-              <div className="w-px h-8 bg-gray-200" />
+              <div className="w-px h-8 bg-fg/10" />
               <div className="text-center">
-                <p className="text-gray-500">Hạng phòng</p>
-                <p className="font-bold text-gray-900">{roomTypes.length}</p>
+                <p className="text-muted">Hạng phòng</p>
+                <p className="font-bold text-fg">{roomTypes.length}</p>
               </div>
-              <div className="w-px h-8 bg-gray-200" />
+              <div className="w-px h-8 bg-fg/10" />
               <div className="text-center">
-                <p className="text-gray-500">Đang trống</p>
-                <p className="font-bold text-[#2a674c]">{roomTypes.reduce((sum, rt) => sum + rt.availableRooms, 0)}</p>
+                <p className="text-muted">Đang trống</p>
+                <p className="font-bold text-ok">{roomTypes.reduce((sum, rt) => sum + rt.availableRooms, 0)}</p>
               </div>
             </div>
           </div>
@@ -529,8 +529,8 @@ export default function RoomTypesPage() {
         {!selectedProperty ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <Bed className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-500">Vui lòng chọn cơ sở để xem hạng phòng</p>
+              <Bed className="w-12 h-12 mx-auto text-muted mb-4" />
+              <p className="text-muted">Vui lòng chọn cơ sở để xem hạng phòng</p>
             </CardContent>
           </Card>
         ) : isLoading ? (
@@ -538,11 +538,11 @@ export default function RoomTypesPage() {
             {[1, 2, 3].map((i) => (
               <Card key={i} className="animate-pulse overflow-hidden">
                 <CardContent className="p-0">
-                  <div className="h-44 bg-gray-200" />
+                  <div className="h-44 bg-fg/10" />
                   <div className="p-4 space-y-3">
-                    <div className="h-5 bg-gray-200 rounded w-3/4" />
-                    <div className="h-4 bg-gray-200 rounded w-1/2" />
-                    <div className="h-4 bg-gray-200 rounded w-2/3" />
+                    <div className="h-5 bg-fg/10 rounded w-3/4" />
+                    <div className="h-4 bg-fg/10 rounded w-1/2" />
+                    <div className="h-4 bg-fg/10 rounded w-2/3" />
                   </div>
                 </CardContent>
               </Card>
@@ -551,8 +551,8 @@ export default function RoomTypesPage() {
         ) : roomTypes.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <Bed className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-500 mb-4">Chưa có hạng phòng nào</p>
+              <Bed className="w-12 h-12 mx-auto text-muted mb-4" />
+              <p className="text-muted mb-4">Chưa có hạng phòng nào</p>
               <Button onClick={() => setIsCreateModalOpen(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 Thêm Hạng Phòng Đầu Tiên
@@ -564,7 +564,7 @@ export default function RoomTypesPage() {
             {roomTypes.map((roomType) => (
               <Card key={roomType.id} className="overflow-hidden rounded-xl hover:shadow-md transition-all">
                 {/* Hero Image */}
-                <div className="relative h-44 overflow-hidden bg-gradient-to-br from-[#a93119]/5 to-[#a93119]/10">
+                <div className="relative h-44 overflow-hidden bg-acc-soft/60">
                   {roomType.images[0] ? (
                     <img
                       src={roomType.images[0].url}
@@ -573,7 +573,7 @@ export default function RoomTypesPage() {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Bed className="w-16 h-16 text-[#a93119]/30" />
+                      <Bed className="w-16 h-16 text-acc/30" />
                     </div>
                   )}
                   
@@ -584,7 +584,7 @@ export default function RoomTypesPage() {
                   </div>
                   
                   {/* Room Type ID */}
-                  <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-white/90 text-xs font-mono text-gray-700">
+                  <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-panel/90 text-xs font-mono text-fg">
                     ID: {roomType.slug?.toUpperCase().slice(0, 6) || roomType.id.slice(0, 6)}
                   </div>
                   
@@ -593,7 +593,7 @@ export default function RoomTypesPage() {
                     <Button 
                       size="sm" 
                       variant="secondary" 
-                      className="bg-white/90 hover:bg-white shadow-sm"
+                      className="bg-panel/90 hover:bg-panel shadow-sm"
                       onClick={() => openEditModal(roomType)}
                     >
                       <Edit className="w-3 h-3 mr-1" />
@@ -607,41 +607,41 @@ export default function RoomTypesPage() {
                   {/* Name & Price */}
                   <div className="flex items-start justify-between">
                     <div>
-                      <h4 className="font-semibold text-gray-900 text-base">{roomType.name}</h4>
+                      <h4 className="font-semibold text-fg text-base">{roomType.name}</h4>
                       {roomType.description && (
-                        <p className="text-sm text-gray-500 mt-0.5 line-clamp-1">{roomType.description}</p>
+                        <p className="text-sm text-muted mt-0.5 line-clamp-1">{roomType.description}</p>
                       )}
                     </div>
                     <div className="text-right shrink-0 ml-2">
-                      <span className="font-bold text-[#a93119] text-lg">
+                      <span className="font-bold text-acc text-lg">
                         {formatPrice(roomType.pricing[0]?.weekdayPrice || 0)}
                       </span>
-                      <span className="text-xs text-gray-400 block">/đêm</span>
+                      <span className="text-xs text-muted block">/đêm</span>
                     </div>
                   </div>
                   
                   {/* Specs Grid */}
-                  <div className="grid grid-cols-3 gap-2 p-2.5 rounded-lg bg-gray-50 text-center">
+                  <div className="grid grid-cols-3 gap-2 p-2.5 rounded-lg bg-fg/[0.03] text-center">
                     <div>
-                      <p className="text-[10px] text-gray-400 uppercase font-semibold tracking-wide">KHO PHÒNG</p>
-                      <p className="font-bold text-gray-900">{roomType.totalRooms} Phòng</p>
+                      <p className="text-[10px] text-muted uppercase font-semibold tracking-wide">KHO PHÒNG</p>
+                      <p className="font-bold text-fg">{roomType.totalRooms} Phòng</p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-gray-400 uppercase font-semibold tracking-wide">DIỆN TÍCH</p>
-                      <p className="font-bold text-gray-900">{roomType.area || '—'} m²</p>
+                      <p className="text-[10px] text-muted uppercase font-semibold tracking-wide">DIỆN TÍCH</p>
+                      <p className="font-bold text-fg">{roomType.area || '—'} m²</p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-gray-400 uppercase font-semibold tracking-wide">SỨC CHỨA</p>
-                      <p className="font-bold text-gray-900">{roomType.baseOccupancy}L • {roomType.maxOccupancy - roomType.baseOccupancy}TE</p>
+                      <p className="text-[10px] text-muted uppercase font-semibold tracking-wide">SỨC CHỨA</p>
+                      <p className="font-bold text-fg">{roomType.baseOccupancy}L • {roomType.maxOccupancy - roomType.baseOccupancy}TE</p>
                     </div>
                   </div>
                   
                   {/* Bed Type */}
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2 text-sm text-muted">
                     {roomType.bedType === 'DOUBLE' || roomType.bedType === 'QUADRUPLE' ? (
-                      <BedDouble className="w-4 h-4 text-[#a93119]" />
+                      <BedDouble className="w-4 h-4 text-acc" />
                     ) : (
-                      <Bed className="w-4 h-4 text-[#a93119]" />
+                      <Bed className="w-4 h-4 text-acc" />
                     )}
                     <span>{bedTypeLabels[roomType.bedType]}</span>
                   </div>
@@ -649,19 +649,19 @@ export default function RoomTypesPage() {
                   {/* Amenities */}
                   {roomType.amenities.length > 0 && (
                     <div className="space-y-1.5">
-                      <p className="text-[10px] text-gray-400 uppercase font-semibold tracking-wide">Tiện ích đặc quyền:</p>
+                      <p className="text-[10px] text-muted uppercase font-semibold tracking-wide">Tiện ích đặc quyền:</p>
                       <div className="flex flex-wrap gap-1.5">
                         {roomType.amenities.slice(0, 4).map((a) => (
                           <span 
                             key={a.amenity.id} 
-                            className="flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs"
+                            className="flex items-center gap-1 px-2 py-1 rounded-full bg-fg/5 text-fg text-xs"
                           >
                             {getAmenityIcon(a.amenity.name)}
                             <span>{a.amenity.name}</span>
                           </span>
                         ))}
                         {roomType.amenities.length > 4 && (
-                          <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-500 text-xs">
+                          <span className="px-2 py-1 rounded-full bg-fg/5 text-muted text-xs">
                             +{roomType.amenities.length - 4}
                           </span>
                         )}
@@ -892,7 +892,7 @@ export default function RoomTypesPage() {
             placeholder="Thông tin chi tiết..."
             rows={2}
           />
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-700">
+          <div className="bg-warn-soft border border-warn/30 rounded-lg p-3 text-sm text-warn">
             <AlertCircle className="w-4 h-4 inline mr-2" />
             Phòng sẽ bị khóa không cho đặt trong khoảng thời gian bảo trì
           </div>

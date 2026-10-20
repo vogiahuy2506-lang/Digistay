@@ -173,13 +173,15 @@ sạn, đặt lại mật khẩu chỉ cần email, email trong phiên do client
   lớp trên cùng (`dialog-behavior.ts`); menu bên trong gọi `preventDefault()` để giữ phím Esc cho mình.
 - Toast (`toast.success()`…) chỉ hiện trong trang quản lý: `ToastProvider` nằm ở `(dashboard)/layout.tsx`.
 - Theme tối của trang quản lý lưu ở cookie `ds-theme`, `ThemeRoot` (`(dashboard)/layout.tsx`) đặt
-  `data-theme`. Chỉ trang có trong `darkReadyPaths` (`src/lib/theme.ts`) mới thật sự tối; chuyển xong
-  một trang (không còn màu viết cứng) thì thêm nó vào đó.
+  `data-theme`. Chỉ trang có trong `darkReadyPaths` (`src/lib/theme.ts`) mới thật sự tối — từ bước 4 là
+  mọi trang quản lý; trang quản lý mới phải dùng màu vai trò rồi thêm vào đó. Phần xem trước website
+  khách sạn (trình dựng website) giữ `data-theme="light"`: website khách sạn chỉ có theme sáng.
 - Phiếu in / HTML tự ghép (`document.write`, email): mọi giá trị từ khách phải qua `escapeHtml`
   (`src/lib/bookings/display.ts`) — tên khách đến từ form đặt phòng công khai.
 - Thứ tự làm: (1) token màu + font — xong (`feat/ui-tokens`); (2) thành phần dùng chung — xong
   (`feat/ui-components`); (3) khung + danh sách đặt phòng + panel — xong (`feat/ui-dashboard-bookings`);
-  (4) các trang quản lý còn lại; (5) website khách sạn. Bản thiết kế: file Claude Design "Digistay hotel booking platform".
+  (4) các trang quản lý còn lại — xong (4a `feat/ui-workspace-pages`, 4b `feat/ui-operations-pages`,
+  4c `feat/ui-config-pages`); (5) website khách sạn. Bản thiết kế: file Claude Design "Digistay hotel booking platform".
 
 ## Kế hoạch gia cố
 
