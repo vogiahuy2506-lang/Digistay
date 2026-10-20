@@ -13,13 +13,14 @@ export function parseThemePreference(value: string | undefined | null): ThemePre
 
 /**
  * Dashboard pages drawn with the role colors: every workspace and property
- * page. Others still hard-code light colors (bg-white, text-gray-900...), so
- * they stay light whatever the preference (today only /admin/system); add a
- * page here once it uses only role colors.
+ * page, profile and /admin/system. A page that still hard-codes light colors
+ * (bg-white, text-gray-900...) must stay out of this list, or it turns half
+ * dark; add a new page here once it uses only role colors.
  */
 const darkReadyPaths: RegExp[] = [
   /^\/workspaces\/?$/,
   /^\/profile\/?$/,
+  /^\/admin\/system\/?$/,
   /^\/workspace\/[^/]+\/?$/,
   /^\/workspace\/[^/]+\/(members|settings)\/?$/,
   /^\/workspace\/[^/]+\/properties(\/new)?\/?$/,
