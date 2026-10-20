@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
+import { invalidatePublicSite } from '@/lib/public-site/site'
 
 const updateSchema = z.object({
   name: z.string().min(2).optional(),
@@ -68,6 +69,7 @@ export async function PATCH(
       where: { id: params.id },
       data: validation.data,
     })
+    invalidatePublicSite(updated.propertyId)
     return NextResponse.json({ success: true, data: updated })
   } catch (error) {
     console.error('Update extra service error:', error)
@@ -89,7 +91,8 @@ export async function DELETE(
     if (!authz.ok) {
       return NextResponse.json({ success: false, error: authz.error }, { status: authz.status })
     }
-    await prisma.extraService.delete({ where: { id: params.id } })
+    const deleted = await prisma.extraService.delete({ where: { id: params.id } })
+    invalidatePublicSite(deleted.propertyId)
     return NextResponse.json({ success: true, message: 'Đã xóa dịch vụ' })
   } catch (error) {
     console.error('Delete extra service error:', error)

@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
-import type { Prisma } from '@prisma/client'
+import { PaymentMethod, PaymentStatus, type Prisma } from '@prisma/client'
+import { badParam, dayParam, enumParam, pageParams, paginationOf, searchParam } from '@/lib/api/list-params'
 import { WorkspaceRoles } from '@/lib/auth/rbac'
 import { lockBooking, syncBookingPayments, CLOSED_BOOKING_STATUSES } from '@/lib/payments/booking-payments'
 import { PayosError, createPayosLink, newOrderCode } from '@/lib/payments/payos'
@@ -21,22 +22,37 @@ class PaymentRequestError extends Error {
   }
 }
 
+/**
+ * GET /api/payments — one page of the caller's payments, newest first.
+ * Filters (propertyId, bookingId, status, method, q, startDate/endDate as
+ * yyyy-mm-dd) run in the database. `stats` sums the property's (or the
+ * booking's) payments by status whatever the other filters.
+ */
 export async function GET(request: NextRequest) {
   try {
     const session = await auth()
     const { searchParams } = new URL(request.url)
-    
-    const bookingId = searchParams.get('bookingId')
-    const propertyId = searchParams.get('propertyId')
 
     if (!session?.user?.id) {
       return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
     }
 
+    const bookingId = searchParams.get('bookingId')
+    const propertyId = searchParams.get('propertyId')
+    const status = enumParam(searchParams.get('status'), Object.values(PaymentStatus))
+    const method = enumParam(searchParams.get('method'), Object.values(PaymentMethod))
+    const from = dayParam(searchParams.get('startDate'), 'from')
+    const to = dayParam(searchParams.get('endDate'), 'to')
+    if (status === null) return badParam('Trạng thái không hợp lệ')
+    if (method === null) return badParam('Phương thức thanh toán không hợp lệ')
+    if (from === null || to === null) return badParam('Ngày không hợp lệ (yyyy-mm-dd)')
+    const q = searchParam(searchParams)
+    const { page, limit, skip } = pageParams(searchParams)
+
     // Always restrict to properties in workspaces the user owns or belongs
     // to. Without this, any account could list every property's payments.
     // A propertyId/bookingId from another tenant just yields an empty list.
-    const where: Prisma.PaymentWhereInput = {
+    const scope: Prisma.PaymentWhereInput = {
       property: {
         workspace: {
           OR: [
@@ -45,35 +61,72 @@ export async function GET(request: NextRequest) {
           ],
         },
       },
+      ...(propertyId && { propertyId }),
+      ...(bookingId && { bookingId }),
     }
-    if (propertyId) {
-      where.propertyId = propertyId
-    }
-    if (bookingId) {
-      where.bookingId = bookingId
+    const contains = (value: string) => ({ contains: value, mode: 'insensitive' as const })
+    const where: Prisma.PaymentWhereInput = {
+      ...scope,
+      ...(status && { status }),
+      ...(method && { method }),
+      ...((from || to) && { createdAt: { ...(from && { gte: from }), ...(to && { lte: to }) } }),
+      ...(q && {
+        OR: [
+          { booking: { bookingCode: contains(q) } },
+          { booking: { guestName: contains(q) } },
+          { transferContent: contains(q) },
+          { gatewayOrderCode: contains(q) },
+          { id: q },
+        ],
+      }),
     }
 
-    const payments = await prisma.payment.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        booking: {
-          select: {
-            id: true,
-            bookingCode: true,
-            guestName: true,
-            property: {
-              select: {
-                id: true,
-                name: true,
+    const [payments, total, byStatus] = await Promise.all([
+      prisma.payment.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        include: {
+          booking: {
+            select: {
+              id: true,
+              bookingCode: true,
+              guestName: true,
+              property: {
+                select: {
+                  id: true,
+                  name: true,
+                },
               },
             },
           },
         },
+      }),
+      prisma.payment.count({ where }),
+      prisma.payment.groupBy({ by: ['status'], where: scope, _count: { _all: true }, _sum: { amount: true } }),
+    ])
+
+    const of = (...statuses: string[]) => {
+      const rows = byStatus.filter((r) => statuses.includes(r.status))
+      return { amount: rows.reduce((n, r) => n + (r._sum.amount ?? 0), 0), count: rows.reduce((n, r) => n + r._count._all, 0) }
+    }
+    const [pending, paid, failed] = [of('PENDING'), of('PAID'), of('FAILED', 'EXPIRED')]
+    return NextResponse.json({
+      success: true,
+      data: payments,
+      pagination: paginationOf(page, limit, total),
+      stats: {
+        total: byStatus.reduce((n, r) => n + (r._sum.amount ?? 0), 0),
+        count: byStatus.reduce((n, r) => n + r._count._all, 0),
+        pending: pending.amount,
+        paid: paid.amount,
+        failed: failed.amount,
+        pendingCount: pending.count,
+        paidCount: paid.count,
+        failedCount: failed.count,
       },
     })
-
-    return NextResponse.json({ success: true, data: payments })
   } catch (error) {
     console.error('Get payments error:', error)
     return NextResponse.json({ success: false, error: 'Lỗi khi lấy danh sách thanh toán' }, { status: 500 })

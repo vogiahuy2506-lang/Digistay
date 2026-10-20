@@ -134,6 +134,14 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
 
 ## Quy ước code
 
+- **API danh sách** dùng `src/lib/api/list-params.ts`: `page`/`limit` (tối đa 100), enum và ngày
+  sai trả 400 (đừng để Prisma ném 500), tìm kiếm và lọc chạy trong DB để phủ mọi trang. Thẻ
+  thống kê đếm bằng `groupBy` trên server, không cộng ở trình duyệt.
+- **Site công khai của khách sạn được cache** theo khách sạn (`src/lib/public-site/site.ts`, tối
+  đa 5 phút). Handler nào ghi dữ liệu site hiển thị (khách sạn, ảnh, tiện ích, hạng phòng, giá,
+  dịch vụ, website) phải gọi `invalidatePublicSite(propertyId)`; `public-site-cache.test.ts` chặn.
+  Không bao giờ cache phòng trống theo ngày hay dữ liệu riêng của khách.
+
 - Comment và tên test bằng tiếng Anh, khớp code hiện có. Chuỗi hiển thị cho người dùng và
   thông báo lỗi API bằng tiếng Việt.
 - Theo pattern có sẵn trong file đang sửa; không thêm tầng hay abstraction mới khi chưa cần.

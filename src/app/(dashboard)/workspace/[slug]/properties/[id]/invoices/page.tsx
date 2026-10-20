@@ -113,6 +113,10 @@ export default function InvoicesPage() {
   const [searchQuery, setSearchQuery] = React.useState('')
   const [dateFrom, setDateFrom] = React.useState('')
   const [dateTo, setDateTo] = React.useState('')
+  // Filters and search run on the server (GET /api/invoices), one page at a time.
+  const [debouncedQuery, setDebouncedQuery] = React.useState('')
+  const [page, setPage] = React.useState(1)
+  const [pagination, setPagination] = React.useState({ page: 1, totalPages: 1, total: 0 })
   
   // Create/Edit form
   const [formData, setFormData] = React.useState<InvoiceFormValue & { bookingId: string }>({
@@ -144,8 +148,19 @@ export default function InvoicesPage() {
   }, [])
 
   React.useEffect(() => {
-    applyFilters()
-  }, [invoices, selectedProperty, statusFilter, searchQuery, dateFrom, dateTo])
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery.trim()), 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // A new filter starts again from the first page.
+  React.useEffect(() => {
+    setPage(1)
+  }, [selectedProperty, statusFilter, debouncedQuery, dateFrom, dateTo])
+
+  React.useEffect(() => {
+    if (selectedProperty) fetchInvoices(selectedProperty)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedProperty, statusFilter, debouncedQuery, dateFrom, dateTo, page])
 
   const fetchProperties = async () => {
     try {
@@ -154,7 +169,6 @@ export default function InvoicesPage() {
       if (data.success && data.data.length > 0) {
         setProperties(data.data)
         setSelectedProperty(data.data[0].id)
-        fetchInvoices(data.data[0].id)
       } else {
         setIsLoading(false)
       }
@@ -167,11 +181,24 @@ export default function InvoicesPage() {
   const fetchInvoices = async (propertyId: string): Promise<Invoice[]> => {
     setIsLoading(true)
     try {
-      const res = await fetch(`/api/invoices?propertyId=${propertyId}`)
+      const params = new URLSearchParams({ propertyId, page: String(page), limit: '20' })
+      if (statusFilter) params.set('status', statusFilter)
+      if (debouncedQuery) params.set('q', debouncedQuery)
+      if (dateFrom) params.set('startDate', dateFrom)
+      if (dateTo) params.set('endDate', dateTo)
+      const res = await fetch(`/api/invoices?${params}`)
       const data = await res.json()
       if (data.success) {
         setInvoices(data.data)
-        calculateStats(data.data)
+        setFilteredInvoices(data.data)
+        setPagination(data.pagination)
+        setStats({
+          totalInvoices: data.stats.total,
+          draftCount: data.stats.draft,
+          pendingCount: data.stats.pending,
+          publishedCount: data.stats.published,
+          totalAmount: data.stats.issuedAmount,
+        })
         return data.data
       }
     } catch (err) {
@@ -194,50 +221,6 @@ export default function InvoicesPage() {
     }
   }
 
-  const calculateStats = (invoicesData: Invoice[]) => {
-    const draftCount = invoicesData.filter((i) => i.status === 'DRAFT').length
-    const pendingCount = invoicesData.filter((i) => i.status === 'PENDING').length
-    const publishedCount = invoicesData.filter((i) => i.status === 'PUBLISHED').length
-    const totalAmount = invoicesData.reduce((sum, i) => sum + i.totalAmount, 0)
-    setStats({
-      totalInvoices: invoicesData.length,
-      draftCount,
-      pendingCount,
-      publishedCount,
-      totalAmount,
-    })
-  }
-
-  const applyFilters = () => {
-    let filtered = [...invoices]
-    
-    if (selectedProperty) {
-      filtered = filtered.filter((i) => i.booking?.property?.id === selectedProperty)
-    }
-    if (statusFilter) {
-      filtered = filtered.filter((i) => i.status === statusFilter)
-    }
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(
-        (i) =>
-          i.invoiceNumber?.toLowerCase().includes(query) ||
-          i.companyName?.toLowerCase().includes(query) ||
-          i.customerName?.toLowerCase().includes(query) ||
-          i.taxCode?.toLowerCase().includes(query) ||
-          i.booking?.bookingCode?.toLowerCase().includes(query)
-      )
-    }
-    if (dateFrom) {
-      filtered = filtered.filter((i) => new Date(i.createdAt) >= new Date(dateFrom))
-    }
-    if (dateTo) {
-      filtered = filtered.filter((i) => new Date(i.createdAt) <= new Date(dateTo + 'T23:59:59'))
-    }
-    
-    setFilteredInvoices(filtered)
-  }
-
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(price)
   }
@@ -250,7 +233,6 @@ export default function InvoicesPage() {
 
   const handlePropertyChange = (propertyId: string) => {
     setSelectedProperty(propertyId)
-    fetchInvoices(propertyId)
   }
 
   const resetForm = () => {
@@ -622,7 +604,7 @@ export default function InvoicesPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Tổng tiền</p>
+                  <p className="text-sm text-gray-500">Đã phát hành (tiền)</p>
                   <p className="text-xl font-bold text-gray-900">{formatPrice(stats.totalAmount)}</p>
                 </div>
                 <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
@@ -782,6 +764,21 @@ export default function InvoicesPage() {
                     })}
                   </tbody>
                 </table>
+              </div>
+            )}
+            {pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-gray-600">
+                <span>
+                  Trang {pagination.page} / {pagination.totalPages} · {pagination.total} hoá đơn
+                </span>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="secondary" disabled={page <= 1 || isLoading} onClick={() => setPage(page - 1)}>
+                    Trước
+                  </Button>
+                  <Button size="sm" variant="secondary" disabled={page >= pagination.totalPages || isLoading} onClick={() => setPage(page + 1)}>
+                    Sau
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>

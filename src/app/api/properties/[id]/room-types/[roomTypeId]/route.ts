@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { updateRoomTypeSchema } from '@/lib/validations'
+import { invalidatePublicSite } from '@/lib/public-site/site'
 
 // Check if user has admin access
 async function checkRoomTypeAdmin(roomTypeId: string, userId: string) {
@@ -148,6 +149,9 @@ export async function PATCH(
       },
     })
 
+    // The site shows room types, their amenities and images.
+    invalidatePublicSite(roomType.property.id)
+
     // Update amenities if provided
     if (amenityIds !== undefined) {
       // Remove existing amenities
@@ -239,6 +243,7 @@ export async function DELETE(
     await prisma.roomType.delete({
       where: { id: roomTypeId },
     })
+    invalidatePublicSite(roomType.property.id)
 
     // Log activity
     await prisma.activityLog.create({

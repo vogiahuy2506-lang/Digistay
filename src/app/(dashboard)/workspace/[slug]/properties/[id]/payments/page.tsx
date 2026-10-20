@@ -114,6 +114,10 @@ export default function PaymentsPage() {
   const [searchQuery, setSearchQuery] = React.useState('')
   const [dateFrom, setDateFrom] = React.useState('')
   const [dateTo, setDateTo] = React.useState('')
+  // Filters and search run on the server (GET /api/payments), one page at a time.
+  const [debouncedQuery, setDebouncedQuery] = React.useState('')
+  const [page, setPage] = React.useState(1)
+  const [pagination, setPagination] = React.useState({ page: 1, totalPages: 1, total: 0 })
   
   // Create payment form
   const [createForm, setCreateForm] = React.useState({
@@ -129,6 +133,7 @@ export default function PaymentsPage() {
   // Stats
   const [stats, setStats] = React.useState({
     total: 0,
+    count: 0,
     pending: 0,
     paid: 0,
     failed: 0,
@@ -142,8 +147,19 @@ export default function PaymentsPage() {
   }, [])
 
   React.useEffect(() => {
-    applyFilters()
-  }, [payments, selectedProperty, statusFilter, methodFilter, searchQuery, dateFrom, dateTo])
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery.trim()), 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // A new filter starts again from the first page.
+  React.useEffect(() => {
+    setPage(1)
+  }, [selectedProperty, statusFilter, methodFilter, debouncedQuery, dateFrom, dateTo])
+
+  React.useEffect(() => {
+    if (selectedProperty) fetchPayments(selectedProperty)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedProperty, statusFilter, methodFilter, debouncedQuery, dateFrom, dateTo, page])
 
   const fetchProperties = async () => {
     try {
@@ -152,7 +168,6 @@ export default function PaymentsPage() {
       if (data.success && data.data.length > 0) {
         setProperties(data.data)
         setSelectedProperty(data.data[0].id)
-        fetchPayments(data.data[0].id)
       } else {
         setIsLoading(false)
       }
@@ -165,11 +180,19 @@ export default function PaymentsPage() {
   const fetchPayments = async (propertyId: string, { syncPayos = true } = {}): Promise<Payment[]> => {
     setIsLoading(true)
     try {
-      const res = await fetch(`/api/payments?propertyId=${propertyId}`)
+      const params = new URLSearchParams({ propertyId, page: String(page), limit: '20' })
+      if (statusFilter) params.set('status', statusFilter)
+      if (methodFilter) params.set('method', methodFilter)
+      if (debouncedQuery) params.set('q', debouncedQuery)
+      if (dateFrom) params.set('startDate', dateFrom)
+      if (dateTo) params.set('endDate', dateTo)
+      const res = await fetch(`/api/payments?${params}`)
       const data = await res.json()
       if (data.success) {
         setPayments(data.data)
-        calculateStats(data.data)
+        setFilteredPayments(data.data)
+        setPagination(data.pagination)
+        setStats(data.stats)
         if (syncPayos) syncPendingPayos(propertyId, data.data)
         return data.data
       }
@@ -235,48 +258,6 @@ export default function PaymentsPage() {
     }
   }
 
-  const calculateStats = (paymentsData: Payment[]) => {
-    const total = paymentsData.reduce((sum, p) => sum + p.amount, 0)
-    const pending = paymentsData.filter((p) => p.status === 'PENDING').reduce((sum, p) => sum + p.amount, 0)
-    const paid = paymentsData.filter((p) => p.status === 'PAID').reduce((sum, p) => sum + p.amount, 0)
-    const failed = paymentsData.filter((p) => p.status === 'FAILED' || p.status === 'EXPIRED').reduce((sum, p) => sum + p.amount, 0)
-    const pendingCount = paymentsData.filter((p) => p.status === 'PENDING').length
-    const paidCount = paymentsData.filter((p) => p.status === 'PAID').length
-    const failedCount = paymentsData.filter((p) => p.status === 'FAILED' || p.status === 'EXPIRED').length
-    setStats({ total, pending, paid, failed, pendingCount, paidCount, failedCount })
-  }
-
-  const applyFilters = () => {
-    let filtered = [...payments]
-    
-    if (selectedProperty) {
-      filtered = filtered.filter((p) => p.booking?.property?.id === selectedProperty)
-    }
-    if (statusFilter) {
-      filtered = filtered.filter((p) => p.status === statusFilter)
-    }
-    if (methodFilter) {
-      filtered = filtered.filter((p) => p.method === methodFilter)
-    }
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(
-        (p) =>
-          p.booking?.bookingCode?.toLowerCase().includes(query) ||
-          p.booking?.guestName?.toLowerCase().includes(query) ||
-          p.transferContent?.toLowerCase().includes(query) ||
-          p.id.toLowerCase().includes(query)
-      )
-    }
-    if (dateFrom) {
-      filtered = filtered.filter((p) => new Date(p.createdAt) >= new Date(dateFrom))
-    }
-    if (dateTo) {
-      filtered = filtered.filter((p) => new Date(p.createdAt) <= new Date(dateTo + 'T23:59:59'))
-    }
-    
-    setFilteredPayments(filtered)
-  }
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(price)
@@ -290,7 +271,6 @@ export default function PaymentsPage() {
 
   const handlePropertyChange = (propertyId: string) => {
     setSelectedProperty(propertyId)
-    fetchPayments(propertyId)
     fetchBookings(propertyId)
   }
 
@@ -428,7 +408,7 @@ export default function PaymentsPage() {
                 <p className="text-lg font-bold text-slate-900 truncate">{formatPrice(stats.total)}</p>
               </div>
             </div>
-            <p className="text-xs text-slate-400 mt-2">{filteredPayments.length} giao dịch</p>
+            <p className="text-xs text-slate-400 mt-2">{stats.count} giao dịch</p>
           </div>
 
           {/* Paid Card */}
@@ -564,7 +544,7 @@ export default function PaymentsPage() {
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-slate-900">Danh sách thanh toán</h3>
-                <p className="text-xs text-slate-500">{filteredPayments.length} giao dịch</p>
+                <p className="text-xs text-slate-500">{pagination.total} giao dịch</p>
               </div>
             </div>
             <Button size="sm" variant="ghost" className="gap-2 text-slate-600 hover:text-slate-900">
@@ -681,6 +661,21 @@ export default function PaymentsPage() {
                   })}
                 </tbody>
               </table>
+            </div>
+          )}
+          {pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-sm text-slate-600">
+              <span>
+                Trang {pagination.page} / {pagination.totalPages}
+              </span>
+              <div className="flex gap-2">
+                <Button size="sm" variant="secondary" disabled={page <= 1 || isLoading} onClick={() => setPage(page - 1)}>
+                  Trước
+                </Button>
+                <Button size="sm" variant="secondary" disabled={page >= pagination.totalPages || isLoading} onClick={() => setPage(page + 1)}>
+                  Sau
+                </Button>
+              </div>
             </div>
           )}
         </div>
