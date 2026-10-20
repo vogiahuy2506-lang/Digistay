@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { BlockType, Prisma } from '@prisma/client'
+import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 
@@ -65,20 +67,42 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// A missing or non-string propertyId must never reach Prisma: `undefined`
+// drops the condition and a filter object widens it, so the delete below
+// once wiped every hotel's blocks.
+const putSchema = z.object({
+  propertyId: z.string().min(1),
+  blocks: z
+    .array(
+      z.object({
+        type: z.nativeEnum(BlockType),
+        name: z.string().max(200),
+        config: z.record(z.unknown()).optional(),
+        isEnabled: z.boolean().optional(),
+      })
+    )
+    .max(100)
+    .default([]),
+})
+
 export async function PUT(request: NextRequest) {
   try {
     const session = await auth()
-    const body = await request.json()
-    const { propertyId, blocks } = body
 
     if (!session?.user?.id) {
       return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
     }
 
+    const validation = putSchema.safeParse(await request.json().catch(() => null))
+    if (!validation.success) {
+      return NextResponse.json({ success: false, error: 'Dữ liệu website không hợp lệ' }, { status: 400 })
+    }
+    const { blocks } = validation.data
+
     // Check property access
     const property = await prisma.property.findFirst({
       where: {
-        id: propertyId,
+        id: validation.data.propertyId,
         workspace: {
           OR: [
             { ownerId: session.user.id },
@@ -86,42 +110,37 @@ export async function PUT(request: NextRequest) {
           ],
         },
       },
+      select: { id: true },
     })
 
     if (!property) {
       return NextResponse.json({ success: false, error: 'Không có quyền chỉnh sửa' }, { status: 403 })
     }
 
-    // Delete existing blocks
-    await prisma.websiteBlock.deleteMany({
-      where: { propertyId },
-    })
-
-    // Create new blocks
-    if (blocks && blocks.length > 0) {
-      await prisma.websiteBlock.createMany({
-        data: blocks.map((block: any, index: number) => ({
-          propertyId,
+    // One transaction: a failure keeps the current layout instead of none.
+    await prisma.$transaction([
+      prisma.websiteBlock.deleteMany({ where: { propertyId: property.id } }),
+      prisma.websiteBlock.createMany({
+        data: blocks.map((block, index) => ({
+          propertyId: property.id,
           type: block.type,
           name: block.name,
-          config: block.config || {},
+          config: (block.config ?? {}) as Prisma.InputJsonObject,
           isEnabled: block.isEnabled ?? true,
           sortOrder: index,
         })),
-      })
-    }
-
-    // Log activity
-    await prisma.activityLog.create({
-      data: {
-        userId: session.user.id,
-        propertyId,
-        action: 'UPDATE',
-        entityType: 'WEBSITE',
-        entityId: propertyId,
-        changes: { blocksUpdated: true },
-      },
-    })
+      }),
+      prisma.activityLog.create({
+        data: {
+          userId: session.user.id,
+          propertyId: property.id,
+          action: 'UPDATE',
+          entityType: 'WEBSITE',
+          entityId: property.id,
+          changes: { blocksUpdated: true },
+        },
+      }),
+    ])
 
     return NextResponse.json({
       success: true,

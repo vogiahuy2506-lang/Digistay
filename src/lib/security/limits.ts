@@ -21,6 +21,10 @@ export const LIMITS = {
   otpVerifyIp: { name: 'otp-verify-ip', limit: 20, windowSec: 15 * MIN },
   /** Wrong current password when changing password/email, per user (failures only). */
   passwordCheckUser: { name: 'password-check-user', limit: 5, windowSec: 15 * MIN },
+  /** Invitations one user sends: each emails any address through Digistay's mail server. */
+  invitationSendUser: { name: 'invite-send-user', limit: 30, windowSec: 60 * MIN },
+  /** Email-change confirmations one user requests: each emails the new address. */
+  emailChangeSendUser: { name: 'email-change-send-user', limit: 5, windowSec: 60 * MIN },
   roomLockIp: { name: 'room-lock-ip', limit: 30, windowSec: 10 * MIN },
   /** Wrong two-factor codes at sign-in from one IP, across accounts (failures only). */
   twoFactorVerifyIp: { name: '2fa-verify-ip', limit: 20, windowSec: 15 * MIN },

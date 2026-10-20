@@ -24,20 +24,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
     }
 
-    const where: any = {}
+    // Always the caller's workspaces; propertyId only narrows it (without
+    // it, this once listed every hotel's invoices).
+    const where: any = {
+      property: {
+        workspace: {
+          OR: [
+            { ownerId: session.user.id },
+            { members: { some: { userId: session.user.id } } },
+          ],
+        },
+      },
+    }
 
     if (propertyId) {
-      where.booking = {
-        propertyId,
-        property: {
-          workspace: {
-            OR: [
-              { ownerId: session.user.id },
-              { members: { some: { userId: session.user.id } } },
-            ],
-          },
-        },
-      }
+      where.propertyId = propertyId
     }
 
     if (status) {
