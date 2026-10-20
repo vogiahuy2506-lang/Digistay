@@ -1,6 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { WorkspaceRole } from '@prisma/client'
+import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
+
+const roleChangeSchema = z.object({
+  memberId: z.string().min(1),
+  role: z.nativeEnum(WorkspaceRole),
+})
+
+/**
+ * The membership row, only if it belongs to this workspace. Member ids reach
+ * every member through GET /api/workspaces, so an admin of any workspace
+ * (anyone can create one) must not be able to act on another's rows.
+ */
+function memberOf(workspaceId: string, memberId: string) {
+  return prisma.workspaceMember.findFirst({
+    where: { id: memberId, workspaceId },
+    select: { id: true, userId: true },
+  })
+}
 
 // Check if user is workspace admin or owner
 async function checkWorkspaceAdmin(workspaceId: string, userId: string) {
@@ -104,13 +123,20 @@ export async function PATCH(
       )
     }
 
-    const body = await request.json()
-    const { memberId, role } = body
-
-    if (!memberId || !role) {
+    const validation = roleChangeSchema.safeParse(await request.json().catch(() => null))
+    if (!validation.success) {
       return NextResponse.json(
         { success: false, error: 'Vui lòng cung cấp đầy đủ thông tin' },
         { status: 400 }
+      )
+    }
+    const { role } = validation.data
+
+    const member = await memberOf(id, validation.data.memberId)
+    if (!member) {
+      return NextResponse.json(
+        { success: false, error: 'Không tìm thấy thành viên' },
+        { status: 404 }
       )
     }
 
@@ -120,7 +146,7 @@ export async function PATCH(
       select: { ownerId: true },
     })
 
-    if (workspace?.ownerId === memberId) {
+    if (workspace?.ownerId === member.userId) {
       return NextResponse.json(
         { success: false, error: 'Không thể thay đổi quyền của chủ sở hữu' },
         { status: 400 }
@@ -128,7 +154,7 @@ export async function PATCH(
     }
 
     await prisma.workspaceMember.update({
-      where: { id: memberId },
+      where: { id: member.id },
       data: { role },
     })
 
@@ -185,12 +211,15 @@ export async function DELETE(
       select: { ownerId: true },
     })
 
-    const member = await prisma.workspaceMember.findUnique({
-      where: { id: memberId },
-      select: { userId: true },
-    })
+    const member = await memberOf(id, memberId)
+    if (!member) {
+      return NextResponse.json(
+        { success: false, error: 'Không tìm thấy thành viên' },
+        { status: 404 }
+      )
+    }
 
-    if (workspace?.ownerId === member?.userId) {
+    if (workspace?.ownerId === member.userId) {
       return NextResponse.json(
         { success: false, error: 'Không thể xóa chủ sở hữu khỏi workspace' },
         { status: 400 }
@@ -198,12 +227,12 @@ export async function DELETE(
     }
 
     // Cannot remove yourself if you're not the owner
-    if (member?.userId === session.user.id) {
+    if (member.userId === session.user.id) {
       const isOwner = workspace?.ownerId === session.user.id
       if (!isOwner) {
         // Allow user to leave workspace
         await prisma.workspaceMember.delete({
-          where: { id: memberId },
+          where: { id: member.id },
         })
         return NextResponse.json({
           success: true,
@@ -213,7 +242,7 @@ export async function DELETE(
     }
 
     await prisma.workspaceMember.delete({
-      where: { id: memberId },
+      where: { id: member.id },
     })
 
     return NextResponse.json({

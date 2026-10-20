@@ -39,7 +39,6 @@ const PUBLIC_HANDLERS: Record<string, string> = {
   'GET /api/invitations/[token]': 'invitation preview; the unguessable token in the URL is the credential',
   'POST /api/payments/webhook': 'disabled: always 404 until a signed gateway webhook replaces it',
   'GET /api/properties/public': 'public property site (name, address, contact, rooms)',
-  'GET /api/rooms/available': 'public room search for the booking site',
 }
 
 interface Handler {

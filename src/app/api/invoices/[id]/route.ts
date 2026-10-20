@@ -32,8 +32,19 @@ export async function GET(request: NextRequest, props: RouteParams) {
       return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
     }
 
-    const invoice = await prisma.invoice.findUnique({
-      where: { id },
+    // Another hotel's invoice answers 404, the same as a missing one.
+    const invoice = await prisma.invoice.findFirst({
+      where: {
+        id,
+        property: {
+          workspace: {
+            OR: [
+              { ownerId: session.user.id },
+              { members: { some: { userId: session.user.id } } },
+            ],
+          },
+        },
+      },
       include: {
         booking: {
           select: {

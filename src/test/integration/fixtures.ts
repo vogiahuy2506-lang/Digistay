@@ -58,6 +58,13 @@ export async function createTenant(opts: { memberRole?: WorkspaceRole } = {}) {
   return { owner, workspace, property, member }
 }
 
+export function createRoomType(propertyId: string, opts: { totalRooms?: number } = {}) {
+  const id = uid()
+  return prisma.roomType.create({
+    data: { propertyId, name: `Room ${id}`, slug: `room-${id}`, bedType: 'DOUBLE', totalRooms: opts.totalRooms ?? 5 },
+  })
+}
+
 export function createBooking(
   propertyId: string,
   opts: { totalAmount?: number; status?: BookingStatus; guestEmail?: string } = {}
