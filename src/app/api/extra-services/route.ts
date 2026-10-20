@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
+import { invalidatePublicSite } from '@/lib/public-site/site'
 
 const serviceSchema = z.object({
   propertyId: z.string(),
@@ -81,6 +82,7 @@ export async function POST(request: NextRequest) {
     }
 
     const service = await prisma.extraService.create({ data: validation.data })
+    invalidatePublicSite(service.propertyId)
     return NextResponse.json({ success: true, data: service, message: 'Đã thêm dịch vụ' })
   } catch (error) {
     console.error('Create extra service error:', error)

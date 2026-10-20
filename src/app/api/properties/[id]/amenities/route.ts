@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
+import { invalidatePublicSite } from '@/lib/public-site/site'
 
 const assignSchema = z.object({
   propertyId: z.string(),
@@ -108,6 +109,7 @@ export async function PUT(
       }),
     ])
 
+    invalidatePublicSite(params.id)
     return NextResponse.json({ success: true, message: 'Đã cập nhật tiện ích' })
   } catch (error) {
     console.error('Assign amenities error:', error)

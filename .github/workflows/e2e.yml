@@ -1,0 +1,85 @@
+name: E2E
+
+# Browser tests (Playwright, e2e/) against the production build, with
+# PayOS, Mắt Bão and SMTP faked (e2e/fakes.ts). Nightly at 03:00 Vietnam
+# time on main, by hand from the Actions tab for any branch, and on PRs
+# that change the tests themselves.
+on:
+  schedule:
+    - cron: '0 20 * * *'
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'e2e/**'
+      - 'playwright.config.ts'
+      - '.github/workflows/e2e.yml'
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: Playwright
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: digistay_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/digistay_e2e?schema=public
+      REDIS_URL: redis://localhost:6379
+      PRISMA_HIDE_UPDATE_MESSAGE: '1'
+      APP_VERSION: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+
+      - name: Build (standalone, as in the Docker image)
+        run: npm run build && npm run e2e:prepare
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser tests
+        run: npx playwright test
+
+      - name: Report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14

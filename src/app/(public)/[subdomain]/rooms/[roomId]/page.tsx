@@ -1,3 +1,5 @@
+import { ratesFrom } from '@/lib/pricing/quote'
+import { ROOM_RATE_INCLUDE, propertyRateDefaults } from '@/lib/pricing/rates'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { SiteHeader, type SiteSection } from '../../_components/SiteHeader'
@@ -31,6 +33,7 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
   const property = await prisma.property.findFirst({
     where: { subdomain, isActive: true },
     select: {
+      id: true,
       name: true,
       type: true,
       city: true,
@@ -41,8 +44,8 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
         where: { id: roomId, isActive: true },
         include: {
           images: { orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }] },
-          // The newest pricing, as POST /api/bookings charges it.
-          pricing: { include: { pricing: true }, take: 1, orderBy: { createdAt: 'desc' } },
+          // The room type's own price, the one bookings are charged.
+          ...ROOM_RATE_INCLUDE,
           amenities: { include: { amenity: true } },
         },
       },
@@ -54,16 +57,8 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
   }
 
   const room = property.roomTypes[0]
-  const config = room.pricing[0]?.pricing
-  const pricing = config
-    ? {
-        weekdayPrice: config.weekdayPrice,
-        weekendPrice: config.weekendPrice,
-        extraAdultPrice: config.extraAdultPrice,
-        extraChildPrice: config.extraChildPrice,
-        baseOccupancy: room.baseOccupancy,
-      }
-    : null
+  // The rates a booking is charged (src/lib/pricing/quote.ts); null: no price yet.
+  const rates = ratesFrom(room.pricing[0], await propertyRateDefaults(prisma, property.id))
   const blockTypes = new Set(property.websiteBlocks.map((b) => b.type))
   const sections = Object.entries(SECTIONS)
     .filter(([type]) => blockTypes.size === 0 || blockTypes.has(type as never))
@@ -199,7 +194,8 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
 
             <aside className="lg:sticky lg:top-28 lg:self-start">
               <BookingBox
-                pricing={pricing}
+                rates={rates}
+                baseOccupancy={room.baseOccupancy}
                 maxAdults={room.maxAdults}
                 maxChildren={room.maxChildren}
                 checkIn={day(query.checkIn)}
@@ -213,9 +209,9 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
       {/* Phones: the price and the button stay at the bottom (redesign 2c mobile). */}
       <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between gap-4 border-t border-line bg-raised px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
         <p className="text-body font-semibold tabular-nums text-fg">
-          {pricing && pricing.weekdayPrice > 0 ? (
+          {rates ? (
             <>
-              {formatVnd(pricing.weekdayPrice)}
+              {formatVnd(rates.weekdayPrice)}
               <span className="text-xs font-normal text-muted"> /đêm</span>
             </>
           ) : (

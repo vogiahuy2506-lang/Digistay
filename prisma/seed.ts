@@ -285,24 +285,6 @@ async function main() {
     },
   ]
 
-  for (const roomType of roomTypes) {
-    const created = await prisma.roomType.upsert({
-      where: {
-        propertyId_slug: {
-          propertyId: demoProperty.id,
-          slug: roomType.slug,
-        },
-      },
-      update: roomType,
-      create: {
-        ...roomType,
-        propertyId: demoProperty.id,
-        availableRooms: roomType.totalRooms,
-      },
-    })
-    console.log(`Created room type: ${created.name}`)
-  }
-
   // Create pricing
   const pricing = await prisma.pricingConfig.upsert({
     where: { id: 'demo-pricing' },
@@ -320,6 +302,40 @@ async function main() {
   })
 
   console.log(`Created pricing: ${pricing.name}`)
+
+  // Each room type's own price: what the site quotes and bookings charge
+  // (src/lib/pricing/quote.ts). The price list above holds the surcharges.
+  const ROOM_PRICES: Record<string, [number, number]> = {
+    standard: [850000, 1100000],
+    superior: [1050000, 1300000],
+    deluxe: [1450000, 1750000],
+    suite: [2500000, 3000000],
+  }
+
+  for (const roomType of roomTypes) {
+    const created = await prisma.roomType.upsert({
+      where: {
+        propertyId_slug: {
+          propertyId: demoProperty.id,
+          slug: roomType.slug,
+        },
+      },
+      update: roomType,
+      create: {
+        ...roomType,
+        propertyId: demoProperty.id,
+        availableRooms: roomType.totalRooms,
+      },
+    })
+    const [weekdayPrice, weekendPrice] = ROOM_PRICES[roomType.slug]
+    if ((await prisma.roomTypePricing.count({ where: { roomTypeId: created.id } })) === 0) {
+      await prisma.roomTypePricing.create({
+        data: { roomTypeId: created.id, pricingId: pricing.id, weekdayPrice, weekendPrice },
+      })
+    }
+    console.log(`Created room type: ${created.name}`)
+  }
+
 
   // Add some amenities to property
   const wifiAmenity = await prisma.amenity.findUnique({ where: { slug: 'wifi' } })

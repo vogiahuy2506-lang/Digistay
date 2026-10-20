@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { queueWorkspaceInvite, sendAfterResponse } from '@/lib/email/outbox'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { inviteMemberSchema } from '@/lib/validations'
 import { generateRandomToken } from '@/lib/utils'
+import { LIMITS } from '@/lib/security/limits'
+import { hit, tooManyRequests } from '@/lib/security/rate-limit'
 
 // Check if user is workspace admin or owner
 async function checkWorkspaceAdmin(workspaceId: string, userId: string) {
@@ -116,6 +119,13 @@ export async function POST(
 
     const { email, role } = validation.data
 
+    // Anyone can create a workspace and is its admin, so without a per-user
+    // cap this route mails any address from Digistay's server, unlimited.
+    const sent = await hit(LIMITS.invitationSendUser, session.user.id)
+    if (!sent.allowed) {
+      return tooManyRequests('Bạn đã gửi quá nhiều lời mời. Vui lòng thử lại sau.', sent.retryAfterSec)
+    }
+
     // Check if user is already a member
     const existingMember = await prisma.workspaceMember.findFirst({
       where: {
@@ -184,17 +194,15 @@ export async function POST(
       },
     })
 
-    // Send invitation email (fire-and-forget so the response is fast even
-    // when the email provider is slow).
+    // Queued, then sent after the response (src/lib/email/outbox.ts): a
+    // failure is retried and alerted instead of lost.
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
     // URL shape: /invitations/[token] (the public accept page is
     // token-only; the workspace is looked up server-side from the token).
     const inviteUrl = `${siteUrl}/invitations/${invitation.token}`
-
-    void (async () => {
-      try {
-        const { sendWorkspaceInvite } = await import('@/lib/email')
-        await sendWorkspaceInvite({
+    try {
+      const emailId = await queueWorkspaceInvite(
+        {
           recipientEmail: invitation.email,
           recipientName: invitation.recipient?.name ?? undefined,
           inviterName: invitation.sender.name ?? invitation.sender.email,
@@ -202,11 +210,13 @@ export async function POST(
           role: invitation.role,
           inviteUrl,
           expiresAt: invitation.expiresAt,
-        })
-      } catch (err) {
-        console.error('[invitation] Email send failed:', err)
-      }
-    })()
+        },
+        invitation.id
+      )
+      sendAfterResponse([emailId])
+    } catch (err) {
+      console.error('[invitation] could not queue the email:', err)
+    }
 
     return NextResponse.json({
       success: true,

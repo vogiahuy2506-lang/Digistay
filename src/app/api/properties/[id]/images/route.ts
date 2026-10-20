@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { uploadImageSchema } from '@/lib/validations'
+import { invalidatePublicSite } from '@/lib/public-site/site'
 
 export async function GET(
   request: NextRequest,
@@ -128,6 +129,7 @@ export async function POST(
     })
 
     // Log activity
+    invalidatePublicSite(id)
     await prisma.activityLog.create({
       data: {
         userId: session.user.id,
@@ -213,6 +215,7 @@ export async function DELETE(
     })
 
     // Log activity
+    invalidatePublicSite(id)
     await prisma.activityLog.create({
       data: {
         userId: session.user.id,

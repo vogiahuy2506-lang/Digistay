@@ -122,6 +122,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Không có quyền truy cập' }, { status: 403 })
     }
 
+    // The room type must be this property's, not just any id the client sends
+    const roomType = await prisma.roomType.findFirst({
+      where: { id: roomTypeId, propertyId: property.id },
+      select: { id: true },
+    })
+    if (!roomType) {
+      return NextResponse.json({ success: false, error: 'Không tìm thấy hạng phòng' }, { status: 404 })
+    }
+
     // Check for overlapping locks
     const existingLock = await prisma.roomLock.findFirst({
       where: {
@@ -208,23 +217,21 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Cần cung cấp lockId' }, { status: 400 })
     }
 
-    // Check access via the lock's property
-    const lock = await prisma.roomLock.findUnique({
-      where: { id: lockId },
+    // Check access via the lock's own property (its room type's property can
+    // differ on rows written before room types were checked), and only for
+    // maintenance blocks: holds and booked nights are not deleted here.
+    const lock = await prisma.roomLock.findFirst({
+      where: { id: lockId, type: 'MAINTENANCE' },
       include: {
-        roomType: {
-          include: {
-            property: {
+        property: {
+          select: {
+            id: true,
+            workspace: {
               select: {
-                id: true,
-                workspace: {
-                  select: {
-                    ownerId: true,
-                    members: {
-                      where: { userId: session.user.id },
-                      select: { role: true },
-                    },
-                  },
+                ownerId: true,
+                members: {
+                  where: { userId: session.user.id },
+                  select: { role: true },
                 },
               },
             },
@@ -233,11 +240,11 @@ export async function DELETE(request: NextRequest) {
       },
     })
 
-    if (!lock) {
+    const workspace = lock?.property.workspace
+    if (!lock || !workspace || (workspace.ownerId !== session.user.id && workspace.members.length === 0)) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy lịch bảo trì' }, { status: 404 })
     }
 
-    const workspace = lock.roomType.property.workspace
     const isOwner = workspace.ownerId === session.user.id
     const isStaff = workspace.members.some(m =>
       ['ADMIN', 'MANAGER', 'RECEPTIONIST'].includes(m.role)
@@ -248,7 +255,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     await prisma.roomLock.delete({
-      where: { id: lockId },
+      where: { id: lock.id },
     })
 
     // Log activity

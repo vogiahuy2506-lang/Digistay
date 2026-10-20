@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { signOut, useSession } from 'next-auth/react'
@@ -436,6 +437,12 @@ export default function ProfilePage() {
                   <Badge variant={profile?.role === 'SUPER_ADMIN' || profile?.role === 'ADMIN' ? 'primary' : 'secondary'}>
                     {profile?.role === 'SUPER_ADMIN' ? 'Super Admin' : profile?.role === 'ADMIN' ? 'Admin' : 'Người dùng'}
                   </Badge>
+                  {/* /api/admin/system checks the role again, in the database. */}
+                  {profile?.role === 'SUPER_ADMIN' && (
+                    <Link href="/admin/system" className="text-xs font-medium text-primary underline">
+                      Trang Hệ thống
+                    </Link>
+                  )}
                 </div>
                 <p className="text-xs text-muted">
                   Tham gia: {profile?.createdAt ? format(new Date(profile.createdAt), 'dd MMMM yyyy', { locale: vi }) : '-'}

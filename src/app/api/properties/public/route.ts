@@ -48,6 +48,12 @@ export async function GET(request: NextRequest) {
             totalRooms: true,
           },
         },
+        // What a guest may add to a booking (priced by src/lib/pricing/quote.ts).
+        extraServices: {
+          where: { isActive: true },
+          orderBy: { createdAt: 'asc' },
+          select: { id: true, name: true, description: true, price: true, priceType: true, perPerson: true },
+        },
       },
     })
 

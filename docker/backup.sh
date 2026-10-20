@@ -71,10 +71,28 @@ fingerprint() {
 
 TS="$(date -u +%Y%m%dT%H%M%SZ)"
 FILE="$BACKUP_DIR/digistay-$TS-$LABEL.dump"
+STARTED="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+UPLOADED=false
+OUTCOME=FAILURE
+
+# Records this run in job_runs (src/lib/ops/job-runs.ts); the ops alerts
+# read it ("no daily backup for 30 hours", "the last backup failed"). Never
+# fails the backup: on a fresh database the table does not exist yet.
+record_run() {
+  local status="$1" error="${2:-}"
+  psql_in "" >/dev/null 2>&1 <<SQL || log "note: could not record this run in job_runs"
+INSERT INTO job_runs (id, job, status, "startedAt", "finishedAt", summary, error)
+VALUES (gen_random_uuid()::text, 'backup', '$status', '$STARTED', now(),
+        jsonb_build_object('label', '$LABEL', 'file', '$(basename "$FILE")', 'uploaded', $UPLOADED),
+        NULLIF('$error', ''));
+SQL
+}
 
 cleanup() {
+  local rc=$?
   rm -f "$FILE.partial"
   pg sh -c 'dropdb -U "$POSTGRES_USER" --if-exists "$1"' dropdb "$SCRATCH_DB" >/dev/null 2>&1 || true
+  if [[ "$OUTCOME" != SUCCESS ]]; then record_run FAILURE "backup.sh exited with code $rc"; fi
 }
 trap cleanup EXIT
 
@@ -103,6 +121,7 @@ if [[ "$BACKUP_SKIP_UPLOAD" == "1" ]]; then
 elif [[ -n "$BACKUP_GCS_BUCKET" ]]; then
   log "uploading to $BACKUP_GCS_BUCKET/"
   gcloud storage cp --quiet "$FILE" "$BACKUP_GCS_BUCKET/$(basename "$FILE")"
+  UPLOADED=true
 else
   log "WARNING: BACKUP_GCS_BUCKET is not set — this backup exists on this VPS only"
 fi
@@ -111,3 +130,5 @@ find "$BACKUP_DIR" -maxdepth 1 -name 'digistay-*.dump' -mtime +"$BACKUP_KEEP_DAY
   | sed 's/^/[backup] pruned /'
 
 log "done: $FILE ($(du -h "$FILE" | cut -f1))"
+OUTCOME=SUCCESS
+record_run SUCCESS

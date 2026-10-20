@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { invalidatePublicSite } from '@/lib/public-site/site'
 
 // GET /api/room-types - Get all room types for a property
 export async function GET(request: NextRequest) {
@@ -163,6 +164,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    invalidatePublicSite(propertyId)
     return NextResponse.json({ success: true, data: roomType }, { status: 201 })
   } catch (error) {
     console.error('Error creating room type:', error)

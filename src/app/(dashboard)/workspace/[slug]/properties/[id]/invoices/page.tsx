@@ -2,14 +2,23 @@
 
 import * as React from 'react'
 import { Header, PageContainer } from '@/components/layout'
-import { Card, CardContent, Button, Badge, Input, Select, Modal, ModalFooter } from '@/components/ui'
+import { Card, CardContent, Button, Badge, Input, Textarea, Select, Modal, ModalFooter } from '@/components/ui'
 import { 
   Search, FileText, Plus, Eye, Download, RefreshCw,
   Clock, CheckCircle, XCircle, AlertCircle, Send, Printer,
-  Building, Copy, Check, Mail, Edit, Trash2
+  Building, Copy, Check, Mail, Edit, Trash2, ArrowUpDown
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
+import { EinvoiceCard, type EinvoiceStatus } from './einvoice-card'
+import { CQT_LABELS } from '@/lib/einvoice/cqt-labels'
+import {
+  EMPTY_INVOICE_FORM,
+  InvoiceFormFields,
+  invoiceFormBody,
+  validateInvoiceForm,
+  type InvoiceFormValue,
+} from './invoice-form'
 
 interface Invoice {
   id: string
@@ -35,6 +44,21 @@ interface Invoice {
   publishedAt: string | null
   xmlUrl: string | null
   pdfUrl: string | null
+  buyerType: string
+  lookupCode: string | null
+  einvoiceNumber: string | null
+  publishError: string | null
+  cqtStatus: number | null
+  cqtNote: string | null
+  replacesInvoice: { id: string; invoiceNumber: string; einvoiceNumber: string | null; invoiceSeries: string | null } | null
+  replacements: { id: string; invoiceNumber: string; einvoiceNumber: string | null; status: string }[]
+  adjustsInvoice: { id: string; invoiceNumber: string; einvoiceNumber: string | null; invoiceSeries: string | null } | null
+  adjustments: { id: string; invoiceNumber: string; einvoiceNumber: string | null; status: string; totalAmount: number }[]
+  metadata: { adjustmentReason?: string } | null
+  autoIssued: boolean
+  emailStatus: string | null
+  emailedAt: string | null
+  emailError: string | null
   createdAt: string
   updatedAt: string
   booking: {
@@ -59,24 +83,18 @@ interface Booking {
   id: string
   bookingCode: string
   guestName: string
+  guestEmail?: string | null
   totalAmount: number
 }
 
 const invoiceStatusConfig: Record<string, { label: string; color: string; bgColor: string; icon: any }> = {
   DRAFT: { label: 'Nháp', color: 'text-gray-600', bgColor: 'bg-gray-50', icon: FileText },
   PENDING: { label: 'Chờ phát hành', color: 'text-amber-600', bgColor: 'bg-amber-50', icon: Clock },
+  PUBLISHING: { label: 'Đang phát hành', color: 'text-blue-600', bgColor: 'bg-blue-50', icon: Clock },
   PUBLISHED: { label: 'Đã phát hành', color: 'text-green-600', bgColor: 'bg-green-50', icon: CheckCircle },
   CANCELLED: { label: 'Đã hủy', color: 'text-red-600', bgColor: 'bg-red-50', icon: XCircle },
   REPLACED: { label: 'Đã thay thế', color: 'text-blue-600', bgColor: 'bg-blue-50', icon: AlertCircle },
 }
-
-const eInvoiceProviders = [
-  { value: 'MISA', label: 'MISA' },
-  { value: 'VNPT', label: 'VNPT' },
-  { value: 'VIETTAX', label: 'VietTax' },
-  { value: 'FAST', label: 'Fast' },
-  { value: 'BASE', label: 'Base' },
-]
 
 export default function InvoicesPage() {
   const [invoices, setInvoices] = React.useState<Invoice[]>([])
@@ -95,24 +113,26 @@ export default function InvoicesPage() {
   const [searchQuery, setSearchQuery] = React.useState('')
   const [dateFrom, setDateFrom] = React.useState('')
   const [dateTo, setDateTo] = React.useState('')
+  // Filters and search run on the server (GET /api/invoices), one page at a time.
+  const [debouncedQuery, setDebouncedQuery] = React.useState('')
+  const [page, setPage] = React.useState(1)
+  const [pagination, setPagination] = React.useState({ page: 1, totalPages: 1, total: 0 })
   
   // Create/Edit form
-  const [formData, setFormData] = React.useState({
+  const [formData, setFormData] = React.useState<InvoiceFormValue & { bookingId: string }>({
     bookingId: '',
-    companyName: '',
-    companyAddress: '',
-    taxCode: '',
-    companyEmail: '',
-    customerName: '',
-    customerEmail: '',
-    customerAddress: '',
-    subtotal: '',
-    taxRate: '0.1',
-    eInvoiceProvider: '',
+    ...EMPTY_INVOICE_FORM,
   })
+  // Separate from the dialogs' open flags: an error keeps the dialog open.
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [einvoice, setEinvoice] = React.useState<EinvoiceStatus | null>(null)
   const [formError, setFormError] = React.useState('')
   const [formSuccess, setFormSuccess] = React.useState('')
   const [editingId, setEditingId] = React.useState<string | null>(null)
+  // Adjustment (src/lib/einvoice/adjustment.ts): the issued invoice being adjusted
+  const [adjusting, setAdjusting] = React.useState<Invoice | null>(null)
+  const [adjustForm, setAdjustForm] = React.useState({ direction: 'increase', amount: '', reason: '' })
+  const [adjustError, setAdjustError] = React.useState('')
 
   // Stats
   const [stats, setStats] = React.useState({
@@ -128,8 +148,19 @@ export default function InvoicesPage() {
   }, [])
 
   React.useEffect(() => {
-    applyFilters()
-  }, [invoices, selectedProperty, statusFilter, searchQuery, dateFrom, dateTo])
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery.trim()), 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // A new filter starts again from the first page.
+  React.useEffect(() => {
+    setPage(1)
+  }, [selectedProperty, statusFilter, debouncedQuery, dateFrom, dateTo])
+
+  React.useEffect(() => {
+    if (selectedProperty) fetchInvoices(selectedProperty)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedProperty, statusFilter, debouncedQuery, dateFrom, dateTo, page])
 
   const fetchProperties = async () => {
     try {
@@ -138,7 +169,6 @@ export default function InvoicesPage() {
       if (data.success && data.data.length > 0) {
         setProperties(data.data)
         setSelectedProperty(data.data[0].id)
-        fetchInvoices(data.data[0].id)
       } else {
         setIsLoading(false)
       }
@@ -148,20 +178,35 @@ export default function InvoicesPage() {
     }
   }
 
-  const fetchInvoices = async (propertyId: string) => {
+  const fetchInvoices = async (propertyId: string): Promise<Invoice[]> => {
     setIsLoading(true)
     try {
-      const res = await fetch(`/api/invoices?propertyId=${propertyId}`)
+      const params = new URLSearchParams({ propertyId, page: String(page), limit: '20' })
+      if (statusFilter) params.set('status', statusFilter)
+      if (debouncedQuery) params.set('q', debouncedQuery)
+      if (dateFrom) params.set('startDate', dateFrom)
+      if (dateTo) params.set('endDate', dateTo)
+      const res = await fetch(`/api/invoices?${params}`)
       const data = await res.json()
       if (data.success) {
         setInvoices(data.data)
-        calculateStats(data.data)
+        setFilteredInvoices(data.data)
+        setPagination(data.pagination)
+        setStats({
+          totalInvoices: data.stats.total,
+          draftCount: data.stats.draft,
+          pendingCount: data.stats.pending,
+          publishedCount: data.stats.published,
+          totalAmount: data.stats.issuedAmount,
+        })
+        return data.data
       }
     } catch (err) {
       console.error('Failed to fetch invoices:', err)
     } finally {
       setIsLoading(false)
     }
+    return []
   }
 
   const fetchBookings = async (propertyId: string) => {
@@ -176,50 +221,6 @@ export default function InvoicesPage() {
     }
   }
 
-  const calculateStats = (invoicesData: Invoice[]) => {
-    const draftCount = invoicesData.filter((i) => i.status === 'DRAFT').length
-    const pendingCount = invoicesData.filter((i) => i.status === 'PENDING').length
-    const publishedCount = invoicesData.filter((i) => i.status === 'PUBLISHED').length
-    const totalAmount = invoicesData.reduce((sum, i) => sum + i.totalAmount, 0)
-    setStats({
-      totalInvoices: invoicesData.length,
-      draftCount,
-      pendingCount,
-      publishedCount,
-      totalAmount,
-    })
-  }
-
-  const applyFilters = () => {
-    let filtered = [...invoices]
-    
-    if (selectedProperty) {
-      filtered = filtered.filter((i) => i.booking?.property?.id === selectedProperty)
-    }
-    if (statusFilter) {
-      filtered = filtered.filter((i) => i.status === statusFilter)
-    }
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(
-        (i) =>
-          i.invoiceNumber?.toLowerCase().includes(query) ||
-          i.companyName?.toLowerCase().includes(query) ||
-          i.customerName?.toLowerCase().includes(query) ||
-          i.taxCode?.toLowerCase().includes(query) ||
-          i.booking?.bookingCode?.toLowerCase().includes(query)
-      )
-    }
-    if (dateFrom) {
-      filtered = filtered.filter((i) => new Date(i.createdAt) >= new Date(dateFrom))
-    }
-    if (dateTo) {
-      filtered = filtered.filter((i) => new Date(i.createdAt) <= new Date(dateTo + 'T23:59:59'))
-    }
-    
-    setFilteredInvoices(filtered)
-  }
-
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(price)
   }
@@ -232,23 +233,10 @@ export default function InvoicesPage() {
 
   const handlePropertyChange = (propertyId: string) => {
     setSelectedProperty(propertyId)
-    fetchInvoices(propertyId)
   }
 
   const resetForm = () => {
-    setFormData({
-      bookingId: '',
-      companyName: '',
-      companyAddress: '',
-      taxCode: '',
-      companyEmail: '',
-      customerName: '',
-      customerEmail: '',
-      customerAddress: '',
-      subtotal: '',
-      taxRate: '0.1',
-      eInvoiceProvider: '',
-    })
+    setFormData({ bookingId: '', ...EMPTY_INVOICE_FORM })
     setFormError('')
     setFormSuccess('')
     setEditingId(null)
@@ -266,6 +254,7 @@ export default function InvoicesPage() {
     setEditingId(invoice.id)
     setFormData({
       bookingId: invoice.bookingId,
+      buyerType: (invoice.buyerType as InvoiceFormValue['buyerType']) || 'company',
       companyName: invoice.companyName,
       companyAddress: invoice.companyAddress,
       taxCode: invoice.taxCode,
@@ -273,9 +262,7 @@ export default function InvoicesPage() {
       customerName: invoice.customerName,
       customerEmail: invoice.customerEmail,
       customerAddress: invoice.customerAddress || '',
-      subtotal: invoice.subtotal.toString(),
-      taxRate: invoice.taxRate.toString(),
-      eInvoiceProvider: invoice.eInvoiceProvider || '',
+      totalAmount: invoice.totalAmount.toString(),
     })
     setFormError('')
     setFormSuccess('')
@@ -285,23 +272,20 @@ export default function InvoicesPage() {
   const handleSelectBooking = (bookingId: string) => {
     const booking = bookings.find((b) => b.id === bookingId)
     if (booking) {
+      // The booking total includes VAT: it is the invoice total.
       setFormData({
         ...formData,
         bookingId,
-        subtotal: booking.totalAmount.toString(),
+        totalAmount: booking.totalAmount.toString(),
+        customerName: formData.customerName || booking.guestName,
+        customerEmail: formData.customerEmail || booking.guestEmail || '',
       })
     }
   }
 
   const validateForm = () => {
     if (!formData.bookingId) return 'Vui lòng chọn đơn đặt phòng'
-    if (!formData.companyName || formData.companyName.length < 2) return 'Vui lòng nhập tên công ty'
-    if (!formData.companyAddress || formData.companyAddress.length < 5) return 'Vui lòng nhập địa chỉ công ty'
-    if (!formData.taxCode || formData.taxCode.length < 10) return 'Vui lòng nhập mã số thuế hợp lệ'
-    if (!formData.customerName || formData.customerName.length < 2) return 'Vui lòng nhập tên khách hàng'
-    if (!formData.customerEmail || !formData.customerEmail.includes('@')) return 'Vui lòng nhập email khách hàng'
-    if (!formData.subtotal || parseFloat(formData.subtotal) <= 0) return 'Vui lòng nhập số tiền hợp lệ'
-    return null
+    return validateInvoiceForm(formData)
   }
 
   const handleCreateInvoice = async () => {
@@ -313,24 +297,13 @@ export default function InvoicesPage() {
 
     setFormError('')
     setFormSuccess('')
-    setIsCreating(true)
+    setIsSubmitting(true)
 
     try {
       const res = await fetch('/api/invoices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bookingId: formData.bookingId,
-          companyName: formData.companyName,
-          companyAddress: formData.companyAddress,
-          taxCode: formData.taxCode,
-          companyEmail: formData.companyEmail || undefined,
-          customerName: formData.customerName,
-          customerEmail: formData.customerEmail,
-          customerAddress: formData.customerAddress || undefined,
-          subtotal: parseFloat(formData.subtotal),
-          taxRate: parseFloat(formData.taxRate),
-        }),
+        body: JSON.stringify({ bookingId: formData.bookingId, ...invoiceFormBody(formData) }),
       })
       const data = await res.json()
 
@@ -348,7 +321,7 @@ export default function InvoicesPage() {
     } catch (err) {
       setFormError('Có lỗi xảy ra, vui lòng thử lại')
     } finally {
-      setIsCreating(false)
+      setIsSubmitting(false)
     }
   }
 
@@ -363,24 +336,13 @@ export default function InvoicesPage() {
 
     setFormError('')
     setFormSuccess('')
-    setIsEditing(true)
+    setIsSubmitting(true)
 
     try {
       const res = await fetch(`/api/invoices/${editingId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          companyName: formData.companyName,
-          companyAddress: formData.companyAddress,
-          taxCode: formData.taxCode,
-          companyEmail: formData.companyEmail || undefined,
-          customerName: formData.customerName,
-          customerEmail: formData.customerEmail,
-          customerAddress: formData.customerAddress || undefined,
-          subtotal: parseFloat(formData.subtotal),
-          taxRate: parseFloat(formData.taxRate),
-          eInvoiceProvider: formData.eInvoiceProvider || undefined,
-        }),
+        body: JSON.stringify(invoiceFormBody(formData)),
       })
       const data = await res.json()
 
@@ -399,7 +361,7 @@ export default function InvoicesPage() {
     } catch (err) {
       setFormError('Có lỗi xảy ra, vui lòng thử lại')
     } finally {
-      setIsEditing(false)
+      setIsSubmitting(false)
     }
   }
 
@@ -430,21 +392,103 @@ export default function InvoicesPage() {
   }
 
   const handlePublishInvoice = async (invoiceId: string) => {
+    const where = einvoice?.environment === 'PRODUCTION' ? 'CHÍNH THỨC' : 'thử nghiệm'
+    if (!confirm(`Phát hành hoá đơn điện tử qua Mắt Bão (môi trường ${where})? Hoá đơn đã phát hành không sửa hay xoá được.`)) {
+      return
+    }
+    setIsSubmitting(true)
     try {
       const res = await fetch(`/api/invoices/${invoiceId}/publish`, {
         method: 'POST',
       })
       const data = await res.json()
-
       if (data.success) {
-        if (selectedProperty) {
-          fetchInvoices(selectedProperty)
-        }
+        setSelectedInvoice((current) => (current && current.id === invoiceId ? { ...current, ...data.data } : current))
       } else {
         alert(data.error || 'Có lỗi xảy ra')
       }
     } catch (err) {
       alert('Có lỗi xảy ra')
+    } finally {
+      setIsSubmitting(false)
+      // Also shows the reason a failed attempt left on the invoice.
+      if (selectedProperty) {
+        const list = await fetchInvoices(selectedProperty)
+        setSelectedInvoice((current) => (current ? list.find((i) => i.id === current.id) ?? current : current))
+      }
+    }
+  }
+
+  // An issued invoice with a mistake: a corrected copy that, once issued,
+  // replaces it on Mắt Bão (src/lib/einvoice/replacement.ts).
+  const handleReplaceInvoice = async (invoice: Invoice) => {
+    if (
+      !confirm(
+        `Lập hoá đơn thay thế cho hoá đơn số ${invoice.einvoiceNumber}? Bản nháp sẽ chép dữ liệu hoá đơn này để bạn sửa rồi phát hành; khi phát hành, hoá đơn số ${invoice.einvoiceNumber} chuyển sang "Đã thay thế". Nên hỏi kế toán trước (có thể cần văn bản thoả thuận với người mua).`
+      )
+    ) {
+      return
+    }
+    const res = await fetch(`/api/invoices/${invoice.id}/replace`, { method: 'POST' })
+    const data = await res.json().catch(() => ({}))
+    if (!data.success) {
+      alert(data.error || 'Có lỗi xảy ra')
+      return
+    }
+    setSelectedInvoice(null)
+    if (selectedProperty) await fetchInvoices(selectedProperty)
+    handleOpenEditModal({ ...data.data, booking: invoice.booking, replacesInvoice: null, replacements: [], adjustsInvoice: null, adjustments: [] })
+  }
+
+  const handleOpenAdjust = (invoice: Invoice) => {
+    setAdjustForm({ direction: 'increase', amount: '', reason: '' })
+    setAdjustError('')
+    setSelectedInvoice(null)
+    setAdjusting(invoice)
+  }
+
+  const handleSubmitAdjust = async () => {
+    if (!adjusting) return
+    const amount = Number(adjustForm.amount)
+    if (!Number.isInteger(amount) || amount <= 0) return setAdjustError('Nhập số tiền chênh lệch (số nguyên, lớn hơn 0)')
+    if (adjustForm.reason.trim().length < 5) return setAdjustError('Vui lòng ghi lý do điều chỉnh')
+    setAdjustError('')
+    setIsSubmitting(true)
+    try {
+      const res = await fetch(`/api/invoices/${adjusting.id}/adjust`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ direction: adjustForm.direction, amount, reason: adjustForm.reason.trim() }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!data.success) {
+        setAdjustError(data.error || 'Có lỗi xảy ra')
+        return
+      }
+      setAdjusting(null)
+      // Open the draft: the next step is publishing it.
+      const list = selectedProperty ? await fetchInvoices(selectedProperty) : []
+      setSelectedInvoice(list.find((i) => i.id === data.data.id) ?? null)
+    } catch (err) {
+      setAdjustError('Có lỗi xảy ra, vui lòng thử lại')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Emails the issued invoice (PDF attached) to the buyer again (src/lib/einvoice/delivery.ts).
+  const handleEmailInvoice = async (invoice: Invoice) => {
+    setIsSubmitting(true)
+    try {
+      const res = await fetch(`/api/invoices/${invoice.id}/email`, { method: 'POST' })
+      const data = await res.json().catch(() => ({}))
+      if (!data.success) alert(data.error || 'Không gửi được email')
+      if (data.data) setSelectedInvoice((current) => (current && current.id === invoice.id ? { ...current, ...data.data } : current))
+    } catch (err) {
+      alert('Có lỗi xảy ra')
+    } finally {
+      setIsSubmitting(false)
+      if (selectedProperty) fetchInvoices(selectedProperty)
     }
   }
 
@@ -475,9 +519,6 @@ export default function InvoicesPage() {
     setTimeout(() => setCopiedId(null), 2000)
   }
 
-  const taxAmount = formData.subtotal ? parseFloat(formData.subtotal) * parseFloat(formData.taxRate || '0') : 0
-  const totalAmount = formData.subtotal ? parseFloat(formData.subtotal) + taxAmount : 0
-
   return (
     <div>
       <Header
@@ -504,6 +545,7 @@ export default function InvoicesPage() {
       />
 
       <PageContainer>
+        {selectedProperty && <EinvoiceCard key={selectedProperty} propertyId={selectedProperty} onStatus={setEinvoice} />}
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
           <Card>
@@ -562,7 +604,7 @@ export default function InvoicesPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Tổng tiền</p>
+                  <p className="text-sm text-gray-500">Đã phát hành (tiền)</p>
                   <p className="text-xl font-bold text-gray-900">{formatPrice(stats.totalAmount)}</p>
                 </div>
                 <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
@@ -649,6 +691,11 @@ export default function InvoicesPage() {
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
                               <span className="font-mono text-sm font-medium">{invoice.invoiceNumber}</span>
+                              {invoice.autoIssued && (
+                                <Badge className="bg-indigo-50 text-indigo-700">
+                                  Tự động
+                                </Badge>
+                              )}
                               <button
                                 onClick={() => handleCopyToClipboard(invoice.invoiceNumber, invoice.id)}
                                 className="p-1 hover:bg-gray-100 rounded"
@@ -675,6 +722,12 @@ export default function InvoicesPage() {
                           </td>
                           <td className="px-4 py-3">
                             <span className="font-semibold">{formatPrice(invoice.totalAmount)}</span>
+                            {invoice.adjustsInvoice && (
+                              <span className="block text-xs text-indigo-600">
+                                {invoice.totalAmount < 0 ? 'Điều chỉnh giảm' : 'Điều chỉnh tăng'} HĐ số{' '}
+                                {invoice.adjustsInvoice.einvoiceNumber}
+                              </span>
+                            )}
                           </td>
                           <td className="px-4 py-3">
                             <Badge className={`${statusInfo.bgColor} ${statusInfo.color}`}>
@@ -694,9 +747,11 @@ export default function InvoicesPage() {
                               </Button>
                               {(invoice.status === 'DRAFT' || invoice.status === 'PENDING') && (
                                 <>
-                                  <Button size="sm" variant="ghost" onClick={() => handleOpenEditModal(invoice)}>
-                                    <Edit className="w-4 h-4" />
-                                  </Button>
+                                  {!invoice.adjustsInvoice && (
+                                    <Button size="sm" variant="ghost" onClick={() => handleOpenEditModal(invoice)}>
+                                      <Edit className="w-4 h-4" />
+                                    </Button>
+                                  )}
                                   <Button size="sm" variant="ghost" onClick={() => handleDeleteInvoice(invoice.id)}>
                                     <Trash2 className="w-4 h-4 text-red-500" />
                                   </Button>
@@ -709,6 +764,21 @@ export default function InvoicesPage() {
                     })}
                   </tbody>
                 </table>
+              </div>
+            )}
+            {pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-gray-600">
+                <span>
+                  Trang {pagination.page} / {pagination.totalPages} · {pagination.total} hoá đơn
+                </span>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="secondary" disabled={page <= 1 || isLoading} onClick={() => setPage(page - 1)}>
+                    Trước
+                  </Button>
+                  <Button size="sm" variant="secondary" disabled={page >= pagination.totalPages || isLoading} onClick={() => setPage(page + 1)}>
+                    Sau
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>
@@ -745,104 +815,16 @@ export default function InvoicesPage() {
                 ]}
               />
 
-              <div className="border-t pt-4 mt-4">
-                <h4 className="font-medium text-gray-900 mb-3">Thông tin công ty xuất hóa đơn</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    label="Tên công ty"
-                    required
-                    value={formData.companyName}
-                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                    placeholder="Công ty ABC"
-                  />
-                  <Input
-                    label="Mã số thuế"
-                    required
-                    value={formData.taxCode}
-                    onChange={(e) => setFormData({ ...formData, taxCode: e.target.value })}
-                    placeholder="0123456789"
-                  />
-                  <div className="col-span-2">
-                    <Input
-                      label="Địa chỉ công ty"
-                      required
-                      value={formData.companyAddress}
-                      onChange={(e) => setFormData({ ...formData, companyAddress: e.target.value })}
-                      placeholder="123 Đường ABC, Quận 1, TP.HCM"
-                    />
-                  </div>
-                  <Input
-                    label="Email công ty"
-                    type="email"
-                    value={formData.companyEmail}
-                    onChange={(e) => setFormData({ ...formData, companyEmail: e.target.value })}
-                    placeholder="finance@company.com"
-                  />
+              {!einvoice?.connected && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
+                  Khách sạn chưa kết nối hoá đơn điện tử Mắt Bão (thẻ phía trên trang), nên chưa tạo được hoá đơn.
                 </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <h4 className="font-medium text-gray-900 mb-3">Thông tin khách hàng</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    label="Tên khách hàng"
-                    required
-                    value={formData.customerName}
-                    onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                    placeholder="Nguyễn Văn A"
-                  />
-                  <Input
-                    label="Email khách hàng"
-                    required
-                    type="email"
-                    value={formData.customerEmail}
-                    onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
-                    placeholder="customer@email.com"
-                  />
-                  <div className="col-span-2">
-                    <Input
-                      label="Địa chỉ khách hàng"
-                      value={formData.customerAddress}
-                      onChange={(e) => setFormData({ ...formData, customerAddress: e.target.value })}
-                      placeholder="456 Đường XYZ, Quận 2, TP.HCM"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <h4 className="font-medium text-gray-900 mb-3">Thông tin thanh toán</h4>
-                <div className="grid grid-cols-3 gap-4">
-                  <Input
-                    label="Số tiền (VNĐ)"
-                    required
-                    type="number"
-                    min="0"
-                    step="1000"
-                    value={formData.subtotal}
-                    onChange={(e) => setFormData({ ...formData, subtotal: e.target.value })}
-                    placeholder="0"
-                  />
-                  <Input
-                    label="Thuế suất (%)"
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    value={(parseFloat(formData.taxRate) * 100).toString()}
-                    onChange={(e) => setFormData({ ...formData, taxRate: (parseFloat(e.target.value) / 100).toString() })}
-                  />
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Tổng cộng</label>
-                    <div className="p-2 bg-gray-100 rounded-lg font-semibold text-lg">
-                      {formatPrice(totalAmount)}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Thuế: {formatPrice(taxAmount)}
-                    </p>
-                  </div>
-                </div>
-              </div>
+              )}
+              <InvoiceFormFields
+                value={formData}
+                onChange={(v) => setFormData({ ...formData, ...v })}
+                vatCode={einvoice?.vatCode}
+              />
 
               {formError && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
@@ -854,7 +836,7 @@ export default function InvoicesPage() {
               <Button variant="secondary" onClick={() => setIsCreating(false)}>
                 Hủy
               </Button>
-              <Button onClick={handleCreateInvoice} isLoading={isCreating} disabled={isCreating}>
+              <Button onClick={handleCreateInvoice} isLoading={isSubmitting} disabled={isSubmitting}>
                 Tạo hóa đơn
               </Button>
             </ModalFooter>
@@ -881,105 +863,11 @@ export default function InvoicesPage() {
         ) : (
           <>
             <div className="space-y-4">
-              <div className="border-t pt-4">
-                <h4 className="font-medium text-gray-900 mb-3">Thông tin công ty xuất hóa đơn</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    label="Tên công ty"
-                    required
-                    value={formData.companyName}
-                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                  />
-                  <Input
-                    label="Mã số thuế"
-                    required
-                    value={formData.taxCode}
-                    onChange={(e) => setFormData({ ...formData, taxCode: e.target.value })}
-                  />
-                  <div className="col-span-2">
-                    <Input
-                      label="Địa chỉ công ty"
-                      required
-                      value={formData.companyAddress}
-                      onChange={(e) => setFormData({ ...formData, companyAddress: e.target.value })}
-                    />
-                  </div>
-                  <Input
-                    label="Email công ty"
-                    type="email"
-                    value={formData.companyEmail}
-                    onChange={(e) => setFormData({ ...formData, companyEmail: e.target.value })}
-                  />
-                  <Select
-                    label="Nhà cung cấp hóa đơn điện tử"
-                    value={formData.eInvoiceProvider}
-                    onChange={(e) => setFormData({ ...formData, eInvoiceProvider: e.target.value })}
-                    options={[
-                      { value: '', label: 'Chọn nhà cung cấp' },
-                      ...eInvoiceProviders,
-                    ]}
-                  />
-                </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <h4 className="font-medium text-gray-900 mb-3">Thông tin khách hàng</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    label="Tên khách hàng"
-                    required
-                    value={formData.customerName}
-                    onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                  />
-                  <Input
-                    label="Email khách hàng"
-                    required
-                    type="email"
-                    value={formData.customerEmail}
-                    onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
-                  />
-                  <div className="col-span-2">
-                    <Input
-                      label="Địa chỉ khách hàng"
-                      value={formData.customerAddress}
-                      onChange={(e) => setFormData({ ...formData, customerAddress: e.target.value })}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t pt-4">
-                <h4 className="font-medium text-gray-900 mb-3">Thông tin thanh toán</h4>
-                <div className="grid grid-cols-3 gap-4">
-                  <Input
-                    label="Số tiền (VNĐ)"
-                    required
-                    type="number"
-                    min="0"
-                    step="1000"
-                    value={formData.subtotal}
-                    onChange={(e) => setFormData({ ...formData, subtotal: e.target.value })}
-                  />
-                  <Input
-                    label="Thuế suất (%)"
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    value={(parseFloat(formData.taxRate) * 100).toString()}
-                    onChange={(e) => setFormData({ ...formData, taxRate: (parseFloat(e.target.value) / 100).toString() })}
-                  />
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Tổng cộng</label>
-                    <div className="p-2 bg-gray-100 rounded-lg font-semibold text-lg">
-                      {formatPrice(totalAmount)}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Thuế: {formatPrice(taxAmount)}
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <InvoiceFormFields
+                value={formData}
+                onChange={(v) => setFormData({ ...formData, ...v })}
+                vatCode={einvoice?.vatCode}
+              />
 
               {formError && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
@@ -991,7 +879,7 @@ export default function InvoicesPage() {
               <Button variant="secondary" onClick={() => setIsEditing(false)}>
                 Hủy
               </Button>
-              <Button onClick={handleUpdateInvoice} isLoading={isEditing} disabled={isEditing}>
+              <Button onClick={handleUpdateInvoice} isLoading={isSubmitting} disabled={isSubmitting}>
                 Lưu thay đổi
               </Button>
             </ModalFooter>
@@ -1039,12 +927,84 @@ export default function InvoicesPage() {
                       Phát hành: {format(new Date(selectedInvoice.publishedAt), 'dd/MM/yyyy HH:mm')}
                     </p>
                   )}
+                  {selectedInvoice.einvoiceNumber && (
+                    <p className="text-sm font-semibold text-gray-900 mt-1">
+                      Số hoá đơn: {selectedInvoice.einvoiceNumber}
+                      {selectedInvoice.invoiceSeries && ` · Ký hiệu ${selectedInvoice.invoiceSeries}`}
+                    </p>
+                  )}
+                  {selectedInvoice.replacesInvoice && (
+                    <p className="text-xs text-blue-700 mt-1">
+                      Thay thế cho hoá đơn số {selectedInvoice.replacesInvoice.einvoiceNumber}
+                      {selectedInvoice.replacesInvoice.invoiceSeries && ` (ký hiệu ${selectedInvoice.replacesInvoice.invoiceSeries})`}
+                    </p>
+                  )}
+                  {selectedInvoice.replacements?.length > 0 && (
+                    <p className="text-xs text-blue-700 mt-1">
+                      Có hoá đơn thay thế: {selectedInvoice.replacements.map((r) => r.einvoiceNumber ?? `${r.invoiceNumber} (nháp)`).join(', ')}
+                    </p>
+                  )}
+                  {selectedInvoice.adjustsInvoice && (
+                    <p className="text-xs text-indigo-700 mt-1">
+                      {selectedInvoice.totalAmount < 0 ? 'Điều chỉnh giảm' : 'Điều chỉnh tăng'} cho hoá đơn số{' '}
+                      {selectedInvoice.adjustsInvoice.einvoiceNumber}
+                      {selectedInvoice.adjustsInvoice.invoiceSeries && ` (ký hiệu ${selectedInvoice.adjustsInvoice.invoiceSeries})`}
+                      {selectedInvoice.metadata?.adjustmentReason && ` — ${selectedInvoice.metadata.adjustmentReason}`}
+                    </p>
+                  )}
+                  {selectedInvoice.adjustments?.length > 0 && (
+                    <p className="text-xs text-indigo-700 mt-1">
+                      Đã điều chỉnh:{' '}
+                      {selectedInvoice.adjustments
+                        .map(
+                          (a) =>
+                            `${a.einvoiceNumber ? `số ${a.einvoiceNumber}` : `${a.invoiceNumber} (nháp)`} ${a.totalAmount > 0 ? '+' : ''}${formatPrice(a.totalAmount)}`
+                        )
+                        .join(', ')}
+                    </p>
+                  )}
+                  {selectedInvoice.cqtStatus != null && (
+                    <p
+                      className={`text-xs mt-1 ${selectedInvoice.cqtStatus === 6 ? 'text-red-600 font-semibold' : selectedInvoice.cqtStatus === 4 ? 'text-green-700' : 'text-gray-500'}`}
+                    >
+                      {CQT_LABELS[selectedInvoice.cqtStatus] ?? `Cơ quan thuế: mã ${selectedInvoice.cqtStatus}`}
+                      {selectedInvoice.cqtNote && ` — ${selectedInvoice.cqtNote}`}
+                    </p>
+                  )}
                 </div>
               </div>
 
+              {selectedInvoice.status === 'PUBLISHED' && selectedInvoice.emailStatus && (
+                <div
+                  className={`p-3 rounded-lg text-sm border ${
+                    selectedInvoice.emailStatus === 'SENT'
+                      ? 'bg-green-50 border-green-200 text-green-800'
+                      : selectedInvoice.emailStatus === 'FAILED' || selectedInvoice.emailStatus === 'SKIPPED'
+                        ? 'bg-red-50 border-red-200 text-red-700'
+                        : 'bg-gray-50 border-gray-200 text-gray-700'
+                  }`}
+                >
+                  {selectedInvoice.emailStatus === 'SENT'
+                    ? `Đã gửi email hoá đơn${selectedInvoice.emailedAt ? ` lúc ${format(new Date(selectedInvoice.emailedAt), 'dd/MM/yyyy HH:mm')}` : ''}`
+                    : selectedInvoice.emailStatus === 'FAILED'
+                      ? `Gửi email lỗi: ${selectedInvoice.emailError ?? ''}`
+                      : selectedInvoice.emailStatus === 'SKIPPED'
+                        ? `Không gửi email: ${selectedInvoice.emailError ?? ''}`
+                        : 'Đang chờ gửi email hoá đơn cho người mua'}
+                </div>
+              )}
+
+              {selectedInvoice.publishError && selectedInvoice.status !== 'PUBLISHED' && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                  Lần phát hành trước không thành công: {selectedInvoice.publishError}
+                </div>
+              )}
+
               {/* Amount */}
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 text-center">
-                <p className="text-sm text-gray-600 mb-1">Tổng tiền hóa đơn</p>
+                <p className="text-sm text-gray-600 mb-1">
+                  {selectedInvoice.adjustsInvoice ? 'Số tiền điều chỉnh (đã gồm VAT)' : 'Tổng tiền hóa đơn'}
+                </p>
                 <p className="text-4xl font-bold text-gray-900">{formatPrice(selectedInvoice.totalAmount)}</p>
                 <div className="flex justify-center gap-6 mt-3 text-sm">
                   <div>
@@ -1145,7 +1105,7 @@ export default function InvoicesPage() {
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div>
                       <span className="text-gray-500">Nhà cung cấp:</span>
-                      <p className="font-medium">{selectedInvoice.eInvoiceProvider}</p>
+                      <p className="font-medium">{selectedInvoice.eInvoiceProvider === 'MATBAO' ? 'Mắt Bão' : selectedInvoice.eInvoiceProvider}</p>
                     </div>
                     {selectedInvoice.invoicePattern && (
                       <div>
@@ -1167,8 +1127,28 @@ export default function InvoicesPage() {
               <Button variant="secondary" onClick={() => setSelectedInvoice(null)}>
                 Đóng
               </Button>
-              {selectedInvoice.pdfUrl && (
-                <Button variant="outline" onClick={() => window.open(selectedInvoice.pdfUrl || '', '_blank')}>
+              {selectedInvoice.status === 'PUBLISHED' &&
+                selectedInvoice.eInvoiceProvider === 'MATBAO' &&
+                !selectedInvoice.replacements?.length &&
+                !selectedInvoice.adjustsInvoice &&
+                !selectedInvoice.adjustments?.length && (
+                  <Button variant="outline" onClick={() => handleReplaceInvoice(selectedInvoice)}>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Lập hoá đơn thay thế
+                  </Button>
+                )}
+              {selectedInvoice.status === 'PUBLISHED' &&
+                selectedInvoice.eInvoiceProvider === 'MATBAO' &&
+                !selectedInvoice.replacements?.length &&
+                !selectedInvoice.adjustsInvoice &&
+                selectedInvoice.adjustments?.every((a) => a.status === 'PUBLISHED') !== false && (
+                  <Button variant="outline" onClick={() => handleOpenAdjust(selectedInvoice)}>
+                    <ArrowUpDown className="w-4 h-4 mr-2" />
+                    Lập hoá đơn điều chỉnh
+                  </Button>
+                )}
+              {selectedInvoice.status === 'PUBLISHED' && (
+                <Button variant="outline" onClick={() => window.open(`/api/invoices/${selectedInvoice.id}/pdf`, '_blank')}>
                   <Download className="w-4 h-4 mr-2" />
                   Tải PDF
                 </Button>
@@ -1179,10 +1159,10 @@ export default function InvoicesPage() {
                   Tải XML
                 </Button>
               )}
-              {selectedInvoice.customerEmail && (
-                <Button variant="outline" onClick={() => window.open(`mailto:${selectedInvoice.customerEmail}`, '_blank')}>
+              {selectedInvoice.status === 'PUBLISHED' && (
+                <Button variant="outline" onClick={() => handleEmailInvoice(selectedInvoice)} isLoading={isSubmitting}>
                   <Mail className="w-4 h-4 mr-2" />
-                  Gửi Email
+                  {selectedInvoice.emailStatus === 'SENT' ? 'Gửi lại email' : 'Gửi email hoá đơn'}
                 </Button>
               )}
               {(selectedInvoice.status === 'DRAFT' || selectedInvoice.status === 'PENDING') && (
@@ -1191,15 +1171,70 @@ export default function InvoicesPage() {
                     <XCircle className="w-4 h-4 mr-2" />
                     Hủy hóa đơn
                   </Button>
-                  <Button onClick={() => handlePublishInvoice(selectedInvoice.id)}>
+                  <Button onClick={() => handlePublishInvoice(selectedInvoice.id)} isLoading={isSubmitting}>
                     <Send className="w-4 h-4 mr-2" />
-                    Phát hành
+                    {selectedInvoice.publishError ? 'Phát hành lại' : 'Phát hành'}
                   </Button>
                 </>
               )}
             </ModalFooter>
           </>
         )}
+      </Modal>
+
+      {/* Adjustment Modal */}
+      <Modal
+        isOpen={!!adjusting}
+        onClose={() => setAdjusting(null)}
+        title="Lập hoá đơn điều chỉnh"
+        description={adjusting ? `Cho hoá đơn số ${adjusting.einvoiceNumber} (${formatPrice(adjusting.totalAmount)})` : undefined}
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm space-y-1">
+            <p>Hoá đơn điều chỉnh chỉ ghi phần chênh lệch; điều chỉnh giảm được ghi số âm. Hoá đơn gốc vẫn giữ nguyên.</p>
+            <p>Người mua là doanh nghiệp: cần văn bản thoả thuận với người mua ghi rõ sai sót trước khi lập. Nên hỏi kế toán.</p>
+            <p>Sai tên, mã số thuế hay địa chỉ người mua: dùng hoá đơn thay thế.</p>
+          </div>
+          <Select
+            label="Loại điều chỉnh"
+            required
+            value={adjustForm.direction}
+            onChange={(e) => setAdjustForm({ ...adjustForm, direction: e.target.value })}
+            options={[
+              { value: 'increase', label: 'Điều chỉnh tăng (thu thêm)' },
+              { value: 'decrease', label: 'Điều chỉnh giảm (bớt tiền)' },
+            ]}
+          />
+          <Input
+            label="Số tiền chênh lệch (đã gồm VAT)"
+            required
+            type="number"
+            min={1}
+            value={adjustForm.amount}
+            onChange={(e) => setAdjustForm({ ...adjustForm, amount: e.target.value })}
+          />
+          <Textarea
+            label="Lý do điều chỉnh"
+            required
+            maxLength={150}
+            rows={2}
+            value={adjustForm.reason}
+            onChange={(e) => setAdjustForm({ ...adjustForm, reason: e.target.value })}
+            hint="In trên hoá đơn (tối đa 150 ký tự)"
+          />
+          {adjustError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">{adjustError}</div>
+          )}
+        </div>
+        <ModalFooter>
+          <Button variant="secondary" onClick={() => setAdjusting(null)}>
+            Hủy
+          </Button>
+          <Button onClick={handleSubmitAdjust} isLoading={isSubmitting} disabled={isSubmitting}>
+            Tạo bản nháp
+          </Button>
+        </ModalFooter>
       </Modal>
     </div>
   )

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Minus, Plus } from 'lucide-react'
 import { formatVnd } from '@/lib/bookings/display'
-import { estimateStay, type RoomPricing } from '@/lib/public-site/stay-estimate'
+import { quoteStay, type Rates } from '@/lib/pricing/quote'
 import { useSiteHref } from '../../_components/site-base'
 
 function vnDay(offsetDays = 0): string {
@@ -12,7 +12,10 @@ function vnDay(offsetDays = 0): string {
 }
 
 interface Props {
-  pricing: RoomPricing | null
+  /** null: the room type has no price yet */
+  rates: Rates | null
+  /** guests included in the room price */
+  baseOccupancy: number
   maxAdults: number
   maxChildren: number
   /** Initial dates from the link that opened the page. */
@@ -21,7 +24,7 @@ interface Props {
 }
 
 /** Sticky booking box (redesign 2c): price per night, dates, guests, running total. */
-export function BookingBox({ pricing, maxAdults, maxChildren, checkIn: initialIn, checkOut: initialOut }: Props) {
+export function BookingBox({ rates, baseOccupancy, maxAdults, maxChildren, checkIn: initialIn, checkOut: initialOut }: Props) {
   const router = useRouter()
   const href = useSiteHref()
   const [checkIn, setCheckIn] = useState(initialIn || vnDay(0))
@@ -29,9 +32,20 @@ export function BookingBox({ pricing, maxAdults, maxChildren, checkIn: initialIn
   const [adults, setAdults] = useState(Math.min(2, Math.max(1, maxAdults)))
   const [children, setChildren] = useState(0)
 
-  const priced = pricing && pricing.weekdayPrice > 0 ? pricing : null
-  const estimate = priced ? estimateStay(checkIn, checkOut, adults, children, priced) : null
   const validDates = !!checkIn && !!checkOut && checkOut > checkIn
+  // The same price the booking is charged (src/lib/pricing/quote.ts).
+  const priced = rates
+  const estimate =
+    priced && validDates
+      ? quoteStay({
+          rates: priced,
+          checkIn: new Date(checkIn),
+          checkOut: new Date(checkOut),
+          numAdults: adults,
+          numChildren: children,
+          baseOccupancy,
+        })
+      : null
 
   const book = () => {
     if (!validDates) return
@@ -68,7 +82,7 @@ export function BookingBox({ pricing, maxAdults, maxChildren, checkIn: initialIn
       ) : (
         <p className="text-body font-medium text-fg">Liên hệ để biết giá</p>
       )}
-      {priced?.weekendPrice && priced.weekendPrice !== priced.weekdayPrice ? (
+      {priced && priced.weekendPrice !== priced.weekdayPrice ? (
         <p className="mt-1 text-small text-muted">Thứ Bảy, Chủ nhật: {formatVnd(priced.weekendPrice)}/đêm</p>
       ) : null}
 
@@ -121,15 +135,15 @@ export function BookingBox({ pricing, maxAdults, maxChildren, checkIn: initialIn
           {estimate.weekendNights > 0 && (
             <div className="flex justify-between gap-3">
               <dt className="text-muted">
-                {formatVnd(priced!.weekendPrice || priced!.weekdayPrice)} × {estimate.weekendNights} đêm cuối tuần
+                {formatVnd(priced!.weekendPrice)} × {estimate.weekendNights} đêm cuối tuần
               </dt>
-              <dd className="tabular-nums text-fg">{formatVnd(estimate.base - estimate.weekdayNights * priced!.weekdayPrice)}</dd>
+              <dd className="tabular-nums text-fg">{formatVnd(estimate.weekendNights * priced!.weekendPrice)}</dd>
             </div>
           )}
-          {estimate.extras > 0 && (
+          {estimate.extraCharges > 0 && (
             <div className="flex justify-between gap-3">
               <dt className="text-muted">Phụ thu khách thêm</dt>
-              <dd className="tabular-nums text-fg">{formatVnd(estimate.extras)}</dd>
+              <dd className="tabular-nums text-fg">{formatVnd(estimate.extraCharges)}</dd>
             </div>
           )}
           <div className="flex justify-between gap-3 border-t border-line pt-3 text-body font-semibold">

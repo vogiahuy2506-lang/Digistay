@@ -3,6 +3,8 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
 
+const MAX_REPORT_DAYS = 366
+
 const querySchema = z.object({
   propertyId: z.string(),
   startDate: z.string().optional(),
@@ -43,11 +45,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Không có quyền truy cập' }, { status: 403 })
     }
 
-    // Default date range: last 30 days
+    // Default date range: last 30 days. A report reads every booking of its
+    // range, so the range is bounded; an unreadable date used to reach
+    // Prisma as Invalid Date and come back as a 500.
     const end = endDate ? new Date(endDate) : new Date()
     const start = startDate 
       ? new Date(startDate) 
       : new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000)
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      return NextResponse.json({ success: false, error: 'Ngày không hợp lệ' }, { status: 400 })
+    }
+    if (start > end) {
+      return NextResponse.json({ success: false, error: 'Ngày bắt đầu phải trước ngày kết thúc' }, { status: 400 })
+    }
+    if (end.getTime() - start.getTime() > MAX_REPORT_DAYS * 24 * 60 * 60 * 1000) {
+      return NextResponse.json({ success: false, error: `Mỗi báo cáo tối đa ${MAX_REPORT_DAYS} ngày` }, { status: 400 })
+    }
 
     // Get bookings in date range
     const bookings = await prisma.booking.findMany({

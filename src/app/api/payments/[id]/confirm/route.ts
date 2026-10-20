@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireSession, getWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { lockBooking, syncBookingPayments } from '@/lib/payments/booking-payments'
 
 interface RouteParams {
   params: Promise<{ id: string }>
 }
-
-// Closed bookings: the money is still recorded, but the booking is not
-// reopened and its paymentStatus (possibly REFUNDED) is not overwritten.
-const CLOSED_BOOKING_STATUSES = ['CANCELLED', 'NO_SHOW']
 
 class PaymentNotPendingError extends Error {}
 
@@ -58,10 +55,7 @@ export async function POST(request: NextRequest, props: RouteParams) {
     const userAgent = request.headers.get('user-agent')
 
     const result = await prisma.$transaction(async (tx) => {
-      // Lock the booking row so two payments of the same booking are
-      // confirmed one after the other; otherwise the paid total computed
-      // below could miss the other one.
-      await tx.$queryRaw`SELECT id FROM bookings WHERE id = ${payment.bookingId} FOR UPDATE`
+      await lockBooking(tx, payment.bookingId)
 
       const { count } = await tx.payment.updateMany({
         where: { id: payment.id, status: 'PENDING' },
@@ -69,27 +63,12 @@ export async function POST(request: NextRequest, props: RouteParams) {
       })
       if (count === 0) throw new PaymentNotPendingError()
 
+      // Closed bookings: the money is recorded, the booking is not reopened.
+      const { closed: paidAfterClosed } = await syncBookingPayments(tx, payment.bookingId)
       const booking = await tx.booking.findUniqueOrThrow({
         where: { id: payment.bookingId },
-        select: { status: true, totalAmount: true },
+        select: { status: true },
       })
-      const paidAfterClosed = CLOSED_BOOKING_STATUSES.includes(booking.status)
-
-      if (!paidAfterClosed) {
-        const paid = await tx.payment.aggregate({
-          where: { bookingId: payment.bookingId, status: 'PAID' },
-          _sum: { amount: true },
-        })
-        const totalPaid = paid._sum.amount ?? 0
-        await tx.booking.update({
-          where: { id: payment.bookingId },
-          data: {
-            paymentStatus: totalPaid >= booking.totalAmount ? 'PAID' : 'PARTIAL',
-            status: booking.status === 'PENDING' ? 'CONFIRMED' : booking.status,
-            depositAmount: totalPaid,
-          },
-        })
-      }
 
       await tx.activityLog.create({
         data: {

@@ -91,3 +91,59 @@ export function createPendingPayment(booking: { id: string; propertyId: string }
     },
   })
 }
+
+/**
+ * A bookable room type: its own price row hangs off the property's price
+ * list ("Bảng giá"), created on first use with the given surcharges.
+ */
+export async function createRoomType(
+  propertyId: string,
+  opts: {
+    name?: string
+    totalRooms?: number
+    weekdayPrice?: number | null
+    weekendPrice?: number
+    baseOccupancy?: number
+    maxAdults?: number
+    maxChildren?: number
+    maxOccupancy?: number
+    propertyExtraAdult?: number
+    propertyExtraChild?: number
+  } = {}
+) {
+  const config =
+    (await prisma.pricingConfig.findFirst({ where: { propertyId } })) ??
+    (await prisma.pricingConfig.create({
+      data: {
+        propertyId,
+        name: 'Standard',
+        weekdayPrice: 1,
+        weekendPrice: 1,
+        extraAdultPrice: opts.propertyExtraAdult ?? 0,
+        extraChildPrice: opts.propertyExtraChild ?? 0,
+      },
+    }))
+  const id = uid()
+  return prisma.roomType.create({
+    data: {
+      propertyId,
+      name: opts.name ?? `Phòng ${id}`,
+      slug: `rt-${id}`,
+      bedType: 'DOUBLE',
+      totalRooms: opts.totalRooms ?? 5,
+      baseOccupancy: opts.baseOccupancy ?? 2,
+      maxAdults: opts.maxAdults ?? 2,
+      maxChildren: opts.maxChildren ?? 0,
+      maxOccupancy: opts.maxOccupancy ?? 4,
+      ...(opts.weekdayPrice !== null && {
+        pricing: {
+          create: {
+            pricingId: config.id,
+            weekdayPrice: opts.weekdayPrice ?? 500_000,
+            weekendPrice: opts.weekendPrice ?? opts.weekdayPrice ?? 500_000,
+          },
+        },
+      }),
+    },
+  })
+}

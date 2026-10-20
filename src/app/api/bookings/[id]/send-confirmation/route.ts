@@ -76,10 +76,11 @@ export async function POST(request: NextRequest, props: RouteParams) {
       numAdults: booking.numAdults,
       numChildren: booking.numChildren,
       totalAmount: booking.totalAmount,
-      manageUrl: `${propertyUrl}/bookings/${booking.id}`,
+      propertyUrl,
     })
 
-    if (result.success) {
+    // sent, not success: without SMTP the stub "succeeds" without sending.
+    if (result.sent) {
       // Log activity
       await prisma.activityLog.create({
         data: {
@@ -103,8 +104,8 @@ export async function POST(request: NextRequest, props: RouteParams) {
     } else {
       return NextResponse.json({
         success: false,
-        error: result.error || 'Không thể gửi email',
-      }, { status: 500 })
+        error: result.success ? 'Máy chủ chưa cấu hình gửi email (SMTP)' : result.error || 'Không thể gửi email',
+      }, { status: 502 })
     }
   } catch (error) {
     console.error('Send confirmation email error:', error)

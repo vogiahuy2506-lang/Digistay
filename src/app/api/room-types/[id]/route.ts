@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { z } from 'zod'
 import { BedType } from '@prisma/client'
+import { invalidatePublicSite } from '@/lib/public-site/site'
 
 const updateRoomTypeSchema = z.object({
   name: z.string().min(1).optional(),
@@ -27,6 +28,14 @@ interface RouteParams {
 }
 
 // GET /api/room-types/[id] - Get single room type
+/** The property's price list a room type's prices hang off (created when missing). */
+async function defaultPricingConfigId(propertyId: string) {
+  const existing = await prisma.pricingConfig.findFirst({ where: { propertyId }, orderBy: { createdAt: 'asc' }, select: { id: true } })
+  if (existing) return existing.id
+  const created = await prisma.pricingConfig.create({ data: { propertyId, name: 'Standard', weekdayPrice: 0, weekendPrice: 0 } })
+  return created.id
+}
+
 export async function GET(request: NextRequest, props: RouteParams) {
   const params = await props.params
   try {
@@ -93,7 +102,7 @@ export async function PUT(request: NextRequest, props: RouteParams) {
     const roomType = await prisma.roomType.findUnique({
       where: { id: params.id },
       include: {
-        pricing: true,
+        pricing: { orderBy: { createdAt: 'desc' }, take: 1 },
         property: {
           select: {
             workspace: {
@@ -152,17 +161,26 @@ export async function PUT(request: NextRequest, props: RouteParams) {
         ...(data.baseOccupancy !== undefined && { baseOccupancy: data.baseOccupancy }),
         ...(data.maxOccupancy !== undefined && { maxOccupancy: data.maxOccupancy }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
-        // Update pricing if provided
+        // Update the price (the newest row, the one bookings charge); a room
+        // type created without a price gets one (this used to fail with 500).
         ...((data.weekdayPrice !== undefined || data.weekendPrice !== undefined) && {
-          pricing: {
-            update: {
-              where: { id: roomType.pricing[0]?.id },
-              data: {
-                weekdayPrice: data.weekdayPrice,
-                weekendPrice: data.weekendPrice,
+          pricing: roomType.pricing[0]
+            ? {
+                update: {
+                  where: { id: roomType.pricing[0].id },
+                  data: {
+                    weekdayPrice: data.weekdayPrice,
+                    weekendPrice: data.weekendPrice,
+                  },
+                },
+              }
+            : {
+                create: {
+                  pricingId: await defaultPricingConfigId(roomType.propertyId),
+                  weekdayPrice: data.weekdayPrice ?? 0,
+                  weekendPrice: data.weekendPrice ?? data.weekdayPrice ?? 0,
+                },
               },
-            },
-          },
         }),
         // Update amenities if provided
         ...(data.amenityIds && {
@@ -180,6 +198,8 @@ export async function PUT(request: NextRequest, props: RouteParams) {
     })
 
     // Log activity
+    invalidatePublicSite(roomType.propertyId)
+
     await prisma.activityLog.create({
       data: {
         userId: session.user.id,
@@ -247,6 +267,7 @@ export async function DELETE(request: NextRequest, props: RouteParams) {
     await prisma.roomType.delete({
       where: { id: params.id },
     })
+    invalidatePublicSite(roomType.propertyId)
 
     // Log activity
     await prisma.activityLog.create({

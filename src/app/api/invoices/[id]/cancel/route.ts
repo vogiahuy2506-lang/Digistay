@@ -58,19 +58,29 @@ export async function POST(request: NextRequest, props: RouteParams) {
     }
 
     if (invoice.status === 'PUBLISHED') {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Hóa đơn đã phát hành không thể hủy. Vui lòng liên hệ cơ quan thuế để hủy hóa đơn điện tử.' 
+      return NextResponse.json({
+        success: false,
+        error:
+          'Hóa đơn đã phát hành không huỷ ở đây được: cần lập thông báo sai sót (mẫu 04/SS-HĐĐT) trên cổng Mắt Bão.',
       }, { status: 400 })
     }
+    // Being published, or a publish that may have reached Mắt Bão.
+    if (invoice.status === 'PUBLISHING' || invoice.lookupCode) {
+      return NextResponse.json({
+        success: false,
+        error: 'Lần phát hành trước chưa rõ kết quả (Mắt Bão có thể đã xuất). Hãy bấm phát hành lại trước.',
+      }, { status: 409 })
+    }
 
-    // Update invoice to cancelled status
-    const cancelledInvoice = await prisma.invoice.update({
-      where: { id },
-      data: {
-        status: 'CANCELLED',
-      },
+    // Conditional: a publish started meanwhile wins.
+    const { count } = await prisma.invoice.updateMany({
+      where: { id, status: { in: ['DRAFT', 'PENDING'] }, lookupCode: null },
+      data: { status: 'CANCELLED' },
     })
+    if (count === 0) {
+      return NextResponse.json({ success: false, error: 'Hoá đơn vừa được phát hành, không huỷ được' }, { status: 409 })
+    }
+    const cancelledInvoice = await prisma.invoice.findUniqueOrThrow({ where: { id } })
 
     // Log activity
     await prisma.activityLog.create({
