@@ -74,6 +74,8 @@ export default async function WorkspaceLayout({
       userName={session.user.name || undefined}
       userEmail={session.user.email}
       userImage={session.user.image || undefined}
+      // Only shows the link: /api/admin/system checks the role in the database.
+      isPlatformAdmin={session.user.role === 'SUPER_ADMIN'}
     >
       {children}
     </WorkspaceShell>

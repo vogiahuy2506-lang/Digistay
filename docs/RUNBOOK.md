@@ -545,6 +545,17 @@ hoặc 24 giờ (cảnh báo) tới khi hết; có mục mới thì gửi ngay.
 
 Lịch sử chạy job nằm ở bảng `job_runs` (giữ 30 ngày); `backup.sh` cũng ghi vào đó.
 
+**Trang Hệ thống** (`/admin/system`, chỉ user `SUPER_ADMIN`; người khác thấy "Không tìm thấy"):
+tình trạng (phiên bản, migration, Redis), vấn đề hiện tại theo các luật cảnh báo, từng job (lần
+chạy gần nhất, lỗi 24 giờ), hàng đợi email, cảnh báo đã gửi. Cấp quyền:
+
+```bash
+docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c \
+  "UPDATE users SET role = '"'"'SUPER_ADMIN'"'"' WHERE email = '"'"'ban@digistay.vn'"'"'"'
+```
+
+Đăng xuất rồi đăng nhập lại để link "Hệ thống" hiện ở góc dưới sidebar.
+
 Email xác nhận đặt phòng, báo đơn mới cho chủ và lời mời đi qua hàng đợi `email_outbox` (nội dung
 mã hoá): gửi ngay sau request, lỗi thì job `email-outbox` thử lại sau 10 phút, 30 phút, 2 giờ,
 6 giờ; hết lượt thì có cảnh báo "email đã thử hết số lần". Email đã gửi được xoá sau 30 ngày.
