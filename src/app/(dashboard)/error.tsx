@@ -48,6 +48,7 @@ export default function DashboardError({
             <RefreshCw className="w-4 h-4" />
             Thử lại
           </button>
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- a full page load leaves the broken state behind */}
           <a
             href="/workspaces"
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition"

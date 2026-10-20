@@ -34,10 +34,10 @@ const ROLE_LABELS: Record<string, string> = {
 export default function InvitationPage({
   params,
 }: {
-  params: { token: string }
+  params: Promise<{ token: string }>
 }) {
   const router = useRouter()
-  const { token } = params
+  const { token } = React.use(params)
 
   const [invitation, setInvitation] = React.useState<InvitationInfo | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)

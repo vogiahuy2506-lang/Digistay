@@ -9,9 +9,9 @@ export default async function WorkspaceLayout({
   params,
 }: {
   children: React.ReactNode
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }) {
-  const { slug } = params
+  const { slug } = await params
   const session = await getServerSession(authOptions)
 
   if (!session?.user?.id) {

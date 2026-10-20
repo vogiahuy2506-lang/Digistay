@@ -3,14 +3,15 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 
 interface RouteParams {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 /**
  * POST /api/bookings/[id]/send-confirmation
  * Send booking confirmation email to guest
  */
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function POST(request: NextRequest, props: RouteParams) {
+  const params = await props.params
   try {
     const session = await auth()
     const { id } = params

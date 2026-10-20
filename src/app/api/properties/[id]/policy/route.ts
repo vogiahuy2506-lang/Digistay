@@ -38,8 +38,9 @@ async function userCanEditProperty(propertyId: string, userId: string) {
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
+  const params = await props.params
   try {
     const session = await auth()
     if (!session?.user?.id) {
@@ -74,8 +75,9 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
+  const params = await props.params
   try {
     const session = await auth()
     if (!session?.user?.id) {

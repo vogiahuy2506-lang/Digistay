@@ -11,8 +11,9 @@ const assignSchema = z.object({
 // GET /api/properties/[id]/amenities — list amenities + selection state
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
+  const params = await props.params
   try {
     const session = await auth()
     if (!session?.user?.id) {
@@ -58,8 +59,9 @@ export async function GET(
 // PUT /api/properties/[id]/amenities — replace selection
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
+  const params = await props.params
   try {
     const session = await auth()
     if (!session?.user?.id) {

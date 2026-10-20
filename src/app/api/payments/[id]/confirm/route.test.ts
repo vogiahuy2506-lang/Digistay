@@ -51,7 +51,7 @@ function confirm(id = 'pay-1') {
       method: 'POST',
       headers: { 'x-forwarded-for': '203.0.113.7, 10.0.0.1', 'user-agent': 'vitest' },
     }),
-    { params: { id } }
+    { params: Promise.resolve({ id }) }
   )
 }
 

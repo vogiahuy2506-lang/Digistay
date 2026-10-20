@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db'
 import { requireSession, getWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 
 interface RouteParams {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 // Closed bookings: the money is still recorded, but the booking is not
@@ -22,7 +22,8 @@ class PaymentNotPendingError extends Error {}
  *   and gets 409.
  * - ActivityLog records who confirmed, when, and from where.
  */
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function POST(request: NextRequest, props: RouteParams) {
+  const params = await props.params
   try {
     const sess = await requireSession()
     if (!sess.ok) return sess.response

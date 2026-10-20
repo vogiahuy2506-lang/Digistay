@@ -3,10 +3,11 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 
 interface RouteParams {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function POST(request: NextRequest, props: RouteParams) {
+  const params = await props.params
   try {
     const { id } = params
     const session = await auth()

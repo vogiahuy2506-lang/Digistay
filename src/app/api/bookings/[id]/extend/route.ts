@@ -10,14 +10,15 @@ const extendSchema = z.object({
 })
 
 interface RouteParams {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 /**
  * POST /api/bookings/[id]/extend
  * Extend a booking's check-out date (late checkout or stay longer)
  */
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function POST(request: NextRequest, props: RouteParams) {
+  const params = await props.params
   try {
     const session = await auth()
     const { id } = params

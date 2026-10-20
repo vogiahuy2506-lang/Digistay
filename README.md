@@ -1,6 +1,6 @@
 # Digistay - Quản lý Khách sạn & Nhà hàng
 
-Nền tảng quản lý khách sạn và nhà hàng chuyên nghiệp, được xây dựng với Next.js 14, Prisma, PostgreSQL và Redis.
+Nền tảng quản lý khách sạn và nhà hàng chuyên nghiệp, được xây dựng với Next.js 15, Prisma, PostgreSQL và Redis.
 
 ## Tính năng (Giai đoạn 1)
 
@@ -149,7 +149,7 @@ src/
 
 ## Công nghệ sử dụng
 
-- **Frontend**: Next.js 14, React 18, TypeScript, Tailwind CSS
+- **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
 - **Backend**: Next.js API Routes
 - **Database**: PostgreSQL với Prisma ORM
 - **Cache**: Redis với ioredis
