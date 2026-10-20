@@ -1,5 +1,8 @@
 import { formatCurrency } from '@/lib/utils'
 import { getPaymentStatusMeta, type StatusTone } from '@/lib/booking-status'
+import { escapeHtml } from '@/lib/utils/escape-html'
+
+export { escapeHtml }
 
 /**
  * Display helpers shared by the bookings list, its side panel and the booking
@@ -109,16 +112,6 @@ export function paymentLine(b: PaymentSummary): { text: string; tone: StatusTone
   const text = texts[b.paymentStatus] ?? meta.label
   if (!meta.needsAction || b.status === 'CANCELLED') return { text, tone: null }
   return { text, tone: meta.tone === 'err' ? 'err' : 'warn' }
-}
-
-/** Escapes text for HTML element content and quoted attribute values. */
-export function escapeHtml(value: unknown): string {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
 }
 
 export interface PrintableBooking {
