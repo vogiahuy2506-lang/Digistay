@@ -305,30 +305,30 @@ export default function WalkinBookingPage() {
   const pricing = calculatePrice()
 
   return (
-    <div className="min-h-screen bg-[#fbf9f6]">
+    <div className="min-h-screen bg-page">
       {/* BEGIN: CRM Global Top Bar */}
-      <header className="h-16 bg-white border-b border-gray-200 px-6 flex items-center justify-between sticky top-0 z-30">
+      <header className="h-16 bg-panel border-b border-line px-6 flex items-center justify-between sticky top-0 z-30">
         {/* Breadcrumb & Context Navigation */}
-        <div className="flex items-center gap-2 text-xs text-gray-500 font-medium">
+        <div className="flex items-center gap-2 text-xs text-muted font-medium">
           <span className="">Lễ tân & Vận hành</span>
-          <ChevronRight className="w-2.5 h-2.5 text-gray-400" />
-          <span className="text-gray-900 font-bold">Đặt phòng Walk-in</span>
-          <span className="ml-2 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-red-50 text-red-600 border border-red-100">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+          <ChevronRight className="w-2.5 h-2.5 text-muted" />
+          <span className="text-fg font-bold">Đặt phòng Walk-in</span>
+          <span className="ml-2 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-err-soft text-err border border-err/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-err animate-pulse"></span>
             Khách Vãng Lai / Trực Tiếp
           </span>
         </div>
         {/* Quick Topbar Utilities */}
         <div className="flex items-center gap-3">
-          <button className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 bg-white hover:bg-gray-50 text-xs font-semibold shadow-xs transition-colors">
-            <Search className="w-3.5 h-3.5 text-gray-400" />
+          <button className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-line text-fg bg-panel hover:bg-fg/[0.03] text-xs font-semibold shadow-xs transition-colors">
+            <Search className="w-3.5 h-3.5 text-muted" />
             Tra cứu khách cũ (CRM Fast Lookup)
           </button>
           <button 
             onClick={() => router.back()}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 bg-white hover:bg-gray-100 text-xs font-semibold shadow-xs transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-line text-fg bg-panel hover:bg-fg/5 text-xs font-semibold shadow-xs transition-colors"
           >
-            <ArrowLeft className="w-3.5 h-3.5 text-gray-400" />
+            <ArrowLeft className="w-3.5 h-3.5 text-muted" />
             Quay lại Lịch phòng
           </button>
         </div>
@@ -338,26 +338,26 @@ export default function WalkinBookingPage() {
       {/* Main Scrollable Content Area */}
       <div className="p-6 md:p-8 max-w-7xl mx-auto w-full space-y-6">
         {/* BEGIN: Page Header Title Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-gray-200/60">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-line/60">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Tạo Đặt Phòng Walk-in</h1>
-              <span className="text-xs px-2.5 py-0.5 rounded-md font-medium bg-amber-50 text-amber-700 border border-amber-200">
+              <h1 className="text-2xl font-extrabold text-fg tracking-tight">Tạo Đặt Phòng Walk-in</h1>
+              <span className="text-xs px-2.5 py-0.5 rounded-md font-medium bg-warn-soft text-warn border border-warn/30">
                 <span className="mr-1">⚡</span>
                 Giữ phòng tức thì
               </span>
             </div>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-muted mt-1">
               Tạo đơn đặt phòng nhanh cho khách ghé trực tiếp tại quầy lễ tân - Tự động đồng bộ khóa phòng và doanh thu ca trực.
             </p>
           </div>
           {/* Room Status Quick Stats Pill */}
-          <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-xs">
+          <div className="flex items-center gap-4 bg-panel px-4 py-2 rounded-xl border border-line shadow-xs">
             <div className="text-right">
-              <span className="text-[11px] uppercase tracking-wider text-gray-400 font-semibold block">Tỷ lệ phòng trống hôm nay</span>
-              <span className="text-sm font-bold text-gray-800">48 / 60 phòng khả dụng</span>
+              <span className="text-[11px] uppercase tracking-wider text-muted font-semibold block">Tỷ lệ phòng trống hôm nay</span>
+              <span className="text-sm font-bold text-fg">48 / 60 phòng khả dụng</span>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm border border-emerald-100">
+            <div className="w-10 h-10 rounded-lg bg-ok-soft text-ok flex items-center justify-center font-bold text-sm border border-ok/30">
               80%
             </div>
           </div>
@@ -365,46 +365,46 @@ export default function WalkinBookingPage() {
         {/* END: Page Header Title Section */}
 
         {/* BEGIN: Interactive 4-Step Booking Workflow Stepper */}
-        <section className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm">
+        <section className="bg-panel rounded-2xl p-4 border border-line shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 relative">
             {/* Step 1: Active */}
-            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-orange-50 border border-orange-200 transition-all">
-              <div className="w-9 h-9 rounded-xl bg-orange-600 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-warn-soft border border-warn/30 transition-all">
+              <div className="w-9 h-9 rounded-xl bg-ink text-on-ink flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
                 <Bed className="w-4 h-4" />
               </div>
               <div className="overflow-hidden">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-orange-600 block">Bước 1 (Hiện tại)</span>
-                <span className="text-xs font-extrabold text-gray-900 truncate block">1. Chọn phòng & Thời gian</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-warn block">Bước 1 (Hiện tại)</span>
+                <span className="text-xs font-extrabold text-fg truncate block">1. Chọn phòng & Thời gian</span>
               </div>
             </div>
             {/* Step 2: Inactive */}
-            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-gray-50/50 border border-transparent opacity-70 hover:opacity-100 transition-all">
-              <div className="w-9 h-9 rounded-xl bg-white border border-gray-200 text-gray-500 flex items-center justify-center font-bold text-sm shrink-0">
+            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-fg/[0.03] border border-transparent opacity-70 hover:opacity-100 transition-all">
+              <div className="w-9 h-9 rounded-xl bg-panel border border-line text-muted flex items-center justify-center font-bold text-sm shrink-0">
                 <User className="w-4 h-4" />
               </div>
               <div className="overflow-hidden">
-                <span className="text-[10px] font-semibold text-gray-400 block">Bước 2</span>
-                <span className="text-xs font-semibold text-gray-700 truncate block">2. Thông tin khách & Dịch vụ</span>
+                <span className="text-[10px] font-semibold text-muted block">Bước 2</span>
+                <span className="text-xs font-semibold text-fg truncate block">2. Thông tin khách & Dịch vụ</span>
               </div>
             </div>
             {/* Step 3: Inactive */}
-            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-gray-50/50 border border-transparent opacity-70 hover:opacity-100 transition-all">
-              <div className="w-9 h-9 rounded-xl bg-white border border-gray-200 text-gray-500 flex items-center justify-center font-bold text-sm shrink-0">
+            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-fg/[0.03] border border-transparent opacity-70 hover:opacity-100 transition-all">
+              <div className="w-9 h-9 rounded-xl bg-panel border border-line text-muted flex items-center justify-center font-bold text-sm shrink-0">
                 <CreditCardIcon className="w-4 h-4" />
               </div>
               <div className="overflow-hidden">
-                <span className="text-[10px] font-semibold text-gray-400 block">Bước 3</span>
-                <span className="text-xs font-semibold text-gray-700 truncate block">3. Thanh toán & Hóa đơn</span>
+                <span className="text-[10px] font-semibold text-muted block">Bước 3</span>
+                <span className="text-xs font-semibold text-fg truncate block">3. Thanh toán & Hóa đơn</span>
               </div>
             </div>
             {/* Step 4: Inactive */}
-            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-gray-50/50 border border-transparent opacity-70 hover:opacity-100 transition-all">
-              <div className="w-9 h-9 rounded-xl bg-white border border-gray-200 text-gray-500 flex items-center justify-center font-bold text-sm shrink-0">
+            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-fg/[0.03] border border-transparent opacity-70 hover:opacity-100 transition-all">
+              <div className="w-9 h-9 rounded-xl bg-panel border border-line text-muted flex items-center justify-center font-bold text-sm shrink-0">
                 <Check className="w-4 h-4" />
               </div>
               <div className="overflow-hidden">
-                <span className="text-[10px] font-semibold text-gray-400 block">Bước 4</span>
-                <span className="text-xs font-semibold text-gray-700 truncate block">4. Hoàn tất & In thẻ phòng</span>
+                <span className="text-[10px] font-semibold text-muted block">Bước 4</span>
+                <span className="text-xs font-semibold text-fg truncate block">4. Hoàn tất & In thẻ phòng</span>
               </div>
             </div>
           </div>
@@ -412,26 +412,26 @@ export default function WalkinBookingPage() {
         {/* END: Interactive 4-Step Booking Workflow Stepper */}
 
         {/* BEGIN: Room Availability Search & Filter Control Bar */}
-        <section className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200/60">
-            <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-              <Filter className="w-4 h-4 text-orange-600" />
+        <section className="bg-panel rounded-2xl p-5 border border-line shadow-sm">
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-line/60">
+            <h2 className="text-sm font-bold text-fg flex items-center gap-2">
+              <Filter className="w-4 h-4 text-warn" />
               Tìm kiếm phòng trống khả dụng theo thời gian thực
             </h2>
-            <span className="text-xs text-gray-500">Hôm nay: <strong className="text-gray-800">{format(new Date(), 'dd/MM/yyyy')}</strong></span>
+            <span className="text-xs text-muted">Hôm nay: <strong className="text-fg">{format(new Date(), 'dd/MM/yyyy')}</strong></span>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3.5">
             {/* Property selector */}
             <div className="lg:col-span-2">
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
+              <label className="block text-xs font-bold text-fg mb-1.5">
                 <MapPin className="w-3 h-3 inline mr-1" />
                 Cơ sở lưu trú
               </label>
               <select 
                 value={selectedProperty}
                 onChange={(e) => setSelectedProperty(e.target.value)}
-                className="block w-full px-3 py-2.5 bg-[#fbf9f6]/50 text-xs font-semibold text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="block w-full px-3 py-2.5 bg-page/50 text-xs font-semibold text-fg border border-line rounded-xl focus:ring-2 focus:ring-warn/30 focus:border-warn/30"
               >
                 {properties.map((p) => (
                   <option key={p.id} value={p.id}>{p.name}</option>
@@ -445,8 +445,8 @@ export default function WalkinBookingPage() {
             {/* Check-in datetime */}
             <div>
               <div className="flex justify-between items-center mb-1.5">
-                <label className="text-xs font-bold text-gray-700">Ngày & Giờ nhận</label>
-                <span className="text-[10px] text-orange-600 font-bold bg-orange-50 px-1.5 py-0.2 rounded">{checkInTime}</span>
+                <label className="text-xs font-bold text-fg">Ngày & Giờ nhận</label>
+                <span className="text-[10px] text-warn font-bold bg-warn-soft px-1.5 py-0.2 rounded">{checkInTime}</span>
               </div>
               <input 
                 type="date" 
@@ -460,35 +460,35 @@ export default function WalkinBookingPage() {
                       : prev
                   )
                 }}
-                className="block w-full px-3 py-2.5 bg-[#fbf9f6]/50 text-xs font-semibold text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="block w-full px-3 py-2.5 bg-page/50 text-xs font-semibold text-fg border border-line rounded-xl focus:ring-2 focus:ring-warn/30 focus:border-warn/30"
               />
             </div>
             
             {/* Check-out datetime */}
             <div>
               <div className="flex justify-between items-center mb-1.5">
-                <label className="text-xs font-bold text-gray-700">Ngày & Giờ trả</label>
-                <span className="text-[10px] text-gray-500 font-medium">{checkOutTime}</span>
+                <label className="text-xs font-bold text-fg">Ngày & Giờ trả</label>
+                <span className="text-[10px] text-muted font-medium">{checkOutTime}</span>
               </div>
               <input 
                 type="date" 
                 value={checkOutDate}
                 onChange={(e) => setCheckOutDate(e.target.value)}
                 min={checkInDate}
-                className="block w-full px-3 py-2.5 bg-[#fbf9f6]/50 text-xs font-semibold text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="block w-full px-3 py-2.5 bg-page/50 text-xs font-semibold text-fg border border-line rounded-xl focus:ring-2 focus:ring-warn/30 focus:border-warn/30"
               />
             </div>
             
             {/* Adults */}
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
+              <label className="block text-xs font-bold text-fg mb-1.5">
                 <Users className="w-3 h-3 inline mr-1" />
                 Người lớn
               </label>
               <select 
                 value={numAdults}
                 onChange={(e) => setNumAdults(e.target.value)}
-                className="block w-full px-3 py-2.5 bg-[#fbf9f6]/50 text-xs font-semibold text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="block w-full px-3 py-2.5 bg-page/50 text-xs font-semibold text-fg border border-line rounded-xl focus:ring-2 focus:ring-warn/30 focus:border-warn/30"
               >
                 <option>1</option>
                 <option>2</option>
@@ -499,14 +499,14 @@ export default function WalkinBookingPage() {
             
             {/* Children */}
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
+              <label className="block text-xs font-bold text-fg mb-1.5">
                 <Users className="w-3 h-3 inline mr-1" />
                 Trẻ em (&lt;12t)
               </label>
               <select 
                 value={numChildren}
                 onChange={(e) => setNumChildren(e.target.value)}
-                className="block w-full px-3 py-2.5 bg-[#fbf9f6]/50 text-xs font-semibold text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="block w-full px-3 py-2.5 bg-page/50 text-xs font-semibold text-fg border border-line rounded-xl focus:ring-2 focus:ring-warn/30 focus:border-warn/30"
               >
                 <option>0</option>
                 <option>1</option>
@@ -516,27 +516,27 @@ export default function WalkinBookingPage() {
           </div>
 
           {/* Filter tags & Search Action Bar */}
-          <div className="mt-4 pt-3 border-t border-gray-200/50 flex flex-wrap items-center justify-between gap-3">
+          <div className="mt-4 pt-3 border-t border-line/50 flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold text-gray-500 mr-1">Bộ lọc nhanh:</span>
-              <button className="px-2.5 py-1 text-xs rounded-lg bg-[#f5f2eb] border border-gray-200 text-gray-700 hover:border-orange-500 font-medium transition-colors">
+              <span className="text-xs font-bold text-muted mr-1">Bộ lọc nhanh:</span>
+              <button className="px-2.5 py-1 text-xs rounded-lg bg-fg/[0.03] border border-line text-fg hover:border-warn/30 font-medium transition-colors">
                 Tất cả các tầng
               </button>
-              <button className="px-2.5 py-1 text-xs rounded-lg bg-[#f5f2eb] border border-gray-200 text-gray-700 hover:border-orange-500 font-medium transition-colors">
-                <Ban className="w-3 h-3 inline mr-1 text-gray-400" /> Không hút thuốc
+              <button className="px-2.5 py-1 text-xs rounded-lg bg-fg/[0.03] border border-line text-fg hover:border-warn/30 font-medium transition-colors">
+                <Ban className="w-3 h-3 inline mr-1 text-muted" /> Không hút thuốc
               </button>
-              <button className="px-2.5 py-1 text-xs rounded-lg bg-[#f5f2eb] border border-gray-200 text-gray-700 hover:border-orange-500 font-medium transition-colors">
-                <Bath className="w-3 h-3 inline mr-1 text-gray-400" /> Có bồn tắm
+              <button className="px-2.5 py-1 text-xs rounded-lg bg-fg/[0.03] border border-line text-fg hover:border-warn/30 font-medium transition-colors">
+                <Bath className="w-3 h-3 inline mr-1 text-muted" /> Có bồn tắm
               </button>
-              <button className="px-2.5 py-1 text-xs rounded-lg bg-[#f5f2eb] border border-gray-200 text-gray-700 hover:border-orange-500 font-medium transition-colors">
-                <Mountain className="w-3 h-3 inline mr-1 text-gray-400" /> Ban công / View phố
+              <button className="px-2.5 py-1 text-xs rounded-lg bg-fg/[0.03] border border-line text-fg hover:border-warn/30 font-medium transition-colors">
+                <Mountain className="w-3 h-3 inline mr-1 text-muted" /> Ban công / View phố
               </button>
             </div>
             {/* Primary Search Trigger Button */}
             <button 
               onClick={searchAvailability}
               disabled={isLoading}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-ink hover:bg-ink/90 text-on-ink text-xs font-bold shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
             >
               <Search className="w-4 h-4" />
               {isLoading ? 'Đang tìm...' : `Tìm Phòng Khả Dụng (${calculateNights()} Đêm)`}
@@ -550,25 +550,25 @@ export default function WalkinBookingPage() {
           {/* Column Left: Available Room Categories (65% Width) */}
           <div className="lg:col-span-7 space-y-4">
             <div className="flex items-center justify-between pb-1">
-              <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center gap-2">
+              <h3 className="text-sm font-bold text-fg uppercase tracking-wider flex items-center gap-2">
                 Danh sách phòng trống 
-                <span className="inline-flex items-center justify-center bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded-full font-bold">
+                <span className="inline-flex items-center justify-center bg-warn-soft text-warn text-xs px-2 py-0.5 rounded-full font-bold">
                   {roomTypes.length} Hạng phòng
                 </span>
               </h3>
-              <span className="text-xs text-gray-400 font-medium">Báo giá theo đêm chưa bao gồm VAT & Dịch vụ</span>
+              <span className="text-xs text-muted font-medium">Báo giá theo đêm chưa bao gồm VAT & Dịch vụ</span>
             </div>
 
             {/* Room Cards */}
             {isLoading ? (
               <div className="text-center py-12">
-                <div className="animate-spin w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full mx-auto mb-4" />
-                <p className="text-gray-500">Đang tìm kiếm phòng trống...</p>
+                <div className="animate-spin w-8 h-8 border-4 border-warn/30 border-t-transparent rounded-full mx-auto mb-4" />
+                <p className="text-muted">Đang tìm kiếm phòng trống...</p>
               </div>
             ) : roomTypes.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
-                <Bed className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-500">
+              <div className="bg-panel rounded-2xl border border-line p-12 text-center">
+                <Bed className="w-12 h-12 mx-auto text-muted mb-4" />
+                <p className="text-muted">
                   {selectedProperty ? 'Không có phòng trống trong khoảng thời gian này' : 'Vui lòng chọn cơ sở'}
                 </p>
               </div>
@@ -578,31 +578,31 @@ export default function WalkinBookingPage() {
                 return (
                   <div 
                     key={roomType.id}
-                    className={`bg-white rounded-2xl overflow-hidden transition-all ${
+                    className={`bg-panel rounded-2xl overflow-hidden transition-all ${
                       isSelected 
-                        ? 'border-2 border-orange-600 shadow-md' 
-                        : 'border border-gray-200 hover:border-gray-300 shadow-sm'
+                        ? 'border-2 border-warn/30 shadow-md' 
+                        : 'border border-line hover:border-line shadow-sm'
                     }`}
                   >
                     {/* Active Highlight Banner */}
                     {isSelected && (
-                      <div className="bg-orange-600 text-white px-4 py-1.5 flex items-center justify-between text-xs font-bold">
+                      <div className="bg-warn-soft text-warn px-4 py-1.5 flex items-center justify-between text-xs font-bold">
                         <span className="flex items-center gap-1.5">
                           <Check className="w-3 h-3" /> ĐANG ĐƯỢC CHỌN CHO ĐƠN WALK-IN
                         </span>
-                        <span className="bg-white/20 text-white text-[11px] px-2 py-0.5 rounded">Ưu tiên lễ tân</span>
+                        <span className="bg-warn/15 text-warn text-[11px] px-2 py-0.5 rounded">Ưu tiên lễ tân</span>
                       </div>
                     )}
                     
                     <div className="p-5">
                       <div className="flex flex-col sm:flex-row gap-4 items-start">
                         {/* Thumbnail Placeholder */}
-                        <div className="w-full sm:w-36 h-28 rounded-xl bg-gradient-to-br from-amber-100 to-orange-200 border border-orange-200 shrink-0 overflow-hidden relative flex flex-col justify-end p-2.5">
+                        <div className="w-full sm:w-36 h-28 rounded-xl bg-warn-soft border border-warn/30 shrink-0 overflow-hidden relative flex flex-col justify-end p-2.5">
                           <span className="absolute top-2 left-2 bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
                             {roomType.floorRange || 'Tầng 3 - 5'}
                           </span>
-                          <BedDouble className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl text-orange-500/40" />
-                          <span className="text-[11px] font-bold text-orange-900 bg-white/90 px-1.5 py-0.5 rounded w-fit">
+                          <BedDouble className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl text-warn/40" />
+                          <span className="text-[11px] font-bold text-warn bg-panel/90 px-1.5 py-0.5 rounded w-fit">
                             {roomType.size || 35} m²
                           </span>
                         </div>
@@ -612,56 +612,56 @@ export default function WalkinBookingPage() {
                           <div className="flex items-start justify-between gap-2">
                             <div>
                               <div className="flex items-center gap-2">
-                                <h4 className="text-base font-extrabold text-gray-900">{roomType.name}</h4>
-                                <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                                <h4 className="text-base font-extrabold text-fg">{roomType.name}</h4>
+                                <span className="bg-ok-soft text-ok border border-ok/30 text-[10px] font-semibold px-2 py-0.5 rounded-full">
                                   Còn {roomType.availableRooms} phòng trống
                                 </span>
                                 {index === 0 && (
-                                  <span className="bg-red-50 text-red-700 border border-red-200 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                  <span className="bg-err-soft text-err border border-err/30 text-[10px] font-bold px-2 py-0.5 rounded-full">
                                     Được ưa chuộng
                                   </span>
                                 )}
                               </div>
-                              <p className="text-xs text-gray-500 mt-0.5">
+                              <p className="text-xs text-muted mt-0.5">
                                 Giường {bedTypeLabels[roomType.bedType] || 'King Size'} • Ban công view phố cổ thoáng mát
                               </p>
                             </div>
                             {/* Pricing */}
                             <div className="text-right shrink-0">
-                              <div className="text-lg font-black text-orange-600">
+                              <div className="text-lg font-black text-warn">
                                 {formatPrice(roomType.pricing[0]?.weekdayPrice || 0)}
                               </div>
-                              <div className="text-[10px] font-medium text-gray-400">/ đêm</div>
+                              <div className="text-[10px] font-medium text-muted">/ đêm</div>
                             </div>
                           </div>
                           
                           {/* Amenities Tags */}
-                          <div className="flex flex-wrap items-center gap-2 mt-3 text-[11px] text-gray-600">
-                            <span className="bg-[#f5f2eb] px-2 py-1 rounded-md border border-gray-200/60 flex items-center gap-1">
-                              <Users className="w-3 h-3 text-gray-400" /> {roomType.baseOccupancy} - {roomType.maxOccupancy} khách
+                          <div className="flex flex-wrap items-center gap-2 mt-3 text-[11px] text-muted">
+                            <span className="bg-fg/[0.03] px-2 py-1 rounded-md border border-line/60 flex items-center gap-1">
+                              <Users className="w-3 h-3 text-muted" /> {roomType.baseOccupancy} - {roomType.maxOccupancy} khách
                             </span>
-                            <span className="bg-[#f5f2eb] px-2 py-1 rounded-md border border-gray-200/60 flex items-center gap-1">
-                              <Wifi className="w-3 h-3 text-gray-400" /> Wifi Free
+                            <span className="bg-fg/[0.03] px-2 py-1 rounded-md border border-line/60 flex items-center gap-1">
+                              <Wifi className="w-3 h-3 text-muted" /> Wifi Free
                             </span>
-                            <span className="bg-[#f5f2eb] px-2 py-1 rounded-md border border-gray-200/60 flex items-center gap-1">
-                              <UtensilsCrossed className="w-3 h-3 text-gray-400" /> Buffet sáng free
+                            <span className="bg-fg/[0.03] px-2 py-1 rounded-md border border-line/60 flex items-center gap-1">
+                              <UtensilsCrossed className="w-3 h-3 text-muted" /> Buffet sáng free
                             </span>
-                            <span className="bg-[#f5f2eb] px-2 py-1 rounded-md border border-gray-200/60 flex items-center gap-1">
-                              <Ban className="w-3 h-3 text-gray-400" /> Không khói thuốc
+                            <span className="bg-fg/[0.03] px-2 py-1 rounded-md border border-line/60 flex items-center gap-1">
+                              <Ban className="w-3 h-3 text-muted" /> Không khói thuốc
                             </span>
                           </div>
                           
                           {/* Room Assignment Selector Section */}
-                          <div className="mt-4 pt-3 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                          <div className="mt-4 pt-3 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-3">
                             <div className="flex items-center gap-2 w-full sm:w-auto">
-                              <label className="text-xs font-bold text-gray-700 whitespace-nowrap">Chọn số phòng:</label>
+                              <label className="text-xs font-bold text-fg whitespace-nowrap">Chọn số phòng:</label>
                               <select 
                                 value={selectedRoom?.id || ''}
                                 onChange={(e) => {
                                   const room = availableRooms.find(r => r.id === e.target.value)
                                   if (room) handleSelectRoom(room)
                                 }}
-                                className="text-xs font-bold text-orange-800 bg-orange-50 border-orange-300 rounded-lg py-1.5 pl-3 pr-8 focus:ring-orange-500 focus:border-orange-500"
+                                className="text-xs font-bold text-warn bg-warn-soft border-warn/30 rounded-lg py-1.5 pl-3 pr-8 focus:ring-warn/30 focus:border-warn/30"
                               >
                                 <option value="">-- Chọn phòng --</option>
                                 {availableRooms.map((room) => (
@@ -675,8 +675,8 @@ export default function WalkinBookingPage() {
                               onClick={() => handleSelectRoomType(roomType)}
                               className={`w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors ${
                                 isSelected
-                                  ? 'bg-orange-600 text-white hover:bg-orange-700'
-                                  : 'border border-orange-600 text-orange-600 hover:bg-orange-50'
+                                  ? 'bg-ink text-on-ink hover:bg-ink/90'
+                                  : 'border border-warn/30 text-warn hover:bg-warn-soft'
                               }`}
                             >
                               {isSelected ? (
@@ -702,14 +702,14 @@ export default function WalkinBookingPage() {
 
           {/* BEGIN: Column Right: Walk-in Live Summary Panel (35% Width) */}
           <div className="lg:col-span-5 sticky top-20">
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="bg-panel rounded-2xl border border-line shadow-sm overflow-hidden">
               {/* Summary Card Header with Hold Timer */}
-              <div className="bg-[#f5f2eb]/80 px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+              <div className="bg-fg/[0.03] px-5 py-4 border-b border-line flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-extrabold text-gray-900 uppercase tracking-wider">Chi Tiết Giữ Phòng Tạm Thời</h3>
-                  <p className="text-[11px] text-gray-500">Khóa phòng Walk-in tự động</p>
+                  <h3 className="text-sm font-extrabold text-fg uppercase tracking-wider">Chi Tiết Giữ Phòng Tạm Thời</h3>
+                  <p className="text-[11px] text-muted">Khóa phòng Walk-in tự động</p>
                 </div>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-warn-soft border border-warn/30 text-warn text-xs font-bold">
                   <Timer className="w-3 h-3 animate-spin" />
                   <span>{formatHoldTime(holdTime)}</span>
                 </div>
@@ -719,44 +719,44 @@ export default function WalkinBookingPage() {
               <div className="p-5 space-y-4">
                 {/* Quick Room Tag */}
                 {selectedRoomType && selectedRoom ? (
-                  <div className="p-3 bg-orange-50/60 rounded-xl border border-orange-100 flex items-start justify-between">
+                  <div className="p-3 bg-warn-soft/60 rounded-xl border border-warn/30 flex items-start justify-between">
                     <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-orange-600 block">Phòng đã chọn</span>
-                      <h5 className="text-sm font-extrabold text-gray-900">{selectedRoomType.name} • P.{selectedRoom.number}</h5>
-                      <p className="text-xs text-gray-600 mt-0.5">Tầng {selectedRoom.floor} (Phòng sạch sẵn sàng đón khách)</p>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-warn block">Phòng đã chọn</span>
+                      <h5 className="text-sm font-extrabold text-fg">{selectedRoomType.name} • P.{selectedRoom.number}</h5>
+                      <p className="text-xs text-muted mt-0.5">Tầng {selectedRoom.floor} (Phòng sạch sẵn sàng đón khách)</p>
                     </div>
-                    <span className="px-2 py-1 bg-white text-orange-700 text-xs font-bold rounded-lg border border-orange-200 shadow-xs">
+                    <span className="px-2 py-1 bg-panel text-warn text-xs font-bold rounded-lg border border-warn/30 shadow-xs">
                       {calculateNights()} Đêm
                     </span>
                   </div>
                 ) : (
-                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 flex items-center justify-center">
-                    <span className="text-xs text-gray-500">Chưa chọn phòng</span>
+                  <div className="p-3 bg-fg/[0.03] rounded-xl border border-line flex items-center justify-center">
+                    <span className="text-xs text-muted">Chưa chọn phòng</span>
                   </div>
                 )}
 
                 {/* Stay Schedule Row */}
-                <div className="grid grid-cols-2 gap-2 text-xs bg-[#fbf9f6] p-3 rounded-xl border border-gray-200/80">
+                <div className="grid grid-cols-2 gap-2 text-xs bg-page p-3 rounded-xl border border-line/80">
                   <div>
-                    <span className="text-gray-400 block text-[10px] font-semibold uppercase">Nhận phòng</span>
-                    <span className="font-bold text-gray-800">{checkInTime} - {format(new Date(checkInDate), 'dd/MM/yyyy')}</span>
+                    <span className="text-muted block text-[10px] font-semibold uppercase">Nhận phòng</span>
+                    <span className="font-bold text-fg">{checkInTime} - {format(new Date(checkInDate), 'dd/MM/yyyy')}</span>
                   </div>
                   <div>
-                    <span className="text-gray-400 block text-[10px] font-semibold uppercase">Trả phòng</span>
-                    <span className="font-bold text-gray-800">{checkOutTime} - {format(new Date(checkOutDate), 'dd/MM/yyyy')}</span>
+                    <span className="text-muted block text-[10px] font-semibold uppercase">Trả phòng</span>
+                    <span className="font-bold text-fg">{checkOutTime} - {format(new Date(checkOutDate), 'dd/MM/yyyy')}</span>
                   </div>
                 </div>
 
                 {/* Fast Guest Information Input Form */}
-                <div className="pt-2 border-t border-gray-200/60">
+                <div className="pt-2 border-t border-line/60">
                   <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-bold text-gray-800 uppercase tracking-wider">Thông tin nhanh khách tại quầy</label>
-                    <span className="text-[10px] text-orange-600 cursor-pointer hover:underline font-semibold">Quét CCCD chip</span>
+                    <label className="text-xs font-bold text-fg uppercase tracking-wider">Thông tin nhanh khách tại quầy</label>
+                    <span className="text-[10px] text-warn cursor-pointer hover:underline font-semibold">Quét CCCD chip</span>
                   </div>
                   <div className="space-y-2">
                     <div>
                       <input 
-                        className="block w-full text-xs font-semibold px-3 py-2 bg-[#fbf9f6]/40 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500" 
+                        className="block w-full text-xs font-semibold px-3 py-2 bg-page/40 border border-line rounded-xl focus:ring-2 focus:ring-warn/30 focus:border-warn/30" 
                         placeholder="Họ và tên khách hàng *"
                         value={guestInfo.name}
                         onChange={(e) => setGuestInfo({ ...guestInfo, name: e.target.value })}
@@ -765,7 +765,7 @@ export default function WalkinBookingPage() {
                     </div>
                     <div>
                       <input 
-                        className="block w-full text-xs font-semibold px-3 py-2 bg-[#fbf9f6]/40 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500" 
+                        className="block w-full text-xs font-semibold px-3 py-2 bg-page/40 border border-line rounded-xl focus:ring-2 focus:ring-warn/30 focus:border-warn/30" 
                         placeholder="Số điện thoại nhận mã đặt phòng *"
                         value={guestInfo.phone}
                         onChange={(e) => setGuestInfo({ ...guestInfo, phone: e.target.value })}
@@ -774,7 +774,7 @@ export default function WalkinBookingPage() {
                     </div>
                     <div>
                       <input 
-                        className="block w-full text-xs font-semibold px-3 py-2 bg-[#fbf9f6]/40 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500" 
+                        className="block w-full text-xs font-semibold px-3 py-2 bg-page/40 border border-line rounded-xl focus:ring-2 focus:ring-warn/30 focus:border-warn/30" 
                         placeholder="Email (tùy chọn)"
                         value={guestInfo.email}
                         onChange={(e) => setGuestInfo({ ...guestInfo, email: e.target.value })}
@@ -785,109 +785,109 @@ export default function WalkinBookingPage() {
                 </div>
 
                 {/* Bill Calculation Table */}
-                <div className="pt-3 border-t border-gray-200/60 space-y-2 text-xs">
+                <div className="pt-3 border-t border-line/60 space-y-2 text-xs">
                   {selectedRoomType && (
                     <>
-                      <div className="flex justify-between text-gray-600">
+                      <div className="flex justify-between text-muted">
                         <span className="">Tiền phòng ({calculateNights()} đêm x {selectedRoomType.name}):</span>
-                        <span className="font-semibold text-gray-900">{formatPrice(pricing.subtotal)}</span>
+                        <span className="font-semibold text-fg">{formatPrice(pricing.subtotal)}</span>
                       </div>
-                      <div className="flex justify-between text-gray-600">
+                      <div className="flex justify-between text-muted">
                         <span className="flex items-center gap-1">
                           Buffet sáng tiêu chuẩn ({parseInt(numAdults)} khách):
                         </span>
-                        <span className="font-semibold text-emerald-600">Miễn phí tặng kèm</span>
+                        <span className="font-semibold text-ok">Miễn phí tặng kèm</span>
                       </div>
                     </>
                   )}
                   {pricing.vat > 0 && (
-                    <div className="flex justify-between text-gray-600">
+                    <div className="flex justify-between text-muted">
                       <span className="">Thuế GTGT (VAT 8%) & Phí dịch vụ:</span>
-                      <span className="font-semibold text-gray-900">{formatPrice(pricing.vat)}</span>
+                      <span className="font-semibold text-fg">{formatPrice(pricing.vat)}</span>
                     </div>
                   )}
-                  <div className="pt-2 border-t border-dashed border-gray-200 flex justify-between items-baseline">
+                  <div className="pt-2 border-t border-dashed border-line flex justify-between items-baseline">
                     <div>
-                      <span className="text-sm font-black text-gray-900 block">Tổng tiền thanh toán</span>
-                      <span className="text-[10px] text-gray-400">Đã bao gồm tất cả chi phí</span>
+                      <span className="text-sm font-black text-fg block">Tổng tiền thanh toán</span>
+                      <span className="text-[10px] text-muted">Đã bao gồm tất cả chi phí</span>
                     </div>
-                    <span className="text-xl font-black text-orange-600 tracking-tight">{formatPrice(pricing.total)}</span>
+                    <span className="text-xl font-black text-warn tracking-tight">{formatPrice(pricing.total)}</span>
                   </div>
                 </div>
 
                 {/* Walk-in Payment Method Quick Selection */}
-                <div className="pt-3 border-t border-gray-200/60">
-                  <label className="block text-xs font-bold text-gray-800 mb-2 uppercase tracking-wider">Phương thức thu tiền tại quầy</label>
+                <div className="pt-3 border-t border-line/60">
+                  <label className="block text-xs font-bold text-fg mb-2 uppercase tracking-wider">Phương thức thu tiền tại quầy</label>
                   <div className="grid grid-cols-3 gap-2 text-center text-xs">
                     {/* VietQR Option */}
                     <button 
                       onClick={() => setPaymentMethod('QR_VIETQR')}
                       className={`p-2.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${
                         paymentMethod === 'QR_VIETQR'
-                          ? 'border-2 border-orange-600 bg-orange-50/50'
-                          : 'border border-gray-200 bg-white hover:bg-gray-50'
+                          ? 'border-2 border-warn/30 bg-warn-soft/50'
+                          : 'border border-line bg-panel hover:bg-fg/[0.03]'
                       }`}
                       type="button"
                     >
-                      <QrCode className={`text-base ${paymentMethod === 'QR_VIETQR' ? 'text-orange-600' : 'text-gray-500'}`} />
-                      <span className={`font-bold text-[11px] ${paymentMethod === 'QR_VIETQR' ? 'text-orange-900' : 'text-gray-700'}`}>VietQR 247</span>
+                      <QrCode className={`text-base ${paymentMethod === 'QR_VIETQR' ? 'text-warn' : 'text-muted'}`} />
+                      <span className={`font-bold text-[11px] ${paymentMethod === 'QR_VIETQR' ? 'text-warn' : 'text-fg'}`}>VietQR 247</span>
                     </button>
                     {/* Cash Option */}
                     <button 
                       onClick={() => setPaymentMethod('CASH')}
                       className={`p-2.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${
                         paymentMethod === 'CASH'
-                          ? 'border-2 border-orange-600 bg-orange-50/50'
-                          : 'border border-gray-200 bg-white hover:bg-gray-50'
+                          ? 'border-2 border-warn/30 bg-warn-soft/50'
+                          : 'border border-line bg-panel hover:bg-fg/[0.03]'
                       }`}
                       type="button"
                     >
-                      <Banknote className={`text-base ${paymentMethod === 'CASH' ? 'text-orange-600' : 'text-gray-500'}`} />
-                      <span className={`font-semibold text-[11px] ${paymentMethod === 'CASH' ? 'text-orange-900' : 'text-gray-700'}`}>Tiền mặt</span>
+                      <Banknote className={`text-base ${paymentMethod === 'CASH' ? 'text-warn' : 'text-muted'}`} />
+                      <span className={`font-semibold text-[11px] ${paymentMethod === 'CASH' ? 'text-warn' : 'text-fg'}`}>Tiền mặt</span>
                     </button>
                     {/* POS Card Option */}
                     <button 
                       onClick={() => setPaymentMethod('POS')}
                       className={`p-2.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${
                         paymentMethod === 'POS'
-                          ? 'border-2 border-orange-600 bg-orange-50/50'
-                          : 'border border-gray-200 bg-white hover:bg-gray-50'
+                          ? 'border-2 border-warn/30 bg-warn-soft/50'
+                          : 'border border-line bg-panel hover:bg-fg/[0.03]'
                       }`}
                       type="button"
                     >
-                      <CreditCardIcon className={`text-base ${paymentMethod === 'POS' ? 'text-orange-600' : 'text-gray-500'}`} />
-                      <span className={`font-semibold text-[11px] ${paymentMethod === 'POS' ? 'text-orange-900' : 'text-gray-700'}`}>Cà thẻ POS</span>
+                      <CreditCardIcon className={`text-base ${paymentMethod === 'POS' ? 'text-warn' : 'text-muted'}`} />
+                      <span className={`font-semibold text-[11px] ${paymentMethod === 'POS' ? 'text-warn' : 'text-fg'}`}>Cà thẻ POS</span>
                     </button>
                   </div>
 
                   {/* Collection Amount Radio Options */}
-                  <div className="mt-3 flex items-center justify-between text-xs bg-[#f5f2eb] p-2 rounded-xl">
+                  <div className="mt-3 flex items-center justify-between text-xs bg-fg/[0.03] p-2 rounded-xl">
                     <label className="inline-flex items-center gap-1.5 cursor-pointer">
                       <input 
                         checked={paymentScope === 'full'}
                         onChange={() => setPaymentScope('full')}
-                        className="text-orange-600 focus:ring-orange-500 h-3.5 w-3.5" 
+                        className="text-warn focus:ring-warn/30 h-3.5 w-3.5" 
                         name="payment_scope" 
                         type="radio" 
                       />
-                      <span className="font-bold text-gray-800">Thu đủ 100% ({formatPrice(pricing.total)})</span>
+                      <span className="font-bold text-fg">Thu đủ 100% ({formatPrice(pricing.total)})</span>
                     </label>
                     <label className="inline-flex items-center gap-1.5 cursor-pointer">
                       <input 
                         checked={paymentScope === 'deposit'}
                         onChange={() => setPaymentScope('deposit')}
-                        className="text-orange-600 focus:ring-orange-500 h-3.5 w-3.5" 
+                        className="text-warn focus:ring-warn/30 h-3.5 w-3.5" 
                         name="payment_scope" 
                         type="radio" 
                       />
-                      <span className="font-medium text-gray-600">Đặt cọc 50%</span>
+                      <span className="font-medium text-muted">Đặt cọc 50%</span>
                     </label>
                   </div>
                 </div>
 
                 {/* Error Message */}
                 {error && (
-                  <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs flex items-center gap-2">
+                  <div className="p-3 rounded-lg bg-err-soft border border-err/30 text-err text-xs flex items-center gap-2">
                     <AlertCircle className="w-4 h-4" />
                     {error}
                   </div>
@@ -898,7 +898,7 @@ export default function WalkinBookingPage() {
                   <button 
                     onClick={handleSubmitBooking}
                     disabled={!selectedRoomType || !selectedRoom || !guestInfo.name || !guestInfo.phone || isSubmitting}
-                    className="w-full py-3 px-4 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-extrabold text-sm shadow-sm flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full py-3 px-4 rounded-xl bg-ink hover:bg-ink/90 text-on-ink font-extrabold text-sm shadow-sm flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                     type="button"
                   >
                     <span className="">Tiếp tục: Điền Thông Tin & Check-in</span>
@@ -906,14 +906,14 @@ export default function WalkinBookingPage() {
                   </button>
                   <div className="grid grid-cols-2 gap-2">
                     <button 
-                      className="py-2 px-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-xs transition-colors" 
+                      className="py-2 px-3 rounded-lg border border-line bg-panel hover:bg-fg/[0.03] text-fg font-semibold text-xs transition-colors" 
                       type="button"
                     >
-                      <Clock className="w-3 h-3 inline mr-1 text-gray-400" /> Giữ chỗ 15 phút
+                      <Clock className="w-3 h-3 inline mr-1 text-muted" /> Giữ chỗ 15 phút
                     </button>
                     <button 
                       onClick={resetForm}
-                      className="py-2 px-3 rounded-lg border border-red-200 bg-red-50/50 hover:bg-red-100/50 text-red-700 font-semibold text-xs transition-colors" 
+                      className="py-2 px-3 rounded-lg border border-err/30 bg-err-soft/50 hover:bg-err-soft/50 text-err font-semibold text-xs transition-colors" 
                       type="button"
                     >
                       <RefreshCw className="w-3 h-3 inline mr-1" /> Làm mới đơn
@@ -923,12 +923,12 @@ export default function WalkinBookingPage() {
               </div>
 
               {/* Live Synchronized System Footer Tag */}
-              <div className="px-5 py-2.5 bg-[#f5f2eb]/50 border-t border-gray-200 text-[11px] text-gray-500 flex items-center justify-between">
+              <div className="px-5 py-2.5 bg-fg/[0.03] border-t border-line text-[11px] text-muted flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
-                  <Workflow className="w-3 h-3 text-emerald-500" />
+                  <Workflow className="w-3 h-3 text-ok" />
                   Đồng bộ tức thì với Sơ đồ phòng
                 </span>
-                <span className="font-mono text-[10px] text-gray-400">#{bookingCode}</span>
+                <span className="font-mono text-[10px] text-muted">#{bookingCode}</span>
               </div>
             </div>
           </div>

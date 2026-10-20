@@ -356,7 +356,7 @@ export default function PropertyDetailPage() {
     return (
       <PageContainer>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-acc"></div>
         </div>
       </PageContainer>
     )
@@ -367,7 +367,7 @@ export default function PropertyDetailPage() {
       <PageContainer>
         <Card>
           <CardContent className="p-12 text-center">
-            <p className="text-gray-500">Không tìm thấy cơ sở</p>
+            <p className="text-muted">Không tìm thấy cơ sở</p>
             <Button onClick={() => router.push(routes.properties(slug))} className="mt-4">
               Quay lại
             </Button>
@@ -452,13 +452,13 @@ export default function PropertyDetailPage() {
                         <div key={img.id} className="relative aspect-video rounded-lg overflow-hidden group">
                           <Image src={img.url} alt={img.alt || property.name} fill className="object-cover" />
                           {img.isPrimary && (
-                            <div className="absolute top-2 left-2 px-2 py-1 bg-primary text-white text-xs rounded">
+                            <div className="absolute top-2 left-2 px-2 py-1 bg-ink text-on-ink text-xs rounded">
                               Ảnh chính
                             </div>
                           )}
                           <button
                             onClick={() => handleDeleteImage(img.id)}
-                            className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute top-2 right-2 p-1 bg-err text-on-err rounded opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -466,7 +466,7 @@ export default function PropertyDetailPage() {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8 text-muted">
                       <p>Chưa có hình ảnh</p>
                       <Button variant="outline" className="mt-2" onClick={() => setShowImageModal(true)}>
                         <Plus className="w-4 h-4 mr-2" />
@@ -486,10 +486,10 @@ export default function PropertyDetailPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-start gap-3">
-                    <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
+                    <MapPin className="w-5 h-5 text-muted mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Địa chỉ</p>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm font-medium text-fg">Địa chỉ</p>
+                      <p className="text-sm text-muted">
                         {property.address}, {property.district && `${property.district}, `}{property.city}
                       </p>
                     </div>
@@ -497,38 +497,38 @@ export default function PropertyDetailPage() {
 
                   {property.phone && (
                     <div className="flex items-start gap-3">
-                      <Phone className="w-5 h-5 text-gray-400 mt-0.5" />
+                      <Phone className="w-5 h-5 text-muted mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium text-gray-900">Điện thoại</p>
-                        <p className="text-sm text-gray-600">{property.phone}</p>
+                        <p className="text-sm font-medium text-fg">Điện thoại</p>
+                        <p className="text-sm text-muted">{property.phone}</p>
                       </div>
                     </div>
                   )}
 
                   {property.email && (
                     <div className="flex items-start gap-3">
-                      <Mail className="w-5 h-5 text-gray-400 mt-0.5" />
+                      <Mail className="w-5 h-5 text-muted mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium text-gray-900">Email</p>
-                        <p className="text-sm text-gray-600">{property.email}</p>
+                        <p className="text-sm font-medium text-fg">Email</p>
+                        <p className="text-sm text-muted">{property.email}</p>
                       </div>
                     </div>
                   )}
 
                   {property.website && (
                     <div className="flex items-start gap-3">
-                      <Globe className="w-5 h-5 text-gray-400 mt-0.5" />
+                      <Globe className="w-5 h-5 text-muted mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium text-gray-900">Website</p>
-                        <p className="text-sm text-gray-600">{property.website}</p>
+                        <p className="text-sm font-medium text-fg">Website</p>
+                        <p className="text-sm text-muted">{property.website}</p>
                       </div>
                     </div>
                   )}
 
                   {property.description && (
                     <div>
-                      <p className="text-sm font-medium text-gray-900 mb-1">Mô tả</p>
-                      <p className="text-sm text-gray-600">{property.description}</p>
+                      <p className="text-sm font-medium text-fg mb-1">Mô tả</p>
+                      <p className="text-sm text-muted">{property.description}</p>
                     </div>
                   )}
                 </CardContent>
@@ -548,18 +548,18 @@ export default function PropertyDetailPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {property.roomTypes.length > 0 ? (
                   property.roomTypes.map((room) => (
-                    <div key={room.id} className="p-4 bg-gray-50 rounded-lg">
+                    <div key={room.id} className="p-4 bg-fg/[0.03] rounded-lg">
                       <div className="flex items-center gap-2 mb-2">
-                        <Bed className="w-4 h-4 text-gray-400" />
-                        <span className="font-medium text-gray-900">{room.name}</span>
+                        <Bed className="w-4 h-4 text-muted" />
+                        <span className="font-medium text-fg">{room.name}</span>
                       </div>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-muted">
                         {room.totalRooms} phòng • Tối đa {room.maxOccupancy} người
                       </p>
                     </div>
                   ))
                 ) : (
-                  <p className="text-gray-500 col-span-4 text-center py-4">
+                  <p className="text-muted col-span-4 text-center py-4">
                     Chưa có hạng phòng nào
                   </p>
                 )}
@@ -574,7 +574,7 @@ export default function PropertyDetailPage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Hạng phòng</CardTitle>
-                <p className="text-sm text-gray-500 mt-1">Cấu hình các loại phòng và số lượng</p>
+                <p className="text-sm text-muted mt-1">Cấu hình các loại phòng và số lượng</p>
               </div>
               <Button onClick={() => {
                 setEditingRoomType(null)
@@ -589,18 +589,18 @@ export default function PropertyDetailPage() {
               {property.roomTypes.length > 0 ? (
                 <div className="space-y-4">
                   {property.roomTypes.map((room) => (
-                    <div key={room.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div key={room.id} className="flex items-center justify-between p-4 bg-fg/[0.03] rounded-lg">
                       <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
+                        <div className="w-16 h-16 bg-fg/10 rounded-lg flex items-center justify-center">
                           {room.images[0] ? (
                             <Image src={room.images[0].url} alt={room.name} width={64} height={64} className="rounded-lg object-cover" />
                           ) : (
-                            <Bed className="w-8 h-8 text-gray-400" />
+                            <Bed className="w-8 h-8 text-muted" />
                           )}
                         </div>
                         <div>
-                          <h4 className="font-medium text-gray-900">{room.name}</h4>
-                          <p className="text-sm text-gray-500">
+                          <h4 className="font-medium text-fg">{room.name}</h4>
+                          <p className="text-sm text-muted">
                             {bedTypes.find(b => b.value === room.bedType)?.label} • 
                             {room.area && `${room.area}m² • `}
                             {room.totalRooms} phòng • Tối đa {room.maxOccupancy} người
@@ -615,7 +615,7 @@ export default function PropertyDetailPage() {
                           <Pencil className="w-4 h-4" />
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => handleDeleteRoomType(room.id)}>
-                          <Trash2 className="w-4 h-4 text-red-500" />
+                          <Trash2 className="w-4 h-4 text-err" />
                         </Button>
                       </div>
                     </div>
@@ -623,8 +623,8 @@ export default function PropertyDetailPage() {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <Bed className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 mb-4">Chưa có hạng phòng nào</p>
+                  <Bed className="w-12 h-12 text-muted mx-auto mb-4" />
+                  <p className="text-muted mb-4">Chưa có hạng phòng nào</p>
                   <Button onClick={() => {
                     setEditingRoomType(null)
                     resetRoomTypeForm()
@@ -641,8 +641,8 @@ export default function PropertyDetailPage() {
           {/* Room Type Modal */}
           {showRoomTypeModal && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                <div className="p-6 border-b border-gray-100">
+              <div className="bg-panel rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="p-6 border-b border-line">
                   <h2 className="text-xl font-semibold">
                     {editingRoomType ? 'Chỉnh sửa hạng phòng' : 'Thêm hạng phòng mới'}
                   </h2>
@@ -728,7 +728,7 @@ export default function PropertyDetailPage() {
                     />
                   </div>
                 </div>
-                <div className="p-6 border-t border-gray-100 flex justify-end gap-3">
+                <div className="p-6 border-t border-line flex justify-end gap-3">
                   <Button variant="outline" onClick={() => setShowRoomTypeModal(false)}>
                     Hủy
                   </Button>
@@ -748,7 +748,7 @@ export default function PropertyDetailPage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Bảng giá</CardTitle>
-                <p className="text-sm text-gray-500 mt-1">Cấu hình giá phòng ngày thường, cuối tuần và phụ phí</p>
+                <p className="text-sm text-muted mt-1">Cấu hình giá phòng ngày thường, cuối tuần và phụ phí</p>
               </div>
               <Button onClick={() => setShowPricingModal(true)}>
                 <Plus className="w-4 h-4 mr-2" />
@@ -759,29 +759,29 @@ export default function PropertyDetailPage() {
               {property.pricing.length > 0 ? (
                 <div className="space-y-4">
                   {property.pricing.map((price) => (
-                    <div key={price.id} className="p-4 bg-gray-50 rounded-lg">
+                    <div key={price.id} className="p-4 bg-fg/[0.03] rounded-lg">
                       <div className="flex items-center justify-between mb-4">
-                        <h4 className="font-medium text-gray-900">{price.name}</h4>
+                        <h4 className="font-medium text-fg">{price.name}</h4>
                         <Badge variant={price.isActive ? 'success' : 'gray'}>
                           {price.isActive ? 'Hoạt động' : 'Tắt'}
                         </Badge>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
-                          <p className="text-sm text-gray-500">Giá ngày thường</p>
-                          <p className="font-semibold text-gray-900">{formatCurrency(price.weekdayPrice)}</p>
+                          <p className="text-sm text-muted">Giá ngày thường</p>
+                          <p className="font-semibold text-fg">{formatCurrency(price.weekdayPrice)}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-gray-500">Giá cuối tuần</p>
-                          <p className="font-semibold text-gray-900">{formatCurrency(price.weekendPrice)}</p>
+                          <p className="text-sm text-muted">Giá cuối tuần</p>
+                          <p className="font-semibold text-fg">{formatCurrency(price.weekendPrice)}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-gray-500">Phụ thu người lớn</p>
-                          <p className="font-semibold text-gray-900">{formatCurrency(price.extraAdultPrice)}</p>
+                          <p className="text-sm text-muted">Phụ thu người lớn</p>
+                          <p className="font-semibold text-fg">{formatCurrency(price.extraAdultPrice)}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-gray-500">Phụ thu trẻ em</p>
-                          <p className="font-semibold text-gray-900">{formatCurrency(price.extraChildPrice)}</p>
+                          <p className="text-sm text-muted">Phụ thu trẻ em</p>
+                          <p className="font-semibold text-fg">{formatCurrency(price.extraChildPrice)}</p>
                         </div>
                       </div>
                     </div>
@@ -789,7 +789,7 @@ export default function PropertyDetailPage() {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <p className="text-gray-500 mb-4">Chưa có bảng giá nào</p>
+                  <p className="text-muted mb-4">Chưa có bảng giá nào</p>
                   <Button onClick={() => setShowPricingModal(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Tạo bảng giá đầu tiên
@@ -802,8 +802,8 @@ export default function PropertyDetailPage() {
           {/* Pricing Modal */}
           {showPricingModal && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-xl max-w-md w-full">
-                <div className="p-6 border-b border-gray-100">
+              <div className="bg-panel rounded-xl max-w-md w-full">
+                <div className="p-6 border-b border-line">
                   <h2 className="text-xl font-semibold">Thêm bảng giá mới</h2>
                 </div>
                 <div className="p-6 space-y-4">
@@ -853,7 +853,7 @@ export default function PropertyDetailPage() {
                     />
                   </div>
                 </div>
-                <div className="p-6 border-t border-gray-100 flex justify-end gap-3">
+                <div className="p-6 border-t border-line flex justify-end gap-3">
                   <Button variant="outline" onClick={() => setShowPricingModal(false)}>
                     Hủy
                   </Button>
@@ -872,7 +872,7 @@ export default function PropertyDetailPage() {
           <Card>
             <CardHeader>
               <CardTitle>Tiện ích</CardTitle>
-              <p className="text-sm text-gray-500 mt-1">Chọn các tiện ích có sẵn tại cơ sở của bạn</p>
+              <p className="text-sm text-muted mt-1">Chọn các tiện ích có sẵn tại cơ sở của bạn</p>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -884,17 +884,17 @@ export default function PropertyDetailPage() {
                       onClick={() => handleToggleAmenity(amenity.id)}
                       className={`p-4 rounded-lg border-2 transition-all text-left ${
                         isSelected 
-                          ? 'border-primary bg-primary-50' 
-                          : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-acc bg-acc-soft' 
+                          : 'border-line hover:border-line'
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          isSelected ? 'bg-primary-100 text-primary' : 'bg-gray-100 text-gray-500'
+                          isSelected ? 'bg-acc-soft text-acc' : 'bg-fg/5 text-muted'
                         }`}>
                           <Wifi className="w-5 h-5" />
                         </div>
-                        <span className={`font-medium ${isSelected ? 'text-primary' : 'text-gray-700'}`}>
+                        <span className={`font-medium ${isSelected ? 'text-acc' : 'text-fg'}`}>
                           {amenity.name}
                         </span>
                       </div>
@@ -912,7 +912,7 @@ export default function PropertyDetailPage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Chính sách</CardTitle>
-                <p className="text-sm text-gray-500 mt-1">Cài đặt giờ check-in/out và các quy định khác</p>
+                <p className="text-sm text-muted mt-1">Cài đặt giờ check-in/out và các quy định khác</p>
               </div>
               <Button onClick={handleSavePolicy}>
                 <Save className="w-4 h-4 mr-2" />
@@ -938,14 +938,14 @@ export default function PropertyDetailPage() {
 
               {/* Policies */}
               <div className="space-y-4">
-                <h4 className="font-medium text-gray-900">Quy định chung</h4>
+                <h4 className="font-medium text-fg">Quy định chung</h4>
                 
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between p-4 bg-fg/[0.03] rounded-lg">
                   <div className="flex items-center gap-3">
-                    <Users className="w-5 h-5 text-gray-400" />
+                    <Users className="w-5 h-5 text-muted" />
                     <div>
-                      <p className="font-medium text-gray-900">Cho phép trẻ em</p>
-                      <p className="text-sm text-gray-500">Trẻ em được phép ở tại cơ sở</p>
+                      <p className="font-medium text-fg">Cho phép trẻ em</p>
+                      <p className="text-sm text-muted">Trẻ em được phép ở tại cơ sở</p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -955,16 +955,16 @@ export default function PropertyDetailPage() {
                       checked={policyForm.childrenAllowed ?? true}
                       onChange={(e) => setPolicyForm({ ...policyForm, childrenAllowed: e.target.checked })}
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                    <div className="w-11 h-6 bg-fg/10 peer-focus:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-acc rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-on-ink after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-panel after:border-line after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-ink"></div>
                   </label>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between p-4 bg-fg/[0.03] rounded-lg">
                   <div className="flex items-center gap-3">
-                    <Baby className="w-5 h-5 text-gray-400" />
+                    <Baby className="w-5 h-5 text-muted" />
                     <div>
-                      <p className="font-medium text-gray-900">Cho phép thú cưng</p>
-                      <p className="text-sm text-gray-500">Vật nuôi được phép ở tại cơ sở</p>
+                      <p className="font-medium text-fg">Cho phép thú cưng</p>
+                      <p className="text-sm text-muted">Vật nuôi được phép ở tại cơ sở</p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -974,16 +974,16 @@ export default function PropertyDetailPage() {
                       checked={policyForm.petsAllowed ?? false}
                       onChange={(e) => setPolicyForm({ ...policyForm, petsAllowed: e.target.checked })}
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                    <div className="w-11 h-6 bg-fg/10 peer-focus:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-acc rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-on-ink after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-panel after:border-line after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-ink"></div>
                   </label>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between p-4 bg-fg/[0.03] rounded-lg">
                   <div className="flex items-center gap-3">
-                    <Clock className="w-5 h-5 text-gray-400" />
+                    <Clock className="w-5 h-5 text-muted" />
                     <div>
-                      <p className="font-medium text-gray-900">Cho phép hút thuốc</p>
-                      <p className="text-sm text-gray-500">Hút thuốc được phép trong khuôn viên</p>
+                      <p className="font-medium text-fg">Cho phép hút thuốc</p>
+                      <p className="text-sm text-muted">Hút thuốc được phép trong khuôn viên</p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -993,14 +993,14 @@ export default function PropertyDetailPage() {
                       checked={policyForm.smokingAllowed ?? false}
                       onChange={(e) => setPolicyForm({ ...policyForm, smokingAllowed: e.target.checked })}
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                    <div className="w-11 h-6 bg-fg/10 peer-focus:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-acc rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-on-ink after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-panel after:border-line after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-ink"></div>
                   </label>
                 </div>
               </div>
 
               {/* Cancellation Policy */}
               <div>
-                <h4 className="font-medium text-gray-900 mb-2">Chính sách hủy phòng</h4>
+                <h4 className="font-medium text-fg mb-2">Chính sách hủy phòng</h4>
                 <Textarea
                   placeholder="VD: Hủy miễn phí trước 24 giờ check-in..."
                   value={policyForm.cancellationPolicy || ''}
@@ -1011,7 +1011,7 @@ export default function PropertyDetailPage() {
 
               {/* Additional Rules */}
               <div>
-                <h4 className="font-medium text-gray-900 mb-2">Nội quy bổ sung</h4>
+                <h4 className="font-medium text-fg mb-2">Nội quy bổ sung</h4>
                 <Textarea
                   placeholder="Các nội quy khác của cơ sở..."
                   value={policyForm.additionalRules || ''}
@@ -1029,7 +1029,7 @@ export default function PropertyDetailPage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Website Builder</CardTitle>
-                <p className="text-sm text-gray-500 mt-1">Tùy chỉnh giao diện website công khai của bạn</p>
+                <p className="text-sm text-muted mt-1">Tùy chỉnh giao diện website công khai của bạn</p>
               </div>
               <Button onClick={() => router.push(`/properties/${propertyId}/website`)}>
                 <Globe className="w-4 h-4 mr-2" />
@@ -1038,26 +1038,26 @@ export default function PropertyDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-gray-50 rounded-lg text-center">
-                  <Globe className="w-8 h-8 text-primary mx-auto mb-2" />
+                <div className="p-4 bg-fg/[0.03] rounded-lg text-center">
+                  <Globe className="w-8 h-8 text-acc mx-auto mb-2" />
                   <h4 className="font-medium">Block Builder</h4>
-                  <p className="text-sm text-gray-500 mt-1">Kéo thả các khối giao diện</p>
+                  <p className="text-sm text-muted mt-1">Kéo thả các khối giao diện</p>
                 </div>
-                <div className="p-4 bg-gray-50 rounded-lg text-center">
-                  <Pencil className="w-8 h-8 text-primary mx-auto mb-2" />
+                <div className="p-4 bg-fg/[0.03] rounded-lg text-center">
+                  <Pencil className="w-8 h-8 text-acc mx-auto mb-2" />
                   <h4 className="font-medium">Tùy biến màu sắc</h4>
-                  <p className="text-sm text-gray-500 mt-1">Thay đổi màu chủ đạo</p>
+                  <p className="text-sm text-muted mt-1">Thay đổi màu chủ đạo</p>
                 </div>
-                <div className="p-4 bg-gray-50 rounded-lg text-center">
-                  <ExternalLink className="w-8 h-8 text-primary mx-auto mb-2" />
+                <div className="p-4 bg-fg/[0.03] rounded-lg text-center">
+                  <ExternalLink className="w-8 h-8 text-acc mx-auto mb-2" />
                   <h4 className="font-medium">Xuất bản</h4>
-                  <p className="text-sm text-gray-500 mt-1">Đăng tải website của bạn</p>
+                  <p className="text-sm text-muted mt-1">Đăng tải website của bạn</p>
                 </div>
               </div>
-              <div className="mt-6 flex items-center justify-between p-4 bg-primary-50 rounded-lg">
+              <div className="mt-6 flex items-center justify-between p-4 bg-acc-soft rounded-lg">
                 <div>
-                  <h4 className="font-medium text-gray-900">Website công khai</h4>
-                  <p className="text-sm text-gray-600">https://{property.subdomain}.digistay.vn</p>
+                  <h4 className="font-medium text-fg">Website công khai</h4>
+                  <p className="text-sm text-muted">https://{property.subdomain}.digistay.vn</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" onClick={() => window.open(`/${property.subdomain}`, '_blank')}>
@@ -1075,29 +1075,29 @@ export default function PropertyDetailPage() {
       {/* Image Upload Modal */}
       {showImageModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-lg w-full">
-            <div className="p-6 border-b border-gray-100">
+          <div className="bg-panel rounded-xl max-w-lg w-full">
+            <div className="p-6 border-b border-line">
               <h2 className="text-xl font-semibold">Thêm hình ảnh</h2>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  URL hình ảnh <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-fg mb-1">
+                  URL hình ảnh <span className="text-err">*</span>
                 </label>
                 <Input
                   placeholder="https://example.com/image.jpg"
                   value={imageForm.url}
                   onChange={(e) => setImageForm({ ...imageForm, url: e.target.value })}
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted mt-1">
                   Nhập URL hình ảnh từ dịch vụ lưu trữ (Cloudinary, AWS S3, imgbb,...)
                 </p>
               </div>
 
               {imageForm.url && (
                 <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">Xem trước:</p>
-                  <div className="relative w-full h-48 rounded-lg overflow-hidden bg-gray-100">
+                  <p className="text-sm font-medium text-fg mb-2">Xem trước:</p>
+                  <div className="relative w-full h-48 rounded-lg overflow-hidden bg-fg/5">
                     <Image src={imageForm.url} alt="Preview" fill className="object-contain" />
                   </div>
                 </div>
@@ -1111,7 +1111,7 @@ export default function PropertyDetailPage() {
               />
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-fg mb-1">
                   Danh mục
                 </label>
                 <Select
@@ -1136,14 +1136,14 @@ export default function PropertyDetailPage() {
                   id="isPrimary"
                   checked={imageForm.isPrimary}
                   onChange={(e) => setImageForm({ ...imageForm, isPrimary: e.target.checked })}
-                  className="w-4 h-4 text-primary rounded border-gray-300 focus-visible:ring-primary focus-visible:ring-2"
+                  className="w-4 h-4 text-acc rounded border-line focus-visible:ring-acc focus-visible:ring-2"
                 />
-                <label htmlFor="isPrimary" className="text-sm text-gray-700">
+                <label htmlFor="isPrimary" className="text-sm text-fg">
                   Đặt làm ảnh chính
                 </label>
               </div>
             </div>
-            <div className="p-6 border-t border-gray-100 flex justify-end gap-3">
+            <div className="p-6 border-t border-line flex justify-end gap-3">
               <Button variant="outline" onClick={() => setShowImageModal(false)}>
                 Hủy
               </Button>

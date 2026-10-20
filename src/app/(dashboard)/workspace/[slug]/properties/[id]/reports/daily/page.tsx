@@ -48,12 +48,12 @@ const METHOD_ICONS: Record<string, React.ComponentType<{ className?: string }>> 
 }
 
 const METHOD_COLORS: Record<string, string> = {
-  CASH: 'text-green-600',
-  BANK_TRANSFER: 'text-blue-600',
-  QR_VIETQR: 'text-purple-600',
-  CARD: 'text-blue-600',
-  CREDIT_CARD: 'text-blue-600',
-  E_WALLET: 'text-purple-600',
+  CASH: 'text-ok',
+  BANK_TRANSFER: 'text-info',
+  QR_VIETQR: 'text-refund',
+  CARD: 'text-info',
+  CREDIT_CARD: 'text-info',
+  E_WALLET: 'text-refund',
 }
 
 export default function DailyReportPage() {
@@ -113,8 +113,8 @@ export default function DailyReportPage() {
         <Header title="Sổ Quỹ" description="Theo dõi thu chi hàng ngày" />
         <Card>
           <CardContent className="p-12 text-center">
-            <Wallet className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">Không xác định được cơ sở.</p>
+            <Wallet className="w-12 h-12 text-muted mx-auto mb-4" />
+            <p className="text-muted">Không xác định được cơ sở.</p>
           </CardContent>
         </Card>
       </PageContainer>
@@ -148,49 +148,49 @@ export default function DailyReportPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <Card className="bg-green-50 border-green-200">
+        <Card className="bg-ok-soft border-ok/30">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-green-600 font-medium">Tiền vào</p>
-                <p className="text-2xl font-bold text-green-700 mt-1">
+                <p className="text-sm text-ok font-medium">Tiền vào</p>
+                <p className="text-2xl font-bold text-ok mt-1">
                   {summary ? formatCurrency(summary.totalIn) : '0 đ'}
                 </p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                <ArrowDownRight className="w-6 h-6 text-green-600" />
+              <div className="w-12 h-12 rounded-full bg-ok-soft flex items-center justify-center">
+                <ArrowDownRight className="w-6 h-6 text-ok" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-red-50 border-red-200">
+        <Card className="bg-err-soft border-err/30">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-red-600 font-medium">Tiền ra</p>
-                <p className="text-2xl font-bold text-red-700 mt-1">
+                <p className="text-sm text-err font-medium">Tiền ra</p>
+                <p className="text-2xl font-bold text-err mt-1">
                   {summary ? formatCurrency(summary.totalOut) : '0 đ'}
                 </p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-                <ArrowUpRight className="w-6 h-6 text-red-600" />
+              <div className="w-12 h-12 rounded-full bg-err-soft flex items-center justify-center">
+                <ArrowUpRight className="w-6 h-6 text-err" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-blue-50 border-blue-200">
+        <Card className="bg-info-soft border-info/30">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-blue-600 font-medium">Số dư</p>
-                <p className="text-2xl font-bold text-blue-700 mt-1">
+                <p className="text-sm text-info font-medium">Số dư</p>
+                <p className="text-2xl font-bold text-info mt-1">
                   {summary ? formatCurrency(summary.balance) : '0 đ'}
                 </p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                <Wallet className="w-6 h-6 text-blue-600" />
+              <div className="w-12 h-12 rounded-full bg-info-soft flex items-center justify-center">
+                <Wallet className="w-6 h-6 text-info" />
               </div>
             </div>
           </CardContent>
@@ -200,16 +200,16 @@ export default function DailyReportPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Đặt phòng hôm nay</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">
+                <p className="text-sm text-muted">Đặt phòng hôm nay</p>
+                <p className="text-2xl font-bold text-fg mt-1">
                   {summary?.bookings || 0}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted mt-1">
                   {summary?.checkIns || 0} check-in • {summary?.checkOuts || 0} check-out
                 </p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-gray-600" />
+              <div className="w-12 h-12 rounded-full bg-fg/5 flex items-center justify-center">
+                <Calendar className="w-6 h-6 text-muted" />
               </div>
             </div>
           </CardContent>
@@ -226,7 +226,7 @@ export default function DailyReportPage() {
         </CardHeader>
         <CardContent>
           {transactions.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">Chưa có giao dịch nào trong ngày này.</p>
+            <p className="text-center text-muted py-8">Chưa có giao dịch nào trong ngày này.</p>
           ) : (
             <Table>
               <TableHeader>
@@ -246,8 +246,8 @@ export default function DailyReportPage() {
                       <Badge
                         className={
                           tx.type === 'IN'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-red-100 text-red-700'
+                            ? 'bg-ok-soft text-ok'
+                            : 'bg-err-soft text-err'
                         }
                       >
                         {tx.type === 'IN' ? 'Tiền vào' : 'Tiền ra'}
@@ -255,19 +255,19 @@ export default function DailyReportPage() {
                     </TableCell>
                     <TableCell>
                       <p className="font-medium">{tx.description}</p>
-                      <p className="text-sm text-gray-500">{tx.category}</p>
+                      <p className="text-sm text-muted">{tx.category}</p>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        {tx.paymentMethod === 'Tiền mặt' && <Banknote className="w-4 h-4 text-gray-400" />}
-                        {tx.paymentMethod === 'Chuyển khoản' && <CreditCard className="w-4 h-4 text-gray-400" />}
-                        {tx.paymentMethod === 'QR VietQR' && <DollarSign className="w-4 h-4 text-gray-400" />}
+                        {tx.paymentMethod === 'Tiền mặt' && <Banknote className="w-4 h-4 text-muted" />}
+                        {tx.paymentMethod === 'Chuyển khoản' && <CreditCard className="w-4 h-4 text-muted" />}
+                        {tx.paymentMethod === 'QR VietQR' && <DollarSign className="w-4 h-4 text-muted" />}
                         {tx.paymentMethod}
                       </div>
                     </TableCell>
                     <TableCell
                       className={`text-right font-semibold ${
-                        tx.type === 'IN' ? 'text-green-600' : 'text-red-600'
+                        tx.type === 'IN' ? 'text-ok' : 'text-err'
                       }`}
                     >
                       {tx.type === 'IN' ? '+' : '-'}
@@ -286,7 +286,7 @@ export default function DailyReportPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
           {methodBreakdown.map((m) => {
             const Icon = METHOD_ICONS[m.method] ?? DollarSign
-            const color = METHOD_COLORS[m.method] ?? 'text-gray-600'
+            const color = METHOD_COLORS[m.method] ?? 'text-muted'
             return (
               <Card key={m.method}>
                 <CardHeader>
@@ -297,7 +297,7 @@ export default function DailyReportPage() {
                 </CardHeader>
                 <CardContent>
                   <p className={`text-2xl font-bold ${color}`}>{formatCurrency(m.amount)}</p>
-                  <p className="text-sm text-gray-500">{m.count} giao dịch</p>
+                  <p className="text-sm text-muted">{m.count} giao dịch</p>
                 </CardContent>
               </Card>
             )

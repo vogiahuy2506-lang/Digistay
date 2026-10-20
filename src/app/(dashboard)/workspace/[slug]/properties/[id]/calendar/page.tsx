@@ -88,9 +88,9 @@ function buildMonthGrid(date: Date): { date: Date; isCurrentMonth: boolean }[] {
   }
 
 const ROOM_TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-  ota: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-800' },
-  direct: { bg: 'bg-sky-50', border: 'border-sky-200', text: 'text-sky-800' },
-  group: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-900' },
+  ota: { bg: 'bg-ok-soft', border: 'border-ok/30', text: 'text-ok' },
+  direct: { bg: 'bg-info-soft', border: 'border-info/30', text: 'text-info' },
+  group: { bg: 'bg-warn-soft', border: 'border-warn/30', text: 'text-warn' },
 }
 
 export default function CalendarPage() {
@@ -661,12 +661,12 @@ export default function CalendarPage() {
     const percent = totalRooms > 0 ? Math.round((occupied / totalRooms) * 100) : 0
     
     if (percent >= 80) {
-      return { label: `${occupied}/${totalRooms} bận`, className: 'bg-amber-50 text-amber-800 border-amber-200' }
+      return { label: `${occupied}/${totalRooms} bận`, className: 'bg-warn-soft text-warn border-warn/30' }
     }
     if (occupied >= totalRooms * 0.5) {
-      return { label: `${occupied}/${totalRooms} bận`, className: 'bg-emerald-50 text-emerald-700 border-emerald-100' }
+      return { label: `${occupied}/${totalRooms} bận`, className: 'bg-ok-soft text-ok border-ok/30' }
     }
-    return { label: `${occupied}/${totalRooms} bận`, className: 'bg-gray-100 text-gray-600 border-gray-200' }
+    return { label: `${occupied}/${totalRooms} bận`, className: 'bg-fg/5 text-muted border-line' }
   }
 
   const isWeekend = (day: Date) => {
@@ -675,120 +675,120 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="min-h-full bg-[#fbf9f6] text-[#241a18] antialiased flex flex-col font-sans">
+    <div className="min-h-full bg-page text-fg antialiased flex flex-col font-sans">
       {/* Top Hospitality CRM App Bar */}
-      <header className="bg-white border-b border-[#eae6de] sticky top-0 z-40">
+      <header className="bg-panel border-b border-line sticky top-0 z-40">
         {/* Main Header */}
         <div className="px-6 py-2.5 flex items-center justify-between gap-4">
           {/* Left: Brand / Workspace & Breadcrumb */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2.5 pr-4 border-r border-[#ece8df]">
-              <div className="w-8 h-8 rounded-lg bg-[#d95338] text-white flex items-center justify-center font-black text-sm shadow-sm shadow-[#d95338]/25">
+            <div className="flex items-center gap-2.5 pr-4 border-r border-line">
+              <div className="w-8 h-8 rounded-lg bg-ink text-on-ink flex items-center justify-center font-black text-sm shadow-sm">
                 D
               </div>
               <div>
                 <div className="flex items-center gap-1.5 leading-none">
-                  <span className="font-bold text-sm tracking-tight text-[#1e1715]">DigiStay Hotel OS</span>
-                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[#fff5f2] text-[#d95338] border border-[#ffe8e2]">PMS Pro</span>
+                  <span className="font-bold text-sm tracking-tight text-fg">DigiStay Hotel OS</span>
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-acc-soft text-acc border border-acc/30">PMS Pro</span>
                 </div>
-                <div className="flex items-center gap-1 text-[11px] text-gray-500 mt-0.5">
-                  <Building2 className="w-3 h-3 text-[10px] text-gray-400" />
+                <div className="flex items-center gap-1 text-[11px] text-muted mt-0.5">
+                  <Building2 className="w-3 h-3 text-[10px] text-muted" />
                   <span>Khách sạn Demo Hà Nội • Chi nhánh Phố Cổ</span>
-                  <i className="fa-solid fa-chevron-down text-[8px] text-gray-400 ml-0.5 cursor-pointer hover:text-gray-700" />
+                  <i className="fa-solid fa-chevron-down text-[8px] text-muted ml-0.5 cursor-pointer hover:text-fg" />
                 </div>
               </div>
             </div>
             {/* CRM Breadcrumbs */}
-            <nav className="hidden md:flex items-center gap-2 text-xs text-gray-500 pl-1 font-medium">
+            <nav className="hidden md:flex items-center gap-2 text-xs text-muted pl-1 font-medium">
               <span>Quản lý vận hành</span>
-              <i className="fa-solid fa-chevron-right text-[9px] text-gray-300" />
-              <span className="text-[#d95338] font-semibold">Lịch phòng trực quan</span>
+              <i className="fa-solid fa-chevron-right text-[9px] text-muted" />
+              <span className="text-acc font-semibold">Lịch phòng trực quan</span>
             </nav>
           </div>
 
           {/* Center: Quick Global Search */}
           <div className="flex-1 max-w-md hidden lg:block">
             <div className="relative">
-              <Search className="absolute left-3 top-2.5 w-3 h-3 text-gray-400" />
+              <Search className="absolute left-3 top-2.5 w-3 h-3 text-muted" />
               <input 
-                className="w-full bg-[#f8f6f2] border border-[#e5e0d6] focus:border-[#d95338] focus:bg-white focus:ring-1 focus:ring-[#d95338] rounded-lg pl-9 pr-12 py-1.5 text-xs text-gray-800 placeholder-gray-400 transition-all" 
+                className="w-full bg-fg/[0.03] border border-line focus:border-acc focus:bg-panel focus:ring-1 focus:ring-acc rounded-lg pl-9 pr-12 py-1.5 text-xs text-fg placeholder-muted transition-all" 
                 placeholder="Tìm tên khách, số phòng, CCCD, mã #BK / #DSM..." 
                 type="text"
               />
-              <kbd className="absolute right-2.5 top-2 px-1.5 py-0.5 text-[10px] font-semibold text-gray-400 bg-white border border-[#e2ddd5] rounded">⌘K</kbd>
+              <kbd className="absolute right-2.5 top-2 px-1.5 py-0.5 text-[10px] font-semibold text-muted bg-panel border border-line rounded">⌘K</kbd>
             </div>
           </div>
 
           {/* Right: Real-time Date/Clock, Alerts & Profile */}
           <div className="flex items-center gap-3">
             {/* Live Indicator */}
-            <div className="hidden xl:flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-[11px] font-medium">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="hidden xl:flex items-center gap-2 px-3 py-1 bg-ok-soft border border-ok/30 rounded-lg text-ok text-[11px] font-medium">
+              <span className="w-2 h-2 rounded-full bg-ok animate-pulse" />
               <span>Trực tuyến: <strong>{formatDate(currentTime, { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}</strong> • {formatDate(currentTime, { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
-            <button className="w-8 h-8 rounded-lg border border-[#e5e0d6] bg-white hover:bg-[#f6f3ed] text-gray-600 flex items-center justify-center transition-colors relative" title="Thông báo buồng phòng">
+            <button className="w-8 h-8 rounded-lg border border-line bg-panel hover:bg-fg/[0.03] text-muted flex items-center justify-center transition-colors relative" title="Thông báo buồng phòng">
               <Bell className="w-3 h-3" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#d95338] ring-2 ring-white" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-acc ring-2 ring-panel" />
             </button>
-            <button className="w-8 h-8 rounded-lg border border-[#e5e0d6] bg-white hover:bg-[#f6f3ed] text-gray-600 flex items-center justify-center transition-colors" title="Trợ giúp & Phím tắt">
+            <button className="w-8 h-8 rounded-lg border border-line bg-panel hover:bg-fg/[0.03] text-muted flex items-center justify-center transition-colors" title="Trợ giúp & Phím tắt">
               <HelpCircle className="w-3 h-3" />
             </button>
             {/* Receptionist User Profile */}
-            <div className="flex items-center gap-2 pl-2 border-l border-[#ece8df] cursor-pointer group">
-              <div className="w-8 h-8 rounded-full bg-[#241a18] text-white flex items-center justify-center font-bold text-xs ring-2 ring-transparent group-hover:ring-[#d95338] transition-all">
+            <div className="flex items-center gap-2 pl-2 border-l border-line cursor-pointer group">
+              <div className="w-8 h-8 rounded-full bg-ink text-on-ink flex items-center justify-center font-bold text-xs ring-2 ring-transparent group-hover:ring-acc transition-all">
                 TL
               </div>
               <div className="hidden sm:block text-left">
-                <p className="text-xs font-bold leading-tight text-gray-900 group-hover:text-[#d95338] transition-colors">Thùy Linh</p>
-                <p className="text-[10px] text-gray-400 leading-tight">Lễ tân ca sáng</p>
+                <p className="text-xs font-bold leading-tight text-fg group-hover:text-acc transition-colors">Thùy Linh</p>
+                <p className="text-[10px] text-muted leading-tight">Lễ tân ca sáng</p>
               </div>
-              <i className="fa-solid fa-angle-down text-[10px] text-gray-400 ml-0.5" />
+              <i className="fa-solid fa-angle-down text-[10px] text-muted ml-0.5" />
             </div>
           </div>
         </div>
 
         {/* Sub Action Bar: Controls, Views & Operations */}
-        <div className="px-6 py-2 bg-[#fdfcfb] border-t border-[#f0ece4] flex flex-wrap items-center justify-between gap-3">
+        <div className="px-6 py-2 bg-panel border-t border-line flex flex-wrap items-center justify-between gap-3">
           {/* Left side of Toolbar: View tabs, Navigator, Filters */}
           <div className="flex flex-wrap items-center gap-2.5">
             {/* View Segmented Switcher */}
-            <div className="inline-flex p-0.5 bg-[#f0ece4] rounded-lg border border-[#e2ddd5] text-xs font-semibold">
+            <div className="inline-flex p-0.5 bg-fg/5 rounded-lg border border-line text-xs font-semibold">
               <button 
                 onClick={() => setViewMode('month')}
-                className={`px-3 py-1 rounded-[6px] transition-colors ${viewMode === 'month' ? 'bg-white text-[#d95338] shadow-xs font-bold' : 'text-gray-600 hover:text-gray-900'}`}
+                className={`px-3 py-1 rounded-[6px] transition-colors ${viewMode === 'month' ? 'bg-panel text-acc shadow-xs font-bold' : 'text-muted hover:text-fg'}`}
               >
                 Tháng
               </button>
               <button 
                 onClick={() => setViewMode('week')}
-                className={`px-3 py-1 rounded-[6px] transition-colors ${viewMode === 'week' ? 'bg-white text-[#d95338] shadow-xs font-bold' : 'text-gray-600 hover:text-gray-900'}`}
+                className={`px-3 py-1 rounded-[6px] transition-colors ${viewMode === 'week' ? 'bg-panel text-acc shadow-xs font-bold' : 'text-muted hover:text-fg'}`}
               >
                 Timeline Tuần
               </button>
               <button 
                 onClick={() => setViewMode('day')}
-                className={`px-3 py-1 rounded-[6px] transition-colors ${viewMode === 'day' ? 'bg-white text-[#d95338] shadow-xs font-bold' : 'text-gray-600 hover:text-gray-900'}`}
+                className={`px-3 py-1 rounded-[6px] transition-colors ${viewMode === 'day' ? 'bg-panel text-acc shadow-xs font-bold' : 'text-muted hover:text-fg'}`}
               >
                 Ngày
               </button>
             </div>
 
             {/* Month Navigation */}
-            <div className="flex items-center bg-white border border-[#ded9cf] rounded-lg shadow-xs p-0.5">
+            <div className="flex items-center bg-panel border border-line rounded-lg shadow-xs p-0.5">
               <button 
                 onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}
-                className="w-7 h-7 rounded hover:bg-[#f6f3ed] flex items-center justify-center text-gray-600 transition-colors" 
+                className="w-7 h-7 rounded hover:bg-fg/[0.03] flex items-center justify-center text-muted transition-colors" 
                 title="Tháng trước"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
               </button>
-              <span className="px-2.5 text-xs font-bold text-gray-900 tracking-tight flex items-center gap-1.5">
-                <CalendarIcon className="w-3 h-3 text-[#d95338]" />
+              <span className="px-2.5 text-xs font-bold text-fg tracking-tight flex items-center gap-1.5">
+                <CalendarIcon className="w-3 h-3 text-acc" />
                 {monthLabel}
               </span>
               <button 
                 onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}
-                className="w-7 h-7 rounded hover:bg-[#f6f3ed] flex items-center justify-center text-gray-600 transition-colors" 
+                className="w-7 h-7 rounded hover:bg-fg/[0.03] flex items-center justify-center text-muted transition-colors" 
                 title="Tháng sau"
               >
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -797,12 +797,12 @@ export default function CalendarPage() {
 
             <button 
               onClick={() => setCurrentDate(new Date())}
-              className="px-2.5 py-1.5 bg-white border border-[#ded9cf] hover:bg-[#f6f3ed] rounded-lg text-xs font-semibold text-gray-700 shadow-xs transition-colors"
+              className="px-2.5 py-1.5 bg-panel border border-line hover:bg-fg/[0.03] rounded-lg text-xs font-semibold text-fg shadow-xs transition-colors"
             >
               Hôm nay
             </button>
 
-            <div className="h-4 w-[1px] bg-[#e5e0d6] mx-0.5 hidden sm:block" />
+            <div className="h-4 w-[1px] bg-fg/5 mx-0.5 hidden sm:block" />
 
             {/* Quick Filters */}
             <div className="flex items-center gap-2">
@@ -811,14 +811,14 @@ export default function CalendarPage() {
                 <select 
                   value={selectedRoomTypeFilter}
                   onChange={(e) => setSelectedRoomTypeFilter(e.target.value)}
-                  className="text-xs bg-white border border-[#ded9cf] rounded-lg pl-2.5 pr-7 py-1.5 font-medium text-gray-700 focus:ring-1 focus:ring-[#d95338] focus:border-[#d95338] shadow-xs appearance-none cursor-pointer"
+                  className="text-xs bg-panel border border-line rounded-lg pl-2.5 pr-7 py-1.5 font-medium text-fg focus:ring-1 focus:ring-acc focus:border-acc shadow-xs appearance-none cursor-pointer"
                 >
                   <option value="all">Hạng phòng: Tất cả ({totalRooms}p)</option>
                   {roomTypes.map(rt => (
                     <option key={rt.id} value={rt.id}>{rt.name} ({rt.totalRooms}p)</option>
                   ))}
                 </select>
-                <i className="fa-solid fa-chevron-down absolute right-2.5 top-2.5 text-[8px] text-gray-400 pointer-events-none" />
+                <i className="fa-solid fa-chevron-down absolute right-2.5 top-2.5 text-[8px] text-muted pointer-events-none" />
               </div>
 
               {/* Floor Filter */}
@@ -826,7 +826,7 @@ export default function CalendarPage() {
                 <select 
                   value={selectedFloorFilter}
                   onChange={(e) => setSelectedFloorFilter(e.target.value)}
-                  className="text-xs bg-white border border-[#ded9cf] rounded-lg pl-2.5 pr-7 py-1.5 font-medium text-gray-700 focus:ring-1 focus:ring-[#d95338] focus:border-[#d95338] shadow-xs appearance-none cursor-pointer"
+                  className="text-xs bg-panel border border-line rounded-lg pl-2.5 pr-7 py-1.5 font-medium text-fg focus:ring-1 focus:ring-acc focus:border-acc shadow-xs appearance-none cursor-pointer"
                 >
                   <option value="all">Tất cả tầng</option>
                   <option value="1-2">Tầng 1-2</option>
@@ -834,21 +834,21 @@ export default function CalendarPage() {
                   <option value="4">Tầng 4</option>
                   <option value="penthouse">Tầng Penthouse</option>
                 </select>
-                <i className="fa-solid fa-chevron-down absolute right-2.5 top-2.5 text-[8px] text-gray-400 pointer-events-none" />
+                <i className="fa-solid fa-chevron-down absolute right-2.5 top-2.5 text-[8px] text-muted pointer-events-none" />
               </div>
 
               {/* Status Indicator Quick Legend */}
-              <div className="hidden xl:flex items-center gap-3 text-[11px] font-medium text-gray-600 pl-2">
+              <div className="hidden xl:flex items-center gap-3 text-[11px] font-medium text-muted pl-2">
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="w-2 h-2 rounded-full bg-ok" />
                   Đã thanh toán
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-amber-500" />
+                  <span className="w-2 h-2 rounded-full bg-warn" />
                   Chờ cọc VietQR
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-[#d95338]" />
+                  <span className="w-2 h-2 rounded-full bg-ink" />
                   Check-in hôm nay
                 </span>
               </div>
@@ -859,7 +859,7 @@ export default function CalendarPage() {
           <div className="flex items-center gap-2">
             <button 
               onClick={handleRefresh}
-              className="px-3 py-1.5 rounded-lg border border-[#ded9cf] bg-white text-gray-700 hover:bg-[#f6f3ed] text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs"
+              className="px-3 py-1.5 rounded-lg border border-line bg-panel text-fg hover:bg-fg/[0.03] text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs"
               title="Làm mới dữ liệu"
             >
               <RefreshCw className="w-3 h-3" />
@@ -867,22 +867,22 @@ export default function CalendarPage() {
             </button>
             <button 
               onClick={() => setShowExportModal(true)}
-              className="px-3 py-1.5 rounded-lg border border-[#ded9cf] bg-white text-gray-700 hover:bg-[#f6f3ed] text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs"
+              className="px-3 py-1.5 rounded-lg border border-line bg-panel text-fg hover:bg-fg/[0.03] text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs"
               title="Xuất báo cáo công suất"
             >
-              <Receipt className="w-3 h-3 text-emerald-700" />
+              <Receipt className="w-3 h-3 text-ok" />
               <span className="hidden md:inline">Xuất báo cáo</span>
             </button>
             <button 
               onClick={() => setShowCreateBookingModal(true)}
-              className="px-3 py-1.5 rounded-lg border border-[#ded9cf] bg-white text-gray-700 hover:bg-[#f6f3ed] text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs"
+              className="px-3 py-1.5 rounded-lg border border-line bg-panel text-fg hover:bg-fg/[0.03] text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs"
             >
-              <CheckCircle className="w-3 h-3 text-[#d95338]" />
+              <CheckCircle className="w-3 h-3 text-acc" />
               <span>Khách Walk-in</span>
             </button>
             <button 
               onClick={() => setShowCreateBookingModal(true)}
-              className="px-3.5 py-1.5 rounded-lg bg-[#d95338] hover:bg-[#b83b23] text-white text-xs font-bold transition-all shadow-sm shadow-[#d95338]/25 flex items-center gap-1.5"
+              className="px-3.5 py-1.5 rounded-lg bg-ink hover:bg-ink/90 text-on-ink text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
             >
               <Plus className="w-3 h-3 text-[10px]" />
               <span>Tạo Đặt Phòng</span>
@@ -896,75 +896,75 @@ export default function CalendarPage() {
         {/* Executive CRM Stat Badges */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           {/* Card 1: Tổng số phòng */}
-          <div className="bg-white rounded-xl border border-[#eae6de] p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)] flex items-center justify-between">
+          <div className="bg-panel rounded-xl border border-line p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)] flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Tổng số phòng</span>
+              <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">Tổng số phòng</span>
               <div className="flex items-baseline gap-2 mt-0.5">
-                <span className="text-2xl font-black text-[#1e1715]">{stats.totalRooms}</span>
-                <span className="text-[11px] text-gray-400 font-medium">phòng vật lý</span>
+                <span className="text-2xl font-black text-fg">{stats.totalRooms}</span>
+                <span className="text-[11px] text-muted font-medium">phòng vật lý</span>
             </div>
-              <div className="text-[11px] text-emerald-700 font-semibold mt-0.5 flex items-center gap-1">
-                <PieChart className="w-3 h-3 text-emerald-600" />
-                <span>Công suất tháng: <strong className="text-[#d95338]">76.4%</strong></span>
+              <div className="text-[11px] text-ok font-semibold mt-0.5 flex items-center gap-1">
+                <PieChart className="w-3 h-3 text-ok" />
+                <span>Công suất tháng: <strong className="text-acc">76.4%</strong></span>
               </div>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-sky-50 text-sky-700 border border-sky-100 flex items-center justify-center text-base shrink-0">
+            <div className="w-10 h-10 rounded-lg bg-info-soft text-info border border-info/30 flex items-center justify-center text-base shrink-0">
               <DoorOpen className="w-5 h-5" />
             </div>
           </div>
 
           {/* Card 2: Đang lưu trú (In-house) */}
-          <div className="bg-white rounded-xl border border-[#eae6de] p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)] flex items-center justify-between">
+          <div className="bg-panel rounded-xl border border-line p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)] flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Đang ở (In-House)</span>
+              <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">Đang ở (In-House)</span>
               <div className="flex items-baseline gap-2 mt-0.5">
-                <span className="text-2xl font-black text-emerald-700">{stats.checkedIn}</span>
-                <span className="text-[11px] text-gray-400 font-medium">/ {stats.totalRooms} phòng</span>
+                <span className="text-2xl font-black text-ok">{stats.checkedIn}</span>
+                <span className="text-[11px] text-muted font-medium">/ {stats.totalRooms} phòng</span>
             </div>
-              <div className="text-[11px] text-gray-600 font-medium mt-0.5 flex items-center gap-1">
-                <Users className="w-3 h-3 text-emerald-600" />
+              <div className="text-[11px] text-muted font-medium mt-0.5 flex items-center gap-1">
+                <Users className="w-3 h-3 text-ok" />
                 <span>{stats.checkedIn * 2} khách lưu trú thực tế</span>
               </div>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center justify-center text-base shrink-0">
+            <div className="w-10 h-10 rounded-lg bg-ok-soft text-ok border border-ok/30 flex items-center justify-center text-base shrink-0">
               <Bed className="w-5 h-5" />
             </div>
           </div>
 
           {/* Card 3: Dự kiến đến hôm nay (Check-in) */}
-          <div className="bg-white rounded-xl border border-[#eae6de] p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)] flex items-center justify-between">
+          <div className="bg-panel rounded-xl border border-line p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)] flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Dự kiến đến hôm nay</span>
+              <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">Dự kiến đến hôm nay</span>
               <div className="flex items-baseline gap-2 mt-0.5">
-                <span className="text-2xl font-black text-amber-700">{todayCheckIns.length}</span>
-                <span className="text-[11px] text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded font-bold border border-amber-200">Lượt check-in</span>
+                <span className="text-2xl font-black text-warn">{todayCheckIns.length}</span>
+                <span className="text-[11px] text-warn bg-warn-soft px-1.5 py-0.2 rounded font-bold border border-warn/30">Lượt check-in</span>
             </div>
-              <div className="text-[11px] text-amber-700 font-medium mt-0.5 flex items-center gap-1">
+              <div className="text-[11px] text-warn font-medium mt-0.5 flex items-center gap-1">
                 <Clock className="w-3 h-3" />
                 <span>{todayCheckIns.filter(b => b.status === 'PENDING').length} cọc VietQR chờ duyệt</span>
               </div>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-700 border border-amber-100 flex items-center justify-center text-base shrink-0">
+            <div className="w-10 h-10 rounded-lg bg-warn-soft text-warn border border-warn/30 flex items-center justify-center text-base shrink-0">
               <Bell className="w-5 h-5" />
             </div>
           </div>
 
           {/* Card 4: Doanh thu dự kiến */}
-          <div className="bg-white rounded-xl border border-[#eae6de] p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)] flex items-center justify-between">
+          <div className="bg-panel rounded-xl border border-line p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)] flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Doanh thu tháng {formatDate(currentDate, { month: 'short' })}</span>
+              <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">Doanh thu tháng {formatDate(currentDate, { month: 'short' })}</span>
               <div className="flex items-baseline gap-2 mt-0.5">
-                <span className="text-2xl font-black text-[#1e1715]">{stats.revenue} tr</span>
-                <span className="text-[11px] text-emerald-700 font-bold bg-emerald-50 px-1 rounded border border-emerald-200">
+                <span className="text-2xl font-black text-fg">{stats.revenue} tr</span>
+                <span className="text-[11px] text-ok font-bold bg-ok-soft px-1 rounded border border-ok/30">
                   <TrendingUp className="w-3 h-3 inline" /> +18% MoM
                 </span>
             </div>
-              <div className="text-[11px] text-gray-500 font-medium mt-0.5 flex items-center gap-1">
-                <CheckCircle className="w-3 h-3 text-[#d95338]" />
+              <div className="text-[11px] text-muted font-medium mt-0.5 flex items-center gap-1">
+                <CheckCircle className="w-3 h-3 text-acc" />
                 <span>{stats.activeBookings} booking đã xác nhận</span>
       </div>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-700 border border-purple-100 flex items-center justify-center text-base shrink-0">
+            <div className="w-10 h-10 rounded-lg bg-refund-soft text-refund border border-refund/30 flex items-center justify-center text-base shrink-0">
               <Receipt className="w-5 h-5" />
             </div>
           </div>
@@ -973,40 +973,40 @@ export default function CalendarPage() {
         {/* Balanced 2-Column CRM Workspace */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
           {/* LEFT: Interactive CRM Room Calendar Grid */}
-          <section className="lg:col-span-8 xl:col-span-8 2xl:col-span-9 bg-white rounded-xl border border-[#eae6de] shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)] flex flex-col overflow-hidden">
+          <section className="lg:col-span-8 xl:col-span-8 2xl:col-span-9 bg-panel rounded-xl border border-line shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)] flex flex-col overflow-hidden">
             {/* Calendar Matrix Header Bar */}
-            <div className="px-4 py-2.5 bg-[#fdfcfb] border-b border-[#ece7de] flex items-center justify-between">
+            <div className="px-4 py-2.5 bg-panel border-b border-line flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-xs text-gray-800">Lưới Lịch Đặt Buồng Theo Tháng</span>
-                <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full font-medium">35 ngày hiển thị</span>
+                <span className="font-bold text-xs text-fg">Lưới Lịch Đặt Buồng Theo Tháng</span>
+                <span className="text-[10px] text-muted bg-fg/5 px-2 py-0.5 rounded-full font-medium">35 ngày hiển thị</span>
                   </div>
-              <div className="flex items-center gap-2 text-[11px] text-gray-500">
+              <div className="flex items-center gap-2 text-[11px] text-muted">
                 <span className="inline-flex items-center gap-1 font-medium">
-                  <span className="w-2 h-2 rounded-sm bg-emerald-500" /> OTA Agoda/Booking
+                  <span className="w-2 h-2 rounded-sm bg-ok" /> OTA Agoda/Booking
                 </span>
                 <span className="inline-flex items-center gap-1 font-medium">
-                  <span className="w-2 h-2 rounded-sm bg-sky-500" /> Khách lẻ / Trực tiếp
+                  <span className="w-2 h-2 rounded-sm bg-info" /> Khách lẻ / Trực tiếp
                 </span>
                 <span className="inline-flex items-center gap-1 font-medium">
-                  <span className="w-2 h-2 rounded-sm bg-amber-500" /> Khách đoàn (Group)
+                  <span className="w-2 h-2 rounded-sm bg-warn" /> Khách đoàn (Group)
                 </span>
               </div>
             </div>
 
             {/* Days of Week Header */}
-            <div className="grid grid-cols-7 border-b border-[#eae6de] bg-[#f8f6f2] text-center text-xs font-bold text-gray-600 divide-x divide-[#ece7de]">
+            <div className="grid grid-cols-7 border-b border-line bg-fg/[0.03] text-center text-xs font-bold text-muted divide-x divide-line">
               {['Thứ 2 (T2)', 'Thứ 3 (T3)', 'Thứ 4 (T4)', 'Thứ 5 (T5)', 'Thứ 6 (T6)', 'Thứ 7 (T7)', 'Chủ Nhật (CN)'].map((day, i) => (
-                <div key={day} className={`py-2 ${i >= 5 ? 'text-[#d95338]' : ''}`}>{day}</div>
+                <div key={day} className={`py-2 ${i >= 5 ? 'text-acc' : ''}`}>{day}</div>
                 ))}
               </div>
 
             {/* Calendar Grid */}
             {isLoading ? (
               <div className="flex items-center justify-center h-96">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#d95338]" />
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-acc" />
               </div>
             ) : (
-              <div className="grid grid-cols-7 divide-x divide-y divide-[#ece7de] bg-[#ece7de]">
+              <div className="grid grid-cols-7 divide-x divide-y divide-line bg-fg/5">
                 {days.map((day, index) => {
                   const dayBookings = bookingsForDay(day.date)
                   const occupancy = occupancyForDay(day.date)
@@ -1021,19 +1021,19 @@ export default function CalendarPage() {
                     key={index}
                       className={`
                         p-2 flex flex-col justify-between min-h-[96px]
-                        ${isToday ? 'bg-[#fff5f2]/50 ring-2 ring-[#d95338] ring-inset shadow-sm' : ''}
-                        ${weekend && day.isCurrentMonth ? 'bg-[#fdfbf7]' : ''}
-                        ${isPastMonth ? 'bg-[#faf8f5]/70' : 'bg-white'}
-                        ${!isPastMonth ? 'hover:bg-[#fbf9f6] transition-colors' : ''}
+                        ${isToday ? 'bg-acc-soft/50 ring-2 ring-acc ring-inset shadow-sm' : ''}
+                        ${weekend && day.isCurrentMonth ? 'bg-panel' : ''}
+                        ${isPastMonth ? 'bg-page/70' : 'bg-panel'}
+                        ${!isPastMonth ? 'hover:bg-page transition-colors' : ''}
                         group
                       `}
                     >
                       <div>
                         <div className="flex justify-between items-center">
                           <span className={`font-bold text-xs ${
-                            isToday ? 'text-[#d95338] text-sm' : 
-                            weekend && day.isCurrentMonth ? 'text-[#d95338]' : 
-                            isPastMonth ? 'text-gray-400' : 'text-gray-800'
+                            isToday ? 'text-acc text-sm' : 
+                            weekend && day.isCurrentMonth ? 'text-acc' : 
+                            isPastMonth ? 'text-muted' : 'text-fg'
                           }`}>
                       {day.date.getDate()}
                           </span>
@@ -1043,7 +1043,7 @@ export default function CalendarPage() {
                             </span>
                           )}
                           {!day.isCurrentMonth && (
-                            <span className="text-[10px] text-gray-400">{formatDate(day.date, { month: 'short' })}</span>
+                            <span className="text-[10px] text-muted">{formatDate(day.date, { month: 'short' })}</span>
                           )}
                     </div>
 
@@ -1054,21 +1054,21 @@ export default function CalendarPage() {
                                 key={b.id}
                                 onClick={() => handleViewBooking(b.id)}
                                 title={`${b.guestName} - ${b.bookingCode}`}
-                                className="booking-bar bg-sky-50 border border-sky-200 text-sky-800 text-[10px] px-1.5 py-0.5 rounded truncate font-medium cursor-pointer hover:border-sky-400 transition-all flex items-center justify-between"
+                                className="booking-bar bg-info-soft border border-info/30 text-info text-[10px] px-1.5 py-0.5 rounded truncate font-medium cursor-pointer hover:border-info/30 transition-all flex items-center justify-between"
                               >
                                 <span className="truncate flex items-center gap-1">
-                                  <i className="fa-solid fa-circle text-[5px] text-sky-500" />
+                                  <i className="fa-solid fa-circle text-[5px] text-info" />
                                   {b.guestName}
                                 </span>
                                 {b.bookingItems[0]?.roomNumber && (
-                                  <span className="text-[9px] bg-sky-100 px-1 rounded shrink-0">
+                                  <span className="text-[9px] bg-info-soft px-1 rounded shrink-0">
                                     P.{b.bookingItems[0].roomNumber}
                                   </span>
                                 )}
                         </div>
                       ))}
                             {dayBookings.length > 2 && (
-                              <div className="text-[10px] text-gray-400 text-center">
+                              <div className="text-[10px] text-muted text-center">
                                 +{dayBookings.length - 2} đơn
                               </div>
                       )}
@@ -1079,7 +1079,7 @@ export default function CalendarPage() {
                       {day.isCurrentMonth && (
                         <span 
                           onClick={() => openCreateBookingForDate(day.date)}
-                          className="text-[10px] text-gray-300 group-hover:text-[#d95338] cursor-pointer font-medium mt-1"
+                          className="text-[10px] text-muted group-hover:text-acc cursor-pointer font-medium mt-1"
                         >
                           + Thêm
                         </span>
@@ -1094,20 +1094,20 @@ export default function CalendarPage() {
           {/* RIGHT: CRM Activity & Room Inventory Panel */}
           <aside className="lg:col-span-4 xl:col-span-4 2xl:col-span-3 space-y-3.5">
             {/* SECTION 1: Trạng thái buồng phòng theo hạng */}
-            <div className="bg-white rounded-xl border border-[#eae6de] p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)]">
-              <div className="flex items-center justify-between pb-2.5 border-b border-[#f0ece4]">
+            <div className="bg-panel rounded-xl border border-line p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)]">
+              <div className="flex items-center justify-between pb-2.5 border-b border-line">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-md bg-[#fff5f2] text-[#d95338] flex items-center justify-center text-xs">
+                  <div className="w-6 h-6 rounded-md bg-acc-soft text-acc flex items-center justify-center text-xs">
                     <BedDouble className="w-3 h-3" />
                   </div>
-                  <h2 className="font-bold text-xs text-gray-900">Tình Trạng Hạng Phòng</h2>
+                  <h2 className="font-bold text-xs text-fg">Tình Trạng Hạng Phòng</h2>
                 </div>
-                <span className="text-[11px] font-semibold text-gray-500">{totalRooms} phòng</span>
+                <span className="text-[11px] font-semibold text-muted">{totalRooms} phòng</span>
               </div>
 
-              <div className="divide-y divide-[#f5f2ec] text-xs">
+              <div className="divide-y divide-line text-xs">
                 {roomTypes.length === 0 ? (
-                  <p className="py-4 text-center text-gray-500 text-xs">Chưa có hạng phòng nào.</p>
+                  <p className="py-4 text-center text-muted text-xs">Chưa có hạng phòng nào.</p>
                 ) : (
                   roomTypes.map((rt, idx) => {
                     const occupancy = stats.totalRooms > 0 ? Math.round((rt.totalRooms * 0.7) / rt.totalRooms * 100) : 0
@@ -1117,28 +1117,28 @@ export default function CalendarPage() {
                       <div key={rt.id} className="py-2.5">
                           <div className="flex items-center justify-between">
                             <div>
-                            <h3 className="font-bold text-gray-900">{rt.name}</h3>
-                            <p className="text-[11px] text-gray-400">
+                            <h3 className="font-bold text-fg">{rt.name}</h3>
+                            <p className="text-[11px] text-muted">
                               {rt.totalRooms} phòng • Tầng {idx + 1}-{idx + 2}
                             </p>
                             </div>
                           <div className="text-right">
                             <span className={`inline-block px-1.5 py-0.5 rounded font-bold text-[11px] border ${
-                              empty === 0 ? 'bg-red-50 text-red-700 border-red-200' :
-                              empty <= 3 ? 'bg-amber-50 text-amber-800 border-amber-200' :
-                              'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              empty === 0 ? 'bg-err-soft text-err border-err/30' :
+                              empty <= 3 ? 'bg-warn-soft text-warn border-warn/30' :
+                              'bg-ok-soft text-ok border-ok/30'
                             }`}>
                               Trống {empty}p
                             </span>
-                            <div className="text-[10px] text-gray-400 mt-0.5">{100 - Math.round(empty / rt.totalRooms * 100)}% kín</div>
+                            <div className="text-[10px] text-muted mt-0.5">{100 - Math.round(empty / rt.totalRooms * 100)}% kín</div>
                           </div>
                         </div>
-                        <div className="w-full bg-gray-100 h-1.5 rounded-full mt-1.5 overflow-hidden">
+                        <div className="w-full bg-fg/5 h-1.5 rounded-full mt-1.5 overflow-hidden">
                           <div 
                             className={`h-full rounded-full ${
-                              (100 - Math.round(empty / rt.totalRooms * 100)) >= 90 ? 'bg-red-500' :
-                              (100 - Math.round(empty / rt.totalRooms * 100)) >= 70 ? 'bg-amber-500' :
-                              'bg-emerald-500'
+                              (100 - Math.round(empty / rt.totalRooms * 100)) >= 90 ? 'bg-err' :
+                              (100 - Math.round(empty / rt.totalRooms * 100)) >= 70 ? 'bg-warn' :
+                              'bg-ok'
                             }`} 
                             style={{ width: `${100 - Math.round(empty / rt.totalRooms * 100)}%` }} 
                           />
@@ -1151,15 +1151,15 @@ export default function CalendarPage() {
             </div>
 
             {/* SECTION 2: Khách Check-in / Check-out trong ngày */}
-            <div className="bg-white rounded-xl border border-[#eae6de] p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)]">
-              <div className="flex items-center justify-between pb-2.5 border-b border-[#f0ece4]">
+            <div className="bg-panel rounded-xl border border-line p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)]">
+              <div className="flex items-center justify-between pb-2.5 border-b border-line">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-md bg-sky-50 text-sky-600 flex items-center justify-center text-xs">
+                  <div className="w-6 h-6 rounded-md bg-info-soft text-info flex items-center justify-center text-xs">
                     <ListChecks className="w-3 h-3" />
                   </div>
-                  <h2 className="font-bold text-xs text-gray-900">Lượt Đến & Đi Hôm Nay</h2>
+                  <h2 className="font-bold text-xs text-fg">Lượt Đến & Đi Hôm Nay</h2>
                 </div>
-                <span className="text-[11px] text-[#d95338] font-semibold hover:underline cursor-pointer">
+                <span className="text-[11px] text-acc font-semibold hover:underline cursor-pointer">
                   Xem tất cả ({todayCheckIns.length + todayCheckOuts.length})
                 </span>
               </div>
@@ -1167,21 +1167,21 @@ export default function CalendarPage() {
               <div className="space-y-2 mt-2.5">
                 {/* Check-ins */}
                 {todayCheckIns.length === 0 ? (
-                  <div className="text-center py-4 text-gray-400 text-xs">Không có lượt đến nào hôm nay</div>
+                  <div className="text-center py-4 text-muted text-xs">Không có lượt đến nào hôm nay</div>
                 ) : (
                   todayCheckIns.slice(0, 3).map((b) => (
-                    <div key={`in-${b.id}`} className="p-2.5 rounded-lg border border-[#ede9e1] bg-[#faf8f5]/60 hover:bg-white hover:border-[#d95338]/40 transition-all">
+                    <div key={`in-${b.id}`} className="p-2.5 rounded-lg border border-line bg-page/60 hover:bg-panel hover:border-acc/40 transition-all">
                       <div className="flex items-start justify-between">
                         <div>
                           <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-gray-900 text-xs">{b.guestName}</span>
-                            <span className="text-[9px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1 rounded font-bold">Check-in</span>
+                            <span className="font-bold text-fg text-xs">{b.guestName}</span>
+                            <span className="text-[9px] bg-ok-soft text-ok border border-ok/30 px-1 rounded font-bold">Check-in</span>
                           </div>
-                          <p className="text-[11px] text-gray-500 mt-0.5">
+                          <p className="text-[11px] text-muted mt-0.5">
                             Phòng {b.bookingItems[0]?.roomNumber || '---'} • #{b.bookingCode} • 14:00
                           </p>
                         </div>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-ok-soft text-ok font-semibold">
                           {b.status === 'PENDING' ? 'Chờ cọc' : 'Đã cọc 100%'}
                         </span>
                       </div>
@@ -1191,18 +1191,18 @@ export default function CalendarPage() {
 
                 {/* Check-outs */}
                 {todayCheckOuts.length > 0 && todayCheckOuts.slice(0, 2).map((b) => (
-                  <div key={`out-${b.id}`} className="p-2.5 rounded-lg border border-[#ede9e1] bg-[#faf8f5]/60 hover:bg-white hover:border-[#d95338]/40 transition-all">
+                  <div key={`out-${b.id}`} className="p-2.5 rounded-lg border border-line bg-page/60 hover:bg-panel hover:border-acc/40 transition-all">
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-gray-900 text-xs">{b.guestName}</span>
-                          <span className="text-[9px] bg-amber-50 text-amber-800 border border-amber-200 px-1 rounded font-bold">Check-out</span>
+                          <span className="font-bold text-fg text-xs">{b.guestName}</span>
+                          <span className="text-[9px] bg-warn-soft text-warn border border-warn/30 px-1 rounded font-bold">Check-out</span>
                         </div>
-                        <p className="text-[11px] text-gray-500 mt-0.5">
+                        <p className="text-[11px] text-muted mt-0.5">
                           Phòng {b.bookingItems[0]?.roomNumber || '---'} • #{b.bookingCode} • 12:00
                         </p>
                       </div>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-semibold">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-fg/5 text-muted font-semibold">
                         Khách Agoda
                       </span>
                     </div>
@@ -1212,40 +1212,40 @@ export default function CalendarPage() {
                   </div>
 
             {/* SECTION 3: Thao tác buồng phòng nhanh */}
-            <div className="bg-white rounded-xl border border-[#eae6de] p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)]">
-              <h2 className="font-bold text-[11px] text-gray-500 uppercase tracking-wider mb-2.5">Thao tác buồng phòng</h2>
+            <div className="bg-panel rounded-xl border border-line p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)]">
+              <h2 className="font-bold text-[11px] text-muted uppercase tracking-wider mb-2.5">Thao tác buồng phòng</h2>
               <div className="grid grid-cols-2 gap-2">
                 <button 
                   onClick={() => handleRoomAction('Dọn buồng')}
-                  className="p-2 rounded-lg border border-[#e5e0d6] hover:border-[#d95338] hover:bg-[#fff5f2]/30 text-left transition-all group"
+                  className="p-2 rounded-lg border border-line hover:border-acc hover:bg-acc-soft/30 text-left transition-all group"
                 >
-                  <Trash2 className="w-4 h-4 text-[#d95338] mb-1 group-hover:scale-110 transition-transform" />
-                  <span className="block text-xs font-bold text-gray-800">Dọn buồng</span>
-                  <span className="text-[10px] text-gray-400">4 phòng chờ dọn</span>
+                  <Trash2 className="w-4 h-4 text-acc mb-1 group-hover:scale-110 transition-transform" />
+                  <span className="block text-xs font-bold text-fg">Dọn buồng</span>
+                  <span className="text-[10px] text-muted">4 phòng chờ dọn</span>
                 </button>
                 <button 
                   onClick={() => handleRoomAction('Khóa bảo trì')}
-                  className="p-2 rounded-lg border border-[#e5e0d6] hover:border-[#d95338] hover:bg-[#fff5f2]/30 text-left transition-all group"
+                  className="p-2 rounded-lg border border-line hover:border-acc hover:bg-acc-soft/30 text-left transition-all group"
                 >
-                  <Wrench className="w-4 h-4 text-amber-600 mb-1 group-hover:scale-110 transition-transform" />
-                  <span className="block text-xs font-bold text-gray-800">Khóa bảo trì</span>
-                  <span className="text-[10px] text-gray-400">1 phòng bảo dưỡng</span>
+                  <Wrench className="w-4 h-4 text-warn mb-1 group-hover:scale-110 transition-transform" />
+                  <span className="block text-xs font-bold text-fg">Khóa bảo trì</span>
+                  <span className="text-[10px] text-muted">1 phòng bảo dưỡng</span>
                 </button>
                 <button 
                   onClick={() => handleRoomAction('Giá ngày')}
-                  className="p-2 rounded-lg border border-[#e5e0d6] hover:border-[#d95338] hover:bg-[#fff5f2]/30 text-left transition-all group"
+                  className="p-2 rounded-lg border border-line hover:border-acc hover:bg-acc-soft/30 text-left transition-all group"
                 >
-                  <Tag className="w-4 h-4 text-purple-600 mb-1 group-hover:scale-110 transition-transform" />
-                  <span className="block text-xs font-bold text-gray-800">Giá ngày</span>
-                  <span className="text-[10px] text-gray-400">Cập nhật cuối tuần</span>
+                  <Tag className="w-4 h-4 text-refund mb-1 group-hover:scale-110 transition-transform" />
+                  <span className="block text-xs font-bold text-fg">Giá ngày</span>
+                  <span className="text-[10px] text-muted">Cập nhật cuối tuần</span>
                 </button>
                 <button 
                   onClick={() => handleRoomAction('Đồng bộ OTA')}
-                  className="p-2 rounded-lg border border-[#e5e0d6] hover:border-[#d95338] hover:bg-[#fff5f2]/30 text-left transition-all group"
+                  className="p-2 rounded-lg border border-line hover:border-acc hover:bg-acc-soft/30 text-left transition-all group"
                 >
-                  <RefreshCw className="w-4 h-4 text-emerald-600 mb-1 group-hover:rotate-180 transition-transform" />
-                  <span className="block text-xs font-bold text-gray-800">Đồng bộ OTA</span>
-                  <span className="text-[10px] text-emerald-600 font-semibold">Tự động (1 phút)</span>
+                  <RefreshCw className="w-4 h-4 text-ok mb-1 group-hover:rotate-180 transition-transform" />
+                  <span className="block text-xs font-bold text-fg">Đồng bộ OTA</span>
+                  <span className="text-[10px] text-ok font-semibold">Tự động (1 phút)</span>
                 </button>
               </div>
             </div>
@@ -1255,32 +1255,32 @@ export default function CalendarPage() {
 
       {/* Create Booking Modal - Full Screen Custom */}
       {showCreateBookingModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-md">
-          <div className="relative w-full max-w-6xl bg-white rounded-2xl shadow-2xl border border-slate-100 flex flex-col max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-ink/60 backdrop-blur-md">
+          <div className="relative w-full max-w-6xl bg-panel rounded-2xl shadow-2xl border border-line flex flex-col max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             {/* Modal Header */}
-            <header className="px-7 py-4 border-b border-slate-200 bg-amber-50/50 flex items-center justify-between shrink-0">
+            <header className="px-7 py-4 border-b border-line bg-warn-soft/50 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center text-red-600 shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-err-soft border border-err/30 flex items-center justify-center text-err shadow-sm">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
                   </svg>
                 </div>
                 <div>
                   <div className="flex items-center gap-2.5">
-                    <h1 className="text-xl font-bold text-slate-900 tracking-tight">Tạo Đặt Phòng Mới</h1>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span> Lễ tân / Walk-in
+                    <h1 className="text-xl font-bold text-fg tracking-tight">Tạo Đặt Phòng Mới</h1>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-ok-soft text-ok border border-ok/30">
+                      <span className="w-1.5 h-1.5 rounded-full bg-ok mr-1.5 animate-pulse"></span> Lễ tân / Walk-in
                     </span>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
-                    <span className="font-mono font-medium text-slate-700 bg-slate-200/70 px-1.5 py-0.5 rounded">Mã dự kiến: #RES-{Date.now().toString(36).toUpperCase().slice(-6)}</span>
+                  <div className="flex items-center gap-3 text-xs text-muted mt-0.5">
+                    <span className="font-mono font-medium text-fg bg-fg/10 px-1.5 py-0.5 rounded">Mã dự kiến: #RES-{Date.now().toString(36).toUpperCase().slice(-6)}</span>
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <button 
                   onClick={() => setShowCreateBookingModal(false)}
-                  className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 rounded-xl transition"
+                  className="p-2 text-muted hover:text-muted hover:bg-fg/10 rounded-xl transition"
                   type="button"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1296,25 +1296,25 @@ export default function CalendarPage() {
                 {/* Left Column - Guest and Room Details */}
                 <section className="lg:col-span-7 space-y-6">
                   {/* Card: Thông tin khách hàng */}
-                  <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
-                    <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-slate-100">
+                  <div className="bg-panel rounded-xl border border-line/80 p-5 shadow-xs">
+                    <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-line">
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-red-600"></span>
-                        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900">1. Thông tin khách lưu trú</h2>
+                        <span className="w-2 h-2 rounded-full bg-err"></span>
+                        <h2 className="text-sm font-bold uppercase tracking-wider text-fg">1. Thông tin khách lưu trú</h2>
                       </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {/* Họ và tên */}
                       <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold text-slate-700">
-                          Họ và tên khách hàng <span className="text-red-600">*</span>
+                        <label className="block text-xs font-semibold text-fg">
+                          Họ và tên khách hàng <span className="text-err">*</span>
                         </label>
                         <div className="relative rounded-lg shadow-xs">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path></svg>
                           </div>
                           <input
-                            className="block w-full pl-9 pr-3 py-2 text-sm text-slate-900 rounded-lg border-slate-300 focus:ring-2 focus:ring-red-500/20 focus:border-red-600 transition placeholder:text-slate-400"
+                            className="block w-full pl-9 pr-3 py-2 text-sm text-fg rounded-lg border-line focus:ring-2 focus:ring-err/30 focus:border-err/30 transition placeholder:text-muted"
                             placeholder="Ví dụ: Nguyễn Văn An"
                             required
                             type="text"
@@ -1325,15 +1325,15 @@ export default function CalendarPage() {
                       </div>
                       {/* Số điện thoại */}
                       <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold text-slate-700">
-                          Số điện thoại liên hệ <span className="text-red-600">*</span>
+                        <label className="block text-xs font-semibold text-fg">
+                          Số điện thoại liên hệ <span className="text-err">*</span>
                         </label>
                         <div className="relative rounded-lg shadow-xs flex">
-                          <span className="inline-flex items-center px-2.5 rounded-l-lg border border-r-0 border-slate-300 bg-slate-50 text-slate-600 text-xs font-medium">
+                          <span className="inline-flex items-center px-2.5 rounded-l-lg border border-r-0 border-line bg-fg/[0.03] text-muted text-xs font-medium">
                             🇻🇳 +84
                           </span>
                           <input
-                            className="block w-full rounded-none rounded-r-lg border-slate-300 py-2 px-3 text-sm text-slate-900 focus:ring-2 focus:ring-red-500/20 focus:border-red-600 transition"
+                            className="block w-full rounded-none rounded-r-lg border-line py-2 px-3 text-sm text-fg focus:ring-2 focus:ring-err/30 focus:border-err/30 transition"
                             placeholder="0987 654 321"
                             required
                             type="tel"
@@ -1344,15 +1344,15 @@ export default function CalendarPage() {
                       </div>
                       {/* Email */}
                       <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold text-slate-700">
-                          Email <span className="text-xs font-normal text-slate-400">(Nhận mã QR check-in)</span>
+                        <label className="block text-xs font-semibold text-fg">
+                          Email <span className="text-xs font-normal text-muted">(Nhận mã QR check-in)</span>
                         </label>
                         <div className="relative rounded-lg shadow-xs">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path></svg>
                           </div>
                           <input
-                            className="block w-full pl-9 pr-3 py-2 text-sm text-slate-900 rounded-lg border-slate-300 focus:ring-2 focus:ring-red-500/20 focus:border-red-600 transition"
+                            className="block w-full pl-9 pr-3 py-2 text-sm text-fg rounded-lg border-line focus:ring-2 focus:ring-err/30 focus:border-err/30 transition"
                             placeholder="an.nguyen@example.com"
                             type="email"
                             value={newBooking.guestEmail}
@@ -1362,15 +1362,15 @@ export default function CalendarPage() {
                       </div>
                       {/* CCCD/Passport */}
                       <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold text-slate-700">
-                          Số CCCD / Hộ chiếu <span className="text-xs font-normal text-slate-400">(Tùy chọn)</span>
+                        <label className="block text-xs font-semibold text-fg">
+                          Số CCCD / Hộ chiếu <span className="text-xs font-normal text-muted">(Tùy chọn)</span>
                         </label>
                         <div className="relative rounded-lg shadow-xs">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2H9.17A3.001 3.001 0 0112 14z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path></svg>
                           </div>
                           <input
-                            className="block w-full pl-9 pr-3 py-2 text-sm text-slate-900 rounded-lg border-slate-300 focus:ring-2 focus:ring-red-500/20 focus:border-red-600 transition"
+                            className="block w-full pl-9 pr-3 py-2 text-sm text-fg rounded-lg border-line focus:ring-2 focus:ring-err/30 focus:border-err/30 transition"
                             placeholder="00120101xxxx"
                             type="text"
                           />
@@ -1380,13 +1380,13 @@ export default function CalendarPage() {
                   </div>
 
                   {/* Card: Thông tin phòng & Thời gian lưu trú */}
-                  <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
-                    <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-slate-100">
+                  <div className="bg-panel rounded-xl border border-line/80 p-5 shadow-xs">
+                    <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-line">
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-red-600"></span>
-                        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900">2. Lịch trình & Xếp phòng</h2>
+                        <span className="w-2 h-2 rounded-full bg-err"></span>
+                        <h2 className="text-sm font-bold uppercase tracking-wider text-fg">2. Lịch trình & Xếp phòng</h2>
                       </div>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-warn-soft text-warn border border-warn/30">
                         Lưu trú: {Math.ceil((new Date(newBooking.checkOutDate).getTime() - new Date(newBooking.checkInDate).getTime()) / (1000 * 60 * 60 * 24))} đêm
                       </span>
                     </div>
@@ -1394,23 +1394,23 @@ export default function CalendarPage() {
                     {/* Thời gian check-in / check-out */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                       {/* Check-in */}
-                      <div className="bg-slate-50/70 p-3.5 rounded-xl border border-slate-200/70">
+                      <div className="bg-fg/[0.03] p-3.5 rounded-xl border border-line/70">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Nhận phòng (Check-in) *
+                          <span className="text-xs font-bold text-fg flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-ok"></span> Nhận phòng (Check-in) *
                           </span>
-                          <span className="text-[11px] text-slate-500">Giờ chuẩn: 14:00</span>
+                          <span className="text-[11px] text-muted">Giờ chuẩn: 14:00</span>
                         </div>
                         <div className="grid grid-cols-5 gap-2">
                           <input 
-                            className="col-span-3 text-xs font-medium rounded-lg border-slate-300 py-1.5 px-2 bg-white focus:ring-red-500 focus:border-red-500" 
+                            className="col-span-3 text-xs font-medium rounded-lg border-line py-1.5 px-2 bg-panel focus:ring-err/30 focus:border-err/30" 
                             type="date" 
                             value={newBooking.checkInDate}
                             onChange={(e) => setNewBooking(prev => ({ ...prev, checkInDate: e.target.value }))}
                             required
                           />
                           <input 
-                            className="col-span-2 text-xs font-medium rounded-lg border-slate-300 py-1.5 px-2 bg-white focus:ring-red-500 focus:border-red-500" 
+                            className="col-span-2 text-xs font-medium rounded-lg border-line py-1.5 px-2 bg-panel focus:ring-err/30 focus:border-err/30" 
                             type="time" 
                             value="14:00"
                             readOnly
@@ -1418,23 +1418,23 @@ export default function CalendarPage() {
                         </div>
                       </div>
                       {/* Check-out */}
-                      <div className="bg-slate-50/70 p-3.5 rounded-xl border border-slate-200/70">
+                      <div className="bg-fg/[0.03] p-3.5 rounded-xl border border-line/70">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-rose-500"></span> Trả phòng (Check-out) *
+                          <span className="text-xs font-bold text-fg flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-err"></span> Trả phòng (Check-out) *
                           </span>
-                          <span className="text-[11px] text-slate-500">Giờ chuẩn: 12:00</span>
+                          <span className="text-[11px] text-muted">Giờ chuẩn: 12:00</span>
                         </div>
                         <div className="grid grid-cols-5 gap-2">
                           <input 
-                            className="col-span-3 text-xs font-medium rounded-lg border-slate-300 py-1.5 px-2 bg-white focus:ring-red-500 focus:border-red-500" 
+                            className="col-span-3 text-xs font-medium rounded-lg border-line py-1.5 px-2 bg-panel focus:ring-err/30 focus:border-err/30" 
                             type="date" 
                             value={newBooking.checkOutDate}
                             onChange={(e) => setNewBooking(prev => ({ ...prev, checkOutDate: e.target.value }))}
                             required
                           />
                           <input 
-                            className="col-span-2 text-xs font-medium rounded-lg border-slate-300 py-1.5 px-2 bg-white focus:ring-red-500 focus:border-red-500" 
+                            className="col-span-2 text-xs font-medium rounded-lg border-line py-1.5 px-2 bg-panel focus:ring-err/30 focus:border-err/30" 
                             type="time" 
                             value="12:00"
                             readOnly
@@ -1446,11 +1446,11 @@ export default function CalendarPage() {
                     {/* Chọn hạng phòng */}
                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 mb-4">
                       <div className="sm:col-span-8 space-y-1.5">
-                        <label className="block text-xs font-semibold text-slate-700">
-                          Hạng phòng <span className="text-red-600">*</span>
+                        <label className="block text-xs font-semibold text-fg">
+                          Hạng phòng <span className="text-err">*</span>
                         </label>
                         <select
-                          className="block w-full rounded-lg border-slate-300 py-2.5 px-3 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-red-500/20 focus:border-red-600"
+                          className="block w-full rounded-lg border-line py-2.5 px-3 text-xs font-medium text-fg focus:ring-2 focus:ring-err/30 focus:border-err/30"
                           value={newBooking.roomTypeId}
                           onChange={(e) => setNewBooking(prev => ({ ...prev, roomTypeId: e.target.value }))}
                           required
@@ -1462,10 +1462,10 @@ export default function CalendarPage() {
                         </select>
               </div>
                       <div className="sm:col-span-4 space-y-1.5">
-                        <label className="block text-xs font-semibold text-slate-700">
-                          Số phòng <span className="text-slate-400 font-normal">(Tùy chọn)</span>
+                        <label className="block text-xs font-semibold text-fg">
+                          Số phòng <span className="text-muted font-normal">(Tùy chọn)</span>
                         </label>
-                        <select className="block w-full rounded-lg border-slate-300 py-2.5 px-3 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-red-500/20 focus:border-red-600">
+                        <select className="block w-full rounded-lg border-line py-2.5 px-3 text-xs font-bold text-fg focus:ring-2 focus:ring-err/30 focus:border-err/30">
                           <option value="">Chưa gán (Tự động)</option>
                           <option value="302">Phòng 302 (Tầng 3)</option>
                           <option value="305">Phòng 305 (Tầng 3)</option>
@@ -1476,11 +1476,11 @@ export default function CalendarPage() {
                     {/* Số lượng khách */}
                     <div className="grid grid-cols-3 gap-3 pt-1">
                       <div>
-                        <label className="block text-[11px] font-medium text-slate-600 mb-1">Người lớn</label>
-                        <div className="flex items-center border border-slate-300 rounded-lg overflow-hidden bg-white">
+                        <label className="block text-[11px] font-medium text-muted mb-1">Người lớn</label>
+                        <div className="flex items-center border border-line rounded-lg overflow-hidden bg-panel">
                           <button 
                             type="button"
-                            className="px-2.5 py-1.5 text-slate-500 hover:bg-slate-100 font-bold"
+                            className="px-2.5 py-1.5 text-muted hover:bg-fg/5 font-bold"
                             onClick={() => setNewBooking(prev => ({ ...prev, numAdults: Math.max(1, prev.numAdults - 1) }))}
                           >-</button>
                           <input 
@@ -1493,17 +1493,17 @@ export default function CalendarPage() {
                           />
                           <button 
                             type="button"
-                            className="px-2.5 py-1.5 text-slate-500 hover:bg-slate-100 font-bold"
+                            className="px-2.5 py-1.5 text-muted hover:bg-fg/5 font-bold"
                             onClick={() => setNewBooking(prev => ({ ...prev, numAdults: Math.min(10, prev.numAdults + 1) }))}
                           >+</button>
             </div>
               </div>
                   <div>
-                        <label className="block text-[11px] font-medium text-slate-600 mb-1">Trẻ em (&lt;12t)</label>
-                        <div className="flex items-center border border-slate-300 rounded-lg overflow-hidden bg-white">
+                        <label className="block text-[11px] font-medium text-muted mb-1">Trẻ em (&lt;12t)</label>
+                        <div className="flex items-center border border-line rounded-lg overflow-hidden bg-panel">
                           <button 
                             type="button"
-                            className="px-2.5 py-1.5 text-slate-500 hover:bg-slate-100 font-bold"
+                            className="px-2.5 py-1.5 text-muted hover:bg-fg/5 font-bold"
                             onClick={() => setNewBooking(prev => ({ ...prev, numChildren: Math.max(0, prev.numChildren - 1) }))}
                           >-</button>
                           <input 
@@ -1516,14 +1516,14 @@ export default function CalendarPage() {
                           />
                           <button 
                             type="button"
-                            className="px-2.5 py-1.5 text-slate-500 hover:bg-slate-100 font-bold"
+                            className="px-2.5 py-1.5 text-muted hover:bg-fg/5 font-bold"
                             onClick={() => setNewBooking(prev => ({ ...prev, numChildren: Math.min(6, prev.numChildren + 1) }))}
                           >+</button>
                         </div>
                   </div>
                   <div>
-                        <label className="block text-[11px] font-medium text-slate-600 mb-1">Extra Bed</label>
-                        <select className="w-full text-xs font-medium rounded-lg border-slate-300 py-1.5 px-2 bg-white focus:ring-red-500 focus:border-red-500">
+                        <label className="block text-[11px] font-medium text-muted mb-1">Extra Bed</label>
+                        <select className="w-full text-xs font-medium rounded-lg border-line py-1.5 px-2 bg-panel focus:ring-err/30 focus:border-err/30">
                           <option value="0">Không thêm</option>
                           <option value="1">+1 Giường (+250k)</option>
                         </select>
@@ -1532,20 +1532,20 @@ export default function CalendarPage() {
                   </div>
 
                   {/* Card: Dịch vụ & Yêu cầu đặc biệt */}
-                  <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
-                    <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
+                  <div className="bg-panel rounded-xl border border-line/80 p-5 shadow-xs">
+                    <div className="flex items-center justify-between pb-3 mb-3 border-b border-line">
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-red-600"></span>
-                        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900">3. Dịch vụ & Ghi chú</h2>
+                        <span className="w-2 h-2 rounded-full bg-err"></span>
+                        <h2 className="text-sm font-bold uppercase tracking-wider text-fg">3. Dịch vụ & Ghi chú</h2>
                       </div>
                     </div>
                     {/* Ghi chú / Special request */}
                   <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      <label className="block text-xs font-semibold text-fg mb-1">
                         Ghi chú nội bộ / Yêu cầu từ khách:
                       </label>
                       <textarea
-                        className="block w-full text-xs rounded-lg border-slate-300 shadow-xs focus:ring-2 focus:ring-red-500 focus:border-red-500 placeholder:text-slate-400"
+                        className="block w-full text-xs rounded-lg border-line shadow-xs focus:ring-2 focus:ring-err/30 focus:border-err/30 placeholder:text-muted"
                         placeholder="Ví dụ: Khách check-in muộn lúc 18h, phòng tầng cao, view thoáng..."
                         rows={3}
                         value={newBooking.guestNote}
@@ -1559,72 +1559,72 @@ export default function CalendarPage() {
                 <aside className="lg:col-span-5 space-y-5 flex flex-col justify-between">
                   <div className="space-y-5">
                     {/* Thẻ tóm tắt đơn phòng */}
-                    <div className="bg-gradient-to-br from-amber-50/40 to-amber-50/20 rounded-xl border border-amber-200 p-4 shadow-xs">
+                    <div className="bg-warn-soft/40 rounded-xl border border-warn/30 p-4 shadow-xs">
                       <div className="flex items-start justify-between">
                   <div>
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800 bg-amber-100/70 px-2 py-0.5 rounded">Chi tiết lưu trú</span>
-                          <h3 className="text-base font-bold text-slate-900 mt-1">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-warn bg-warn-soft/70 px-2 py-0.5 rounded">Chi tiết lưu trú</span>
+                          <h3 className="text-base font-bold text-fg mt-1">
                             {roomTypes.find(rt => rt.id === newBooking.roomTypeId)?.name || 'Chọn hạng phòng'}
                           </h3>
-                          <p className="text-xs text-slate-600">Phòng • Tầng • Giường</p>
+                          <p className="text-xs text-muted">Phòng • Tầng • Giường</p>
                   </div>
                         <div className="text-right">
-                          <span className="text-xs text-slate-500 block">Thời gian</span>
-                          <span className="text-sm font-bold text-slate-900">
+                          <span className="text-xs text-muted block">Thời gian</span>
+                          <span className="text-sm font-bold text-fg">
                             {Math.ceil((new Date(newBooking.checkOutDate).getTime() - new Date(newBooking.checkInDate).getTime()) / (1000 * 60 * 60 * 24))} đêm
                           </span>
                 </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-amber-200/60 text-xs">
+                      <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-warn/30 text-xs">
                         <div>
-                          <span className="text-slate-500 text-[11px] block">Nhận:</span>
-                          <span className="font-semibold text-slate-800">{newBooking.checkInDate ? format(new Date(newBooking.checkInDate), 'HH:mm • dd/MM/yyyy') : '--:--'} 14:00</span>
+                          <span className="text-muted text-[11px] block">Nhận:</span>
+                          <span className="font-semibold text-fg">{newBooking.checkInDate ? format(new Date(newBooking.checkInDate), 'HH:mm • dd/MM/yyyy') : '--:--'} 14:00</span>
                         </div>
                         <div>
-                          <span className="text-slate-500 text-[11px] block">Trả:</span>
-                          <span className="font-semibold text-slate-800">{newBooking.checkOutDate ? format(new Date(newBooking.checkOutDate), 'HH:mm • dd/MM/yyyy') : '--:--'} 12:00</span>
+                          <span className="text-muted text-[11px] block">Trả:</span>
+                          <span className="font-semibold text-fg">{newBooking.checkOutDate ? format(new Date(newBooking.checkOutDate), 'HH:mm • dd/MM/yyyy') : '--:--'} 12:00</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Bảng kê chi phí */}
-                    <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-3.5">
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center justify-between">
+                    <div className="bg-panel rounded-xl border border-line/80 p-5 shadow-xs space-y-3.5">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-fg flex items-center justify-between">
                         <span>Bảng kê chi phí dự kiến</span>
-                        <span className="text-[11px] text-slate-400 font-normal">VNĐ</span>
+                        <span className="text-[11px] text-muted font-normal">VNĐ</span>
                       </h3>
-                      <div className="space-y-2 text-xs divide-y divide-slate-100">
-                        <div className="flex justify-between py-1 text-slate-600">
+                      <div className="space-y-2 text-xs divide-y divide-line">
+                        <div className="flex justify-between py-1 text-muted">
                           <span>Tiền phòng ({Math.ceil((new Date(newBooking.checkOutDate).getTime() - new Date(newBooking.checkInDate).getTime()) / (1000 * 60 * 60 * 24))} đêm)</span>
-                          <span className="font-semibold text-slate-900">1.200.000₫</span>
+                          <span className="font-semibold text-fg">1.200.000₫</span>
                         </div>
-                        <div className="flex justify-between py-1 text-slate-600">
+                        <div className="flex justify-between py-1 text-muted">
                           <span>Thuế & Phí phục vụ</span>
-                          <span className="text-slate-700">VAT 8% + SVC 5%</span>
+                          <span className="text-fg">VAT 8% + SVC 5%</span>
                         </div>
-                        <div className="flex justify-between py-1 text-slate-600 items-center">
-                          <span className="flex items-center gap-1 text-red-600 cursor-pointer hover:underline">
+                        <div className="flex justify-between py-1 text-muted items-center">
+                          <span className="flex items-center gap-1 text-err cursor-pointer hover:underline">
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path></svg>
                             Mã ưu đãi / Voucher
                           </span>
-                          <span className="text-slate-400 font-mono">-0₫</span>
+                          <span className="text-muted font-mono">-0₫</span>
                         </div>
                       </div>
                       {/* Tổng tiền thanh toán */}
-                      <div className="p-3 bg-slate-50 rounded-lg flex items-center justify-between border border-slate-200">
+                      <div className="p-3 bg-fg/[0.03] rounded-lg flex items-center justify-between border border-line">
                         <div>
-                          <span className="text-xs font-bold text-slate-700 block">Tổng tiền phòng:</span>
-                          <span className="text-[11px] text-slate-500">Đã gồm thuế & phụ phí</span>
+                          <span className="text-xs font-bold text-fg block">Tổng tiền phòng:</span>
+                          <span className="text-[11px] text-muted">Đã gồm thuế & phụ phí</span>
                         </div>
                         <div className="text-right">
-                          <span className="text-xl font-extrabold text-red-600">1.200.000₫</span>
+                          <span className="text-xl font-extrabold text-err">1.200.000₫</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Quick Tip / Policy info */}
-                    <div className="text-[11px] text-slate-400 bg-slate-50 px-3.5 py-2.5 rounded-lg border border-slate-200/60 flex items-center gap-2">
-                      <svg className="w-4 h-4 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path></svg>
+                    <div className="text-[11px] text-muted bg-fg/[0.03] px-3.5 py-2.5 rounded-lg border border-line/60 flex items-center gap-2">
+                      <svg className="w-4 h-4 text-warn shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path></svg>
                       <span>Đơn tạo ở trạng thái Chờ cọc sẽ tự động hủy sau 2 giờ nếu khách chưa thanh toán.</span>
                     </div>
                   </div>
@@ -1633,9 +1633,9 @@ export default function CalendarPage() {
             </main>
 
             {/* Modal Footer */}
-            <footer className="px-7 py-4 bg-amber-50/50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-              <div className="flex items-center gap-2 text-xs text-slate-500">
-                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <footer className="px-7 py-4 bg-warn-soft/50 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+              <div className="flex items-center gap-2 text-xs text-muted">
+                <span className="w-2 h-2 rounded-full bg-ok"></span>
                 <span>Điền thông tin và nhấn &quot;Tạo đơn&quot; để hoàn tất</span>
               </div>
               <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
@@ -1643,7 +1643,7 @@ export default function CalendarPage() {
                 <button 
                   type="button"
                   onClick={() => setShowCreateBookingModal(false)}
-                  className="w-1/3 sm:w-auto px-4 py-2 text-xs font-semibold text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-100 hover:text-slate-800 transition"
+                  className="w-1/3 sm:w-auto px-4 py-2 text-xs font-semibold text-muted bg-panel border border-line rounded-lg hover:bg-fg/5 hover:text-fg transition"
                 >
                   Hủy bỏ
                 </button>
@@ -1652,7 +1652,7 @@ export default function CalendarPage() {
                   type="submit"
                   form="reservation-form"
                   disabled={isActionLoading}
-                  className="w-full sm:w-auto px-5 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 rounded-lg shadow-sm shadow-red-600/30 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full sm:w-auto px-5 py-2 text-xs font-bold text-on-err bg-err hover:bg-err/90 active:bg-err/90 rounded-lg shadow-sm transition flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {isActionLoading ? (
                     <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
@@ -1680,15 +1680,15 @@ export default function CalendarPage() {
       >
         {selectedBooking && (
           <div className="space-y-4">
-            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+            <div className="bg-fg/[0.03] rounded-lg p-4 space-y-2">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Trạng thái:</span>
+                <span className="text-sm text-muted">Trạng thái:</span>
                 <span className={`text-sm font-medium px-2 py-0.5 rounded ${
-                  selectedBooking.status === 'CHECKED_IN' ? 'bg-green-100 text-green-800' :
-                  selectedBooking.status === 'CONFIRMED' ? 'bg-blue-100 text-blue-800' :
-                  selectedBooking.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                  selectedBooking.status === 'CHECKED_OUT' ? 'bg-gray-100 text-gray-800' :
-                  'bg-red-100 text-red-800'
+                  selectedBooking.status === 'CHECKED_IN' ? 'bg-ok-soft text-ok' :
+                  selectedBooking.status === 'CONFIRMED' ? 'bg-info-soft text-info' :
+                  selectedBooking.status === 'PENDING' ? 'bg-warn-soft text-warn' :
+                  selectedBooking.status === 'CHECKED_OUT' ? 'bg-fg/5 text-fg' :
+                  'bg-err-soft text-err'
                 }`}>
                   {selectedBooking.status === 'CHECKED_IN' ? 'Đã nhận phòng' :
                    selectedBooking.status === 'CONFIRMED' ? 'Đã xác nhận' :
@@ -1698,63 +1698,63 @@ export default function CalendarPage() {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Khách:</span>
+                <span className="text-sm text-muted">Khách:</span>
                 <span className="text-sm font-medium">{selectedBooking.guestName}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Điện thoại:</span>
+                <span className="text-sm text-muted">Điện thoại:</span>
                 <span className="text-sm">{selectedBooking.guestPhone}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Email:</span>
+                <span className="text-sm text-muted">Email:</span>
                 <span className="text-sm">{selectedBooking.guestEmail}</span>
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+            <div className="bg-fg/[0.03] rounded-lg p-4 space-y-2">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Nhận phòng:</span>
+                <span className="text-sm text-muted">Nhận phòng:</span>
                 <span className="text-sm font-medium">
                   {selectedBooking.checkInDate ? format(new Date(selectedBooking.checkInDate), 'dd/MM/yyyy') : '-'}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Trả phòng:</span>
+                <span className="text-sm text-muted">Trả phòng:</span>
                 <span className="text-sm font-medium">
                   {selectedBooking.checkOutDate ? format(new Date(selectedBooking.checkOutDate), 'dd/MM/yyyy') : '-'}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Phòng:</span>
+                <span className="text-sm text-muted">Phòng:</span>
                 <span className="text-sm font-medium">
                   {selectedBooking.bookingItems[0]?.roomNumber || 'Chưa gán'}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Người lớn:</span>
+                <span className="text-sm text-muted">Người lớn:</span>
                 <span className="text-sm">{selectedBooking.numAdults}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Trẻ em:</span>
+                <span className="text-sm text-muted">Trẻ em:</span>
                 <span className="text-sm">{selectedBooking.numChildren}</span>
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+            <div className="bg-fg/[0.03] rounded-lg p-4 space-y-2">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Tổng tiền:</span>
-                <span className="text-lg font-bold text-[#d95338]">
+                <span className="text-sm text-muted">Tổng tiền:</span>
+                <span className="text-lg font-bold text-acc">
                   {selectedBooking.totalAmount?.toLocaleString('vi-VN')} VNĐ
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Đã cọc:</span>
-                <span className="text-sm text-emerald-600 font-medium">
+                <span className="text-sm text-muted">Đã cọc:</span>
+                <span className="text-sm text-ok font-medium">
                   {selectedBooking.depositAmount?.toLocaleString('vi-VN')} VNĐ
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Còn lại:</span>
+                <span className="text-sm text-muted">Còn lại:</span>
                 <span className="text-sm font-medium">
                   {(selectedBooking.totalAmount - selectedBooking.depositAmount)?.toLocaleString('vi-VN')} VNĐ
                 </span>
@@ -1762,9 +1762,9 @@ export default function CalendarPage() {
             </div>
 
             {selectedBooking.guestNote && (
-              <div className="bg-amber-50 rounded-lg p-4">
-                <span className="text-sm font-medium text-amber-800">Ghi chú:</span>
-                <p className="text-sm text-amber-700 mt-1">{selectedBooking.guestNote}</p>
+              <div className="bg-warn-soft rounded-lg p-4">
+                <span className="text-sm font-medium text-warn">Ghi chú:</span>
+                <p className="text-sm text-warn mt-1">{selectedBooking.guestNote}</p>
               </div>
             )}
 
@@ -1773,7 +1773,6 @@ export default function CalendarPage() {
                 <Button
                   onClick={() => handleCheckIn(selectedBooking.id)}
                   disabled={isActionLoading}
-                  className="bg-emerald-600 hover:bg-emerald-700"
                 >
                   {isActionLoading && actionLoadingType === 'checkin' ? (
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -1788,7 +1787,7 @@ export default function CalendarPage() {
                 <Button
                   onClick={() => handleCheckOut(selectedBooking.id)}
                   disabled={isActionLoading}
-                  className="bg-amber-600 hover:bg-amber-700"
+                  className="bg-warn hover:bg-warn"
                 >
                   {isActionLoading && actionLoadingType === 'checkout' ? (
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -1815,7 +1814,7 @@ export default function CalendarPage() {
                   onClick={() => handleCancelBooking(selectedBooking.id)}
                   disabled={isActionLoading}
                   variant="outline"
-                  className="text-red-600 hover:bg-red-50"
+                  className="text-err hover:bg-err-soft"
                 >
                   {isActionLoading && actionLoadingType === 'cancel' ? (
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -1837,34 +1836,34 @@ export default function CalendarPage() {
         title="Xuất báo cáo công suất"
       >
         <div className="space-y-4">
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-            <p className="text-sm text-amber-800">
+          <div className="bg-warn-soft border border-warn/30 rounded-lg p-4">
+            <p className="text-sm text-warn">
               <strong>Báo cáo tháng {currentDate.getMonth() + 1}/{currentDate.getFullYear()}</strong>
             </p>
-            <p className="text-xs text-amber-700 mt-1">
+            <p className="text-xs text-warn mt-1">
               Tổng đơn: {bookings.length} | Đã xác nhận: {bookings.filter(b => b.status === 'CONFIRMED' || b.status === 'CHECKED_IN').length} | Công suất: {getOccupancyPercent(today)}%
             </p>
         </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Chọn định dạng xuất:</label>
+            <label className="block text-sm font-medium text-fg mb-2">Chọn định dạng xuất:</label>
             <div className="grid grid-cols-3 gap-3">
               <button
                 onClick={() => setExportType('pdf')}
                 className={`p-4 rounded-lg border-2 transition-all ${
                   exportType === 'pdf' 
-                    ? 'border-[#d95338] bg-[#fff5f2]' 
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-acc bg-acc-soft' 
+                    : 'border-line hover:border-line'
                 }`}
               >
                 <div className="text-center">
-                  <div className="w-12 h-12 mx-auto bg-red-100 rounded-lg flex items-center justify-center mb-2">
-                    <span className="text-red-600 font-bold text-lg">PDF</span>
+                  <div className="w-12 h-12 mx-auto bg-err-soft rounded-lg flex items-center justify-center mb-2">
+                    <span className="text-err font-bold text-lg">PDF</span>
                   </div>
                   <span className={`text-sm font-medium ${
-                    exportType === 'pdf' ? 'text-[#d95338]' : 'text-gray-700'
+                    exportType === 'pdf' ? 'text-acc' : 'text-fg'
                   }`}>PDF</span>
-                  <p className="text-[10px] text-gray-500 mt-1">In và lưu PDF</p>
+                  <p className="text-[10px] text-muted mt-1">In và lưu PDF</p>
                 </div>
               </button>
               
@@ -1872,18 +1871,18 @@ export default function CalendarPage() {
                 onClick={() => setExportType('excel')}
                 className={`p-4 rounded-lg border-2 transition-all ${
                   exportType === 'excel' 
-                    ? 'border-[#d95338] bg-[#fff5f2]' 
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-acc bg-acc-soft' 
+                    : 'border-line hover:border-line'
                 }`}
               >
                 <div className="text-center">
-                  <div className="w-12 h-12 mx-auto bg-green-100 rounded-lg flex items-center justify-center mb-2">
-                    <span className="text-green-600 font-bold text-lg">XLS</span>
+                  <div className="w-12 h-12 mx-auto bg-ok-soft rounded-lg flex items-center justify-center mb-2">
+                    <span className="text-ok font-bold text-lg">XLS</span>
                   </div>
                   <span className={`text-sm font-medium ${
-                    exportType === 'excel' ? 'text-[#d95338]' : 'text-gray-700'
+                    exportType === 'excel' ? 'text-acc' : 'text-fg'
                   }`}>Excel</span>
-                  <p className="text-[10px] text-gray-500 mt-1">Bảng tính Excel</p>
+                  <p className="text-[10px] text-muted mt-1">Bảng tính Excel</p>
                 </div>
               </button>
               
@@ -1891,26 +1890,26 @@ export default function CalendarPage() {
                 onClick={() => setExportType('csv')}
                 className={`p-4 rounded-lg border-2 transition-all ${
                   exportType === 'csv' 
-                    ? 'border-[#d95338] bg-[#fff5f2]' 
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-acc bg-acc-soft' 
+                    : 'border-line hover:border-line'
                 }`}
               >
                 <div className="text-center">
-                  <div className="w-12 h-12 mx-auto bg-blue-100 rounded-lg flex items-center justify-center mb-2">
-                    <span className="text-blue-600 font-bold text-lg">CSV</span>
+                  <div className="w-12 h-12 mx-auto bg-info-soft rounded-lg flex items-center justify-center mb-2">
+                    <span className="text-info font-bold text-lg">CSV</span>
                   </div>
                   <span className={`text-sm font-medium ${
-                    exportType === 'csv' ? 'text-[#d95338]' : 'text-gray-700'
+                    exportType === 'csv' ? 'text-acc' : 'text-fg'
                   }`}>CSV</span>
-                  <p className="text-[10px] text-gray-500 mt-1">Dữ liệu text</p>
+                  <p className="text-[10px] text-muted mt-1">Dữ liệu text</p>
                 </div>
               </button>
             </div>
           </div>
 
-          <div className="bg-gray-50 rounded-lg p-3">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Nội dung báo cáo:</h4>
-            <ul className="text-xs text-gray-600 space-y-1">
+          <div className="bg-fg/[0.03] rounded-lg p-3">
+            <h4 className="text-sm font-medium text-fg mb-2">Nội dung báo cáo:</h4>
+            <ul className="text-xs text-muted space-y-1">
               <li>• Tổng quan: Số phòng, tổng đơn, công suất</li>
               <li>• Danh sách đặt phòng trong tháng</li>
               <li>• Thông tin khách: Tên, ngày nhận/trả phòng</li>
@@ -1929,7 +1928,6 @@ export default function CalendarPage() {
             <Button 
               onClick={handleExportReport}
               disabled={isActionLoading}
-              className="bg-emerald-600 hover:bg-emerald-700"
             >
               {isActionLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />

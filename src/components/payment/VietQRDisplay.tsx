@@ -79,16 +79,16 @@ export function VietQRDisplay({
             <img
               src={dataUrl}
               alt="VietQR"
-              className="w-72 h-72 border border-gray-200 rounded-lg p-2 bg-white"
+              className="w-72 h-72 border border-line rounded-lg p-2 bg-panel"
             />
           ) : (
-            <div className="w-72 h-72 flex items-center justify-center text-gray-400 border border-gray-200 rounded-lg">
+            <div className="w-72 h-72 flex items-center justify-center text-muted border border-line rounded-lg">
               Đang tạo mã QR...
             </div>
           )}
         </div>
 
-        <p className="text-center text-sm text-gray-600">
+        <p className="text-center text-sm text-muted">
           Mở app ngân hàng và quét mã để chuyển khoản tự động
         </p>
 
@@ -98,11 +98,11 @@ export function VietQRDisplay({
           <Row label="Nội dung CK">
             <button
               onClick={() => copy(transferContent)}
-              className="inline-flex items-center gap-1.5 text-primary hover:underline"
+              className="inline-flex items-center gap-1.5 text-acc hover:underline"
             >
               <span className="font-mono">{transferContent}</span>
               {copied ? (
-                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                <CheckCircle2 className="w-4 h-4 text-ok" />
               ) : (
                 <Copy className="w-4 h-4" />
               )}
@@ -119,7 +119,7 @@ export function VietQRDisplay({
           )}
         </div>
 
-        <p className="text-xs text-gray-500 text-center">
+        <p className="text-xs text-muted text-center">
           Hệ thống tự động xác nhận khoản thanh toán trong vài giây sau khi chuyển khoản thành công.
         </p>
       </CardContent>
@@ -139,14 +139,14 @@ function Row({
   children?: React.ReactNode
 }) {
   return (
-    <div className="flex items-center justify-between gap-2 py-1.5 border-b border-gray-100 last:border-0">
-      <span className="text-gray-600">{label}</span>
+    <div className="flex items-center justify-between gap-2 py-1.5 border-b border-line last:border-0">
+      <span className="text-muted">{label}</span>
       {children ?? (
         <span
           className={
             highlight
-              ? 'font-bold text-primary text-base'
-              : 'font-medium text-gray-900'
+              ? 'font-bold text-acc text-base'
+              : 'font-medium text-fg'
           }
         >
           {value}
