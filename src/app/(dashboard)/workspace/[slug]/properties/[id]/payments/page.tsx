@@ -85,15 +85,15 @@ const paymentMethodLabels: Record<string, { label: string; icon: any }> = {
 }
 
 const paymentStatusConfig: Record<string, { label: string; color: string; bgColor: string; borderColor: string; icon: any }> = {
-  PENDING: { label: 'Chờ thanh toán', color: 'text-amber-700', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', icon: Clock },
-  PAID: { label: 'Đã thanh toán', color: 'text-green-700', bgColor: 'bg-green-50', borderColor: 'border-green-200', icon: CheckCircle },
-  FAILED: { label: 'Thất bại', color: 'text-red-700', bgColor: 'bg-red-50', borderColor: 'border-red-200', icon: XCircle },
-  EXPIRED: { label: 'Hết hạn', color: 'text-slate-700', bgColor: 'bg-slate-100', borderColor: 'border-slate-200', icon: AlertCircle },
-  REFUNDED: { label: 'Đã hoàn tiền', color: 'text-blue-700', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', icon: RefreshCw },
+  PENDING: { label: 'Chờ thanh toán', color: 'text-warn', bgColor: 'bg-warn-soft', borderColor: 'border-warn/30', icon: Clock },
+  PAID: { label: 'Đã thanh toán', color: 'text-ok', bgColor: 'bg-ok-soft', borderColor: 'border-ok/30', icon: CheckCircle },
+  FAILED: { label: 'Thất bại', color: 'text-err', bgColor: 'bg-err-soft', borderColor: 'border-err/30', icon: XCircle },
+  EXPIRED: { label: 'Hết hạn', color: 'text-plain', bgColor: 'bg-plain-soft', borderColor: 'border-line', icon: AlertCircle },
+  REFUNDED: { label: 'Đã hoàn tiền', color: 'text-refund', bgColor: 'bg-refund-soft', borderColor: 'border-refund/30', icon: RefreshCw },
   // Every PaymentStatus needs an entry: rows render config[status].icon.
-  CANCELLED: { label: 'Đã huỷ', color: 'text-slate-600', bgColor: 'bg-slate-50', borderColor: 'border-slate-200', icon: XCircle },
-  PROCESSING: { label: 'Đang xử lý', color: 'text-amber-700', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', icon: Clock },
-  PARTIAL: { label: 'Thanh toán một phần', color: 'text-amber-700', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', icon: Clock },
+  CANCELLED: { label: 'Đã huỷ', color: 'text-plain', bgColor: 'bg-plain-soft', borderColor: 'border-line', icon: XCircle },
+  PROCESSING: { label: 'Đang xử lý', color: 'text-info', bgColor: 'bg-info-soft', borderColor: 'border-info/30', icon: Clock },
+  PARTIAL: { label: 'Thanh toán một phần', color: 'text-info', bgColor: 'bg-info-soft', borderColor: 'border-info/30', icon: Clock },
 }
 
 export default function PaymentsPage() {
@@ -370,93 +370,93 @@ export default function PaymentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sand-50/50 via-white to-sand-100/30">
-      <Header
-        title="Thanh Toán"
-        description="Quản lý các khoản thanh toán"
-        actions={
-          <div className="flex items-center gap-2 shrink-0">
-            <Select
-              value={selectedProperty}
-              onChange={(e) => handlePropertyChange(e.target.value)}
-              className="w-44 text-sm shrink-0"
-              options={properties.map((p) => ({ value: p.id, label: p.name }))}
-            />
-            <Button size="sm" variant="secondary" onClick={handleRefresh} className="gap-1.5 shrink-0">
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span className="hidden lg:inline">Làm mới</span>
-            </Button>
-            <Button size="sm" onClick={handleOpenCreateModal} className="gap-1.5 shrink-0">
-              <Plus className="w-3.5 h-3.5" />
-              <span className="hidden lg:inline">Tạo thanh toán</span>
-            </Button>
-          </div>
-        }
-      />
-
+    <div>
       <PageContainer>
+        <Header
+          title="Thanh Toán"
+          description="Quản lý các khoản thanh toán"
+          actions={
+            <div className="flex items-center gap-2 shrink-0">
+              <Select
+                value={selectedProperty}
+                onChange={(e) => handlePropertyChange(e.target.value)}
+                className="w-44 text-sm shrink-0"
+                options={properties.map((p) => ({ value: p.id, label: p.name }))}
+              />
+              <Button size="sm" variant="secondary" onClick={handleRefresh} className="gap-1.5 shrink-0">
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span className="hidden lg:inline">Làm mới</span>
+              </Button>
+              <Button size="sm" onClick={handleOpenCreateModal} className="gap-1.5 shrink-0">
+                <Plus className="w-3.5 h-3.5" />
+                <span className="hidden lg:inline">Tạo thanh toán</span>
+              </Button>
+            </div>
+          }
+        />
+
         {/* Stats Cards - CRM Style */}
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
           {/* Total Card */}
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+          <div className="bg-panel rounded-xl p-4 shadow-sm border border-line hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-500 to-slate-600 flex items-center justify-center shadow-sm shrink-0">
-                <TrendingUp className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 rounded-xl bg-fg/5 flex items-center justify-center shrink-0">
+                <TrendingUp className="w-5 h-5 text-fg" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-slate-400 truncate">Tổng thanh toán</p>
-                <p className="text-lg font-bold text-slate-900 truncate">{formatPrice(stats.total)}</p>
+                <p className="text-xs font-medium text-muted truncate">Tổng thanh toán</p>
+                <p className="text-lg font-bold text-fg truncate">{formatPrice(stats.total)}</p>
               </div>
             </div>
-            <p className="text-xs text-slate-400 mt-2">{stats.count} giao dịch</p>
+            <p className="text-xs text-muted mt-2">{stats.count} giao dịch</p>
           </div>
 
           {/* Paid Card */}
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-green-100 hover:shadow-md transition-shadow">
+          <div className="bg-panel rounded-xl p-4 shadow-sm border border-ok/30 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-sm shrink-0">
-                <CheckCircle className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 rounded-xl bg-ok-soft flex items-center justify-center shrink-0">
+                <CheckCircle className="w-5 h-5 text-ok" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-green-400 truncate">Đã thanh toán</p>
-                <p className="text-lg font-bold text-green-700 truncate">{formatPrice(stats.paid)}</p>
+                <p className="text-xs font-medium text-ok truncate">Đã thanh toán</p>
+                <p className="text-lg font-bold text-ok truncate">{formatPrice(stats.paid)}</p>
               </div>
             </div>
-            <p className="text-xs text-green-500 mt-2 flex items-center gap-1">
+            <p className="text-xs text-ok mt-2 flex items-center gap-1">
               <ArrowUpRight className="w-3 h-3" />
               {stats.paidCount} giao dịch
             </p>
           </div>
 
           {/* Pending Card */}
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-amber-100 hover:shadow-md transition-shadow">
+          <div className="bg-panel rounded-xl p-4 shadow-sm border border-warn/30 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-sm shrink-0">
-                <Clock className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 rounded-xl bg-warn-soft flex items-center justify-center shrink-0">
+                <Clock className="w-5 h-5 text-warn" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-amber-400 truncate">Chờ thanh toán</p>
-                <p className="text-lg font-bold text-amber-700 truncate">{formatPrice(stats.pending)}</p>
+                <p className="text-xs font-medium text-warn truncate">Chờ thanh toán</p>
+                <p className="text-lg font-bold text-warn truncate">{formatPrice(stats.pending)}</p>
               </div>
             </div>
-            <p className="text-xs text-amber-500 mt-2 flex items-center gap-1">
+            <p className="text-xs text-warn mt-2 flex items-center gap-1">
               <Wallet className="w-3 h-3" />
               {stats.pendingCount} giao dịch
             </p>
           </div>
 
           {/* Failed Card */}
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-red-100 hover:shadow-md transition-shadow">
+          <div className="bg-panel rounded-xl p-4 shadow-sm border border-err/30 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-sm shrink-0">
-                <XCircle className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 rounded-xl bg-err-soft flex items-center justify-center shrink-0">
+                <XCircle className="w-5 h-5 text-err" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-red-400 truncate">Thất bại/Hết hạn</p>
-                <p className="text-lg font-bold text-red-700 truncate">{formatPrice(stats.failed)}</p>
+                <p className="text-xs font-medium text-err truncate">Thất bại/Hết hạn</p>
+                <p className="text-lg font-bold text-err truncate">{formatPrice(stats.failed)}</p>
               </div>
             </div>
-            <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
+            <p className="text-xs text-err mt-2 flex items-center gap-1">
               <AlertTriangle className="w-3 h-3" />
               {stats.failedCount} giao dịch
             </p>
@@ -464,13 +464,13 @@ export default function PaymentsPage() {
         </div>
 
         {/* Filters - CRM Style */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 mb-6">
+        <div className="bg-panel rounded-xl p-4 shadow-sm border border-line mb-6">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center">
-                <Filter className="w-3.5 h-3.5 text-slate-600" />
+              <div className="w-7 h-7 rounded-lg bg-fg/5 flex items-center justify-center">
+                <Filter className="w-3.5 h-3.5 text-muted" />
               </div>
-              <span className="text-sm font-semibold text-slate-700">Bộ lọc</span>
+              <span className="text-sm font-semibold text-fg">Bộ lọc</span>
             </div>
             {(searchQuery || statusFilter || methodFilter || dateFrom || dateTo) && (
               <button
@@ -481,7 +481,7 @@ export default function PaymentsPage() {
                   setDateFrom('')
                   setDateTo('')
                 }}
-                className="text-xs text-slate-500 hover:text-red-500 font-medium flex items-center gap-1"
+                className="text-xs text-muted hover:text-err font-medium flex items-center gap-1"
               >
                 <XCircle className="w-3 h-3" />
                 Xóa
@@ -490,19 +490,19 @@ export default function PaymentsPage() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
             <div className="lg:col-span-2 relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted" />
               <input
                 type="text"
                 placeholder="Mã GD, tên khách..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition"
+                className="w-full pl-8 pr-3 py-2 text-sm bg-fg/[0.03] border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-acc/20 focus:border-acc transition"
               />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition appearance-none cursor-pointer"
+              className="px-3 py-2 text-sm bg-fg/[0.03] border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-acc/20 focus:border-acc transition appearance-none cursor-pointer"
             >
               <option value="">Trạng thái</option>
               {Object.entries(paymentStatusConfig).map(([key, { label }]) => (
@@ -512,7 +512,7 @@ export default function PaymentsPage() {
             <select
               value={methodFilter}
               onChange={(e) => setMethodFilter(e.target.value)}
-              className="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition appearance-none cursor-pointer"
+              className="px-3 py-2 text-sm bg-fg/[0.03] border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-acc/20 focus:border-acc transition appearance-none cursor-pointer"
             >
               <option value="">Phương thức</option>
               {paymentMethodOptions.map((opt) => (
@@ -523,31 +523,31 @@ export default function PaymentsPage() {
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition"
+              className="px-3 py-2 text-sm bg-fg/[0.03] border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-acc/20 focus:border-acc transition"
             />
             <input
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 transition"
+              className="px-3 py-2 text-sm bg-fg/[0.03] border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-acc/20 focus:border-acc transition"
             />
           </div>
         </div>
 
         {/* Payments List - CRM Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="bg-panel rounded-xl shadow-sm border border-line overflow-hidden">
           {/* Table Header */}
-          <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+          <div className="px-4 py-3 bg-fg/[0.03] border-b border-line flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                <CreditCard className="w-3.5 h-3.5 text-primary" />
+              <div className="w-7 h-7 rounded-lg bg-acc-soft flex items-center justify-center">
+                <CreditCard className="w-3.5 h-3.5 text-acc" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-slate-900">Danh sách thanh toán</h3>
-                <p className="text-xs text-slate-500">{pagination.total} giao dịch</p>
+                <h3 className="text-sm font-semibold text-fg">Danh sách thanh toán</h3>
+                <p className="text-xs text-muted">{pagination.total} giao dịch</p>
               </div>
             </div>
-            <Button size="sm" variant="ghost" className="gap-2 text-slate-600 hover:text-slate-900">
+            <Button size="sm" variant="ghost" className="gap-2 text-muted hover:text-fg">
               <Download className="w-4 h-4" />
               <span className="hidden lg:inline">Xuất Excel</span>
             </Button>
@@ -555,16 +555,16 @@ export default function PaymentsPage() {
 
           {isLoading ? (
             <div className="p-10 text-center">
-              <div className="w-10 h-10 border-3 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-sm text-slate-500">Đang tải dữ liệu...</p>
+              <div className="w-10 h-10 border-4 border-acc/20 border-t-acc rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-sm text-muted">Đang tải dữ liệu...</p>
             </div>
           ) : filteredPayments.length === 0 ? (
             <div className="p-10 text-center">
-              <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <CreditCard className="w-8 h-8 text-slate-400" />
+              <div className="w-16 h-16 bg-fg/5 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <CreditCard className="w-8 h-8 text-muted" />
               </div>
-              <h3 className="text-base font-semibold text-slate-700 mb-1">Chưa có thanh toán nào</h3>
-              <p className="text-sm text-slate-500 mb-4">Tạo thanh toán mới để bắt đầu</p>
+              <h3 className="text-base font-semibold text-fg mb-1">Chưa có thanh toán nào</h3>
+              <p className="text-sm text-muted mb-4">Tạo thanh toán mới để bắt đầu</p>
               <Button onClick={handleOpenCreateModal} className="gap-2">
                 <Plus className="w-4 h-4" />
                 Tạo thanh toán
@@ -574,18 +574,18 @@ export default function PaymentsPage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100">
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Mã GD</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Đặt phòng</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Khách hàng</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Số tiền</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Phương thức</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Trạng thái</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Ngày</th>
-                    <th className="px-4 py-2.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Thao tác</th>
+                  <tr className="bg-fg/[0.03] border-b border-line">
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">Mã GD</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">Đặt phòng</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">Khách hàng</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">Số tiền</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">Phương thức</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">Trạng thái</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">Ngày</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-semibold text-muted uppercase tracking-wider">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-line">
                   {filteredPayments.map((payment, index) => {
                     const statusInfo = paymentStatusConfig[payment.status] || paymentStatusConfig.PENDING
                     const methodInfo = payment.paymentGateway === 'PAYOS'
@@ -595,63 +595,63 @@ export default function PaymentsPage() {
                     const StatusIcon = statusInfo.icon
                     
                     return (
-                      <tr key={payment.id} className={`hover:bg-slate-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
+                      <tr key={payment.id} className={`hover:bg-fg/5 transition-colors ${index % 2 === 0 ? 'bg-panel' : 'bg-fg/[0.03]'}`}>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs font-medium text-slate-700 bg-slate-100 px-2 py-1 rounded-lg">
+                            <span className="font-mono text-xs font-medium text-fg bg-fg/5 px-2 py-1 rounded-lg">
                               {payment.id.slice(-8).toUpperCase()}
                             </span>
                             <button
                               onClick={() => handleCopyToClipboard(payment.id, payment.id)}
-                              className="p-1 hover:bg-slate-200 rounded transition"
+                              className="p-1 hover:bg-fg/10 rounded transition"
                               title="Sao chép"
                             >
                               {copiedId === payment.id ? (
-                                <Check className="w-3 h-3 text-green-500" />
+                                <Check className="w-3 h-3 text-ok" />
                               ) : (
-                                <Copy className="w-3 h-3 text-slate-400" />
+                                <Copy className="w-3 h-3 text-muted" />
                               )}
                             </button>
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-sm font-medium text-slate-900">{payment.booking?.bookingCode}</span>
+                          <span className="text-sm font-medium text-fg">{payment.booking?.bookingCode}</span>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full bg-primary/10 text-primary font-semibold text-xs flex items-center justify-center">
+                            <div className="w-7 h-7 rounded-full bg-acc-soft text-acc font-semibold text-xs flex items-center justify-center">
                               {payment.booking?.guestName?.charAt(0)?.toUpperCase() || 'G'}
                             </div>
-                            <span className="text-sm text-slate-700">{payment.booking?.guestName}</span>
+                            <span className="text-sm text-fg">{payment.booking?.guestName}</span>
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-sm font-semibold text-slate-900">{formatPrice(payment.amount)}</span>
+                          <span className="text-sm font-semibold text-fg">{formatPrice(payment.amount)}</span>
                           {payment.fee > 0 && (
-                            <span className="block text-xs text-slate-400">Phí: {formatPrice(payment.fee)}</span>
+                            <span className="block text-xs text-muted">Phí: {formatPrice(payment.fee)}</span>
                           )}
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1.5">
-                            <div className="w-6 h-6 rounded bg-slate-100 flex items-center justify-center">
-                              <MethodIcon className="w-3 h-3 text-slate-500" />
+                            <div className="w-6 h-6 rounded bg-fg/5 flex items-center justify-center">
+                              <MethodIcon className="w-3 h-3 text-muted" />
                             </div>
-                            <span className="text-xs text-slate-600">{methodInfo.label}</span>
+                            <span className="text-xs text-muted">{methodInfo.label}</span>
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${statusInfo.bgColor} ${statusInfo.color}`}>
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${statusInfo.bgColor} ${statusInfo.color}`}>
                             <StatusIcon className="w-3 h-3" />
                             {statusInfo.label}
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-sm text-slate-500">
+                          <span className="text-sm text-muted">
                             {format(new Date(payment.createdAt), 'dd/MM/yyyy')}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <Button size="sm" variant="ghost" onClick={() => handleViewPayment(payment)} className="gap-1.5 text-slate-600 hover:text-primary">
+                          <Button size="sm" variant="ghost" onClick={() => handleViewPayment(payment)} className="gap-1.5 text-muted hover:text-acc">
                             <Eye className="w-4 h-4" />
                             <span className="hidden sm:inline">Chi tiết</span>
                           </Button>
@@ -664,7 +664,7 @@ export default function PaymentsPage() {
             </div>
           )}
           {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-sm text-slate-600">
+            <div className="flex items-center justify-between border-t border-line px-4 py-3 text-sm text-muted">
               <span>
                 Trang {pagination.page} / {pagination.totalPages}
               </span>
@@ -689,16 +689,16 @@ export default function PaymentsPage() {
         size="md"
       >
         {createSuccess ? (
-          <div className="text-center py-8">
-            <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-8 h-8 text-green-600" />
+          <div className="text-center py-8 px-6">
+            <div className="w-16 h-16 bg-ok-soft rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-ok" />
             </div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">{createSuccess}</h3>
-            <p className="text-slate-500">Đang chuyển hướng...</p>
+            <h3 className="text-lg font-semibold text-fg mb-2">{createSuccess}</h3>
+            <p className="text-muted">Đang chuyển hướng...</p>
           </div>
         ) : (
           <>
-            <div className="space-y-5">
+            <div className="space-y-5 p-6 overflow-y-auto">
               <Select
                 label="Đơn đặt phòng"
                 required
@@ -718,7 +718,7 @@ export default function PaymentsPage() {
                 options={payosConnected ? [PAYOS_OPTION, ...paymentMethodOptions] : paymentMethodOptions}
               />
               {createForm.method === 'PAYOS' && (
-                <p className="text-xs text-slate-500 -mt-2">
+                <p className="text-xs text-muted -mt-2">
                   Tiền vào thẳng tài khoản của khách sạn đã gắn với PayOS; khoản này tự chuyển sang
                   &quot;Đã thanh toán&quot; khi khách chuyển khoản. Link có hạn 24 giờ.
                 </p>
@@ -736,13 +736,13 @@ export default function PaymentsPage() {
               />
 
               {createError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm flex items-center gap-2">
+                <div className="p-3 bg-err-soft border border-err/30 rounded-xl text-err text-sm flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   {createError}
                 </div>
               )}
             </div>
-            <ModalFooter className="mt-6">
+            <ModalFooter>
               <Button variant="secondary" onClick={() => setIsCreating(false)}>
                 Hủy bỏ
               </Button>
@@ -764,26 +764,26 @@ export default function PaymentsPage() {
       >
         {selectedPayment && (
           <>
-            <div className="space-y-6">
+            <div className="space-y-6 p-6 overflow-y-auto">
               {/* Payment Header */}
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-sand-50 to-white rounded-2xl border border-sand-200/60">
+              <div className="flex items-center justify-between p-4 bg-fg/[0.03] rounded-2xl border border-line">
                 <div>
                   <div className="flex items-center gap-3 mb-1">
-                    <span className="font-mono text-lg font-bold bg-slate-900 text-white px-3 py-1.5 rounded-lg">
+                    <span className="font-mono text-lg font-bold bg-ink text-on-ink px-3 py-1.5 rounded-lg">
                       {selectedPayment.id.slice(-8).toUpperCase()}
                     </span>
                     <button
                       onClick={() => handleCopyToClipboard(selectedPayment.id, selectedPayment.id)}
-                      className="p-2 hover:bg-sand-200 rounded-lg transition"
+                      className="p-2 hover:bg-fg/10 rounded-lg transition"
                     >
                       {copiedId === selectedPayment.id ? (
-                        <Check className="w-4 h-4 text-green-500" />
+                        <Check className="w-4 h-4 text-ok" />
                       ) : (
-                        <Copy className="w-4 h-4 text-slate-400" />
+                        <Copy className="w-4 h-4 text-muted" />
                       )}
                     </button>
                   </div>
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-muted">
                     Tạo lúc: {format(new Date(selectedPayment.createdAt), 'dd/MM/yyyy HH:mm')}
                   </p>
                 </div>
@@ -794,13 +794,13 @@ export default function PaymentsPage() {
               </div>
 
               {/* Amount */}
-              <div className="bg-gradient-to-br from-terracotta-50 to-terracotta-100/50 rounded-2xl p-6 text-center border border-terracotta-200/50">
-                <p className="text-sm text-terracotta-700 mb-2 font-medium">Số tiền thanh toán</p>
-                <p className="text-4xl font-bold text-terracotta-700">{formatPrice(selectedPayment.amount)}</p>
+              <div className="bg-acc-soft rounded-2xl p-6 text-center border border-acc/30">
+                <p className="text-sm text-acc mb-2 font-medium">Số tiền thanh toán</p>
+                <p className="text-4xl font-bold text-acc">{formatPrice(selectedPayment.amount)}</p>
                 {selectedPayment.fee > 0 && (
-                  <p className="text-sm text-terracotta-600 mt-3 flex items-center justify-center gap-4">
+                  <p className="text-sm text-acc mt-3 flex items-center justify-center gap-4">
                     <span>Phí: {formatPrice(selectedPayment.fee)}</span>
-                    <span className="text-terracotta-400">•</span>
+                    <span className="text-acc/60">•</span>
                     <span className="font-semibold">Thực nhận: {formatPrice(selectedPayment.netAmount)}</span>
                   </p>
                 )}
@@ -808,64 +808,64 @@ export default function PaymentsPage() {
 
               {/* Payment Info Grid */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-sand-50/50 rounded-xl border border-sand-200/60">
+                <div className="p-4 bg-fg/[0.03] rounded-xl border border-line">
                   <div className="flex items-center gap-2 mb-2">
-                    {React.createElement(paymentMethodLabels[selectedPayment.method]?.icon || CreditCard, { className: 'w-4 h-4 text-terracotta-500' })}
-                    <span className="text-xs font-semibold text-slate-500 uppercase">Phương thức</span>
+                    {React.createElement(paymentMethodLabels[selectedPayment.method]?.icon || CreditCard, { className: 'w-4 h-4 text-acc' })}
+                    <span className="text-xs font-semibold text-muted uppercase">Phương thức</span>
                   </div>
-                  <p className="font-semibold text-slate-900">
+                  <p className="font-semibold text-fg">
                     {selectedPayment.paymentGateway === 'PAYOS' ? 'PayOS' : paymentMethodLabels[selectedPayment.method]?.label}
                   </p>
                 </div>
-                <div className="p-4 bg-sand-50/50 rounded-xl border border-sand-200/60">
+                <div className="p-4 bg-fg/[0.03] rounded-xl border border-line">
                   <div className="flex items-center gap-2 mb-2">
-                    <FileText className="w-4 h-4 text-terracotta-500" />
-                    <span className="text-xs font-semibold text-slate-500 uppercase">Đơn đặt phòng</span>
+                    <FileText className="w-4 h-4 text-acc" />
+                    <span className="text-xs font-semibold text-muted uppercase">Đơn đặt phòng</span>
                   </div>
-                  <p className="font-semibold text-slate-900">{selectedPayment.booking?.bookingCode}</p>
+                  <p className="font-semibold text-fg">{selectedPayment.booking?.bookingCode}</p>
                 </div>
-                <div className="p-4 bg-sand-50/50 rounded-xl border border-sand-200/60">
+                <div className="p-4 bg-fg/[0.03] rounded-xl border border-line">
                   <div className="flex items-center gap-2 mb-2">
-                    <Building className="w-4 h-4 text-terracotta-500" />
-                    <span className="text-xs font-semibold text-slate-500 uppercase">Cơ sở</span>
+                    <Building className="w-4 h-4 text-acc" />
+                    <span className="text-xs font-semibold text-muted uppercase">Cơ sở</span>
                   </div>
-                  <p className="font-semibold text-slate-900">{selectedPayment.booking?.property?.name}</p>
+                  <p className="font-semibold text-fg">{selectedPayment.booking?.property?.name}</p>
                 </div>
-                <div className="p-4 bg-sand-50/50 rounded-xl border border-sand-200/60">
+                <div className="p-4 bg-fg/[0.03] rounded-xl border border-line">
                   <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle className="w-4 h-4 text-terracotta-500" />
-                    <span className="text-xs font-semibold text-slate-500 uppercase">Khách hàng</span>
+                    <CheckCircle className="w-4 h-4 text-acc" />
+                    <span className="text-xs font-semibold text-muted uppercase">Khách hàng</span>
                   </div>
-                  <p className="font-semibold text-slate-900">{selectedPayment.booking?.guestName}</p>
+                  <p className="font-semibold text-fg">{selectedPayment.booking?.guestName}</p>
                 </div>
               </div>
 
               {/* PayOS: what staff need to know and to send */}
               {selectedPayment.metadata?.payos?.amountMismatch != null && (
-                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700">
+                <div className="p-3 rounded-xl bg-err-soft border border-err/30 text-sm text-err">
                   PayOS báo nhận {formatPrice(selectedPayment.metadata.payos.amountMismatch)}, khác số tiền của khoản này.
                   Khoản này chưa được xác nhận: kiểm tra sao kê rồi xử lý tay.
                 </div>
               )}
               {selectedPayment.metadata?.payos?.paidAfter && (
-                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-800">
+                <div className="p-3 rounded-xl bg-warn-soft border border-warn/30 text-sm text-warn">
                   Khách trả tiền sau khi link đã bị huỷ hoặc hết hạn. Tiền đã vào tài khoản khách sạn và đã được ghi nhận;
                   kiểm tra lại đơn đặt phòng.
                 </div>
               )}
               {selectedPayment.paymentGateway === 'PAYOS' && selectedPayment.checkoutUrl && selectedPayment.status === 'PENDING' && (
-                <div className="p-4 rounded-2xl border border-sand-200/60 space-y-2">
-                  <p className="text-sm text-slate-600">
+                <div className="p-4 rounded-2xl border border-line space-y-2">
+                  <p className="text-sm text-muted">
                     Gửi link này cho khách (Zalo, email...) hoặc cho khách quét mã bên dưới. Khoản này tự xác nhận khi khách chuyển khoản.
                   </p>
                   <div className="flex items-center gap-2">
-                    <code className="flex-1 truncate text-xs bg-slate-100 px-2 py-1.5 rounded">{selectedPayment.checkoutUrl}</code>
+                    <code className="flex-1 truncate text-xs bg-fg/5 px-2 py-1.5 rounded">{selectedPayment.checkoutUrl}</code>
                     <button
                       onClick={() => handleCopyToClipboard(selectedPayment.checkoutUrl!, 'checkoutUrl')}
-                      className="p-1.5 hover:bg-sand-200 rounded-lg transition"
+                      className="p-1.5 hover:bg-fg/10 rounded-lg transition"
                       aria-label="Sao chép link"
                     >
-                      {copiedId === 'checkoutUrl' ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-slate-400" />}
+                      {copiedId === 'checkoutUrl' ? <Check className="w-4 h-4 text-ok" /> : <Copy className="w-4 h-4 text-muted" />}
                     </button>
                   </div>
                 </div>
@@ -873,53 +873,53 @@ export default function PaymentsPage() {
 
               {/* Bank Transfer Info */}
               {selectedPayment.paymentGateway !== 'PAYOS' && (selectedPayment.method === 'BANK_TRANSFER' || selectedPayment.method === 'QR_VIETQR') && (
-                <div className="border border-sand-200/60 rounded-2xl overflow-hidden">
-                  <div className="px-4 py-3 bg-sand-50/80 border-b border-sand-200/60">
-                    <h4 className="font-semibold text-slate-900 flex items-center gap-2">
-                      <Building className="w-4 h-4 text-terracotta-500" />
+                <div className="border border-line rounded-2xl overflow-hidden">
+                  <div className="px-4 py-3 bg-fg/[0.03] border-b border-line">
+                    <h4 className="font-semibold text-fg flex items-center gap-2">
+                      <Building className="w-4 h-4 text-acc" />
                       Thông tin chuyển khoản
                     </h4>
                   </div>
                   <div className="p-4 space-y-3">
-                    <div className="flex justify-between items-center py-2 border-b border-sand-100">
-                      <span className="text-slate-500">Ngân hàng</span>
-                      <span className="font-semibold text-slate-900">{selectedPayment.bankCode || 'N/A'}</span>
+                    <div className="flex justify-between items-center py-2 border-b border-line">
+                      <span className="text-muted">Ngân hàng</span>
+                      <span className="font-semibold text-fg">{selectedPayment.bankCode || 'N/A'}</span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-sand-100">
-                      <span className="text-slate-500">Số tài khoản</span>
+                    <div className="flex justify-between items-center py-2 border-b border-line">
+                      <span className="text-muted">Số tài khoản</span>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono font-semibold text-slate-900">{selectedPayment.bankAccount || 'N/A'}</span>
+                        <span className="font-mono font-semibold text-fg">{selectedPayment.bankAccount || 'N/A'}</span>
                         {selectedPayment.bankAccount && (
                           <button
                             onClick={() => handleCopyToClipboard(selectedPayment.bankAccount!, 'bankAccount')}
-                            className="p-1 hover:bg-sand-200 rounded transition"
+                            className="p-1 hover:bg-fg/10 rounded transition"
                           >
                             {copiedId === 'bankAccount' ? (
-                              <Check className="w-4 h-4 text-green-500" />
+                              <Check className="w-4 h-4 text-ok" />
                             ) : (
-                              <Copy className="w-4 h-4 text-slate-400" />
+                              <Copy className="w-4 h-4 text-muted" />
                             )}
                           </button>
                         )}
                       </div>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-sand-100">
-                      <span className="text-slate-500">Tên tài khoản</span>
-                      <span className="font-semibold text-slate-900">{selectedPayment.accountHolder || 'N/A'}</span>
+                    <div className="flex justify-between items-center py-2 border-b border-line">
+                      <span className="text-muted">Tên tài khoản</span>
+                      <span className="font-semibold text-fg">{selectedPayment.accountHolder || 'N/A'}</span>
                     </div>
-                    <div className="flex justify-between items-center py-3 bg-terracotta-50 -mx-4 -mb-4 px-4 mt-2">
-                      <span className="text-terracotta-700 font-medium">Nội dung CK</span>
+                    <div className="flex justify-between items-center py-3 bg-acc-soft -mx-4 -mb-4 px-4 mt-2">
+                      <span className="text-acc font-medium">Nội dung CK</span>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-terracotta-700 text-lg">{selectedPayment.transferContent || 'N/A'}</span>
+                        <span className="font-mono font-bold text-acc text-lg">{selectedPayment.transferContent || 'N/A'}</span>
                         {selectedPayment.transferContent && (
                           <button
                             onClick={() => handleCopyToClipboard(selectedPayment.transferContent!, 'transferContent')}
-                            className="p-1.5 hover:bg-terracotta-100 rounded-lg transition"
+                            className="p-1.5 hover:bg-acc/10 rounded-lg transition"
                           >
                             {copiedId === 'transferContent' ? (
-                              <Check className="w-4 h-4 text-green-600" />
+                              <Check className="w-4 h-4 text-ok" />
                             ) : (
-                              <Copy className="w-4 h-4 text-terracotta-500" />
+                              <Copy className="w-4 h-4 text-acc" />
                             )}
                           </button>
                         )}
@@ -931,23 +931,24 @@ export default function PaymentsPage() {
 
               {/* QR Code Area */}
               {selectedPayment.method === 'QR_VIETQR' && selectedPayment.status === 'PENDING' && (
-                <div className="border border-sand-200/60 rounded-2xl overflow-hidden">
-                  <div className="px-4 py-3 bg-sand-50/80 border-b border-sand-200/60">
-                    <h4 className="font-semibold text-slate-900 flex items-center gap-2">
-                      <QrCode className="w-4 h-4 text-terracotta-500" />
+                <div className="border border-line rounded-2xl overflow-hidden">
+                  <div className="px-4 py-3 bg-fg/[0.03] border-b border-line">
+                    <h4 className="font-semibold text-fg flex items-center gap-2">
+                      <QrCode className="w-4 h-4 text-acc" />
                       Quét mã QR để thanh toán
                     </h4>
                   </div>
-                  <div className="p-6 text-center bg-gradient-to-br from-slate-50 to-slate-100/50">
-                    <div className="w-52 h-52 mx-auto bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4 border border-sand-200/40">
+                  <div className="p-6 text-center bg-fg/[0.03]">
+                    {/* Light on purpose: a QR code needs a white quiet zone to scan, in either theme. */}
+                    <div data-theme="light" className="w-52 h-52 mx-auto bg-panel rounded-2xl flex items-center justify-center mb-4 border border-line">
                       {selectedPayment.qrCodeUrl ? (
                         <QrImage payload={selectedPayment.qrCodeUrl} />
                       ) : (
-                        <QrCode className="w-36 h-36 text-slate-300" />
+                        <QrCode className="w-36 h-36 text-muted" />
                       )}
                     </div>
                     {selectedPayment.expiresAt && (
-                      <p className="text-sm text-amber-600 flex items-center justify-center gap-2">
+                      <p className="text-sm text-warn flex items-center justify-center gap-2">
                         <Clock className="w-4 h-4" />
                         Hết hạn: {format(new Date(selectedPayment.expiresAt), 'dd/MM/yyyy HH:mm')}
                       </p>
@@ -958,18 +959,18 @@ export default function PaymentsPage() {
 
               {/* Paid Info */}
               {selectedPayment.paidAt && (
-                <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-2xl p-5 text-center border border-green-200/50">
-                  <CheckCircle className="w-10 h-10 text-green-600 mx-auto mb-3" />
-                  <p className="text-green-800 font-semibold text-lg">
+                <div className="bg-ok-soft rounded-2xl p-5 text-center border border-ok/30">
+                  <CheckCircle className="w-10 h-10 text-ok mx-auto mb-3" />
+                  <p className="text-ok font-semibold text-lg">
                     Thanh toán thành công
                   </p>
-                  <p className="text-green-600 text-sm mt-1">
+                  <p className="text-ok text-sm mt-1">
                     Lúc {format(new Date(selectedPayment.paidAt), 'HH:mm')} ngày {format(new Date(selectedPayment.paidAt), 'dd/MM/yyyy')}
                   </p>
                 </div>
               )}
             </div>
-            <ModalFooter className="mt-6">
+            <ModalFooter>
               <Button variant="secondary" onClick={() => setSelectedPayment(null)} className="gap-2">
                 Đóng
               </Button>
@@ -985,7 +986,7 @@ export default function PaymentsPage() {
                 </>
               )}
               {selectedPayment.status === 'PENDING' && (
-                <Button onClick={() => handleConfirmPayment(selectedPayment.id)} className="gap-2 bg-green-600 hover:bg-green-700">
+                <Button onClick={() => handleConfirmPayment(selectedPayment.id)} className="gap-2">
                   <CheckCircle className="w-4 h-4" />
                   Xác nhận đã thanh toán
                 </Button>

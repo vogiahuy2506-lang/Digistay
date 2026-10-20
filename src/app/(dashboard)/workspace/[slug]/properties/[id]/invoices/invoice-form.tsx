@@ -89,7 +89,7 @@ export function InvoiceFormFields({
 
       {value.buyerType === 'company' && (
         <div className="border-t pt-4">
-          <h4 className="font-medium text-gray-900 mb-3">Công ty mua</h4>
+          <h4 className="font-medium text-fg mb-3">Công ty mua</h4>
           <div className="grid grid-cols-2 gap-4">
             <Input label="Tên công ty" required value={value.companyName} onChange={(e) => set({ companyName: e.target.value })} />
             <Input label="Mã số thuế" required value={value.taxCode} onChange={(e) => set({ taxCode: e.target.value })} placeholder="0123456789" />
@@ -102,7 +102,7 @@ export function InvoiceFormFields({
       )}
 
       <div className="border-t pt-4">
-        <h4 className="font-medium text-gray-900 mb-3">
+        <h4 className="font-medium text-fg mb-3">
           {value.buyerType === 'company' ? 'Người mua hàng (đại diện công ty)' : 'Khách hàng'}
         </h4>
         <div className="grid grid-cols-2 gap-4">
@@ -117,7 +117,7 @@ export function InvoiceFormFields({
       </div>
 
       <div className="border-t pt-4">
-        <h4 className="font-medium text-gray-900 mb-3">Số tiền</h4>
+        <h4 className="font-medium text-fg mb-3">Số tiền</h4>
         <div className="grid grid-cols-2 gap-4">
           <Input
             label="Tổng tiền khách trả (đã gồm VAT)"
@@ -128,7 +128,7 @@ export function InvoiceFormFields({
             value={value.totalAmount}
             onChange={(e) => set({ totalAmount: e.target.value })}
           />
-          <div className="text-sm text-gray-600 pt-6">
+          <div className="text-sm text-muted pt-6">
             {split ? (
               <>
                 Chưa thuế {formatPrice(split.net)} · Thuế {VAT_LABELS[vatCode as keyof typeof VAT_LABELS]}{' '}

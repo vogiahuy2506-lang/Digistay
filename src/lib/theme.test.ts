@@ -19,14 +19,16 @@ describe('dashboard theme', () => {
     for (const ready of ['', '/bookings', '/bookings/b1', '/bookings/new', '/calendar', '/reports', '/reports/daily']) {
       expect(isDarkReady(`${P}${ready}`)).toBe(true)
     }
-    // Not yet: rewritten by #41 and the PayOS / Mắt Bão chain.
-    expect(isDarkReady(`${P}/payments`)).toBe(false)
-    expect(isDarkReady(`${P}/invoices`)).toBe(false)
-    for (const ready of ['/rooms', '/services', '/policies', '/bank-accounts', '/website']) {
+    for (const ready of ['/rooms', '/services', '/policies', '/bank-accounts', '/website', '/payments', '/invoices', '/payments/', '/invoices/']) {
       expect(isDarkReady(`${P}${ready}`)).toBe(true)
     }
+    // Only the pages themselves, not made-up paths below them.
+    expect(isDarkReady(`${P}/payments/p1`)).toBe(false)
+    expect(isDarkReady(`${P}/invoices/i1`)).toBe(false)
     // Not moved: it always redirects to /workspaces anyway.
     expect(isDarkReady('/workspace-picker/demo')).toBe(false)
+    // Not moved yet: still hard-coded light colors.
+    expect(isDarkReady('/admin/system')).toBe(false)
     expect(isDarkReady('/workspace/demo/properties/p1/reports/daily/extra')).toBe(false)
     expect(isDarkReady(null)).toBe(false)
   })

@@ -259,9 +259,10 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
   lớp trên cùng (`dialog-behavior.ts`); menu bên trong gọi `preventDefault()` để giữ phím Esc cho mình.
 - Toast (`toast.success()`…) chỉ hiện trong trang quản lý: `ToastProvider` nằm ở `(dashboard)/layout.tsx`.
 - Theme tối của trang quản lý lưu ở cookie `ds-theme`, `ThemeRoot` (`(dashboard)/layout.tsx`) đặt
-  `data-theme`. Chỉ trang có trong `darkReadyPaths` (`src/lib/theme.ts`) mới thật sự tối — từ bước 4 là
-  mọi trang quản lý trừ Thanh toán và Hóa đơn (chuyển sau khi #41 và chuỗi PayOS / Mắt Bão merge);
-  trang quản lý mới phải dùng màu vai trò rồi thêm vào đó. Phần xem trước website
+  `data-theme`. Chỉ trang có trong `darkReadyPaths` (`src/lib/theme.ts`) mới thật sự tối — nay là
+  mọi trang quản lý của workspace và khách sạn (Thanh toán và Hóa đơn chuyển sau cùng, trên bản đã
+  có PayOS / Mắt Bão); riêng `/admin/system` (trang vận hành, đến cùng #41) chưa chuyển nên vẫn sáng.
+  Trang quản lý mới phải dùng màu vai trò rồi thêm vào đó. Phần xem trước website
   khách sạn (trình dựng website) giữ `data-theme="light"`: website khách sạn chỉ có theme sáng.
 - Phiếu in / HTML tự ghép (`document.write`, email): mọi giá trị từ khách phải qua `escapeHtml`
   (`src/lib/bookings/display.ts`) — tên khách đến từ form đặt phòng công khai.
