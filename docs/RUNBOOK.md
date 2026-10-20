@@ -155,11 +155,11 @@ sudo -u deploy nano /opt/digistay/.env.production
 Cả 2 file phải **giống hệt nhau**. Sửa các dòng:
 
 ```bash
-POSTGRES_PASSWORD=MotPassManhVaDai-Nhay-Dai-ItNhat-20-KyTu-Khong-Dau
+POSTGRES_PASSWORD=<mat-khau-manh-it-nhat-20-ky-tu>
 CERTBOT_EMAIL=email-cua-ban@gmail.com
 
 # Cập nhật DATABASE_URL với password giống POSTGRES_PASSWORD
-DATABASE_URL=postgresql://digistay:MotPassManhVaDai-Nhay-Dai-ItNhat-20-KyTu-Khong-Dau@postgres:5432/digistay?schema=public
+DATABASE_URL=postgresql://digistay:<mat-khau-manh-it-nhat-20-ky-tu>@postgres:5432/digistay?schema=public
 ```
 
 > **Trong Compose, `${VAR:?…}` được đọc từ `/opt/digistay/.env`** (project root)
