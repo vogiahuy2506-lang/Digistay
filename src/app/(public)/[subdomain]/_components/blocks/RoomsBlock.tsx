@@ -1,5 +1,6 @@
 import { Card, CardContent, Button } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
+import { SiteLink } from '../site-base'
 import type { PublicBlock, PublicProperty, PublicRoomType } from '../PropertySite'
 
 interface Props {
@@ -123,13 +124,14 @@ export function RoomsBlock({ block, roomTypes, property }: Props) {
                 )}
 
                 {showCTA && (
-                  <a
-                    href={`/${property.id}/rooms/${room.id}`}
+                  // Was /<property id>/rooms/..., a 404: the route takes the subdomain.
+                  <SiteLink
+                    path={`/rooms/${room.id}`}
                     className="mt-4 block w-full text-center text-white py-2 rounded-lg font-medium hover:opacity-90 transition"
                     style={{ backgroundColor: 'var(--brand-primary)' }}
                   >
                     Xem phòng / Đặt ngay
-                  </a>
+                  </SiteLink>
                 )}
               </CardContent>
             </Card>
