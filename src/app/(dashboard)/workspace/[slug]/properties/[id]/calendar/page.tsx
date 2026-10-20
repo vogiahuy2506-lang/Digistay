@@ -15,6 +15,7 @@ import { formatDate } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
 import { useProperty } from '@/lib/hooks/use-property'
 import { escapeHtml } from '@/lib/bookings/display'
+import { fetchWindow, staysNight, toCsv } from '@/lib/bookings/calendar'
 import { format, addDays, parseISO } from 'date-fns'
 
 interface RoomType {
@@ -108,6 +109,8 @@ export default function CalendarPage() {
   // the guest's, and the mismatch broke hydration (React error #418).
   const [currentTime, setCurrentTime] = React.useState<Date | null>(null)
   const [exportType, setExportType] = React.useState<'pdf' | 'excel' | 'csv'>('pdf')
+  // The hotel's check-in / check-out times (Policy); the dialog said 14:00 / 12:00 whatever they were.
+  const [stayTimes, setStayTimes] = React.useState<{ checkIn: string; checkOut: string } | null>(null)
 
   // Update time every minute
   React.useEffect(() => {
@@ -137,30 +140,50 @@ export default function CalendarPage() {
     }
   }, [propertyId, currentDate.getFullYear(), currentDate.getMonth()])
 
+  /**
+   * Every booking the list API returns for a widened window, all pages: it
+   * caps a page at 100 (this asked for 200 and silently got 100), and only
+   * returns stays inside the window, so it is asked wider than the days
+   * shown (src/lib/bookings/calendar.ts).
+   */
+  const fetchBookingsAround = async (from: Date, to: Date): Promise<Booking[]> => {
+    const { startDate, endDate } = fetchWindow(from, to)
+    const found: Booking[] = []
+    for (let page = 1, pages = 1; page <= pages && page <= 20; page++) {
+      const res = await fetch(
+        `/api/bookings?propertyId=${propertyId}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&limit=100&page=${page}`
+      )
+      const data = await res.json()
+      if (!data.success) break
+      found.push(...(data.data ?? []))
+      pages = data.pagination?.totalPages ?? 1
+    }
+    return found
+  }
+
   const fetchCalendarData = async () => {
     setIsLoading(true)
     try {
-      const year = currentDate.getFullYear()
-      const month = currentDate.getMonth()
-      const start = startOfDay(new Date(year, month, 1)).toISOString()
-      const end = startOfDay(new Date(year, month + 1, 0)).toISOString()
+      const grid = buildMonthGrid(currentDate)
+      const gridStart = grid[0].date
+      const gridEnd = addDays(grid[grid.length - 1].date, 1)
+      const now = startOfDay(new Date())
+      // Today's arrivals and departures stay listed while another month is shown.
+      const todayOutside = now < gridStart || now >= gridEnd
 
-      const [roomTypesRes, bookingsRes] = await Promise.all([
-        fetch(`/api/room-types?propertyId=${propertyId}`),
-        fetch(`/api/bookings?propertyId=${propertyId}&startDate=${start}&endDate=${end}&limit=200`),
-      ])
-      const [roomTypesData, bookingsData] = await Promise.all([
-        roomTypesRes.json(),
-        bookingsRes.json(),
+      const [roomTypesData, shown, aroundToday, policyData] = await Promise.all([
+        fetch(`/api/room-types?propertyId=${propertyId}`).then((r) => r.json()),
+        fetchBookingsAround(gridStart, gridEnd),
+        todayOutside ? fetchBookingsAround(now, addDays(now, 1)) : Promise.resolve([]),
+        fetch(`/api/properties/${propertyId}/policy`).then((r) => r.json()).catch(() => null),
       ])
 
       if (roomTypesData.success) {
         setRoomTypes(roomTypesData.data ?? [])
       }
-
-      if (bookingsData.success) {
-        setBookings(bookingsData.data ?? [])
-      }
+      setBookings([...new Map([...shown, ...aroundToday].map((b) => [b.id, b])).values()])
+      const policy = policyData?.data
+      setStayTimes(policy ? { checkIn: policy.checkInTime, checkOut: policy.checkOutTime } : null)
     } catch (err) {
       console.error('Calendar fetch error:', err)
     } finally {
@@ -179,9 +202,11 @@ export default function CalendarPage() {
     })
   }
 
+  /** Rooms taken the night of `day`, per room type (a booking's check-out day is free). */
   const occupancyForDay = (day: Date) => {
     const result = new Map<string, number>()
-    for (const b of bookingsForDay(day)) {
+    for (const b of bookings) {
+      if (b.status === 'CANCELLED' || b.status === 'NO_SHOW' || !staysNight(b, day)) continue
       for (const item of b.bookingItems) {
         result.set(item.roomTypeId, (result.get(item.roomTypeId) ?? 0) + 1)
       }
@@ -388,7 +413,8 @@ export default function CalendarPage() {
           b.rooms,
         ])
         
-        const csvContent = [csvHeaders.join(','), ...csvRows.map(r => r.join(','))].join('\n')
+        // Quoted and formula-safe: a comma in a guest name shifted the columns (calendar.ts).
+        const csvContent = toCsv([csvHeaders, ...csvRows])
         const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' })
         const url = URL.createObjectURL(blob)
         const link = document.createElement('a')
@@ -579,7 +605,8 @@ export default function CalendarPage() {
     setShowCreateBookingModal(true)
   }
 
-  const monthLabel = formatDate(currentDate, { month: 'long', year: 'numeric' })
+  // formatDate adds day / month / year unless they are turned off: this read "20 tháng 10, 2026".
+  const monthLabel = formatDate(currentDate, { day: undefined, month: 'long', year: 'numeric' })
   const today = startOfDay(new Date())
   const days = buildMonthGrid(currentDate)
   const totalRooms = roomTypes.reduce((sum, rt) => sum + rt.totalRooms, 0)
@@ -591,13 +618,19 @@ export default function CalendarPage() {
     let pending = 0
     let revenue = 0
 
+    // Bookings are loaded around the month (and today), so the month's figures
+    // take the bookings arriving in it; who is in house is as of now.
+    const year = currentDate.getFullYear()
+    const month = currentDate.getMonth()
     for (const b of bookings) {
       if (b.status === 'CANCELLED' || b.status === 'NO_SHOW') continue
-      activeBookings++
       if (b.status === 'CHECKED_IN') {
         checkedIn++
         guestsInHouse += (b.numAdults ?? 0) + (b.numChildren ?? 0)
       }
+      const arrival = new Date(b.checkInDate)
+      if (arrival.getFullYear() !== year || arrival.getMonth() !== month) continue
+      activeBookings++
       if (b.status === 'PENDING') pending++
       revenue += Number(b.totalAmount) || 0
     }
@@ -616,7 +649,7 @@ export default function CalendarPage() {
       revenue,
       checkInsToday
     }
-  }, [bookings, totalRooms, today])
+  }, [bookings, totalRooms, today, currentDate])
 
   // Booked room-nights over room-nights available in the month shown, in %.
   const monthOccupancy = (() => {
@@ -626,7 +659,7 @@ export default function CalendarPage() {
     if (totalRooms === 0) return 0
     let occupied = 0
     for (let d = 1; d <= daysInMonth; d++) {
-      for (const b of bookingsForDay(new Date(year, month, d))) occupied += b.bookingItems.length
+      for (const taken of occupancyForDay(new Date(year, month, d)).values()) occupied += taken
     }
     return (occupied / (totalRooms * daysInMonth)) * 100
   })()
@@ -704,7 +737,7 @@ export default function CalendarPage() {
             <div className="hidden xl:flex items-center gap-2 px-3 py-1 bg-ok-soft border border-ok/30 rounded-lg text-ok text-[11px] font-medium">
               <span className="w-2 h-2 rounded-full bg-ok animate-pulse" />
               {currentTime && (
-                <span>Trực tuyến: <strong>{formatDate(currentTime, { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}</strong> • {formatDate(currentTime, { hour: '2-digit', minute: '2-digit' })}</span>
+                <span>Trực tuyến: <strong>{formatDate(currentTime, { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}</strong> • {formatDate(currentTime, { day: undefined, month: undefined, year: undefined, hour: '2-digit', minute: '2-digit' })}</span>
               )}
             </div>
           </div>
@@ -918,7 +951,7 @@ export default function CalendarPage() {
                             </span>
                           )}
                           {!day.isCurrentMonth && (
-                            <span className="text-[10px] text-muted">{formatDate(day.date, { month: 'short' })}</span>
+                            <span className="text-[10px] text-muted">{formatDate(day.date, { day: undefined, year: undefined, month: 'short' })}</span>
                           )}
                     </div>
 
@@ -1089,10 +1122,15 @@ export default function CalendarPage() {
         </div>
       </main>
 
-      {/* Create Booking Modal - Full Screen Custom */}
-      {showCreateBookingModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-ink/60 backdrop-blur-md">
-          <div className="relative w-full max-w-6xl bg-panel rounded-2xl shadow-2xl border border-line flex flex-col max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      {/* Create booking: the shared Modal (it was a hand-made overlay with no
+          dialog role, no Esc or focus handling, and an ink backdrop that
+          turned light in the dark theme). */}
+      <Modal
+        isOpen={showCreateBookingModal}
+        onClose={() => setShowCreateBookingModal(false)}
+        title="Tạo đặt phòng mới"
+        size="full"
+      >
             {/* Modal Header */}
             <header className="px-7 py-4 border-b border-line bg-warn-soft/50 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-4">
@@ -1217,23 +1255,15 @@ export default function CalendarPage() {
                           <span className="text-xs font-bold text-fg flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-ok"></span> Nhận phòng (Check-in) *
                           </span>
-                          <span className="text-[11px] text-muted">Giờ chuẩn: 14:00</span>
+                          {stayTimes && <span className="text-[11px] text-muted">Nhận từ {stayTimes.checkIn}</span>}
                         </div>
-                        <div className="grid grid-cols-5 gap-2">
-                          <input 
-                            className="col-span-3 text-xs font-medium rounded-lg border-line py-1.5 px-2 bg-panel focus:ring-err/30 focus:border-err/30" 
-                            type="date" 
-                            value={newBooking.checkInDate}
+                        <input
+                          className="w-full text-xs font-medium rounded-lg border-line py-1.5 px-2 bg-panel focus:ring-err/30 focus:border-err/30"
+                          type="date"
+                          value={newBooking.checkInDate}
                             onChange={(e) => setNewBooking(prev => ({ ...prev, checkInDate: e.target.value }))}
-                            required
-                          />
-                          <input 
-                            className="col-span-2 text-xs font-medium rounded-lg border-line py-1.5 px-2 bg-panel focus:ring-err/30 focus:border-err/30" 
-                            type="time" 
-                            value="14:00"
-                            readOnly
-                          />
-                        </div>
+                          required
+                        />
                       </div>
                       {/* Check-out */}
                       <div className="bg-fg/[0.03] p-3.5 rounded-xl border border-line/70">
@@ -1241,23 +1271,15 @@ export default function CalendarPage() {
                           <span className="text-xs font-bold text-fg flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-err"></span> Trả phòng (Check-out) *
                           </span>
-                          <span className="text-[11px] text-muted">Giờ chuẩn: 12:00</span>
+                          {stayTimes && <span className="text-[11px] text-muted">Trả trước {stayTimes.checkOut}</span>}
                         </div>
-                        <div className="grid grid-cols-5 gap-2">
-                          <input 
-                            className="col-span-3 text-xs font-medium rounded-lg border-line py-1.5 px-2 bg-panel focus:ring-err/30 focus:border-err/30" 
-                            type="date" 
-                            value={newBooking.checkOutDate}
+                        <input
+                          className="w-full text-xs font-medium rounded-lg border-line py-1.5 px-2 bg-panel focus:ring-err/30 focus:border-err/30"
+                          type="date"
+                          value={newBooking.checkOutDate}
                             onChange={(e) => setNewBooking(prev => ({ ...prev, checkOutDate: e.target.value }))}
-                            required
-                          />
-                          <input 
-                            className="col-span-2 text-xs font-medium rounded-lg border-line py-1.5 px-2 bg-panel focus:ring-err/30 focus:border-err/30" 
-                            type="time" 
-                            value="12:00"
-                            readOnly
-                          />
-                        </div>
+                          required
+                        />
                       </div>
                     </div>
 
@@ -1378,11 +1400,11 @@ export default function CalendarPage() {
                       <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-warn/30 text-xs">
                         <div>
                           <span className="text-muted text-[11px] block">Nhận:</span>
-                          <span className="font-semibold text-fg">{newBooking.checkInDate ? format(parseISO(newBooking.checkInDate), 'dd/MM/yyyy') : '--'} • 14:00</span>
+                          <span className="font-semibold text-fg">{newBooking.checkInDate ? format(parseISO(newBooking.checkInDate), 'dd/MM/yyyy') : '--'}{stayTimes ? ` • ${stayTimes.checkIn}` : ''}</span>
                         </div>
                         <div>
                           <span className="text-muted text-[11px] block">Trả:</span>
-                          <span className="font-semibold text-fg">{newBooking.checkOutDate ? format(parseISO(newBooking.checkOutDate), 'dd/MM/yyyy') : '--'} • 12:00</span>
+                          <span className="font-semibold text-fg">{newBooking.checkOutDate ? format(parseISO(newBooking.checkOutDate), 'dd/MM/yyyy') : '--'}{stayTimes ? ` • ${stayTimes.checkOut}` : ''}</span>
                         </div>
                       </div>
                     </div>
@@ -1417,7 +1439,7 @@ export default function CalendarPage() {
                   type="submit"
                   form="reservation-form"
                   disabled={isActionLoading}
-                  className="w-full sm:w-auto px-5 py-2 text-xs font-bold text-on-err bg-err hover:bg-err/90 active:bg-err/90 rounded-lg shadow-sm transition flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full sm:w-auto px-5 py-2 text-xs font-bold text-on-ink bg-ink hover:bg-ink/90 rounded-lg shadow-sm transition flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {isActionLoading ? (
                     <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
@@ -1433,9 +1455,7 @@ export default function CalendarPage() {
                 </button>
             </div>
             </footer>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Booking Detail Modal */}
       <Modal
