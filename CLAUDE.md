@@ -171,6 +171,12 @@ sạn, đặt lại mật khẩu chỉ cần email, email trong phiên do client
   20/10/2026: DB trống mà health vẫn ok). Cảnh báo vận hành gửi email cho `ALERT_EMAILS` hoặc
   `SUPER_ADMIN`; thêm luật mới trong `alerts.ts`, mỗi luật trả về fingerprint các mục để không gửi
   lặp. RUNBOOK, "Giám sát và cảnh báo".
+- **Email gửi sau request** đi qua hàng đợi `src/lib/email/outbox.ts` (`queue*` rồi
+  `sendAfterResponse`): lưu mã hoá, gửi ngay sau response, job `email-outbox` thử lại, hết lượt thì
+  có cảnh báo. Đừng gửi kiểu "bắn rồi quên": `send()` báo lỗi bằng giá trị trả về chứ không ném,
+  nên lỗi bị nuốt. Email người dùng đang chờ (mã OTP) vẫn gửi trực tiếp để báo lỗi ngay.
+  Kiểm "đã gửi" bằng `result.sent`, không phải `result.success` (không có SMTP thì stub vẫn
+  `success`).
 - **Hoá đơn điện tử** (`src/lib/einvoice/`): mỗi khách sạn tự gắn tài khoản Mắt Bão của mình,
   hoá đơn xuất dưới mã số thuế của khách sạn.
   - **Giá phòng đã gồm VAT**: tổng hoá đơn = số khách trả; chưa thuế và thuế được tách ra bằng

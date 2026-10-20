@@ -568,6 +568,10 @@ hoặc 24 giờ (cảnh báo) tới khi hết; có mục mới thì gửi ngay.
 
 Lịch sử chạy job nằm ở bảng `job_runs` (giữ 30 ngày); `backup.sh` cũng ghi vào đó.
 
+Email xác nhận đặt phòng, báo đơn mới cho chủ và lời mời đi qua hàng đợi `email_outbox` (nội dung
+mã hoá): gửi ngay sau request, lỗi thì job `email-outbox` thử lại sau 10 phút, 30 phút, 2 giờ,
+6 giờ; hết lượt thì có cảnh báo "email đã thử hết số lần". Email đã gửi được xoá sau 30 ngày.
+
 ```bash
 docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c \
   "SELECT job, status, \"startedAt\", error FROM job_runs ORDER BY \"startedAt\" DESC LIMIT 20"'

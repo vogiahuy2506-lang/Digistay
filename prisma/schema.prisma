@@ -1189,3 +1189,30 @@ model AlertState {
 
   @@map("alert_states")
 }
+
+/// Emails sent after the request (src/lib/email/outbox.ts): kept until
+/// sent, retried with backoff, alerted when given up. The rendered message
+/// is encrypted (an invitation carries its token). Sent ones are dropped
+/// after 30 days.
+model EmailOutbox {
+  id        String    @id
+  /// booking_confirmation, owner_new_booking, workspace_invite
+  kind      String
+  toEmail   String
+  /// encrypted JSON { to, name, subject, text, html }
+  message   String
+  /// PENDING, SENDING, SENT, FAILED
+  status    String    @default("PENDING")
+  attempts  Int       @default(0)
+  /// next attempt; while SENDING, when the claim expires
+  nextAt    DateTime?
+  sentAt    DateTime?
+  error     String?
+  /// what it is about (booking or invitation id)
+  refId     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([status, nextAt])
+  @@map("email_outbox")
+}

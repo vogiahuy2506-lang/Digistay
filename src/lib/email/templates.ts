@@ -356,14 +356,16 @@ export interface BookingConfirmationTemplateProps {
   numChildren: number
   totalAmount: number
   currency?: string
-  manageUrl: string
+  /** The hotel's public site. Guests have no booking page of their own: the
+   * old "manage booking" link went to a page that does not exist. */
+  propertyUrl: string
   notes?: string
 }
 
 export function bookingConfirmationTemplate(props: BookingConfirmationTemplateProps): { html: string; text: string; subject: string } {
   const {
     guestName, bookingCode, propertyName, propertyAddress, propertyPhone,
-    checkIn, checkOut, numAdults, numChildren, totalAmount, currency = 'VND', manageUrl, notes,
+    checkIn, checkOut, numAdults, numChildren, totalAmount, currency = 'VND', propertyUrl, notes,
   } = props
 
   const nights = Math.max(
@@ -463,8 +465,8 @@ export function bookingConfirmationTemplate(props: BookingConfirmationTemplatePr
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0;">
       <tr>
         <td align="center">
-          <a href="${escapeHtml(manageUrl)}" style="display: inline-block; background: linear-gradient(135deg, ${BRAND.primary} 0%, ${BRAND.primaryLight} 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-size: 15px; font-weight: 600; box-shadow: 0 4px 12px rgba(169, 49, 25, 0.25);">
-            Quản lý đặt phòng →
+          <a href="${escapeHtml(propertyUrl)}" style="display: inline-block; background: linear-gradient(135deg, ${BRAND.primary} 0%, ${BRAND.primaryLight} 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-size: 15px; font-weight: 600; box-shadow: 0 4px 12px rgba(169, 49, 25, 0.25);">
+            Xem trang khách sạn →
           </a>
         </td>
       </tr>
@@ -473,7 +475,7 @@ export function bookingConfirmationTemplate(props: BookingConfirmationTemplatePr
 
   return {
     html: baseLayout({ previewText: `Đặt phòng ${bookingCode} tại ${propertyName}`, bodyHtml }),
-    text: `Xác nhận đặt phòng ${bookingCode}\nKhách sạn: ${propertyName}\n${formatDate(checkIn)} - ${formatDate(checkOut)}\nTổng: ${formatVnd(totalAmount, currency)}\nQuản lý: ${manageUrl}`,
+    text: `Xác nhận đặt phòng ${bookingCode}\nKhách sạn: ${propertyName}\n${formatDate(checkIn)} - ${formatDate(checkOut)}\nTổng: ${formatVnd(totalAmount, currency)}\nTrang khách sạn: ${propertyUrl}`,
     subject: `[${bookingCode}] ✅ Xác nhận đặt phòng tại ${propertyName}`,
   }
 }

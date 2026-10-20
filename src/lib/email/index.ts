@@ -16,12 +16,10 @@ import {
   passwordChangedTemplate,
   emailChangeTemplate,
   bookingConfirmationTemplate,
-  workspaceInviteTemplate,
   invoiceEmailTemplate,
   opsAlertTemplate,
   type OtpEmailTemplateProps,
   type BookingConfirmationTemplateProps,
-  type WorkspaceInviteTemplateProps,
 } from './templates'
 
 export interface EmailRecipient {
@@ -107,6 +105,14 @@ async function getTransport(): Promise<
 
 function getFromAddress(): string {
   return process.env.EMAIL_FROM ?? 'Digistay <noreply@digistay.vn>'
+}
+
+/** For the outbox (outbox.ts), which renders first and sends later. */
+export function sendRendered(
+  to: EmailRecipient,
+  message: { subject: string; text: string; html: string }
+): Promise<SendResult> {
+  return send(to, message.subject, message.text, message.html)
 }
 
 // Every caller passes (subject, text, html): the parameters used to be
@@ -196,45 +202,8 @@ export async function sendBookingConfirmation(
   return send({ email: data.guestEmail, name: data.guestName }, subject, text, html)
 }
 
-// ============================================
-//  Owner new-booking notification
-// ============================================
-
-export interface OwnerNewBookingData {
-  ownerEmail: string
-  ownerName?: string
-  bookingCode: string
-  guestName: string
-  guestPhone: string
-  guestEmail: string
-  propertyName: string
-  checkIn: string
-  checkOut: string
-  totalAmount: number
-  currency?: string
-  manageUrl: string
-}
-
-export async function sendOwnerNewBooking(
-  data: OwnerNewBookingData
-): Promise<SendResult> {
-  const subject = `Đơn đặt phòng mới #${data.bookingCode} - ${data.propertyName}`
-  const text = `Đơn đặt phòng: ${data.bookingCode}\nKhách: ${data.guestName}\nNgày: ${data.checkIn} - ${data.checkOut}`
-  return send({ email: data.ownerEmail, name: data.ownerName }, subject, text, text)
-}
-
-// ============================================
-//  Workspace invitation
-// ============================================
-
-export type WorkspaceInviteData = WorkspaceInviteTemplateProps
-
-export async function sendWorkspaceInvite(
-  data: WorkspaceInviteData
-): Promise<SendResult> {
-  const { html, text, subject } = workspaceInviteTemplate(data)
-  return send({ email: data.recipientEmail, name: data.recipientName }, subject, text, html)
-}
+// The owner's new-booking notice and workspace invitations go through the
+// outbox (outbox.ts): queued with the request, retried until sent.
 
 // ============================================
 //  OTP verification (email-based)
