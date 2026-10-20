@@ -1,11 +1,44 @@
 /**
  * Two-factor sign-in against real Postgres (Part 4f): setup, the sign-in
  * step, replay and lock, recovery codes, turning it off, and the API
- * routes. Session revocation (Redis) is mocked so tests can control it.
+ * routes. Redis is an in-memory fake (CI has no Redis, and a developer's
+ * local one must not be written to); session revocation is mocked so
+ * tests can control it.
  */
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest'
 import bcrypt from 'bcryptjs'
 
+const store = vi.hoisted(() => {
+  const data = new Map<string, string>()
+  return {
+    data,
+    redis: {
+      async get(key: string) {
+        return data.get(key) ?? null
+      },
+      async set(key: string, value: string) {
+        data.set(key, value)
+        return 'OK'
+      },
+      async del(key: string) {
+        return data.delete(key) ? 1 : 0
+      },
+      async incr(key: string) {
+        const n = Number(data.get(key) ?? 0) + 1
+        data.set(key, String(n))
+        return n
+      },
+      async expire() {
+        return 1
+      },
+      async ttl() {
+        return 600
+      },
+    },
+  }
+})
+
+vi.mock('@/lib/db/redis', () => ({ redis: store.redis }))
 vi.mock('@/lib/auth', () => ({ auth: vi.fn() }))
 vi.mock('@/lib/auth/session-revocation', () => ({
   isSessionRevoked: vi.fn(async () => false),
@@ -45,6 +78,7 @@ beforeAll(() => {
 })
 beforeEach(async () => {
   await resetDatabase()
+  store.data.clear()
   vi.mocked(isSessionRevoked).mockResolvedValue(false)
   vi.mocked(revokeSessions).mockClear()
   vi.spyOn(console, 'error').mockImplementation(() => {})
@@ -219,6 +253,19 @@ describe('sign-in', () => {
     vi.mocked(isSessionRevoked).mockResolvedValue(true) // e.g. the password changed meanwhile
     await expect(authorizeWithSecondFactor({ challenge, code: nextCode(secret) })).rejects.toThrow(
       'Phiên đăng nhập đã hết hạn'
+    )
+  })
+
+  it('counts wrong codes per IP and stops guessing across accounts', async () => {
+    const { user, secret } = await userWithTwoFactor()
+    const headers = { 'x-real-ip': '203.0.113.9' }
+    const challenge = await challengeFor(user.id)
+    await expect(authorizeWithSecondFactor({ challenge, code: '000000' }, headers)).rejects.toThrow()
+    expect(store.data.get('rl:2fa-verify-ip:203.0.113.9')).toBe('1')
+
+    store.data.set('rl:2fa-verify-ip:203.0.113.9', '20')
+    await expect(authorizeWithSecondFactor({ challenge, code: nextCode(secret) }, headers)).rejects.toThrow(
+      'quá nhiều lần'
     )
   })
 
