@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, CardHeader, CardTitle, Button, Badge, Input, Modal } from '@/components/ui'
 import { routes } from '@/lib/utils/routes'
+import { buildPrintSlipHtml } from '@/lib/bookings/print-slip'
 import { 
   ArrowLeft, Calendar, Clock, Users, CreditCard, FileText, 
   CheckCircle, XCircle, Printer, Mail, User, AlertTriangle,
@@ -244,59 +245,9 @@ export default function BookingDetailPage() {
   const handlePrintBooking = () => {
     if (!booking) return
     
-    // Open print dialog for booking details
-    const printContent = `
-      <html>
-        <head>
-          <title>Phieu dat phong - ${booking.bookingCode}</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            h1 { font-size: 24px; }
-            .section { margin: 20px 0; }
-            .label { color: #666; font-size: 12px; }
-            .value { font-size: 16px; font-weight: bold; }
-            table { width: 100%; border-collapse: collapse; }
-            td { padding: 8px 0; }
-          </style>
-        </head>
-        <body>
-          <h1>PHIẾU ĐẶT PHÒNG</h1>
-          <div class="section">
-            <div class="label">Mã đặt phòng</div>
-            <div class="value">${booking.bookingCode}</div>
-          </div>
-          <div class="section">
-            <h2>Thông tin khách</h2>
-            <table>
-              <tr><td class="label">Tên</td><td>${booking.guestName}</td></tr>
-              <tr><td class="label">Điện thoại</td><td>${booking.guestPhone}</td></tr>
-              <tr><td class="label">Email</td><td>${booking.guestEmail}</td></tr>
-            </table>
-          </div>
-          <div class="section">
-            <h2>Thông tin phòng</h2>
-            <table>
-              <tr><td class="label">Nhận phòng</td><td>${formatDate(booking.checkInDate)}</td></tr>
-              <tr><td class="label">Trả phòng</td><td>${formatDate(booking.checkOutDate)}</td></tr>
-              <tr><td class="label">Số khách</td><td>${booking.numAdults} NL${booking.numChildren > 0 ? ` + ${booking.numChildren} TE` : ''}</td></tr>
-              <tr><td class="label">Số phòng</td><td>${roomNumber || 'Chưa gán'}</td></tr>
-            </table>
-          </div>
-          <div class="section">
-            <h2>Thông tin thanh toán</h2>
-            <table>
-              <tr><td class="label">Tổng tiền</td><td style="font-size: 20px;">${formatCurrency(booking.totalAmount)}</td></tr>
-              <tr><td class="label">Đã thanh toán</td><td>${formatCurrency(booking.depositAmount)}</td></tr>
-            </table>
-          </div>
-          <div class="section">
-            <p><strong>Cơ sở:</strong> ${booking.property.name}</p>
-            <p><strong>Địa chỉ:</strong> ${booking.property.address}</p>
-            <p><strong>Điện thoại:</strong> ${booking.property.phone}</p>
-          </div>
-        </body>
-      </html>
-    `
+    // Every value is escaped inside buildPrintSlipHtml: guest data comes from
+    // the public booking form and this window shares the dashboard's origin.
+    const printContent = buildPrintSlipHtml(booking, roomNumber, { date: formatDate, money: formatCurrency })
     
     const printWindow = window.open('', '_blank')
     if (printWindow) {
