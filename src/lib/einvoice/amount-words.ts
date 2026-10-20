@@ -38,6 +38,11 @@ function readThreeDigits(n: number, full: boolean): string {
 }
 
 export function vndToWords(amount: number): string {
+  // A decrease adjustment is negative on the invoice ("ghi dấu âm").
+  if (Math.round(amount) < 0) {
+    const words = vndToWords(-amount)
+    return `Âm ${words.charAt(0).toLowerCase()}${words.slice(1)}`
+  }
   let remaining = Math.max(0, Math.round(amount))
   if (remaining === 0) return 'Không đồng'
 

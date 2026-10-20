@@ -38,6 +38,7 @@ import { GET as pdfRoute } from '@/app/api/invoices/[id]/pdf/route'
 import { GET as settingsRoute } from '@/app/api/properties/[id]/einvoice/route'
 import { POST as matbaoWebhook } from '@/app/api/webhooks/matbao/[propertyId]/[token]/route'
 import { POST as replaceRoute } from '@/app/api/invoices/[id]/replace/route'
+import { POST as adjustRoute } from '@/app/api/invoices/[id]/adjust/route'
 
 const fake = new FakeMatbao()
 const year = new Date().getFullYear() % 100
@@ -452,5 +453,121 @@ describe('replacement invoices', () => {
     const { body: draft } = await replace(original.id)
     expect((await cancelRoute(req('POST'), params(draft.data.id))).status).toBe(200)
     expect((await replace(original.id)).res.status).toBe(200)
+  })
+})
+
+describe('adjustment invoices', () => {
+  const adjust = async (id: string, body: object) => {
+    const res = await adjustRoute(req('POST', body), params(id))
+    return { res, body: await res.json() }
+  }
+  const replace = async (id: string) => replaceRoute(req('POST'), params(id))
+
+  async function issued(totalAmount: number) {
+    const tenant = await connectedTenant('USER')
+    const { body: created } = await createInvoice(tenant.booking.id, { ...COMPANY, totalAmount })
+    const { body: published } = await publish(created.data.id)
+    return { ...tenant, original: published.data }
+  }
+
+  it('an increase: TCHDon 2 with the difference, naming the original, which stays issued', async () => {
+    const { original, booking } = await issued(1_080_000)
+    const { res, body: draft } = await adjust(original.id, { direction: 'increase', amount: 540_000, reason: 'Khách ở thêm 1 đêm' })
+    expect(res.status).toBe(200)
+    expect(draft.data).toMatchObject({
+      status: 'PENDING',
+      adjustsInvoiceId: original.id,
+      totalAmount: 540_000,
+      subtotal: 500_000,
+      taxAmount: 40_000,
+      taxCode: COMPANY.taxCode,
+    })
+    // 1,080,000 + 540,000 of 2,160,000 invoiced: 600,000 more does not fit.
+    expect((await createInvoice(booking.id, { ...COMPANY, totalAmount: 600_000 })).res.status).toBe(400)
+
+    const { res: pub, body: issuedAdjustment } = await publish(draft.data.id)
+    expect(pub.status).toBe(200)
+    const sent = fake.createCalls.at(-1)!
+    expect(sent).toMatchObject({
+      TCHDon: 2,
+      MSHDonDCLQuan: original.invoiceCode,
+      KHMSHDCLQuan: '1',
+      KHHDCLQuan: SERIES,
+      SHDCLQuan: original.einvoiceNumber,
+      TgThTien: 500_000,
+      TgTThue: 40_000,
+      TgTTTBSo: 540_000,
+      NMua_MST: COMPANY.taxCode,
+    })
+    expect(sent.NLHDCLQuan).toBe(formatNLap(new Date(original.publishedAt)))
+    expect(sent.GChu).toContain(`Điều chỉnh tăng cho hóa đơn mẫu số 1 ký hiệu ${SERIES} số ${original.einvoiceNumber}`)
+    expect(sent.GChu).toContain('Lý do: Khách ở thêm 1 đêm')
+    expect(sent.DSHHDVu[0].THHDVu).toMatch(/^Điều chỉnh tăng: dịch vụ lưu trú/)
+    expect(issuedAdjustment.data.status).toBe('PUBLISHED')
+    expect((await prisma.invoice.findUniqueOrThrow({ where: { id: original.id } })).status).toBe('PUBLISHED')
+    expect(await prisma.activityLog.count({ where: { action: 'INVOICE_ADJUSTED', entityId: original.id } })).toBe(1)
+  })
+
+  it('a decrease is negative (TCHDon 3), and frees room in the booking only once issued', async () => {
+    const { original, booking } = await issued(2_160_000)
+    const { body: draft } = await adjust(original.id, { direction: 'decrease', amount: 1_080_000, reason: 'Giảm giá cho khách đoàn' })
+    expect(draft.data).toMatchObject({ totalAmount: -1_080_000, subtotal: -1_000_000, taxAmount: -80_000 })
+    // Not issued yet: the booking still counts as fully invoiced.
+    expect((await createInvoice(booking.id, { ...COMPANY, totalAmount: 1_000 })).res.status).toBe(400)
+
+    expect((await publish(draft.data.id)).res.status).toBe(200)
+    const sent = fake.createCalls.at(-1)!
+    expect(sent).toMatchObject({ TCHDon: 3, TgThTien: -1_000_000, TgTThue: -80_000, TgTTTBSo: -1_080_000 })
+    expect(sent.DSHHDVu[0]).toMatchObject({ DGia: -1_000_000, ThTien: -1_000_000, TThue: -80_000, TgTien: -1_080_000 })
+    expect(sent.TgTTTBChu).toBe('Âm một triệu không trăm tám mươi nghìn đồng')
+    expect(sent.GChu).toContain('Điều chỉnh giảm cho hóa đơn')
+
+    // Issued: the room is back, and the invoice cannot go below zero.
+    const over = await adjust(original.id, { direction: 'decrease', amount: 1_080_001, reason: 'Giảm thêm' })
+    expect(over.res.status).toBe(400)
+    expect(over.body.error).toContain('1.080.000')
+    expect((await createInvoice(booking.id, { ...COMPANY, totalAmount: 1_080_000 })).res.status).toBe(200)
+  })
+
+  it('one unissued adjustment at a time, never alongside a replacement, and not editable', async () => {
+    const { original } = await issued(2_160_000)
+    const { body: draft } = await adjust(original.id, { direction: 'decrease', amount: 100_000, reason: 'Bớt phụ thu' })
+    const second = await adjust(original.id, { direction: 'decrease', amount: 50_000, reason: 'Bớt thêm' })
+    expect(second.res.status).toBe(409)
+    expect(second.body.error).toContain('chưa phát hành')
+
+    const replacing = await replace(original.id)
+    expect(replacing.status).toBe(409)
+    expect((await replacing.json()).error).toContain('đã có hoá đơn điều chỉnh')
+    const edited = await updateInvoiceRoute(req('PUT', { ...COMPANY, totalAmount: 50_000 }), params(draft.data.id))
+    expect(edited.status).toBe(409)
+
+    // A cancelled adjustment blocks nothing; a replacement then blocks adjusting.
+    expect((await cancelRoute(req('POST'), params(draft.data.id))).status).toBe(200)
+    expect((await replace(original.id)).status).toBe(200)
+    const blocked = await adjust(original.id, { direction: 'decrease', amount: 50_000, reason: 'Bớt phụ thu' })
+    expect(blocked.res.status).toBe(409)
+    expect(blocked.body.error).toContain('hoá đơn thay thế')
+  })
+
+  it('only issued invoices, never an adjustment itself, only staff, only valid input', async () => {
+    const { original, booking, member, owner } = await issued(1_080_000)
+    const { body: draft } = await adjust(original.id, { direction: 'increase', amount: 100_000, reason: 'Phụ thu minibar' })
+    expect((await adjust(draft.data.id, { direction: 'decrease', amount: 1, reason: 'Thử điều chỉnh' })).res.status).toBe(409) // not issued
+    await publish(draft.data.id)
+    const nested = await adjust(draft.data.id, { direction: 'decrease', amount: 1, reason: 'Thử điều chỉnh' })
+    expect(nested.res.status).toBe(409)
+    expect(nested.body.error).toContain('hoá đơn gốc')
+
+    expect((await adjust(original.id, { direction: 'increase', amount: 0, reason: 'Phụ thu minibar' })).res.status).toBe(400)
+    expect((await adjust(original.id, { direction: 'increase', amount: 1_000 })).res.status).toBe(400)
+    expect((await adjust(original.id, { direction: 'sideways', amount: 1_000, reason: 'Phụ thu minibar' })).res.status).toBe(400)
+    // 1,080,000 + 100,000 issued; 980,001 more is over the booking.
+    expect((await adjust(original.id, { direction: 'increase', amount: 980_001, reason: 'Phụ thu minibar' })).res.status).toBe(400)
+
+    signInAs(member!)
+    expect((await adjust(original.id, { direction: 'increase', amount: 1_000, reason: 'Phụ thu minibar' })).res.status).toBe(403)
+    signInAs(owner)
+    expect(await prisma.invoice.count({ where: { bookingId: booking.id } })).toBe(2)
   })
 })

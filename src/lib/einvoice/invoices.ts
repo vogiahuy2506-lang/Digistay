@@ -62,6 +62,31 @@ export function assertEditable(invoice: Pick<Invoice, 'status' | 'lookupCode'>) 
 }
 
 /**
+ * What the booking's invoices add up to (adjustments signed). A decrease
+ * counts only once issued, so a draft decrease never makes room for another
+ * invoice; an invoice being replaced counts once, through its replacement.
+ * Call after lockBooking().
+ */
+export async function invoicedTotal(tx: Tx, bookingId: string, excludeInvoiceId?: string) {
+  const others = await tx.invoice.aggregate({
+    where: {
+      bookingId,
+      status: { notIn: ['CANCELLED', 'REPLACED'] },
+      ...(excludeInvoiceId && { id: { not: excludeInvoiceId } }),
+      NOT: { replacements: { some: { status: { notIn: ['CANCELLED'] } } } },
+      OR: [{ totalAmount: { gte: 0 } }, { status: 'PUBLISHED' }],
+    },
+    _sum: { totalAmount: true },
+  })
+  return others._sum.totalAmount ?? 0
+}
+
+export function overBookingError(bookingTotal: number, invoiced: number) {
+  const left = Math.max(0, bookingTotal - invoiced)
+  return new EinvoiceError(`Vượt số tiền của đơn: chỉ còn ${left.toLocaleString('vi-VN')} ₫ chưa xuất hoá đơn`)
+}
+
+/**
  * The columns to write for this input, after checking the booking's
  * invoices stay within its total. Call inside a transaction.
  */
@@ -74,21 +99,8 @@ export async function invoiceData(
 ) {
   if (!isVatCode(vatCode)) throw new EinvoiceError('Thuế suất của khách sạn không hợp lệ')
   await lockBooking(tx, booking.id)
-  const others = await tx.invoice.aggregate({
-    where: {
-      bookingId: booking.id,
-      status: { notIn: ['CANCELLED', 'REPLACED'] },
-      ...(excludeInvoiceId && { id: { not: excludeInvoiceId } }),
-      // An invoice being replaced counts once: through its replacement.
-      NOT: { replacements: { some: { status: { notIn: ['CANCELLED'] } } } },
-    },
-    _sum: { totalAmount: true },
-  })
-  const invoiced = others._sum.totalAmount ?? 0
-  if (invoiced + input.totalAmount > booking.totalAmount) {
-    const left = Math.max(0, booking.totalAmount - invoiced)
-    throw new EinvoiceError(`Vượt số tiền của đơn: chỉ còn ${left.toLocaleString('vi-VN')} ₫ chưa xuất hoá đơn`)
-  }
+  const invoiced = await invoicedTotal(tx, booking.id, excludeInvoiceId)
+  if (invoiced + input.totalAmount > booking.totalAmount) throw overBookingError(booking.totalAmount, invoiced)
   const { net, vat, gross, rate } = splitGross(input.totalAmount, vatCode)
   const company = input.buyerType === 'company'
   return {

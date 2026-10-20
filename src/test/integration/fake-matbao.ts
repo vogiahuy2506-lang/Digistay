@@ -4,6 +4,11 @@
  * token, the template/series, the totals and the invoice date order (333),
  * answers 304 for a MaTraCuu already issued, and nests results the way the
  * real API does. `failNext` injects the failures that matter.
+ *
+ * Replacements (TCHDon 1) and adjustments (2 increase, 3 decrease) must name
+ * an issued invoice of the account. Adjustment amounts are taken as signed
+ * (NĐ 123 Điều 19: a decrease is negative) — Mắt Bão's documentation does
+ * not say, so this is our assumption, to confirm on Mắt Bão's DEMO.
  */
 import http from 'http'
 import type { AddressInfo } from 'net'
@@ -109,22 +114,24 @@ export class FakeMatbao {
       if (this.lastNLap.has(key) && invoice.NLap < this.lastNLap.get(key)!) {
         return fail('333', 'Ngày lập nhỏ hơn hoá đơn trước')
       }
-      let replaced: IssuedInvoice | undefined
-      if (invoice.TCHDon === 1) {
-        // A replacement must name an issued invoice of this account exactly.
-        replaced = [...this.issued.values()].find(
+      let related: IssuedInvoice | undefined
+      if ([1, 2, 3].includes(invoice.TCHDon)) {
+        // It must name an issued invoice of this account exactly.
+        related = [...this.issued.values()].find(
           (i) => i.account === account && i.maSoHDon === invoice.MSHDonDCLQuan
         )
         if (
-          !replaced ||
-          String(replaced.shDon) !== String(invoice.SHDCLQuan) ||
-          replaced.payload.KHHDon !== invoice.KHHDCLQuan ||
-          replaced.payload.KHMSHDon !== invoice.KHMSHDCLQuan ||
+          !related ||
+          String(related.shDon) !== String(invoice.SHDCLQuan) ||
+          related.payload.KHHDon !== invoice.KHHDCLQuan ||
+          related.payload.KHMSHDon !== invoice.KHMSHDCLQuan ||
           !invoice.NLHDCLQuan
         ) {
           return fail('341', 'Không tìm thấy hoá đơn liên quan')
         }
-        if (replaced.replacedBy) return fail('342', 'Hoá đơn liên quan đã bị thay thế')
+        if (related.replacedBy) return fail('342', 'Hoá đơn liên quan đã bị thay thế')
+        if (invoice.TCHDon === 2 && !(invoice.TgTTTBSo > 0)) return fail('343', 'Điều chỉnh tăng phải có số tiền dương')
+        if (invoice.TCHDon === 3 && !(invoice.TgTTTBSo < 0)) return fail('343', 'Điều chỉnh giảm phải ghi số âm')
       }
       const lines = (invoice.DSHHDVu ?? []).filter((l: any) => l.TChat === 1)
       const net = lines.reduce((s: number, l: any) => s + l.ThTien, 0)
@@ -143,7 +150,7 @@ export class FakeMatbao {
         account,
       }
       this.issued.set(invoice.MaTraCuu, issued)
-      if (replaced) replaced.replacedBy = invoice.MaTraCuu
+      if (related && invoice.TCHDon === 1) related.replacedBy = invoice.MaTraCuu
       if (failure === 'drop-after-issue') return req.socket.destroy()
       return this.send(res, 200, {
         success: true,

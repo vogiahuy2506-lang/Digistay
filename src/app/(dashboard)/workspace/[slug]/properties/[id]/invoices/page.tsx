@@ -2,11 +2,11 @@
 
 import * as React from 'react'
 import { Header, PageContainer } from '@/components/layout'
-import { Card, CardContent, Button, Badge, Input, Select, Modal, ModalFooter } from '@/components/ui'
+import { Card, CardContent, Button, Badge, Input, Textarea, Select, Modal, ModalFooter } from '@/components/ui'
 import { 
   Search, FileText, Plus, Eye, Download, RefreshCw,
   Clock, CheckCircle, XCircle, AlertCircle, Send, Printer,
-  Building, Copy, Check, Mail, Edit, Trash2
+  Building, Copy, Check, Mail, Edit, Trash2, ArrowUpDown
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
@@ -52,6 +52,9 @@ interface Invoice {
   cqtNote: string | null
   replacesInvoice: { id: string; invoiceNumber: string; einvoiceNumber: string | null; invoiceSeries: string | null } | null
   replacements: { id: string; invoiceNumber: string; einvoiceNumber: string | null; status: string }[]
+  adjustsInvoice: { id: string; invoiceNumber: string; einvoiceNumber: string | null; invoiceSeries: string | null } | null
+  adjustments: { id: string; invoiceNumber: string; einvoiceNumber: string | null; status: string; totalAmount: number }[]
+  metadata: { adjustmentReason?: string } | null
   createdAt: string
   updatedAt: string
   booking: {
@@ -118,6 +121,10 @@ export default function InvoicesPage() {
   const [formError, setFormError] = React.useState('')
   const [formSuccess, setFormSuccess] = React.useState('')
   const [editingId, setEditingId] = React.useState<string | null>(null)
+  // Adjustment (src/lib/einvoice/adjustment.ts): the issued invoice being adjusted
+  const [adjusting, setAdjusting] = React.useState<Invoice | null>(null)
+  const [adjustForm, setAdjustForm] = React.useState({ direction: 'increase', amount: '', reason: '' })
+  const [adjustError, setAdjustError] = React.useState('')
 
   // Stats
   const [stats, setStats] = React.useState({
@@ -444,7 +451,43 @@ export default function InvoicesPage() {
     }
     setSelectedInvoice(null)
     if (selectedProperty) await fetchInvoices(selectedProperty)
-    handleOpenEditModal({ ...data.data, booking: invoice.booking, replacesInvoice: null, replacements: [] })
+    handleOpenEditModal({ ...data.data, booking: invoice.booking, replacesInvoice: null, replacements: [], adjustsInvoice: null, adjustments: [] })
+  }
+
+  const handleOpenAdjust = (invoice: Invoice) => {
+    setAdjustForm({ direction: 'increase', amount: '', reason: '' })
+    setAdjustError('')
+    setSelectedInvoice(null)
+    setAdjusting(invoice)
+  }
+
+  const handleSubmitAdjust = async () => {
+    if (!adjusting) return
+    const amount = Number(adjustForm.amount)
+    if (!Number.isInteger(amount) || amount <= 0) return setAdjustError('Nhập số tiền chênh lệch (số nguyên, lớn hơn 0)')
+    if (adjustForm.reason.trim().length < 5) return setAdjustError('Vui lòng ghi lý do điều chỉnh')
+    setAdjustError('')
+    setIsSubmitting(true)
+    try {
+      const res = await fetch(`/api/invoices/${adjusting.id}/adjust`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ direction: adjustForm.direction, amount, reason: adjustForm.reason.trim() }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!data.success) {
+        setAdjustError(data.error || 'Có lỗi xảy ra')
+        return
+      }
+      setAdjusting(null)
+      // Open the draft: the next step is publishing it.
+      const list = selectedProperty ? await fetchInvoices(selectedProperty) : []
+      setSelectedInvoice(list.find((i) => i.id === data.data.id) ?? null)
+    } catch (err) {
+      setAdjustError('Có lỗi xảy ra, vui lòng thử lại')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleCancelInvoice = async (invoiceId: string) => {
@@ -672,6 +715,12 @@ export default function InvoicesPage() {
                           </td>
                           <td className="px-4 py-3">
                             <span className="font-semibold">{formatPrice(invoice.totalAmount)}</span>
+                            {invoice.adjustsInvoice && (
+                              <span className="block text-xs text-indigo-600">
+                                {invoice.totalAmount < 0 ? 'Điều chỉnh giảm' : 'Điều chỉnh tăng'} HĐ số{' '}
+                                {invoice.adjustsInvoice.einvoiceNumber}
+                              </span>
+                            )}
                           </td>
                           <td className="px-4 py-3">
                             <Badge className={`${statusInfo.bgColor} ${statusInfo.color}`}>
@@ -691,9 +740,11 @@ export default function InvoicesPage() {
                               </Button>
                               {(invoice.status === 'DRAFT' || invoice.status === 'PENDING') && (
                                 <>
-                                  <Button size="sm" variant="ghost" onClick={() => handleOpenEditModal(invoice)}>
-                                    <Edit className="w-4 h-4" />
-                                  </Button>
+                                  {!invoice.adjustsInvoice && (
+                                    <Button size="sm" variant="ghost" onClick={() => handleOpenEditModal(invoice)}>
+                                      <Edit className="w-4 h-4" />
+                                    </Button>
+                                  )}
                                   <Button size="sm" variant="ghost" onClick={() => handleDeleteInvoice(invoice.id)}>
                                     <Trash2 className="w-4 h-4 text-red-500" />
                                   </Button>
@@ -871,6 +922,25 @@ export default function InvoicesPage() {
                       Có hoá đơn thay thế: {selectedInvoice.replacements.map((r) => r.einvoiceNumber ?? `${r.invoiceNumber} (nháp)`).join(', ')}
                     </p>
                   )}
+                  {selectedInvoice.adjustsInvoice && (
+                    <p className="text-xs text-indigo-700 mt-1">
+                      {selectedInvoice.totalAmount < 0 ? 'Điều chỉnh giảm' : 'Điều chỉnh tăng'} cho hoá đơn số{' '}
+                      {selectedInvoice.adjustsInvoice.einvoiceNumber}
+                      {selectedInvoice.adjustsInvoice.invoiceSeries && ` (ký hiệu ${selectedInvoice.adjustsInvoice.invoiceSeries})`}
+                      {selectedInvoice.metadata?.adjustmentReason && ` — ${selectedInvoice.metadata.adjustmentReason}`}
+                    </p>
+                  )}
+                  {selectedInvoice.adjustments?.length > 0 && (
+                    <p className="text-xs text-indigo-700 mt-1">
+                      Đã điều chỉnh:{' '}
+                      {selectedInvoice.adjustments
+                        .map(
+                          (a) =>
+                            `${a.einvoiceNumber ? `số ${a.einvoiceNumber}` : `${a.invoiceNumber} (nháp)`} ${a.totalAmount > 0 ? '+' : ''}${formatPrice(a.totalAmount)}`
+                        )
+                        .join(', ')}
+                    </p>
+                  )}
                   {selectedInvoice.cqtStatus != null && (
                     <p
                       className={`text-xs mt-1 ${selectedInvoice.cqtStatus === 6 ? 'text-red-600 font-semibold' : selectedInvoice.cqtStatus === 4 ? 'text-green-700' : 'text-gray-500'}`}
@@ -890,7 +960,9 @@ export default function InvoicesPage() {
 
               {/* Amount */}
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 text-center">
-                <p className="text-sm text-gray-600 mb-1">Tổng tiền hóa đơn</p>
+                <p className="text-sm text-gray-600 mb-1">
+                  {selectedInvoice.adjustsInvoice ? 'Số tiền điều chỉnh (đã gồm VAT)' : 'Tổng tiền hóa đơn'}
+                </p>
                 <p className="text-4xl font-bold text-gray-900">{formatPrice(selectedInvoice.totalAmount)}</p>
                 <div className="flex justify-center gap-6 mt-3 text-sm">
                   <div>
@@ -1015,10 +1087,22 @@ export default function InvoicesPage() {
               </Button>
               {selectedInvoice.status === 'PUBLISHED' &&
                 selectedInvoice.eInvoiceProvider === 'MATBAO' &&
-                !selectedInvoice.replacements?.length && (
+                !selectedInvoice.replacements?.length &&
+                !selectedInvoice.adjustsInvoice &&
+                !selectedInvoice.adjustments?.length && (
                   <Button variant="outline" onClick={() => handleReplaceInvoice(selectedInvoice)}>
                     <Edit className="w-4 h-4 mr-2" />
                     Lập hoá đơn thay thế
+                  </Button>
+                )}
+              {selectedInvoice.status === 'PUBLISHED' &&
+                selectedInvoice.eInvoiceProvider === 'MATBAO' &&
+                !selectedInvoice.replacements?.length &&
+                !selectedInvoice.adjustsInvoice &&
+                selectedInvoice.adjustments?.every((a) => a.status === 'PUBLISHED') !== false && (
+                  <Button variant="outline" onClick={() => handleOpenAdjust(selectedInvoice)}>
+                    <ArrowUpDown className="w-4 h-4 mr-2" />
+                    Lập hoá đơn điều chỉnh
                   </Button>
                 )}
               {selectedInvoice.status === 'PUBLISHED' && (
@@ -1054,6 +1138,61 @@ export default function InvoicesPage() {
             </ModalFooter>
           </>
         )}
+      </Modal>
+
+      {/* Adjustment Modal */}
+      <Modal
+        isOpen={!!adjusting}
+        onClose={() => setAdjusting(null)}
+        title="Lập hoá đơn điều chỉnh"
+        description={adjusting ? `Cho hoá đơn số ${adjusting.einvoiceNumber} (${formatPrice(adjusting.totalAmount)})` : undefined}
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm space-y-1">
+            <p>Hoá đơn điều chỉnh chỉ ghi phần chênh lệch; điều chỉnh giảm được ghi số âm. Hoá đơn gốc vẫn giữ nguyên.</p>
+            <p>Người mua là doanh nghiệp: cần văn bản thoả thuận với người mua ghi rõ sai sót trước khi lập. Nên hỏi kế toán.</p>
+            <p>Sai tên, mã số thuế hay địa chỉ người mua: dùng hoá đơn thay thế.</p>
+          </div>
+          <Select
+            label="Loại điều chỉnh"
+            required
+            value={adjustForm.direction}
+            onChange={(e) => setAdjustForm({ ...adjustForm, direction: e.target.value })}
+            options={[
+              { value: 'increase', label: 'Điều chỉnh tăng (thu thêm)' },
+              { value: 'decrease', label: 'Điều chỉnh giảm (bớt tiền)' },
+            ]}
+          />
+          <Input
+            label="Số tiền chênh lệch (đã gồm VAT)"
+            required
+            type="number"
+            min={1}
+            value={adjustForm.amount}
+            onChange={(e) => setAdjustForm({ ...adjustForm, amount: e.target.value })}
+          />
+          <Textarea
+            label="Lý do điều chỉnh"
+            required
+            maxLength={150}
+            rows={2}
+            value={adjustForm.reason}
+            onChange={(e) => setAdjustForm({ ...adjustForm, reason: e.target.value })}
+            hint="In trên hoá đơn (tối đa 150 ký tự)"
+          />
+          {adjustError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">{adjustError}</div>
+          )}
+        </div>
+        <ModalFooter>
+          <Button variant="secondary" onClick={() => setAdjusting(null)}>
+            Hủy
+          </Button>
+          <Button onClick={handleSubmitAdjust} isLoading={isSubmitting} disabled={isSubmitting}>
+            Tạo bản nháp
+          </Button>
+        </ModalFooter>
       </Modal>
     </div>
   )

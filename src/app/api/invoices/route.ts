@@ -76,6 +76,12 @@ export async function GET(request: NextRequest) {
           where: { status: { not: 'CANCELLED' } },
           select: { id: true, invoiceNumber: true, einvoiceNumber: true, status: true },
         },
+        adjustsInvoice: { select: { id: true, invoiceNumber: true, einvoiceNumber: true, invoiceSeries: true } },
+        adjustments: {
+          where: { status: { not: 'CANCELLED' } },
+          select: { id: true, invoiceNumber: true, einvoiceNumber: true, status: true, totalAmount: true },
+          orderBy: { createdAt: 'asc' },
+        },
       },
     })
 

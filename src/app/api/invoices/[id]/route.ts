@@ -103,6 +103,9 @@ export async function PUT(request: NextRequest, props: RouteParams) {
     }
 
     assertEditable(invoice)
+    if (invoice.adjustsInvoiceId) {
+      throw new EinvoiceError('Hoá đơn điều chỉnh không sửa được: huỷ bản nháp này rồi lập lại', 409)
+    }
 
     const validation = updateInvoiceSchema.safeParse(body)
     if (!validation.success) {

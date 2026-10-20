@@ -5,8 +5,7 @@
  * issued invoice states which one it replaces (mẫu số, ký hiệu, số, ngày).
  * The original becomes REPLACED only once the replacement is issued.
  *
- * Adjustment invoices (TCHDon 2-5) are not supported: they carry
- * differences, not a whole new invoice, and need the accountant.
+ * An invoice is either replaced or adjusted (adjustment.ts), never both.
  */
 import { prisma } from '@/lib/db'
 import { lockBooking } from '@/lib/payments/booking-payments'
@@ -27,6 +26,19 @@ export async function createReplacementDraft(originalId: string, userId: string)
       !original.publishedAt
     ) {
       throw new EinvoiceError('Chỉ lập hoá đơn thay thế cho hoá đơn đã phát hành qua Mắt Bão (có số hoá đơn)', 409)
+    }
+    if (original.adjustsInvoiceId) {
+      throw new EinvoiceError('Đây là hoá đơn điều chỉnh: hãy lập điều chỉnh khác cho hoá đơn gốc', 409)
+    }
+    const adjustment = await tx.invoice.findFirst({
+      where: { adjustsInvoiceId: original.id, status: { not: 'CANCELLED' } },
+      select: { invoiceNumber: true },
+    })
+    if (adjustment) {
+      throw new EinvoiceError(
+        `Hoá đơn này đã có hoá đơn điều chỉnh (${adjustment.invoiceNumber}): hãy lập thêm điều chỉnh thay vì thay thế`,
+        409
+      )
     }
     const existing = await tx.invoice.findFirst({
       where: { replacesInvoiceId: original.id, status: { not: 'CANCELLED' } },
