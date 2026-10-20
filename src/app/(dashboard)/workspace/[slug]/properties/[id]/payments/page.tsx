@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
+import QRCode from 'qrcode'
 
 interface Payment {
   id: string
@@ -26,6 +27,10 @@ interface Payment {
   paidAt: string | null
   expiresAt: string | null
   createdAt: string
+  paymentGateway: string | null
+  checkoutUrl: string | null
+  qrCodeUrl: string | null
+  metadata: { payos?: { amountMismatch?: number; paidAfter?: string } } | null
   booking: {
     id: string
     bookingCode: string
@@ -57,6 +62,19 @@ const paymentMethodOptions = [
   { value: 'CASH', label: 'Tiền mặt' },
 ]
 
+// Offered first when the property has connected its PayOS account (Part 5).
+const PAYOS_OPTION = { value: 'PAYOS', label: 'PayOS — khách quét mã, tự xác nhận' }
+
+/** Renders a VietQR/PayOS payload as an image. */
+function QrImage({ payload }: { payload: string }) {
+  const [src, setSrc] = React.useState('')
+  React.useEffect(() => {
+    QRCode.toDataURL(payload, { margin: 1, width: 220 }).then(setSrc).catch(() => setSrc(''))
+  }, [payload])
+  // eslint-disable-next-line @next/next/no-img-element -- data: URL rendered in the browser
+  return src ? <img src={src} alt="Mã QR thanh toán" className="w-48 h-48 mx-auto" /> : null
+}
+
 const paymentMethodLabels: Record<string, { label: string; icon: any }> = {
   BANK_TRANSFER: { label: 'Chuyển khoản', icon: Building },
   QR_VIETQR: { label: 'QR VietQR', icon: QrCode },
@@ -72,6 +90,10 @@ const paymentStatusConfig: Record<string, { label: string; color: string; bgColo
   FAILED: { label: 'Thất bại', color: 'text-red-700', bgColor: 'bg-red-50', borderColor: 'border-red-200', icon: XCircle },
   EXPIRED: { label: 'Hết hạn', color: 'text-slate-700', bgColor: 'bg-slate-100', borderColor: 'border-slate-200', icon: AlertCircle },
   REFUNDED: { label: 'Đã hoàn tiền', color: 'text-blue-700', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', icon: RefreshCw },
+  // Every PaymentStatus needs an entry: rows render config[status].icon.
+  CANCELLED: { label: 'Đã huỷ', color: 'text-slate-600', bgColor: 'bg-slate-50', borderColor: 'border-slate-200', icon: XCircle },
+  PROCESSING: { label: 'Đang xử lý', color: 'text-amber-700', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', icon: Clock },
+  PARTIAL: { label: 'Thanh toán một phần', color: 'text-amber-700', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', icon: Clock },
 }
 
 export default function PaymentsPage() {
@@ -92,6 +114,10 @@ export default function PaymentsPage() {
   const [searchQuery, setSearchQuery] = React.useState('')
   const [dateFrom, setDateFrom] = React.useState('')
   const [dateTo, setDateTo] = React.useState('')
+  // Filters and search run on the server (GET /api/payments), one page at a time.
+  const [debouncedQuery, setDebouncedQuery] = React.useState('')
+  const [page, setPage] = React.useState(1)
+  const [pagination, setPagination] = React.useState({ page: 1, totalPages: 1, total: 0 })
   
   // Create payment form
   const [createForm, setCreateForm] = React.useState({
@@ -101,10 +127,13 @@ export default function PaymentsPage() {
   })
   const [createError, setCreateError] = React.useState('')
   const [createSuccess, setCreateSuccess] = React.useState('')
+  const [payosConnected, setPayosConnected] = React.useState(false)
+  const [payosBusy, setPayosBusy] = React.useState(false)
 
   // Stats
   const [stats, setStats] = React.useState({
     total: 0,
+    count: 0,
     pending: 0,
     paid: 0,
     failed: 0,
@@ -118,8 +147,19 @@ export default function PaymentsPage() {
   }, [])
 
   React.useEffect(() => {
-    applyFilters()
-  }, [payments, selectedProperty, statusFilter, methodFilter, searchQuery, dateFrom, dateTo])
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery.trim()), 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // A new filter starts again from the first page.
+  React.useEffect(() => {
+    setPage(1)
+  }, [selectedProperty, statusFilter, methodFilter, debouncedQuery, dateFrom, dateTo])
+
+  React.useEffect(() => {
+    if (selectedProperty) fetchPayments(selectedProperty)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedProperty, statusFilter, methodFilter, debouncedQuery, dateFrom, dateTo, page])
 
   const fetchProperties = async () => {
     try {
@@ -128,7 +168,6 @@ export default function PaymentsPage() {
       if (data.success && data.data.length > 0) {
         setProperties(data.data)
         setSelectedProperty(data.data[0].id)
-        fetchPayments(data.data[0].id)
       } else {
         setIsLoading(false)
       }
@@ -138,19 +177,72 @@ export default function PaymentsPage() {
     }
   }
 
-  const fetchPayments = async (propertyId: string) => {
+  const fetchPayments = async (propertyId: string, { syncPayos = true } = {}): Promise<Payment[]> => {
     setIsLoading(true)
     try {
-      const res = await fetch(`/api/payments?propertyId=${propertyId}`)
+      const params = new URLSearchParams({ propertyId, page: String(page), limit: '20' })
+      if (statusFilter) params.set('status', statusFilter)
+      if (methodFilter) params.set('method', methodFilter)
+      if (debouncedQuery) params.set('q', debouncedQuery)
+      if (dateFrom) params.set('startDate', dateFrom)
+      if (dateTo) params.set('endDate', dateTo)
+      const res = await fetch(`/api/payments?${params}`)
       const data = await res.json()
       if (data.success) {
         setPayments(data.data)
-        calculateStats(data.data)
+        setFilteredPayments(data.data)
+        setPagination(data.pagination)
+        setStats(data.stats)
+        if (syncPayos) syncPendingPayos(propertyId, data.data)
+        return data.data
       }
     } catch (err) {
       console.error('Failed to fetch payments:', err)
     } finally {
       setIsLoading(false)
+    }
+    return []
+  }
+
+  // A missed webhook must not leave a paid link pending: ask PayOS about
+  // recent pending links (a few, one at a time), then reload if any changed.
+  const syncPendingPayos = async (propertyId: string, list: Payment[]) => {
+    const recent = Date.now() - 48 * 60 * 60 * 1000
+    const pending = list
+      .filter((p) => p.paymentGateway === 'PAYOS' && p.status === 'PENDING' && new Date(p.createdAt).getTime() > recent)
+      .slice(0, 10)
+    let changed = false
+    for (const p of pending) {
+      const res = await fetch(`/api/payments/${p.id}/sync`, { method: 'POST' }).catch(() => null)
+      const data = await res?.json().catch(() => null)
+      if (data?.success && data.data.status !== 'PENDING') changed = true
+    }
+    if (changed) fetchPayments(propertyId, { syncPayos: false })
+  }
+
+  const fetchPayosStatus = async (propertyId: string) => {
+    const res = await fetch(`/api/properties/${propertyId}/payos`).catch(() => null)
+    const data = await res?.json().catch(() => null)
+    const connected = Boolean(data?.success && data.data.connected)
+    setPayosConnected(connected)
+    return connected
+  }
+
+  const handlePayosAction = async (paymentId: string, action: 'sync' | 'cancel') => {
+    if (action === 'cancel' && !confirm('Huỷ link thanh toán này? Khách sẽ không trả được bằng link này nữa.')) return
+    setPayosBusy(true)
+    try {
+      const res = await fetch(`/api/payments/${paymentId}/${action}`, { method: 'POST' })
+      const data = await res.json()
+      if (!data.success) {
+        alert(data.error || 'Có lỗi xảy ra')
+        return
+      }
+      if (action === 'sync' && data.data.status === 'PENDING') alert('PayOS chưa nhận được tiền cho link này.')
+      const list = await fetchPayments(selectedProperty, { syncPayos: false })
+      setSelectedPayment(list.find((p) => p.id === paymentId) ?? null)
+    } finally {
+      setPayosBusy(false)
     }
   }
 
@@ -166,48 +258,6 @@ export default function PaymentsPage() {
     }
   }
 
-  const calculateStats = (paymentsData: Payment[]) => {
-    const total = paymentsData.reduce((sum, p) => sum + p.amount, 0)
-    const pending = paymentsData.filter((p) => p.status === 'PENDING').reduce((sum, p) => sum + p.amount, 0)
-    const paid = paymentsData.filter((p) => p.status === 'PAID').reduce((sum, p) => sum + p.amount, 0)
-    const failed = paymentsData.filter((p) => p.status === 'FAILED' || p.status === 'EXPIRED').reduce((sum, p) => sum + p.amount, 0)
-    const pendingCount = paymentsData.filter((p) => p.status === 'PENDING').length
-    const paidCount = paymentsData.filter((p) => p.status === 'PAID').length
-    const failedCount = paymentsData.filter((p) => p.status === 'FAILED' || p.status === 'EXPIRED').length
-    setStats({ total, pending, paid, failed, pendingCount, paidCount, failedCount })
-  }
-
-  const applyFilters = () => {
-    let filtered = [...payments]
-    
-    if (selectedProperty) {
-      filtered = filtered.filter((p) => p.booking?.property?.id === selectedProperty)
-    }
-    if (statusFilter) {
-      filtered = filtered.filter((p) => p.status === statusFilter)
-    }
-    if (methodFilter) {
-      filtered = filtered.filter((p) => p.method === methodFilter)
-    }
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(
-        (p) =>
-          p.booking?.bookingCode?.toLowerCase().includes(query) ||
-          p.booking?.guestName?.toLowerCase().includes(query) ||
-          p.transferContent?.toLowerCase().includes(query) ||
-          p.id.toLowerCase().includes(query)
-      )
-    }
-    if (dateFrom) {
-      filtered = filtered.filter((p) => new Date(p.createdAt) >= new Date(dateFrom))
-    }
-    if (dateTo) {
-      filtered = filtered.filter((p) => new Date(p.createdAt) <= new Date(dateTo + 'T23:59:59'))
-    }
-    
-    setFilteredPayments(filtered)
-  }
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(price)
@@ -221,15 +271,15 @@ export default function PaymentsPage() {
 
   const handlePropertyChange = (propertyId: string) => {
     setSelectedProperty(propertyId)
-    fetchPayments(propertyId)
     fetchBookings(propertyId)
   }
 
-  const handleOpenCreateModal = () => {
+  const handleOpenCreateModal = async () => {
     if (selectedProperty) {
       fetchBookings(selectedProperty)
     }
-    setCreateForm({ bookingId: '', method: 'QR_VIETQR', amount: '' })
+    const connected = selectedProperty ? await fetchPayosStatus(selectedProperty) : false
+    setCreateForm({ bookingId: '', method: connected ? 'PAYOS' : 'QR_VIETQR', amount: '' })
     setCreateError('')
     setCreateSuccess('')
     setIsCreating(true)
@@ -261,7 +311,12 @@ export default function PaymentsPage() {
       })
       const data = await res.json()
 
-      if (data.success) {
+      if (data.success && createForm.method === 'PAYOS') {
+        // Straight to the QR and link to give the guest.
+        setIsCreating(false)
+        const list = await fetchPayments(selectedProperty, { syncPayos: false })
+        setSelectedPayment(list.find((p) => p.id === data.data.id) ?? null)
+      } else if (data.success) {
         setCreateSuccess('Tạo thanh toán thành công!')
         setTimeout(() => {
           setIsCreating(false)
@@ -353,7 +408,7 @@ export default function PaymentsPage() {
                 <p className="text-lg font-bold text-slate-900 truncate">{formatPrice(stats.total)}</p>
               </div>
             </div>
-            <p className="text-xs text-slate-400 mt-2">{filteredPayments.length} giao dịch</p>
+            <p className="text-xs text-slate-400 mt-2">{stats.count} giao dịch</p>
           </div>
 
           {/* Paid Card */}
@@ -489,7 +544,7 @@ export default function PaymentsPage() {
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-slate-900">Danh sách thanh toán</h3>
-                <p className="text-xs text-slate-500">{filteredPayments.length} giao dịch</p>
+                <p className="text-xs text-slate-500">{pagination.total} giao dịch</p>
               </div>
             </div>
             <Button size="sm" variant="ghost" className="gap-2 text-slate-600 hover:text-slate-900">
@@ -533,7 +588,9 @@ export default function PaymentsPage() {
                 <tbody className="divide-y divide-slate-100">
                   {filteredPayments.map((payment, index) => {
                     const statusInfo = paymentStatusConfig[payment.status] || paymentStatusConfig.PENDING
-                    const methodInfo = paymentMethodLabels[payment.method] || { label: payment.method, icon: CreditCard }
+                    const methodInfo = payment.paymentGateway === 'PAYOS'
+                      ? { label: 'PayOS', icon: QrCode }
+                      : paymentMethodLabels[payment.method] || { label: payment.method, icon: CreditCard }
                     const MethodIcon = methodInfo.icon
                     const StatusIcon = statusInfo.icon
                     
@@ -606,6 +663,21 @@ export default function PaymentsPage() {
               </table>
             </div>
           )}
+          {pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-sm text-slate-600">
+              <span>
+                Trang {pagination.page} / {pagination.totalPages}
+              </span>
+              <div className="flex gap-2">
+                <Button size="sm" variant="secondary" disabled={page <= 1 || isLoading} onClick={() => setPage(page - 1)}>
+                  Trước
+                </Button>
+                <Button size="sm" variant="secondary" disabled={page >= pagination.totalPages || isLoading} onClick={() => setPage(page + 1)}>
+                  Sau
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </PageContainer>
 
@@ -643,8 +715,14 @@ export default function PaymentsPage() {
                 required
                 value={createForm.method}
                 onChange={(e) => setCreateForm({ ...createForm, method: e.target.value })}
-                options={paymentMethodOptions}
+                options={payosConnected ? [PAYOS_OPTION, ...paymentMethodOptions] : paymentMethodOptions}
               />
+              {createForm.method === 'PAYOS' && (
+                <p className="text-xs text-slate-500 -mt-2">
+                  Tiền vào thẳng tài khoản của khách sạn đã gắn với PayOS; khoản này tự chuyển sang
+                  &quot;Đã thanh toán&quot; khi khách chuyển khoản. Link có hạn 24 giờ.
+                </p>
+              )}
               
               <Input
                 label="Số tiền (VNĐ)"
@@ -735,7 +813,9 @@ export default function PaymentsPage() {
                     {React.createElement(paymentMethodLabels[selectedPayment.method]?.icon || CreditCard, { className: 'w-4 h-4 text-terracotta-500' })}
                     <span className="text-xs font-semibold text-slate-500 uppercase">Phương thức</span>
                   </div>
-                  <p className="font-semibold text-slate-900">{paymentMethodLabels[selectedPayment.method]?.label}</p>
+                  <p className="font-semibold text-slate-900">
+                    {selectedPayment.paymentGateway === 'PAYOS' ? 'PayOS' : paymentMethodLabels[selectedPayment.method]?.label}
+                  </p>
                 </div>
                 <div className="p-4 bg-sand-50/50 rounded-xl border border-sand-200/60">
                   <div className="flex items-center gap-2 mb-2">
@@ -760,8 +840,39 @@ export default function PaymentsPage() {
                 </div>
               </div>
 
+              {/* PayOS: what staff need to know and to send */}
+              {selectedPayment.metadata?.payos?.amountMismatch != null && (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700">
+                  PayOS báo nhận {formatPrice(selectedPayment.metadata.payos.amountMismatch)}, khác số tiền của khoản này.
+                  Khoản này chưa được xác nhận: kiểm tra sao kê rồi xử lý tay.
+                </div>
+              )}
+              {selectedPayment.metadata?.payos?.paidAfter && (
+                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-800">
+                  Khách trả tiền sau khi link đã bị huỷ hoặc hết hạn. Tiền đã vào tài khoản khách sạn và đã được ghi nhận;
+                  kiểm tra lại đơn đặt phòng.
+                </div>
+              )}
+              {selectedPayment.paymentGateway === 'PAYOS' && selectedPayment.checkoutUrl && selectedPayment.status === 'PENDING' && (
+                <div className="p-4 rounded-2xl border border-sand-200/60 space-y-2">
+                  <p className="text-sm text-slate-600">
+                    Gửi link này cho khách (Zalo, email...) hoặc cho khách quét mã bên dưới. Khoản này tự xác nhận khi khách chuyển khoản.
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 truncate text-xs bg-slate-100 px-2 py-1.5 rounded">{selectedPayment.checkoutUrl}</code>
+                    <button
+                      onClick={() => handleCopyToClipboard(selectedPayment.checkoutUrl!, 'checkoutUrl')}
+                      className="p-1.5 hover:bg-sand-200 rounded-lg transition"
+                      aria-label="Sao chép link"
+                    >
+                      {copiedId === 'checkoutUrl' ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-slate-400" />}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Bank Transfer Info */}
-              {(selectedPayment.method === 'BANK_TRANSFER' || selectedPayment.method === 'QR_VIETQR') && (
+              {selectedPayment.paymentGateway !== 'PAYOS' && (selectedPayment.method === 'BANK_TRANSFER' || selectedPayment.method === 'QR_VIETQR') && (
                 <div className="border border-sand-200/60 rounded-2xl overflow-hidden">
                   <div className="px-4 py-3 bg-sand-50/80 border-b border-sand-200/60">
                     <h4 className="font-semibold text-slate-900 flex items-center gap-2">
@@ -828,8 +939,12 @@ export default function PaymentsPage() {
                     </h4>
                   </div>
                   <div className="p-6 text-center bg-gradient-to-br from-slate-50 to-slate-100/50">
-                    <div className="w-48 h-48 mx-auto bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4 border border-sand-200/40">
-                      <QrCode className="w-36 h-36 text-slate-800" />
+                    <div className="w-52 h-52 mx-auto bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4 border border-sand-200/40">
+                      {selectedPayment.qrCodeUrl ? (
+                        <QrImage payload={selectedPayment.qrCodeUrl} />
+                      ) : (
+                        <QrCode className="w-36 h-36 text-slate-300" />
+                      )}
                     </div>
                     {selectedPayment.expiresAt && (
                       <p className="text-sm text-amber-600 flex items-center justify-center gap-2">
@@ -858,6 +973,17 @@ export default function PaymentsPage() {
               <Button variant="secondary" onClick={() => setSelectedPayment(null)} className="gap-2">
                 Đóng
               </Button>
+              {selectedPayment.paymentGateway === 'PAYOS' && selectedPayment.status === 'PENDING' && (
+                <>
+                  <Button variant="secondary" onClick={() => handlePayosAction(selectedPayment.id, 'cancel')} isLoading={payosBusy}>
+                    Huỷ link
+                  </Button>
+                  <Button variant="secondary" onClick={() => handlePayosAction(selectedPayment.id, 'sync')} isLoading={payosBusy} className="gap-2">
+                    <RefreshCw className="w-4 h-4" />
+                    Kiểm tra ngay
+                  </Button>
+                </>
+              )}
               {selectedPayment.status === 'PENDING' && (
                 <Button onClick={() => handleConfirmPayment(selectedPayment.id)} className="gap-2 bg-green-600 hover:bg-green-700">
                   <CheckCircle className="w-4 h-4" />

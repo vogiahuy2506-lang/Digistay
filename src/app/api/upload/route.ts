@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { uploadImage, uploadImageWithThumbnail, isValidImageType, isValidImageSize } from '@/lib/cloudinary'
 import { prisma } from '@/lib/db'
+import { invalidatePublicSite } from '@/lib/public-site/site'
 
 // Max file size: 10MB
 const MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -111,6 +112,7 @@ export async function POST(request: NextRequest) {
             isPrimary: false,
           },
         })
+        invalidatePublicSite(propertyId)
       }
     }
 

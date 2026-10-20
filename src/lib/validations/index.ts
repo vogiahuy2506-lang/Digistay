@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { RESERVED_SUBDOMAINS } from '@/lib/subdomains'
 
 /** Minimum length for NEW passwords; existing ones keep working. */
 export const PASSWORD_MIN_LENGTH = 8
@@ -87,7 +88,13 @@ export const createPropertySchema = z.object({
   email: z.string().email('Email không hợp lệ').optional().or(z.literal('')),
   website: z.string().url('Website không hợp lệ').optional().or(z.literal('')),
   description: z.string().max(2000, 'Mô tả không được quá 2000 ký tự').optional(),
-  subdomain: z.string().min(3, 'Subdomain phải có ít nhất 3 ký tự').max(50, 'Subdomain không được quá 50 ký tự').regex(/^[a-z0-9-]+$/, 'Subdomain chỉ chứa chữ thường, số và dấu gạch ngang'),
+  subdomain: z
+    .string()
+    .min(3, 'Subdomain phải có ít nhất 3 ký tự')
+    .max(50, 'Subdomain không được quá 50 ký tự')
+    .regex(/^[a-z0-9-]+$/, 'Subdomain chỉ chứa chữ thường, số và dấu gạch ngang')
+    .refine((s) => !s.startsWith('-') && !s.endsWith('-'), 'Subdomain không được bắt đầu hay kết thúc bằng dấu gạch ngang')
+    .refine((s) => !RESERVED_SUBDOMAINS.has(s), 'Tên này dành riêng cho hệ thống, vui lòng chọn tên khác'),
 })
 
 export const updatePropertySchema = z.object({

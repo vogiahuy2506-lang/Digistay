@@ -9,3 +9,6 @@ ea21ad2e13eabdca310c3be64db7cd772128f0dd:.env.production.template:env-assigned-s
 ea21ad2e13eabdca310c3be64db7cd772128f0dd:.env.production.template:connection-string-password:14
 8cf735d3fc4a628483e131ae1e53a0c5411a1eb7:docs/RUNBOOK.md:connection-string-password:162
 8cf735d3fc4a628483e131ae1e53a0c5411a1eb7:docs/RUNBOOK.md:env-assigned-secret:158
+# - 4d89206: a test-only constant for the reconcile job's x-cron-secret, never
+#   used anywhere else; the test now generates it at run time.
+4d89206060af7be43f686ad96abc798a322ad251:src/lib/payments/payos.int.test.ts:generic-api-key:387

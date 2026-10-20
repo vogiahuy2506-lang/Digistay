@@ -5,7 +5,7 @@ import { redis } from '@/lib/db/redis'
 import { sendEmailChangeEmail } from '@/lib/email'
 import { randomBytes } from 'crypto'
 import { LIMITS } from '@/lib/security/limits'
-import { isBlocked, recordFailure, tooManyRequests } from '@/lib/security/rate-limit'
+import { hit, isBlocked, recordFailure, tooManyRequests } from '@/lib/security/rate-limit'
 
 function generateToken(): string {
   return randomBytes(32).toString('hex')
@@ -91,6 +91,12 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Email mới phải khác email hiện tại' },
         { status: 400 }
       )
+    }
+
+    // Each request mails the new address from Digistay's server.
+    const sent = await hit(LIMITS.emailChangeSendUser, user.id)
+    if (!sent.allowed) {
+      return tooManyRequests('Bạn đã yêu cầu đổi email quá nhiều lần. Vui lòng thử lại sau.', sent.retryAfterSec)
     }
 
     // Generate token, store in Redis (24h expiry)

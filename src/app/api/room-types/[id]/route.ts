@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { z } from 'zod'
 import { BedType } from '@prisma/client'
+import { invalidatePublicSite } from '@/lib/public-site/site'
 
 const updateRoomTypeSchema = z.object({
   name: z.string().min(1).optional(),
@@ -180,6 +181,8 @@ export async function PUT(request: NextRequest, props: RouteParams) {
     })
 
     // Log activity
+    invalidatePublicSite(roomType.propertyId)
+
     await prisma.activityLog.create({
       data: {
         userId: session.user.id,
@@ -247,6 +250,7 @@ export async function DELETE(request: NextRequest, props: RouteParams) {
     await prisma.roomType.delete({
       where: { id: params.id },
     })
+    invalidatePublicSite(roomType.propertyId)
 
     // Log activity
     await prisma.activityLog.create({

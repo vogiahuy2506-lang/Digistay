@@ -67,11 +67,13 @@ DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54329/digistay_test" npm 
   (server) hoặc `React.use(params)` (client component).
 - Multi-tenant: `Workspace` (chủ `ownerId` + `WorkspaceMember` vai trò ADMIN / MANAGER /
   RECEPTIONIST / USER) → nhiều `Property` (khách sạn) → `Booking`, `Payment`...
-- **`middleware.ts` ở thư mục gốc KHÔNG chạy**: dự án dùng `src/`, Next.js chỉ nhận
-  `src/middleware.ts` (bản build có middleware-manifest rỗng, đo 19/10/2026). Vì vậy rewrite
-  subdomain `<slug>.digistay.vn` → `/<slug>` và chuyển `/` sang `/login` hiện không xảy ra.
-  Chuyển file sang `src/` là quyết định sản phẩm (trang marketing ở `/` đang dựa vào việc nó
-  không chạy). Dù sao không có lớp nào chặn trước API: mỗi route tự kiểm tra đăng nhập.
+- `src/middleware.ts` chỉ làm một việc: chuyển `<subdomain>.digistay.vn/...` sang
+  `/<subdomain>/...` (site công khai). Nó không đụng tới `/api` và không chặn gì: mỗi route API
+  tự kiểm tra đăng nhập, còn `/` là trang giới thiệu.
+  - Tên miền gốc lấy từ `ROOT_DOMAIN`, nếu không có thì từ `NEXTAUTH_URL`.
+  - Tên subdomain dành riêng nằm ở `src/lib/subdomains.ts`. Thêm route cấp một mới trong
+    `src/app` thì thêm tên đó vào danh sách này.
+  - Trước 20/10/2026 file nằm ở thư mục gốc nên không bao giờ chạy.
 - Biến môi trường khai báo ở `src/lib/env.ts`; thêm biến thì cập nhật cả `.env.example`. Lưu ý:
   chưa file nào import `env.ts`, nên schema zod của nó **không kiểm tra gì lúc chạy** (đo
   19/10/2026); biến nào cần kiểm thật thì kiểm ở nơi dùng (vd `DATA_ENCRYPTION_KEYS` ở
@@ -126,7 +128,19 @@ sạn, đặt lại mật khẩu chỉ cần email, email trong phiên do client
 - Sửa logic bảo mật hoặc tiền: gỡ thử chính điều kiện vừa thêm, xác nhận có test đỏ, rồi
   khôi phục. Không có test nào đỏ nghĩa là test chưa bảo vệ điều kiện đó.
 
+Test trình duyệt (Playwright, `e2e/`): chạy hằng đêm trên CI với bản build production
+(`npm run e2e`, RUNBOOK "Kiểm thử trình duyệt (e2e)"). Thêm tính năng có giao diện thì thêm một
+kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes.ts`, không gọi thật.
+
 ## Quy ước code
+
+- **API danh sách** dùng `src/lib/api/list-params.ts`: `page`/`limit` (tối đa 100), enum và ngày
+  sai trả 400 (đừng để Prisma ném 500), tìm kiếm và lọc chạy trong DB để phủ mọi trang. Thẻ
+  thống kê đếm bằng `groupBy` trên server, không cộng ở trình duyệt.
+- **Site công khai của khách sạn được cache** theo khách sạn (`src/lib/public-site/site.ts`, tối
+  đa 5 phút). Handler nào ghi dữ liệu site hiển thị (khách sạn, ảnh, tiện ích, hạng phòng, giá,
+  dịch vụ, website) phải gọi `invalidatePublicSite(propertyId)`; `public-site-cache.test.ts` chặn.
+  Không bao giờ cache phòng trống theo ngày hay dữ liệu riêng của khách.
 
 - Comment và tên test bằng tiếng Anh, khớp code hiện có. Chuỗi hiển thị cho người dùng và
   thông báo lỗi API bằng tiếng Việt.
@@ -135,9 +149,14 @@ sạn, đặt lại mật khẩu chỉ cần email, email trong phiên do client
 - Bộ tối ưu ảnh của Next đang **tắt** (`images.unoptimized`), để server không phải giải mã ảnh lạ
   (lỗ hổng RCE AVIF chỉ được vá từ Next 15.5.24; đang dùng 15.5.28). Muốn bật lại thì chỉ với
   `remotePatterns` liệt kê đúng host của mình, không bao giờ `**`; có test chặn.
+- Chứng chỉ HTTPS gia hạn bằng timer `digistay-cert-renew` (RUNBOOK). Trước đó không có gì
+  gia hạn.
 - `/workspace-picker/*` luôn chuyển về `/workspaces`: layout của nó nằm trên `[slug]` nên không
   bao giờ nhận được `slug` (có từ trước, Next 15 mới lộ ra khi kiểm kiểu). Dọn hay sửa là quyết
   định sản phẩm; trang lời mời đang trỏ tới đó.
+- IP khách: app chỉ tin `X-Real-IP` do nginx đặt bằng `$remote_addr`; sau Cloudflare thì
+  `cloudflare-real-ip.inc` sửa `$remote_addr` thành IP thật, chỉ với kết nối từ dải IP Cloudflare.
+  Không bao giờ thêm dải nội bộ hay `0.0.0.0/0` vào đó (`scripts/nginx-config.test.mjs` chặn).
 - Header bảo mật nằm ở nginx: `docker/nginx/conf.d/security-headers.inc`, include ở server
   và ở mọi `location` có `add_header` riêng. Sửa `app-secure.conf.template`, không sửa file
   sinh ra — `docker/deploy.sh` sinh lại và reload nginx mỗi lần deploy.
@@ -146,6 +165,73 @@ sạn, đặt lại mật khẩu chỉ cần email, email trong phiên do client
   Chưa cấu hình thì lưu `null`. Không bao giờ trả giá trị đã giải mã ra trình duyệt: trả
   `maskSecret()`, ô nhập để trống nghĩa là giữ nguyên. Khoá mã hoá: RUNBOOK, "Khoá mã hoá dữ liệu".
 - Không lưu token OAuth: chỉ dùng Google để đăng nhập (`src/lib/auth/adapter.ts`).
+- **Thanh toán:** mọi chỗ ghi nhận tiền hoặc đổi số tiền phải trả của một đơn đều gọi
+  `lockBooking()` rồi `syncBookingPayments()` (`src/lib/payments/booking-payments.ts`) trong cùng
+  transaction. Hàm này tính `depositAmount` (= tổng đã trả) và `paymentStatus` từ các khoản `PAID`.
+  Đừng tự đặt `paymentStatus: 'PAID'`: các nhánh tiền mặt cũ làm vậy, khiến cọc 200k báo là trả đủ.
+- **PayOS** (`src/lib/payments/payos.ts`): mỗi khách sạn tự gắn tài khoản PayOS của mình, tiền vào
+  thẳng tài khoản khách sạn. Mỗi khách sạn có một URL webhook riêng
+  (`/api/webhooks/payos/<propertyId>`), chữ ký được kiểm bằng khoá của đúng khách sạn đó. Chuyển
+  sang `PAID` chỉ qua một UPDATE có điều kiện (webhook, đối soát hay nhân viên: ai tới trước
+  thắng), và số tiền phải khớp đúng. Tiền về cho link đã huỷ/hết hạn vẫn được ghi nhận và gắn cờ;
+  khoản `REFUNDED` không bao giờ sống lại. Return URL không bao giờ đánh dấu đã trả.
+  `PAYOS_BASE_URL` chỉ dùng cho test (PayOS giả ở `src/test/integration/fake-payos.ts`).
+  Đối soát định kỳ: timer systemd `digistay-reconcile`, 10 phút một lần, gọi
+  `/api/internal/payos-reconcile` (RUNBOOK, "Đối soát PayOS định kỳ").
+- Job định kỳ nằm ở `/api/internal/*`: kiểm `checkCronSecret()` (header `CRON_SECRET`), nginx
+  không mở ra ngoài, và timer `digistay-reconcile` gọi từ bên trong container app qua
+  `docker/systemd/scheduled-jobs.sh` (thêm job mới = thêm tên vào vòng lặp trong script đó).
+  Bọc job bằng `recordJobRun()` (`src/lib/ops/job-runs.ts`) để có lịch sử và cảnh báo khi lỗi.
+- **Giám sát** (`src/lib/ops/`): `/api/health` đỏ khi DB thiếu migration của bản đang chạy (sự cố
+  20/10/2026: DB trống mà health vẫn ok). Cảnh báo vận hành gửi email cho `ALERT_EMAILS` hoặc
+  `SUPER_ADMIN`; thêm luật mới trong `alerts.ts`, mỗi luật trả về fingerprint các mục để không gửi
+  lặp. RUNBOOK, "Giám sát và cảnh báo".
+- **Email gửi sau request** đi qua hàng đợi `src/lib/email/outbox.ts` (`queue*` rồi
+  `sendAfterResponse`): lưu mã hoá, gửi ngay sau response, job `email-outbox` thử lại, hết lượt thì
+  có cảnh báo. Đừng gửi kiểu "bắn rồi quên": `send()` báo lỗi bằng giá trị trả về chứ không ném,
+  nên lỗi bị nuốt. Email người dùng đang chờ (mã OTP) vẫn gửi trực tiếp để báo lỗi ngay.
+  Kiểm "đã gửi" bằng `result.sent`, không phải `result.success` (không có SMTP thì stub vẫn
+  `success`).
+- **Hoá đơn điện tử** (`src/lib/einvoice/`): mỗi khách sạn tự gắn tài khoản Mắt Bão của mình,
+  hoá đơn xuất dưới mã số thuế của khách sạn.
+  - **Giá phòng đã gồm VAT**: tổng hoá đơn = số khách trả; chưa thuế và thuế được tách ra bằng
+    `splitGross`. Không cộng VAT lên trên.
+  - **Thuế suất** do kế toán của khách sạn chọn, và được chụp lại vào từng hoá đơn lúc tạo.
+  - **Tổng các hoá đơn của một đơn không vượt quá tổng của đơn.**
+  - **Chống xuất trùng:** `MaTraCuu = DS<invoiceNumber>` cố định cho mỗi hoá đơn. Phát hành
+    lại sau timeout thì Mắt Bão trả 304, không xuất lần hai. Trạng thái `PUBLISHING` được giành
+    bằng một UPDATE có điều kiện.
+  - **Sau một lần phát hành chưa rõ kết quả** (`lookupCode` đã có), không cho sửa, xoá hay huỷ
+    cho tới khi phát hành lại xong.
+  - **Hoá đơn đã phát hành không huỷ trong app**: phải lập mẫu 04/SS-HĐĐT trên cổng Mắt Bão.
+    Nhưng có thể **thay thế** (`replacement.ts`, TCHDon 1):
+    - Bản nháp chép từ hoá đơn gốc. Khi phát hành, hoá đơn mới ghi rõ thay cho mẫu số, ký
+      hiệu, số và ngày của hoá đơn gốc; hoá đơn gốc chuyển sang `REPLACED`.
+    - Mỗi hoá đơn chỉ có một bản thay thế còn hiệu lực.
+    - Khi tính tổng tiền đã xuất cho một đơn, hoá đơn gốc không bị tính hai lần.
+  - **Điều chỉnh** (`adjustment.ts`, TCHDon 2 tăng / 3 giảm): hoá đơn mới chỉ ghi phần chênh
+    lệch, có dấu: `totalAmount` âm là điều chỉnh giảm (NĐ 123 Điều 19: "ghi dấu âm"). Hoá đơn
+    gốc vẫn `PUBLISHED`. Mỗi lúc chỉ một bản nháp điều chỉnh; giảm không quá giá trị hiện tại của
+    hoá đơn gốc; một hoá đơn hoặc bị thay thế, hoặc được điều chỉnh, không cả hai.
+    - Tài liệu Mắt Bão không nói dấu của số tiền: đang **giả định số âm** (Mắt Bão giả kiểm theo
+      giả định này). Phải phát hành thử một điều chỉnh giảm trên DEMO trước khi dùng Chính thức.
+    - Điều chỉnh thông tin (TCHDon 4) không hỗ trợ: sai thông tin người mua thì thay thế.
+    - Khi tính tổng đã xuất của một đơn, bản nháp điều chỉnh giảm chưa được trừ cho tới khi
+      phát hành (`invoicedTotal`).
+  - **Ký hiệu đổi theo năm**: sang năm mới phải sửa ký hiệu trong thẻ Mắt Bão.
+  - **Môi trường Chính thức** là hoá đơn thật, có giá trị pháp lý.
+  - Trạng thái từ cơ quan thuế về qua webhook `/api/webhooks/matbao/<propertyId>/<token>`. Mắt
+    Bão không ký callback, nên token bí mật trong URL chính là thứ xác thực: token được mã hoá, và
+    chỉ owner/ADMIN thấy URL. Trạng thái cuối (4, 6, 9) không bị thông báo đến muộn ghi đè.
+  - **Email hoá đơn** (`delivery.ts`): phát hành xong thì `emailStatus = PENDING` (nếu khách sạn
+    bật), gửi ngay sau response (`after()`), job định kỳ gửi phần còn lại. Gửi qua SMTP của
+    Digistay, PDF lấy từ Mắt Bão đính kèm; không nhờ Mắt Bão gửi. Giành quyền gửi bằng UPDATE có
+    điều kiện (`SENDING` + lease ở `emailNextAt`), lỗi thử lại 10 phút/30 phút/2 giờ/6 giờ rồi dừng.
+  - **Tự xuất hoá đơn** (`jobs.ts`, mặc định tắt, owner/ADMIN bật): đơn **thanh toán đủ** từ lúc
+    bật, chưa có hoá đơn nào → một hoá đơn bằng tổng đơn, người mua lấy từ `vat*` của booking
+    (không có thì là khách). Tiền cọc không kích hoạt (luật không tính cọc là thời điểm lập hoá
+    đơn). Mỗi đơn một lần; thông tin công ty sai thì để `PENDING` kèm lý do cho nhân viên.
+  - `MATBAO_BASE_URL` chỉ dùng cho test (Mắt Bão giả ở `src/test/integration/fake-matbao.ts`).
 - Xác thực hai lớp (`src/lib/auth/two-factor.ts`) là **tuỳ chọn, không bao giờ bắt buộc**. Khi
   đã bật, mật khẩu đúng hoặc Google đúng **không tạo phiên**: chỉ trả "vé" chờ nhập mã, provider
   `two-factor` mới tạo phiên. Thêm cách đăng nhập mới thì phải đi qua bước này. Không có đường
@@ -207,8 +293,11 @@ dùng duyệt rồi mới làm, trên nhánh riêng. Cập nhật trạng thái 
    4d header bảo mật + tắt bộ tối ưu ảnh, 4e tiện ích mã hoá khoá bên thứ ba + bỏ lưu token
    OAuth, 4f xác thực hai lớp TOTP (**không bắt buộc** — người dùng tự bật) — xong.
    Thêm: lên Next 15.5.28 + React 19 (hết các lỗ hổng của Next 14) — xong.
-5. Thanh toán PayOS hoặc SePay, mỗi khách sạn một bộ khoá; sửa nhánh tiền mặt đang đặt
-   `PAID` bất kể số tiền và không cập nhật `depositAmount`
-6. Hoá đơn điện tử Mắt Bão
+5. Thanh toán PayOS, mỗi khách sạn một bộ khoá; sửa các nhánh tiền mặt đặt `PAID` bất kể số
+   tiền và không cập nhật `depositAmount` — xong; có thêm đối soát định kỳ 10 phút. Còn: SePay
+   (nếu khách sạn cần), khách tự trả cọc trên site công khai.
+6. Hoá đơn điện tử Mắt Bão, mỗi khách sạn một tài khoản, kèm trạng thái từ cơ quan thuế — xong.
+   Thêm: hoá đơn thay thế, hoá đơn điều chỉnh tăng/giảm, tự gửi email hoá đơn (kèm PDF), tự xuất
+   hoá đơn khi đơn thanh toán đủ — xong.
 
 Tài liệu deploy: `docs/DEPLOYMENT.md`, `docs/RUNBOOK.md`.

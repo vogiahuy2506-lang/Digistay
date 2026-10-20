@@ -1,0 +1,10 @@
+[Unit]
+Description=Renew the Digistay certificates every day
+
+[Timer]
+OnCalendar=*-*-* 04:30:00 Asia/Ho_Chi_Minh
+Persistent=true
+RandomizedDelaySec=30min
+
+[Install]
+WantedBy=timers.target

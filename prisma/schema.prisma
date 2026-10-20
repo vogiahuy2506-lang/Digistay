@@ -255,6 +255,8 @@ model Property {
   websiteBlocks WebsiteBlock[]
   websiteSettings WebsiteSettings?
   bankAccounts   BankAccount[]
+  payos          PropertyPayos?
+  einvoice       PropertyEinvoice?
   roomLocks      RoomLock[]
   extraServices   ExtraService[]
   dailyRevenues   DailyRevenue[]
@@ -567,7 +569,7 @@ model WebsiteSettings {
   metaKeywords    String?
   
   // Custom domain
-  customDomain    String?
+  customDomain    String?  @unique // lowercase ASCII; set only by /api/website/domain/verify
   domainVerificationStatus String?  // pending, verified, mismatch, not_found, a_record, dns_error
   domainVerifiedAt DateTime?
   
@@ -814,6 +816,11 @@ model Payment {
   // Transaction reference
   transactionId   String?   // Từ cổng thanh toán
   paymentGateway  PaymentGateway?
+  /// PayOS orderCode (16 digits, kept as text so payments stay JSON-safe),
+  /// unique across all properties (src/lib/payments/payos.ts)
+  gatewayOrderCode String?  @unique
+  /// PayOS checkout page for the guest
+  checkoutUrl     String?
   
   // Timestamps
   paidAt          DateTime?
@@ -852,6 +859,7 @@ enum PaymentStatus {
 
 enum PaymentGateway {
   VIETQR
+  PAYOS
   VNPAY
   ONEPAY
   STRIPE
@@ -893,6 +901,71 @@ model BankAccount {
   @@index([propertyId])
 }
 
+/// The property's own PayOS account (Part 5): guests pay straight into the
+/// hotel's bank account and PayOS confirms the payment by webhook. Keys
+/// are encrypted with src/lib/security/secret-box.ts.
+model PropertyPayos {
+  propertyId         String    @id
+  property           Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  clientId           String
+  /// encrypted
+  apiKey             String
+  /// encrypted
+  checksumKey        String
+  /// set once PayOS accepted our webhook URL; payments need it
+  webhookConfirmedAt DateTime?
+  /// the bank account PayOS pays into, as PayOS reports it
+  accountName        String?
+  accountNumber      String?
+  connectedById      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("property_payos")
+}
+
+/// The property's own Mắt Bão e-invoice account (Part 6): invoices are issued
+/// under the hotel's tax code. The password is encrypted with
+/// src/lib/security/secret-box.ts.
+model PropertyEinvoice {
+  propertyId       String    @id
+  property         Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  /// DEMO (demo-api-hddt.matbao.in) or PRODUCTION: invoices issued in
+  /// production are legal documents
+  environment      String
+  /// Mã số thuế of the hotel (seller), as Mắt Bão knows it
+  taxCode          String
+  username         String
+  /// encrypted
+  password         String
+  /// KHMSHDon, e.g. "1"
+  templateCode     String
+  /// KHHDon, e.g. "C26TAA" (changes every calendar year)
+  series           String
+  /// Mắt Bão TSuat: 10, 8, 5, 0, -1 (KCT), -2 (KKKNT); set by the hotel's accountant
+  vatCode          Int
+  /// set when login and the series check last succeeded
+  verifiedAt       DateTime?
+  /// numbers left in the series at the last check (CLai)
+  remainingNumbers Int?
+  /// encrypted; part of the webhook URL given to Mắt Bão support
+  webhookToken     String?
+  /// Issue an invoice by itself once a booking is fully paid (jobs.ts).
+  /// Off by default: the hotel's accountant decides
+  autoIssue        Boolean   @default(false)
+  /// when autoIssue was last turned on: bookings paid before are left alone
+  autoIssueSince   DateTime?
+  /// email each issued invoice (PDF attached) to the buyer (delivery.ts)
+  emailInvoices    Boolean   @default(true)
+  connectedById    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("property_einvoice")
+}
+
 // ============================================
 // INVOICE (Hóa đơn điện tử)
 // ============================================
@@ -920,9 +993,15 @@ model Invoice {
   customerEmail   String
   customerAddress String?
   
-  // Totals
+  /// company | personal | consumer (khách lẻ không lấy hoá đơn)
+  buyerType       String   @default("company")
+
+  // Totals: totalAmount is what the guest pays (VAT included); subtotal
+  // and taxAmount are split from it (src/lib/einvoice/vat.ts)
   subtotal        Float
   taxRate         Float    @default(0.1)
+  /// Mắt Bão TSuat at creation (10, 8, 5, 0, -1 KCT, -2 KKKNT)
+  vatCode         Int?
   taxAmount       Float
   totalAmount     Float
   
@@ -941,6 +1020,42 @@ model Invoice {
   publishedAt     DateTime?
   xmlUrl          String?
   pdfUrl          String?
+  /// Mắt Bão MaTraCuu: fixed per invoice, so publishing again never
+  /// issues a second one (src/lib/einvoice/matbao.ts)
+  lookupCode      String?  @unique
+  /// Số hoá đơn assigned by Mắt Bão
+  einvoiceNumber  String?
+  /// Why the last publish attempt failed (shown to staff)
+  publishError    String?
+  /// Tax office status from Mắt Bão's webhook (MaTTHDon: 4 code issued,
+  /// 6 refused...), its note and the tax office code (MCCQT)
+  cqtStatus       Int?
+  cqtNote         String?
+  cqtCode         String?
+
+  /// Replacement invoice (TCHDon 1): the issued invoice this one replaces;
+  /// that one becomes REPLACED once this is issued
+  replacesInvoiceId String?
+  replacesInvoice   Invoice?  @relation("InvoiceReplacement", fields: [replacesInvoiceId], references: [id])
+  replacements      Invoice[] @relation("InvoiceReplacement")
+
+  /// Adjustment invoice (TCHDon 2 increase, 3 decrease): the issued invoice
+  /// it adjusts. totalAmount is the signed difference, negative for a
+  /// decrease; the adjusted invoice stays PUBLISHED (adjustment.ts)
+  adjustsInvoiceId  String?
+  adjustsInvoice    Invoice?  @relation("InvoiceAdjustment", fields: [adjustsInvoiceId], references: [id])
+  adjustments       Invoice[] @relation("InvoiceAdjustment")
+
+  /// created by the auto-issue job (jobs.ts), not by staff
+  autoIssued      Boolean   @default(false)
+  /// Email to the buyer once issued (delivery.ts): PENDING, SENDING, SENT,
+  /// FAILED (tried again at emailNextAt while it is set), SKIPPED
+  emailStatus     String?
+  emailAttempts   Int       @default(0)
+  /// next attempt; while SENDING, when the claim expires
+  emailNextAt     DateTime?
+  emailedAt       DateTime?
+  emailError      String?
   
   // Metadata
   metadata        Json?
@@ -956,12 +1071,14 @@ model Invoice {
 enum InvoiceStatus {
   DRAFT           // Nháp
   PENDING         // Chờ phát hành
+  PUBLISHING      // Đang gửi sang nhà cung cấp
   PUBLISHED       // Đã phát hành
   CANCELLED       // Đã hủy
   REPLACED        // Thay thế
 }
 
 enum EInvoiceProvider {
+  MATBAO
   MISA
   VNPT
   VIETTAX
@@ -1036,4 +1153,66 @@ model ActivityLog {
   @@index([workspaceId])
   @@index([propertyId])
   @@index([userId])
+}
+
+/// One run of a scheduled job (src/lib/ops/job-runs.ts): the jobs under
+/// /api/internal/ and docker/backup.sh (which writes its row with psql).
+/// Kept 30 days.
+model JobRun {
+  id         String    @id @default(cuid())
+  /// payos-reconcile, einvoice-jobs, ops-alerts, backup
+  job        String
+  /// RUNNING, SUCCESS, FAILURE
+  status     String
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  summary    Json?
+  error      String?
+
+  @@index([job, startedAt])
+  @@map("job_runs")
+}
+
+/// What the ops alert job last saw for one rule (src/lib/ops/alerts.ts),
+/// so the same problem is emailed once and then only as a reminder.
+model AlertState {
+  key         String    @id
+  /// critical or warning
+  severity    String
+  /// the items the alert was about; a new item means a new email
+  fingerprint String
+  title       String
+  firstSeenAt DateTime  @default(now())
+  lastSentAt  DateTime?
+  resolvedAt  DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  @@map("alert_states")
+}
+
+/// Emails sent after the request (src/lib/email/outbox.ts): kept until
+/// sent, retried with backoff, alerted when given up. The rendered message
+/// is encrypted (an invitation carries its token). Sent ones are dropped
+/// after 30 days.
+model EmailOutbox {
+  id        String    @id
+  /// booking_confirmation, owner_new_booking, workspace_invite
+  kind      String
+  toEmail   String
+  /// encrypted JSON { to, name, subject, text, html }
+  message   String
+  /// PENDING, SENDING, SENT, FAILED
+  status    String    @default("PENDING")
+  attempts  Int       @default(0)
+  /// next attempt; while SENDING, when the claim expires
+  nextAt    DateTime?
+  sentAt    DateTime?
+  error     String?
+  /// what it is about (booking or invitation id)
+  refId     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([status, nextAt])
+  @@map("email_outbox")
 }

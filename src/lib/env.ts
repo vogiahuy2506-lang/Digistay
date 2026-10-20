@@ -34,6 +34,13 @@ const schema = z.object({
   // imported anywhere, see CLAUDE.md).
   DATA_ENCRYPTION_KEYS: z.string().min(1),
 
+  // Shared secret of the scheduled jobs (/api/internal/*, called by the
+  // systemd timers in docker/systemd). Optional: without it they answer 503.
+  CRON_SECRET: z.string().min(32).optional(),
+  // Who gets the ops alert emails (src/lib/ops/alerts.ts), comma separated.
+  // Optional: without it, every SUPER_ADMIN user.
+  ALERT_EMAILS: z.string().optional(),
+
   // Cache — optional; falls back to in-memory stub when missing
   REDIS_URL: z.string().optional(),
 

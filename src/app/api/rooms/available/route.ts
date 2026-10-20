@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { auth } from '@/lib/auth'
 import { z } from 'zod'
 
 /**
  * GET /api/rooms/available
  * Get list of available rooms for a room type within a date range.
- * Used by the walk-in booking flow.
+ * Used by the walk-in booking flow in the dashboard, so members only: it
+ * lists booked room numbers. The public site uses /api/bookings/availability.
  */
 const querySchema = z.object({
   propertyId: z.string(),
@@ -16,6 +18,11 @@ const querySchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
 
     const query = querySchema.safeParse({
@@ -33,6 +40,31 @@ export async function GET(request: NextRequest) {
     }
 
     const { propertyId, roomTypeId, checkIn, checkOut } = query.data
+
+    // The room type, only if it is this property's and the caller is a member
+    const roomType = await prisma.roomType.findFirst({
+      where: {
+        id: roomTypeId,
+        property: {
+          id: propertyId,
+          workspace: {
+            OR: [
+              { ownerId: session.user.id },
+              { members: { some: { userId: session.user.id } } },
+            ],
+          },
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        totalRooms: true,
+      },
+    })
+
+    if (!roomType) {
+      return NextResponse.json({ success: false, error: 'Không tìm thấy hạng phòng' }, { status: 404 })
+    }
     const checkInDate = new Date(checkIn)
     const checkOutDate = new Date(checkOut)
 
@@ -84,20 +116,6 @@ export async function GET(request: NextRequest) {
     // Note: RoomLock doesn't store roomNumber, only roomTypeId
     // In a full implementation, you'd track individual rooms
     // For now, we just return the count of locked slots
-
-    // Get room type info
-    const roomType = await prisma.roomType.findFirst({
-      where: { id: roomTypeId },
-      select: {
-        id: true,
-        name: true,
-        totalRooms: true,
-      },
-    })
-
-    if (!roomType) {
-      return NextResponse.json({ success: false, error: 'Không tìm thấy hạng phòng' }, { status: 404 })
-    }
 
     // Calculate available count
     const totalBooked = bookedRooms.size

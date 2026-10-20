@@ -356,14 +356,16 @@ export interface BookingConfirmationTemplateProps {
   numChildren: number
   totalAmount: number
   currency?: string
-  manageUrl: string
+  /** The hotel's public site. Guests have no booking page of their own: the
+   * old "manage booking" link went to a page that does not exist. */
+  propertyUrl: string
   notes?: string
 }
 
 export function bookingConfirmationTemplate(props: BookingConfirmationTemplateProps): { html: string; text: string; subject: string } {
   const {
     guestName, bookingCode, propertyName, propertyAddress, propertyPhone,
-    checkIn, checkOut, numAdults, numChildren, totalAmount, currency = 'VND', manageUrl, notes,
+    checkIn, checkOut, numAdults, numChildren, totalAmount, currency = 'VND', propertyUrl, notes,
   } = props
 
   const nights = Math.max(
@@ -463,8 +465,8 @@ export function bookingConfirmationTemplate(props: BookingConfirmationTemplatePr
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0;">
       <tr>
         <td align="center">
-          <a href="${escapeHtml(manageUrl)}" style="display: inline-block; background: linear-gradient(135deg, ${BRAND.primary} 0%, ${BRAND.primaryLight} 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-size: 15px; font-weight: 600; box-shadow: 0 4px 12px rgba(169, 49, 25, 0.25);">
-            Quản lý đặt phòng →
+          <a href="${escapeHtml(propertyUrl)}" style="display: inline-block; background: linear-gradient(135deg, ${BRAND.primary} 0%, ${BRAND.primaryLight} 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-size: 15px; font-weight: 600; box-shadow: 0 4px 12px rgba(169, 49, 25, 0.25);">
+            Xem trang khách sạn →
           </a>
         </td>
       </tr>
@@ -473,7 +475,7 @@ export function bookingConfirmationTemplate(props: BookingConfirmationTemplatePr
 
   return {
     html: baseLayout({ previewText: `Đặt phòng ${bookingCode} tại ${propertyName}`, bodyHtml }),
-    text: `Xác nhận đặt phòng ${bookingCode}\nKhách sạn: ${propertyName}\n${formatDate(checkIn)} - ${formatDate(checkOut)}\nTổng: ${formatVnd(totalAmount, currency)}\nQuản lý: ${manageUrl}`,
+    text: `Xác nhận đặt phòng ${bookingCode}\nKhách sạn: ${propertyName}\n${formatDate(checkIn)} - ${formatDate(checkOut)}\nTổng: ${formatVnd(totalAmount, currency)}\nTrang khách sạn: ${propertyUrl}`,
     subject: `[${bookingCode}] ✅ Xác nhận đặt phòng tại ${propertyName}`,
   }
 }
@@ -568,43 +570,42 @@ export function workspaceInviteTemplate(props: WorkspaceInviteTemplateProps): { 
 // ============================================
 export function invoiceEmailTemplate(props: {
   customerName: string
-  invoiceNumber: string
+  einvoiceNumber: string
+  series: string
+  lookupCode: string
   bookingCode: string
   propertyName: string
   totalAmount: number
   taxAmount: number
-  pdfUrl: string
-  xmlUrl?: string
+  note?: string
   currency?: string
 }): { html: string; text: string; subject: string } {
-  const { customerName, invoiceNumber, bookingCode, propertyName, totalAmount, taxAmount, pdfUrl, xmlUrl, currency = 'VND' } = props
+  const { customerName, einvoiceNumber, series, lookupCode, bookingCode, propertyName, totalAmount, taxAmount, note, currency = 'VND' } = props
+  const row = (label: string, value: string) => `
+            <tr>
+              <td style="padding: 6px 0; font-size: 13px; color: ${BRAND.textMuted};">${label}</td>
+              <td align="right" style="padding: 6px 0; font-size: 14px; color: ${BRAND.text}; font-weight: 600;">${escapeHtml(value)}</td>
+            </tr>`
 
   const bodyHtml = `
     <h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: ${BRAND.text};">🧾 Hóa đơn điện tử</h1>
     <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: ${BRAND.textMuted};">
       Xin chào <strong style="color: ${BRAND.text};">${escapeHtml(customerName)}</strong>,<br/>
-      Cảm ơn bạn đã sử dụng dịch vụ. Hóa đơn điện tử của bạn đã được phát hành.
+      ${escapeHtml(propertyName)} đã phát hành hóa đơn điện tử cho đơn đặt phòng của bạn. Bản PDF được đính kèm email này.
     </p>
 
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0; border: 1px solid ${BRAND.border}; border-radius: 12px; overflow: hidden;">
       <tr>
         <td style="padding: 20px; background-color: ${BRAND.surface};">
           <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-            <tr>
-              <td style="padding: 6px 0; font-size: 13px; color: ${BRAND.textMuted};">Số hóa đơn</td>
-              <td align="right" style="padding: 6px 0; font-size: 14px; color: ${BRAND.text}; font-weight: 600;">${escapeHtml(invoiceNumber)}</td>
-            </tr>
-            <tr>
-              <td style="padding: 6px 0; font-size: 13px; color: ${BRAND.textMuted};">Mã đặt phòng</td>
-              <td align="right" style="padding: 6px 0; font-size: 14px; color: ${BRAND.text}; font-weight: 600;">${escapeHtml(bookingCode)}</td>
-            </tr>
-            <tr>
-              <td style="padding: 6px 0; font-size: 13px; color: ${BRAND.textMuted};">Khách sạn</td>
-              <td align="right" style="padding: 6px 0; font-size: 14px; color: ${BRAND.text}; font-weight: 600;">${escapeHtml(propertyName)}</td>
-            </tr>
+            ${row('Số hóa đơn', `${einvoiceNumber} (ký hiệu ${series})`)}
+            ${row('Mã tra cứu', lookupCode)}
+            ${row('Mã đặt phòng', bookingCode)}
+            ${row('Khách sạn', propertyName)}
+            ${note ? row('Ghi chú', note) : ''}
             <tr><td colspan="2" style="padding: 8px 0;"><div style="border-top: 1px solid ${BRAND.border};"></div></td></tr>
             <tr>
-              <td style="padding: 6px 0; font-size: 13px; color: ${BRAND.textMuted};">Thuế VAT</td>
+              <td style="padding: 6px 0; font-size: 13px; color: ${BRAND.textMuted};">Thuế GTGT</td>
               <td align="right" style="padding: 6px 0; font-size: 14px; color: ${BRAND.text};">${formatVnd(taxAmount, currency)}</td>
             </tr>
             <tr>
@@ -616,25 +617,53 @@ export function invoiceEmailTemplate(props: {
       </tr>
     </table>
 
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0;">
-      <tr>
-        <td align="center">
-          <a href="${escapeHtml(pdfUrl)}" style="display: inline-block; background: linear-gradient(135deg, ${BRAND.primary} 0%, ${BRAND.primaryLight} 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-size: 15px; font-weight: 600; box-shadow: 0 4px 12px rgba(169, 49, 25, 0.25);">
-            📄 Tải hóa đơn PDF
-          </a>
-          ${xmlUrl ? `
-          <a href="${escapeHtml(xmlUrl)}" style="display: inline-block; margin-left: 8px; background-color: ${BRAND.surface}; color: ${BRAND.primary}; text-decoration: none; padding: 14px 24px; border-radius: 10px; font-size: 15px; font-weight: 600; border: 1px solid ${BRAND.primary};">
-            Tải XML
-          </a>
-          ` : ''}
-        </td>
-      </tr>
-    </table>
+    <p style="margin: 0; font-size: 13px; line-height: 1.6; color: ${BRAND.textMuted};">
+      Hóa đơn được phát hành qua Mắt Bão; có thể tra cứu trên cổng hóa đơn của Mắt Bão bằng mã tra cứu ở trên.
+    </p>
   `
 
   return {
-    html: baseLayout({ previewText: `Hóa đơn ${invoiceNumber} - ${formatVnd(totalAmount, currency)}`, bodyHtml }),
-    text: `Hóa đơn ${invoiceNumber}\nBooking: ${bookingCode}\nTổng: ${formatVnd(totalAmount, currency)}\nPDF: ${pdfUrl}${xmlUrl ? `\nXML: ${xmlUrl}` : ''}`,
-    subject: `[${invoiceNumber}] Hóa đơn từ ${propertyName}`,
+    html: baseLayout({ previewText: `Hóa đơn số ${einvoiceNumber} - ${formatVnd(totalAmount, currency)}`, bodyHtml }),
+    text: [
+      `Xin chào ${customerName},`,
+      `${propertyName} đã phát hành hóa đơn điện tử cho đơn đặt phòng của bạn (PDF đính kèm).`,
+      `Số hóa đơn: ${einvoiceNumber} (ký hiệu ${series})`,
+      `Mã tra cứu: ${lookupCode}`,
+      `Mã đặt phòng: ${bookingCode}`,
+      ...(note ? [`Ghi chú: ${note}`] : []),
+      `Thuế GTGT: ${formatVnd(taxAmount, currency)}`,
+      `Tổng cộng: ${formatVnd(totalAmount, currency)}`,
+    ].join('\n'),
+    subject: `Hóa đơn điện tử số ${einvoiceNumber} - ${propertyName}`,
+  }
+}
+
+// ============================================
+//  Ops alerts (src/lib/ops/alerts.ts), for the people running Digistay
+// ============================================
+export function opsAlertTemplate(
+  findings: { severity: 'critical' | 'warning'; title: string; lines: string[] }[]
+): { html: string; text: string; subject: string } {
+  const critical = findings.filter((f) => f.severity === 'critical').length
+  const label = (s: string) => (s === 'critical' ? 'NGHIÊM TRỌNG' : 'Cảnh báo')
+  const bodyHtml = `
+    <h1 style="margin: 0 0 16px; font-size: 20px; font-weight: 700; color: ${BRAND.text};">Cảnh báo vận hành Digistay</h1>
+    ${findings
+      .map(
+        (f) => `
+    <div style="margin: 0 0 16px; padding: 12px 14px; border: 1px solid ${BRAND.border}; border-radius: 8px;">
+      <p style="margin: 0 0 6px; font-size: 14px; font-weight: 700; color: ${f.severity === 'critical' ? '#b42318' : BRAND.text};">
+        ${label(f.severity)}: ${escapeHtml(f.title)}
+      </p>
+      ${f.lines.map((l) => `<p style="margin: 0; font-size: 13px; line-height: 1.6; color: ${BRAND.textMuted};">${escapeHtml(l)}</p>`).join('')}
+    </div>`
+      )
+      .join('')}
+    <p style="margin: 0; font-size: 12px; color: ${BRAND.textMuted};">Email này nhắc lại mỗi 6 giờ (nghiêm trọng) hoặc 24 giờ (cảnh báo) cho tới khi vấn đề hết. Xử lý: docs/RUNBOOK.md.</p>
+  `
+  return {
+    html: baseLayout({ previewText: findings[0]?.title ?? 'Cảnh báo vận hành', bodyHtml }),
+    text: findings.map((f) => [`${label(f.severity)}: ${f.title}`, ...f.lines.map((l) => `  - ${l}`)].join('\n')).join('\n\n'),
+    subject: `[Digistay] ${critical > 0 ? `${critical} nghiêm trọng, ` : ''}${findings.length} cảnh báo: ${findings[0]?.title ?? ''}`.slice(0, 200),
   }
 }

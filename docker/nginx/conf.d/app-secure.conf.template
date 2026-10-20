@@ -7,7 +7,9 @@ server {
     listen [::]:443 ssl;
     http2 on;
 
-    server_name ${DOMAIN} www.${DOMAIN};
+    # *.${DOMAIN}: property sites (src/middleware.ts). They need the wildcard
+    # certificate and DNS record first: docs/RUNBOOK.md, "Subdomain cho site khách sạn".
+    server_name ${DOMAIN} www.${DOMAIN} *.${DOMAIN};
 
     # ---- TLS material (certbot volume) ----
     ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
@@ -31,11 +33,19 @@ server {
     # edit this template, never the rendered file.
     server_tokens off;
     include /etc/nginx/conf.d/security-headers.inc;
+    # The guest's IP when digistay.vn is proxied by Cloudflare (no effect otherwise).
+    include /etc/nginx/conf.d/cloudflare-real-ip.inc;
 
     # ---- Body size (mirror next.config experimental.serverActions.bodySizeLimit) ----
     client_max_body_size 12m;
 
     # ---- Reverse proxy → app ----
+    # Internal endpoints (scheduled jobs) are called from inside the app
+    # container only; never route them from the internet.
+    location /api/internal/ {
+        return 404;
+    }
+
     location / {
         proxy_pass http://app:3000;
         proxy_http_version 1.1;

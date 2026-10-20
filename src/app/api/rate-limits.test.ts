@@ -41,7 +41,9 @@ vi.mock('@/lib/auth', () => ({ auth: vi.fn() }))
 vi.mock('@/lib/db', () => ({
   prisma: {
     user: { findFirst: vi.fn(), findUnique: vi.fn(), update: vi.fn(), updateMany: vi.fn(), create: vi.fn() },
-    workspace: { create: vi.fn() },
+    workspace: { create: vi.fn(), findFirst: vi.fn() },
+    workspaceMember: { findFirst: vi.fn() },
+    invitation: { findFirst: vi.fn(), create: vi.fn() },
   },
 }))
 vi.mock('@/lib/email', () => ({
@@ -51,7 +53,11 @@ vi.mock('@/lib/email', () => ({
   }),
   sendPasswordChangedEmail: vi.fn(async () => ({ success: true })),
   sendWelcomeEmail: vi.fn(async () => ({ success: true })),
-  sendEmailChangeEmail: vi.fn(async () => ({ success: true })),
+  sendEmailChangeEmail: vi.fn(async ({ recipientEmail }: { recipientEmail: string }) => {
+    h.sent.push(recipientEmail)
+    return { success: true }
+  }),
+  sendWorkspaceInvite: vi.fn(async () => ({ success: true })),
 }))
 
 import { auth } from '@/lib/auth'
@@ -63,11 +69,14 @@ import { POST as resetPassword } from './auth/reset-password/route'
 import { PUT as changePassword } from './users/me/route'
 import { POST as changeEmail } from './users/me/change-email/route'
 import { POST as roomLock } from './bookings/room-lock/route'
+import { POST as inviteMember } from './workspaces/[id]/invitations/route'
 import { issueResetToken } from '@/lib/auth/otp'
 
 const db = prisma as unknown as {
   user: Record<'findFirst' | 'findUnique' | 'update' | 'updateMany' | 'create', ReturnType<typeof vi.fn>>
-  workspace: { create: ReturnType<typeof vi.fn> }
+  workspace: Record<'create' | 'findFirst', ReturnType<typeof vi.fn>>
+  workspaceMember: { findFirst: ReturnType<typeof vi.fn> }
+  invitation: Record<'findFirst' | 'create', ReturnType<typeof vi.fn>>
 }
 const mockAuth = auth as unknown as ReturnType<typeof vi.fn>
 
@@ -202,5 +211,35 @@ describe('room-lock', () => {
   it('31st hold request from one IP within 10 minutes gets 429', async () => {
     for (let i = 0; i < 30; i++) expect((await call(roomLock, {})).status).toBe(400) // invalid body, still counted
     expect((await call(roomLock, {})).status).toBe(429)
+  })
+})
+
+describe("mail to any address through Digistay's server", () => {
+  const invite = (email: string) =>
+    call((r) => inviteMember(r, { params: Promise.resolve({ id: 'ws' }) }), { email, role: 'USER' })
+
+  it('31st invitation from one user within an hour gets 429 before anything is written', async () => {
+    db.workspace.findFirst.mockResolvedValue({ id: 'ws' })
+    db.workspaceMember.findFirst.mockResolvedValue(null)
+    db.invitation.findFirst.mockResolvedValue(null)
+    db.invitation.create.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({
+      ...data,
+      id: 'inv',
+      workspace: { name: 'W' },
+      sender: { name: 'Me', email: 'me@example.com' },
+      recipient: null,
+    }))
+
+    for (let i = 0; i < 30; i++) expect((await invite(`guest${i}@example.com`)).status).toBe(200)
+    expect((await invite('guest30@example.com')).status).toBe(429)
+    expect(db.invitation.create).toHaveBeenCalledTimes(30)
+  })
+
+  it('6th email-change request within an hour gets 429 and sends nothing', async () => {
+    for (let i = 0; i < 5; i++) {
+      expect((await call(changeEmail, { newEmail: `new${i}@example.com`, password: CURRENT })).status).toBe(200)
+    }
+    expect((await call(changeEmail, { newEmail: 'new5@example.com', password: CURRENT })).status).toBe(429)
+    expect(h.sent).toHaveLength(5)
   })
 })

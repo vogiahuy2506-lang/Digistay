@@ -16,16 +16,21 @@ import {
   passwordChangedTemplate,
   emailChangeTemplate,
   bookingConfirmationTemplate,
-  workspaceInviteTemplate,
   invoiceEmailTemplate,
+  opsAlertTemplate,
   type OtpEmailTemplateProps,
   type BookingConfirmationTemplateProps,
-  type WorkspaceInviteTemplateProps,
 } from './templates'
 
 export interface EmailRecipient {
   email: string
   name?: string
+}
+
+export interface EmailAttachment {
+  filename: string
+  content: Buffer
+  contentType?: string
 }
 
 export interface SendResult {
@@ -102,14 +107,26 @@ function getFromAddress(): string {
   return process.env.EMAIL_FROM ?? 'Digistay <noreply@digistay.vn>'
 }
 
+/** For the outbox (outbox.ts), which renders first and sends later. */
+export function sendRendered(
+  to: EmailRecipient,
+  message: { subject: string; text: string; html: string }
+): Promise<SendResult> {
+  return send(to, message.subject, message.text, message.html)
+}
+
+// Every caller passes (subject, text, html): the parameters used to be
+// declared the other way round, so the HTML part of every email carried the
+// plain text and the templates never showed.
 async function send(
   to: EmailRecipient,
   subject: string,
-  html: string,
-  text?: string
+  text: string,
+  html: string = text,
+  attachments: EmailAttachment[] = []
 ): Promise<SendResult> {
   const from = getFromAddress()
-  const plain = text ?? html
+  const plain = text
 
   const transport = await getTransport()
 
@@ -135,6 +152,7 @@ async function send(
         subject,
         text: plain,
         html,
+        ...(attachments.length > 0 && { attachments }),
       })
       return { success: true, sent: true, id: info.messageId }
     } catch (err) {
@@ -153,6 +171,9 @@ async function send(
         subject,
         text: plain,
         html,
+        ...(attachments.length > 0 && {
+          attachments: attachments.map(({ filename, content }) => ({ filename, content })),
+        }),
       })
       if (result.error) {
         return { success: false, sent: false, error: result.error.message }
@@ -181,45 +202,8 @@ export async function sendBookingConfirmation(
   return send({ email: data.guestEmail, name: data.guestName }, subject, text, html)
 }
 
-// ============================================
-//  Owner new-booking notification
-// ============================================
-
-export interface OwnerNewBookingData {
-  ownerEmail: string
-  ownerName?: string
-  bookingCode: string
-  guestName: string
-  guestPhone: string
-  guestEmail: string
-  propertyName: string
-  checkIn: string
-  checkOut: string
-  totalAmount: number
-  currency?: string
-  manageUrl: string
-}
-
-export async function sendOwnerNewBooking(
-  data: OwnerNewBookingData
-): Promise<SendResult> {
-  const subject = `Đơn đặt phòng mới #${data.bookingCode} - ${data.propertyName}`
-  const text = `Đơn đặt phòng: ${data.bookingCode}\nKhách: ${data.guestName}\nNgày: ${data.checkIn} - ${data.checkOut}`
-  return send({ email: data.ownerEmail, name: data.ownerName }, subject, text, text)
-}
-
-// ============================================
-//  Workspace invitation
-// ============================================
-
-export type WorkspaceInviteData = WorkspaceInviteTemplateProps
-
-export async function sendWorkspaceInvite(
-  data: WorkspaceInviteData
-): Promise<SendResult> {
-  const { html, text, subject } = workspaceInviteTemplate(data)
-  return send({ email: data.recipientEmail, name: data.recipientName }, subject, text, html)
-}
+// The owner's new-booking notice and workspace invitations go through the
+// outbox (outbox.ts): queued with the request, retried until sent.
 
 // ============================================
 //  OTP verification (email-based)
@@ -261,19 +245,36 @@ export function sendEmailChangeEmail(props: { recipientEmail: string; recipientN
 // ============================================
 
 export interface InvoiceEmailData {
-  customerEmail: string
+  to: string
   customerName: string
-  invoiceNumber: string
+  einvoiceNumber: string
+  series: string
+  lookupCode: string
   bookingCode: string
   propertyName: string
   totalAmount: number
   taxAmount: number
-  pdfUrl: string
-  xmlUrl?: string
-  currency?: string
+  /** e.g. "Điều chỉnh giảm cho hoá đơn số 12" */
+  note?: string
+  pdf: { filename: string; content: Buffer }
 }
 
-export async function sendInvoiceEmail(data: InvoiceEmailData): Promise<SendResult> {
+/** An issued e-invoice, its PDF attached (src/lib/einvoice/delivery.ts). */
+export async function sendInvoiceEmail({ to, pdf, ...data }: InvoiceEmailData): Promise<SendResult> {
   const { html, text, subject } = invoiceEmailTemplate(data)
-  return send({ email: data.customerEmail, name: data.customerName }, subject, text, html)
+  return send({ email: to, name: data.customerName }, subject, text, html, [
+    { ...pdf, contentType: 'application/pdf' },
+  ])
+}
+
+// ============================================
+//  Ops alerts (src/lib/ops/alerts.ts)
+// ============================================
+
+export async function sendOpsAlertEmail(
+  to: string,
+  findings: Parameters<typeof opsAlertTemplate>[0]
+): Promise<SendResult> {
+  const { html, text, subject } = opsAlertTemplate(findings)
+  return send({ email: to }, subject, text, html)
 }

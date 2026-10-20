@@ -58,6 +58,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Amenities have no workspace: every hotel picks from this one list, so
+    // only the platform adds to it. Role read from the database, not the
+    // session token, which can be up to 30 days old.
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true },
+    })
+    if (user?.role !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { success: false, error: 'Chỉ quản trị viên Digistay được thêm tiện ích dùng chung' },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
     const validation = amenitySchema.safeParse(body)
 

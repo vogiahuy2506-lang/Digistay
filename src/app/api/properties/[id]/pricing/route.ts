@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { createPricingSchema, updatePricingSchema } from '@/lib/validations'
+import { invalidatePublicSite } from '@/lib/public-site/site'
 
 // Check if user has admin access to property's workspace
 async function checkPropertyAdmin(propertyId: string, userId: string) {
@@ -121,6 +122,7 @@ export async function POST(
     })
 
     // Log activity
+    invalidatePublicSite(id)
     await prisma.activityLog.create({
       data: {
         userId: session.user.id,
@@ -217,6 +219,7 @@ export async function PATCH(
     })
 
     // Log activity
+    invalidatePublicSite(id)
     await prisma.activityLog.create({
       data: {
         userId: session.user.id,
@@ -303,6 +306,7 @@ export async function DELETE(
     })
 
     // Log activity
+    invalidatePublicSite(id)
     await prisma.activityLog.create({
       data: {
         userId: session.user.id,

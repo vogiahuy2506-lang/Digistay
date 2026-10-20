@@ -466,6 +466,261 @@ khách sạn tạo lại khoá ở nhà cung cấp, vì ai có DB cũ và khoá 
 
 ---
 
+## Đối soát PayOS định kỳ
+
+Timer `digistay-reconcile` cứ 10 phút chạy `docker/systemd/scheduled-jobs.sh`, gọi hai việc bên
+trong container app (cần header `CRON_SECRET`; nginx không mở `/api/internal/` ra ngoài):
+
+- `/api/internal/payos-reconcile`: webhook của PayOS có thể bị lỡ, ví dụ khi site đang deploy
+  hoặc PayOS thử lại vài lần rồi bỏ. Việc này hỏi PayOS về các link đang chờ trong 3 ngày gần
+  nhất, rồi ghi nhận kết quả giống hệt webhook (chạy lặp cũng không ghi hai lần).
+- `/api/internal/einvoice-jobs`: tự xuất hoá đơn cho đơn đã trả đủ (khách sạn nào bật), phát hành
+  lại hoá đơn tự động chưa rõ kết quả, và gửi email hoá đơn còn chờ (xem "Hoá đơn tự động và
+  email" bên dưới).
+
+### Cài đặt một lần
+
+```bash
+cd /opt/digistay
+sudo grep -c '^CRON_SECRET=' .env.production   # phải là 0
+printf '\nCRON_SECRET=%s\n' "$(openssl rand -hex 32)" | sudo tee -a .env.production >/dev/null
+# Có hiệu lực từ lần deploy kế tiếp (container app đọc .env.production lúc khởi động).
+
+sudo cp docker/systemd/digistay-reconcile.{service,timer} /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now digistay-reconcile.timer
+sudo systemctl start digistay-reconcile.service          # chạy thử ngay
+sudo journalctl -u digistay-reconcile -n 5 --no-pager    # hai dòng {"success":true,...}
+```
+
+Đã cài bản cũ (chỉ đối soát PayOS)? Chép lại hai file unit như trên rồi `daemon-reload`.
+
+Log của app có dòng `[payos] reconcile {...}` và `[einvoice] jobs {...}` sau mỗi lượt. Nếu thấy `paid without a webhook`
+nghĩa là webhook của khách sạn đó đang lỡ: kiểm tra URL webhook trong PayOS (bấm "Đổi khoá" ở
+trang Tài khoản ngân hàng để đăng ký lại).
+
+### Hoá đơn tự động và email
+
+- **Email hoá đơn**: hoá đơn vừa phát hành được gửi cho người mua, đính kèm PDF lấy từ Mắt Bão
+  (email công ty nếu là hoá đơn công ty). Cần SMTP (`EMAIL_SERVER_*` trong `.env.production`);
+  chưa cấu hình thì hoá đơn hiện "Gửi email lỗi: Máy chủ chưa cấu hình gửi email". Lỗi được thử
+  lại sau 10 phút, 30 phút, 2 giờ, 6 giờ rồi dừng; nhân viên bấm "Gửi lại email" bất cứ lúc nào.
+  Khách sạn tắt được việc gửi trong thẻ Mắt Bão ở trang Hoá đơn.
+- **Tự xuất hoá đơn** (mặc định tắt, owner/ADMIN bật trong thẻ Mắt Bão): đơn **thanh toán đủ** kể
+  từ lúc bật, chưa có hoá đơn nào, được xuất một hoá đơn bằng tổng tiền đơn. Người mua là công ty
+  khách nhập khi đặt phòng (`vatCompany`, `vatTaxCode`...), không có thì là khách. Thông tin công ty
+  không hợp lệ thì hoá đơn nằm ở "Chờ phát hành" kèm lý do, chờ nhân viên sửa. Mỗi đơn chỉ một lần:
+  đơn đã có hoá đơn (kể cả đã huỷ) thì để nhân viên lo; đơn trả thêm sau đó (gia hạn) thì nhân viên
+  lập điều chỉnh tăng.
+- Kiểm tra: `docker logs digistay-app --since 1h | grep '\[einvoice\]'`.
+
+---
+
+## Giám sát và cảnh báo
+
+**`/api/health`** trả 200 `{"status":"ok","version":"<sha>","redis":"ok"}` khi app chạy được:
+DB trả lời, khoá mã hoá hợp lệ, và **DB đã có mọi migration của bản đang chạy**. Thiếu migration
+(ví dụ DB trống) thì trả 503 và log ghi tên migration thiếu, nên `docker/deploy.sh` sẽ quay về
+bản trước. Redis chết chỉ hiện `"redis":"down"`, không làm health đỏ.
+
+**Kiểm tra từ bên ngoài** (cài một lần): tạo monitor HTTP miễn phí (UptimeRobot, Better Stack…)
+cho `https://digistay.vn/api/health`, 5 phút/lần, báo khi mã khác 200 hoặc nội dung không có
+`"status":"ok"`. Đây là thứ duy nhất báo được khi chính app hoặc VPS chết.
+
+**Email cảnh báo** (`src/lib/ops/alerts.ts`): job `ops-alerts` chạy cuối mỗi lượt 10 phút của
+`scheduled-jobs.sh`, gửi cho `ALERT_EMAILS` (trong `.env.production`, cách nhau dấu phẩy) hoặc
+mọi user `SUPER_ADMIN`. Cần SMTP. Một vấn đề được gửi một lần, nhắc lại mỗi 6 giờ (nghiêm trọng)
+hoặc 24 giờ (cảnh báo) tới khi hết; có mục mới thì gửi ngay.
+
+| Cảnh báo | Mức | Xử lý |
+|---|---|---|
+| Job `payos-reconcile` / `einvoice-jobs` / `backup` lỗi hoặc chạy dở quá 1 giờ | cảnh báo (backup: nghiêm trọng) | `journalctl -u digistay-reconcile` hoặc `-u digistay-backup`; log app |
+| Chưa có / quá 30 giờ không có backup hằng ngày | nghiêm trọng | "Backup & khôi phục" |
+| Backup chỉ nằm trên VPS | cảnh báo | đặt `BACKUP_GCS_BUCKET` |
+| Hoá đơn điện tử kẹt (`PUBLISHING` > 10 phút, chưa rõ kết quả > 1 giờ) | nghiêm trọng | mở hoá đơn, bấm phát hành lại (Mắt Bão trả 304, không xuất trùng) |
+| Email hoá đơn đã thử hết lần | cảnh báo | kiểm SMTP, bấm "Gửi lại email" |
+| PayOS về sai số tiền | nghiêm trọng | khoản đó **không** được ghi nhận: liên hệ khách, hoàn hoặc ghi tay |
+| PayOS trả vào link đã huỷ/hết hạn hay đơn đã đóng | cảnh báo | đã ghi nhận; nhân viên quyết hoàn hay giữ |
+| PayOS chỉ được ghi nhận nhờ đối soát | cảnh báo | webhook của khách sạn đó hỏng: "Đổi khoá" ở trang Tài khoản ngân hàng |
+
+Lịch sử chạy job nằm ở bảng `job_runs` (giữ 30 ngày); `backup.sh` cũng ghi vào đó.
+
+**Trang Hệ thống** (`/admin/system`, chỉ user `SUPER_ADMIN`; người khác thấy "Không tìm thấy"):
+tình trạng (phiên bản, migration, Redis), vấn đề hiện tại theo các luật cảnh báo, từng job (lần
+chạy gần nhất, lỗi 24 giờ), hàng đợi email, cảnh báo đã gửi. Cấp quyền:
+
+```bash
+docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c \
+  "UPDATE users SET role = '"'"'SUPER_ADMIN'"'"' WHERE email = '"'"'ban@digistay.vn'"'"'"'
+```
+
+Link "Trang Hệ thống" hiện ở trang Tài khoản của tôi (`/profile`), cạnh nhãn Super Admin.
+
+Email xác nhận đặt phòng, báo đơn mới cho chủ và lời mời đi qua hàng đợi `email_outbox` (nội dung
+mã hoá): gửi ngay sau request, lỗi thì job `email-outbox` thử lại sau 10 phút, 30 phút, 2 giờ,
+6 giờ; hết lượt thì có cảnh báo "email đã thử hết số lần". Email đã gửi được xoá sau 30 ngày.
+
+```bash
+docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c \
+  "SELECT job, status, \"startedAt\", error FROM job_runs ORDER BY \"startedAt\" DESC LIMIT 20"'
+```
+
+---
+
+## Bật Cloudflare proxy (đám mây cam)
+
+DNS của digistay.vn nằm ở Cloudflare nhưng **chưa bật proxy** (response không có header `cf-ray`).
+Bật proxy thì có chống DDoS, cache file tĩnh ở biên, và giấu IP của VPS. nginx đã sẵn sàng:
+`docker/nginx/conf.d/cloudflare-real-ip.inc` lấy IP thật của khách từ `CF-Connecting-IP`, **chỉ**
+khi kết nối đến từ dải IP của Cloudflare. Không có file này, mọi khách sẽ mang IP của Cloudflare
+và giới hạn số lần thử/khoá tài khoản sẽ khoá nhầm cả đám đông.
+
+1. Deploy bản có file này. Kiểm: `curl -sI https://digistay.vn | grep -i server` vẫn ra nginx.
+2. Cloudflare → SSL/TLS: chế độ **Full (strict)** (VPS có chứng chỉ Let's Encrypt hợp lệ). Đừng
+   dùng "Flexible": Cloudflare sẽ gọi VPS bằng HTTP và nginx chuyển hướng vòng tròn.
+3. Cloudflare → DNS: bật đám mây cam cho `digistay.vn`, `www` và `*` (nếu đã có).
+4. Kiểm: `curl -sI https://digistay.vn | grep -i cf-ray` có kết quả; đăng nhập sai vài lần rồi xem
+   log app: IP trong cảnh báo là IP thật, không phải `172.64…`/`104.16…`.
+5. Gia hạn chứng chỉ dùng DNS-01 qua API Cloudflare nên không bị ảnh hưởng.
+
+Tuỳ chọn, sau khi ổn định: chặn cổng 80/443 với mọi IP ngoài dải Cloudflare (firewall GCE) để
+không ai đi vòng qua Cloudflare. Danh sách dải IP đổi rất hiếm; khi Cloudflare thông báo thay đổi:
+`bash docker/nginx/update-cloudflare-ips.sh`, xem diff, commit.
+
+---
+
+## Kiểm thử trình duyệt (e2e)
+
+Workflow `E2E` (`.github/workflows/e2e.yml`) chạy Playwright mỗi đêm lúc 03:00 trên `main`, với bản
+build production; PayOS, Mắt Bão và SMTP là bản giả (`e2e/fakes.ts`). Kịch bản ở `e2e/specs/`:
+đăng nhập, xác thực hai lớp, PayOS (kết nối → link → webhook → tiền cọc), hoá đơn (phát hành → email
+kèm PDF → điều chỉnh giảm → tự xuất khi đơn trả đủ), trang Hệ thống, và vài kiểm tra cơ bản (health,
+404 thay vì 500). Đỏ thì tải artifact `playwright-report` trong lần chạy đó (có trace và ảnh).
+Chạy cho một nhánh: Actions → E2E → Run workflow.
+
+Chạy trên máy (cần Postgres và Redis; database **phải** tên `*_e2e` vì mọi bảng bị xoá):
+
+```bash
+docker exec digistay-test-pg psql -U postgres -c "CREATE DATABASE digistay_e2e"
+export DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54329/digistay_e2e" REDIS_URL=redis://127.0.0.1:6379
+npx prisma migrate deploy
+npm run build && npm run e2e:prepare
+npx playwright install chromium   # một lần
+npm run e2e
+```
+
+---
+
+## Gia hạn chứng chỉ HTTPS
+
+Chứng chỉ Let's Encrypt chỉ có hạn 90 ngày. Trước đây **không có gì tự gia hạn**: dịch vụ
+`certbot` trong compose chỉ chạy `sleep`. Timer `digistay-cert-renew` chạy
+`docker/certbot/renew.sh` mỗi ngày; certbot chỉ gia hạn khi chứng chỉ còn dưới 30 ngày, rồi
+script reload nginx.
+
+### Cài đặt một lần
+
+```bash
+cd /opt/digistay
+sudo docker run --rm -v digistay_certbot_conf:/etc/letsencrypt certbot/dns-cloudflare:v5.8.0 certificates
+#   → xem "Expiry Date" của chứng chỉ hiện tại
+sudo bash docker/certbot/renew.sh --dry-run    # thử với máy chủ staging, không đổi gì
+
+sudo cp docker/systemd/digistay-cert-renew.{service,timer} /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now digistay-cert-renew.timer
+systemctl list-timers digistay-cert-renew.timer
+```
+
+Nếu VPS đã có cron gia hạn riêng (ngoài repo) thì bỏ cron đó, để không chạy hai nơi.
+
+---
+
+## Subdomain cho site khách sạn
+
+Site công khai của khách sạn luôn có ở `digistay.vn/<subdomain>`. Phần dưới đây bật thêm địa
+chỉ `<subdomain>.digistay.vn`:
+- **Code:** đã sẵn sàng. `src/middleware.ts` chuyển request sang đúng site; nginx đã có
+  `*.digistay.vn` trong `server_name`; app tự lấy tên miền gốc từ `NEXTAUTH_URL`.
+- **Còn thiếu:** chứng chỉ wildcard và bản ghi DNS.
+
+**Làm đúng thứ tự: chứng chỉ trước, DNS sau.** Nếu thêm DNS trước, khách vào subdomain sẽ gặp
+lỗi chứng chỉ không thể bỏ qua, vì HSTS đang bật `includeSubDomains`.
+
+1. **API token Cloudflare** (DNS của digistay.vn ở Cloudflare): My Profile → API Tokens →
+   Create Token → mẫu "Edit zone DNS", Zone Resources = chỉ `digistay.vn`.
+2. **Trên VPS:**
+
+   ```bash
+   sudo install -m 600 /dev/null /etc/digistay/cloudflare.ini
+   echo 'dns_cloudflare_api_token = <token>' | sudo tee /etc/digistay/cloudflare.ini >/dev/null
+   ```
+
+3. **Cấp lại chứng chỉ** cùng tên, gồm cả `*.digistay.vn`. Chạy thử trước bằng `--dry-run`, ổn
+   rồi chạy lại không có cờ đó:
+
+   ```bash
+   cd /opt/digistay
+   sudo docker run --rm -v digistay_certbot_conf:/etc/letsencrypt \
+     -v /etc/digistay/cloudflare.ini:/etc/digistay/cloudflare.ini:ro \
+     certbot/dns-cloudflare:v5.8.0 certonly --non-interactive --dry-run \
+     --dns-cloudflare --dns-cloudflare-credentials /etc/digistay/cloudflare.ini \
+     --cert-name digistay.vn -d digistay.vn -d '*.digistay.vn' \
+     --email <email> --agree-tos --no-eff-email
+   sudo docker compose exec -T nginx nginx -s reload
+   ```
+
+   Không ghi thêm `www.digistay.vn`: wildcard đã gồm nó, và Let's Encrypt từ chối tên trùng.
+   Từ đó `renew.sh` gia hạn cả chứng chỉ này qua DNS (file `cloudflare.ini` phải còn đó).
+4. **DNS trên Cloudflare:** bản ghi `A`, tên `*`, trỏ về IP của VPS, **DNS only** (mây xám). Bật
+   proxy (mây cam) sẽ làm hỏng cách lấy IP thật của các giới hạn tần suất.
+5. **Kiểm tra:** `curl -sI https://<subdomain của một khách sạn>.digistay.vn` trả `200`. Subdomain
+   không tồn tại trả `404`. Các tên dành riêng (`www`, `api`, `login`...) không bao giờ thành site
+   khách sạn.
+
+---
+
+## Tên miền riêng của khách sạn
+
+Khách sạn gắn tên miền của mình (vd `www.khachsan.vn`) bằng nút xác minh tên miền
+(`POST /api/website/domain/verify`, chỉ ADMIN/MANAGER). Chỉ gắn được khi DNS có đủ hai thứ:
+- **Trỏ đúng site:** CNAME `www.khachsan.vn` → `<subdomain của chính site đó>.digistay.vn`. Tên miền
+  gốc (`khachsan.vn`) không đặt CNAME được: dùng bản ghi A, mọi địa chỉ phải là IP của `digistay.vn`.
+- **Chứng minh chủ sở hữu:** TXT `_digistay-verify.<tên miền>` = `digistay-verify=<mã>`. Mã do app
+  tính từ workspace + tên miền (HMAC, khoá dẫn xuất từ `NEXTAUTH_SECRET`); API trả về trong
+  `data.records.txt`.
+
+Chỉ CNAME/A là chưa đủ: khách sạn cũ rời đi mà quên xoá DNS thì tên miền vẫn trỏ về Digistay, và
+ai cũng gắn được. Đổi `NEXTAUTH_SECRET` làm đổi mọi mã: tên miền đã gắn không bị ảnh hưởng, chỉ lần
+gắn mới phải thêm TXT mới. Kiểm thất bại (kể cả DNS lỗi tạm thời) không ghi gì vào DB.
+
+**Hiện chưa phục vụ:** app chưa trả site theo tên miền riêng (middleware chỉ xử lý
+`*.digistay.vn`), và `/api/website/ssl/provision` vẫn là bản mô phỏng. Phần này chỉ bảo đảm không
+ai gắn được tên miền của người khác trước khi tính năng đó có.
+
+**Trước khi deploy migration `20261021030000_custom_domain_unique`**, đo trên production:
+```bash
+sudo docker compose exec -T postgres psql -U digistay -d digistay -c \
+  "SELECT lower(\"customDomain\"), count(*) FROM website_settings
+   WHERE \"customDomain\" IS NOT NULL AND btrim(\"customDomain\") <> ''
+   GROUP BY 1 HAVING count(*) > 1;"
+```
+Phải ra 0 dòng. Có dòng thì DỪNG: chọn site nào giữ tên miền là việc của người, không để migration
+chọn (migration sẽ fail nếu trùng đúng chữ).
+
+**Tên miền đang bị site khác giữ (API trả 409).** App không bao giờ tự gỡ khỏi site cũ. Người vận hành:
+1. Người yêu cầu thêm bản ghi TXT có trong phản hồi 409 (`data.records.txt`).
+2. Kiểm: `dig +short TXT _digistay-verify.<tên miền>` phải ra đúng giá trị đó.
+3. Gỡ khỏi site cũ, ghi lại ai yêu cầu và lúc nào:
+   ```bash
+   sudo docker compose exec -T postgres psql -U digistay -d digistay -c \
+     "UPDATE website_settings SET \"customDomain\" = NULL, \"domainVerificationStatus\" = NULL,
+      \"domainVerifiedAt\" = NULL, \"sslEnabled\" = false WHERE \"customDomain\" = '<tên miền>';"
+   ```
+4. Người yêu cầu bấm xác minh lại.
+
+---
+
 ## Đặt lại xác thực hai lớp
 
 Xác thực hai lớp (2FA) là **tuỳ chọn**, người dùng tự bật ở Hồ sơ → Bảo mật. Mất điện thoại thì

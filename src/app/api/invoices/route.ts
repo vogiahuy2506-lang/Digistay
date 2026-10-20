@@ -2,94 +2,124 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
+import { InvoiceStatus, type Prisma } from '@prisma/client'
+import { badParam, dayParam, enumParam, pageParams, paginationOf, searchParam } from '@/lib/api/list-params'
+import { EinvoiceError } from '@/lib/einvoice/matbao'
+import { generateInvoiceNumber, invoiceData, invoiceInputSchema } from '@/lib/einvoice/invoices'
+import type { VatCode } from '@/lib/einvoice/vat'
 
-const createInvoiceSchema = z.object({
-  bookingId: z.string(),
-  companyName: z.string().min(2),
-  companyAddress: z.string().min(5),
-  taxCode: z.string().min(10),
-  companyEmail: z.string().email().optional(),
-  customerName: z.string().min(2),
-  customerEmail: z.string().email(),
-  customerAddress: z.string().optional(),
-  subtotal: z.number().positive(),
-  taxRate: z.number().min(0).max(1).default(0.1),
-})
+// Amounts are computed on the server from the VAT-inclusive total and the
+// property's VAT code (src/lib/einvoice/invoices.ts).
+const createInvoiceSchema = z.object({ bookingId: z.string() }).and(invoiceInputSchema)
 
-function generateInvoiceNumber(): string {
-  const date = new Date()
-  const year = date.getFullYear().toString().slice(-2)
-  const month = (date.getMonth() + 1).toString().padStart(2, '0')
-  const day = date.getDate().toString().padStart(2, '0')
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase()
-  return `INV${year}${month}${day}${random}`
-}
-
+/**
+ * GET /api/invoices — one page of the caller's invoices, newest first.
+ * Filters (propertyId, status, q, startDate/endDate as yyyy-mm-dd) and the
+ * search run in the database, so they cover every page. `stats` counts the
+ * property's invoices whatever the filters (the cards above the list).
+ */
 export async function GET(request: NextRequest) {
   try {
     const session = await auth()
     const { searchParams } = new URL(request.url)
-    
-    const propertyId = searchParams.get('propertyId')
-    const status = searchParams.get('status')
-    const startDate = searchParams.get('startDate')
-    const endDate = searchParams.get('endDate')
 
     if (!session?.user?.id) {
       return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
     }
 
-    const where: any = {}
+    const propertyId = searchParams.get('propertyId')
+    const status = enumParam(searchParams.get('status'), Object.values(InvoiceStatus))
+    const from = dayParam(searchParams.get('startDate'), 'from')
+    const to = dayParam(searchParams.get('endDate'), 'to')
+    if (status === null) return badParam('Trạng thái không hợp lệ')
+    if (from === null || to === null) return badParam('Ngày không hợp lệ (yyyy-mm-dd)')
+    const q = searchParam(searchParams)
+    const { page, limit, skip } = pageParams(searchParams)
 
-    if (propertyId) {
-      where.booking = {
-        propertyId,
-        property: {
-          workspace: {
-            OR: [
-              { ownerId: session.user.id },
-              { members: { some: { userId: session.user.id } } },
-            ],
-          },
+    // Always the caller's workspaces; propertyId only narrows it (without
+    // it, this once listed every hotel's invoices).
+    const scope: Prisma.InvoiceWhereInput = {
+      property: {
+        workspace: {
+          OR: [
+            { ownerId: session.user.id },
+            { members: { some: { userId: session.user.id } } },
+          ],
         },
-      }
+      },
+      ...(propertyId && { propertyId }),
+    }
+    const contains = (value: string) => ({ contains: value, mode: 'insensitive' as const })
+    const where: Prisma.InvoiceWhereInput = {
+      ...scope,
+      ...(status && { status }),
+      ...((from || to) && { createdAt: { ...(from && { gte: from }), ...(to && { lte: to }) } }),
+      ...(q && {
+        OR: [
+          { invoiceNumber: contains(q) },
+          { einvoiceNumber: contains(q) },
+          { companyName: contains(q) },
+          { customerName: contains(q) },
+          { taxCode: contains(q) },
+          { booking: { bookingCode: contains(q) } },
+        ],
+      }),
     }
 
-    if (status) {
-      where.status = status
-    }
-
-    if (startDate) {
-      where.createdAt = { ...where.createdAt, gte: new Date(startDate) }
-    }
-
-    if (endDate) {
-      where.createdAt = { ...where.createdAt, lte: new Date(endDate) }
-    }
-
-    const invoices = await prisma.invoice.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        booking: {
-          select: {
-            id: true,
-            bookingCode: true,
-            guestName: true,
-            checkInDate: true,
-            checkOutDate: true,
-            property: {
-              select: {
-                id: true,
-                name: true,
+    const [invoices, total, byStatus, issued] = await Promise.all([
+      prisma.invoice.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        include: {
+          booking: {
+            select: {
+              id: true,
+              bookingCode: true,
+              guestName: true,
+              checkInDate: true,
+              checkOutDate: true,
+              property: {
+                select: {
+                  id: true,
+                  name: true,
+                },
               },
             },
           },
+          replacesInvoice: { select: { id: true, invoiceNumber: true, einvoiceNumber: true, invoiceSeries: true } },
+          replacements: {
+            where: { status: { not: 'CANCELLED' } },
+            select: { id: true, invoiceNumber: true, einvoiceNumber: true, status: true },
+          },
+          adjustsInvoice: { select: { id: true, invoiceNumber: true, einvoiceNumber: true, invoiceSeries: true } },
+          adjustments: {
+            where: { status: { not: 'CANCELLED' } },
+            select: { id: true, invoiceNumber: true, einvoiceNumber: true, status: true, totalAmount: true },
+            orderBy: { createdAt: 'asc' },
+          },
         },
+      }),
+      prisma.invoice.count({ where }),
+      prisma.invoice.groupBy({ by: ['status'], where: scope, _count: { _all: true } }),
+      // Issued money: adjustments are signed, so they count as they should.
+      prisma.invoice.aggregate({ where: { ...scope, status: 'PUBLISHED' }, _sum: { totalAmount: true } }),
+    ])
+
+    const count = (s: string) => byStatus.find((r) => r.status === s)?._count._all ?? 0
+    return NextResponse.json({
+      success: true,
+      data: invoices,
+      pagination: paginationOf(page, limit, total),
+      stats: {
+        total: byStatus.reduce((n, r) => n + r._count._all, 0),
+        draft: count('DRAFT'),
+        pending: count('PENDING'),
+        published: count('PUBLISHED'),
+        issuedAmount: issued._sum.totalAmount ?? 0,
       },
     })
-
-    return NextResponse.json({ success: true, data: invoices })
   } catch (error) {
     console.error('Get invoices error:', error)
     return NextResponse.json({ success: false, error: 'Lỗi khi lấy danh sách hóa đơn' }, { status: 500 })
@@ -113,7 +143,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    const { bookingId, taxRate, ...invoiceData } = validation.data
+    const { bookingId, ...input } = validation.data
 
     // Get booking
     const booking = await prisma.booking.findUnique({
@@ -121,6 +151,7 @@ export async function POST(request: NextRequest) {
       include: {
         property: {
           select: {
+            einvoice: { select: { vatCode: true, verifiedAt: true } },
             workspace: {
               select: {
                 ownerId: true,
@@ -148,20 +179,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Không có quyền tạo hóa đơn' }, { status: 403 })
     }
 
-    const taxAmount = invoiceData.subtotal * taxRate
-    const totalAmount = invoiceData.subtotal + taxAmount
+    const einvoice = booking.property.einvoice
+    if (!einvoice?.verifiedAt) {
+      return NextResponse.json(
+        { success: false, error: 'Khách sạn chưa kết nối hoá đơn điện tử Mắt Bão (trang Hoá đơn → Kết nối)' },
+        { status: 400 }
+      )
+    }
 
-    const invoice = await prisma.invoice.create({
-      data: {
-        bookingId,
-        propertyId: booking.propertyId,
-        invoiceNumber: generateInvoiceNumber(),
-        ...invoiceData,
-        taxRate,
-        taxAmount,
-        totalAmount,
-        status: 'PENDING',
-      },
+    const invoice = await prisma.$transaction(async (tx) => {
+      const data = await invoiceData(tx, booking, input, einvoice.vatCode as VatCode)
+      return tx.invoice.create({
+        data: {
+          bookingId,
+          propertyId: booking.propertyId,
+          invoiceNumber: generateInvoiceNumber(),
+          ...data,
+          status: 'PENDING',
+        },
+      })
     })
 
     // Log activity
@@ -182,6 +218,9 @@ export async function POST(request: NextRequest) {
       message: 'Tạo hóa đơn thành công',
     })
   } catch (error) {
+    if (error instanceof EinvoiceError) {
+      return NextResponse.json({ success: false, error: error.message }, { status: error.status })
+    }
     console.error('Create invoice error:', error)
     return NextResponse.json({ success: false, error: 'Lỗi khi tạo hóa đơn' }, { status: 500 })
   }

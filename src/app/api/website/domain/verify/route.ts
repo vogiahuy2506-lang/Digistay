@@ -1,39 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
+import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import dns from 'dns'
-import { promisify } from 'util'
+import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { rootDomain } from '@/lib/subdomains'
+import {
+  checkOwnership,
+  checkRouting,
+  normalizeHostname,
+  ownershipRecord,
+  resolver,
+} from '@/lib/custom-domain'
 
-const dnsResolve = promisify(dns.resolve)
+const bodySchema = z.object({
+  propertyId: z.string().min(1),
+  domain: z.string().min(1).max(300),
+})
 
 /**
  * POST /api/website/domain/verify
- * Xác minh quyền sở hữu domain bằng cách kiểm tra CNAME record
+ * Attach the hotel's own domain to its property site, only once DNS proves
+ * both that it points at this property and that this workspace controls it
+ * (src/lib/custom-domain.ts). Nothing is written until both pass, so a
+ * failed or flaky check never changes what the hotel already has.
  */
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
-    const body = await request.json()
-    const { propertyId, domain } = body
-
     if (!session?.user?.id) {
       return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
     }
 
-    if (!propertyId || !domain) {
+    const body = bodySchema.safeParse(await request.json().catch(() => null))
+    if (!body.success) {
       return NextResponse.json({ success: false, error: 'Thiếu propertyId hoặc domain' }, { status: 400 })
     }
 
-    // Validate domain format
-    const domainRegex = /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/
-    if (!domainRegex.test(domain)) {
-      return NextResponse.json({ success: false, error: 'Tên miền không hợp lệ' }, { status: 400 })
-    }
-
-    // Check property access
     const property = await prisma.property.findFirst({
       where: {
-        id: propertyId,
+        id: body.data.propertyId,
         workspace: {
           OR: [
             { ownerId: session.user.id },
@@ -41,104 +47,87 @@ export async function POST(request: NextRequest) {
           ],
         },
       },
-      include: {
-        websiteSettings: true,
+      select: {
+        id: true,
+        subdomain: true,
+        workspaceId: true,
+        websiteSettings: { select: { customDomain: true, domainVerificationStatus: true } },
       },
     })
-
     if (!property) {
-      return NextResponse.json({ success: false, error: 'Không có quyền truy cập' }, { status: 403 })
+      return NextResponse.json({ success: false, error: 'Không tìm thấy cơ sở' }, { status: 404 })
     }
 
-    // Get expected CNAME target (subdomain of main app)
-    const expectedTarget = `${property.subdomain}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'digistay.vn'}`
-    const alternativeTarget = `${property.subdomain}.${process.env.NEXT_PUBLIC_APP_DOMAIN || 'localhost'}`
+    // The domain decides where the hotel's brand traffic goes.
+    const access = await requireWorkspaceRole(property.workspaceId, WorkspaceRoles.ADMINS_AND_MANAGERS)
+    if (!access.ok) return access.response
 
-    let verificationStatus = 'pending'
-    let verificationDetails: Record<string, any> = {
-      domain,
-      checkedAt: new Date().toISOString(),
+    const root = rootDomain()
+    const host = normalizeHostname(body.data.domain, root)
+    if (!host) {
+      return NextResponse.json({ success: false, error: 'Tên miền không hợp lệ' }, { status: 400 })
     }
 
-    try {
-      // Check CNAME record
-      const cnameRecords = await dnsResolve(domain, 'CNAME').catch(() => [])
-      
-      if (cnameRecords.length > 0) {
-        const cnameTarget = cnameRecords[0].toLowerCase().replace(/\.+$/, '')
-        const isValid = 
-          cnameTarget === expectedTarget.toLowerCase() ||
-          cnameTarget === alternativeTarget.toLowerCase() ||
-          cnameTarget.endsWith(`.${(process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'digistay.vn').toLowerCase()}`) ||
-          cnameTarget.endsWith(`.${(process.env.NEXT_PUBLIC_APP_DOMAIN || 'localhost').toLowerCase()}`)
+    const target = `${property.subdomain}.${root}`
+    const txt = ownershipRecord(property.workspaceId, host)
+    const records = await expectedRecords(host, target, txt, root)
 
-        verificationStatus = isValid ? 'verified' : 'mismatch'
-        verificationDetails = {
-          ...verificationDetails,
-          recordType: 'CNAME',
-          actualValue: cnameRecords[0],
-          expectedValue: expectedTarget,
-          isValid,
-        }
-      } else {
-        // Also check A record for direct IP
-        const aRecords = await dnsResolve(domain, 'A').catch(() => [])
-        
-        if (aRecords.length > 0) {
-          verificationStatus = 'a_record'
-          verificationDetails = {
-            ...verificationDetails,
-            recordType: 'A',
-            actualValue: aRecords[0],
-            note: 'A record detected. CNAME recommended for better SSL provisioning.',
-          }
-        } else {
-          verificationStatus = 'not_found'
-          verificationDetails = {
-            ...verificationDetails,
-            recordType: 'NONE',
-            expectedValue: expectedTarget,
-          }
-        }
-      }
-    } catch (dnsError: any) {
-      verificationStatus = 'dns_error'
-      verificationDetails = {
-        ...verificationDetails,
-        error: dnsError.message,
-      }
-    }
-
-    // Update verification status in database
-    const updatedSettings = await prisma.websiteSettings.update({
-      where: { propertyId },
-      data: {
-        customDomain: domain,
-        domainVerificationStatus: verificationStatus,
-        domainVerifiedAt: verificationStatus === 'verified' ? new Date() : null,
-      },
+    // Held by another site: never moved automatically, even with valid DNS
+    // (RUNBOOK "Tên miền riêng"). The records let support check the claim.
+    const taken = await prisma.websiteSettings.findFirst({
+      where: { customDomain: host, NOT: { propertyId: property.id } },
+      select: { id: true },
     })
+    if (taken) return domainTaken(records)
 
-    // Log activity
+    const routing = await checkRouting(host, target, root)
+    if (!routing.ok) return failed(routing.reason, records, routing.found)
+
+    // This site's own verified domain is not asked for the TXT again.
+    const current = property.websiteSettings
+    const ownActive = current?.customDomain === host && current.domainVerificationStatus === 'verified'
+    if (!ownActive) {
+      const ownership = await checkOwnership(host, property.workspaceId)
+      if (!ownership.ok) return failed(ownership.reason, records, ownership.found)
+    }
+
+    const domainChanged = current?.customDomain !== host
+    const verified = {
+      customDomain: host,
+      domainVerificationStatus: 'verified',
+      domainVerifiedAt: new Date(),
+      // A certificate belongs to the old hostname.
+      ...(domainChanged && { sslEnabled: false, sslVerifiedAt: null, sslCertificateId: null, sslProvider: null }),
+    }
+    let settings
+    try {
+      settings = await prisma.websiteSettings.upsert({
+        where: { propertyId: property.id },
+        update: verified,
+        create: { propertyId: property.id, ...verified },
+        select: { id: true },
+      })
+    } catch (error) {
+      // Another site attached it between the check above and this write.
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') return domainTaken(records)
+      throw error
+    }
+
     await prisma.activityLog.create({
       data: {
         userId: session.user.id,
-        propertyId,
+        propertyId: property.id,
         action: 'VERIFY_DOMAIN',
         entityType: 'WEBSITE_SETTINGS',
-        entityId: updatedSettings.id,
-        changes: { domain, status: verificationStatus },
+        entityId: settings.id,
+        changes: { domain: host, via: routing.via, ownership: ownActive ? 'already-verified' : 'txt' },
       },
     })
 
     return NextResponse.json({
       success: true,
-      data: {
-        status: verificationStatus,
-        details: verificationDetails,
-        message: getVerificationMessage(verificationStatus),
-        instructions: getVerificationInstructions(domain, expectedTarget),
-      },
+      data: { status: 'verified', domain: host, records },
+      message: 'Tên miền đã được xác minh và gắn với website.',
     })
   } catch (error) {
     console.error('Domain verification error:', error)
@@ -146,32 +135,43 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function getVerificationMessage(status: string): string {
-  switch (status) {
-    case 'verified':
-      return '✅ Tên miền đã được xác minh thành công! SSL sẽ được tự động cấp phát trong giây lát.'
-    case 'mismatch':
-      return '⚠️ Bản ghi CNAME không đúng. Vui lòng cập nhật theo hướng dẫn bên dưới.'
-    case 'a_record':
-      return '⚠️ Phát hiện bản ghi A. Khuyến nghị sử dụng CNAME để SSL hoạt động tốt nhất.'
-    case 'not_found':
-      return '❌ Không tìm thấy bản ghi DNS. Vui lòng thêm bản ghi CNAME theo hướng dẫn.'
-    case 'dns_error':
-      return '❌ Không thể kiểm tra DNS. Vui lòng thử lại sau.'
-    default:
-      return 'Đang xử lý xác minh...'
+type Records = Awaited<ReturnType<typeof expectedRecords>>
+
+/** What the hotel adds at its DNS provider: CNAME (or A for an apex domain) plus the TXT. */
+async function expectedRecords(host: string, target: string, txt: { name: string; value: string }, root: string) {
+  const addresses = await resolver.resolve4(root).catch(() => [] as string[])
+  return {
+    cname: { type: 'CNAME', name: host, value: target },
+    a: addresses.map((ip) => ({ type: 'A', name: host, value: ip })),
+    txt: { type: 'TXT', name: txt.name, value: txt.value },
   }
 }
 
-function getVerificationInstructions(domain: string, target: string): string[] {
-  return [
-    `1. Đăng nhập vào trang quản lý domain của bạn (nơi bạn mua domain ${domain})`,
-    `2. Tìm mục "Quản lý DNS" hoặc "Cấu hình DNS"`,
-    `3. Thêm bản ghi CNAME mới:`,
-    `   - Host/Name: @ hoặc để trống`,
-    `   - Value/Target: ${target}`,
-    `   - TTL: 3600 (hoặc default)`,
-    `4. Chờ 5-30 phút để DNS propagation hoàn tất`,
-    `5. Quay lại và nhấn "Xác minh" để kiểm tra`,
-  ]
+const MESSAGES: Record<string, string> = {
+  not_found: 'Chưa thấy bản ghi DNS nào cho tên miền này. Thêm bản ghi CNAME (hoặc A với tên miền gốc) theo hướng dẫn.',
+  wrong_target:
+    'Tên miền chưa trỏ đúng về website này. CNAME phải trỏ tới đúng địa chỉ bên dưới; bản ghi A phải là địa chỉ IP của Digistay.',
+  txt_missing: 'Tên miền đã trỏ đúng, nhưng chưa thấy bản ghi TXT xác minh chủ sở hữu. Thêm bản ghi TXT bên dưới.',
+  txt_wrong: 'Tên miền đã trỏ đúng, nhưng bản ghi TXT xác minh chủ sở hữu có giá trị chưa đúng. Sửa theo giá trị bên dưới.',
+  transient: 'Không kiểm tra được DNS lúc này. Vui lòng thử lại sau ít phút.',
+}
+
+function failed(reason: string, records: Records, found: string[]) {
+  return NextResponse.json(
+    { success: false, error: MESSAGES[reason] ?? MESSAGES.transient, data: { status: reason, records, found } },
+    { status: reason === 'transient' ? 503 : 422 }
+  )
+}
+
+function domainTaken(records: Records) {
+  return NextResponse.json(
+    {
+      success: false,
+      error:
+        'Tên miền này đang được gắn với một website khác trên Digistay. Hãy gỡ nó ở website đó trước, ' +
+        'hoặc thêm bản ghi TXT bên dưới rồi liên hệ hỗ trợ.',
+      data: { status: 'taken', records },
+    },
+    { status: 409 }
+  )
 }
