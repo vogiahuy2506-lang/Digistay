@@ -3,6 +3,8 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { inviteMemberSchema } from '@/lib/validations'
 import { generateRandomToken } from '@/lib/utils'
+import { LIMITS } from '@/lib/security/limits'
+import { hit, tooManyRequests } from '@/lib/security/rate-limit'
 
 // Check if user is workspace admin or owner
 async function checkWorkspaceAdmin(workspaceId: string, userId: string) {
@@ -115,6 +117,13 @@ export async function POST(
     }
 
     const { email, role } = validation.data
+
+    // Anyone can create a workspace and is its admin, so without a per-user
+    // cap this route mails any address from Digistay's server, unlimited.
+    const sent = await hit(LIMITS.invitationSendUser, session.user.id)
+    if (!sent.allowed) {
+      return tooManyRequests('Bạn đã gửi quá nhiều lời mời. Vui lòng thử lại sau.', sent.retryAfterSec)
+    }
 
     // Check if user is already a member
     const existingMember = await prisma.workspaceMember.findFirst({
