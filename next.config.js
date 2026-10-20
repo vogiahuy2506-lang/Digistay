@@ -8,14 +8,13 @@ const nextConfig = {
   poweredByHeader: false,
   images: {
     // Image optimization is OFF: /_next/image decodes untrusted images with
-    // sharp/libheif on our server, and Next 14.x gets no fix for a critical
-    // RCE there (GHSA-2xp9-vwfh-vxw4, AVIF) nor for several DoS issues; the
-    // old `remotePatterns: [{ hostname: '**' }]` let anyone point it at any
-    // image on the internet. next/image now renders a plain <img src>.
-    // Re-enable only on Next >= 15.5.24, with a short remotePatterns list
-    // that attackers cannot upload to (never '**', never all of a shared
-    // host such as res.cloudinary.com). src/lib/security/next-config.test.ts
-    // guards this.
+    // sharp/libheif on our server (a critical AVIF RCE, GHSA-2xp9-vwfh-vxw4,
+    // was only fixed in 15.5.24; we are on 15.5.28), and the old
+    // `remotePatterns: [{ hostname: '**' }]` let anyone point it at any
+    // image on the internet. next/image renders a plain <img src>. If it is
+    // ever re-enabled, list only hosts attackers cannot upload to (never
+    // '**', never all of a shared host such as res.cloudinary.com).
+    // src/lib/security/next-config.test.ts guards this.
     unoptimized: true,
   },
   experimental: {

@@ -29,7 +29,7 @@ function signInAs(user: { id: string; email: string }) {
 function confirm(paymentId: string) {
   return POST(
     new NextRequest(`http://localhost/api/payments/${paymentId}/confirm`, { method: 'POST' }),
-    { params: { id: paymentId } }
+    { params: Promise.resolve({ id: paymentId }) }
   )
 }
 

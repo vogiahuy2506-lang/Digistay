@@ -5,14 +5,17 @@ import { prisma } from '@/lib/db'
 import { getWorkspaceRoleBySlug } from '@/lib/auth/rbac'
 import { WorkspaceShell } from '@/components/layout/workspace-shell'
 
+// This layout sits above [slug], so Next never passes it a slug: every
+// /workspace-picker URL redirects to /workspaces (as on Next 14, where the
+// type did not catch it). Next 15's typed routes do; behaviour kept as is.
 export default async function WorkspacePickerLayout({
   children,
   params,
 }: {
   children: React.ReactNode
-  params: { slug: string }
+  params: Promise<{ slug?: string }>
 }) {
-  const { slug } = params
+  const { slug } = await params
 
   if (!slug) {
     redirect('/workspaces')

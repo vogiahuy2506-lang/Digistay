@@ -23,14 +23,12 @@ const updateRoomTypeSchema = z.object({
 })
 
 interface RouteParams {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 // GET /api/room-types/[id] - Get single room type
-export async function GET(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function GET(request: NextRequest, props: RouteParams) {
+  const params = await props.params
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -84,10 +82,8 @@ export async function GET(
 }
 
 // PUT /api/room-types/[id] - Update room type
-export async function PUT(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function PUT(request: NextRequest, props: RouteParams) {
+  const params = await props.params
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -207,10 +203,8 @@ export async function PUT(
 }
 
 // DELETE /api/room-types/[id] - Delete room type
-export async function DELETE(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function DELETE(request: NextRequest, props: RouteParams) {
+  const params = await props.params
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {

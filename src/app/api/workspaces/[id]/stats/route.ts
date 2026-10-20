@@ -3,17 +3,15 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 
 interface RouteParams {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 /**
  * GET /api/workspaces/[id]/stats
  * Get workspace-level statistics including all properties.
  */
-export async function GET(
-  request: NextRequest,
-  { params }: RouteParams
-) {
+export async function GET(request: NextRequest, props: RouteParams) {
+  const params = await props.params
   try {
     const session = await auth()
     const { id } = params

@@ -10,14 +10,15 @@ const cancelSchema = z.object({
 })
 
 interface RouteParams {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 /**
  * POST /api/bookings/[id]/cancel
  * Cancel a booking. Handles refund logic if payment was made.
  */
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function POST(request: NextRequest, props: RouteParams) {
+  const params = await props.params
   try {
     const session = await auth()
     const { id } = params

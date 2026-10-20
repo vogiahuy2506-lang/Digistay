@@ -62,7 +62,9 @@ DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54329/digistay_test" npm 
 
 ## Kiến trúc cần biết
 
-- Next.js 14 App Router, một app. API ở `src/app/api/**/route.ts`, gọi Prisma trực tiếp.
+- Next.js 15 App Router (React 19), một app. API ở `src/app/api/**/route.ts`, gọi Prisma trực tiếp.
+  `params`/`searchParams` của page, layout và route handler là **Promise**: luôn `await params`
+  (server) hoặc `React.use(params)` (client component).
 - Multi-tenant: `Workspace` (chủ `ownerId` + `WorkspaceMember` vai trò ADMIN / MANAGER /
   RECEPTIONIST / USER) → nhiều `Property` (khách sạn) → `Booking`, `Payment`...
 - **`middleware.ts` ở thư mục gốc KHÔNG chạy**: dự án dùng `src/`, Next.js chỉ nhận
@@ -130,8 +132,12 @@ sạn, đặt lại mật khẩu chỉ cần email, email trong phiên do client
   thông báo lỗi API bằng tiếng Việt.
 - Theo pattern có sẵn trong file đang sửa; không thêm tầng hay abstraction mới khi chưa cần.
 - Mọi file text dùng LF (`.gitattributes`). Script `.sh` chạy trên VPS — CRLF làm deploy hỏng.
-- Bộ tối ưu ảnh của Next đang **tắt** (`images.unoptimized`): Next 14.x không có bản vá cho
-  lỗ hổng RCE khi giải mã ảnh AVIF. Đừng bật lại khi chưa lên Next ≥ 15.5.24; có test chặn.
+- Bộ tối ưu ảnh của Next đang **tắt** (`images.unoptimized`), để server không phải giải mã ảnh lạ
+  (lỗ hổng RCE AVIF chỉ được vá từ Next 15.5.24; đang dùng 15.5.28). Muốn bật lại thì chỉ với
+  `remotePatterns` liệt kê đúng host của mình, không bao giờ `**`; có test chặn.
+- `/workspace-picker/*` luôn chuyển về `/workspaces`: layout của nó nằm trên `[slug]` nên không
+  bao giờ nhận được `slug` (có từ trước, Next 15 mới lộ ra khi kiểm kiểu). Dọn hay sửa là quyết
+  định sản phẩm; trang lời mời đang trỏ tới đó.
 - Header bảo mật nằm ở nginx: `docker/nginx/conf.d/security-headers.inc`, include ở server
   và ở mọi `location` có `add_header` riêng. Sửa `app-secure.conf.template`, không sửa file
   sinh ra — `docker/deploy.sh` sinh lại và reload nginx mỗi lần deploy.
@@ -162,6 +168,7 @@ dùng duyệt rồi mới làm, trên nhánh riêng. Cập nhật trạng thái 
    xuất khi đổi mật khẩu (PR #3), 4c test chính sách route + gitleaks + `.gitignore` — xong.
    4d header bảo mật + tắt bộ tối ưu ảnh, 4e tiện ích mã hoá khoá bên thứ ba + bỏ lưu token
    OAuth, 4f xác thực hai lớp TOTP (**không bắt buộc** — người dùng tự bật) — xong.
+   Thêm: lên Next 15.5.28 + React 19 (hết các lỗ hổng của Next 14) — xong.
 5. Thanh toán PayOS hoặc SePay, mỗi khách sạn một bộ khoá; sửa nhánh tiền mặt đang đặt
    `PAID` bất kể số tiền và không cập nhật `depositAmount`
 6. Hoá đơn điện tử Mắt Bão

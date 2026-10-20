@@ -10,8 +10,9 @@ import { auth } from '@/lib/auth'
  */
 export async function POST(
   _request: NextRequest,
-  { params }: { params: { token: string } }
+  props: { params: Promise<{ token: string }> }
 ) {
+  const params = await props.params
   try {
     const { token } = params
     const session = await auth()
