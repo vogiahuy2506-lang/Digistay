@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { z } from 'zod'
-import { v4 as uuidv4 } from 'uuid'
+import { randomUUID } from 'crypto'
 import { getClientIp } from '@/lib/security/client-ip'
 import { LIMITS } from '@/lib/security/limits'
 import { hit, tooManyRequests } from '@/lib/security/rate-limit'
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       return tooManyRequests('Bạn thao tác quá nhanh. Vui lòng thử lại sau ít phút.', byIp.retryAfterSec)
     }
 
-    const session = await request.headers.get('x-session-id') || uuidv4()
+    const session = await request.headers.get('x-session-id') || randomUUID()
     const body = await request.json()
 
     const validation = lockSchema.safeParse(body)
