@@ -7,7 +7,9 @@ server {
     listen [::]:443 ssl;
     http2 on;
 
-    server_name ${DOMAIN} www.${DOMAIN};
+    # *.${DOMAIN}: property sites (src/middleware.ts). They need the wildcard
+    # certificate and DNS record first: docs/RUNBOOK.md, "Subdomain cho site khách sạn".
+    server_name ${DOMAIN} www.${DOMAIN} *.${DOMAIN};
 
     # ---- TLS material (certbot volume) ----
     ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
