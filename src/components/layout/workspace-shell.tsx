@@ -53,8 +53,6 @@ interface WorkspaceShellProps {
   userName?: string
   userEmail?: string
   userImage?: string
-  /** SUPER_ADMIN: shows the link to the system page (/admin/system) */
-  isPlatformAdmin?: boolean
   children: React.ReactNode
 }
 
@@ -64,7 +62,6 @@ export function WorkspaceShell({
   userName,
   userEmail,
   userImage,
-  isPlatformAdmin = false,
   children,
 }: WorkspaceShellProps) {
   const pathname = usePathname()
@@ -316,14 +313,6 @@ export function WorkspaceShell({
               <p className="text-xs text-gray-500 truncate">{userEmail || ''}</p>
             </div>
           </div>
-          {isPlatformAdmin && (
-            <Link
-              href="/admin/system"
-              className="mb-2 block rounded-lg px-2 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-            >
-              Hệ thống (quản trị nền tảng)
-            </Link>
-          )}
           <div className="flex items-center gap-1">
             <button
               className="flex-1 flex items-center justify-center p-2 rounded-lg hover:bg-gray-50 transition-colors"
