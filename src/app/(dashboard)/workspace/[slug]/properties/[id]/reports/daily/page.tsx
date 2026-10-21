@@ -5,7 +5,8 @@ import { useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, CardHeader, CardTitle, Button, Badge, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Input } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
-import { formatDate } from '@/lib/utils'
+import { useTranslations } from 'next-intl'
+import { useDashLabels } from '@/lib/i18n/dash'
 import {
   Wallet, DollarSign, CreditCard, Banknote, Calendar,
   Printer, Download, ArrowUpRight, ArrowDownRight
@@ -59,6 +60,9 @@ const METHOD_COLORS: Record<string, string> = {
 export default function DailyReportPage() {
   const params = useParams<{ slug: string; id: string }>()
   const propertyId = params.id
+  const t = useTranslations('dash.reports.cashbook')
+  const tc = useTranslations('dash.common')
+  const labels = useDashLabels()
 
   const [selectedDate, setSelectedDate] = React.useState(new Date().toISOString().split('T')[0])
   const [summary, setSummary] = React.useState<DailySummary | null>(null)
@@ -84,14 +88,14 @@ export default function DailyReportPage() {
         setTransactions(json.data.transactions ?? [])
         setMethodBreakdown(json.data.methodBreakdown ?? [])
       } else {
-        toast.error(json.error || 'Không thể tải sổ quỹ')
+        toast.error(json.error || t('loadError'))
         setSummary(null)
         setTransactions([])
         setMethodBreakdown([])
       }
     } catch (err) {
       console.error('Fetch daily report error:', err)
-      toast.error('Đã xảy ra lỗi khi tải sổ quỹ')
+      toast.error(t('error'))
       setSummary(null)
       setTransactions([])
       setMethodBreakdown([])
@@ -100,21 +104,19 @@ export default function DailyReportPage() {
     }
   }
 
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-      minimumFractionDigits: 0,
-    }).format(amount)
+  // The picked day ("YYYY-MM-DD"), e.g. "21 tháng 10, 2026" / "21 October 2026".
+  const dayTitle = new Intl.DateTimeFormat(labels.locale === 'en' ? 'en-GB' : 'vi-VN', {
+    timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: 'long', day: 'numeric',
+  }).format(new Date(selectedDate))
 
   if (!propertyId) {
     return (
       <PageContainer>
-        <Header title="Sổ Quỹ" description="Theo dõi thu chi hàng ngày" />
+        <Header title={t('title')} description={t('description')} />
         <Card>
           <CardContent className="p-12 text-center">
             <Wallet className="w-12 h-12 text-muted mx-auto mb-4" />
-            <p className="text-muted">Không xác định được cơ sở.</p>
+            <p className="text-muted">{t('noProperty')}</p>
           </CardContent>
         </Card>
       </PageContainer>
@@ -124,8 +126,8 @@ export default function DailyReportPage() {
   return (
     <PageContainer>
       <Header
-        title="Sổ Quỹ"
-        description={formatDate(selectedDate)}
+        title={t('title')}
+        description={dayTitle}
         actions={
           <div className="flex items-center gap-4">
             <Input
@@ -136,11 +138,11 @@ export default function DailyReportPage() {
             />
             <Button variant="outline" onClick={() => window.print()}>
               <Printer className="w-4 h-4 mr-2" />
-              In sổ quỹ
+              {t('print')}
             </Button>
             <Button variant="outline">
               <Download className="w-4 h-4 mr-2" />
-              Xuất Excel
+              {tc('actions.export')}
             </Button>
           </div>
         }
@@ -152,9 +154,9 @@ export default function DailyReportPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-ok font-medium">Tiền vào</p>
+                <p className="text-sm text-ok font-medium">{t('moneyIn')}</p>
                 <p className="text-2xl font-bold text-ok mt-1">
-                  {summary ? formatCurrency(summary.totalIn) : '0 đ'}
+                  {labels.money(summary ? summary.totalIn : 0)}
                 </p>
               </div>
               <div className="w-12 h-12 rounded-full bg-ok-soft flex items-center justify-center">
@@ -168,9 +170,9 @@ export default function DailyReportPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-err font-medium">Tiền ra</p>
+                <p className="text-sm text-err font-medium">{t('moneyOut')}</p>
                 <p className="text-2xl font-bold text-err mt-1">
-                  {summary ? formatCurrency(summary.totalOut) : '0 đ'}
+                  {labels.money(summary ? summary.totalOut : 0)}
                 </p>
               </div>
               <div className="w-12 h-12 rounded-full bg-err-soft flex items-center justify-center">
@@ -184,9 +186,9 @@ export default function DailyReportPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-info font-medium">Số dư</p>
+                <p className="text-sm text-info font-medium">{t('balance')}</p>
                 <p className="text-2xl font-bold text-info mt-1">
-                  {summary ? formatCurrency(summary.balance) : '0 đ'}
+                  {labels.money(summary ? summary.balance : 0)}
                 </p>
               </div>
               <div className="w-12 h-12 rounded-full bg-info-soft flex items-center justify-center">
@@ -200,12 +202,12 @@ export default function DailyReportPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted">Đặt phòng hôm nay</p>
+                <p className="text-sm text-muted">{t('bookingsToday')}</p>
                 <p className="text-2xl font-bold text-fg mt-1">
                   {summary?.bookings || 0}
                 </p>
                 <p className="text-xs text-muted mt-1">
-                  {summary?.checkIns || 0} check-in • {summary?.checkOuts || 0} check-out
+                  {t('checkInsOuts', { checkIns: summary?.checkIns || 0, checkOuts: summary?.checkOuts || 0 })}
                 </p>
               </div>
               <div className="w-12 h-12 rounded-full bg-fg/5 flex items-center justify-center">
@@ -221,21 +223,21 @@ export default function DailyReportPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <DollarSign className="w-5 h-5" />
-            Giao dịch trong ngày
+            {t('transactions')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {transactions.length === 0 ? (
-            <p className="text-center text-muted py-8">Chưa có giao dịch nào trong ngày này.</p>
+            <p className="text-center text-muted py-8">{t('empty')}</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Giờ</TableHead>
-                  <TableHead>Loại</TableHead>
-                  <TableHead>Mô tả</TableHead>
-                  <TableHead>Thanh toán</TableHead>
-                  <TableHead className="text-right">Số tiền</TableHead>
+                  <TableHead>{t('columns.time')}</TableHead>
+                  <TableHead>{t('columns.type')}</TableHead>
+                  <TableHead>{t('columns.description')}</TableHead>
+                  <TableHead>{t('columns.payment')}</TableHead>
+                  <TableHead className="text-right">{t('columns.amount')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -250,7 +252,7 @@ export default function DailyReportPage() {
                             : 'bg-err-soft text-err'
                         }
                       >
-                        {tx.type === 'IN' ? 'Tiền vào' : 'Tiền ra'}
+                        {tx.type === 'IN' ? t('moneyIn') : t('moneyOut')}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -271,7 +273,7 @@ export default function DailyReportPage() {
                       }`}
                     >
                       {tx.type === 'IN' ? '+' : '-'}
-                      {formatCurrency(tx.amount)}
+                      {labels.money(tx.amount)}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -292,12 +294,12 @@ export default function DailyReportPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Icon className={`w-5 h-5 ${color}`} />
-                    {m.label}
+                    {labels.paymentMethod(m.method)}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className={`text-2xl font-bold ${color}`}>{formatCurrency(m.amount)}</p>
-                  <p className="text-sm text-muted">{m.count} giao dịch</p>
+                  <p className={`text-2xl font-bold ${color}`}>{labels.money(m.amount)}</p>
+                  <p className="text-sm text-muted">{t('count', { count: m.count })}</p>
                 </CardContent>
               </Card>
             )

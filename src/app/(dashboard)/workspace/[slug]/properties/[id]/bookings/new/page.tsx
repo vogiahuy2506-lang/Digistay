@@ -11,8 +11,10 @@ import {
   Filter
 } from 'lucide-react'
 import { format, addDays, differenceInDays } from 'date-fns'
+import { useTranslations } from 'next-intl'
 import { quoteStay, type Rates } from '@/lib/pricing/quote'
 import { routes } from '@/lib/utils/routes'
+import { useDashLabels } from '@/lib/i18n/dash'
 
 interface RoomType {
   id: string
@@ -59,14 +61,7 @@ interface BookingResult {
   status: string
 }
 
-const bedTypeLabels: Record<string, string> = {
-  SINGLE: 'Giường đơn',
-  DOUBLE: 'Giường đôi',
-  TWIN: 'Hai giường đơn',
-  TRIPLE: 'Ba giường',
-  KING: 'King Size',
-  QUEEN: 'Queen Size',
-}
+const BED_TYPES = ['SINGLE', 'DOUBLE', 'TWIN', 'TRIPLE', 'KING', 'QUEEN'] as const
 
 const amenityIcons: Record<string, React.ReactNode> = {
   'wifi': <Wifi className="w-3 h-3" />,
@@ -83,6 +78,9 @@ export default function WalkinBookingPage() {
   const router = useRouter()
   const params = useParams<{ slug: string; id: string }>()
   const propertyIdFromUrl = params.id
+  const t = useTranslations('dash.bookings.walkIn')
+  const tc = useTranslations('dash.common')
+  const labels = useDashLabels()
   
   const [properties, setProperties] = React.useState<Property[]>([])
   const [selectedProperty, setSelectedProperty] = React.useState(propertyIdFromUrl || '')
@@ -171,11 +169,11 @@ export default function WalkinBookingPage() {
       if (data.success) {
         setRoomTypes(data.data.filter((rt: RoomType) => rt.isAvailable))
       } else {
-        setError(data.error || 'Lỗi khi tìm kiếm')
+        setError(data.error || t('search.searchError'))
       }
     } catch (err) {
       console.error('Failed to search availability:', err)
-      setError('Lỗi kết nối')
+      setError(t('search.connectionError'))
     } finally {
       setIsLoading(false)
     }
@@ -214,9 +212,10 @@ export default function WalkinBookingPage() {
     return { subtotal: quote.basePrice, surcharges: quote.extraAdultCharge + quote.extraChildCharge, total: quote.total }
   }
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(price)
-  }
+  const formatPrice = labels.money
+
+  const bedTypeLabel = (bedType: string) =>
+    t(`bedTypes.${BED_TYPES.includes(bedType as never) ? (bedType as (typeof BED_TYPES)[number]) : 'KING'}`)
 
   const handleSelectRoomType = (roomType: RoomType) => {
     setSelectedRoomType(roomType)
@@ -229,7 +228,7 @@ export default function WalkinBookingPage() {
 
   const handleSubmitBooking = async () => {
     if (!guestInfo.name || !guestInfo.phone) {
-      setError('Vui lòng nhập đầy đủ thông tin khách hàng')
+      setError(t('summary.missingGuest'))
       return
     }
     
@@ -256,7 +255,7 @@ export default function WalkinBookingPage() {
       const data = await res.json()
       
       if (!data.success) {
-        throw new Error(data.error || 'Đặt phòng thất bại')
+        throw new Error(data.error || t('summary.bookingFailed'))
       }
 
       const booking = data.data
@@ -288,12 +287,12 @@ export default function WalkinBookingPage() {
       <header className="min-h-16 bg-panel border-b border-line px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 sticky top-0 z-30">
         {/* Breadcrumb & Context Navigation */}
         <div className="flex items-center gap-2 text-xs text-muted font-medium">
-          <span className="">Lễ tân & Vận hành</span>
+          <span className="">{t('breadcrumb')}</span>
           <ChevronRight className="w-2.5 h-2.5 text-muted" />
-          <span className="text-fg font-bold">Đặt phòng Walk-in</span>
+          <span className="text-fg font-bold">{t('crumb')}</span>
           <span className="ml-2 hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-err-soft text-err border border-err/30">
             <span className="w-1.5 h-1.5 rounded-full bg-err animate-pulse"></span>
-            Khách Vãng Lai / Trực Tiếp
+            {t('walkInBadge')}
           </span>
         </div>
         {/* Quick Topbar Utilities */}
@@ -303,7 +302,7 @@ export default function WalkinBookingPage() {
             className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-line text-fg bg-panel hover:bg-fg/5 text-xs font-semibold shadow-xs transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5 text-muted" />
-            Quay lại Lịch phòng
+            {t('backToCalendar')}
           </button>
         </div>
       </header>
@@ -315,21 +314,21 @@ export default function WalkinBookingPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-line/60">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-extrabold text-fg tracking-tight">Tạo Đặt Phòng Walk-in</h1>
+              <h1 className="text-2xl font-extrabold text-fg tracking-tight">{t('title')}</h1>
               <span className="text-xs px-2.5 py-0.5 rounded-md font-medium bg-warn-soft text-warn border border-warn/30">
                 <span className="mr-1">⚡</span>
-                Giữ phòng tức thì
+                {t('instantHold')}
               </span>
             </div>
             <p className="text-sm text-muted mt-1">
-              Tạo đơn đặt phòng nhanh cho khách ghé trực tiếp tại quầy lễ tân - Tự động đồng bộ khóa phòng và doanh thu ca trực.
+              {t('intro')}
             </p>
           </div>
           {/* Room Status Quick Stats Pill */}
           <div className="flex items-center gap-4 bg-panel px-4 py-2 rounded-xl border border-line shadow-xs">
             <div className="text-right">
-              <span className="text-[11px] uppercase tracking-wider text-muted font-semibold block">Tỷ lệ phòng trống hôm nay</span>
-              <span className="text-sm font-bold text-fg">48 / 60 phòng khả dụng</span>
+              <span className="text-[11px] uppercase tracking-wider text-muted font-semibold block">{t('vacancyToday')}</span>
+              <span className="text-sm font-bold text-fg">{t('vacancyCount', { available: 48, total: 60 })}</span>
             </div>
             <div className="w-10 h-10 rounded-lg bg-ok-soft text-ok flex items-center justify-center font-bold text-sm border border-ok/30">
               80%
@@ -347,8 +346,8 @@ export default function WalkinBookingPage() {
                 <Bed className="w-4 h-4" />
               </div>
               <div className="overflow-hidden">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-warn block">Bước 1 (Hiện tại)</span>
-                <span className="text-xs font-extrabold text-fg truncate block">1. Chọn phòng & Thời gian</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-warn block">{t('steps.current', { step: 1 })}</span>
+                <span className="text-xs font-extrabold text-fg truncate block">{t('steps.room')}</span>
               </div>
             </div>
             {/* Step 2: Inactive */}
@@ -357,8 +356,8 @@ export default function WalkinBookingPage() {
                 <User className="w-4 h-4" />
               </div>
               <div className="overflow-hidden">
-                <span className="text-[10px] font-semibold text-muted block">Bước 2</span>
-                <span className="text-xs font-semibold text-fg truncate block">2. Thông tin khách & Dịch vụ</span>
+                <span className="text-[10px] font-semibold text-muted block">{t('steps.step', { step: 2 })}</span>
+                <span className="text-xs font-semibold text-fg truncate block">{t('steps.guest')}</span>
               </div>
             </div>
             {/* Step 3: Inactive */}
@@ -367,8 +366,8 @@ export default function WalkinBookingPage() {
                 <CreditCardIcon className="w-4 h-4" />
               </div>
               <div className="overflow-hidden">
-                <span className="text-[10px] font-semibold text-muted block">Bước 3</span>
-                <span className="text-xs font-semibold text-fg truncate block">3. Thanh toán & Hóa đơn</span>
+                <span className="text-[10px] font-semibold text-muted block">{t('steps.step', { step: 3 })}</span>
+                <span className="text-xs font-semibold text-fg truncate block">{t('steps.payment')}</span>
               </div>
             </div>
             {/* Step 4: Inactive */}
@@ -377,8 +376,8 @@ export default function WalkinBookingPage() {
                 <Check className="w-4 h-4" />
               </div>
               <div className="overflow-hidden">
-                <span className="text-[10px] font-semibold text-muted block">Bước 4</span>
-                <span className="text-xs font-semibold text-fg truncate block">4. Hoàn tất & In thẻ phòng</span>
+                <span className="text-[10px] font-semibold text-muted block">{t('steps.step', { step: 4 })}</span>
+                <span className="text-xs font-semibold text-fg truncate block">{t('steps.done')}</span>
               </div>
             </div>
           </div>
@@ -390,9 +389,14 @@ export default function WalkinBookingPage() {
           <div className="flex items-center justify-between mb-4 pb-3 border-b border-line/60">
             <h2 className="text-sm font-bold text-fg flex items-center gap-2">
               <Filter className="w-4 h-4 text-warn" />
-              Tìm kiếm phòng trống khả dụng theo thời gian thực
+              {t('search.title')}
             </h2>
-            <span className="text-xs text-muted">Hôm nay: <strong className="text-fg">{format(new Date(), 'dd/MM/yyyy')}</strong></span>
+            <span className="text-xs text-muted">
+              {t.rich('search.today', {
+                date: format(new Date(), 'dd/MM/yyyy'),
+                strong: (chunks) => <strong className="text-fg">{chunks}</strong>,
+              })}
+            </span>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3.5">
@@ -400,7 +404,7 @@ export default function WalkinBookingPage() {
             <div className="lg:col-span-2">
               <label className="block text-xs font-bold text-fg mb-1.5">
                 <MapPin className="w-3 h-3 inline mr-1" />
-                Cơ sở lưu trú
+                {t('search.property')}
               </label>
               <select 
                 value={selectedProperty}
@@ -411,7 +415,7 @@ export default function WalkinBookingPage() {
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
                 {properties.length === 0 && (
-                  <option>Khách sạn Demo Hà Nội - Phố Cổ</option>
+                  <option>{t('search.demoProperty')}</option>
                 )}
               </select>
             </div>
@@ -419,7 +423,7 @@ export default function WalkinBookingPage() {
             {/* Check-in datetime */}
             <div>
               <div className="flex justify-between items-center mb-1.5">
-                <label className="text-xs font-bold text-fg">Ngày & Giờ nhận</label>
+                <label className="text-xs font-bold text-fg">{t('search.checkIn')}</label>
                 <span className="text-[10px] text-warn font-bold bg-warn-soft px-1.5 py-0.2 rounded">{checkInTime}</span>
               </div>
               <input 
@@ -441,7 +445,7 @@ export default function WalkinBookingPage() {
             {/* Check-out datetime */}
             <div>
               <div className="flex justify-between items-center mb-1.5">
-                <label className="text-xs font-bold text-fg">Ngày & Giờ trả</label>
+                <label className="text-xs font-bold text-fg">{t('search.checkOut')}</label>
                 <span className="text-[10px] text-muted font-medium">{checkOutTime}</span>
               </div>
               <input 
@@ -457,7 +461,7 @@ export default function WalkinBookingPage() {
             <div>
               <label className="block text-xs font-bold text-fg mb-1.5">
                 <Users className="w-3 h-3 inline mr-1" />
-                Người lớn
+                {t('search.adults')}
               </label>
               <select 
                 value={numAdults}
@@ -475,7 +479,7 @@ export default function WalkinBookingPage() {
             <div>
               <label className="block text-xs font-bold text-fg mb-1.5">
                 <Users className="w-3 h-3 inline mr-1" />
-                Trẻ em (&lt;12t)
+                {t('search.children')}
               </label>
               <select 
                 value={numChildren}
@@ -492,18 +496,18 @@ export default function WalkinBookingPage() {
           {/* Filter tags & Search Action Bar */}
           <div className="mt-4 pt-3 border-t border-line/50 flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold text-muted mr-1">Bộ lọc nhanh:</span>
+              <span className="text-xs font-bold text-muted mr-1">{t('search.quickFilters')}</span>
               <button className="px-2.5 py-1 text-xs rounded-lg bg-fg/[0.03] border border-line text-fg hover:border-warn/30 font-medium transition-colors">
-                Tất cả các tầng
+                {t('search.allFloors')}
               </button>
               <button className="px-2.5 py-1 text-xs rounded-lg bg-fg/[0.03] border border-line text-fg hover:border-warn/30 font-medium transition-colors">
-                <Ban className="w-3 h-3 inline mr-1 text-muted" /> Không hút thuốc
+                <Ban className="w-3 h-3 inline mr-1 text-muted" /> {t('search.nonSmoking')}
               </button>
               <button className="px-2.5 py-1 text-xs rounded-lg bg-fg/[0.03] border border-line text-fg hover:border-warn/30 font-medium transition-colors">
-                <Bath className="w-3 h-3 inline mr-1 text-muted" /> Có bồn tắm
+                <Bath className="w-3 h-3 inline mr-1 text-muted" /> {t('search.bathtub')}
               </button>
               <button className="px-2.5 py-1 text-xs rounded-lg bg-fg/[0.03] border border-line text-fg hover:border-warn/30 font-medium transition-colors">
-                <Mountain className="w-3 h-3 inline mr-1 text-muted" /> Ban công / View phố
+                <Mountain className="w-3 h-3 inline mr-1 text-muted" /> {t('search.balcony')}
               </button>
             </div>
             {/* Primary Search Trigger Button */}
@@ -513,7 +517,7 @@ export default function WalkinBookingPage() {
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-ink hover:bg-ink/90 text-on-ink text-xs font-bold shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
             >
               <Search className="w-4 h-4" />
-              {isLoading ? 'Đang tìm...' : `Tìm Phòng Khả Dụng (${calculateNights()} Đêm)`}
+              {isLoading ? t('search.searching') : t('search.submit', { count: calculateNights() })}
             </button>
           </div>
         </section>
@@ -525,25 +529,25 @@ export default function WalkinBookingPage() {
           <div className="lg:col-span-7 space-y-4">
             <div className="flex items-center justify-between pb-1">
               <h3 className="text-sm font-bold text-fg uppercase tracking-wider flex items-center gap-2">
-                Danh sách phòng trống 
+                {t('rooms.title')}
                 <span className="inline-flex items-center justify-center bg-warn-soft text-warn text-xs px-2 py-0.5 rounded-full font-bold">
-                  {roomTypes.length} Hạng phòng
+                  {t('rooms.typeCount', { count: roomTypes.length })}
                 </span>
               </h3>
-              <span className="text-xs text-muted font-medium">Báo giá theo đêm chưa bao gồm VAT & Dịch vụ</span>
+              <span className="text-xs text-muted font-medium">{t('rooms.priceNote')}</span>
             </div>
 
             {/* Room Cards */}
             {isLoading ? (
               <div className="text-center py-12">
                 <div className="animate-spin w-8 h-8 border-4 border-warn/30 border-t-transparent rounded-full mx-auto mb-4" />
-                <p className="text-muted">Đang tìm kiếm phòng trống...</p>
+                <p className="text-muted">{t('rooms.searching')}</p>
               </div>
             ) : roomTypes.length === 0 ? (
               <div className="bg-panel rounded-2xl border border-line p-12 text-center">
                 <Bed className="w-12 h-12 mx-auto text-muted mb-4" />
                 <p className="text-muted">
-                  {selectedProperty ? 'Không có phòng trống trong khoảng thời gian này' : 'Vui lòng chọn cơ sở'}
+                  {selectedProperty ? t('rooms.none') : t('rooms.chooseProperty')}
                 </p>
               </div>
             ) : (
@@ -562,9 +566,9 @@ export default function WalkinBookingPage() {
                     {isSelected && (
                       <div className="bg-warn-soft text-warn px-4 py-1.5 flex items-center justify-between text-xs font-bold">
                         <span className="flex items-center gap-1.5">
-                          <Check className="w-3 h-3" /> ĐANG ĐƯỢC CHỌN CHO ĐƠN WALK-IN
+                          <Check className="w-3 h-3" /> {t('rooms.selectedBanner')}
                         </span>
-                        <span className="bg-warn/15 text-warn text-[11px] px-2 py-0.5 rounded">Ưu tiên lễ tân</span>
+                        <span className="bg-warn/15 text-warn text-[11px] px-2 py-0.5 rounded">{t('rooms.deskPriority')}</span>
                       </div>
                     )}
                     
@@ -573,7 +577,7 @@ export default function WalkinBookingPage() {
                         {/* Thumbnail Placeholder */}
                         <div className="w-full sm:w-36 h-28 rounded-xl bg-warn-soft border border-warn/30 shrink-0 overflow-hidden relative flex flex-col justify-end p-2.5">
                           <span className="absolute top-2 left-2 bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
-                            {roomType.floorRange || 'Tầng 3 - 5'}
+                            {roomType.floorRange || t('rooms.floorFallback')}
                           </span>
                           <BedDouble className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl text-warn/40" />
                           <span className="text-[11px] font-bold text-warn bg-panel/90 px-1.5 py-0.5 rounded w-fit">
@@ -588,16 +592,16 @@ export default function WalkinBookingPage() {
                               <div className="flex items-center gap-2">
                                 <h4 className="text-base font-extrabold text-fg">{roomType.name}</h4>
                                 <span className="bg-ok-soft text-ok border border-ok/30 text-[10px] font-semibold px-2 py-0.5 rounded-full">
-                                  Còn {roomType.availableRooms} phòng trống
+                                  {t('rooms.left', { count: roomType.availableRooms })}
                                 </span>
                                 {index === 0 && (
                                   <span className="bg-err-soft text-err border border-err/30 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                                    Được ưa chuộng
+                                    {t('rooms.popular')}
                                   </span>
                                 )}
                               </div>
                               <p className="text-xs text-muted mt-0.5">
-                                Giường {bedTypeLabels[roomType.bedType] || 'King Size'} • Ban công view phố cổ thoáng mát
+                                {t('rooms.bedLine', { bed: bedTypeLabel(roomType.bedType) })}
                               </p>
                             </div>
                             {/* Pricing */}
@@ -605,30 +609,30 @@ export default function WalkinBookingPage() {
                               <div className="text-lg font-black text-warn">
                                 {formatPrice(roomType.pricing.weekdayPrice)}
                               </div>
-                              <div className="text-[10px] font-medium text-muted">/ đêm</div>
+                              <div className="text-[10px] font-medium text-muted">{t('rooms.perNight')}</div>
                             </div>
                           </div>
                           
                           {/* Amenities Tags */}
                           <div className="flex flex-wrap items-center gap-2 mt-3 text-[11px] text-muted">
                             <span className="bg-fg/[0.03] px-2 py-1 rounded-md border border-line/60 flex items-center gap-1">
-                              <Users className="w-3 h-3 text-muted" /> {roomType.baseOccupancy} - {roomType.maxOccupancy} khách
+                              <Users className="w-3 h-3 text-muted" /> {t('rooms.occupancy', { min: roomType.baseOccupancy, max: roomType.maxOccupancy })}
                             </span>
                             <span className="bg-fg/[0.03] px-2 py-1 rounded-md border border-line/60 flex items-center gap-1">
-                              <Wifi className="w-3 h-3 text-muted" /> Wifi Free
+                              <Wifi className="w-3 h-3 text-muted" /> {t('rooms.wifi')}
                             </span>
                             <span className="bg-fg/[0.03] px-2 py-1 rounded-md border border-line/60 flex items-center gap-1">
-                              <UtensilsCrossed className="w-3 h-3 text-muted" /> Buffet sáng free
+                              <UtensilsCrossed className="w-3 h-3 text-muted" /> {t('rooms.breakfast')}
                             </span>
                             <span className="bg-fg/[0.03] px-2 py-1 rounded-md border border-line/60 flex items-center gap-1">
-                              <Ban className="w-3 h-3 text-muted" /> Không khói thuốc
+                              <Ban className="w-3 h-3 text-muted" /> {t('rooms.nonSmoking')}
                             </span>
                           </div>
                           
                           {/* Room Assignment Selector Section */}
                           <div className="mt-4 pt-3 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-3">
                             <div className="flex items-center gap-2 w-full sm:w-auto">
-                              <label className="text-xs font-bold text-fg whitespace-nowrap">Chọn số phòng:</label>
+                              <label className="text-xs font-bold text-fg whitespace-nowrap">{t('rooms.pickNumber')}</label>
                               <select 
                                 value={selectedRoom?.id || ''}
                                 onChange={(e) => {
@@ -637,10 +641,14 @@ export default function WalkinBookingPage() {
                                 }}
                                 className="text-xs font-bold text-warn bg-warn-soft border-warn/30 rounded-lg py-1.5 pl-3 pr-8 focus:ring-warn/30 focus:border-warn/30"
                               >
-                                <option value="">-- Chọn phòng --</option>
+                                <option value="">{t('rooms.pickRoom')}</option>
                                 {availableRooms.map((room) => (
                                   <option key={room.id} value={room.id}>
-                                    Phòng {room.number} (Tầng {room.floor} - {room.isClean ? 'Đã dọn sạch' : 'Sạch sẵn'})
+                                    {t('rooms.roomOption', {
+                                      number: room.number,
+                                      floor: room.floor,
+                                      state: room.isClean ? t('rooms.cleaned') : t('rooms.ready'),
+                                    })}
                                   </option>
                                 ))}
                               </select>
@@ -655,11 +663,11 @@ export default function WalkinBookingPage() {
                             >
                               {isSelected ? (
                                 <>
-                                  <Check className="w-3 h-3" /> Đã chọn phòng này
+                                  <Check className="w-3 h-3" /> {t('rooms.chosen')}
                                 </>
                               ) : (
                                 <>
-                                  <Plus className="w-3 h-3" /> Chọn hạng phòng này
+                                  <Plus className="w-3 h-3" /> {t('rooms.choose')}
                                 </>
                               )}
                             </button>
@@ -680,8 +688,8 @@ export default function WalkinBookingPage() {
               {/* Summary Card Header with Hold Timer */}
               <div className="bg-fg/[0.03] px-5 py-4 border-b border-line flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-extrabold text-fg uppercase tracking-wider">Chi Tiết Giữ Phòng Tạm Thời</h3>
-                  <p className="text-[11px] text-muted">Khóa phòng Walk-in tự động</p>
+                  <h3 className="text-sm font-extrabold text-fg uppercase tracking-wider">{t('summary.title')}</h3>
+                  <p className="text-[11px] text-muted">{t('summary.autoLock')}</p>
                 </div>
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-warn-soft border border-warn/30 text-warn text-xs font-bold">
                   <Timer className="w-3 h-3 animate-spin" />
@@ -695,28 +703,30 @@ export default function WalkinBookingPage() {
                 {selectedRoomType && selectedRoom ? (
                   <div className="p-3 bg-warn-soft/60 rounded-xl border border-warn/30 flex items-start justify-between">
                     <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-warn block">Phòng đã chọn</span>
-                      <h5 className="text-sm font-extrabold text-fg">{selectedRoomType.name} • P.{selectedRoom.number}</h5>
-                      <p className="text-xs text-muted mt-0.5">Tầng {selectedRoom.floor} (Phòng sạch sẵn sàng đón khách)</p>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-warn block">{t('summary.selectedRoom')}</span>
+                      <h5 className="text-sm font-extrabold text-fg">
+                        {t('summary.roomLine', { roomType: selectedRoomType.name, number: selectedRoom.number })}
+                      </h5>
+                      <p className="text-xs text-muted mt-0.5">{t('summary.floorReady', { floor: selectedRoom.floor })}</p>
                     </div>
                     <span className="px-2 py-1 bg-panel text-warn text-xs font-bold rounded-lg border border-warn/30 shadow-xs">
-                      {calculateNights()} Đêm
+                      {t('summary.nights', { count: calculateNights() })}
                     </span>
                   </div>
                 ) : (
                   <div className="p-3 bg-fg/[0.03] rounded-xl border border-line flex items-center justify-center">
-                    <span className="text-xs text-muted">Chưa chọn phòng</span>
+                    <span className="text-xs text-muted">{t('summary.noRoom')}</span>
                   </div>
                 )}
 
                 {/* Stay Schedule Row */}
                 <div className="grid grid-cols-2 gap-2 text-xs bg-page p-3 rounded-xl border border-line/80">
                   <div>
-                    <span className="text-muted block text-[10px] font-semibold uppercase">Nhận phòng</span>
+                    <span className="text-muted block text-[10px] font-semibold uppercase">{t('summary.checkIn')}</span>
                     <span className="font-bold text-fg">{checkInTime} - {format(new Date(checkInDate), 'dd/MM/yyyy')}</span>
                   </div>
                   <div>
-                    <span className="text-muted block text-[10px] font-semibold uppercase">Trả phòng</span>
+                    <span className="text-muted block text-[10px] font-semibold uppercase">{t('summary.checkOut')}</span>
                     <span className="font-bold text-fg">{checkOutTime} - {format(new Date(checkOutDate), 'dd/MM/yyyy')}</span>
                   </div>
                 </div>
@@ -724,14 +734,14 @@ export default function WalkinBookingPage() {
                 {/* Fast Guest Information Input Form */}
                 <div className="pt-2 border-t border-line/60">
                   <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-bold text-fg uppercase tracking-wider">Thông tin nhanh khách tại quầy</label>
-                    <span className="text-[10px] text-warn cursor-pointer hover:underline font-semibold">Quét CCCD chip</span>
+                    <label className="text-xs font-bold text-fg uppercase tracking-wider">{t('summary.guestInfo')}</label>
+                    <span className="text-[10px] text-warn cursor-pointer hover:underline font-semibold">{t('summary.scanId')}</span>
                   </div>
                   <div className="space-y-2">
                     <div>
                       <input 
                         className="block w-full text-xs font-semibold px-3 py-2 bg-page/40 border border-line rounded-xl focus:ring-2 focus:ring-warn/30 focus:border-warn/30" 
-                        placeholder="Họ và tên khách hàng *"
+                        placeholder={t('summary.namePlaceholder')}
                         value={guestInfo.name}
                         onChange={(e) => setGuestInfo({ ...guestInfo, name: e.target.value })}
                         type="text"
@@ -740,7 +750,7 @@ export default function WalkinBookingPage() {
                     <div>
                       <input 
                         className="block w-full text-xs font-semibold px-3 py-2 bg-page/40 border border-line rounded-xl focus:ring-2 focus:ring-warn/30 focus:border-warn/30" 
-                        placeholder="Số điện thoại nhận mã đặt phòng *"
+                        placeholder={t('summary.phonePlaceholder')}
                         value={guestInfo.phone}
                         onChange={(e) => setGuestInfo({ ...guestInfo, phone: e.target.value })}
                         type="tel"
@@ -749,7 +759,7 @@ export default function WalkinBookingPage() {
                     <div>
                       <input 
                         className="block w-full text-xs font-semibold px-3 py-2 bg-page/40 border border-line rounded-xl focus:ring-2 focus:ring-warn/30 focus:border-warn/30" 
-                        placeholder="Email (tùy chọn)"
+                        placeholder={t('summary.emailPlaceholder')}
                         value={guestInfo.email}
                         onChange={(e) => setGuestInfo({ ...guestInfo, email: e.target.value })}
                         type="email"
@@ -763,12 +773,12 @@ export default function WalkinBookingPage() {
                   {selectedRoomType && (
                     <>
                       <div className="flex justify-between text-muted">
-                        <span className="">Tiền phòng ({calculateNights()} đêm x {selectedRoomType.name}):</span>
+                        <span className="">{t('summary.roomCharge', { count: calculateNights(), roomType: selectedRoomType.name })}</span>
                         <span className="font-semibold text-fg">{formatPrice(pricing.subtotal)}</span>
                       </div>
                       {pricing.surcharges > 0 && (
                         <div className="flex justify-between text-muted">
-                          <span>Phụ thu khách thêm:</span>
+                          <span>{t('summary.extraGuests')}</span>
                           <span className="font-semibold text-fg">{formatPrice(pricing.surcharges)}</span>
                         </div>
                       )}
@@ -776,8 +786,8 @@ export default function WalkinBookingPage() {
                   )}
                   <div className="pt-2 border-t border-dashed border-line flex justify-between items-baseline">
                     <div>
-                      <span className="text-sm font-black text-fg block">Tổng tiền thanh toán</span>
-                      <span className="text-[10px] text-muted">Giá đã gồm VAT</span>
+                      <span className="text-sm font-black text-fg block">{t('summary.total')}</span>
+                      <span className="text-[10px] text-muted">{t('summary.vatIncluded')}</span>
                     </div>
                     <span className="text-xl font-black text-warn tracking-tight">{formatPrice(pricing.total)}</span>
                   </div>
@@ -785,7 +795,7 @@ export default function WalkinBookingPage() {
 
                 {/* Walk-in Payment Method Quick Selection */}
                 <div className="pt-3 border-t border-line/60">
-                  <label className="block text-xs font-bold text-fg mb-2 uppercase tracking-wider">Phương thức thu tiền tại quầy</label>
+                  <label className="block text-xs font-bold text-fg mb-2 uppercase tracking-wider">{t('summary.paymentMethod')}</label>
                   <div className="grid grid-cols-3 gap-2 text-center text-xs">
                     {/* VietQR Option */}
                     <button 
@@ -811,7 +821,7 @@ export default function WalkinBookingPage() {
                       type="button"
                     >
                       <Banknote className={`text-base ${paymentMethod === 'CASH' ? 'text-warn' : 'text-muted'}`} />
-                      <span className={`font-semibold text-[11px] ${paymentMethod === 'CASH' ? 'text-warn' : 'text-fg'}`}>Tiền mặt</span>
+                      <span className={`font-semibold text-[11px] ${paymentMethod === 'CASH' ? 'text-warn' : 'text-fg'}`}>{tc('paymentMethod.CASH')}</span>
                     </button>
                     {/* POS Card Option */}
                     <button 
@@ -824,7 +834,7 @@ export default function WalkinBookingPage() {
                       type="button"
                     >
                       <CreditCardIcon className={`text-base ${paymentMethod === 'POS' ? 'text-warn' : 'text-muted'}`} />
-                      <span className={`font-semibold text-[11px] ${paymentMethod === 'POS' ? 'text-warn' : 'text-fg'}`}>Cà thẻ POS</span>
+                      <span className={`font-semibold text-[11px] ${paymentMethod === 'POS' ? 'text-warn' : 'text-fg'}`}>{t('summary.posCard')}</span>
                     </button>
                   </div>
 
@@ -838,7 +848,7 @@ export default function WalkinBookingPage() {
                         name="payment_scope" 
                         type="radio" 
                       />
-                      <span className="font-bold text-fg">Thu đủ 100% ({formatPrice(pricing.total)})</span>
+                      <span className="font-bold text-fg">{t('summary.payFull', { amount: formatPrice(pricing.total) })}</span>
                     </label>
                     <label className="inline-flex items-center gap-1.5 cursor-pointer">
                       <input 
@@ -848,7 +858,7 @@ export default function WalkinBookingPage() {
                         name="payment_scope" 
                         type="radio" 
                       />
-                      <span className="font-medium text-muted">Đặt cọc 50%</span>
+                      <span className="font-medium text-muted">{t('summary.deposit')}</span>
                     </label>
                   </div>
                 </div>
@@ -869,7 +879,7 @@ export default function WalkinBookingPage() {
                     className="w-full py-3 px-4 rounded-xl bg-ink hover:bg-ink/90 text-on-ink font-extrabold text-sm shadow-sm flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                     type="button"
                   >
-                    <span className="">Tiếp tục: Điền Thông Tin & Check-in</span>
+                    <span className="">{t('summary.continue')}</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                   <div className="grid grid-cols-2 gap-2">
@@ -877,14 +887,14 @@ export default function WalkinBookingPage() {
                       className="py-2 px-3 rounded-lg border border-line bg-panel hover:bg-fg/[0.03] text-fg font-semibold text-xs transition-colors" 
                       type="button"
                     >
-                      <Clock className="w-3 h-3 inline mr-1 text-muted" /> Giữ chỗ 15 phút
+                      <Clock className="w-3 h-3 inline mr-1 text-muted" /> {t('summary.hold')}
                     </button>
                     <button 
                       onClick={resetForm}
                       className="py-2 px-3 rounded-lg border border-err/30 bg-err-soft/50 hover:bg-err-soft/50 text-err font-semibold text-xs transition-colors" 
                       type="button"
                     >
-                      <RefreshCw className="w-3 h-3 inline mr-1" /> Làm mới đơn
+                      <RefreshCw className="w-3 h-3 inline mr-1" /> {t('summary.reset')}
                     </button>
                   </div>
                 </div>
@@ -894,7 +904,7 @@ export default function WalkinBookingPage() {
               <div className="px-5 py-2.5 bg-fg/[0.03] border-t border-line text-[11px] text-muted flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
                   <Workflow className="w-3 h-3 text-ok" />
-                  Đồng bộ tức thì với Sơ đồ phòng
+                  {t('summary.synced')}
                 </span>
                 <span className="font-mono text-[10px] text-muted">#{bookingCode}</span>
               </div>

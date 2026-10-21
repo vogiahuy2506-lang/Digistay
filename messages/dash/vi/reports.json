@@ -1,1 +1,48 @@
-{}
+{
+  "revenue": {
+    "title": "Báo cáo doanh thu",
+    "noPropertyDescription": "Xem thống kê và báo cáo tài chính",
+    "description": "Thống kê doanh thu và hoạt động kinh doanh",
+    "selectProperty": "Vui lòng chọn cơ sở để xem báo cáo",
+    "chooseProperty": "Chọn cơ sở",
+    "range": "{count} ngày",
+    "totalRevenue": "Tổng doanh thu",
+    "lastDays": "{count} ngày qua",
+    "bookings": "Số đơn đặt phòng",
+    "average": "TB: {amount}/đơn",
+    "rooms": "Số phòng",
+    "occupancy": "Tỷ lệ lấp đầy: {percent}%",
+    "dailyAverage": "Doanh thu trung bình/ngày",
+    "chart": "Biểu đồ doanh thu",
+    "byMethod": "Doanh thu theo hình thức thanh toán",
+    "qr": "QR VietQR",
+    "card": "Thẻ",
+    "daily": "Chi tiết theo ngày",
+    "dayBookings": "{count} đơn",
+    "dayCheckedIn": "{count} đã nhận",
+    "empty": "Không có dữ liệu báo cáo"
+  },
+  "cashbook": {
+    "title": "Sổ Quỹ",
+    "description": "Theo dõi thu chi hàng ngày",
+    "noProperty": "Không xác định được cơ sở.",
+    "print": "In sổ quỹ",
+    "moneyIn": "Tiền vào",
+    "moneyOut": "Tiền ra",
+    "balance": "Số dư",
+    "bookingsToday": "Đặt phòng hôm nay",
+    "checkInsOuts": "{checkIns} check-in • {checkOuts} check-out",
+    "transactions": "Giao dịch trong ngày",
+    "empty": "Chưa có giao dịch nào trong ngày này.",
+    "columns": {
+      "time": "Giờ",
+      "type": "Loại",
+      "description": "Mô tả",
+      "payment": "Thanh toán",
+      "amount": "Số tiền"
+    },
+    "count": "{count} giao dịch",
+    "loadError": "Không thể tải sổ quỹ",
+    "error": "Đã xảy ra lỗi khi tải sổ quỹ"
+  }
+}

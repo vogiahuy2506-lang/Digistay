@@ -4,10 +4,11 @@ import * as React from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { PageContainer } from '@/components/layout'
 import { Alert, AlertDescription, BookingStatusBadge, Loading } from '@/components/ui'
 import { BookingActions, BookingDetailContent, useBooking } from '@/components/bookings/booking-detail'
-import { formatDateTime, sourceLabel } from '@/lib/bookings/display'
+import { useDashLabels } from '@/lib/i18n/dash'
 import { routes } from '@/lib/utils/routes'
 
 /**
@@ -18,6 +19,9 @@ export default function BookingDetailPage() {
   const params = useParams<{ slug: string; id: string; bookingId: string }>()
   const { booking, error, reload } = useBooking(params.bookingId)
   const listHref = routes.propertyBookings(params.slug, params.id)
+  const t = useTranslations('dash.bookings')
+  const tc = useTranslations('dash.common')
+  const labels = useDashLabels()
 
   return (
     <PageContainer className="max-w-3xl">
@@ -26,7 +30,7 @@ export default function BookingDetailPage() {
         className="inline-flex items-center gap-1.5 mb-4 text-small text-muted hover:text-fg focus:outline-none focus-visible:underline"
       >
         <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-        Đặt phòng
+        {tc('nav.bookings')}
       </Link>
 
       {error ? (
@@ -34,7 +38,7 @@ export default function BookingDetailPage() {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : !booking ? (
-        <Loading className="py-16" text="Đang tải đặt phòng…" />
+        <Loading className="py-16" text={t('detail.loading')} />
       ) : (
         <>
           <div className="mb-5">
@@ -43,7 +47,7 @@ export default function BookingDetailPage() {
               <BookingStatusBadge status={booking.status} size="md" />
             </div>
             <p className="mt-1 text-small text-muted">
-              {booking.property.name} · {sourceLabel(booking.source)} · đặt lúc {formatDateTime(booking.createdAt)}
+              {booking.property.name} · {labels.source(booking.source)} · {t('detail.bookedAt', { time: labels.dateTime(booking.createdAt) })}
             </p>
           </div>
 

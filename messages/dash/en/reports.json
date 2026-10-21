@@ -1,1 +1,48 @@
-{}
+{
+  "revenue": {
+    "title": "Revenue report",
+    "noPropertyDescription": "Statistics and financial reports",
+    "description": "Revenue and business activity",
+    "selectProperty": "Choose a property to see its report",
+    "chooseProperty": "Choose a property",
+    "range": "{count, plural, one {# day} other {# days}}",
+    "totalRevenue": "Total revenue",
+    "lastDays": "{count, plural, one {Last day} other {Last # days}}",
+    "bookings": "Bookings",
+    "average": "Avg: {amount}/booking",
+    "rooms": "Rooms",
+    "occupancy": "Occupancy: {percent}%",
+    "dailyAverage": "Average revenue per day",
+    "chart": "Revenue chart",
+    "byMethod": "Revenue by payment method",
+    "qr": "VietQR",
+    "card": "Card",
+    "daily": "By day",
+    "dayBookings": "{count, plural, one {# booking} other {# bookings}}",
+    "dayCheckedIn": "{count} checked in",
+    "empty": "No report data"
+  },
+  "cashbook": {
+    "title": "Cash book",
+    "description": "Daily income and expenses",
+    "noProperty": "Could not tell which property this is.",
+    "print": "Print cash book",
+    "moneyIn": "Money in",
+    "moneyOut": "Money out",
+    "balance": "Balance",
+    "bookingsToday": "Bookings today",
+    "checkInsOuts": "{checkIns, plural, one {# check-in} other {# check-ins}} • {checkOuts, plural, one {# check-out} other {# check-outs}}",
+    "transactions": "Transactions of the day",
+    "empty": "No transactions on this day.",
+    "columns": {
+      "time": "Time",
+      "type": "Type",
+      "description": "Description",
+      "payment": "Payment",
+      "amount": "Amount"
+    },
+    "count": "{count, plural, one {# transaction} other {# transactions}}",
+    "loadError": "Could not load the cash book",
+    "error": "Something went wrong loading the cash book"
+  }
+}

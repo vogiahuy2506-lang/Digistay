@@ -10,6 +10,8 @@ import {
 } from 'lucide-react'
 import { routes } from '@/lib/utils/routes'
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
+import { useDashLabels } from '@/lib/i18n/dash'
 
 interface Property {
   id: string
@@ -80,35 +82,35 @@ interface Policy {
   additionalRules: string | null
 }
 
-const bedTypes = [
-  { value: 'SINGLE', label: 'Giường đơn' },
-  { value: 'DOUBLE', label: 'Giường đôi' },
-  { value: 'TWIN', label: '2 Giường đơn' },
-  { value: 'TRIPLE', label: '3 Giường' },
-  { value: 'QUADRUPLE', label: '4 Giường' },
-  { value: 'KING', label: 'Giường King' },
-  { value: 'QUEEN', label: 'Giường Queen' },
-  { value: 'SUITE', label: 'Suite' },
-  { value: 'BUNK', label: 'Giường tầng' },
-]
+const BED_TYPES = ['SINGLE', 'DOUBLE', 'TWIN', 'TRIPLE', 'QUADRUPLE', 'KING', 'QUEEN', 'SUITE', 'BUNK'] as const
+type BedType = (typeof BED_TYPES)[number]
 
+// Names come from messages (detail.amenities.items.<id>).
 const defaultAmenities = [
-  { id: 'wifi', name: 'Wifi miễn phí', slug: 'wifi', icon: 'wifi', category: 'internet' },
-  { id: 'parking', name: 'Bãi đỗ xe', slug: 'parking', icon: 'car', category: 'parking' },
-  { id: 'breakfast', name: 'Ăn sáng', slug: 'breakfast', icon: 'utensils', category: 'food' },
-  { id: 'ac', name: 'Điều hòa', slug: 'ac', icon: 'snowflake', category: 'comfort' },
-  { id: 'pool', name: 'Hồ bơi', slug: 'pool', icon: 'waves', category: 'leisure' },
-  { id: 'gym', name: 'Phòng gym', slug: 'gym', icon: 'dumbbell', category: 'leisure' },
-  { id: 'spa', name: 'Spa', slug: 'spa', icon: 'sparkles', category: 'leisure' },
-  { id: 'restaurant', name: 'Nhà hàng', slug: 'restaurant', icon: 'utensils', category: 'food' },
-  { id: 'bar', name: 'Quầy bar', slug: 'bar', icon: 'wine', category: 'food' },
-  { id: 'room_service', name: 'Dịch vụ phòng', slug: 'room-service', icon: 'concierge', category: 'service' },
-  { id: 'laundry', name: 'Giặt ủi', slug: 'laundry', icon: 'shirt', category: 'service' },
-  { id: 'airport', name: 'Đưa đón sân bay', slug: 'airport', icon: 'plane', category: 'transport' },
-]
+  { id: 'wifi', slug: 'wifi', icon: 'wifi', category: 'internet' },
+  { id: 'parking', slug: 'parking', icon: 'car', category: 'parking' },
+  { id: 'breakfast', slug: 'breakfast', icon: 'utensils', category: 'food' },
+  { id: 'ac', slug: 'ac', icon: 'snowflake', category: 'comfort' },
+  { id: 'pool', slug: 'pool', icon: 'waves', category: 'leisure' },
+  { id: 'gym', slug: 'gym', icon: 'dumbbell', category: 'leisure' },
+  { id: 'spa', slug: 'spa', icon: 'sparkles', category: 'leisure' },
+  { id: 'restaurant', slug: 'restaurant', icon: 'utensils', category: 'food' },
+  { id: 'bar', slug: 'bar', icon: 'wine', category: 'food' },
+  { id: 'room_service', slug: 'room-service', icon: 'concierge', category: 'service' },
+  { id: 'laundry', slug: 'laundry', icon: 'shirt', category: 'service' },
+  { id: 'airport', slug: 'airport', icon: 'plane', category: 'transport' },
+] as const
+
+const IMAGE_CATEGORIES = ['lobby', 'room', 'pool', 'restaurant', 'gym', 'exterior', 'other'] as const
 
 export default function PropertyDetailPage() {
   const router = useRouter()
+  const t = useTranslations('dash.property.detail')
+  const tp = useTranslations('dash.property')
+  const tc = useTranslations('dash.common')
+  const labels = useDashLabels()
+  const bedTypes = BED_TYPES.map((value) => ({ value, label: t(`bedTypes.${value}`) }))
+  const bedTypeLabel = (type: string) => (BED_TYPES.includes(type as BedType) ? t(`bedTypes.${type as BedType}`) : undefined)
   const params = useParams<{ slug: string; id: string }>()
   const slug = params.slug
   const propertyId = params.id
@@ -158,7 +160,7 @@ export default function PropertyDetailPage() {
 
   const handleUploadImage = async () => {
     if (!imageForm.url) {
-      alert('Vui lòng nhập URL hình ảnh')
+      alert(t('images.urlRequired'))
       return
     }
 
@@ -183,7 +185,7 @@ export default function PropertyDetailPage() {
   }
 
   const handleDeleteImage = async (imageId: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa hình ảnh này?')) return
+    if (!confirm(t('images.deleteConfirm'))) return
 
     try {
       await fetch(`/api/properties/${propertyId}/images?imageId=${imageId}`, {
@@ -244,7 +246,7 @@ export default function PropertyDetailPage() {
   }
 
   const handleDeleteRoomType = async (id: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa hạng phòng này?')) return
+    if (!confirm(t('rooms.deleteConfirm'))) return
 
     try {
       await fetch(`/api/properties/${propertyId}/room-types/${id}`, {
@@ -344,14 +346,6 @@ export default function PropertyDetailPage() {
     }).then(() => fetchProperty())
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
-
   if (isLoading) {
     return (
       <PageContainer>
@@ -367,9 +361,9 @@ export default function PropertyDetailPage() {
       <PageContainer>
         <Card>
           <CardContent className="p-12 text-center">
-            <p className="text-muted">Không tìm thấy cơ sở</p>
+            <p className="text-muted">{t('notFound')}</p>
             <Button onClick={() => router.push(routes.properties(slug))} className="mt-4">
-              Quay lại
+              {tc('actions.back')}
             </Button>
           </CardContent>
         </Card>
@@ -383,35 +377,35 @@ export default function PropertyDetailPage() {
       <div className="flex items-center gap-4 mb-6">
         <Button variant="ghost" onClick={() => router.push(routes.properties(slug))}>
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Quay lại
+          {tc('actions.back')}
         </Button>
       </div>
 
       <Header
         title={property.name}
-        description={`${property.subdomain} • ${property.isActive ? 'Hoạt động' : 'Tắt'}`}
+        description={`${property.subdomain} • ${property.isActive ? tp('status.active') : tp('status.inactive')}`}
         actions={
           <div className="flex items-center gap-2">
             <Badge variant={property.isActive ? 'success' : 'gray'} className="text-sm px-3 py-1">
-              {property.isActive ? 'Hoạt động' : 'Tắt'}
+              {property.isActive ? tp('status.active') : tp('status.inactive')}
             </Badge>
             <Button 
               variant="outline" 
               onClick={() => window.open(`/${property.subdomain}`, '_blank')}
             >
               <ExternalLink className="w-4 h-4 mr-2" />
-              Xem website
+              {t('viewWebsite')}
             </Button>
             <Button 
               variant="outline"
               onClick={() => router.push(routes.propertyWebsite(slug, propertyId))}
             >
               <Globe className="w-4 h-4 mr-2" />
-              Website Builder
+              {t('websiteBuilder')}
             </Button>
             <Button variant="outline">
               <Pencil className="w-4 h-4 mr-2" />
-              Chỉnh sửa
+              {t('edit')}
             </Button>
           </div>
         }
@@ -420,12 +414,12 @@ export default function PropertyDetailPage() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="overview">Tổng quan</TabsTrigger>
-          <TabsTrigger value="rooms">Hạng phòng</TabsTrigger>
-          <TabsTrigger value="pricing">Bảng giá</TabsTrigger>
-          <TabsTrigger value="amenities">Tiện ích</TabsTrigger>
-          <TabsTrigger value="policy">Chính sách</TabsTrigger>
-          <TabsTrigger value="website">Website</TabsTrigger>
+          <TabsTrigger value="overview">{t('tabs.overview')}</TabsTrigger>
+          <TabsTrigger value="rooms">{t('tabs.rooms')}</TabsTrigger>
+          <TabsTrigger value="pricing">{t('tabs.pricing')}</TabsTrigger>
+          <TabsTrigger value="amenities">{t('tabs.amenities')}</TabsTrigger>
+          <TabsTrigger value="policy">{t('tabs.policy')}</TabsTrigger>
+          <TabsTrigger value="website">{t('tabs.website')}</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -435,14 +429,14 @@ export default function PropertyDetailPage() {
             <div className="lg:col-span-2">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Hình ảnh</CardTitle>
+                  <CardTitle>{t('overview.images')}</CardTitle>
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={() => setShowImageModal(true)}
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    Thêm ảnh
+                    {t('images.add')}
                   </Button>
                 </CardHeader>
                 <CardContent>
@@ -453,7 +447,7 @@ export default function PropertyDetailPage() {
                           <Image src={img.url} alt={img.alt || property.name} fill className="object-cover" />
                           {img.isPrimary && (
                             <div className="absolute top-2 left-2 px-2 py-1 bg-ink text-on-ink text-xs rounded">
-                              Ảnh chính
+                              {t('overview.primaryImage')}
                             </div>
                           )}
                           <button
@@ -467,10 +461,10 @@ export default function PropertyDetailPage() {
                     </div>
                   ) : (
                     <div className="text-center py-8 text-muted">
-                      <p>Chưa có hình ảnh</p>
+                      <p>{t('overview.noImages')}</p>
                       <Button variant="outline" className="mt-2" onClick={() => setShowImageModal(true)}>
                         <Plus className="w-4 h-4 mr-2" />
-                        Thêm hình ảnh
+                        {t('images.addTitle')}
                       </Button>
                     </div>
                   )}
@@ -482,13 +476,13 @@ export default function PropertyDetailPage() {
             <div>
               <Card>
                 <CardHeader>
-                  <CardTitle>Thông tin cơ bản</CardTitle>
+                  <CardTitle>{t('overview.info')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-muted mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-fg">Địa chỉ</p>
+                      <p className="text-sm font-medium text-fg">{t('overview.address')}</p>
                       <p className="text-sm text-muted">
                         {property.address}, {property.district && `${property.district}, `}{property.city}
                       </p>
@@ -499,7 +493,7 @@ export default function PropertyDetailPage() {
                     <div className="flex items-start gap-3">
                       <Phone className="w-5 h-5 text-muted mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium text-fg">Điện thoại</p>
+                        <p className="text-sm font-medium text-fg">{t('overview.phone')}</p>
                         <p className="text-sm text-muted">{property.phone}</p>
                       </div>
                     </div>
@@ -509,7 +503,7 @@ export default function PropertyDetailPage() {
                     <div className="flex items-start gap-3">
                       <Mail className="w-5 h-5 text-muted mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium text-fg">Email</p>
+                        <p className="text-sm font-medium text-fg">{t('overview.email')}</p>
                         <p className="text-sm text-muted">{property.email}</p>
                       </div>
                     </div>
@@ -519,7 +513,7 @@ export default function PropertyDetailPage() {
                     <div className="flex items-start gap-3">
                       <Globe className="w-5 h-5 text-muted mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium text-fg">Website</p>
+                        <p className="text-sm font-medium text-fg">{t('overview.website')}</p>
                         <p className="text-sm text-muted">{property.website}</p>
                       </div>
                     </div>
@@ -527,7 +521,7 @@ export default function PropertyDetailPage() {
 
                   {property.description && (
                     <div>
-                      <p className="text-sm font-medium text-fg mb-1">Mô tả</p>
+                      <p className="text-sm font-medium text-fg mb-1">{t('overview.description')}</p>
                       <p className="text-sm text-muted">{property.description}</p>
                     </div>
                   )}
@@ -539,9 +533,9 @@ export default function PropertyDetailPage() {
           {/* Room types summary */}
           <Card className="mt-6">
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Tóm tắt hạng phòng</CardTitle>
+              <CardTitle>{t('overview.roomsSummary')}</CardTitle>
               <Button size="sm" onClick={() => setActiveTab('rooms')}>
-                Xem chi tiết
+                {t('overview.viewDetails')}
               </Button>
             </CardHeader>
             <CardContent>
@@ -554,13 +548,13 @@ export default function PropertyDetailPage() {
                         <span className="font-medium text-fg">{room.name}</span>
                       </div>
                       <p className="text-sm text-muted">
-                        {room.totalRooms} phòng • Tối đa {room.maxOccupancy} người
+                        {t('rooms.capacity', { rooms: room.totalRooms, guests: room.maxOccupancy })}
                       </p>
                     </div>
                   ))
                 ) : (
                   <p className="text-muted col-span-4 text-center py-4">
-                    Chưa có hạng phòng nào
+                    {t('rooms.empty')}
                   </p>
                 )}
               </div>
@@ -573,8 +567,8 @@ export default function PropertyDetailPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>Hạng phòng</CardTitle>
-                <p className="text-sm text-muted mt-1">Cấu hình các loại phòng và số lượng</p>
+                <CardTitle>{t('rooms.title')}</CardTitle>
+                <p className="text-sm text-muted mt-1">{t('rooms.subtitle')}</p>
               </div>
               <Button onClick={() => {
                 setEditingRoomType(null)
@@ -582,7 +576,7 @@ export default function PropertyDetailPage() {
                 setShowRoomTypeModal(true)
               }}>
                 <Plus className="w-4 h-4 mr-2" />
-                Thêm hạng phòng
+                {t('rooms.add')}
               </Button>
             </CardHeader>
             <CardContent>
@@ -601,15 +595,15 @@ export default function PropertyDetailPage() {
                         <div>
                           <h4 className="font-medium text-fg">{room.name}</h4>
                           <p className="text-sm text-muted">
-                            {bedTypes.find(b => b.value === room.bedType)?.label} • 
+                            {bedTypeLabel(room.bedType)} • 
                             {room.area && `${room.area}m² • `}
-                            {room.totalRooms} phòng • Tối đa {room.maxOccupancy} người
+                            {t('rooms.capacity', { rooms: room.totalRooms, guests: room.maxOccupancy })}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant={room.isActive ? 'success' : 'gray'}>
-                          {room.isActive ? 'Hoạt động' : 'Tắt'}
+                          {room.isActive ? tp('status.active') : tp('status.inactive')}
                         </Badge>
                         <Button variant="ghost" size="sm" onClick={() => handleEditRoomType(room)}>
                           <Pencil className="w-4 h-4" />
@@ -624,14 +618,14 @@ export default function PropertyDetailPage() {
               ) : (
                 <div className="text-center py-12">
                   <Bed className="w-12 h-12 text-muted mx-auto mb-4" />
-                  <p className="text-muted mb-4">Chưa có hạng phòng nào</p>
+                  <p className="text-muted mb-4">{t('rooms.empty')}</p>
                   <Button onClick={() => {
                     setEditingRoomType(null)
                     resetRoomTypeForm()
                     setShowRoomTypeModal(true)
                   }}>
                     <Plus className="w-4 h-4 mr-2" />
-                    Thêm hạng phòng đầu tiên
+                    {t('rooms.addFirst')}
                   </Button>
                 </div>
               )}
@@ -644,21 +638,21 @@ export default function PropertyDetailPage() {
               <div className="bg-panel rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                 <div className="p-6 border-b border-line">
                   <h2 className="text-xl font-semibold">
-                    {editingRoomType ? 'Chỉnh sửa hạng phòng' : 'Thêm hạng phòng mới'}
+                    {editingRoomType ? t('rooms.modal.editTitle') : t('rooms.modal.addTitle')}
                   </h2>
                 </div>
                 <div className="p-6 space-y-4">
                   <Input
-                    label="Tên hạng phòng"
-                    placeholder="VD: Phòng Deluxe"
+                    label={t('rooms.modal.name')}
+                    placeholder={t('rooms.modal.namePlaceholder')}
                     value={roomTypeForm.name}
                     onChange={(e) => setRoomTypeForm({ ...roomTypeForm, name: e.target.value })}
                     required
                   />
 
                   <Textarea
-                    label="Mô tả (tùy chọn)"
-                    placeholder="Mô tả chi tiết về hạng phòng"
+                    label={t('rooms.modal.description')}
+                    placeholder={t('rooms.modal.descriptionPlaceholder')}
                     value={roomTypeForm.description}
                     onChange={(e) => setRoomTypeForm({ ...roomTypeForm, description: e.target.value })}
                     rows={3}
@@ -666,7 +660,7 @@ export default function PropertyDetailPage() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <Input
-                      label="Diện tích (m²)"
+                      label={t('rooms.modal.area')}
                       type="number"
                       placeholder="25"
                       value={roomTypeForm.area}
@@ -674,7 +668,7 @@ export default function PropertyDetailPage() {
                     />
 
                     <Select
-                      label="Loại giường"
+                      label={t('rooms.modal.bedType')}
                       options={bedTypes}
                       value={roomTypeForm.bedType}
                       onChange={(e) => setRoomTypeForm({ ...roomTypeForm, bedType: e.target.value })}
@@ -683,7 +677,7 @@ export default function PropertyDetailPage() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <Input
-                      label="Số phòng"
+                      label={t('rooms.modal.totalRooms')}
                       type="number"
                       min="1"
                       value={roomTypeForm.totalRooms}
@@ -693,14 +687,14 @@ export default function PropertyDetailPage() {
 
                     <div className="grid grid-cols-2 gap-2">
                       <Input
-                        label="Người lớn tối đa"
+                        label={t('rooms.modal.maxAdults')}
                         type="number"
                         min="1"
                         value={roomTypeForm.maxAdults}
                         onChange={(e) => setRoomTypeForm({ ...roomTypeForm, maxAdults: parseInt(e.target.value) || 1 })}
                       />
                       <Input
-                        label="Trẻ em tối đa"
+                        label={t('rooms.modal.maxChildren')}
                         type="number"
                         min="0"
                         value={roomTypeForm.maxChildren}
@@ -711,16 +705,16 @@ export default function PropertyDetailPage() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <Input
-                      label="Số người cơ bản"
+                      label={t('rooms.modal.baseOccupancy')}
                       type="number"
                       min="1"
                       value={roomTypeForm.baseOccupancy}
                       onChange={(e) => setRoomTypeForm({ ...roomTypeForm, baseOccupancy: parseInt(e.target.value) || 1 })}
-                      hint="Số người tính theo giá cơ bản"
+                      hint={t('rooms.modal.baseOccupancyHint')}
                     />
 
                     <Input
-                      label="Số người tối đa"
+                      label={t('rooms.modal.maxOccupancy')}
                       type="number"
                       min="1"
                       value={roomTypeForm.maxOccupancy}
@@ -730,11 +724,11 @@ export default function PropertyDetailPage() {
                 </div>
                 <div className="p-6 border-t border-line flex justify-end gap-3">
                   <Button variant="outline" onClick={() => setShowRoomTypeModal(false)}>
-                    Hủy
+                    {tc('actions.cancel')}
                   </Button>
                   <Button onClick={handleSaveRoomType}>
                     <Save className="w-4 h-4 mr-2" />
-                    Lưu
+                    {tc('actions.save')}
                   </Button>
                 </div>
               </div>
@@ -747,12 +741,12 @@ export default function PropertyDetailPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>Bảng giá</CardTitle>
-                <p className="text-sm text-muted mt-1">Cấu hình giá phòng ngày thường, cuối tuần và phụ phí</p>
+                <CardTitle>{t('pricing.title')}</CardTitle>
+                <p className="text-sm text-muted mt-1">{t('pricing.subtitle')}</p>
               </div>
               <Button onClick={() => setShowPricingModal(true)}>
                 <Plus className="w-4 h-4 mr-2" />
-                Thêm bảng giá
+                {t('pricing.add')}
               </Button>
             </CardHeader>
             <CardContent>
@@ -763,25 +757,25 @@ export default function PropertyDetailPage() {
                       <div className="flex items-center justify-between mb-4">
                         <h4 className="font-medium text-fg">{price.name}</h4>
                         <Badge variant={price.isActive ? 'success' : 'gray'}>
-                          {price.isActive ? 'Hoạt động' : 'Tắt'}
+                          {price.isActive ? tp('status.active') : tp('status.inactive')}
                         </Badge>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
-                          <p className="text-sm text-muted">Giá ngày thường</p>
-                          <p className="font-semibold text-fg">{formatCurrency(price.weekdayPrice)}</p>
+                          <p className="text-sm text-muted">{t('pricing.weekday')}</p>
+                          <p className="font-semibold text-fg">{labels.money(price.weekdayPrice)}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted">Giá cuối tuần</p>
-                          <p className="font-semibold text-fg">{formatCurrency(price.weekendPrice)}</p>
+                          <p className="text-sm text-muted">{t('pricing.weekend')}</p>
+                          <p className="font-semibold text-fg">{labels.money(price.weekendPrice)}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted">Phụ thu người lớn</p>
-                          <p className="font-semibold text-fg">{formatCurrency(price.extraAdultPrice)}</p>
+                          <p className="text-sm text-muted">{t('pricing.extraAdult')}</p>
+                          <p className="font-semibold text-fg">{labels.money(price.extraAdultPrice)}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted">Phụ thu trẻ em</p>
-                          <p className="font-semibold text-fg">{formatCurrency(price.extraChildPrice)}</p>
+                          <p className="text-sm text-muted">{t('pricing.extraChild')}</p>
+                          <p className="font-semibold text-fg">{labels.money(price.extraChildPrice)}</p>
                         </div>
                       </div>
                     </div>
@@ -789,10 +783,10 @@ export default function PropertyDetailPage() {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <p className="text-muted mb-4">Chưa có bảng giá nào</p>
+                  <p className="text-muted mb-4">{t('pricing.empty')}</p>
                   <Button onClick={() => setShowPricingModal(true)}>
                     <Plus className="w-4 h-4 mr-2" />
-                    Tạo bảng giá đầu tiên
+                    {t('pricing.addFirst')}
                   </Button>
                 </div>
               )}
@@ -804,12 +798,12 @@ export default function PropertyDetailPage() {
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
               <div className="bg-panel rounded-xl max-w-md w-full">
                 <div className="p-6 border-b border-line">
-                  <h2 className="text-xl font-semibold">Thêm bảng giá mới</h2>
+                  <h2 className="text-xl font-semibold">{t('pricing.modal.title')}</h2>
                 </div>
                 <div className="p-6 space-y-4">
                   <Input
-                    label="Tên bảng giá"
-                    placeholder="VD: Standard"
+                    label={t('pricing.modal.name')}
+                    placeholder={t('pricing.modal.namePlaceholder')}
                     value={pricingForm.name}
                     onChange={(e) => setPricingForm({ ...pricingForm, name: e.target.value })}
                     required
@@ -817,7 +811,7 @@ export default function PropertyDetailPage() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <Input
-                      label="Giá ngày thường (VND)"
+                      label={t('pricing.modal.weekday')}
                       type="number"
                       min="0"
                       value={pricingForm.weekdayPrice}
@@ -826,7 +820,7 @@ export default function PropertyDetailPage() {
                     />
 
                     <Input
-                      label="Giá cuối tuần (VND)"
+                      label={t('pricing.modal.weekend')}
                       type="number"
                       min="0"
                       value={pricingForm.weekendPrice}
@@ -837,7 +831,7 @@ export default function PropertyDetailPage() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <Input
-                      label="Phụ thu người lớn (VND)"
+                      label={t('pricing.modal.extraAdult')}
                       type="number"
                       min="0"
                       value={pricingForm.extraAdultPrice}
@@ -845,7 +839,7 @@ export default function PropertyDetailPage() {
                     />
 
                     <Input
-                      label="Phụ thu trẻ em (VND)"
+                      label={t('pricing.modal.extraChild')}
                       type="number"
                       min="0"
                       value={pricingForm.extraChildPrice}
@@ -855,11 +849,11 @@ export default function PropertyDetailPage() {
                 </div>
                 <div className="p-6 border-t border-line flex justify-end gap-3">
                   <Button variant="outline" onClick={() => setShowPricingModal(false)}>
-                    Hủy
+                    {tc('actions.cancel')}
                   </Button>
                   <Button onClick={handleSavePricing}>
                     <Save className="w-4 h-4 mr-2" />
-                    Lưu
+                    {tc('actions.save')}
                   </Button>
                 </div>
               </div>
@@ -871,8 +865,8 @@ export default function PropertyDetailPage() {
         <TabsContent value="amenities">
           <Card>
             <CardHeader>
-              <CardTitle>Tiện ích</CardTitle>
-              <p className="text-sm text-muted mt-1">Chọn các tiện ích có sẵn tại cơ sở của bạn</p>
+              <CardTitle>{t('amenities.title')}</CardTitle>
+              <p className="text-sm text-muted mt-1">{t('amenities.subtitle')}</p>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -895,7 +889,7 @@ export default function PropertyDetailPage() {
                           <Wifi className="w-5 h-5" />
                         </div>
                         <span className={`font-medium ${isSelected ? 'text-acc' : 'text-fg'}`}>
-                          {amenity.name}
+                          {t(`amenities.items.${amenity.id}`)}
                         </span>
                       </div>
                     </button>
@@ -911,25 +905,25 @@ export default function PropertyDetailPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>Chính sách</CardTitle>
-                <p className="text-sm text-muted mt-1">Cài đặt giờ check-in/out và các quy định khác</p>
+                <CardTitle>{t('policy.title')}</CardTitle>
+                <p className="text-sm text-muted mt-1">{t('policy.subtitle')}</p>
               </div>
               <Button onClick={handleSavePolicy}>
                 <Save className="w-4 h-4 mr-2" />
-                Lưu thay đổi
+                {tc('actions.saveChanges')}
               </Button>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Check-in/out times */}
               <div className="grid grid-cols-2 gap-4">
                 <Input
-                  label="Giờ nhận phòng (Check-in)"
+                  label={t('policy.checkIn')}
                   type="time"
                   value={policyForm.checkInTime || '14:00'}
                   onChange={(e) => setPolicyForm({ ...policyForm, checkInTime: e.target.value })}
                 />
                 <Input
-                  label="Giờ trả phòng (Check-out)"
+                  label={t('policy.checkOut')}
                   type="time"
                   value={policyForm.checkOutTime || '12:00'}
                   onChange={(e) => setPolicyForm({ ...policyForm, checkOutTime: e.target.value })}
@@ -938,14 +932,14 @@ export default function PropertyDetailPage() {
 
               {/* Policies */}
               <div className="space-y-4">
-                <h4 className="font-medium text-fg">Quy định chung</h4>
+                <h4 className="font-medium text-fg">{t('policy.rules')}</h4>
                 
                 <div className="flex items-center justify-between p-4 bg-fg/[0.03] rounded-lg">
                   <div className="flex items-center gap-3">
                     <Users className="w-5 h-5 text-muted" />
                     <div>
-                      <p className="font-medium text-fg">Cho phép trẻ em</p>
-                      <p className="text-sm text-muted">Trẻ em được phép ở tại cơ sở</p>
+                      <p className="font-medium text-fg">{t('policy.children')}</p>
+                      <p className="text-sm text-muted">{t('policy.childrenHint')}</p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -963,8 +957,8 @@ export default function PropertyDetailPage() {
                   <div className="flex items-center gap-3">
                     <Baby className="w-5 h-5 text-muted" />
                     <div>
-                      <p className="font-medium text-fg">Cho phép thú cưng</p>
-                      <p className="text-sm text-muted">Vật nuôi được phép ở tại cơ sở</p>
+                      <p className="font-medium text-fg">{t('policy.pets')}</p>
+                      <p className="text-sm text-muted">{t('policy.petsHint')}</p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -982,8 +976,8 @@ export default function PropertyDetailPage() {
                   <div className="flex items-center gap-3">
                     <Clock className="w-5 h-5 text-muted" />
                     <div>
-                      <p className="font-medium text-fg">Cho phép hút thuốc</p>
-                      <p className="text-sm text-muted">Hút thuốc được phép trong khuôn viên</p>
+                      <p className="font-medium text-fg">{t('policy.smoking')}</p>
+                      <p className="text-sm text-muted">{t('policy.smokingHint')}</p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -1000,9 +994,9 @@ export default function PropertyDetailPage() {
 
               {/* Cancellation Policy */}
               <div>
-                <h4 className="font-medium text-fg mb-2">Chính sách hủy phòng</h4>
+                <h4 className="font-medium text-fg mb-2">{t('policy.cancellation')}</h4>
                 <Textarea
-                  placeholder="VD: Hủy miễn phí trước 24 giờ check-in..."
+                  placeholder={t('policy.cancellationPlaceholder')}
                   value={policyForm.cancellationPolicy || ''}
                   onChange={(e) => setPolicyForm({ ...policyForm, cancellationPolicy: e.target.value })}
                   rows={3}
@@ -1011,9 +1005,9 @@ export default function PropertyDetailPage() {
 
               {/* Additional Rules */}
               <div>
-                <h4 className="font-medium text-fg mb-2">Nội quy bổ sung</h4>
+                <h4 className="font-medium text-fg mb-2">{t('policy.additionalRules')}</h4>
                 <Textarea
-                  placeholder="Các nội quy khác của cơ sở..."
+                  placeholder={t('policy.additionalRulesPlaceholder')}
                   value={policyForm.additionalRules || ''}
                   onChange={(e) => setPolicyForm({ ...policyForm, additionalRules: e.target.value })}
                   rows={4}
@@ -1028,43 +1022,43 @@ export default function PropertyDetailPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>Website Builder</CardTitle>
-                <p className="text-sm text-muted mt-1">Tùy chỉnh giao diện website công khai của bạn</p>
+                <CardTitle>{t('website.title')}</CardTitle>
+                <p className="text-sm text-muted mt-1">{t('website.subtitle')}</p>
               </div>
               <Button onClick={() => router.push(`/properties/${propertyId}/website`)}>
                 <Globe className="w-4 h-4 mr-2" />
-                Mở Website Builder
+                {t('website.open')}
               </Button>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="p-4 bg-fg/[0.03] rounded-lg text-center">
                   <Globe className="w-8 h-8 text-acc mx-auto mb-2" />
-                  <h4 className="font-medium">Block Builder</h4>
-                  <p className="text-sm text-muted mt-1">Kéo thả các khối giao diện</p>
+                  <h4 className="font-medium">{t('website.blocks')}</h4>
+                  <p className="text-sm text-muted mt-1">{t('website.blocksHint')}</p>
                 </div>
                 <div className="p-4 bg-fg/[0.03] rounded-lg text-center">
                   <Pencil className="w-8 h-8 text-acc mx-auto mb-2" />
-                  <h4 className="font-medium">Tùy biến màu sắc</h4>
-                  <p className="text-sm text-muted mt-1">Thay đổi màu chủ đạo</p>
+                  <h4 className="font-medium">{t('website.colors')}</h4>
+                  <p className="text-sm text-muted mt-1">{t('website.colorsHint')}</p>
                 </div>
                 <div className="p-4 bg-fg/[0.03] rounded-lg text-center">
                   <ExternalLink className="w-8 h-8 text-acc mx-auto mb-2" />
-                  <h4 className="font-medium">Xuất bản</h4>
-                  <p className="text-sm text-muted mt-1">Đăng tải website của bạn</p>
+                  <h4 className="font-medium">{t('website.publish')}</h4>
+                  <p className="text-sm text-muted mt-1">{t('website.publishHint')}</p>
                 </div>
               </div>
               <div className="mt-6 flex items-center justify-between p-4 bg-acc-soft rounded-lg">
                 <div>
-                  <h4 className="font-medium text-fg">Website công khai</h4>
+                  <h4 className="font-medium text-fg">{t('website.public')}</h4>
                   <p className="text-sm text-muted">https://{property.subdomain}.digistay.vn</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" onClick={() => window.open(`/${property.subdomain}`, '_blank')}>
                     <ExternalLink className="w-4 h-4 mr-2" />
-                    Xem website
+                    {t('viewWebsite')}
                   </Button>
-                  <Badge variant="success">Đã xuất bản</Badge>
+                  <Badge variant="success">{t('website.published')}</Badge>
                 </div>
               </div>
             </CardContent>
@@ -1077,12 +1071,12 @@ export default function PropertyDetailPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-panel rounded-xl max-w-lg w-full">
             <div className="p-6 border-b border-line">
-              <h2 className="text-xl font-semibold">Thêm hình ảnh</h2>
+              <h2 className="text-xl font-semibold">{t('images.addTitle')}</h2>
             </div>
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-fg mb-1">
-                  URL hình ảnh <span className="text-err">*</span>
+                  {t('images.url')} <span className="text-err">*</span>
                 </label>
                 <Input
                   placeholder="https://example.com/image.jpg"
@@ -1090,40 +1084,34 @@ export default function PropertyDetailPage() {
                   onChange={(e) => setImageForm({ ...imageForm, url: e.target.value })}
                 />
                 <p className="text-xs text-muted mt-1">
-                  Nhập URL hình ảnh từ dịch vụ lưu trữ (Cloudinary, AWS S3, imgbb,...)
+                  {t('images.urlHint')}
                 </p>
               </div>
 
               {imageForm.url && (
                 <div>
-                  <p className="text-sm font-medium text-fg mb-2">Xem trước:</p>
+                  <p className="text-sm font-medium text-fg mb-2">{t('images.preview')}</p>
                   <div className="relative w-full h-48 rounded-lg overflow-hidden bg-fg/5">
-                    <Image src={imageForm.url} alt="Preview" fill className="object-contain" />
+                    <Image src={imageForm.url} alt={t('images.previewAlt')} fill className="object-contain" />
                   </div>
                 </div>
               )}
 
               <Input
-                label="Mô tả ảnh (alt)"
-                placeholder="VD: Phòng Deluxe nhìn ra biển"
+                label={t('images.alt')}
+                placeholder={t('images.altPlaceholder')}
                 value={imageForm.alt}
                 onChange={(e) => setImageForm({ ...imageForm, alt: e.target.value })}
               />
 
               <div>
                 <label className="block text-sm font-medium text-fg mb-1">
-                  Danh mục
+                  {t('images.category')}
                 </label>
                 <Select
                   options={[
-                    { value: '', label: 'Chọn danh mục' },
-                    { value: 'lobby', label: 'Sảnh lễ tân' },
-                    { value: 'room', label: 'Phòng' },
-                    { value: 'pool', label: 'Hồ bơi' },
-                    { value: 'restaurant', label: 'Nhà hàng' },
-                    { value: 'gym', label: 'Phòng gym' },
-                    { value: 'exterior', label: 'Mặt tiền' },
-                    { value: 'other', label: 'Khác' },
+                    { value: '', label: t('images.categories.none') },
+                    ...IMAGE_CATEGORIES.map((value) => ({ value, label: t(`images.categories.${value}`) })),
                   ]}
                   value={imageForm.category}
                   onChange={(e) => setImageForm({ ...imageForm, category: e.target.value })}
@@ -1139,16 +1127,16 @@ export default function PropertyDetailPage() {
                   className="w-4 h-4 text-acc rounded border-line focus-visible:ring-acc focus-visible:ring-2"
                 />
                 <label htmlFor="isPrimary" className="text-sm text-fg">
-                  Đặt làm ảnh chính
+                  {t('images.primary')}
                 </label>
               </div>
             </div>
             <div className="p-6 border-t border-line flex justify-end gap-3">
               <Button variant="outline" onClick={() => setShowImageModal(false)}>
-                Hủy
+                {tc('actions.cancel')}
               </Button>
               <Button onClick={handleUploadImage} disabled={isUploading}>
-                {isUploading ? 'Đang tải lên...' : 'Thêm ảnh'}
+                {isUploading ? t('images.uploading') : t('images.add')}
               </Button>
             </div>
           </div>

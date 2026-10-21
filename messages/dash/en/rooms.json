@@ -1,1 +1,231 @@
-{}
+{
+  "rooms": {
+    "header": {
+      "title": "Room types & inventory",
+      "description": "Manage room types, capacity and photos",
+      "add": "Add room type"
+    },
+    "tabs": {
+      "rooms": "Room types",
+      "maintenance": "Maintenance"
+    },
+    "bedType": {
+      "SINGLE": "Single bed",
+      "DOUBLE": "Double bed",
+      "TWIN": "Twin beds",
+      "TRIPLE": "Three beds",
+      "QUADRUPLE": "Four beds"
+    },
+    "banner": {
+      "summary": "{types, plural, one {# room type} other {# room types}} • {rooms, plural, one {# room} other {# rooms}}",
+      "totalRooms": "Total rooms",
+      "roomTypes": "Room types",
+      "available": "Available"
+    },
+    "list": {
+      "selectProperty": "Choose a property to see its room types",
+      "empty": "No room types yet",
+      "addFirst": "Add your first room type"
+    },
+    "card": {
+      "photos": "{count, plural, one {# photo} other {# photos}}",
+      "perNight": "/night",
+      "inventory": "Inventory",
+      "roomCount": "{count, plural, one {# room} other {# rooms}}",
+      "area": "Area",
+      "capacity": "Capacity",
+      "capacityValue": "{adults}A • {children}C",
+      "amenities": "Amenities:",
+      "inactive": "Inactive"
+    },
+    "form": {
+      "name": "Room type name",
+      "namePlaceholder": "e.g. Deluxe River View room",
+      "description": "Description",
+      "descriptionPlaceholder": "Describe the room type...",
+      "bedType": "Bed type",
+      "area": "Area (m²)",
+      "totalRooms": "Number of rooms",
+      "baseOccupancy": "Minimum guests",
+      "maxOccupancy": "Maximum guests",
+      "weekdayPrice": "Weekday price (VND)",
+      "weekendPrice": "Weekend price (VND)"
+    },
+    "create": {
+      "submit": "Create room type",
+      "failed": "Could not create the room type"
+    },
+    "edit": {
+      "title": "Edit room type",
+      "submit": "Save changes",
+      "failed": "Could not update the room type"
+    },
+    "delete": {
+      "confirm": "Delete this room type?",
+      "failed": "Could not delete the room type"
+    },
+    "error": "Something went wrong",
+    "maintenance": {
+      "title": "Maintenance schedule",
+      "description": "Plan room repairs and maintenance",
+      "add": "Add maintenance",
+      "empty": "No maintenance scheduled yet",
+      "addFirst": "Schedule the first maintenance",
+      "fillAll": "Please fill in all the details",
+      "created": "Maintenance scheduled",
+      "createFailed": "Could not schedule the maintenance",
+      "deleteConfirm": "Delete this maintenance?",
+      "deleteFailed": "Could not delete the maintenance",
+      "form": {
+        "roomType": "Room type",
+        "chooseRoomType": "Choose a room type",
+        "startDate": "Start date",
+        "endDate": "End date",
+        "reason": "Reason",
+        "reasonPlaceholder": "e.g. Repainting the walls, replacing the air conditioner...",
+        "notes": "Extra notes",
+        "notesPlaceholder": "Details...",
+        "warning": "The room cannot be booked during the maintenance",
+        "submit": "Schedule maintenance"
+      }
+    }
+  },
+  "services": {
+    "title": "Amenities & services",
+    "description": "Manage the amenities and services of your property",
+    "noProperty": "Property not found.",
+    "noPropertyToast": "Property not found",
+    "loadError": "Something went wrong while loading",
+    "amenities": {
+      "title": "Amenities",
+      "selected": "{count, plural, one {# amenity selected} other {# amenities selected}}",
+      "choose": "Choose the property’s amenities",
+      "search": "Search...",
+      "empty": "No amenities yet. Run <code>npx tsx prisma/seed-amenities.ts</code>",
+      "saveFailed": "Could not save the amenities",
+      "saved": "Amenities saved",
+      "saveError": "Something went wrong while saving the amenities"
+    },
+    "amenityCategory": {
+      "comfort": "Comfort",
+      "entertainment": "Entertainment",
+      "facility": "Facilities",
+      "food": "Food & drink",
+      "internet": "Internet",
+      "leisure": "Leisure",
+      "parking": "Parking",
+      "security": "Security",
+      "service": "Services"
+    },
+    "serviceCategory": {
+      "laundry": "Laundry",
+      "transport": "Transport",
+      "food": "Food & drink",
+      "entertainment": "Entertainment",
+      "other": "Other"
+    },
+    "priceType": {
+      "FIXED": "Fixed",
+      "PER_NIGHT": "Per night",
+      "PER_PERSON": "Per person"
+    },
+    "price": {
+      "perNight": "{price}/night",
+      "perPerson": "{price}/person",
+      "perUse": "{price}/use"
+    },
+    "list": {
+      "title": "Extra services",
+      "count": "{count, plural, one {# service} other {# services}}",
+      "empty": "No services yet",
+      "emptyHint": "Create services guests can add to their booking",
+      "add": "Add service",
+      "addFirst": "Add your first service",
+      "off": "Off",
+      "perUse": "Per use",
+      "deleteConfirm": "Delete this service?",
+      "deleteFailed": "Could not delete the service",
+      "deleted": "Service deleted",
+      "deleteError": "Something went wrong while deleting the service"
+    },
+    "modal": {
+      "editTitle": "Edit service",
+      "newTitle": "New service",
+      "editSubtitle": "Update the service details",
+      "newSubtitle": "Create a new service",
+      "name": "Service name",
+      "namePlaceholder": "e.g. Laundry",
+      "category": "Category",
+      "priceType": "Pricing",
+      "price": "Price (₫)",
+      "perPerson": "Charge per person",
+      "create": "Create service",
+      "invalid": "Please enter a name and a valid price",
+      "saveFailed": "Could not save the service",
+      "updated": "Service updated",
+      "added": "Service added",
+      "saveError": "Something went wrong while saving the service"
+    }
+  },
+  "policies": {
+    "description": "Check-in/out times, cancellation and the property’s rules",
+    "noPropertyDescription": "Check-in, cancellation and house rules",
+    "noProperty": "Property not found.",
+    "loadFailed": "Could not load the policies",
+    "loadError": "Something went wrong while loading the policies",
+    "saveFailed": "Could not save the policies",
+    "saved": "Policies saved",
+    "saveError": "Something went wrong while saving",
+    "times": {
+      "title": "Check-in / check-out times",
+      "checkIn": "Check-in time",
+      "checkInHint": "Guests can check in from this time",
+      "checkOut": "Check-out time",
+      "checkOutHint": "Guests must check out by this time"
+    },
+    "late": {
+      "title": "Late check-out fee",
+      "enable": "Charge a fee when guests check out after {time} on their booked check-out day",
+      "intro": "Surcharge as a % of the booking’s nightly rate:",
+      "before": "Out before",
+      "later": "Any later",
+      "tierTime": "Cut-off time {n}",
+      "surchargeBefore": "Surcharge if out before {time} (%)",
+      "surchargeLater": "Surcharge if later (%)",
+      "hint": "Default, as is customary: 30% before 15:00, 50% before 18:00, a full night after that. Staying into the next day counts one night per 24 hours (better to extend the stay). At check-out the app suggests the amount; the front desk applies, changes or waives it (changing or waiving needs a reason and is logged)."
+    },
+    "cancellation": {
+      "title": "Cancellation policy",
+      "freeHours": "Free cancellation up to (hours before)",
+      "freeHoursPlaceholder": "e.g. 24 (free if cancelled 24 hours ahead)",
+      "freeHoursHint": "Leave empty if there is no free cancellation",
+      "details": "Details",
+      "detailsPlaceholder": "Describe the cancellation policy, fees, refunds...",
+      "detailsHint": "Guests see this policy before booking on the website."
+    },
+    "deposit": {
+      "label": "Deposit for website bookings (%)",
+      "hint": "0 = no deposit, guests pay at the front desk. With a deposit, guests pay by bank transfer through PayOS as they book, the money goes straight to the hotel’s account, and the booking is confirmed automatically once it arrives.",
+      "deadline": "Cancel the booking automatically if no deposit is paid within",
+      "deadlineHint": "If the money has not arrived in time, the booking is cancelled, the room is released and the guest gets an email. The app checks with PayOS first: if the guest has paid, the booking is confirmed. Without auto-cancel, the booking waits for the hotel to handle it.",
+      "noAutoCancel": "No auto-cancel",
+      "minutes": "{count, plural, one {# minute} other {# minutes}}",
+      "hours": "{count, plural, one {# hour} other {# hours}}",
+      "payosMissing": "PayOS is not connected (Bank accounts → Online payments): guests do not pay a deposit until it is."
+    },
+    "rules": {
+      "title": "Other rules",
+      "children": "Children allowed",
+      "childrenHint": "Can guests bring children?",
+      "minChildAge": "Age from which children pay the adult rate",
+      "pets": "Pets allowed",
+      "petsHint": "Can guests bring pets?",
+      "smoking": "Smoking allowed",
+      "smokingHint": "Is smoking allowed in the rooms?"
+    },
+    "additional": {
+      "title": "Additional rules",
+      "placeholder": "Other house rules (quiet hours, visitors, ...)..."
+    }
+  }
+}

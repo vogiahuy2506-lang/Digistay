@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, CardHeader, CardTitle, Button, Input } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
+import { useTranslations } from 'next-intl'
 import { Save, ShieldCheck, Clock, Baby, Dog, Cigarette, FileText } from 'lucide-react'
 import { DEFAULT_LATE_TIERS, type LateTier } from '@/lib/bookings/late-checkout'
 
@@ -30,18 +31,18 @@ interface Policy {
 
 const TIER_INPUT = 'h-10 px-3 border border-line rounded-ctl bg-raised text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acc'
 
-/** How long a guest has to pay the online deposit (Policy.depositDeadlineMinutes). */
-const DEADLINE_OPTIONS = [
-  { value: 0, label: 'Không tự huỷ' },
-  { value: 30, label: '30 phút' },
-  { value: 60, label: '1 giờ' },
-  { value: 120, label: '2 giờ' },
-  { value: 360, label: '6 giờ' },
-  { value: 720, label: '12 giờ' },
-  { value: 1440, label: '24 giờ' },
-]
+/** How long a guest has to pay the online deposit (Policy.depositDeadlineMinutes), in minutes; 0: never cancel. */
+const DEADLINE_OPTIONS = [0, 30, 60, 120, 360, 720, 1440]
 
 export default function PoliciesPage() {
+  const t = useTranslations('dash.rooms.policies')
+  const tc = useTranslations('dash.common')
+  const deadlineLabel = (minutes: number) =>
+    minutes === 0
+      ? t('deposit.noAutoCancel')
+      : minutes < 60
+        ? t('deposit.minutes', { count: minutes })
+        : t('deposit.hours', { count: minutes / 60 })
   const params = useParams<{ slug: string; id: string }>()
   const propertyId = params.id
 
@@ -68,12 +69,12 @@ export default function PoliciesPage() {
       if (data.success) {
         setPolicy(data.data)
       } else {
-        toast.error(data.error || 'Không thể tải chính sách')
-        setError(data.error || 'Không thể tải chính sách')
+        toast.error(data.error || t('loadFailed'))
+        setError(data.error || t('loadFailed'))
       }
     } catch (err) {
       console.error('Fetch policy error:', err)
-      setError('Đã xảy ra lỗi khi tải chính sách')
+      setError(t('loadError'))
     } finally {
       setIsLoading(false)
     }
@@ -103,14 +104,14 @@ export default function PoliciesPage() {
       })
       const data = await res.json()
       if (!data.success) {
-        toast.error(data.error || 'Không thể lưu chính sách')
+        toast.error(data.error || t('saveFailed'))
         return
       }
-      toast.success('Đã lưu chính sách')
+      toast.success(t('saved'))
       setPolicy({ ...data.data, payosConnected: policy.payosConnected })
     } catch (err) {
       console.error('Save policy error:', err)
-      toast.error('Đã xảy ra lỗi khi lưu')
+      toast.error(t('saveError'))
     } finally {
       setIsSubmitting(false)
     }
@@ -128,11 +129,11 @@ export default function PoliciesPage() {
   if (!propertyId) {
     return (
       <PageContainer>
-        <Header title="Chính sách" description="Chính sách check-in, hủy phòng và quy định" />
+        <Header title={tc('nav.policies')} description={t('noPropertyDescription')} />
         <Card>
           <CardContent className="p-12 text-center">
             <ShieldCheck className="w-12 h-12 text-muted mx-auto mb-4" />
-            <p className="text-muted">Không xác định được cơ sở.</p>
+            <p className="text-muted">{t('noProperty')}</p>
           </CardContent>
         </Card>
       </PageContainer>
@@ -142,12 +143,12 @@ export default function PoliciesPage() {
   return (
     <PageContainer>
       <Header
-        title="Chính sách"
-        description="Giờ check-in/out, hủy phòng và các quy định của cơ sở"
+        title={tc('nav.policies')}
+        description={t('description')}
         actions={
           <Button onClick={handleSave} isLoading={isSubmitting} disabled={!policy}>
             <Save className="w-4 h-4 mr-2" />
-            Lưu thay đổi
+            {tc('actions.saveChanges')}
           </Button>
         }
       />
@@ -160,7 +161,7 @@ export default function PoliciesPage() {
         <Card>
           <CardContent className="p-12 text-center">
             <p className="text-err mb-4">{error}</p>
-            <Button onClick={fetchPolicy}>Thử lại</Button>
+            <Button onClick={fetchPolicy}>{tc('actions.retry')}</Button>
           </CardContent>
         </Card>
       ) : policy ? (
@@ -170,14 +171,14 @@ export default function PoliciesPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="w-5 h-5" />
-                Giờ check-in / check-out
+                {t('times.title')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-fg mb-1">
-                    Giờ check-in
+                    {t('times.checkIn')}
                   </label>
                   <Input
                     type="time"
@@ -185,12 +186,12 @@ export default function PoliciesPage() {
                     onChange={(e) => update('checkInTime', e.target.value)}
                   />
                   <p className="text-xs text-muted mt-1">
-                    Khách có thể nhận phòng từ giờ này
+                    {t('times.checkInHint')}
                   </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-fg mb-1">
-                    Giờ check-out
+                    {t('times.checkOut')}
                   </label>
                   <Input
                     type="time"
@@ -198,7 +199,7 @@ export default function PoliciesPage() {
                     onChange={(e) => update('checkOutTime', e.target.value)}
                   />
                   <p className="text-xs text-muted mt-1">
-                    Khách phải trả phòng trước giờ này
+                    {t('times.checkOutHint')}
                   </p>
                 </div>
               </div>
@@ -210,7 +211,7 @@ export default function PoliciesPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="w-5 h-5" />
-                Phí trả phòng muộn
+                {t('late.title')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -221,18 +222,18 @@ export default function PoliciesPage() {
                   onChange={(e) => update('lateCheckoutTiers', e.target.checked ? DEFAULT_LATE_TIERS : [])}
                   className="w-4 h-4"
                 />
-                Thu phí khi khách trả phòng sau {policy.checkOutTime} của ngày trả đã đặt
+                {t('late.enable', { time: policy.checkOutTime })}
               </label>
               {lateTiers.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-xs text-muted">Phụ thu tính theo % giá một đêm của đơn:</p>
+                  <p className="text-xs text-muted">{t('late.intro')}</p>
                   {lateTiers.map((tier, i) => (
                     <div key={i} className="grid grid-cols-[84px_108px_1fr] items-center gap-2 sm:gap-3 text-sm text-fg">
-                      <span>{tier.until !== null ? 'Trả trước' : 'Muộn hơn nữa'}</span>
+                      <span>{tier.until !== null ? t('late.before') : t('late.later')}</span>
                       {tier.until !== null ? (
                         <input
                           type="time"
-                          aria-label={`Mốc giờ ${i + 1}`}
+                          aria-label={t('late.tierTime', { n: i + 1 })}
                           value={tier.until}
                           onChange={(e) => setTier(i, { until: e.target.value })}
                           className={TIER_INPUT}
@@ -245,7 +246,7 @@ export default function PoliciesPage() {
                           type="number"
                           min={0}
                           max={300}
-                          aria-label={tier.until !== null ? `Phụ thu nếu trả trước ${tier.until} (%)` : 'Phụ thu nếu muộn hơn (%)'}
+                          aria-label={tier.until !== null ? t('late.surchargeBefore', { time: tier.until }) : t('late.surchargeLater')}
                           value={tier.percent}
                           onChange={(e) => setTier(i, { percent: Math.min(300, Math.max(0, parseInt(e.target.value) || 0)) })}
                           className={`${TIER_INPUT} w-16 sm:w-20`}
@@ -255,9 +256,7 @@ export default function PoliciesPage() {
                     </div>
                   ))}
                   <p className="text-xs text-muted">
-                    Mặc định theo thông lệ: trước 15:00 phụ thu 30%, trước 18:00 phụ thu 50%, muộn hơn tính một đêm. Ở
-                    sang ngày hôm sau thì mỗi 24 giờ tính một đêm (nên gia hạn). Khi trả phòng, app gợi ý số tiền; lễ tân
-                    áp dụng, sửa hoặc miễn (sửa hay miễn phải ghi lý do, có lưu nhật ký).
+                    {t('late.hint')}
                   </p>
                 </div>
               )}
@@ -269,13 +268,13 @@ export default function PoliciesPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="w-5 h-5" />
-                Chính sách hủy phòng
+                {t('cancellation.title')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-fg mb-1">
-                  Hủy miễn phí trước (giờ)
+                  {t('cancellation.freeHours')}
                 </label>
                 <Input
                   type="number"
@@ -288,30 +287,30 @@ export default function PoliciesPage() {
                       e.target.value === '' ? null : parseInt(e.target.value)
                     )
                   }
-                  placeholder="VD: 24 (hủy trước 24 giờ được miễn phí)"
+                  placeholder={t('cancellation.freeHoursPlaceholder')}
                 />
                 <p className="text-xs text-muted mt-1">
-                  Để trống nếu không có chính sách hủy miễn phí
+                  {t('cancellation.freeHoursHint')}
                 </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-fg mb-1">
-                  Mô tả chi tiết
+                  {t('cancellation.details')}
                 </label>
                 <textarea
                   value={policy.cancellationPolicy ?? ''}
                   onChange={(e) => update('cancellationPolicy', e.target.value || null)}
-                  placeholder="Mô tả chi tiết về chính sách hủy phòng, phí hủy, hoàn tiền..."
+                  placeholder={t('cancellation.detailsPlaceholder')}
                   rows={4}
                   className="w-full px-3 py-2 border rounded-lg focus-visible:ring-2 focus-visible:ring-2 focus-visible:ring-acc focus-visible:border-acc focus-visible:border-acc"
                 />
                 <p className="text-xs text-muted mt-1">
-                  Khách thấy chính sách này trước khi đặt phòng trên website.
+                  {t('cancellation.detailsHint')}
                 </p>
               </div>
               <div>
                 <label htmlFor="online-deposit" className="block text-sm font-medium text-fg mb-1">
-                  Đặt cọc khi khách đặt trên website (%)
+                  {t('deposit.label')}
                 </label>
                 <Input
                   id="online-deposit"
@@ -324,13 +323,12 @@ export default function PoliciesPage() {
                   }
                 />
                 <p className="text-xs text-muted mt-1">
-                  0 = không thu cọc, khách trả tại quầy. Có cọc thì khách chuyển khoản qua PayOS ngay khi đặt,
-                  tiền vào thẳng tài khoản khách sạn, và đặt phòng tự được xác nhận khi tiền về.
+                  {t('deposit.hint')}
                 </p>
                 {policy.onlineDepositPercent > 0 && (
                   <div className="mt-3">
                     <label htmlFor="deposit-deadline" className="block text-sm font-medium text-fg mb-1">
-                      Tự huỷ đơn nếu khách chưa đặt cọc sau
+                      {t('deposit.deadline')}
                     </label>
                     <select
                       id="deposit-deadline"
@@ -338,22 +336,21 @@ export default function PoliciesPage() {
                       onChange={(e) => update('depositDeadlineMinutes', parseInt(e.target.value))}
                       className="w-full h-10 px-3 border border-line rounded-ctl bg-raised text-fg focus-visible:ring-2 focus-visible:ring-acc"
                     >
-                      {DEADLINE_OPTIONS.some((o) => o.value === policy.depositDeadlineMinutes) ? null : (
-                        <option value={policy.depositDeadlineMinutes}>{policy.depositDeadlineMinutes} phút</option>
+                      {DEADLINE_OPTIONS.includes(policy.depositDeadlineMinutes) ? null : (
+                        <option value={policy.depositDeadlineMinutes}>{t('deposit.minutes', { count: policy.depositDeadlineMinutes })}</option>
                       )}
-                      {DEADLINE_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
+                      {DEADLINE_OPTIONS.map((minutes) => (
+                        <option key={minutes} value={minutes}>{deadlineLabel(minutes)}</option>
                       ))}
                     </select>
                     <p className="text-xs text-muted mt-1">
-                      Quá hạn mà tiền chưa về, đơn tự huỷ, phòng được mở lại và khách nhận email. App hỏi lại PayOS trước khi
-                      huỷ: khách đã trả thì đơn được xác nhận. Không tự huỷ thì đơn chờ khách sạn xử lý.
+                      {t('deposit.deadlineHint')}
                     </p>
                   </div>
                 )}
                 {policy.onlineDepositPercent > 0 && !policy.payosConnected && (
                   <p className="text-xs text-warn mt-1">
-                    Chưa kết nối PayOS (Tài khoản ngân hàng → Thanh toán online): khách chưa phải đặt cọc cho tới khi kết nối.
+                    {t('deposit.payosMissing')}
                   </p>
                 )}
               </div>
@@ -363,15 +360,15 @@ export default function PoliciesPage() {
           {/* Children, Pets, Smoking */}
           <Card>
             <CardHeader>
-              <CardTitle>Quy định khác</CardTitle>
+              <CardTitle>{t('rules.title')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-start justify-between p-4 bg-fg/[0.03] rounded-lg">
                 <div className="flex items-start gap-3">
                   <Baby className="w-5 h-5 text-muted mt-0.5" />
                   <div>
-                    <p className="font-medium">Cho phép trẻ em</p>
-                    <p className="text-sm text-muted">Có cho phép khách mang theo trẻ em?</p>
+                    <p className="font-medium">{t('rules.children')}</p>
+                    <p className="text-sm text-muted">{t('rules.childrenHint')}</p>
                   </div>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -388,7 +385,7 @@ export default function PoliciesPage() {
               {policy.childrenAllowed && (
                 <div className="ml-12">
                   <label className="block text-sm font-medium text-fg mb-1">
-                    Tuổi trẻ em tối thiểu được tính giá người lớn
+                    {t('rules.minChildAge')}
                   </label>
                   <Input
                     type="number"
@@ -405,8 +402,8 @@ export default function PoliciesPage() {
                 <div className="flex items-start gap-3">
                   <Dog className="w-5 h-5 text-muted mt-0.5" />
                   <div>
-                    <p className="font-medium">Cho phép thú cưng</p>
-                    <p className="text-sm text-muted">Có cho phép khách mang theo thú cưng?</p>
+                    <p className="font-medium">{t('rules.pets')}</p>
+                    <p className="text-sm text-muted">{t('rules.petsHint')}</p>
                   </div>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -424,8 +421,8 @@ export default function PoliciesPage() {
                 <div className="flex items-start gap-3">
                   <Cigarette className="w-5 h-5 text-muted mt-0.5" />
                   <div>
-                    <p className="font-medium">Cho phép hút thuốc</p>
-                    <p className="text-sm text-muted">Có cho phép hút thuốc trong phòng?</p>
+                    <p className="font-medium">{t('rules.smoking')}</p>
+                    <p className="text-sm text-muted">{t('rules.smokingHint')}</p>
                   </div>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -444,13 +441,13 @@ export default function PoliciesPage() {
           {/* Additional rules */}
           <Card>
             <CardHeader>
-              <CardTitle>Quy định bổ sung</CardTitle>
+              <CardTitle>{t('additional.title')}</CardTitle>
             </CardHeader>
             <CardContent>
               <textarea
                 value={policy.additionalRules ?? ''}
                 onChange={(e) => update('additionalRules', e.target.value || null)}
-                placeholder="Các quy định khác của cơ sở (giờ yên tĩnh, quy định về khách đến thăm, ...)..."
+                placeholder={t('additional.placeholder')}
                 rows={5}
                 className="w-full px-3 py-2 border rounded-lg focus-visible:ring-2 focus-visible:ring-2 focus-visible:ring-acc focus-visible:border-acc focus-visible:border-acc"
               />
