@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
-import { quoteStay, type PricedService } from '@/lib/pricing/quote'
+import { depositFor, quoteStay, type PricedService } from '@/lib/pricing/quote'
 import { useSiteHref } from '../_components/site-base'
 
 interface RoomType {
@@ -45,6 +45,10 @@ interface Property {
   name: string
   subdomain: string
   extraServices: Service[]
+  /** the hotel's own cancellation terms */
+  policy: { cancellationHours: number | null; cancellationPolicy: string | null } | null
+  /** a deposit paid through PayOS when booking, or null */
+  onlineDeposit: { percent: number } | null
 }
 
 const SERVICE_UNIT: Record<string, string> = { FIXED: 'lần', PER_NIGHT: 'đêm', PER_PERSON: 'người' }
@@ -104,7 +108,12 @@ export function SearchClient({ params }: { params: Promise<{ subdomain: string }
   // Ids of the hotel's own services (GET /api/properties/public)
   const [selectedServices, setSelectedServices] = React.useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = React.useState(false)
-  const [bookingResult, setBookingResult] = React.useState<{ bookingCode: string; totalAmount: number } | null>(null)
+  const [bookingResult, setBookingResult] = React.useState<{
+    bookingCode: string
+    totalAmount: number
+    /** the hotel takes a deposit but no link could be made: it will call */
+    depositUnavailable?: boolean
+  } | null>(null)
   const [bookingError, setBookingError] = React.useState('')
 
   React.useEffect(() => {
@@ -276,8 +285,14 @@ export function SearchClient({ params }: { params: Promise<{ subdomain: string }
       const data = await res.json()
       
       if (data.success) {
-        setBookingResult({ bookingCode: data.data.bookingCode, totalAmount: data.data.totalAmount })
+        setBookingResult({
+          bookingCode: data.data.bookingCode,
+          totalAmount: data.data.totalAmount,
+          depositUnavailable: data.data.depositUnavailable,
+        })
         setBookingStep(4)
+        // The deposit is paid on PayOS; it sends the guest back to /thanh-toan.
+        if (data.data.deposit?.checkoutUrl) window.location.assign(data.data.deposit.checkoutUrl)
       } else {
         setBookingError(data.error || 'Đặt phòng thất bại')
       }
@@ -659,15 +674,24 @@ export function SearchClient({ params }: { params: Promise<{ subdomain: string }
                     </div>
                   </div>
 
-                  {/* Cancellation Policy */}
-                  <div className="bg-warn-soft border border-warn/30 rounded-ctl p-4 mb-6">
-                    <h5 className="font-medium text-warn mb-2">Chính sách hủy</h5>
-                    <ul className="text-sm text-warn space-y-1">
-                      <li>• Hủy miễn phí trước 24 giờ check-in</li>
-                      <li>• Hủy trong vòng 24h: mất 50% tiền cọc</li>
-                      <li>• Không đến: mất toàn bộ tiền cọc</li>
-                    </ul>
-                  </div>
+                  {/* The hotel's own cancellation terms (made-up ones used to be printed here). */}
+                  {(property?.policy?.cancellationHours != null || property?.policy?.cancellationPolicy) && (
+                    <div className="bg-warn-soft border border-warn/30 rounded-ctl p-4 mb-6">
+                      <h5 className="font-medium text-warn mb-2">Chính sách hủy</h5>
+                      <div className="text-sm text-warn space-y-1">
+                        {property.policy.cancellationHours != null && (
+                          <p>
+                            {property.policy.cancellationHours > 0
+                              ? `Hủy miễn phí trước ${property.policy.cancellationHours} giờ so với giờ nhận phòng.`
+                              : 'Không hủy miễn phí.'}
+                          </p>
+                        )}
+                        {property.policy.cancellationPolicy && (
+                          <p className="whitespace-pre-line">{property.policy.cancellationPolicy}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex justify-between">
                     <Button variant="outline" onClick={() => setBookingStep(1)}>
@@ -688,22 +712,27 @@ export function SearchClient({ params }: { params: Promise<{ subdomain: string }
                   <h4 className="font-semibold mb-4">Thanh toán</h4>
                   
                   <div className="space-y-3 mb-6">
-                    <label className="flex items-center justify-between p-4 border-2 border-info/30 bg-info-soft rounded-ctl cursor-pointer">
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="radio"
-                          name="payment"
-                          value="CASH"
-                          defaultChecked
-                          className="w-5 h-5 text-info"
-                        />
+                    {property?.onlineDeposit ? (
+                      // Same amount the server asks PayOS for (depositFor).
+                      <div className="p-4 border-2 border-info/30 bg-info-soft rounded-ctl" data-testid="deposit-box">
+                        <p className="font-medium">
+                          Đặt cọc {property.onlineDeposit.percent}%:{' '}
+                          {formatPrice(depositFor(calculatePrice(selectedRoomType).total, property.onlineDeposit.percent))}
+                        </p>
+                        <p className="text-sm text-muted mt-1">
+                          Chuyển khoản hoặc quét mã QR qua PayOS ngay sau khi xác nhận; tiền vào thẳng tài khoản của khách
+                          sạn. Khi tiền về, đặt phòng được xác nhận và bạn nhận email. Phần còn lại trả khi nhận phòng.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between p-4 border-2 border-info/30 bg-info-soft rounded-ctl">
                         <div>
                           <p className="font-medium">Thanh toán tại quầy</p>
                           <p className="text-sm text-muted">Tiền mặt hoặc chuyển khoản khi nhận phòng</p>
                         </div>
+                        <span className="text-2xl" aria-hidden="true">💵</span>
                       </div>
-                      <span className="text-2xl">💵</span>
-                    </label>
+                    )}
                   </div>
 
                   {/* Final Summary */}
@@ -739,7 +768,7 @@ export function SearchClient({ params }: { params: Promise<{ subdomain: string }
                       Quay lại
                     </Button>
                     <Button onClick={handleSubmitBooking} isLoading={isSubmitting}>
-                      Xác nhận đặt phòng
+                      {property?.onlineDeposit ? 'Xác nhận và đặt cọc' : 'Xác nhận đặt phòng'}
                     </Button>
                   </div>
                 </div>
@@ -758,6 +787,11 @@ export function SearchClient({ params }: { params: Promise<{ subdomain: string }
                   <p className="text-3xl font-mono font-bold text-info mb-6">
                     {bookingResult.bookingCode}
                   </p>
+                  {bookingResult.depositUnavailable && (
+                    <p className="text-sm text-warn mb-3">
+                      Chưa tạo được link đặt cọc. Đặt phòng của bạn vẫn được giữ; khách sạn sẽ liên hệ để hướng dẫn đặt cọc.
+                    </p>
+                  )}
                   <p className="text-sm text-muted mb-6">
                     Khách sạn sẽ liên hệ để xác nhận. Email xác nhận đã được gửi tới {guestInfo.email}; vui lòng giữ mã
                     đặt phòng này để nhận phòng.

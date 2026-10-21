@@ -222,7 +222,9 @@ describe('the public booking route', () => {
     const room = await createRoomType(property.id)
     const res = await call(guestBooking(json({ propertyId: property.id, roomTypeId: room.id, ...guest(), ...WEEKDAYS, numAdults: 2 }, freshIp())))
     expect(res.status).toBe(200)
-    expect(Object.keys(res.body.data).sort()).toEqual(['bookingCode', 'checkInDate', 'checkOutDate', 'status', 'totalAmount'])
+    // deposit: the PayOS link when the hotel takes one (guest-deposit.int.test.ts); none here.
+    expect(Object.keys(res.body.data).sort()).toEqual(['bookingCode', 'checkInDate', 'checkOutDate', 'deposit', 'depositUnavailable', 'status', 'totalAmount'])
+    expect(res.body.data).toMatchObject({ deposit: null, depositUnavailable: false })
     const booking = await prisma.booking.findFirstOrThrow({ where: { bookingCode: res.body.data.bookingCode }, include: { payments: true } })
     expect(booking).toMatchObject({ status: 'PENDING', source: 'DIRECT', createdById: null, depositAmount: 0 })
     expect(booking.payments).toEqual([])

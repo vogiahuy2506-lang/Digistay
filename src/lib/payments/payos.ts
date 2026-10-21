@@ -26,6 +26,7 @@ import { PayOS, type Webhook } from '@payos/node'
 import type { Prisma, PropertyPayos } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { decryptSecret, encryptSecret, secretContext } from '@/lib/security/secret-box'
+import { queueDepositReceived, sendAfterResponse } from '@/lib/email/outbox'
 import { lockBooking, syncBookingPayments } from './booking-payments'
 
 /** How long a guest can pay a link: staff often send it by Zalo. */
@@ -262,13 +263,13 @@ export async function applyPayosPaid(input: {
     return 'amount_mismatch'
   }
 
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     await lockBooking(tx, payment.bookingId)
     const claimed = await tx.payment.updateMany({
       where: { id: payment.id, status: { in: [...PAYABLE_STATUSES] } },
       data: { status: 'PAID', paidAt: new Date(), transactionId: input.reference ?? null },
     })
-    if (claimed.count === 0) return 'duplicate' as const
+    if (claimed.count === 0) return { outcome: 'duplicate' as const, emailIds: [] }
 
     const lateLink = payment.status !== 'PENDING'
     await tx.payment.update({
@@ -303,8 +304,49 @@ export async function applyPayosPaid(input: {
         },
       },
     })
-    return 'paid' as const
+
+    // A guest's deposit from the hotel's site (guest-deposit.ts): tell them
+    // the booking is confirmed. Not for a booking already cancelled: staff
+    // sort that money out (it is flagged above).
+    const emailIds: string[] = []
+    if (asObject(payment.metadata).guestDeposit === true && !closed) {
+      const booking = await tx.booking.findUniqueOrThrow({
+        where: { id: payment.bookingId },
+        select: {
+          guestEmail: true,
+          guestName: true,
+          bookingCode: true,
+          checkInDate: true,
+          checkOutDate: true,
+          totalAmount: true,
+          depositAmount: true,
+          property: { select: { name: true, phone: true } },
+        },
+      })
+      if (booking.guestEmail) {
+        emailIds.push(
+          await queueDepositReceived(
+            {
+              guestEmail: booking.guestEmail,
+              guestName: booking.guestName,
+              bookingCode: booking.bookingCode,
+              propertyName: booking.property.name,
+              propertyPhone: booking.property.phone,
+              checkIn: booking.checkInDate,
+              checkOut: booking.checkOutDate,
+              deposit: payment.amount,
+              remaining: Math.max(0, booking.totalAmount - booking.depositAmount),
+            },
+            payment.bookingId,
+            tx
+          )
+        )
+      }
+    }
+    return { outcome: 'paid' as const, emailIds }
   })
+  sendAfterResponse(result.emailIds)
+  return result.outcome
 }
 
 /**

@@ -32,7 +32,7 @@ const LEASE_MS = 3 * 60 * 1000
 const BACKOFF_MS = [10, 30, 120, 360].map((minutes) => minutes * 60 * 1000)
 const KEEP_SENT_MS = 30 * 24 * 60 * 60 * 1000
 
-type Kind = 'booking_confirmation' | 'owner_new_booking' | 'workspace_invite'
+type Kind = 'booking_confirmation' | 'owner_new_booking' | 'workspace_invite' | 'deposit_received'
 interface Message {
   to: EmailRecipient
   subject: string
@@ -92,6 +92,37 @@ export function queueOwnerNewBooking(data: OwnerNewBookingData, bookingId: strin
   // The guest's name and contact come from a public form: escape them for the HTML part.
   const html = escapeHtml(text).replace(/\n/g, '<br/>')
   return queueEmail('owner_new_booking', { to: { email: data.ownerEmail, name: data.ownerName }, subject, text, html }, bookingId, db)
+}
+
+export interface DepositReceivedData {
+  guestEmail: string
+  guestName: string
+  bookingCode: string
+  propertyName: string
+  propertyPhone?: string | null
+  checkIn: Date
+  checkOut: Date
+  deposit: number
+  /** still to pay at the hotel */
+  remaining: number
+}
+
+/** To the guest once PayOS reports their deposit (src/lib/payments/payos.ts): the booking is confirmed. */
+export function queueDepositReceived(data: DepositReceivedData, bookingId: string, db?: Db) {
+  const day = (d: Date) => d.toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })
+  const vnd = (n: number) => `${Math.round(n).toLocaleString('vi-VN')} ₫`
+  const subject = `Đã nhận tiền cọc - đặt phòng #${data.bookingCode} đã được xác nhận`
+  const text = [
+    `Xin chào ${data.guestName},`,
+    '',
+    `${data.propertyName} đã nhận ${vnd(data.deposit)} tiền cọc cho đặt phòng ${data.bookingCode}. Đặt phòng của bạn đã được xác nhận.`,
+    `Nhận phòng: ${day(data.checkIn)} · Trả phòng: ${day(data.checkOut)}`,
+    ...(data.remaining > 0 ? [`Còn lại khi nhận phòng: ${vnd(data.remaining)}`] : []),
+    ...(data.propertyPhone ? [`Liên hệ khách sạn: ${data.propertyPhone}`] : []),
+  ].join('\n')
+  // The guest's name comes from a public form: escape it for the HTML part.
+  const html = escapeHtml(text).replace(/\n/g, '<br/>')
+  return queueEmail('deposit_received', { to: { email: data.guestEmail, name: data.guestName }, subject, text, html }, bookingId, db)
 }
 
 export function queueWorkspaceInvite(data: WorkspaceInviteTemplateProps, invitationId: string, db?: Db) {

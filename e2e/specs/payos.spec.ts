@@ -1,10 +1,16 @@
 /**
  * PayOS per hotel (Part 5): connect the hotel's account, take a payment by
  * link, the guest pays, the signed webhook updates the booking; cancel.
+ * Then a guest's deposit when booking on the hotel's site. In this order:
+ * the second test needs the connection the first one makes.
  */
 import { test, expect } from '@playwright/test'
+import { PrismaClient } from '@prisma/client'
 import { E2E } from '../env'
 import { control, failOnPageErrors, ids, propertyPath } from '../helpers'
+
+const day = (offset: number) => new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10)
+const digits = (text: string) => Number(text.replace(/\D/g, ''))
 
 test('connect, pay by link, webhook updates the booking, cancel a link', async ({ page }) => {
   const noErrors = failOnPageErrors(page)
@@ -58,4 +64,56 @@ test('connect, pay by link, webhook updates the booking, cancel a link', async (
   await expect(page.locator('span:visible', { hasText: 'Đã huỷ' }).first()).toBeVisible()
 
   noErrors()
+})
+
+test("a guest books on the hotel's site and pays the hotel's 30% deposit through PayOS", async ({ page, browser }) => {
+  // The hotel takes 30% online (Chính sách).
+  await page.goto(propertyPath('/policies'))
+  await page.getByLabel('Đặt cọc khi khách đặt trên website (%)').fill('30')
+  await page.getByRole('button', { name: 'Lưu thay đổi' }).click()
+  await expect(page.getByText('Đã lưu chính sách')).toBeVisible()
+
+  // A guest, signed out. PayOS's own checkout page is outside: stand in for it.
+  const context = await browser.newContext({ storageState: { cookies: [], origins: [] } })
+  const guest = await context.newPage()
+  const noErrors = failOnPageErrors(guest)
+  let orderCode = ''
+  await guest.route('https://pay.payos.vn/**', (route) => {
+    orderCode = route.request().url().match(/pl(\d+)/)?.[1] ?? ''
+    return route.fulfill({ contentType: 'text/html', body: '<h1>PayOS checkout</h1>' })
+  })
+  const email = `coc-${Date.now()}@example.com`
+  await guest.goto(`/${ids().subdomain}/search?checkIn=${day(60)}&checkOut=${day(62)}&guests=2`)
+  await guest.getByRole('button', { name: 'Đặt phòng này' }).first().click()
+  await guest.getByPlaceholder('Nguyễn Văn A').fill('Đỗ Văn Cọc')
+  await guest.getByPlaceholder('0912345678').fill('0912345678')
+  await guest.getByPlaceholder('email@example.com').fill(email)
+  await guest.getByRole('button', { name: 'Tiếp tục', exact: true }).click()
+  await guest.getByRole('button', { name: 'Tiếp tục thanh toán' }).click()
+
+  const box = guest.getByTestId('deposit-box')
+  await expect(box).toContainText('Đặt cọc 30%')
+  const deposit = digits((await box.locator('p').first().innerText()).split(':')[1])
+  expect(deposit).toBeGreaterThan(0)
+  await guest.getByRole('button', { name: 'Xác nhận và đặt cọc' }).click()
+  await guest.waitForURL(/pay\.payos\.vn/)
+  expect(orderCode).not.toBe('')
+
+  // The guest pays: PayOS sends the signed webhook, then sends them back.
+  expect(await control.pay(orderCode)).toEqual({ webhookStatus: 200 })
+  await guest.goto(`/${ids().subdomain}/thanh-toan?code=00&cancel=false&status=PAID&orderCode=${orderCode}`)
+  await expect(guest.getByRole('heading', { name: 'Đã nhận tiền thanh toán' })).toBeVisible()
+
+  const prisma = new PrismaClient()
+  try {
+    const payment = await prisma.payment.findFirstOrThrow({ where: { gatewayOrderCode: orderCode }, include: { booking: true } })
+    expect(payment).toMatchObject({ status: 'PAID', amount: deposit })
+    expect(payment.booking).toMatchObject({ status: 'CONFIRMED', paymentStatus: 'PARTIAL', depositAmount: deposit, guestEmail: email })
+  } finally {
+    await prisma.$disconnect()
+  }
+  // The booking request, then "deposit received".
+  await expect.poll(async () => (await control.mails()).filter((m) => m.to === email).length, { timeout: 15_000 }).toBe(2)
+  noErrors()
+  await context.close()
 })

@@ -160,6 +160,7 @@ async function outboxGaveUp(now: Date): Promise<Finding[]> {
     booking_confirmation: 'xác nhận đặt phòng',
     owner_new_booking: 'báo đơn mới cho chủ',
     workspace_invite: 'lời mời',
+    deposit_received: 'báo đã nhận cọc',
   }
   return [
     {

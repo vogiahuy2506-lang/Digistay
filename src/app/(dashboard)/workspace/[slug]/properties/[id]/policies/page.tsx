@@ -19,6 +19,9 @@ interface Policy {
   petsAllowed: boolean
   smokingAllowed: boolean
   additionalRules: string | null
+  onlineDepositPercent: number
+  /** read-only: the deposit needs a connected PayOS account */
+  payosConnected?: boolean
 }
 
 export default function PoliciesPage() {
@@ -76,6 +79,7 @@ export default function PoliciesPage() {
           petsAllowed: policy.petsAllowed,
           smokingAllowed: policy.smokingAllowed,
           additionalRules: policy.additionalRules,
+          onlineDepositPercent: policy.onlineDepositPercent,
         }),
       })
       const data = await res.json()
@@ -84,7 +88,7 @@ export default function PoliciesPage() {
         return
       }
       toast.success('Đã lưu chính sách')
-      setPolicy(data.data)
+      setPolicy({ ...data.data, payosConnected: policy.payosConnected })
     } catch (err) {
       console.error('Save policy error:', err)
       toast.error('Đã xảy ra lỗi khi lưu')
@@ -218,6 +222,33 @@ export default function PoliciesPage() {
                   rows={4}
                   className="w-full px-3 py-2 border rounded-lg focus-visible:ring-2 focus-visible:ring-2 focus-visible:ring-acc focus-visible:border-acc focus-visible:border-acc"
                 />
+                <p className="text-xs text-muted mt-1">
+                  Khách thấy chính sách này trước khi đặt phòng trên website.
+                </p>
+              </div>
+              <div>
+                <label htmlFor="online-deposit" className="block text-sm font-medium text-fg mb-1">
+                  Đặt cọc khi khách đặt trên website (%)
+                </label>
+                <Input
+                  id="online-deposit"
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={policy.onlineDepositPercent}
+                  onChange={(e) =>
+                    update('onlineDepositPercent', Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))
+                  }
+                />
+                <p className="text-xs text-muted mt-1">
+                  0 = không thu cọc, khách trả tại quầy. Có cọc thì khách chuyển khoản qua PayOS ngay khi đặt,
+                  tiền vào thẳng tài khoản khách sạn, và đặt phòng tự được xác nhận khi tiền về.
+                </p>
+                {policy.onlineDepositPercent > 0 && !policy.payosConnected && (
+                  <p className="text-xs text-warn mt-1">
+                    Chưa kết nối PayOS (Tài khoản ngân hàng → Thanh toán online): khách chưa phải đặt cọc cho tới khi kết nối.
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>

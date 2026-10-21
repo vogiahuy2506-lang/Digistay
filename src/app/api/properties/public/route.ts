@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { SITE_VISIBILITY_SELECT, siteVisibility } from '@/lib/public-site/visibility'
+import { onlineDepositFrom } from '@/lib/payments/guest-deposit'
 
 /**
  * GET /api/properties/public
@@ -56,6 +57,10 @@ export async function GET(request: NextRequest) {
           orderBy: { createdAt: 'asc' },
           select: { id: true, name: true, description: true, price: true, priceType: true, perPerson: true },
         },
+        // The hotel's own terms, shown before the guest books (the page used
+        // to print made-up ones), and whether it takes a deposit online.
+        policy: { select: { cancellationHours: true, cancellationPolicy: true, onlineDepositPercent: true } },
+        payos: { select: { webhookConfirmedAt: true } },
       },
     })
 
@@ -68,7 +73,17 @@ export async function GET(request: NextRequest) {
       )
     }
     // Read to decide, not sent (undefined keys are left out of the JSON).
-    const data = { ...property, workspaceId: undefined, websiteSettings: undefined }
+    const data = {
+      ...property,
+      workspaceId: undefined,
+      websiteSettings: undefined,
+      payos: undefined,
+      policy: property.policy && {
+        cancellationHours: property.policy.cancellationHours,
+        cancellationPolicy: property.policy.cancellationPolicy,
+      },
+      onlineDeposit: onlineDepositFrom(property),
+    }
 
     return NextResponse.json({
       success: true,
