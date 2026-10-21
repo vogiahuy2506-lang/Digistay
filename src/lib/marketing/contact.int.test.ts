@@ -33,7 +33,7 @@ import { LIMITS } from '@/lib/security/limits'
 
 const body = { name: 'Nguyễn Thu Hà', email: 'thuha@maybien.vn', phone: '0912 345 678', hotel: 'Mây Biển', topic: 'sales', message: 'Hỏi gói cho 24 phòng.' }
 const send = (data: unknown, ip = '203.0.113.7') =>
-  POST(new NextRequest('http://x/api/public/contact', { method: 'POST', body: JSON.stringify(data), headers: { 'x-forwarded-for': ip } }))
+  POST(new NextRequest('http://x/api/public/contact', { method: 'POST', body: JSON.stringify(data), headers: { 'x-real-ip': ip } }))
 
 describe('POST /api/public/contact', () => {
   const env = { ...process.env }
