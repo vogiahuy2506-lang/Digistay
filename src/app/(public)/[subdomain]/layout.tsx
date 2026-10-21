@@ -4,7 +4,7 @@ import { headers } from 'next/headers'
 import { NextIntlClientProvider } from 'next-intl'
 import { getLocale, getMessages, getTranslations } from 'next-intl/server'
 import { prisma } from '@/lib/db'
-import { SITE_BASE_HEADER, siteBasePath } from '@/lib/public-site/paths'
+import { SITE_BASE_HEADER, SITE_PATH_HEADER, siteBasePath, siteHref } from '@/lib/public-site/paths'
 import { hotelAccentVariables } from '@/lib/public-site/accent'
 import { fontStack } from '@/lib/public-site/font-stack'
 import { loadVisibleSite } from '@/lib/public-site/visibility'
@@ -62,6 +62,13 @@ export default async function HotelSiteLayout({
   // From the middleware; the Host header is the fallback (src/lib/public-site/paths.ts).
   const base = requestHeaders.get(SITE_BASE_HEADER) ?? siteBasePath(subdomain, host)
   const bases = { vi: base, en: `${base}/en` }
+  // The same page in the other language, worked out here: client hooks
+  // (usePathname) see the rewritten path on the server and the visitor's on
+  // the client, and the two renders must match.
+  const page = requestHeaders.get(SITE_PATH_HEADER) ?? '/'
+  const q = page.indexOf('?')
+  const otherLocale = locale === 'en' ? 'vi' : 'en'
+  const switchHref = siteHref(bases[otherLocale], q < 0 ? page : page.slice(0, q)) + (q < 0 ? '' : page.slice(q))
 
   const style = {
     ...hotelAccentVariables(settings?.primaryColor),
@@ -82,7 +89,7 @@ export default async function HotelSiteLayout({
     >
       {preview && <p className="bg-ink px-4 py-2 text-center text-small text-on-ink">{t('preview')}</p>}
       <NextIntlClientProvider messages={{ common: messages.common, site: messages.site }}>
-        <SiteBaseProvider locale={locale} bases={bases} internal={`/${subdomain}`}>
+        <SiteBaseProvider locale={locale} bases={bases} switchHref={switchHref}>
           {children}
         </SiteBaseProvider>
       </NextIntlClientProvider>

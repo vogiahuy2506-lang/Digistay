@@ -17,6 +17,9 @@
  */
 export const SITE_BASE_HEADER = 'x-site-base'
 
+/** Also set by the middleware: the page's path within the site and its query (/rooms/x?checkIn=…), for the language switch. */
+export const SITE_PATH_HEADER = 'x-site-path'
+
 export function siteBasePath(
   subdomain: string,
   host: string | null | undefined,

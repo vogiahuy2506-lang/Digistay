@@ -69,6 +69,16 @@ describe('middleware (hotel site language)', () => {
     expect(base(send('https://digistay.vn/workspaces', { 'x-site-base': '' }))).toBeNull()
   })
 
+  it('tells the page which page of the site it is, for the language switch', () => {
+    const path = (res: Response) => res.headers.get('x-middleware-request-x-site-path')
+    expect(path(run('https://khach-san-demo.digistay.vn/en/search?checkIn=2026-12-07'))).toBe('/search?checkIn=2026-12-07')
+    expect(path(run('https://digistay.vn/khach-san-demo/rooms/abc'))).toBe('/rooms/abc')
+    expect(path(run('https://digistay.vn/khach-san-demo/en'))).toBe('/')
+    // Second run: the first run's value stays.
+    expect(path(send('https://digistay.vn/khach-san-demo', { 'x-site-path': '/rooms/abc' }))).toBe('/rooms/abc')
+    expect(path(send('https://digistay.vn/workspaces', { 'x-site-path': '/x' }))).toBeNull()
+  })
+
   it('keeps English on the second run Next makes over the rewritten path', () => {
     // First run: /khach-san-demo/en → /khach-san-demo with "en"; Next then runs
     // the middleware again on /khach-san-demo, carrying that header.

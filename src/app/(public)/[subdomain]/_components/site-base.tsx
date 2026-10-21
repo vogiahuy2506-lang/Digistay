@@ -1,7 +1,6 @@
 'use client'
 
 import * as React from 'react'
-import { usePathname, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { siteHref } from '@/lib/public-site/paths'
 import type { Locale } from '@/i18n/locales'
@@ -13,14 +12,14 @@ import type { Locale } from '@/i18n/locales'
 interface SiteBase {
   locale: Locale
   bases: Record<Locale, string>
-  /** '/<hotel>': the path the pages are rendered under after the middleware's rewrite. */
-  internal: string
+  /** The current page in the other language (worked out by the layout). */
+  switchHref: string
 }
 
 const SiteBaseContext = React.createContext<SiteBase | null>(null)
 
-export function SiteBaseProvider({ locale, bases, internal, children }: SiteBase & { children: React.ReactNode }) {
-  const value = React.useMemo(() => ({ locale, bases, internal }), [locale, bases, internal])
+export function SiteBaseProvider({ locale, bases, switchHref, children }: SiteBase & { children: React.ReactNode }) {
+  const value = React.useMemo(() => ({ locale, bases, switchHref }), [locale, bases, switchHref])
   return <SiteBaseContext.Provider value={value}>{children}</SiteBaseContext.Provider>
 }
 
@@ -48,19 +47,11 @@ export function SiteLink({
 
 /** The same page in the other language ("EN" / "VI"), dates and filters kept. */
 export function LanguageSwitch({ className }: { className?: string }) {
-  const { locale, bases, internal } = useSiteBase()
+  const { locale, switchHref } = useSiteBase()
   const t = useTranslations('site.language')
-  const pathname = usePathname() ?? '/'
-  const query = useSearchParams()?.toString()
   const other: Locale = locale === 'en' ? 'vi' : 'en'
-  // usePathname() may give the browser's path (/<hotel>/en/rooms/x, /en/rooms/x)
-  // or the rewritten one (/<hotel>/rooms/x): strip whichever base it starts with.
-  const prefixes = [bases[locale], `${internal}/en`, internal].filter(Boolean).sort((a, b) => b.length - a.length)
-  const prefix = prefixes.find((p) => pathname === p || pathname.startsWith(`${p}/`))
-  const rest = prefix ? pathname.slice(prefix.length) || '/' : pathname
-  const href = siteHref(bases[other], rest) + (query ? `?${query}` : '')
   return (
-    <a href={href} hrefLang={other} lang={other} aria-label={t('switchLabel')} className={className}>
+    <a href={switchHref} hrefLang={other} lang={other} aria-label={t('switchLabel')} className={className}>
       {t('switchShort')}
     </a>
   )

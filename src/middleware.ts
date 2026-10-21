@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { isAllowedSubdomain, rootDomain, subdomainOf } from '@/lib/subdomains'
-import { SITE_BASE_HEADER } from '@/lib/public-site/paths'
+import { SITE_BASE_HEADER, SITE_PATH_HEADER } from '@/lib/public-site/paths'
 import { DEFAULT_LOCALE, SITE_LOCALE_HEADER, isLocale, type Locale } from '@/i18n/locales'
 
 /**
@@ -23,22 +23,23 @@ export function middleware(request: NextRequest) {
 
   if (sub) {
     const { locale, rest } = splitLocale(path)
-    return toSite(request, `/${sub}${rest === '/' ? '' : rest}`, locale, '')
+    return toSite(request, `/${sub}${rest === '/' ? '' : rest}`, locale, '', rest)
   }
 
   // digistay.vn/<hotel>/... is the same site as <hotel>.digistay.vn/...
   const [, first, ...more] = path.split('/')
   if (first && isAllowedSubdomain(first)) {
     const { locale, rest } = splitLocale(`/${more.join('/')}`)
-    return toSite(request, `/${first}${rest === '/' ? '' : rest}`, locale, `/${first}`)
+    return toSite(request, `/${first}${rest === '/' ? '' : rest}`, locale, `/${first}`, rest)
   }
 
   // Not a hotel site: the language comes from the visitor's cookie; site
   // headers sent by the client are not ours.
-  if (request.headers.has(SITE_LOCALE_HEADER) || request.headers.has(SITE_BASE_HEADER)) {
+  if ([SITE_LOCALE_HEADER, SITE_BASE_HEADER, SITE_PATH_HEADER].some((h) => request.headers.has(h))) {
     const headers = new Headers(request.headers)
     headers.delete(SITE_LOCALE_HEADER)
     headers.delete(SITE_BASE_HEADER)
+    headers.delete(SITE_PATH_HEADER)
     return NextResponse.next({ request: { headers } })
   }
   return NextResponse.next()
@@ -50,7 +51,7 @@ function splitLocale(path: string): { locale: Locale; rest: string } {
   return { locale: DEFAULT_LOCALE, rest: path }
 }
 
-function toSite(request: NextRequest, pathname: string, locale: Locale, base: string) {
+function toSite(request: NextRequest, pathname: string, locale: Locale, base: string, rest: string) {
   const headers = new Headers(request.headers)
   // `next start` runs the middleware a second time on the rewritten path
   // (/<hotel>/..., without /en, as an internal request on the app's host),
@@ -61,6 +62,8 @@ function toSite(request: NextRequest, pathname: string, locale: Locale, base: st
   headers.set(SITE_LOCALE_HEADER, locale === DEFAULT_LOCALE && isLocale(kept) ? kept : locale)
   const keptBase = request.headers.get(SITE_BASE_HEADER)
   headers.set(SITE_BASE_HEADER, keptBase !== null && (keptBase === '' || keptBase === base) ? keptBase : base)
+  // The page within the site, as the visitor asked for it (the first run's stays).
+  if (!request.headers.has(SITE_PATH_HEADER)) headers.set(SITE_PATH_HEADER, `${rest}${request.nextUrl.search}`)
   if (pathname === request.nextUrl.pathname) return NextResponse.next({ request: { headers } })
   const url = request.nextUrl.clone()
   url.pathname = pathname
