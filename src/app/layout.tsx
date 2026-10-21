@@ -1,21 +1,12 @@
 import type { Metadata } from 'next'
-import { Inter, JetBrains_Mono, Playfair_Display } from 'next/font/google'
+// Redesign fonts, self-hosted from npm; they only set CSS variables
+// (src/styles/fonts.css explains why not next/font/google).
+import '@fontsource-variable/inter/wght.css'
+import '@fontsource-variable/playfair-display/wght.css'
+import '@fontsource-variable/jetbrains-mono/wght.css'
+import '@/styles/fonts.css'
 import './globals.css'
 import Providers from '@/components/providers'
-
-// Redesign fonts, self-hosted by next/font. They only set CSS variables:
-// pages opt in through font-sans / font-serif / font-mono (tailwind.config.ts).
-const inter = Inter({ subsets: ['latin', 'vietnamese'], variable: '--font-inter', display: 'swap' })
-const playfair = Playfair_Display({
-  subsets: ['latin', 'vietnamese'],
-  variable: '--font-playfair',
-  display: 'swap',
-})
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin', 'vietnamese'],
-  variable: '--font-jetbrains-mono',
-  display: 'swap',
-})
 
 export const metadata: Metadata = {
   title: 'DigiStay - Nền Tảng No-Code Xây Dựng Kênh Bán Phòng Độc Quyền',
@@ -32,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="vi" className={`${inter.variable} ${playfair.variable} ${jetbrainsMono.variable}`}>
+    <html lang="vi">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

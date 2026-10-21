@@ -1,0 +1,14 @@
+/*
+ * The redesign's fonts, self-hosted from npm (@fontsource, imported in
+ * src/app/layout.tsx). They used to come from next/font/google, which
+ * downloads them from Google at build time: when Google answers with a
+ * font URL without a file extension (fonts.gstatic.com/l/font?kit=...),
+ * next/font crashes ("Cannot read properties of null (reading '1')") and
+ * the build fails — it did on the VPS and now and then on CI.
+ * Pages opt in through font-sans / font-serif / font-mono (tailwind.config.ts).
+ */
+:root {
+  --font-inter: 'Inter Variable';
+  --font-playfair: 'Playfair Display Variable';
+  --font-jetbrains-mono: 'JetBrains Mono Variable';
+}

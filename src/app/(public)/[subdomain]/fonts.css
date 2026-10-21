@@ -1,0 +1,9 @@
+/* The builder's font choices under the variables font-stack.ts uses (see fonts.ts). */
+.site-fonts {
+  --font-roboto: 'Roboto Variable';
+  --font-open-sans: 'Open Sans Variable';
+  --font-nunito-sans: 'Nunito Sans Variable';
+  --font-merriweather: 'Merriweather Variable';
+  --font-be-vietnam-pro: 'Be Vietnam Pro';
+  --font-montserrat: 'Montserrat Variable';
+}

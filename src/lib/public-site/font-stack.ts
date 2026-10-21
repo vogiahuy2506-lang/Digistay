@@ -1,7 +1,7 @@
 /**
  * The website builder stores font names ("Nunito Sans", "Merriweather"...).
  * Those names alone did nothing: no font was loaded, so every site fell back
- * to the system font. The fonts are loaded with next/font in
+ * to the system font. The fonts are self-hosted (@fontsource) in
  * src/app/(public)/[subdomain]/fonts.ts under these CSS variables, all with
  * the Vietnamese subset.
  */
