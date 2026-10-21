@@ -1,21 +1,70 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { rootDomain, subdomainOf } from '@/lib/subdomains'
+import { isAllowedSubdomain, rootDomain, subdomainOf } from '@/lib/subdomains'
+import { SITE_BASE_HEADER } from '@/lib/public-site/paths'
+import { DEFAULT_LOCALE, SITE_LOCALE_HEADER, isLocale, type Locale } from '@/i18n/locales'
 
 /**
  * Property sites on subdomains: foo.digistay.vn/rooms/x is served by
  * /foo/rooms/x (the public site under src/app/(public)/[subdomain]). Only
  * page requests are rewritten: the API keeps its own paths on every host.
  *
+ * A hotel's site is in English under /en: foo.digistay.vn/en/rooms/x and
+ * digistay.vn/foo/en/rooms/x are /foo/rooms/x with SITE_LOCALE_HEADER "en"
+ * (src/i18n/locales.ts). Every other hotel-site request gets "vi", so the
+ * site never follows the dashboard's language cookie.
+ *
  * This file used to live at the repository root, where Next does not load
  * it with the src/ layout, so it never ran. Its other job, sending "/" to
  * /login or the first workspace, is dropped: "/" is the marketing page.
  */
 export function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname
   const sub = subdomainOf(request.headers.get('host') ?? '', rootDomain())
-  if (!sub) return NextResponse.next()
+
+  if (sub) {
+    const { locale, rest } = splitLocale(path)
+    return toSite(request, `/${sub}${rest === '/' ? '' : rest}`, locale, '')
+  }
+
+  // digistay.vn/<hotel>/... is the same site as <hotel>.digistay.vn/...
+  const [, first, ...more] = path.split('/')
+  if (first && isAllowedSubdomain(first)) {
+    const { locale, rest } = splitLocale(`/${more.join('/')}`)
+    return toSite(request, `/${first}${rest === '/' ? '' : rest}`, locale, `/${first}`)
+  }
+
+  // Not a hotel site: the language comes from the visitor's cookie; site
+  // headers sent by the client are not ours.
+  if (request.headers.has(SITE_LOCALE_HEADER) || request.headers.has(SITE_BASE_HEADER)) {
+    const headers = new Headers(request.headers)
+    headers.delete(SITE_LOCALE_HEADER)
+    headers.delete(SITE_BASE_HEADER)
+    return NextResponse.next({ request: { headers } })
+  }
+  return NextResponse.next()
+}
+
+/** '/en/rooms/x' → English, '/rooms/x'; anything else is Vietnamese, unchanged. */
+function splitLocale(path: string): { locale: Locale; rest: string } {
+  if (path === '/en' || path.startsWith('/en/')) return { locale: 'en', rest: path.slice(3) || '/' }
+  return { locale: DEFAULT_LOCALE, rest: path }
+}
+
+function toSite(request: NextRequest, pathname: string, locale: Locale, base: string) {
+  const headers = new Headers(request.headers)
+  // `next start` runs the middleware a second time on the rewritten path
+  // (/<hotel>/..., without /en, as an internal request on the app's host),
+  // carrying the headers the first run set: keep them, or every English
+  // page turned Vietnamese and subdomain links got the /<hotel> prefix.
+  // A client sending them itself only changes its own page's language or links.
+  const kept = request.headers.get(SITE_LOCALE_HEADER)
+  headers.set(SITE_LOCALE_HEADER, locale === DEFAULT_LOCALE && isLocale(kept) ? kept : locale)
+  const keptBase = request.headers.get(SITE_BASE_HEADER)
+  headers.set(SITE_BASE_HEADER, keptBase !== null && (keptBase === '' || keptBase === base) ? keptBase : base)
+  if (pathname === request.nextUrl.pathname) return NextResponse.next({ request: { headers } })
   const url = request.nextUrl.clone()
-  url.pathname = `/${sub}${request.nextUrl.pathname === '/' ? '' : request.nextUrl.pathname}`
-  return NextResponse.rewrite(url)
+  url.pathname = pathname
+  return NextResponse.rewrite(url, { request: { headers } })
 }
 
 export const config = {

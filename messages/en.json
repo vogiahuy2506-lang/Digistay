@@ -1,0 +1,175 @@
+{
+  "common": {
+    "error": {
+      "title": "This page can't be shown",
+      "text": "Something went wrong while loading it. Please try again in a few minutes.",
+      "retry": "Try again"
+    }
+  },
+  "site": {
+    "language": {
+      "switchLabel": "Switch to Vietnamese",
+      "switchShort": "VI"
+    },
+    "nav": {
+      "sections": "Sections",
+      "openMenu": "Open menu",
+      "book": "Book now",
+      "home": "Home",
+      "rooms": "Rooms",
+      "breadcrumb": "Breadcrumb"
+    },
+    "sections": {
+      "rooms": "Rooms",
+      "amenities": "Amenities",
+      "gallery": "Gallery",
+      "services": "Services",
+      "map": "Location",
+      "contact": "Contact"
+    },
+    "propertyType": {
+      "HOTEL": "Hotel",
+      "HOMESTAY": "Homestay",
+      "RESORT": "Resort",
+      "RESTAURANT": "Restaurant",
+      "VILLA": "Villa",
+      "MOTEL": "Guesthouse",
+      "other": "Accommodation"
+    },
+    "bed": {
+      "SINGLE": "1 single bed",
+      "DOUBLE": "1 double bed",
+      "TWIN": "2 single beds",
+      "TRIPLE": "3 single beds",
+      "QUADRUPLE": "4 single beds",
+      "KING": "1 king bed",
+      "QUEEN": "1 queen bed",
+      "SUITE": "Suite",
+      "BUNK": "Bunk beds"
+    },
+    "units": {
+      "nights": "{count, plural, one {# night} other {# nights}}",
+      "weekendNights": "{count, plural, one {# weekend night} other {# weekend nights}}",
+      "adults": "{count, plural, one {# adult} other {# adults}}",
+      "children": "{count, plural, one {# child} other {# children}}",
+      "perNight": "/night",
+      "perPerson": "/person",
+      "once": "one-off",
+      "area": "{area} m²",
+      "free": "Free"
+    },
+    "room": {
+      "maxGuests": "{adults, plural, one {# adult} other {# adults}}",
+      "maxGuestsWithChildren": "{adults, plural, one {# adult} other {# adults}} + {children, plural, one {# child} other {# children}}",
+      "noPhoto": "No photo yet",
+      "photoAlt": "{name} — photo {n}",
+      "details": "View details →",
+      "contactForPrice": "Contact us for prices",
+      "specs": "Details",
+      "area": "Size",
+      "bedType": "Beds",
+      "maxAdults": "Max adults",
+      "maxChildren": "Max children",
+      "amenities": "In the room",
+      "policies": "Policies"
+    },
+    "policy": {
+      "checkInOut": "Check-in / check-out",
+      "checkInOutText": "Check-in from {checkIn} · Check-out by {checkOut}.",
+      "cancellation": "Cancellation",
+      "freeCancellation": "Free cancellation up to {hours, plural, one {# hour} other {# hours}} before check-in.",
+      "children": "Children",
+      "childrenFromAge": "Children from {age} years old are welcome.",
+      "childrenAnyAge": "Children of all ages are welcome.",
+      "noChildren": "Children are not accepted.",
+      "petsSmoking": "Pets · smoking",
+      "petsAllowed": "Pets are allowed.",
+      "noPets": "Pets are not allowed.",
+      "smokingArea": "There is a smoking area.",
+      "noSmoking": "No smoking.",
+      "otherRules": "Other rules"
+    },
+    "stay": {
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "adults": "Adults",
+      "children": "Children",
+      "decrease": "Fewer {what}",
+      "increase": "More {what}",
+      "search": "Search",
+      "searchLabel": "Search for rooms",
+      "checkOutAfterCheckIn": "Check-out must be after check-in",
+      "summary": "{nights} · {adults}",
+      "summaryWithChildren": "{nights} · {adults} · {children}"
+    },
+    "bookingBox": {
+      "weekend": "Saturday, Sunday: {price}/night",
+      "maxOccupancy": "This room takes up to {adults}.",
+      "maxOccupancyWithChildren": "This room takes up to {adults} + {children}.",
+      "extraGuests": "Extra guests",
+      "estimate": "Estimated total",
+      "book": "Book",
+      "noChargeYet": "You won't be charged yet."
+    },
+    "blocks": {
+      "about": { "title": "About us", "eyebrow": "About" },
+      "amenities": {
+        "title": "Everything for an easy stay",
+        "eyebrow": "Amenities",
+        "empty": "The list of amenities is being updated."
+      },
+      "contact": {
+        "title": "Contact us to book",
+        "eyebrow": "Contact",
+        "intro": "Reach the hotel directly through any of these.",
+        "phone": "Phone",
+        "zaloMessage": "Message on Zalo",
+        "address": "Address"
+      },
+      "cta": { "title": "Book your stay", "button": "Book now" },
+      "footer": { "contact": "Contact", "explore": "Explore", "poweredBy": "Powered by" },
+      "gallery": {
+        "title": "Gallery",
+        "eyebrow": "Photos",
+        "count": "{count, plural, one {# photo} other {# photos}}",
+        "previous": "Previous photo",
+        "next": "Next photo",
+        "view": "View photo {n}",
+        "viewWithAlt": "View photo {n}: {alt}",
+        "photo": "Photo {n} of {total}"
+      },
+      "hero": {
+        "welcome": "Welcome to {name}",
+        "photoAlt": "{name} — photo {n}",
+        "seeOnMap": "See it on the map →",
+        "swipe": "Swipe to see {count, plural, one {# photo} other {# photos}}"
+      },
+      "map": {
+        "eyebrow": "Location",
+        "mapTitle": "Map: {address}",
+        "address": "Address",
+        "phone": "Phone",
+        "directions": "Directions",
+        "call": "Call {phone}"
+      },
+      "menu": {
+        "title": "Restaurant menu",
+        "eyebrow": "Restaurant",
+        "empty": "The menu is being updated. Please contact us directly to book a table."
+      },
+      "reviews": { "title": "What our guests say", "eyebrow": "Reviews", "stars": "{rating} out of 5 stars" },
+      "rooms": {
+        "title": "Choose a room for your trip",
+        "count": "{count, plural, one {# room type} other {# room types}} at {name}.",
+        "empty": "No rooms are listed yet. Please contact {name} directly."
+      },
+      "services": {
+        "title": "Extra services",
+        "eyebrow": "Services",
+        "aside": "Add them when you book.",
+        "empty": "The list of services is being updated."
+      }
+    },
+    "preview": "Preview: this site is not published; only the hotel's signed-in members can see it."
+  }
+}

@@ -1,5 +1,9 @@
 import * as React from 'react'
+import type { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
+
+/** The hotel site's translator (useTranslations('site') / getTranslations('site')). */
+export type SiteT = ReturnType<typeof useTranslations<'site'>>
 
 /**
  * Building blocks of a hotel's website (redesign 3a / 2c, direction A):
@@ -70,7 +74,9 @@ const PROPERTY_TYPES: Record<string, string> = {
   MOTEL: 'Nhà nghỉ',
 }
 
-export function propertyTypeLabel(type: string): string {
+// Without `t` the labels stay Vietnamese, for callers not translated yet.
+export function propertyTypeLabel(type: string, t?: SiteT): string {
+  if (t) return type in PROPERTY_TYPES ? t(`propertyType.${type as 'HOTEL'}`) : t('propertyType.other')
   return PROPERTY_TYPES[type] ?? 'Cơ sở lưu trú'
 }
 
@@ -86,12 +92,20 @@ const BED_LABELS: Record<string, string> = {
   BUNK: 'Giường tầng',
 }
 
-export function bedLabel(bedType: string): string {
+export function bedLabel(bedType: string, t?: SiteT): string {
+  if (t && bedType in BED_LABELS) return t(`bed.${bedType as 'DOUBLE'}`)
   return BED_LABELS[bedType] ?? bedType
 }
 
 /** "32 m² · 1 giường đôi · 2 người lớn + 1 trẻ em" */
-export function roomMeta(room: { area: number | null; bedType: string; maxAdults: number; maxChildren: number }): string {
+export function roomMeta(room: { area: number | null; bedType: string; maxAdults: number; maxChildren: number }, t?: SiteT): string {
+  if (t) {
+    const guests =
+      room.maxChildren > 0
+        ? t('room.maxGuestsWithChildren', { adults: room.maxAdults, children: room.maxChildren })
+        : t('room.maxGuests', { adults: room.maxAdults })
+    return [room.area ? t('units.area', { area: room.area }) : null, bedLabel(room.bedType, t), guests].filter(Boolean).join(' · ')
+  }
   const guests = room.maxChildren > 0 ? `${room.maxAdults} người lớn + ${room.maxChildren} trẻ em` : `${room.maxAdults} người lớn`
   return [room.area ? `${room.area} m²` : null, bedLabel(room.bedType), guests].filter(Boolean).join(' · ')
 }

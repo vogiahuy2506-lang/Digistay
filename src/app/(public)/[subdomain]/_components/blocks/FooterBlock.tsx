@@ -1,6 +1,7 @@
 import type { PublicBlock, PublicProperty } from '../PropertySite'
 import type { SiteSection } from '../SiteHeader'
 import { Container } from '../site-ui'
+import { useTranslations } from 'next-intl'
 
 interface Props {
   block: PublicBlock
@@ -10,6 +11,7 @@ interface Props {
 
 /** Footer (redesign 3a). Digistay's own color appears only in "Vận hành bởi Digistay". */
 export function FooterBlock({ property, sections = [] }: Props) {
+  const t = useTranslations('site')
   const year = new Date().getFullYear()
   const address = [property.address, property.district, property.city].filter(Boolean).join(', ')
 
@@ -22,7 +24,7 @@ export function FooterBlock({ property, sections = [] }: Props) {
             <p className="mt-3 text-small text-muted">{address}</p>
           </div>
           <div>
-            <p className="text-label uppercase text-muted">Liên hệ</p>
+            <p className="text-label uppercase text-muted">{t('blocks.footer.contact')}</p>
             <ul className="mt-4 space-y-2 text-small text-fg">
               {property.phone && (
                 <li>
@@ -42,12 +44,12 @@ export function FooterBlock({ property, sections = [] }: Props) {
           </div>
           {sections.length > 0 && (
             <div>
-              <p className="text-label uppercase text-muted">Khám phá</p>
+              <p className="text-label uppercase text-muted">{t('blocks.footer.explore')}</p>
               <ul className="mt-4 space-y-2 text-small text-fg">
                 {sections.map((s) => (
                   <li key={s.id}>
                     <a href={`#${s.id}`} className="hover:text-acc">
-                      {s.label}
+                      {t(`sections.${s.id}`)}
                     </a>
                   </li>
                 ))}
@@ -60,7 +62,7 @@ export function FooterBlock({ property, sections = [] }: Props) {
             © {year} {property.name}
           </p>
           <p className="flex items-center gap-2">
-            Vận hành bởi
+            {t('blocks.footer.poweredBy')}
             <span className="inline-flex items-center gap-1.5 font-semibold text-brand">
               <span className="h-2.5 w-2.5 rounded-[2px] bg-brand" aria-hidden="true" />
               Digistay

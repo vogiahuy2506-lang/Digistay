@@ -7,6 +7,16 @@
  * adds the "/<subdomain>" itself. Links must carry the prefix in the first
  * case and must not in the second, or they point to /<subdomain>/<subdomain>/...
  */
+/**
+ * Set by src/middleware.ts on every hotel-site request: the site's base path
+ * as the visitor's URL has it ('' on the hotel's own host, '/<hotel>' on the
+ * app's). The page cannot tell from the Host header: `next start` runs the
+ * middleware again on the rewritten path as an internal request, and the
+ * page then sees the app's host — links on a hotel's subdomain came out as
+ * /<hotel>/rooms/x, which that host serves as /<hotel>/<hotel>/rooms/x (404).
+ */
+export const SITE_BASE_HEADER = 'x-site-base'
+
 export function siteBasePath(
   subdomain: string,
   host: string | null | undefined,

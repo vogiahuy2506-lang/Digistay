@@ -1,0 +1,189 @@
+{
+  "common": {
+    "error": {
+      "title": "Không thể hiển thị trang này",
+      "text": "Đã xảy ra lỗi khi tải nội dung. Vui lòng thử lại sau ít phút.",
+      "retry": "Thử lại"
+    }
+  },
+  "site": {
+    "language": {
+      "switchLabel": "Đổi sang tiếng Anh",
+      "switchShort": "EN"
+    },
+    "nav": {
+      "sections": "Các mục",
+      "openMenu": "Mở menu",
+      "book": "Đặt phòng",
+      "home": "Trang chủ",
+      "rooms": "Phòng",
+      "breadcrumb": "Đường dẫn"
+    },
+    "sections": {
+      "rooms": "Phòng",
+      "amenities": "Tiện ích",
+      "gallery": "Hình ảnh",
+      "services": "Dịch vụ",
+      "map": "Vị trí",
+      "contact": "Liên hệ"
+    },
+    "propertyType": {
+      "HOTEL": "Khách sạn",
+      "HOMESTAY": "Homestay",
+      "RESORT": "Resort",
+      "RESTAURANT": "Nhà hàng",
+      "VILLA": "Villa",
+      "MOTEL": "Nhà nghỉ",
+      "other": "Cơ sở lưu trú"
+    },
+    "bed": {
+      "SINGLE": "1 giường đơn",
+      "DOUBLE": "1 giường đôi",
+      "TWIN": "2 giường đơn",
+      "TRIPLE": "3 giường đơn",
+      "QUADRUPLE": "4 giường đơn",
+      "KING": "1 giường King",
+      "QUEEN": "1 giường Queen",
+      "SUITE": "Suite",
+      "BUNK": "Giường tầng"
+    },
+    "units": {
+      "nights": "{count} đêm",
+      "weekendNights": "{count} đêm cuối tuần",
+      "adults": "{count} người lớn",
+      "children": "{count} trẻ em",
+      "perNight": "/đêm",
+      "perPerson": "/người",
+      "once": "một lần",
+      "area": "{area} m²",
+      "free": "Miễn phí"
+    },
+    "room": {
+      "maxGuests": "{adults} người lớn",
+      "maxGuestsWithChildren": "{adults} người lớn + {children} trẻ em",
+      "noPhoto": "Chưa có ảnh",
+      "photoAlt": "{name} — ảnh {n}",
+      "details": "Xem chi tiết →",
+      "contactForPrice": "Liên hệ để biết giá",
+      "specs": "Thông số",
+      "area": "Diện tích",
+      "bedType": "Loại giường",
+      "maxAdults": "Tối đa người lớn",
+      "maxChildren": "Tối đa trẻ em",
+      "amenities": "Tiện ích trong phòng",
+      "policies": "Chính sách"
+    },
+    "policy": {
+      "checkInOut": "Nhận / trả phòng",
+      "checkInOutText": "Nhận từ {checkIn} · Trả trước {checkOut}.",
+      "cancellation": "Hủy phòng",
+      "freeCancellation": "Miễn phí khi hủy trước giờ nhận phòng {hours} giờ.",
+      "children": "Trẻ em",
+      "childrenFromAge": "Nhận trẻ từ {age} tuổi.",
+      "childrenAnyAge": "Nhận trẻ em mọi độ tuổi.",
+      "noChildren": "Không nhận trẻ em.",
+      "petsSmoking": "Thú cưng · hút thuốc",
+      "petsAllowed": "Cho phép thú cưng.",
+      "noPets": "Không cho phép thú cưng.",
+      "smokingArea": "Có khu vực hút thuốc.",
+      "noSmoking": "Không hút thuốc.",
+      "otherRules": "Quy định khác"
+    },
+    "stay": {
+      "checkIn": "Ngày nhận",
+      "checkOut": "Ngày trả",
+      "adults": "Người lớn",
+      "children": "Trẻ em",
+      "decrease": "Giảm {what}",
+      "increase": "Tăng {what}",
+      "search": "Tìm phòng",
+      "searchLabel": "Tìm phòng trống",
+      "checkOutAfterCheckIn": "Ngày trả phải sau ngày nhận",
+      "summary": "{nights} · {adults}",
+      "summaryWithChildren": "{nights} · {adults} · {children}"
+    },
+    "bookingBox": {
+      "weekend": "Thứ Bảy, Chủ nhật: {price}/đêm",
+      "maxOccupancy": "Phòng này tối đa {adults}.",
+      "maxOccupancyWithChildren": "Phòng này tối đa {adults} + {children}.",
+      "extraGuests": "Phụ thu khách thêm",
+      "estimate": "Tạm tính",
+      "book": "Đặt phòng",
+      "noChargeYet": "Chưa trừ tiền ở bước này."
+    },
+    "blocks": {
+      "about": {
+        "title": "Về chúng tôi",
+        "eyebrow": "Giới thiệu"
+      },
+      "amenities": {
+        "title": "Mọi thứ cần cho một kỳ nghỉ nhẹ nhàng",
+        "eyebrow": "Tiện ích",
+        "empty": "Danh sách tiện ích đang được cập nhật."
+      },
+      "contact": {
+        "title": "Liên hệ đặt phòng",
+        "eyebrow": "Liên hệ",
+        "intro": "Liên hệ trực tiếp với khách sạn qua các kênh dưới đây.",
+        "phone": "Điện thoại",
+        "zaloMessage": "Nhắn tin Zalo",
+        "address": "Địa chỉ"
+      },
+      "cta": {
+        "title": "Đặt phòng ngay",
+        "button": "Đặt phòng"
+      },
+      "footer": {
+        "contact": "Liên hệ",
+        "explore": "Khám phá",
+        "poweredBy": "Vận hành bởi"
+      },
+      "gallery": {
+        "title": "Hình ảnh",
+        "eyebrow": "Thư viện ảnh",
+        "count": "{count} ảnh",
+        "previous": "Ảnh trước",
+        "next": "Ảnh tiếp theo",
+        "view": "Xem ảnh {n}",
+        "viewWithAlt": "Xem ảnh {n}: {alt}",
+        "photo": "Ảnh {n} / {total}"
+      },
+      "hero": {
+        "welcome": "Chào mừng đến với {name}",
+        "photoAlt": "{name} — ảnh {n}",
+        "seeOnMap": "Xem vị trí trên bản đồ →",
+        "swipe": "Vuốt ngang để xem {count} ảnh"
+      },
+      "map": {
+        "eyebrow": "Vị trí",
+        "mapTitle": "Bản đồ: {address}",
+        "address": "Địa chỉ",
+        "phone": "Điện thoại",
+        "directions": "Chỉ đường",
+        "call": "Gọi {phone}"
+      },
+      "menu": {
+        "title": "Thực đơn nhà hàng",
+        "eyebrow": "Nhà hàng",
+        "empty": "Thực đơn đang được cập nhật. Vui lòng liên hệ trực tiếp để đặt bàn."
+      },
+      "reviews": {
+        "title": "Khách nói gì về chúng tôi",
+        "eyebrow": "Đánh giá",
+        "stars": "{rating} trên 5 sao"
+      },
+      "rooms": {
+        "title": "Chọn phòng cho chuyến đi của bạn",
+        "count": "{count} hạng phòng tại {name}.",
+        "empty": "Chưa có hạng phòng nào. Vui lòng liên hệ trực tiếp với {name}."
+      },
+      "services": {
+        "title": "Dịch vụ thêm",
+        "eyebrow": "Dịch vụ",
+        "aside": "Chọn thêm khi đặt phòng.",
+        "empty": "Danh sách dịch vụ đang được cập nhật."
+      }
+    },
+    "preview": "Bản xem trước: website chưa xuất bản, chỉ thành viên của khách sạn đang đăng nhập mới xem được."
+  }
+}

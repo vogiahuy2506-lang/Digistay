@@ -30,6 +30,62 @@ describe('middleware (property subdomains)', () => {
   })
 })
 
+describe('middleware (hotel site language)', () => {
+  const lang = (res: Response) => res.headers.get('x-middleware-request-x-site-locale')
+  const send = (url: string, headers: Record<string, string> = {}) =>
+    middleware(new NextRequest(url, { headers: { host: new URL(url).host, ...headers } }))
+
+  it('serves /en on a hotel subdomain in English from the same pages', () => {
+    const home = run('https://khach-san-demo.digistay.vn/en')
+    expect(home.headers.get('x-middleware-rewrite')).toBe('https://khach-san-demo.digistay.vn/khach-san-demo')
+    expect(lang(home)).toBe('en')
+    const room = run('https://khach-san-demo.digistay.vn/en/rooms/abc?x=1')
+    expect(room.headers.get('x-middleware-rewrite')).toBe('https://khach-san-demo.digistay.vn/khach-san-demo/rooms/abc?x=1')
+    expect(lang(room)).toBe('en')
+  })
+
+  it('serves digistay.vn/<hotel>/en/... in English too', () => {
+    const res = run('https://digistay.vn/khach-san-demo/en/rooms/abc')
+    expect(res.headers.get('x-middleware-rewrite')).toBe('https://digistay.vn/khach-san-demo/rooms/abc')
+    expect(lang(res)).toBe('en')
+  })
+
+  it('every other hotel page is Vietnamese, whatever the dashboard cookie says', () => {
+    for (const url of ['https://khach-san-demo.digistay.vn/rooms/abc', 'https://khach-san-demo.digistay.vn/enfoo', 'https://digistay.vn/khach-san-demo']) {
+      expect(lang(send(url, { cookie: 'NEXT_LOCALE=en' })), url).toBe('vi')
+    }
+    expect(run('https://digistay.vn/khach-san-demo').headers.get('x-middleware-rewrite')).toBeNull()
+  })
+
+  it('tells the page its base path: none on the hotel host, /<hotel> on the app host', () => {
+    const base = (res: Response) => res.headers.get('x-middleware-request-x-site-base')
+    expect(base(run('https://khach-san-demo.digistay.vn/rooms/abc'))).toBe('')
+    expect(base(run('https://khach-san-demo.digistay.vn/en'))).toBe('')
+    expect(base(run('https://digistay.vn/khach-san-demo/en/rooms/abc'))).toBe('/khach-san-demo')
+    // Second run (internal, app host) of a subdomain request: the hotel host's base stays.
+    expect(base(send('https://digistay.vn/khach-san-demo/rooms/abc', { 'x-site-base': '' }))).toBe('')
+    // Anything else a client sends is replaced.
+    expect(base(send('https://digistay.vn/khach-san-demo', { 'x-site-base': '/other' }))).toBe('/khach-san-demo')
+    expect(base(send('https://digistay.vn/workspaces', { 'x-site-base': '' }))).toBeNull()
+  })
+
+  it('keeps English on the second run Next makes over the rewritten path', () => {
+    // First run: /khach-san-demo/en → /khach-san-demo with "en"; Next then runs
+    // the middleware again on /khach-san-demo, carrying that header.
+    const second = send('https://digistay.vn/khach-san-demo/rooms/abc', { 'x-site-locale': 'en' })
+    expect(lang(second)).toBe('en')
+    expect(lang(send('https://digistay.vn/khach-san-demo/rooms/abc', { 'x-site-locale': 'xx' }))).toBe('vi')
+  })
+
+  it('app pages get no language header, and one sent by the client is dropped', () => {
+    for (const url of ['https://digistay.vn/', 'https://digistay.vn/workspaces', 'https://digistay.vn/login']) {
+      const res = send(url, { 'x-site-locale': 'en' })
+      expect(lang(res), url).toBeNull()
+      expect(res.headers.get('x-middleware-rewrite'), url).toBeNull()
+    }
+  })
+})
+
 describe('middleware matcher (as Next applies it)', () => {
   const runsOn = (path: string) => unstable_doesMiddlewareMatch({ config, url: `https://khach-san-demo.digistay.vn${path}` })
 

@@ -293,6 +293,24 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
   chưa xuất bản thì 404 với khách, thành viên đã đăng nhập thấy bản xem trước. Đặt phòng công
   khai chỉ nhận website đã xuất bản. Test tích hợp đặt phòng của khách: gọi `publishSite()` trước.
 
+## Song ngữ (tiếng Việt / tiếng Anh)
+
+- Thư viện `next-intl`. Chữ hiển thị nằm trong `messages/vi.json` và `messages/en.json` (cùng khoá,
+  `src/i18n/messages.test.ts` kiểm: đủ khoá, cùng biến, đúng cú pháp ICU). Không viết cứng chữ mới
+  trong component: thêm khoá vào cả hai file rồi dùng `useTranslations('nhóm')` (server lẫn client
+  component) hoặc `getTranslations` trong component async. Số nhiều tiếng Anh dùng ICU
+  (`{count, plural, one {# night} other {# nights}}`). Giá: `formatVnd(số, locale)`.
+- Ngôn ngữ lấy từ đâu (`src/i18n/locales.ts`): website khách sạn theo URL — `/en/...` là tiếng Anh,
+  middleware bỏ `/en` rồi báo qua header `x-site-locale`; mọi trang khác theo cookie `NEXT_LOCALE`.
+  Middleware cũng báo đường dẫn gốc qua `x-site-base` (Host không tin được: `next start` chạy
+  middleware lần hai như request nội bộ). Link trong website khách sạn luôn qua `SiteLink` /
+  `useSiteHref` để giữ `/en`; nút đổi ngôn ngữ là `LanguageSwitch`.
+- Client component chỉ nhận nhóm chữ của khu vực mình: layout gốc gửi `common`, layout website khách
+  sạn gửi `common` + `site`. Khu vực mới thì thêm nhóm riêng và gửi ở layout của nó.
+- Tiến độ: (1) khung + giao diện website khách sạn — xong; còn: form tìm/đặt phòng và trang thanh
+  toán của website, ô tiếng Anh cho nội dung khách sạn nhập, email gửi khách theo ngôn ngữ, trang
+  quản lý, trang đăng nhập / giới thiệu, thông báo lỗi từ API.
+
 ## Kế hoạch gia cố
 
 Làm từng phần, theo thứ tự, lấy repo Founder AI (UKNOW) làm tham khảo. Mỗi phần: đọc cách

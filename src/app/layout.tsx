@@ -6,6 +6,8 @@ import '@fontsource-variable/playfair-display/wght.css'
 import '@fontsource-variable/jetbrains-mono/wght.css'
 import '@/styles/fonts.css'
 import './globals.css'
+import { NextIntlClientProvider } from 'next-intl'
+import { getLocale, getMessages } from 'next-intl/server'
 import Providers from '@/components/providers'
 
 export const metadata: Metadata = {
@@ -17,13 +19,15 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const locale = await getLocale()
+  const messages = await getMessages()
   return (
-    <html lang="vi">
+    <html lang={locale}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -31,7 +35,10 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet" />
       </head>
       <body className="min-h-screen bg-background text-on-surface antialiased selection:bg-primary-fixed selection:text-on-primary-fixed-variant">
-        <Providers>{children}</Providers>
+        {/* Only the shared messages here; each area adds its own (e.g. the hotel site's layout). */}
+        <NextIntlClientProvider messages={{ common: messages.common }}>
+          <Providers>{children}</Providers>
+        </NextIntlClientProvider>
       </body>
     </html>
   )

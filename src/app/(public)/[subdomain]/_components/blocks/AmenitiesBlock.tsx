@@ -1,6 +1,7 @@
 import { getIcon } from '../icon-map'
 import type { PublicAmenity, PublicBlock, PublicImage } from '../PropertySite'
 import { Eyebrow, Section, SectionTitle, cfgText } from '../site-ui'
+import { useTranslations } from 'next-intl'
 
 interface Props {
   block: PublicBlock
@@ -10,8 +11,9 @@ interface Props {
 
 /** Amenities (redesign 3a): a ruled list next to a large photo. */
 export function AmenitiesBlock({ block, amenities, images }: Props) {
+  const t = useTranslations('site.blocks.amenities')
   const cfg = block.config || {}
-  const title = cfgText(cfg, 'amenitiesTitle', 'title') ?? 'Mọi thứ cần cho một kỳ nghỉ nhẹ nhàng'
+  const title = cfgText(cfg, 'amenitiesTitle', 'title') ?? t('title')
   // The hero shows the first photos; take a later one when there is one.
   const photo = images[2] ?? images[1] ?? images[0]
 
@@ -19,10 +21,10 @@ export function AmenitiesBlock({ block, amenities, images }: Props) {
     <Section id="amenities" className="bg-fg/[0.02]">
       <div className={photo ? 'grid gap-10 lg:grid-cols-[minmax(0,440px)_1fr] lg:gap-16' : ''}>
         <div>
-          <Eyebrow>Tiện ích</Eyebrow>
+          <Eyebrow>{t('eyebrow')}</Eyebrow>
           <SectionTitle>{title}</SectionTitle>
           {amenities.length === 0 ? (
-            <p className="mt-8 text-body text-muted">Danh sách tiện ích đang được cập nhật.</p>
+            <p className="mt-8 text-body text-muted">{t('empty')}</p>
           ) : (
             <ul className={`mt-8 border-t border-line ${photo ? '' : 'sm:grid sm:grid-cols-2 sm:gap-x-10'}`}>
               {amenities.map((amenity) => {

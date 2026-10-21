@@ -1,6 +1,7 @@
 import { Mail, MapPin, MessageCircle, Phone } from 'lucide-react'
 import type { PublicBlock, PublicProperty } from '../PropertySite'
 import { Eyebrow, Section, SectionTitle, cfgText } from '../site-ui'
+import { useTranslations } from 'next-intl'
 
 interface Props {
   block: PublicBlock
@@ -8,8 +9,9 @@ interface Props {
 }
 
 export function ContactBlock({ block, property }: Props) {
+  const t = useTranslations('site.blocks.contact')
   const cfg = block.config || {}
-  const title = cfgText(cfg, 'contactTitle', 'title') ?? 'Liên hệ đặt phòng'
+  const title = cfgText(cfg, 'contactTitle', 'title') ?? t('title')
   const phone = cfgText(cfg, 'contactPhone') ?? property.phone
   const email = cfgText(cfg, 'contactEmail') ?? property.email
   const address = cfgText(cfg, 'contactAddress') ?? [property.address, property.city].filter(Boolean).join(', ')
@@ -17,19 +19,19 @@ export function ContactBlock({ block, property }: Props) {
   const zaloLink = phone ? `https://zalo.me/${phone.replace(/[^0-9]/g, '')}` : null
 
   const rows = [
-    phone && { icon: Phone, label: 'Điện thoại', value: phone, href: `tel:${phone.replace(/[^\d+]/g, '')}` },
+    phone && { icon: Phone, label: t('phone'), value: phone, href: `tel:${phone.replace(/[^\d+]/g, '')}` },
     email && { icon: Mail, label: 'Email', value: email, href: `mailto:${email}` },
-    zaloLink && { icon: MessageCircle, label: 'Zalo', value: 'Nhắn tin Zalo', href: zaloLink, external: true },
-    address && { icon: MapPin, label: 'Địa chỉ', value: address },
+    zaloLink && { icon: MessageCircle, label: 'Zalo', value: t('zaloMessage'), href: zaloLink, external: true },
+    address && { icon: MapPin, label: t('address'), value: address },
   ].filter(Boolean) as { icon: typeof Phone; label: string; value: string; href?: string; external?: boolean }[]
 
   return (
     <Section id="contact">
       <div className="grid gap-10 lg:grid-cols-[1fr_520px]">
         <div>
-          <Eyebrow>Liên hệ</Eyebrow>
+          <Eyebrow>{t('eyebrow')}</Eyebrow>
           <SectionTitle>{title}</SectionTitle>
-          <p className="mt-4 max-w-md text-body text-muted">Liên hệ trực tiếp với khách sạn qua các kênh dưới đây.</p>
+          <p className="mt-4 max-w-md text-body text-muted">{t('intro')}</p>
         </div>
         <ul className="border-t border-line">
           {rows.map(({ icon: Icon, label, value, href, external }) => {

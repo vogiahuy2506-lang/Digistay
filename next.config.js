@@ -1,3 +1,7 @@
+// Translations (next-intl): the request's language and messages come from
+// src/i18n/request.ts.
+const withNextIntl = require('next-intl/plugin')('./src/i18n/request.ts')
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // `standalone` emits a self-contained server.js + minimal node_modules
@@ -24,4 +28,4 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfig
+module.exports = withNextIntl(nextConfig)

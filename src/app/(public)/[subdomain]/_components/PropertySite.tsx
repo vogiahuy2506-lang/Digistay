@@ -12,6 +12,7 @@ import { ServicesBlock } from './blocks/ServicesBlock'
 import { SiteHeader, type SiteSection } from './SiteHeader'
 import { SiteLink } from './site-base'
 import { Container, cfgText } from './site-ui'
+import { useTranslations } from 'next-intl'
 
 type BlockType =
   | 'HERO'
@@ -110,13 +111,14 @@ interface Props {
   settings: PublicSettings | null
 }
 
-const SECTION_LABELS: Partial<Record<BlockType, { id: string; label: string }>> = {
-  ROOMS: { id: 'rooms', label: 'Phòng' },
-  AMENITIES: { id: 'amenities', label: 'Tiện ích' },
-  GALLERY: { id: 'gallery', label: 'Hình ảnh' },
-  SERVICES: { id: 'services', label: 'Dịch vụ' },
-  MAP: { id: 'map', label: 'Vị trí' },
-  CONTACT: { id: 'contact', label: 'Liên hệ' },
+// The header menu: blocks with a section of their own (labels: site.sections).
+const SECTION_LABELS: Partial<Record<BlockType, SiteSection>> = {
+  ROOMS: { id: 'rooms' },
+  AMENITIES: { id: 'amenities' },
+  GALLERY: { id: 'gallery' },
+  SERVICES: { id: 'services' },
+  MAP: { id: 'map' },
+  CONTACT: { id: 'contact' },
 }
 
 /**
@@ -195,10 +197,11 @@ function BlockRenderer(props: {
 
 /** Call to action: a dark band with one button (ctaTitle / ctaSubtitle / ctaButtonText / ctaButtonLink). */
 function CtaBlock({ block }: { block: PublicBlock }) {
+  const t = useTranslations('site.blocks.cta')
   const cfg = block.config || {}
-  const title = cfgText(cfg, 'ctaTitle', 'title') ?? 'Đặt phòng ngay'
+  const title = cfgText(cfg, 'ctaTitle', 'title') ?? t('title')
   const subtitle = cfgText(cfg, 'ctaSubtitle', 'subtitle')
-  const label = cfgText(cfg, 'ctaButtonText', 'buttonText') ?? 'Đặt phòng'
+  const label = cfgText(cfg, 'ctaButtonText', 'buttonText') ?? t('button')
   const link = cfgText(cfg, 'ctaButtonLink') ?? '#booking'
   const buttonClass =
     'mt-8 inline-flex h-12 items-center rounded-ctl bg-page px-6 text-body font-medium text-fg hover:bg-page/90 transition-colors'

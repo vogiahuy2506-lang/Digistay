@@ -1,8 +1,10 @@
 import { cache } from 'react'
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
+import { NextIntlClientProvider } from 'next-intl'
+import { getLocale, getMessages, getTranslations } from 'next-intl/server'
 import { prisma } from '@/lib/db'
-import { siteBasePath } from '@/lib/public-site/paths'
+import { SITE_BASE_HEADER, siteBasePath } from '@/lib/public-site/paths'
 import { hotelAccentVariables } from '@/lib/public-site/accent'
 import { fontStack } from '@/lib/public-site/font-stack'
 import { loadVisibleSite } from '@/lib/public-site/visibility'
@@ -49,9 +51,17 @@ export default async function HotelSiteLayout({
   params: Promise<{ subdomain: string }>
 }) {
   const { subdomain } = await params
-  const host = (await headers()).get('host')
+  const requestHeaders = await headers()
+  const host = requestHeaders.get('host')
   const settings = (await loadSiteFrame(subdomain))?.websiteSettings
   const preview = (await loadVisibleSite(subdomain))?.preview ?? false
+  const locale = await getLocale()
+  const messages = await getMessages()
+  const t = await getTranslations('site')
+  // Links keep the language: /<hotel>/en/... (or /en/... on the hotel's own host).
+  // From the middleware; the Host header is the fallback (src/lib/public-site/paths.ts).
+  const base = requestHeaders.get(SITE_BASE_HEADER) ?? siteBasePath(subdomain, host)
+  const bases = { vi: base, en: `${base}/en` }
 
   const style = {
     ...hotelAccentVariables(settings?.primaryColor),
@@ -70,12 +80,12 @@ export default async function HotelSiteLayout({
       className={`${siteFontVariables} min-h-screen bg-page text-fg font-site-body antialiased`}
       style={style}
     >
-      {preview && (
-        <p className="bg-ink px-4 py-2 text-center text-small text-on-ink">
-          Bản xem trước: website chưa xuất bản, chỉ thành viên của khách sạn đang đăng nhập mới xem được.
-        </p>
-      )}
-      <SiteBaseProvider base={siteBasePath(subdomain, host)}>{children}</SiteBaseProvider>
+      {preview && <p className="bg-ink px-4 py-2 text-center text-small text-on-ink">{t('preview')}</p>}
+      <NextIntlClientProvider messages={{ common: messages.common, site: messages.site }}>
+        <SiteBaseProvider locale={locale} bases={bases} internal={`/${subdomain}`}>
+          {children}
+        </SiteBaseProvider>
+      </NextIntlClientProvider>
     </div>
   )
 }

@@ -1,15 +1,17 @@
 import { Menu, Phone } from 'lucide-react'
-import { SiteLink } from './site-base'
+import { useTranslations } from 'next-intl'
+import { LanguageSwitch, SiteLink } from './site-base'
 import { Container, propertyTypeLabel } from './site-ui'
 
+export type SiteSectionId = 'rooms' | 'amenities' | 'gallery' | 'services' | 'map' | 'contact'
+
 export interface SiteSection {
-  id: string
-  label: string
+  id: SiteSectionId
 }
 
 interface Props {
   property: { name: string; type: string; city: string; phone: string | null }
-  /** Sections of the home page shown in the menu ("Phòng", "Tiện ích"...). */
+  /** Sections of the home page shown in the menu (labels from site.sections). */
   sections: SiteSection[]
   /** On the home page the menu scrolls; elsewhere it links back to it. */
   onHome?: boolean
@@ -17,6 +19,7 @@ interface Props {
 
 /** Hotel website header (redesign 3a): wordmark, section menu, phone, "Đặt phòng". */
 export function SiteHeader({ property, sections, onHome = true }: Props) {
+  const t = useTranslations('site')
   const sectionPath = (id: string) => (onHome ? `#${id}` : `/#${id}`)
   const bookPath = onHome ? '#booking' : '/search'
   const linkClass = 'text-small text-fg hover:text-acc transition-colors duration-160 focus:outline-none focus-visible:text-acc'
@@ -27,20 +30,20 @@ export function SiteHeader({ property, sections, onHome = true }: Props) {
         <SiteLink path="/" className="min-w-0 shrink focus:outline-none focus-visible:underline">
           <span className="block font-site text-[20px] sm:text-[24px] leading-tight text-fg truncate">{property.name}</span>
           <span className="block text-[10px] uppercase tracking-[0.18em] text-muted truncate">
-            {propertyTypeLabel(property.type)} · {property.city}
+            {propertyTypeLabel(property.type, t)} · {property.city}
           </span>
         </SiteLink>
 
         {sections.length > 0 && (
-          <nav aria-label="Các mục" className="hidden lg:flex flex-1 justify-center gap-8">
+          <nav aria-label={t('nav.sections')} className="hidden lg:flex flex-1 justify-center gap-8">
             {sections.map((s) =>
               onHome ? (
                 <a key={s.id} href={sectionPath(s.id)} className={linkClass}>
-                  {s.label}
+                  {t(`sections.${s.id}`)}
                 </a>
               ) : (
                 <SiteLink key={s.id} path={sectionPath(s.id)} className={linkClass}>
-                  {s.label}
+                  {t(`sections.${s.id}`)}
                 </SiteLink>
               )
             )}
@@ -48,6 +51,7 @@ export function SiteHeader({ property, sections, onHome = true }: Props) {
         )}
 
         <div className="ml-auto flex items-center gap-3 sm:gap-5 shrink-0">
+          <LanguageSwitch className="inline-flex h-11 min-w-11 items-center justify-center rounded-ctl px-2 text-small font-medium text-fg hover:bg-fg/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc" />
           {property.phone && (
             <a href={`tel:${property.phone.replace(/[^\d+]/g, '')}`} className={`hidden md:inline-flex items-center gap-2 ${linkClass}`}>
               <Phone className="h-4 w-4" aria-hidden="true" />
@@ -56,30 +60,30 @@ export function SiteHeader({ property, sections, onHome = true }: Props) {
           )}
           {onHome ? (
             <a href={bookPath} className="inline-flex h-11 items-center rounded-ctl bg-ink px-5 text-small font-medium text-on-ink hover:bg-ink/90 transition-colors">
-              Đặt phòng
+              {t('nav.book')}
             </a>
           ) : (
             <SiteLink path={bookPath} className="inline-flex h-11 items-center rounded-ctl bg-ink px-5 text-small font-medium text-on-ink hover:bg-ink/90 transition-colors">
-              Đặt phòng
+              {t('nav.book')}
             </SiteLink>
           )}
           {sections.length > 0 && (
             <details className="relative lg:hidden">
               <summary
-                aria-label="Mở menu"
+                aria-label={t('nav.openMenu')}
                 className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-ctl text-fg hover:bg-fg/5 [&::-webkit-details-marker]:hidden"
               >
                 <Menu className="h-5 w-5" aria-hidden="true" />
               </summary>
-              <nav aria-label="Các mục" className="absolute right-0 top-12 z-50 min-w-[200px] border border-line bg-raised py-2 shadow-lift">
+              <nav aria-label={t('nav.sections')} className="absolute right-0 top-12 z-50 min-w-[200px] border border-line bg-raised py-2 shadow-lift">
                 {sections.map((s) =>
                   onHome ? (
                     <a key={s.id} href={sectionPath(s.id)} className="block px-4 py-3 text-body text-fg hover:bg-fg/5">
-                      {s.label}
+                      {t(`sections.${s.id}`)}
                     </a>
                   ) : (
                     <SiteLink key={s.id} path={sectionPath(s.id)} className="block px-4 py-3 text-body text-fg hover:bg-fg/5">
-                      {s.label}
+                      {t(`sections.${s.id}`)}
                     </SiteLink>
                   )
                 )}

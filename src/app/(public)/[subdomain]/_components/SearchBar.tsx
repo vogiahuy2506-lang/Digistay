@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Minus, Plus } from 'lucide-react'
 import { nightsBetween } from '@/lib/bookings/display'
 import { useSiteHref } from './site-base'
+import { useTranslations } from 'next-intl'
 
 /** Today in Vietnam time, as yyyy-mm-dd (what <input type="date"> takes). */
 function vnDay(offsetDays = 0): string {
@@ -26,6 +27,7 @@ function Stepper({
   max: number
   onChange: (n: number) => void
 }) {
+  const t = useTranslations('site.stay')
   const btn =
     'flex h-9 w-9 items-center justify-center rounded-full border border-line text-fg hover:border-muted disabled:opacity-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc'
   return (
@@ -35,13 +37,13 @@ function Stepper({
         {hint && <span className="normal-case tracking-normal"> ({hint})</span>}
       </span>
       <div className="mt-1.5 flex items-center gap-3">
-        <button type="button" className={btn} onClick={() => onChange(value - 1)} disabled={value <= min} aria-label={`Giảm ${label.toLowerCase()}`}>
+        <button type="button" className={btn} onClick={() => onChange(value - 1)} disabled={value <= min} aria-label={t('decrease', { what: label.toLowerCase() })}>
           <Minus className="h-3.5 w-3.5" aria-hidden="true" />
         </button>
         <span className="w-6 text-center text-body tabular-nums text-fg" aria-live="polite">
           {value}
         </span>
-        <button type="button" className={btn} onClick={() => onChange(value + 1)} disabled={value >= max} aria-label={`Tăng ${label.toLowerCase()}`}>
+        <button type="button" className={btn} onClick={() => onChange(value + 1)} disabled={value >= max} aria-label={t('increase', { what: label.toLowerCase() })}>
           <Plus className="h-3.5 w-3.5" aria-hidden="true" />
         </button>
       </div>
@@ -51,6 +53,7 @@ function Stepper({
 
 /** "Tìm phòng" bar (redesign 3a): dates, adults, children; opens the search page. */
 export function SearchBar() {
+  const t = useTranslations('site')
   const router = useRouter()
   const href = useSiteHref()
   const [checkIn, setCheckIn] = useState(vnDay(0))
@@ -84,25 +87,29 @@ export function SearchBar() {
   )
 
   return (
-    <form onSubmit={onSubmit} aria-label="Tìm phòng trống">
+    <form onSubmit={onSubmit} aria-label={t('stay.searchLabel')}>
       <div className="grid grid-cols-2 border border-line bg-panel shadow-lift lg:grid-cols-[1fr_1fr_1fr_1fr_auto] lg:divide-x lg:divide-line [&>*]:border-line max-lg:[&>*:nth-child(odd)]:border-r max-lg:[&>*:nth-child(-n+4)]:border-b">
-        {dateField('Ngày nhận', checkIn, vnDay(0), (v) => {
+        {dateField(t('stay.checkIn'), checkIn, vnDay(0), (v) => {
           setCheckIn(v)
           if (v >= checkOut) setCheckOut(new Date(new Date(`${v}T12:00:00Z`).getTime() + 86400000).toISOString().slice(0, 10))
         })}
-        {dateField('Ngày trả', checkOut, checkIn || vnDay(1), setCheckOut)}
-        <Stepper label="Người lớn" value={adults} min={1} max={20} onChange={setAdults} />
-        <Stepper label="Trẻ em" value={children} min={0} max={10} onChange={setChildren} />
+        {dateField(t('stay.checkOut'), checkOut, checkIn || vnDay(1), setCheckOut)}
+        <Stepper label={t('stay.adults')} value={adults} min={1} max={20} onChange={setAdults} />
+        <Stepper label={t('stay.children')} value={children} min={0} max={10} onChange={setChildren} />
         <button
           type="submit"
           disabled={!valid}
           className="col-span-2 lg:col-span-1 h-14 lg:h-auto px-8 bg-ink text-on-ink text-body font-medium hover:bg-ink/90 disabled:opacity-60 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-acc focus-visible:ring-offset-2"
         >
-          Tìm phòng
+          {t('stay.search')}
         </button>
       </div>
       <p className="mt-3 text-small text-muted">
-        {valid ? `${nights} đêm · ${adults} người lớn${children ? ` · ${children} trẻ em` : ''}` : 'Ngày trả phải sau ngày nhận'}
+        {valid
+          ? children
+            ? t('stay.summaryWithChildren', { nights: t('units.nights', { count: nights }), adults: t('units.adults', { count: adults }), children: t('units.children', { count: children }) })
+            : t('stay.summary', { nights: t('units.nights', { count: nights }), adults: t('units.adults', { count: adults }) })
+          : t('stay.checkOutAfterCheckIn')}
       </p>
     </form>
   )

@@ -6,6 +6,7 @@ import { Minus, Plus } from 'lucide-react'
 import { formatVnd } from '@/lib/bookings/display'
 import { quoteStay, type Rates } from '@/lib/pricing/quote'
 import { useSiteHref } from '../../_components/site-base'
+import { useLocale, useTranslations } from 'next-intl'
 
 function vnDay(offsetDays = 0): string {
   return new Date(Date.now() + 7 * 3600 * 1000 + offsetDays * 86400 * 1000).toISOString().slice(0, 10)
@@ -25,6 +26,8 @@ interface Props {
 
 /** Sticky booking box (redesign 2c): price per night, dates, guests, running total. */
 export function BookingBox({ rates, baseOccupancy, maxAdults, maxChildren, checkIn: initialIn, checkOut: initialOut }: Props) {
+  const t = useTranslations('site')
+  const locale = useLocale()
   const router = useRouter()
   const href = useSiteHref()
   const [checkIn, setCheckIn] = useState(initialIn || vnDay(0))
@@ -61,11 +64,11 @@ export function BookingBox({ rates, baseOccupancy, maxAdults, maxChildren, check
     <div className={cell}>
       <span className={label}>{name}</span>
       <div className="mt-1.5 flex items-center justify-between">
-        <button type="button" className={stepBtn} onClick={() => set(value - 1)} disabled={value <= min} aria-label={`Giảm ${name.toLowerCase()}`}>
+        <button type="button" className={stepBtn} onClick={() => set(value - 1)} disabled={value <= min} aria-label={t('stay.decrease', { what: name.toLowerCase() })}>
           <Minus className="h-3.5 w-3.5" aria-hidden="true" />
         </button>
         <span className="text-body tabular-nums" aria-live="polite">{value}</span>
-        <button type="button" className={stepBtn} onClick={() => set(value + 1)} disabled={value >= max} aria-label={`Tăng ${name.toLowerCase()}`}>
+        <button type="button" className={stepBtn} onClick={() => set(value + 1)} disabled={value >= max} aria-label={t('stay.increase', { what: name.toLowerCase() })}>
           <Plus className="h-3.5 w-3.5" aria-hidden="true" />
         </button>
       </div>
@@ -76,19 +79,19 @@ export function BookingBox({ rates, baseOccupancy, maxAdults, maxChildren, check
     <div id="dat-phong" className="scroll-mt-24 border border-line bg-raised p-6 shadow-lift">
       {priced ? (
         <p className="text-[28px] leading-9 font-semibold tabular-nums text-fg">
-          {formatVnd(priced.weekdayPrice)}
-          <span className="text-small font-normal text-muted"> /đêm</span>
+          {formatVnd(priced.weekdayPrice, locale)}
+          <span className="text-small font-normal text-muted"> {t('units.perNight')}</span>
         </p>
       ) : (
-        <p className="text-body font-medium text-fg">Liên hệ để biết giá</p>
+        <p className="text-body font-medium text-fg">{t('room.contactForPrice')}</p>
       )}
       {priced && priced.weekendPrice !== priced.weekdayPrice ? (
-        <p className="mt-1 text-small text-muted">Thứ Bảy, Chủ nhật: {formatVnd(priced.weekendPrice)}/đêm</p>
+        <p className="mt-1 text-small text-muted">{t('bookingBox.weekend', { price: formatVnd(priced.weekendPrice, locale) })}</p>
       ) : null}
 
       <div className="mt-5 grid grid-cols-2 border border-line [&>*]:border-line [&>*:nth-child(odd)]:border-r [&>*:nth-child(-n+2)]:border-b">
         <label className={cell}>
-          <span className={label}>Ngày nhận</span>
+          <span className={label}>{t('stay.checkIn')}</span>
           <input
             type="date"
             value={checkIn}
@@ -103,7 +106,7 @@ export function BookingBox({ rates, baseOccupancy, maxAdults, maxChildren, check
           />
         </label>
         <label className={cell}>
-          <span className={label}>Ngày trả</span>
+          <span className={label}>{t('stay.checkOut')}</span>
           <input
             type="date"
             value={checkOut}
@@ -112,13 +115,15 @@ export function BookingBox({ rates, baseOccupancy, maxAdults, maxChildren, check
             className="mt-1 w-full bg-transparent text-small text-fg focus:outline-none [color-scheme:light]"
           />
         </label>
-        {stepper('Người lớn', adults, 1, Math.max(1, maxAdults), setAdults)}
-        {stepper('Trẻ em', children, 0, Math.max(0, maxChildren), setChildren)}
+        {stepper(t('stay.adults'), adults, 1, Math.max(1, maxAdults), setAdults)}
+        {stepper(t('stay.children'), children, 0, Math.max(0, maxChildren), setChildren)}
       </div>
 
       {(adults >= maxAdults || (maxChildren > 0 && children >= maxChildren)) && (
         <p className="mt-3 bg-warn-soft px-3 py-2 text-small text-warn">
-          Phòng này tối đa {maxAdults} người lớn{maxChildren > 0 ? ` + ${maxChildren} trẻ em` : ''}.
+          {maxChildren > 0
+            ? t('bookingBox.maxOccupancyWithChildren', { adults: t('units.adults', { count: maxAdults }), children: t('units.children', { count: maxChildren }) })
+            : t('bookingBox.maxOccupancy', { adults: t('units.adults', { count: maxAdults }) })}
         </p>
       )}
 
@@ -127,28 +132,28 @@ export function BookingBox({ rates, baseOccupancy, maxAdults, maxChildren, check
           {estimate.weekdayNights > 0 && (
             <div className="flex justify-between gap-3">
               <dt className="text-muted">
-                {formatVnd(priced!.weekdayPrice)} × {estimate.weekdayNights} đêm
+                {formatVnd(priced!.weekdayPrice, locale)} × {t('units.nights', { count: estimate.weekdayNights })}
               </dt>
-              <dd className="tabular-nums text-fg">{formatVnd(estimate.weekdayNights * priced!.weekdayPrice)}</dd>
+              <dd className="tabular-nums text-fg">{formatVnd(estimate.weekdayNights * priced!.weekdayPrice, locale)}</dd>
             </div>
           )}
           {estimate.weekendNights > 0 && (
             <div className="flex justify-between gap-3">
               <dt className="text-muted">
-                {formatVnd(priced!.weekendPrice)} × {estimate.weekendNights} đêm cuối tuần
+                {formatVnd(priced!.weekendPrice, locale)} × {t('units.weekendNights', { count: estimate.weekendNights })}
               </dt>
-              <dd className="tabular-nums text-fg">{formatVnd(estimate.weekendNights * priced!.weekendPrice)}</dd>
+              <dd className="tabular-nums text-fg">{formatVnd(estimate.weekendNights * priced!.weekendPrice, locale)}</dd>
             </div>
           )}
           {estimate.extraCharges > 0 && (
             <div className="flex justify-between gap-3">
-              <dt className="text-muted">Phụ thu khách thêm</dt>
-              <dd className="tabular-nums text-fg">{formatVnd(estimate.extraCharges)}</dd>
+              <dt className="text-muted">{t('bookingBox.extraGuests')}</dt>
+              <dd className="tabular-nums text-fg">{formatVnd(estimate.extraCharges, locale)}</dd>
             </div>
           )}
           <div className="flex justify-between gap-3 border-t border-line pt-3 text-body font-semibold">
-            <dt className="text-fg">Tạm tính</dt>
-            <dd className="tabular-nums text-fg">{formatVnd(estimate.total)}</dd>
+            <dt className="text-fg">{t('bookingBox.estimate')}</dt>
+            <dd className="tabular-nums text-fg">{formatVnd(estimate.total, locale)}</dd>
           </div>
         </dl>
       )}
@@ -159,9 +164,9 @@ export function BookingBox({ rates, baseOccupancy, maxAdults, maxChildren, check
         disabled={!validDates}
         className="mt-6 flex h-[52px] w-full items-center justify-center rounded-ctl bg-ink text-body font-medium text-on-ink hover:bg-ink/90 disabled:opacity-60 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-acc focus-visible:ring-offset-2"
       >
-        Đặt phòng
+        {t('bookingBox.book')}
       </button>
-      <p className="mt-3 text-center text-xs text-muted">Chưa trừ tiền ở bước này.</p>
+      <p className="mt-3 text-center text-xs text-muted">{t('bookingBox.noChargeYet')}</p>
     </div>
   )
 }

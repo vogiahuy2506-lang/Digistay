@@ -8,6 +8,7 @@
  */
 import { useEffect } from 'react'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 export default function PublicSiteError({
   error,
@@ -16,6 +17,7 @@ export default function PublicSiteError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  const t = useTranslations('common.error')
   useEffect(() => {
     // eslint-disable-next-line no-console
     console.error('Public site error:', error)
@@ -27,18 +29,14 @@ export default function PublicSiteError({
         <div className="w-12 h-12 rounded-2xl bg-warn-soft mx-auto mb-4 flex items-center justify-center">
           <AlertTriangle className="w-6 h-6 text-warn" />
         </div>
-        <h2 className="text-base font-semibold text-fg mb-1">
-          Không thể hiển thị trang này
-        </h2>
-        <p className="text-sm text-muted mb-4">
-          Đã xảy ra lỗi khi tải nội dung. Vui lòng thử lại sau ít phút.
-        </p>
+        <h2 className="text-base font-semibold text-fg mb-1">{t('title')}</h2>
+        <p className="text-sm text-muted mb-4">{t('text')}</p>
         <button
           onClick={reset}
           className="inline-flex items-center gap-2 px-4 py-2 bg-ink text-white rounded-lg text-sm font-semibold hover:bg-ink transition"
         >
           <RefreshCw className="w-4 h-4" />
-          Thử lại
+          {t('retry')}
         </button>
       </div>
     </div>

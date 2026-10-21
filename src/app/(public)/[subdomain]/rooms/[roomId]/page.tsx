@@ -1,6 +1,7 @@
 import { ratesFrom } from '@/lib/pricing/quote'
 import { ROOM_RATE_INCLUDE, propertyRateDefaults } from '@/lib/pricing/rates'
 import { notFound } from 'next/navigation'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { prisma } from '@/lib/db'
 import { SiteHeader, type SiteSection } from '../../_components/SiteHeader'
 import { SiteLink } from '../../_components/site-base'
@@ -18,10 +19,10 @@ interface PageProps {
 export const dynamic = 'force-dynamic'
 
 const SECTIONS: Record<string, SiteSection> = {
-  ROOMS: { id: 'rooms', label: 'Phòng' },
-  AMENITIES: { id: 'amenities', label: 'Tiện ích' },
-  MAP: { id: 'map', label: 'Vị trí' },
-  CONTACT: { id: 'contact', label: 'Liên hệ' },
+  ROOMS: { id: 'rooms' },
+  AMENITIES: { id: 'amenities' },
+  MAP: { id: 'map' },
+  CONTACT: { id: 'contact' },
 }
 
 const day = (v: string | undefined) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined)
@@ -30,6 +31,8 @@ const day = (v: string | undefined) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v :
 export default async function RoomDetailPage({ params, searchParams }: PageProps) {
   const { subdomain, roomId } = await params
   const query = await searchParams
+  const t = await getTranslations('site')
+  const locale = await getLocale()
 
   const site = await loadVisibleSite(subdomain)
   if (!site) notFound()
@@ -71,20 +74,23 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
   const photos = room.images
 
   const specs = [
-    { label: 'Diện tích', value: room.area ? `${room.area} m²` : '—' },
-    { label: 'Loại giường', value: bedLabel(room.bedType) },
-    { label: 'Tối đa người lớn', value: String(room.maxAdults) },
-    { label: 'Tối đa trẻ em', value: String(room.maxChildren) },
+    { label: t('room.area'), value: room.area ? t('units.area', { area: room.area }) : '—' },
+    { label: t('room.bedType'), value: bedLabel(room.bedType, t) },
+    { label: t('room.maxAdults'), value: String(room.maxAdults) },
+    { label: t('room.maxChildren'), value: String(room.maxChildren) },
   ]
 
   const policies: { title: string; text: string }[] = []
   if (policy) {
-    policies.push({ title: 'Nhận / trả phòng', text: `Nhận từ ${policy.checkInTime} · Trả trước ${policy.checkOutTime}.` })
+    policies.push({
+      title: t('policy.checkInOut'),
+      text: t('policy.checkInOutText', { checkIn: policy.checkInTime, checkOut: policy.checkOutTime }),
+    })
     if (policy.cancellationHours != null || policy.cancellationPolicy) {
       policies.push({
-        title: 'Hủy phòng',
+        title: t('policy.cancellation'),
         text: [
-          policy.cancellationHours != null ? `Miễn phí khi hủy trước giờ nhận phòng ${policy.cancellationHours} giờ.` : null,
+          policy.cancellationHours != null ? t('policy.freeCancellation', { hours: policy.cancellationHours }) : null,
           policy.cancellationPolicy,
         ]
           .filter(Boolean)
@@ -92,18 +98,18 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
       })
     }
     policies.push({
-      title: 'Trẻ em',
+      title: t('policy.children'),
       text: policy.childrenAllowed
         ? policy.minChildAge > 0
-          ? `Nhận trẻ từ ${policy.minChildAge} tuổi.`
-          : 'Nhận trẻ em mọi độ tuổi.'
-        : 'Không nhận trẻ em.',
+          ? t('policy.childrenFromAge', { age: policy.minChildAge })
+          : t('policy.childrenAnyAge')
+        : t('policy.noChildren'),
     })
     policies.push({
-      title: 'Thú cưng · hút thuốc',
-      text: `${policy.petsAllowed ? 'Cho phép' : 'Không cho phép'} thú cưng. ${policy.smokingAllowed ? 'Có khu vực hút thuốc' : 'Không hút thuốc'}.`,
+      title: t('policy.petsSmoking'),
+      text: `${policy.petsAllowed ? t('policy.petsAllowed') : t('policy.noPets')} ${policy.smokingAllowed ? t('policy.smokingArea') : t('policy.noSmoking')}`,
     })
-    if (policy.additionalRules) policies.push({ title: 'Quy định khác', text: policy.additionalRules })
+    if (policy.additionalRules) policies.push({ title: t('policy.otherRules'), text: policy.additionalRules })
   }
 
   return (
@@ -112,13 +118,13 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
 
       <main className="pb-28 lg:pb-24">
         <Container className="pt-6 sm:pt-10">
-          <nav aria-label="Đường dẫn" className="text-small">
+          <nav aria-label={t('nav.breadcrumb')} className="text-small">
             <SiteLink path="/" className="text-acc hover:underline">
-              Trang chủ
+              {t('nav.home')}
             </SiteLink>
             <span className="text-muted"> / </span>
             <SiteLink path="/#rooms" className="text-acc hover:underline">
-              Phòng
+              {t('nav.rooms')}
             </SiteLink>
             <span className="text-muted"> / </span>
             <span className="text-fg">{room.name}</span>
@@ -126,7 +132,7 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
 
           <div className="mt-4 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
             <h1 className="font-site text-[40px] leading-[48px] sm:text-h1 text-fg">{room.name}</h1>
-            <p className="text-small text-muted lg:pb-2">{roomMeta(room)}</p>
+            <p className="text-small text-muted lg:pb-2">{roomMeta(room, t)}</p>
           </div>
 
           {photos.length > 0 && (
@@ -136,7 +142,7 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
                 <img
                   key={img.id}
                   src={img.url}
-                  alt={img.alt || `${room.name} — ảnh ${i + 1}`}
+                  alt={img.alt || t('room.photoAlt', { name: room.name, n: i + 1 })}
                   loading={i === 0 ? 'eager' : 'lazy'}
                   className={
                     i === 0
@@ -153,7 +159,7 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
               {room.description && <p className="max-w-2xl text-lead text-fg whitespace-pre-line">{room.description}</p>}
 
               <section>
-                <h2 className="font-site text-h3 text-fg">Thông số</h2>
+                <h2 className="font-site text-h3 text-fg">{t('room.specs')}</h2>
                 <dl className="mt-5 grid grid-cols-2 border-y border-line sm:grid-cols-4">
                   {specs.map((s, i) => (
                     <div key={s.label} className={`py-5 pr-4 ${i > 0 ? 'sm:border-l sm:border-line sm:pl-5' : ''} ${i % 2 === 1 ? 'border-l border-line pl-5 sm:pl-5' : ''}`}>
@@ -166,7 +172,7 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
 
               {room.amenities.length > 0 && (
                 <section>
-                  <h2 className="font-site text-h3 text-fg">Tiện ích trong phòng</h2>
+                  <h2 className="font-site text-h3 text-fg">{t('room.amenities')}</h2>
                   <ul className="mt-5 grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3">
                     {room.amenities.map(({ amenity }) => {
                       const Icon = getIcon(amenity.icon)
@@ -183,7 +189,7 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
 
               {policies.length > 0 && (
                 <section>
-                  <h2 className="font-site text-h3 text-fg">Chính sách</h2>
+                  <h2 className="font-site text-h3 text-fg">{t('room.policies')}</h2>
                   <ul className="mt-5 grid gap-3 sm:grid-cols-2">
                     {policies.map((p) => (
                       <li key={p.title} className="border border-line bg-panel p-5">
@@ -215,15 +221,15 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
         <p className="text-body font-semibold tabular-nums text-fg">
           {rates ? (
             <>
-              {formatVnd(rates.weekdayPrice)}
-              <span className="text-xs font-normal text-muted"> /đêm</span>
+              {formatVnd(rates.weekdayPrice, locale)}
+              <span className="text-xs font-normal text-muted"> {t('units.perNight')}</span>
             </>
           ) : (
-            'Liên hệ để biết giá'
+            t('room.contactForPrice')
           )}
         </p>
         <a href="#dat-phong" className="inline-flex h-11 items-center rounded-ctl bg-ink px-6 text-small font-medium text-on-ink">
-          Đặt phòng
+          {t('bookingBox.book')}
         </a>
       </div>
     </>

@@ -1,5 +1,6 @@
 import type { PublicBlock, PublicProperty } from '../PropertySite'
 import { Eyebrow, Section, SectionTitle, cfgText } from '../site-ui'
+import { useLocale, useTranslations } from 'next-intl'
 
 interface Props {
   block: PublicBlock
@@ -13,6 +14,8 @@ function coordinate(value: unknown): number | null {
 
 /** Location (redesign 3a): embedded map, the address, "Chỉ đường" and "Gọi". */
 export function MapBlock({ block, property }: Props) {
+  const t = useTranslations('site.blocks.map')
+  const locale = useLocale()
   const cfg = block.config || {}
   const fullAddress =
     cfgText(cfg, 'mapAddress') ??
@@ -26,12 +29,12 @@ export function MapBlock({ block, property }: Props) {
   const zoom = Math.min(20, Math.max(3, Number(cfg.mapZoom) || 15))
 
   const query = lat != null && lng != null ? `${lat},${lng}` : fullAddress
-  const embedUrl = `https://www.google.com/maps?q=${encodeURIComponent(query)}&hl=vi&z=${zoom}&output=embed`
+  const embedUrl = `https://www.google.com/maps?q=${encodeURIComponent(query)}&hl=${locale}&z=${zoom}&output=embed`
   const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(query)}`
 
   return (
     <Section id="map">
-      <Eyebrow>Vị trí</Eyebrow>
+      <Eyebrow>{t('eyebrow')}</Eyebrow>
       <SectionTitle className="max-w-3xl">{title}</SectionTitle>
       <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_400px] lg:gap-14">
         <iframe
@@ -40,17 +43,17 @@ export function MapBlock({ block, property }: Props) {
           allowFullScreen
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
-          title={`Bản đồ: ${fullAddress}`}
+          title={t('mapTitle', { address: fullAddress })}
         />
         <div className="flex flex-col">
           <dl className="border-t border-line">
             <div className="flex justify-between gap-4 border-b border-line py-4">
-              <dt className="text-body text-fg">Địa chỉ</dt>
+              <dt className="text-body text-fg">{t('address')}</dt>
               <dd className="text-right text-small text-muted">{fullAddress}</dd>
             </div>
             {property.phone && (
               <div className="flex justify-between gap-4 border-b border-line py-4">
-                <dt className="text-body text-fg">Điện thoại</dt>
+                <dt className="text-body text-fg">{t('phone')}</dt>
                 <dd className="text-small text-muted tabular-nums">{property.phone}</dd>
               </div>
             )}
@@ -62,11 +65,11 @@ export function MapBlock({ block, property }: Props) {
               rel="noopener noreferrer"
               className="inline-flex h-11 items-center rounded-ctl border border-fg px-5 text-small font-medium text-fg hover:bg-fg/5"
             >
-              Chỉ đường
+              {t('directions')}
             </a>
             {property.phone && (
               <a href={`tel:${property.phone.replace(/[^\d+]/g, '')}`} className="text-small font-medium text-acc hover:underline">
-                Gọi {property.phone}
+                {t('call', { phone: property.phone })}
               </a>
             )}
           </div>

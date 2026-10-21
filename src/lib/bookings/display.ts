@@ -45,8 +45,14 @@ export function formatDateTime(value: string | Date): string {
   return `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`
 }
 
-/** "4.350.000 ₫" with a non-breaking space, so the ₫ never wraps onto its own line. */
-export function formatVnd(amount: number): string {
+/**
+ * "4.350.000 ₫" with a non-breaking space, so the ₫ never wraps onto its own
+ * line; "₫4,350,000" in English.
+ */
+export function formatVnd(amount: number, locale: 'vi' | 'en' = 'vi'): string {
+  if (locale === 'en') {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(amount)
+  }
   return formatCurrency(amount).replace(/\s/g, ' ')
 }
 
