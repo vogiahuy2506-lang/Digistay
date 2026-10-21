@@ -95,3 +95,36 @@ test("a room page quotes that room type's own price, as the booking charges it",
   expect(estimate).toBe(quote.total)
   noErrors()
 })
+
+test('a family picks a child on the room page; the search page keeps it, and the child is priced and charged', async ({ page }) => {
+  const noErrors = failOnPageErrors(page)
+  const { subdomain, prop } = ids()
+  const prisma = new PrismaClient()
+  try {
+    const deluxe = await prisma.roomType.findFirstOrThrow({ where: { propertyId: prop, slug: 'deluxe' } })
+    await page.goto(`/${subdomain}/rooms/${deluxe.id}?checkIn=${day(90)}&checkOut=${day(92)}`)
+    await page.getByRole('button', { name: 'Tăng trẻ em' }).click()
+    await page.locator('#dat-phong').getByRole('button', { name: 'Đặt phòng' }).click()
+
+    await expect(page.getByText('2 người lớn, 1 trẻ em')).toBeVisible()
+    await page.getByRole('button', { name: 'Đặt phòng này' }).first().click()
+    await page.getByPlaceholder('Nguyễn Văn A').fill('Gia Đình Nhỏ')
+    await page.getByPlaceholder('0912345678').fill('0912345678')
+    await page.getByPlaceholder('email@example.com').fill(`giadinh-${Date.now()}@example.com`)
+    await page.getByRole('button', { name: 'Tiếp tục', exact: true }).click()
+    await page.getByRole('button', { name: 'Tiếp tục thanh toán' }).click()
+    await page.getByRole('button', { name: 'Xác nhận đặt phòng' }).click()
+    await expect(page.getByRole('heading', { name: 'Đã gửi yêu cầu đặt phòng' })).toBeVisible()
+    const code = (await page.locator('p.font-mono').first().innerText()).trim()
+
+    // The child is a child: the property's 150,000 a night, two nights, no adult surcharge.
+    expect(await prisma.booking.findUniqueOrThrow({ where: { bookingCode: code } })).toMatchObject({
+      numAdults: 2,
+      numChildren: 1,
+      extraCharges: 300_000,
+    })
+  } finally {
+    await prisma.$disconnect()
+  }
+  noErrors()
+})

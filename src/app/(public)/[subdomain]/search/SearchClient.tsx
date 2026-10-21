@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { format, addDays, differenceInDays } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { 
-  Search, Calendar, Users, Check, ChevronLeft, ChevronRight, 
+  Search, Calendar, Check, ChevronLeft, ChevronRight, 
   Wifi, Car, Coffee, Dumbbell, Utensils, Snowflake, Waves, Sparkles
 } from 'lucide-react'
 import { Button } from '@/components/ui'
@@ -46,12 +46,35 @@ interface Property {
   subdomain: string
   extraServices: Service[]
   /** the hotel's own cancellation terms */
-  policy: { cancellationHours: number | null; cancellationPolicy: string | null } | null
+  policy: { cancellationHours: number | null; cancellationPolicy: string | null; childrenAllowed: boolean } | null
   /** a deposit paid through PayOS when booking, or null */
   onlineDeposit: { percent: number; deadlineMinutes: number } | null
 }
 
 const SERVICE_UNIT: Record<string, string> = { FIXED: 'lần', PER_NIGHT: 'đêm', PER_PERSON: 'người' }
+
+/** A count from the query string, within 0–20, or `fallback`. */
+function countParam(value: string | null, fallback: number, min: number): number {
+  const n = Number.parseInt(value ?? '', 10)
+  return Number.isFinite(n) ? Math.min(20, Math.max(min, n)) : fallback
+}
+
+function Stepper({ label, value, min, max, onChange }: { label: string; value: number; min: number; max: number; onChange: (n: number) => void }) {
+  return (
+    <div>
+      <span className="block text-sm font-medium text-fg mb-1">{label}</span>
+      <div className="flex items-center border border-line rounded-ctl overflow-hidden">
+        <button type="button" onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min} aria-label={`Giảm ${label.toLowerCase()}`} className="px-4 py-2 hover:bg-fg/5 border-r border-line disabled:opacity-40">
+          −
+        </button>
+        <span className="flex-1 text-center tabular-nums" aria-live="polite">{value}</span>
+        <button type="button" onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max} aria-label={`Tăng ${label.toLowerCase()}`} className="px-4 py-2 hover:bg-fg/5 border-l border-line disabled:opacity-40">
+          +
+        </button>
+      </div>
+    </div>
+  )
+}
 
 /** 30 → "30 phút", 120 → "2 giờ". */
 const durationLabel = (minutes: number) => (minutes % 60 === 0 ? `${minutes / 60} giờ` : `${minutes} phút`)
@@ -92,7 +115,10 @@ export function SearchClient({ params }: { params: Promise<{ subdomain: string }
   // Search form state
   const [checkIn, setCheckIn] = React.useState(searchParams.get('checkIn') || format(new Date(), 'yyyy-MM-dd'))
   const [checkOut, setCheckOut] = React.useState(searchParams.get('checkOut') || format(addDays(new Date(), 1), 'yyyy-MM-dd'))
-  const [guests, setGuests] = React.useState(parseInt(searchParams.get('guests') || '2'))
+  // adults/children from the hotel's search bar and room page; older links only carry `guests` (all adults).
+  const [adults, setAdults] = React.useState(countParam(searchParams.get('adults') ?? searchParams.get('guests'), 2, 1))
+  const [children, setChildren] = React.useState(countParam(searchParams.get('children'), 0, 0))
+  const guests = adults + children
   const [selectedRoomType, setSelectedRoomType] = React.useState<RoomType | null>(null)
   
   // Lock state
@@ -136,8 +162,11 @@ export function SearchClient({ params }: { params: Promise<{ subdomain: string }
     if (searchParams.get('checkOut')) {
       setCheckOut(searchParams.get('checkOut')!)
     }
-    if (searchParams.get('guests')) {
-      setGuests(parseInt(searchParams.get('guests')!))
+    if (searchParams.get('adults') ?? searchParams.get('guests')) {
+      setAdults(countParam(searchParams.get('adults') ?? searchParams.get('guests'), 2, 1))
+    }
+    if (searchParams.get('children')) {
+      setChildren(countParam(searchParams.get('children'), 0, 0))
     }
   }, [searchParams])
 
@@ -145,7 +174,7 @@ export function SearchClient({ params }: { params: Promise<{ subdomain: string }
     if (property && checkIn && checkOut) {
       searchAvailability()
     }
-  }, [property, checkIn, checkOut, guests])
+  }, [property, checkIn, checkOut, adults, children])
 
   const fetchProperty = async () => {
     try {
@@ -174,7 +203,7 @@ export function SearchClient({ params }: { params: Promise<{ subdomain: string }
     setError('')
     try {
       const res = await fetch(
-        `/api/bookings/availability?propertyId=${property.id}&checkInDate=${checkIn}&checkOutDate=${checkOut}&numGuests=${guests}`
+        `/api/bookings/availability?propertyId=${property.id}&checkInDate=${checkIn}&checkOutDate=${checkOut}&numGuests=${guests}&numAdults=${adults}&numChildren=${children}`
       )
       const data = await res.json()
       if (data.success) {
@@ -200,7 +229,7 @@ export function SearchClient({ params }: { params: Promise<{ subdomain: string }
       setError('Ngày trả phòng phải sau ngày nhận phòng')
       return
     }
-    router.push(siteHref(`/search?checkIn=${checkIn}&checkOut=${checkOut}&guests=${guests}`))
+    router.push(siteHref(`/search?checkIn=${checkIn}&checkOut=${checkOut}&adults=${adults}&children=${children}`))
   }
 
   const handleSelectRoom = async (roomType: RoomType) => {
@@ -243,8 +272,8 @@ export function SearchClient({ params }: { params: Promise<{ subdomain: string }
       rates: roomType.pricing,
       checkIn: new Date(checkIn),
       checkOut: new Date(checkOut),
-      numAdults: guests,
-      numChildren: 0,
+      numAdults: adults,
+      numChildren: children,
       baseOccupancy: roomType.baseOccupancy,
       services: services.map((service) => ({ service, quantity: 1 })),
     })
@@ -277,8 +306,8 @@ export function SearchClient({ params }: { params: Promise<{ subdomain: string }
           guestNote: guestInfo.note,
           checkInDate: checkIn,
           checkOutDate: checkOut,
-          numAdults: guests,
-          numChildren: 0,
+          numAdults: adults,
+          numChildren: children,
           services: selectedServices.map((serviceId) => ({ serviceId, quantity: 1 })),
           // Our hold: released by the booking instead of blocking it.
           ...(lockInfo?.lockId && { holdId: lockInfo.lockId }),
@@ -334,7 +363,7 @@ export function SearchClient({ params }: { params: Promise<{ subdomain: string }
       <main className="mx-auto w-full max-w-[1280px] px-4 sm:px-8 lg:px-12 py-8">
         {/* Search Form */}
         <div className="bg-panel rounded-box shadow-lg p-6 mb-8">
-          <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <form onSubmit={handleSearch} className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div>
               <label className="block text-sm font-medium text-fg mb-1">Nhận phòng</label>
               <input
@@ -357,30 +386,11 @@ export function SearchClient({ params }: { params: Promise<{ subdomain: string }
                 required
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-fg mb-1">Số khách</label>
-              <div className="flex items-center border border-line rounded-ctl overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => setGuests(Math.max(1, guests - 1))}
-                  className="px-4 py-2 hover:bg-fg/5 border-r"
-                >
-                  −
-                </button>
-                <span className="flex-1 text-center">
-                  <Users className="w-4 h-4 inline mr-1" />
-                  {guests}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setGuests(Math.min(20, guests + 1))}
-                  className="px-4 py-2 hover:bg-fg/5 border-l"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-            <div className="flex items-end">
+            <Stepper label="Người lớn" value={adults} min={1} max={20} onChange={setAdults} />
+            {property?.policy?.childrenAllowed !== false && (
+              <Stepper label="Trẻ em" value={children} min={0} max={10} onChange={setChildren} />
+            )}
+            <div className="col-span-2 md:col-span-1 flex items-end">
               <Button type="submit" className="w-full" size="lg">
                 <Search className="w-4 h-4 mr-2" />
                 Tìm kiếm
@@ -410,7 +420,7 @@ export function SearchClient({ params }: { params: Promise<{ subdomain: string }
                   {roomTypes.length} hạng phòng có sẵn
                 </h2>
                 <p className="text-muted">
-                  {formatDate(checkIn)} → {formatDate(checkOut)} • {calculateNights()} đêm • {guests} khách
+                  {formatDate(checkIn)} → {formatDate(checkOut)} • {calculateNights()} đêm • {adults} người lớn{children > 0 ? `, ${children} trẻ em` : ''}
                 </p>
               </div>
             </div>
@@ -496,6 +506,7 @@ export function SearchClient({ params }: { params: Promise<{ subdomain: string }
                             {pricing.weekdayNights > 0 && `${pricing.weekdayNights} đêm ngày thường`}
                             {pricing.weekendNights > 0 && `${pricing.weekdayNights > 0 ? ' + ' : ''}${pricing.weekendNights} đêm cuối tuần (${formatPrice(roomType.pricing.weekendPrice)}/đêm)`}
                             {pricing.extraAdults > 0 && ` · phụ thu ${pricing.extraAdults} người lớn`}
+                            {pricing.extraChildren > 0 && ` · phụ thu ${pricing.extraChildren} trẻ em`}
                           </p>
                           <div className="flex gap-2">
                             <Button
