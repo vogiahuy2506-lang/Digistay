@@ -5,10 +5,13 @@
  * a decrease is written with a minus sign. It names the original (mẫu số,
  * ký hiệu, số, ngày) like a replacement, and the original stays PUBLISHED.
  *
- * Mắt Bão's API documents TCHDon 2/3 but not the sign of the amounts. We
- * send them signed (TCHDon 5, "tăng và giảm", has no other way to tell a
- * line's direction); the fake Mắt Bão follows that. Issue one on DEMO
- * before using it in PRODUCTION.
+ * Mắt Bão's API document does not state the sign of the amounts; its
+ * Postman example of a decrease is all negative, and so is ours. Verified on
+ * Mắt Bão's DEMO on 21/10/2026: original 11368, decrease 11369 (−108,000,
+ * printed "Hóa đơn điều chỉnh giảm cho hóa đơn điện tử số 11368…"),
+ * increase 11370. The example puts the minus on the quantity, we put it on
+ * the unit price (an adjustment changes the amount, not the nights); DEMO
+ * takes both.
  *
  * Wrong buyer details: use a replacement (replacement.ts) — information
  * adjustments (TCHDon 4) are not supported.
