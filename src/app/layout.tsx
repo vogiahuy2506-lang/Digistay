@@ -35,8 +35,10 @@ export default async function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet" />
       </head>
       <body className="min-h-screen bg-background text-on-surface antialiased selection:bg-primary-fixed selection:text-on-primary-fixed-variant">
-        {/* Only the shared messages here; each area adds its own (e.g. the hotel site's layout). */}
-        <NextIntlClientProvider messages={{ common: messages.common }}>
+        {/* The client components' messages, for every area. One provider only: a second one
+            nested in the hotel site's layout made its pages fail to hydrate now and then
+            (React #418) in production builds. Add an area's namespace here when it needs one. */}
+        <NextIntlClientProvider messages={{ common: messages.common, site: messages.site }}>
           <Providers>{children}</Providers>
         </NextIntlClientProvider>
       </body>

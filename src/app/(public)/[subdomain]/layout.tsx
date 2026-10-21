@@ -1,8 +1,7 @@
 import { cache } from 'react'
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
-import { NextIntlClientProvider } from 'next-intl'
-import { getLocale, getMessages, getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { prisma } from '@/lib/db'
 import { SITE_BASE_HEADER, SITE_PATH_HEADER, siteBasePath, siteHref } from '@/lib/public-site/paths'
 import { hotelAccentVariables } from '@/lib/public-site/accent'
@@ -56,7 +55,6 @@ export default async function HotelSiteLayout({
   const settings = (await loadSiteFrame(subdomain))?.websiteSettings
   const preview = (await loadVisibleSite(subdomain))?.preview ?? false
   const locale = await getLocale()
-  const messages = await getMessages()
   const t = await getTranslations('site')
   // Links keep the language: /<hotel>/en/... (or /en/... on the hotel's own host).
   // From the middleware; the Host header is the fallback (src/lib/public-site/paths.ts).
@@ -88,11 +86,9 @@ export default async function HotelSiteLayout({
       style={style}
     >
       {preview && <p className="bg-ink px-4 py-2 text-center text-small text-on-ink">{t('preview')}</p>}
-      <NextIntlClientProvider messages={{ common: messages.common, site: messages.site }}>
-        <SiteBaseProvider locale={locale} bases={bases} switchHref={switchHref}>
-          {children}
-        </SiteBaseProvider>
-      </NextIntlClientProvider>
+      <SiteBaseProvider locale={locale} bases={bases} switchHref={switchHref}>
+        {children}
+      </SiteBaseProvider>
     </div>
   )
 }

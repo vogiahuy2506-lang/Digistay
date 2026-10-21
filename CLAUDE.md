@@ -324,8 +324,9 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
   Middleware cũng báo đường dẫn gốc qua `x-site-base` (Host không tin được: `next start` chạy
   middleware lần hai như request nội bộ). Link trong website khách sạn luôn qua `SiteLink` /
   `useSiteHref` để giữ `/en`; nút đổi ngôn ngữ là `LanguageSwitch`.
-- Client component chỉ nhận nhóm chữ của khu vực mình: layout gốc gửi `common`, layout website khách
-  sạn gửi `common` + `site`. Khu vực mới thì thêm nhóm riêng và gửi ở layout của nó.
+- Chữ cho client component gửi ở **một** `NextIntlClientProvider` duy nhất trong layout gốc
+  (`common` + `site`); khu vực mới thì thêm nhóm của nó vào đó. Không lồng provider thứ hai trong
+  layout con: bản build production khi đó thỉnh thoảng lỗi hydrate (React #418) ở website khách sạn.
 - Tiến độ: (1) khung + giao diện website khách sạn — xong; còn: form tìm/đặt phòng và trang thanh
   toán của website, ô tiếng Anh cho nội dung khách sạn nhập, email gửi khách theo ngôn ngữ, trang
   quản lý, trang đăng nhập / giới thiệu, thông báo lỗi từ API.
