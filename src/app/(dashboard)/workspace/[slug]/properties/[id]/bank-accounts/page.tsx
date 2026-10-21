@@ -288,10 +288,10 @@ export default function BankAccountsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(account)}>
+                    <Button aria-label={tc('actions.edit')} variant="outline" size="sm" onClick={() => handleEdit(account)}>
                       <Edit className="w-4 h-4" />
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleDelete(account.id)}>
+                    <Button aria-label={tc('actions.delete')} variant="outline" size="sm" onClick={() => handleDelete(account.id)}>
                       <Trash2 className="w-4 h-4 text-err" />
                     </Button>
                   </div>

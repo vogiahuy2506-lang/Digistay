@@ -470,7 +470,7 @@ export default function PropertyDetailPage() {
                               {t('overview.primaryImage')}
                             </div>
                           )}
-                          <button
+                          <button aria-label={tc('actions.delete')}
                             onClick={() => handleDeleteImage(img.id)}
                             className="absolute top-2 right-2 p-1 bg-err text-on-err rounded opacity-0 group-hover:opacity-100 transition-opacity"
                           >
@@ -625,10 +625,10 @@ export default function PropertyDetailPage() {
                         <Badge variant={room.isActive ? 'success' : 'gray'}>
                           {room.isActive ? tp('status.active') : tp('status.inactive')}
                         </Badge>
-                        <Button variant="ghost" size="sm" onClick={() => handleEditRoomType(room)}>
+                        <Button aria-label={tc('actions.edit')} variant="ghost" size="sm" onClick={() => handleEditRoomType(room)}>
                           <Pencil className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDeleteRoomType(room.id)}>
+                        <Button aria-label={tc('actions.delete')} variant="ghost" size="sm" onClick={() => handleDeleteRoomType(room.id)}>
                           <Trash2 className="w-4 h-4 text-err" />
                         </Button>
                       </div>

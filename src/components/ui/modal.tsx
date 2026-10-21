@@ -10,9 +10,11 @@ import { useDialogBehavior } from './dialog-behavior'
 interface ModalProps {
   isOpen: boolean
   onClose: () => void
-  /** Accessible name when the modal has no ModalHeader. */
+  /** The dialog's name, shown in a header with `description` and a close button. */
   title?: string
   description?: string
+  /** false: the dialog draws its own header; `title` still names it for screen readers. */
+  showHeader?: boolean
   children: React.ReactNode
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full'
 }
@@ -45,7 +47,7 @@ function useCloseLabel() {
 // ModalHeader registers its id so the dialog is named by its header text.
 const ModalLabelContext = React.createContext<string | undefined>(undefined)
 
-export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalProps) {
+export function Modal({ isOpen, onClose, title, description, showHeader = true, children, size = 'md' }: ModalProps) {
   const dialogRef = React.useRef<HTMLDivElement>(null)
   const labelId = React.useId()
   useDialogBehavior(dialogRef, isOpen, { onEscape: onClose, modal: true })
@@ -73,7 +75,17 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
           sizes[size]
         )}
       >
-        <ModalLabelContext.Provider value={labelId}>{children}</ModalLabelContext.Provider>
+        <ModalLabelContext.Provider value={labelId}>
+          {title && showHeader && (
+            <ModalHeader onClose={onClose}>
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold text-fg">{title}</h2>
+                {description && <p className="mt-0.5 text-small text-muted">{description}</p>}
+              </div>
+            </ModalHeader>
+          )}
+          {children}
+        </ModalLabelContext.Provider>
       </div>
     </div>
   )

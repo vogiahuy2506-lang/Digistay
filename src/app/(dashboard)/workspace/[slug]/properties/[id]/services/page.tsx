@@ -413,13 +413,13 @@ export default function ServicesPage() {
                       {formatPrice(service.price, service.priceType, service.perPerson)}
                     </span>
                     <div className="flex items-center gap-1">
-                      <button
+                      <button aria-label={tc('actions.edit')}
                         onClick={() => handleEditService(service)}
                         className="p-2 text-muted hover:text-muted hover:bg-fg/5 rounded-lg transition-colors"
                       >
                         <Edit className="w-4 h-4" />
                       </button>
-                      <button
+                      <button aria-label={tc('actions.delete')}
                         onClick={() => handleDeleteService(service.id)}
                         className="p-2 text-muted hover:text-err hover:bg-err-soft rounded-lg transition-colors"
                       >
@@ -447,7 +447,7 @@ export default function ServicesPage() {
                   {editingService ? t('modal.editSubtitle') : t('modal.newSubtitle')}
                 </p>
               </div>
-              <button
+              <button aria-label={tc('actions.close')}
                 onClick={() => { setShowServiceModal(false); resetServiceForm() }}
                 className="p-2 text-muted hover:text-muted hover:bg-fg/5 rounded-lg transition-colors"
               >

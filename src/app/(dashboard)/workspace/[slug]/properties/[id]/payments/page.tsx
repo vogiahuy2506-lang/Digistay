@@ -389,11 +389,11 @@ export default function PaymentsPage() {
                 className="w-44 text-sm shrink-0"
                 options={properties.map((p) => ({ value: p.id, label: p.name }))}
               />
-              <Button size="sm" variant="secondary" onClick={handleRefresh} className="gap-1.5 shrink-0">
+              <Button aria-label={tc('actions.refresh')} size="sm" variant="secondary" onClick={handleRefresh} className="gap-1.5 shrink-0">
                 <RefreshCw className="w-3.5 h-3.5" />
                 <span className="hidden lg:inline">{tc('actions.refresh')}</span>
               </Button>
-              <Button size="sm" onClick={handleOpenCreateModal} className="gap-1.5 shrink-0">
+              <Button aria-label={t('header.create')} size="sm" onClick={handleOpenCreateModal} className="gap-1.5 shrink-0">
                 <Plus className="w-3.5 h-3.5" />
                 <span className="hidden lg:inline">{t('header.create')}</span>
               </Button>
@@ -553,7 +553,7 @@ export default function PaymentsPage() {
                 <p className="text-xs text-muted">{t('stats.transactions', { count: pagination.total })}</p>
               </div>
             </div>
-            <Button size="sm" variant="ghost" className="gap-2 text-muted hover:text-fg">
+            <Button aria-label={tc('actions.export')} size="sm" variant="ghost" className="gap-2 text-muted hover:text-fg">
               <Download className="w-4 h-4" />
               <span className="hidden lg:inline">{tc('actions.export')}</span>
             </Button>
@@ -660,7 +660,7 @@ export default function PaymentsPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <Button size="sm" variant="ghost" onClick={() => handleViewPayment(payment)} className="gap-1.5 text-muted hover:text-acc">
+                          <Button aria-label={tc('actions.details')} size="sm" variant="ghost" onClick={() => handleViewPayment(payment)} className="gap-1.5 text-muted hover:text-acc">
                             <Eye className="w-4 h-4" />
                             <span className="hidden sm:inline">{tc('actions.details')}</span>
                           </Button>

@@ -5,7 +5,9 @@
     "undo": "Undo (Ctrl+Z)",
     "redo": "Redo (Ctrl+Y)",
     "template": "Template",
-    "preview": "Preview"
+    "preview": "Preview",
+    "desktop": "Desktop view",
+    "mobile": "Phone view"
   },
   "tabs": {
     "blocks": "Blocks",
@@ -20,24 +22,63 @@
     "unpublished": "Website unpublished"
   },
   "blockTypes": {
-    "HERO": { "name": "Hero banner", "description": "Top banner with an image & search" },
-    "ROOMS": { "name": "Room list", "description": "Shows your room types" },
-    "AMENITIES": { "name": "Amenities", "description": "Your property's amenities" },
-    "ABOUT": { "name": "About", "description": "About your property" },
-    "GALLERY": { "name": "Photo gallery", "description": "A collection of photos" },
-    "REVIEWS": { "name": "Reviews", "description": "Shows guest reviews" },
-    "MAP": { "name": "Map", "description": "Google Maps location" },
-    "CONTACT": { "name": "Contact", "description": "Contact details" },
-    "CTA": { "name": "Call to action", "description": "A call-to-action button" }
+    "HERO": {
+      "name": "Hero banner",
+      "description": "Top banner with an image & search"
+    },
+    "ROOMS": {
+      "name": "Room list",
+      "description": "Shows your room types"
+    },
+    "AMENITIES": {
+      "name": "Amenities",
+      "description": "Your property's amenities"
+    },
+    "ABOUT": {
+      "name": "About",
+      "description": "About your property"
+    },
+    "GALLERY": {
+      "name": "Photo gallery",
+      "description": "A collection of photos"
+    },
+    "REVIEWS": {
+      "name": "Reviews",
+      "description": "Shows guest reviews"
+    },
+    "MAP": {
+      "name": "Map",
+      "description": "Google Maps location"
+    },
+    "CONTACT": {
+      "name": "Contact",
+      "description": "Contact details"
+    },
+    "CTA": {
+      "name": "Call to action",
+      "description": "A call-to-action button"
+    }
   },
   "templates": {
     "choose": "Choose a template",
     "subtitle": "Get started fast with a ready-made template",
     "startBlank": "Or start blank and design it your way",
-    "classicHotel": { "name": "Classic hotel", "description": "Elegant and professional" },
-    "modernResort": { "name": "Modern resort", "description": "Minimal, upscale, made for getaways" },
-    "budgetFriendly": { "name": "Budget", "description": "Simple, easy to use, good value" },
-    "premiumBoutique": { "name": "Premium boutique", "description": "Unique, private, high-end" }
+    "classicHotel": {
+      "name": "Classic hotel",
+      "description": "Elegant and professional"
+    },
+    "modernResort": {
+      "name": "Modern resort",
+      "description": "Minimal, upscale, made for getaways"
+    },
+    "budgetFriendly": {
+      "name": "Budget",
+      "description": "Simple, easy to use, good value"
+    },
+    "premiumBoutique": {
+      "name": "Premium boutique",
+      "description": "Unique, private, high-end"
+    }
   },
   "sortable": {
     "configure": "Block settings",

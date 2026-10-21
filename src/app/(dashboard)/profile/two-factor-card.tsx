@@ -234,7 +234,7 @@ export function TwoFactorCard() {
                 <code className="px-3 py-2 bg-fg/5 rounded-lg text-sm tracking-wider break-all">
                   {setup.secret.match(/.{1,4}/g)?.join(' ')}
                 </code>
-                <Button
+                <Button aria-label={tc('actions.copy')}
                   variant="ghost"
                   size="sm"
                   onClick={() => navigator.clipboard.writeText(setup.secret).then(() => setNotice(t('setup.keyCopied')))}

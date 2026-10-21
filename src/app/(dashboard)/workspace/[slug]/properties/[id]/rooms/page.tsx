@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
-import { Card, CardContent, Button, Badge, Modal, ModalFooter, Input, Select, Textarea, Dropdown, DropdownItem, DropdownDivider } from '@/components/ui'
+import { Card, CardContent, Button, Badge, Modal, ModalBody, ModalFooter, Input, Select, Textarea, Dropdown, DropdownItem, DropdownDivider } from '@/components/ui'
 import {
   Plus, Bed, Edit, Image, BedDouble, Wrench, X, AlertCircle,
 } from 'lucide-react'
@@ -671,7 +671,7 @@ export default function RoomTypesPage() {
 
       {/* Create Modal */}
       <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title={t('header.add')}>
-        <div className="space-y-4">
+        <ModalBody className="space-y-4">
           <Input
             label={t('form.name')}
             value={formData.name}
@@ -760,7 +760,7 @@ export default function RoomTypesPage() {
               placeholder="650000"
             />
           </div>
-        </div>
+        </ModalBody>
         <ModalFooter>
           <Button variant="secondary" onClick={() => setIsCreateModalOpen(false)}>
             {tc('actions.cancel')}
@@ -773,7 +773,7 @@ export default function RoomTypesPage() {
 
       {/* Edit Modal */}
       <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title={t('edit.title')}>
-        <div className="space-y-4">
+        <ModalBody className="space-y-4">
           <Input
             label={t('form.name')}
             value={formData.name}
@@ -857,7 +857,7 @@ export default function RoomTypesPage() {
               onChange={(e) => setFormData({ ...formData, weekendPrice: e.target.value })}
             />
           </div>
-        </div>
+        </ModalBody>
         <ModalFooter>
           <Button variant="secondary" onClick={() => setIsEditModalOpen(false)}>
             {tc('actions.cancel')}
@@ -870,7 +870,7 @@ export default function RoomTypesPage() {
 
       {/* Maintenance Modal */}
       <Modal isOpen={isMaintenanceModalOpen} onClose={() => setIsMaintenanceModalOpen(false)} title={t('maintenance.add')}>
-        <div className="space-y-4">
+        <ModalBody className="space-y-4">
           <Select
             label={t('maintenance.form.roomType')}
             value={maintenanceForm.roomTypeId}
@@ -913,7 +913,7 @@ export default function RoomTypesPage() {
             <AlertCircle className="w-4 h-4 inline mr-2" />
             {t('maintenance.form.warning')}
           </div>
-        </div>
+        </ModalBody>
         <ModalFooter>
           <Button variant="secondary" onClick={() => setIsMaintenanceModalOpen(false)}>
             {tc('actions.cancel')}

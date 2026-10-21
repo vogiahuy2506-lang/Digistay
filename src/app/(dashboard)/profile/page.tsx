@@ -40,6 +40,7 @@ interface PasswordForm {
 export default function ProfilePage() {
   const t = useTranslations('dash.account.profile')
   const tc = useTranslations('dash.common')
+  const ta = useTranslations('auth.common')
   const locale = useLocale()
   const router = useRouter()
   const { data: session, update: updateSession } = useSession()
@@ -600,6 +601,8 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     onClick={() => setShowNewEmailPassword(!showNewEmailPassword)}
+                    aria-label={showNewEmailPassword ? ta('hidePassword') : ta('showPassword')}
+                    aria-pressed={showNewEmailPassword}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-muted"
                   >
                     {showNewEmailPassword ? '🙈' : '👁️'}
@@ -647,6 +650,8 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    aria-label={showCurrentPassword ? ta('hidePassword') : ta('showPassword')}
+                    aria-pressed={showCurrentPassword}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-muted"
                   >
                     {showCurrentPassword ? '🙈' : '👁️'}
@@ -669,6 +674,8 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     onClick={() => setShowNewPassword(!showNewPassword)}
+                    aria-label={showNewPassword ? ta('hidePassword') : ta('showPassword')}
+                    aria-pressed={showNewPassword}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-muted"
                   >
                     {showNewPassword ? '🙈' : '👁️'}

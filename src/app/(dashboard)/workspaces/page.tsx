@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
-import { Modal, ModalFooter, Input, Textarea } from '@/components/ui'
+import { Modal, ModalBody, ModalFooter, Input, Textarea } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
 import { routes } from '@/lib/utils/routes'
 import type { WorkspaceRole } from '@/components/layout/nav'
@@ -824,7 +824,7 @@ export default function WorkspacesPage() {
               <p className="text-xs text-muted">{t('list.create.subtitle')}</p>
             </div>
           </div>
-          <button
+          <button aria-label={tc('actions.close')}
             onClick={() => setIsCreateOpen(false)}
             className="w-8 h-8 rounded-lg text-muted hover:text-fg hover:bg-fg/5 flex items-center justify-center transition border border-transparent hover:border-line"
           >
@@ -1084,7 +1084,8 @@ export default function WorkspacesPage() {
 
       {/* Edit Modal */}
       <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title={t('list.edit.title')}>
-        <form onSubmit={handleEdit}>
+        <form className="flex flex-col min-h-0" onSubmit={handleEdit}>
+          <ModalBody>
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-err-soft border border-err/30 text-err text-sm">
               {error}
@@ -1104,6 +1105,7 @@ export default function WorkspacesPage() {
               rows={3}
             />
           </div>
+          </ModalBody>
           <ModalFooter>
             <button
               type="button"

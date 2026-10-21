@@ -5,7 +5,9 @@
     "undo": "Hoàn tác (Ctrl+Z)",
     "redo": "Làm lại (Ctrl+Y)",
     "template": "Template",
-    "preview": "Xem trước"
+    "preview": "Xem trước",
+    "desktop": "Xem trên máy tính",
+    "mobile": "Xem trên điện thoại"
   },
   "tabs": {
     "blocks": "Blocks",
@@ -20,24 +22,63 @@
     "unpublished": "Đã gỡ xuất bản website"
   },
   "blockTypes": {
-    "HERO": { "name": "Banner Hero", "description": "Banner đầu trang với hình ảnh & tìm kiếm" },
-    "ROOMS": { "name": "Danh sách phòng", "description": "Hiển thị các hạng phòng" },
-    "AMENITIES": { "name": "Tiện ích", "description": "Danh sách tiện ích cơ sở" },
-    "ABOUT": { "name": "Giới thiệu", "description": "Thông tin giới thiệu" },
-    "GALLERY": { "name": "Thư viện ảnh", "description": "Bộ sưu tập hình ảnh" },
-    "REVIEWS": { "name": "Đánh giá", "description": "Hiển thị đánh giá khách" },
-    "MAP": { "name": "Bản đồ", "description": "Vị trí Google Maps" },
-    "CONTACT": { "name": "Liên hệ", "description": "Thông tin liên hệ" },
-    "CTA": { "name": "Call to Action", "description": "Nút kêu gọi hành động" }
+    "HERO": {
+      "name": "Banner Hero",
+      "description": "Banner đầu trang với hình ảnh & tìm kiếm"
+    },
+    "ROOMS": {
+      "name": "Danh sách phòng",
+      "description": "Hiển thị các hạng phòng"
+    },
+    "AMENITIES": {
+      "name": "Tiện ích",
+      "description": "Danh sách tiện ích cơ sở"
+    },
+    "ABOUT": {
+      "name": "Giới thiệu",
+      "description": "Thông tin giới thiệu"
+    },
+    "GALLERY": {
+      "name": "Thư viện ảnh",
+      "description": "Bộ sưu tập hình ảnh"
+    },
+    "REVIEWS": {
+      "name": "Đánh giá",
+      "description": "Hiển thị đánh giá khách"
+    },
+    "MAP": {
+      "name": "Bản đồ",
+      "description": "Vị trí Google Maps"
+    },
+    "CONTACT": {
+      "name": "Liên hệ",
+      "description": "Thông tin liên hệ"
+    },
+    "CTA": {
+      "name": "Call to Action",
+      "description": "Nút kêu gọi hành động"
+    }
   },
   "templates": {
     "choose": "Chọn Template",
     "subtitle": "Bắt đầu nhanh với template có sẵn",
     "startBlank": "Hoặc bắt đầu trống và tự thiết kế theo ý bạn",
-    "classicHotel": { "name": "Khách sạn Cổ điển", "description": "Phong cách thanh lịch, chuyên nghiệp" },
-    "modernResort": { "name": "Resort Hiện đại", "description": "Tối giản, sang trọng, nghỉ dưỡng" },
-    "budgetFriendly": { "name": "Tiết kiệm", "description": "Đơn giản, dễ dùng, giá tốt" },
-    "premiumBoutique": { "name": "Boutique Cao cấp", "description": "Độc đáo, riêng tư, cao cấp" }
+    "classicHotel": {
+      "name": "Khách sạn Cổ điển",
+      "description": "Phong cách thanh lịch, chuyên nghiệp"
+    },
+    "modernResort": {
+      "name": "Resort Hiện đại",
+      "description": "Tối giản, sang trọng, nghỉ dưỡng"
+    },
+    "budgetFriendly": {
+      "name": "Tiết kiệm",
+      "description": "Đơn giản, dễ dùng, giá tốt"
+    },
+    "premiumBoutique": {
+      "name": "Boutique Cao cấp",
+      "description": "Độc đáo, riêng tư, cao cấp"
+    }
   },
   "sortable": {
     "configure": "Cấu hình khối",

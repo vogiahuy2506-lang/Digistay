@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { Button, Modal, PaymentStatusBadge } from '@/components/ui'
+import { Button, Modal, ModalBody, PaymentStatusBadge } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
 import {
   Calendar as CalendarIcon, ChevronLeft, ChevronRight,
@@ -774,7 +774,7 @@ export default function CalendarPage() {
 
           {/* Right side of Toolbar: CTA Buttons */}
           <div className="flex items-center gap-2">
-            <button 
+            <button aria-label={tc('actions.refresh')} 
               onClick={handleRefresh}
               className="px-3 py-1.5 rounded-lg border border-line bg-panel text-fg hover:bg-fg/[0.03] text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs"
               title={t('toolbar.refreshTitle')}
@@ -782,7 +782,7 @@ export default function CalendarPage() {
               <RefreshCw className="w-3 h-3" />
               <span className="hidden md:inline">{tc('actions.refresh')}</span>
             </button>
-            <button 
+            <button aria-label={t('toolbar.export')} 
               onClick={() => setShowExportModal(true)}
               className="px-3 py-1.5 rounded-lg border border-line bg-panel text-fg hover:bg-fg/[0.03] text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs"
               title={t('toolbar.exportTitle')}
@@ -1129,6 +1129,7 @@ export default function CalendarPage() {
         isOpen={showCreateBookingModal}
         onClose={() => setShowCreateBookingModal(false)}
         title={t('create.title')}
+        showHeader={false}
         size="full"
       >
             {/* Modal Header */}
@@ -1464,7 +1465,7 @@ export default function CalendarPage() {
         title={t('detail.title', { code: selectedBooking?.bookingCode || '' })}
       >
         {selectedBooking && (
-          <div className="space-y-4">
+          <ModalBody className="space-y-4">
             <div className="bg-fg/[0.03] rounded-lg p-4 space-y-2">
               <div className="flex justify-between">
                 <span className="text-sm text-muted">{t('detail.status')}</span>
@@ -1606,7 +1607,7 @@ export default function CalendarPage() {
                 </Button>
               )}
             </div>
-          </div>
+          </ModalBody>
         )}
       </Modal>
 
@@ -1616,7 +1617,7 @@ export default function CalendarPage() {
         onClose={() => setShowExportModal(false)}
         title={t('toolbar.exportTitle')}
       >
-        <div className="space-y-4">
+        <ModalBody className="space-y-4">
           <div className="bg-warn-soft border border-warn/30 rounded-lg p-4">
             <p className="text-sm text-warn">
               <strong>{t('export.monthReport', { month: currentDate.getMonth() + 1, year: String(currentDate.getFullYear()) })}</strong>
@@ -1722,7 +1723,7 @@ export default function CalendarPage() {
               {t('toolbar.export')}
             </Button>
           </div>
-        </div>
+        </ModalBody>
       </Modal>
 
       <style jsx global>{`

@@ -760,17 +760,17 @@ export default function InvoicesPage() {
                           </td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex items-center justify-end gap-1">
-                              <Button size="sm" variant="ghost" onClick={() => handleViewInvoice(invoice)}>
+                              <Button aria-label={tc('actions.details')} size="sm" variant="ghost" onClick={() => handleViewInvoice(invoice)}>
                                 <Eye className="w-4 h-4" />
                               </Button>
                               {(invoice.status === 'DRAFT' || invoice.status === 'PENDING') && (
                                 <>
                                   {!invoice.adjustsInvoice && (
-                                    <Button size="sm" variant="ghost" onClick={() => handleOpenEditModal(invoice)}>
+                                    <Button aria-label={tc('actions.edit')} size="sm" variant="ghost" onClick={() => handleOpenEditModal(invoice)}>
                                       <Edit className="w-4 h-4" />
                                     </Button>
                                   )}
-                                  <Button size="sm" variant="ghost" onClick={() => handleDeleteInvoice(invoice.id)}>
+                                  <Button aria-label={tc('actions.delete')} size="sm" variant="ghost" onClick={() => handleDeleteInvoice(invoice.id)}>
                                     <Trash2 className="w-4 h-4 text-err" />
                                   </Button>
                                 </>

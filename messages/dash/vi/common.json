@@ -117,7 +117,9 @@
     "print": "In",
     "details": "Chi tiết",
     "yes": "Có",
-    "no": "Không"
+    "no": "Không",
+    "more": "Thêm tùy chọn",
+    "copy": "Sao chép"
   },
   "states": {
     "loading": "Đang tải…",

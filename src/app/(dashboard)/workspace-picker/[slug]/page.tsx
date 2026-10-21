@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { Card, CardContent, Button, Modal, ModalFooter, Input, Textarea, Select } from '@/components/ui'
+import { Card, CardContent, Button, Modal, ModalBody, ModalFooter, Input, Textarea, Select } from '@/components/ui'
 import { useWorkspace } from '@/lib/hooks/use-workspace'
 import { routes } from '@/lib/utils/routes'
 import {
@@ -363,7 +363,7 @@ export default function WorkspaceHomePage() {
                       >
                         <Dropdown
                           trigger={
-                            <button
+                            <button aria-label={tc('actions.more')}
                               className="p-1.5 rounded-lg bg-white/90 hover:bg-white shadow-sm"
                               onClick={(e) => e.stopPropagation()}
                             >
@@ -483,7 +483,8 @@ export default function WorkspaceHomePage() {
         description={t('picker.create.description', { name: workspace.name })}
         size="lg"
       >
-        <form onSubmit={handleCreate}>
+        <form className="flex flex-col min-h-0" onSubmit={handleCreate}>
+          <ModalBody>
           {createError && (
             <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
               {createError}
@@ -581,6 +582,7 @@ export default function WorkspaceHomePage() {
               rows={3}
             />
           </div>
+          </ModalBody>
           <ModalFooter>
             <Button
               type="button"

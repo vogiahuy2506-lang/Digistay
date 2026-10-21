@@ -4,7 +4,7 @@ import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { Header, PageContainer } from '@/components/layout'
-import { Card, CardContent, Button, Badge, Modal, ModalFooter, Input, Select } from '@/components/ui'
+import { Card, CardContent, Button, Badge, Modal, ModalBody, ModalFooter, Input, Select } from '@/components/ui'
 import { Plus, Users, Mail, MoreVertical, Shield, User, Trash2, UserPlus } from 'lucide-react'
 import { Dropdown, DropdownItem, DropdownDivider } from '@/components/ui'
 import { Avatar } from '@/components/ui'
@@ -270,7 +270,7 @@ export default function MembersPage() {
                         {!member.isOwner && (
                           <Dropdown
                             trigger={
-                              <button className="p-1 rounded hover:bg-fg/5">
+                              <button aria-label={tc('actions.more')} className="p-1 rounded hover:bg-fg/5">
                                 <MoreVertical className="w-5 h-5 text-muted" />
                               </button>
                             }
@@ -364,7 +364,8 @@ export default function MembersPage() {
         title={t('members.invite')}
         description={t('members.modal.description')}
       >
-        <form onSubmit={handleInvite}>
+        <form className="flex flex-col min-h-0" onSubmit={handleInvite}>
+          <ModalBody>
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-err-soft border border-err/30 text-err text-sm">
               {error}
@@ -395,6 +396,7 @@ export default function MembersPage() {
             />
           </div>
 
+          </ModalBody>
           <ModalFooter>
             <Button
               type="button"

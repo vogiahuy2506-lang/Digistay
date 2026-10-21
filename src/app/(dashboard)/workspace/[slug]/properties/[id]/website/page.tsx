@@ -545,7 +545,7 @@ function BlockConfigPanel({
               <p className="text-xs text-muted">{text.description(block.type)}</p>
             </div>
           </div>
-          <button 
+          <button aria-label={tc('actions.close')} 
             onClick={onClose}
             className="p-2 rounded-lg hover:bg-fg/5 transition-colors"
           >
@@ -907,6 +907,7 @@ function TemplateModal({
   onClose: () => void
 }) {
   const t = useTranslations('dash.website.templates')
+  const tc = useTranslations('dash.common')
   const text = useBlockText()
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -922,7 +923,7 @@ function TemplateModal({
               <p className="text-xs text-muted">{t('subtitle')}</p>
             </div>
           </div>
-          <button 
+          <button aria-label={tc('actions.close')} 
             onClick={onClose}
             className="p-2 rounded-lg hover:bg-fg/5 transition-colors"
           >
@@ -1611,7 +1612,7 @@ export default function WebsiteBuilderPage() {
 
           {/* Preview Mode Toggle */}
           <div className="flex items-center gap-1 bg-fg/5 rounded-xl p-1">
-            <button
+            <button aria-label={t('header.desktop')}
               onClick={() => setPreviewMode('desktop')}
               className={`
                 p-2 rounded-lg transition-all duration-200
@@ -1623,7 +1624,7 @@ export default function WebsiteBuilderPage() {
             >
               <Monitor className="w-4 h-4" />
             </button>
-            <button
+            <button aria-label={t('header.mobile')}
               onClick={() => setPreviewMode('mobile')}
               className={`
                 p-2 rounded-lg transition-all duration-200

@@ -117,7 +117,9 @@
     "print": "Print",
     "details": "Details",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "more": "More options",
+    "copy": "Copy"
   },
   "states": {
     "loading": "Loading…",

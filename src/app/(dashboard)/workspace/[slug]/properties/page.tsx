@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
-import { Card, CardContent, Button, Badge, Modal, ModalFooter, Input, Select, Textarea } from '@/components/ui'
+import { Card, CardContent, Button, Badge, Modal, ModalBody, ModalFooter, Input, Select, Textarea } from '@/components/ui'
 import { Plus, Building2, MapPin, MoreVertical, Pencil, Trash2, Eye, EyeOff } from 'lucide-react'
 import { Dropdown, DropdownItem, DropdownDivider } from '@/components/ui'
 import Image from 'next/image'
@@ -269,7 +269,7 @@ export default function PropertiesPage() {
                     <h3 className="font-semibold text-fg truncate">{property.name}</h3>
                     <Dropdown
                       trigger={
-                        <button className="p-1 rounded hover:bg-fg/5">
+                        <button aria-label={tc('actions.more')} className="p-1 rounded hover:bg-fg/5">
                           <MoreVertical className="w-5 h-5 text-muted" />
                         </button>
                       }
@@ -336,7 +336,8 @@ export default function PropertiesPage() {
         description={t('list.create.description')}
         size="lg"
       >
-        <form onSubmit={handleCreateProperty}>
+        <form className="flex flex-col min-h-0" onSubmit={handleCreateProperty}>
+          <ModalBody>
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-err-soft border border-err/30 text-err text-sm">
               {error}
@@ -437,6 +438,7 @@ export default function PropertiesPage() {
             />
           </div>
 
+          </ModalBody>
           <ModalFooter>
             <Button
               type="button"
