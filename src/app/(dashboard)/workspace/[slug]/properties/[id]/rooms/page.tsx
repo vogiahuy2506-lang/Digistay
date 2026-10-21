@@ -4,21 +4,22 @@ import * as React from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, Button, Badge, Modal, ModalFooter, Input, Select, Textarea, Dropdown, DropdownItem, DropdownDivider } from '@/components/ui'
-import { 
-  Plus, Bed, Edit, Trash2, MoreVertical, Image, Users, Maximize2, 
-  DollarSign, BedDouble, Wifi, Utensils, 
-  Bath, Coffee, Wine, Sparkles, Waves, ChevronRight, Save, Wrench,
-  Calendar, X, AlertCircle
+import {
+  Plus, Bed, Edit, Image, BedDouble, Wrench, X, AlertCircle,
 } from 'lucide-react'
 import { format, addDays } from 'date-fns'
 import { useTranslations } from 'next-intl'
 import { useDashLabels } from '@/lib/i18n/dash'
+import { EnglishCopy } from '@/components/ui/english-copy'
+import { getIcon } from '@/lib/amenity-icons'
+import { amenityName } from '@/lib/i18n/amenities'
 
 interface RoomType {
   id: string
   name: string
   slug: string
   description: string | null
+  translations?: { en?: { name?: string; description?: string } } | null
   area: number | null
   bedType: string
   maxAdults: number
@@ -29,7 +30,7 @@ interface RoomType {
   maxOccupancy: number
   isActive: boolean
   images: { id: string; url: string; isPrimary: boolean }[]
-  amenities: { amenity: { id: string; name: string; icon: string | null } }[]
+  amenities: { amenity: { id: string; name: string; slug: string; icon: string | null } }[]
   pricing: { weekdayPrice: number; weekendPrice: number }[]
 }
 
@@ -56,16 +57,6 @@ interface Property {
 // Labels: messages dash.rooms.rooms.bedType.*
 const BED_TYPES = ['SINGLE', 'DOUBLE', 'TWIN', 'TRIPLE', 'QUADRUPLE'] as const
 type BedType = (typeof BED_TYPES)[number]
-
-const amenityIcons: Record<string, React.ReactNode> = {
-  'pool': <Waves className="w-3 h-3 text-ok" />,
-  'wifi': <Wifi className="w-3 h-3 text-muted" />,
-  'restaurant': <Utensils className="w-3 h-3 text-acc" />,
-  'breakfast': <Coffee className="w-3 h-3 text-acc" />,
-  'spa': <Sparkles className="w-3 h-3 text-ok" />,
-  'bathtub': <Bath className="w-3 h-3 text-acc" />,
-  'minibar': <Wine className="w-3 h-3 text-acc" />,
-}
 
 export default function RoomTypesPage() {
   const t = useTranslations('dash.rooms.rooms')
@@ -102,6 +93,7 @@ export default function RoomTypesPage() {
   const [formData, setFormData] = React.useState({
     name: '',
     description: '',
+    en: { name: '', description: '' },
     area: '',
     bedType: 'DOUBLE',
     maxAdults: '2',
@@ -243,23 +235,30 @@ export default function RoomTypesPage() {
     }
   }
 
+  // The API takes numbers (the room type update's schema refuses the form's strings).
+  const requestBody = () => {
+    const { en, ...fields } = formData
+    return {
+      ...fields,
+      area: fields.area ? parseFloat(fields.area) : null,
+      maxAdults: parseInt(fields.maxAdults),
+      maxChildren: parseInt(fields.maxChildren),
+      totalRooms: parseInt(fields.totalRooms),
+      baseOccupancy: parseInt(fields.baseOccupancy),
+      maxOccupancy: parseInt(fields.maxOccupancy),
+      weekdayPrice: fields.weekdayPrice ? parseFloat(fields.weekdayPrice) : 0,
+      weekendPrice: fields.weekendPrice ? parseFloat(fields.weekendPrice) : 0,
+      translations: { en },
+    }
+  }
+
   const handleCreate = async () => {
     setIsSaving(true)
     try {
       const res = await fetch('/api/room-types', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          propertyId: selectedProperty,
-          ...formData,
-          maxAdults: parseInt(formData.maxAdults),
-          maxChildren: parseInt(formData.maxChildren),
-          totalRooms: parseInt(formData.totalRooms),
-          baseOccupancy: parseInt(formData.baseOccupancy),
-          maxOccupancy: parseInt(formData.maxOccupancy),
-          weekdayPrice: formData.weekdayPrice ? parseFloat(formData.weekdayPrice) : 0,
-          weekendPrice: formData.weekendPrice ? parseFloat(formData.weekendPrice) : 0,
-        }),
+        body: JSON.stringify({ propertyId: selectedProperty, ...requestBody() }),
       })
       const data = await res.json()
       if (data.success) {
@@ -284,7 +283,7 @@ export default function RoomTypesPage() {
       const res = await fetch(`/api/room-types/${selectedRoomType.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(requestBody()),
       })
       const data = await res.json()
       if (data.success) {
@@ -324,6 +323,7 @@ export default function RoomTypesPage() {
     setFormData({
       name: roomType.name,
       description: roomType.description || '',
+      en: { name: roomType.translations?.en?.name ?? '', description: roomType.translations?.en?.description ?? '' },
       area: roomType.area?.toString() || '',
       bedType: roomType.bedType,
       maxAdults: roomType.maxAdults.toString(),
@@ -341,6 +341,7 @@ export default function RoomTypesPage() {
     setFormData({
       name: '',
       description: '',
+      en: { name: '', description: '' },
       area: '',
       bedType: 'DOUBLE',
       maxAdults: '2',
@@ -351,14 +352,6 @@ export default function RoomTypesPage() {
       weekdayPrice: '',
       weekendPrice: '',
     })
-  }
-
-  const getAmenityIcon = (name: string) => {
-    const lowerName = name.toLowerCase()
-    for (const [key, icon] of Object.entries(amenityIcons)) {
-      if (lowerName.includes(key)) return icon
-    }
-    return <span className="w-3 h-3" />
   }
 
   return (
@@ -642,15 +635,18 @@ export default function RoomTypesPage() {
                     <div className="space-y-1.5">
                       <p className="text-[10px] text-muted uppercase font-semibold tracking-wide">{t('card.amenities')}</p>
                       <div className="flex flex-wrap gap-1.5">
-                        {roomType.amenities.slice(0, 4).map((a) => (
-                          <span 
-                            key={a.amenity.id} 
-                            className="flex items-center gap-1 px-2 py-1 rounded-full bg-fg/5 text-fg text-xs"
-                          >
-                            {getAmenityIcon(a.amenity.name)}
-                            <span>{a.amenity.name}</span>
-                          </span>
-                        ))}
+                        {roomType.amenities.slice(0, 4).map((a) => {
+                          const Icon = getIcon(a.amenity.icon)
+                          return (
+                            <span
+                              key={a.amenity.id}
+                              className="flex items-center gap-1 px-2 py-1 rounded-full bg-fg/5 text-fg text-xs"
+                            >
+                              <Icon className="w-3 h-3 text-muted" aria-hidden="true" />
+                              <span>{amenityName(a.amenity.slug, a.amenity.name, labels.locale)}</span>
+                            </span>
+                          )
+                        })}
                         {roomType.amenities.length > 4 && (
                           <span className="px-2 py-1 rounded-full bg-fg/5 text-muted text-xs">
                             +{roomType.amenities.length - 4}
@@ -690,6 +686,21 @@ export default function RoomTypesPage() {
             placeholder={t('form.descriptionPlaceholder')}
             rows={3}
           />
+          <EnglishCopy filled={Boolean(formData.en.name || formData.en.description)}>
+            <Input
+              label={t('form.name')}
+              value={formData.en.name}
+              onChange={(e) => setFormData({ ...formData, en: { ...formData.en, name: e.target.value } })}
+              placeholder={formData.name}
+            />
+            <Textarea
+              label={t('form.description')}
+              value={formData.en.description}
+              onChange={(e) => setFormData({ ...formData, en: { ...formData.en, description: e.target.value } })}
+              placeholder={formData.description}
+              rows={3}
+            />
+          </EnglishCopy>
           <div className="grid grid-cols-2 gap-4">
             <Select
               label={t('form.bedType')}
@@ -775,6 +786,21 @@ export default function RoomTypesPage() {
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             rows={3}
           />
+          <EnglishCopy filled={Boolean(formData.en.name || formData.en.description)}>
+            <Input
+              label={t('form.name')}
+              value={formData.en.name}
+              onChange={(e) => setFormData({ ...formData, en: { ...formData.en, name: e.target.value } })}
+              placeholder={formData.name}
+            />
+            <Textarea
+              label={t('form.description')}
+              value={formData.en.description}
+              onChange={(e) => setFormData({ ...formData, en: { ...formData.en, description: e.target.value } })}
+              placeholder={formData.description}
+              rows={3}
+            />
+          </EnglishCopy>
           <div className="grid grid-cols-2 gap-4">
             <Select
               label={t('form.bedType')}

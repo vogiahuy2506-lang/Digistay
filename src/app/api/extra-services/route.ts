@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { invalidatePublicSite } from '@/lib/public-site/site'
+import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
 
 const serviceSchema = z.object({
   propertyId: z.string(),
@@ -13,6 +14,7 @@ const serviceSchema = z.object({
   price: z.number().nonnegative(),
   perPerson: z.boolean().default(false),
   isActive: z.boolean().default(true),
+  translations: translationsInput(['name', 'description']),
 })
 
 async function userOwnsProperty(propertyId: string, userId: string) {
@@ -81,7 +83,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Không có quyền thêm dịch vụ' }, { status: 403 })
     }
 
-    const service = await prisma.extraService.create({ data: validation.data })
+    const { translations, ...fields } = validation.data
+    const service = await prisma.extraService.create({
+      data: { ...fields, translations: mergeTranslations(null, translations) },
+    })
     invalidatePublicSite(service.propertyId)
     return NextResponse.json({ success: true, data: service, message: 'Đã thêm dịch vụ' })
   } catch (error) {

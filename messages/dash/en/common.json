@@ -125,5 +125,10 @@
     "error": "Something went wrong, please try again",
     "saved": "Saved",
     "noPermission": "You don't have access to this page"
+  },
+  "english": {
+    "title": "English version",
+    "optional": "optional",
+    "hint": "Guests reading the site in English see these texts. A field left empty shows the Vietnamese text."
   }
 }

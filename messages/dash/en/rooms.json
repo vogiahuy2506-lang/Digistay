@@ -155,6 +155,8 @@
       "newSubtitle": "Create a new service",
       "name": "Service name",
       "namePlaceholder": "e.g. Laundry",
+      "description": "Description",
+      "descriptionPlaceholder": "e.g. Same-day wash and iron, delivered to the room",
       "category": "Category",
       "priceType": "Pricing",
       "price": "Price (₫)",

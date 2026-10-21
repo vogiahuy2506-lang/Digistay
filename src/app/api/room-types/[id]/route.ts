@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db'
 import { z } from 'zod'
 import { BedType } from '@prisma/client'
 import { invalidatePublicSite } from '@/lib/public-site/site'
+import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
 
 const updateRoomTypeSchema = z.object({
   name: z.string().min(1).optional(),
@@ -21,6 +22,7 @@ const updateRoomTypeSchema = z.object({
   weekdayPrice: z.number().optional(),
   weekendPrice: z.number().optional(),
   amenityIds: z.array(z.string()).optional(),
+  translations: translationsInput(['name', 'description']),
 })
 
 interface RouteParams {
@@ -152,6 +154,7 @@ export async function PUT(request: NextRequest, props: RouteParams) {
       data: {
         ...(data.name && { name: data.name }),
         ...(data.description !== undefined && { description: data.description }),
+        ...(data.translations && { translations: mergeTranslations(roomType.translations, data.translations) }),
         ...(data.area !== undefined && { area: data.area }),
         ...(bedTypeValue && { bedType: bedTypeValue }),
         ...(data.maxAdults !== undefined && { maxAdults: data.maxAdults }),

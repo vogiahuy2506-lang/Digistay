@@ -3,7 +3,8 @@
 import * as React from 'react'
 import { useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
-import { Card, CardContent, CardHeader, CardTitle, Button, Input } from '@/components/ui'
+import { Card, CardContent, CardHeader, CardTitle, Button, Input, Textarea } from '@/components/ui'
+import { EnglishCopy } from '@/components/ui/english-copy'
 import { toast } from '@/components/ui/toast'
 import { useTranslations } from 'next-intl'
 import { Save, ShieldCheck, Clock, Baby, Dog, Cigarette, FileText } from 'lucide-react'
@@ -21,6 +22,7 @@ interface Policy {
   petsAllowed: boolean
   smokingAllowed: boolean
   additionalRules: string | null
+  translations?: { en?: { cancellationPolicy?: string; additionalRules?: string } } | null
   onlineDepositPercent: number
   depositDeadlineMinutes: number
   /** null: the default tiers; []: no late fee */
@@ -47,6 +49,7 @@ export default function PoliciesPage() {
   const propertyId = params.id
 
   const [policy, setPolicy] = React.useState<Policy | null>(null)
+  const [en, setEn] = React.useState({ cancellationPolicy: '', additionalRules: '' })
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [error, setError] = React.useState('')
@@ -68,6 +71,8 @@ export default function PoliciesPage() {
       const data = await res.json()
       if (data.success) {
         setPolicy(data.data)
+        const stored = (data.data as Policy).translations?.en
+        setEn({ cancellationPolicy: stored?.cancellationPolicy ?? '', additionalRules: stored?.additionalRules ?? '' })
       } else {
         toast.error(data.error || t('loadFailed'))
         setError(data.error || t('loadFailed'))
@@ -100,6 +105,7 @@ export default function PoliciesPage() {
           onlineDepositPercent: policy.onlineDepositPercent,
           depositDeadlineMinutes: policy.depositDeadlineMinutes,
           lateCheckoutTiers: policy.lateCheckoutTiers,
+          translations: { en },
         }),
       })
       const data = await res.json()
@@ -308,6 +314,15 @@ export default function PoliciesPage() {
                   {t('cancellation.detailsHint')}
                 </p>
               </div>
+              <EnglishCopy filled={Boolean(en.cancellationPolicy)}>
+                <Textarea
+                  label={t('cancellation.details')}
+                  value={en.cancellationPolicy}
+                  onChange={(e) => setEn({ ...en, cancellationPolicy: e.target.value })}
+                  placeholder={policy.cancellationPolicy ?? ''}
+                  rows={4}
+                />
+              </EnglishCopy>
               <div>
                 <label htmlFor="online-deposit" className="block text-sm font-medium text-fg mb-1">
                   {t('deposit.label')}
@@ -451,6 +466,17 @@ export default function PoliciesPage() {
                 rows={5}
                 className="w-full px-3 py-2 border rounded-lg focus-visible:ring-2 focus-visible:ring-2 focus-visible:ring-acc focus-visible:border-acc focus-visible:border-acc"
               />
+              <div className="mt-4">
+                <EnglishCopy filled={Boolean(en.additionalRules)}>
+                  <Textarea
+                    label={t('additional.title')}
+                    value={en.additionalRules}
+                    onChange={(e) => setEn({ ...en, additionalRules: e.target.value })}
+                    placeholder={policy.additionalRules ?? ''}
+                    rows={5}
+                  />
+                </EnglishCopy>
+              </div>
             </CardContent>
           </Card>
         </div>

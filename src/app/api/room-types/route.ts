@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { invalidatePublicSite } from '@/lib/public-site/site'
+import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
 
 // GET /api/room-types - Get all room types for a property
 export async function GET(request: NextRequest) {
@@ -57,6 +58,8 @@ export async function GET(request: NextRequest) {
   }
 }
 
+const roomTypeTranslations = translationsInput(['name', 'description'])
+
 // POST /api/room-types - Create a new room type
 export async function POST(request: NextRequest) {
   try {
@@ -85,6 +88,10 @@ export async function POST(request: NextRequest) {
     // Validate required fields
     if (!propertyId || !name || !bedType) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 })
+    }
+    const translations = roomTypeTranslations.safeParse(body.translations)
+    if (!translations.success) {
+      return NextResponse.json({ success: false, error: 'Bản tiếng Anh không hợp lệ' }, { status: 400 })
     }
 
     // Verify user has access to this property
@@ -136,6 +143,7 @@ export async function POST(request: NextRequest) {
         name,
         slug,
         description,
+        translations: mergeTranslations(null, translations.data),
         area: area ? parseFloat(area) : null,
         bedType,
         maxAdults: maxAdults || 2,

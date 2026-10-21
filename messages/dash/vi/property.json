@@ -72,6 +72,11 @@
     "viewWebsite": "Xem website",
     "websiteBuilder": "Website Builder",
     "edit": "Chỉnh sửa",
+    "editModal": {
+      "title": "Chỉnh sửa cơ sở",
+      "saved": "Đã lưu thông tin cơ sở",
+      "failed": "Không thể lưu thông tin cơ sở"
+    },
     "tabs": {
       "overview": "Tổng quan",
       "rooms": "Hạng phòng",
@@ -176,21 +181,7 @@
     },
     "amenities": {
       "title": "Tiện ích",
-      "subtitle": "Chọn các tiện ích có sẵn tại cơ sở của bạn",
-      "items": {
-        "wifi": "Wifi miễn phí",
-        "parking": "Bãi đỗ xe",
-        "breakfast": "Ăn sáng",
-        "ac": "Điều hòa",
-        "pool": "Hồ bơi",
-        "gym": "Phòng gym",
-        "spa": "Spa",
-        "restaurant": "Nhà hàng",
-        "bar": "Quầy bar",
-        "room_service": "Dịch vụ phòng",
-        "laundry": "Giặt ủi",
-        "airport": "Đưa đón sân bay"
-      }
+      "subtitle": "Chọn các tiện ích có sẵn tại cơ sở của bạn"
     },
     "policy": {
       "title": "Chính sách",
@@ -220,7 +211,8 @@
       "publish": "Xuất bản",
       "publishHint": "Đăng tải website của bạn",
       "public": "Website công khai",
-      "published": "Đã xuất bản"
+      "published": "Đã xuất bản",
+      "unpublished": "Chưa xuất bản"
     }
   }
 }

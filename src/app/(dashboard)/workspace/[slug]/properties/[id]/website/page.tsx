@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { useDashLabels } from '@/lib/i18n/dash'
 import { PageContainer } from '@/components/layout'
 import { toast } from '@/components/ui/toast'
+import { EnglishCopy } from '@/components/ui/english-copy'
 import { useProperty } from '@/lib/hooks/use-property'
 import { Card, CardContent, CardHeader, CardTitle, Button, Input, Badge, Tabs, TabsList, TabsTrigger, TabsContent, Alert, AlertDescription } from '@/components/ui'
 import {
@@ -47,6 +48,7 @@ interface WebsiteSettings {
   layout: string
   metaTitle?: string
   metaDescription?: string
+  translations?: { en?: { metaTitle?: string; metaDescription?: string } } | null
   isPublished: boolean
   customDomain?: string
   sslEnabled: boolean
@@ -110,6 +112,25 @@ interface BlockConfig {
   ctaButtonText?: string
   ctaButtonLink?: string
   ctaBackground?: string
+
+  /** The same texts in English, for the site's /en pages (blockText in src/lib/i18n/content.ts). */
+  en?: Partial<Record<BlockTextKey, string>>
+}
+
+type BlockTextKey =
+  | 'heroTitle' | 'heroSubtitle' | 'heroCtaText' | 'roomsTitle' | 'amenitiesTitle' | 'aboutTitle' | 'aboutContent'
+  | 'galleryTitle' | 'reviewsTitle' | 'contactTitle' | 'ctaTitle' | 'ctaSubtitle' | 'ctaButtonText'
+
+/** Each block type's texts that have an English version, with their field label (dash.website.config.fields). */
+const BLOCK_TEXTS: Record<string, { key: BlockTextKey; label: 'heroTitle' | 'subtitle' | 'ctaButton' | 'title' | 'content' | 'description' | 'buttonText'; long?: boolean }[]> = {
+  HERO: [{ key: 'heroTitle', label: 'heroTitle' }, { key: 'heroSubtitle', label: 'subtitle' }, { key: 'heroCtaText', label: 'ctaButton' }],
+  ROOMS: [{ key: 'roomsTitle', label: 'title' }],
+  AMENITIES: [{ key: 'amenitiesTitle', label: 'title' }],
+  ABOUT: [{ key: 'aboutTitle', label: 'title' }, { key: 'aboutContent', label: 'content', long: true }],
+  GALLERY: [{ key: 'galleryTitle', label: 'title' }],
+  REVIEWS: [{ key: 'reviewsTitle', label: 'title' }],
+  CONTACT: [{ key: 'contactTitle', label: 'title' }],
+  CTA: [{ key: 'ctaTitle', label: 'title' }, { key: 'ctaSubtitle', label: 'description' }, { key: 'ctaButtonText', label: 'buttonText' }],
 }
 
 interface Block {
@@ -507,6 +528,8 @@ function BlockConfigPanel({
     setConfig(newConfig)
     onUpdate(newConfig)
   }
+  const englishTexts = BLOCK_TEXTS[block.type] ?? []
+  const updateEnglish = (key: BlockTextKey, value: string) => updateConfig('en', { ...config.en, [key]: value })
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -836,6 +859,33 @@ function BlockConfigPanel({
                 </div>
               </div>
             </>
+          )}
+
+          {englishTexts.length > 0 && (
+            <EnglishCopy filled={englishTexts.some(({ key }) => config.en?.[key])}>
+              {englishTexts.map(({ key, label, long }) => (
+                <div key={key}>
+                  <label htmlFor={`en-${key}`} className="text-sm font-medium text-fg block mb-1">{t(`fields.${label}`)}</label>
+                  {long ? (
+                    <textarea
+                      id={`en-${key}`}
+                      value={config.en?.[key] ?? ''}
+                      onChange={(e) => updateEnglish(key, e.target.value)}
+                      placeholder={config[key] ?? ''}
+                      rows={4}
+                      className="w-full px-3 py-2 border border-line rounded-ctl bg-raised text-fg text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acc"
+                    />
+                  ) : (
+                    <Input
+                      id={`en-${key}`}
+                      value={config.en?.[key] ?? ''}
+                      onChange={(e) => updateEnglish(key, e.target.value)}
+                      placeholder={config[key] ?? ''}
+                    />
+                  )}
+                </div>
+              ))}
+            </EnglishCopy>
           )}
         </div>
 
@@ -1862,6 +1912,27 @@ export default function WebsiteBuilderPage() {
                       rows={3}
                     />
                   </div>
+                  {settings && (
+                    <EnglishCopy filled={Boolean(settings.translations?.en?.metaTitle || settings.translations?.en?.metaDescription)}>
+                      <Input
+                        label={t('settings.metaTitle')}
+                        value={settings.translations?.en?.metaTitle ?? ''}
+                        onChange={(e) => setSettings({ ...settings, translations: { en: { ...settings.translations?.en, metaTitle: e.target.value } } })}
+                        placeholder={settings.metaTitle ?? ''}
+                      />
+                      <div>
+                        <label htmlFor="seo-en-description" className="text-sm font-medium text-fg">{t('settings.metaDescription')}</label>
+                        <textarea
+                          id="seo-en-description"
+                          value={settings.translations?.en?.metaDescription ?? ''}
+                          onChange={(e) => setSettings({ ...settings, translations: { en: { ...settings.translations?.en, metaDescription: e.target.value } } })}
+                          placeholder={settings.metaDescription ?? ''}
+                          className="w-full mt-1 px-3 py-2 border border-line rounded-ctl bg-raised text-fg text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acc"
+                          rows={3}
+                        />
+                      </div>
+                    </EnglishCopy>
+                  )}
                 </CardContent>
               </Card>
 

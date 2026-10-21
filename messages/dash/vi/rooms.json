@@ -155,6 +155,8 @@
       "newSubtitle": "Tạo dịch vụ mới",
       "name": "Tên dịch vụ",
       "namePlaceholder": "VD: Giặt ủi quần áo",
+      "description": "Mô tả",
+      "descriptionPlaceholder": "VD: Giặt và là trong ngày, trả tại phòng",
       "category": "Danh mục",
       "priceType": "Loại giá",
       "price": "Giá (₫)",

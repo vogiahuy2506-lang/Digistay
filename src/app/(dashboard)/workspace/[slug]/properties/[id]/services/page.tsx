@@ -3,14 +3,15 @@
 import * as React from 'react'
 import { useParams } from 'next/navigation'
 import { PageContainer } from '@/components/layout'
-import { Button, Badge, Input } from '@/components/ui'
+import { Button, Badge, Input, Textarea } from '@/components/ui'
+import { EnglishCopy } from '@/components/ui/english-copy'
+import { getIcon } from '@/lib/amenity-icons'
+import { amenityName } from '@/lib/i18n/amenities'
 import { toast } from '@/components/ui/toast'
 import { useTranslations } from 'next-intl'
 import { useDashLabels } from '@/lib/i18n/dash'
 import {
-  Star, Plus, Trash2, Edit, Wifi, Car, Utensils, Waves, Dumbbell,
-  Coffee, Sun, Shield, Dog, Save, Check, ConciergeBell,
-  Shirt, Bike, Music, X, Search
+  Plus, Trash2, Edit, Save, ConciergeBell, X, Search,
 } from 'lucide-react'
 
 interface Amenity {
@@ -27,16 +28,12 @@ interface ExtraService {
   propertyId: string
   name: string
   description: string | null
+  translations?: { en?: { name?: string; description?: string } } | null
   category: string | null
   priceType: 'FIXED' | 'PER_NIGHT' | 'PER_PERSON'
   price: number
   perPerson: boolean
   isActive: boolean
-}
-
-const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  Wifi, Car, Utensils, Waves, Dumbbell, Coffee, Sun, Shield, Star, Dog,
-  Shirt, Bike, Music, ConciergeBell
 }
 
 // Labels: messages dash.rooms.services.serviceCategory.* and .amenityCategory.*
@@ -63,6 +60,8 @@ export default function ServicesPage() {
 
   const [serviceForm, setServiceForm] = React.useState({
     name: '',
+    description: '',
+    en: { name: '', description: '' },
     category: 'other',
     priceType: 'FIXED' as 'FIXED' | 'PER_NIGHT' | 'PER_PERSON',
     price: 0,
@@ -170,7 +169,7 @@ export default function ServicesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           propertyId,
-          ...serviceForm,
+          ...(({ en, ...fields }) => ({ ...fields, translations: { en } }))(serviceForm),
         }),
       })
       const data = await res.json()
@@ -194,6 +193,8 @@ export default function ServicesPage() {
     setEditingService(null)
     setServiceForm({
       name: '',
+      description: '',
+      en: { name: '', description: '' },
       category: 'other',
       priceType: 'FIXED',
       price: 0,
@@ -205,6 +206,8 @@ export default function ServicesPage() {
     setEditingService(service)
     setServiceForm({
       name: service.name,
+      description: service.description ?? '',
+      en: { name: service.translations?.en?.name ?? '', description: service.translations?.en?.description ?? '' },
       category: service.category ?? 'other',
       priceType: service.priceType,
       price: service.price,
@@ -227,7 +230,7 @@ export default function ServicesPage() {
 
   const groupedAmenities = React.useMemo(() => {
     const filtered = amenities.filter(a =>
-      searchQuery ? a.name.toLowerCase().includes(searchQuery.toLowerCase()) : true
+      searchQuery ? amenityName(a.slug, a.name, labels.locale).toLowerCase().includes(searchQuery.toLowerCase()) : true
     )
     const groups: Record<string, Amenity[]> = {}
     filtered.forEach(a => {
@@ -235,7 +238,7 @@ export default function ServicesPage() {
       groups[a.category].push(a)
     })
     return groups
-  }, [amenities, searchQuery])
+  }, [amenities, searchQuery, labels.locale])
 
   const selectedCount = amenities.filter(a => a.isSelected).length
 
@@ -314,7 +317,7 @@ export default function ServicesPage() {
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                     {items.map((amenity) => {
-                      const IconComponent = iconMap[amenity.icon ?? ''] || Star
+                      const IconComponent = getIcon(amenity.icon)
                       return (
                         <button
                           key={amenity.id}
@@ -330,7 +333,7 @@ export default function ServicesPage() {
                         >
                           <IconComponent className={`w-5 h-5 ${amenity.isSelected ? 'text-info' : 'text-muted'}`} />
                           <span className={`text-sm font-medium ${amenity.isSelected ? 'text-info' : 'text-fg'}`}>
-                            {amenity.name}
+                            {amenityName(amenity.slug, amenity.name, labels.locale)}
                           </span>
                         </button>
                       )
@@ -434,7 +437,7 @@ export default function ServicesPage() {
       {/* Service Modal */}
       {showServiceModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-panel rounded-xl shadow-xl w-full max-w-md">
+          <div className="bg-panel rounded-xl shadow-xl w-full max-w-md max-h-full flex flex-col">
             <div className="flex items-center justify-between p-5 border-b border-line">
               <div>
                 <h2 className="text-lg font-semibold text-fg">
@@ -452,7 +455,7 @@ export default function ServicesPage() {
               </button>
             </div>
 
-            <div className="p-5 space-y-4">
+            <div className="p-5 space-y-4 overflow-y-auto min-h-0">
               <div>
                 <label className="block text-sm font-medium text-fg mb-1.5">
                   {t('modal.name')}
@@ -463,6 +466,30 @@ export default function ServicesPage() {
                   placeholder={t('modal.namePlaceholder')}
                 />
               </div>
+
+              <Textarea
+                label={t('modal.description')}
+                value={serviceForm.description}
+                onChange={(e) => setServiceForm({ ...serviceForm, description: e.target.value })}
+                placeholder={t('modal.descriptionPlaceholder')}
+                rows={2}
+              />
+
+              <EnglishCopy filled={Boolean(serviceForm.en.name || serviceForm.en.description)}>
+                <Input
+                  label={t('modal.name')}
+                  value={serviceForm.en.name}
+                  onChange={(e) => setServiceForm({ ...serviceForm, en: { ...serviceForm.en, name: e.target.value } })}
+                  placeholder={serviceForm.name}
+                />
+                <Textarea
+                  label={t('modal.description')}
+                  value={serviceForm.en.description}
+                  onChange={(e) => setServiceForm({ ...serviceForm, en: { ...serviceForm.en, description: e.target.value } })}
+                  placeholder={serviceForm.description}
+                  rows={2}
+                />
+              </EnglishCopy>
 
               <div>
                 <label className="block text-sm font-medium text-fg mb-1.5">{t('modal.category')}</label>

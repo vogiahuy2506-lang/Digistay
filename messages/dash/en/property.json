@@ -72,6 +72,11 @@
     "viewWebsite": "View website",
     "websiteBuilder": "Website Builder",
     "edit": "Edit",
+    "editModal": {
+      "title": "Edit property",
+      "saved": "Property details saved",
+      "failed": "Could not save the property details"
+    },
     "tabs": {
       "overview": "Overview",
       "rooms": "Room types",
@@ -176,21 +181,7 @@
     },
     "amenities": {
       "title": "Amenities",
-      "subtitle": "Choose the amenities your property offers",
-      "items": {
-        "wifi": "Free Wi-Fi",
-        "parking": "Parking",
-        "breakfast": "Breakfast",
-        "ac": "Air conditioning",
-        "pool": "Swimming pool",
-        "gym": "Gym",
-        "spa": "Spa",
-        "restaurant": "Restaurant",
-        "bar": "Bar",
-        "room_service": "Room service",
-        "laundry": "Laundry",
-        "airport": "Airport transfer"
-      }
+      "subtitle": "Choose the amenities your property offers"
     },
     "policy": {
       "title": "Policies",
@@ -220,7 +211,8 @@
       "publish": "Publish",
       "publishHint": "Put your website online",
       "public": "Public website",
-      "published": "Published"
+      "published": "Published",
+      "unpublished": "Not published"
     }
   }
 }

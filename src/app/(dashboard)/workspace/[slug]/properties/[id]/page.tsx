@@ -4,14 +4,17 @@ import * as React from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Tabs, TabsList, TabsTrigger, TabsContent, Input, Select, Textarea } from '@/components/ui'
-import { 
-  ArrowLeft, Building2, MapPin, Phone, Mail, Globe, Bed, Wifi, Car, Utensils, 
-  Plus, Pencil, Trash2, Save, Clock, Users, Baby, ExternalLink
+import {
+  ArrowLeft, MapPin, Phone, Mail, Globe, Bed, Plus, Pencil, Trash2, Save, Baby, ExternalLink, PawPrint, Cigarette,
 } from 'lucide-react'
+import { toast } from '@/components/ui/toast'
+import { getIcon } from '@/lib/amenity-icons'
+import { amenityName } from '@/lib/i18n/amenities'
 import { routes } from '@/lib/utils/routes'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { useDashLabels } from '@/lib/i18n/dash'
+import { EditPropertyModal } from './edit-property-modal'
 
 interface Property {
   id: string
@@ -25,6 +28,8 @@ interface Property {
   website: string | null
   subdomain: string
   description: string | null
+  translations?: { en?: { description?: string } } | null
+  websiteSettings?: { isPublished: boolean } | null
   isActive: boolean
   images: { id: string; url: string; isPrimary: boolean; alt: string | null }[]
   roomTypes: RoomType[]
@@ -85,22 +90,6 @@ interface Policy {
 const BED_TYPES = ['SINGLE', 'DOUBLE', 'TWIN', 'TRIPLE', 'QUADRUPLE', 'KING', 'QUEEN', 'SUITE', 'BUNK'] as const
 type BedType = (typeof BED_TYPES)[number]
 
-// Names come from messages (detail.amenities.items.<id>).
-const defaultAmenities = [
-  { id: 'wifi', slug: 'wifi', icon: 'wifi', category: 'internet' },
-  { id: 'parking', slug: 'parking', icon: 'car', category: 'parking' },
-  { id: 'breakfast', slug: 'breakfast', icon: 'utensils', category: 'food' },
-  { id: 'ac', slug: 'ac', icon: 'snowflake', category: 'comfort' },
-  { id: 'pool', slug: 'pool', icon: 'waves', category: 'leisure' },
-  { id: 'gym', slug: 'gym', icon: 'dumbbell', category: 'leisure' },
-  { id: 'spa', slug: 'spa', icon: 'sparkles', category: 'leisure' },
-  { id: 'restaurant', slug: 'restaurant', icon: 'utensils', category: 'food' },
-  { id: 'bar', slug: 'bar', icon: 'wine', category: 'food' },
-  { id: 'room_service', slug: 'room-service', icon: 'concierge', category: 'service' },
-  { id: 'laundry', slug: 'laundry', icon: 'shirt', category: 'service' },
-  { id: 'airport', slug: 'airport', icon: 'plane', category: 'transport' },
-] as const
-
 const IMAGE_CATEGORIES = ['lobby', 'room', 'pool', 'restaurant', 'gym', 'exterior', 'other'] as const
 
 export default function PropertyDetailPage() {
@@ -118,6 +107,9 @@ export default function PropertyDetailPage() {
   const [property, setProperty] = React.useState<Property | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
   const [activeTab, setActiveTab] = React.useState('overview')
+  const [showEditModal, setShowEditModal] = React.useState(false)
+  /** Every shared amenity, with whether this property has it (GET /api/properties/[id]/amenities). */
+  const [amenityOptions, setAmenityOptions] = React.useState<(Amenity & { isSelected: boolean })[]>([])
 
   // Room type form state
   const [showRoomTypeModal, setShowRoomTypeModal] = React.useState(false)
@@ -199,7 +191,17 @@ export default function PropertyDetailPage() {
 
   React.useEffect(() => {
     fetchProperty()
+    fetchAmenities()
   }, [propertyId])
+
+  const fetchAmenities = async () => {
+    try {
+      const data = await fetch(`/api/properties/${propertyId}/amenities`).then((r) => r.json())
+      if (data.success) setAmenityOptions(data.data)
+    } catch (err) {
+      console.error('Failed to fetch amenities:', err)
+    }
+  }
 
   const fetchProperty = async () => {
     try {
@@ -239,9 +241,12 @@ export default function PropertyDetailPage() {
         setEditingRoomType(null)
         resetRoomTypeForm()
         fetchProperty()
+      } else {
+        toast.error((await response.json().catch(() => ({}))).error || tc('states.error'))
       }
     } catch (err) {
       console.error('Failed to save room type:', err)
+      toast.error(tc('states.error'))
     }
   }
 
@@ -302,9 +307,12 @@ export default function PropertyDetailPage() {
         setShowPricingModal(false)
         resetPricingForm()
         fetchProperty()
+      } else {
+        toast.error((await response.json().catch(() => ({}))).error || tc('states.error'))
       }
     } catch (err) {
       console.error('Failed to save pricing:', err)
+      toast.error(tc('states.error'))
     }
   }
 
@@ -320,30 +328,41 @@ export default function PropertyDetailPage() {
 
   const handleSavePolicy = async () => {
     try {
-      await fetch(`/api/properties/${propertyId}/policy`, {
+      const response = await fetch(`/api/properties/${propertyId}/policy`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(policyForm),
       })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !data.success) {
+        toast.error(data.error || tc('states.error'))
+        return
+      }
+      toast.success(tc('states.saved'))
       fetchProperty()
     } catch (err) {
       console.error('Failed to save policy:', err)
+      toast.error(tc('states.error'))
     }
   }
 
-  const handleToggleAmenity = (amenityId: string) => {
-    if (!property) return
-    
-    const currentAmenityIds = property.amenities.map(a => a.amenity.id)
-    const newAmenityIds = currentAmenityIds.includes(amenityId)
-      ? currentAmenityIds.filter(id => id !== amenityId)
-      : [...currentAmenityIds, amenityId]
-
-    fetch(`/api/properties/${propertyId}/amenities`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amenityIds: newAmenityIds }),
-    }).then(() => fetchProperty())
+  const handleToggleAmenity = async (amenityId: string) => {
+    const next = amenityOptions.map((a) => (a.id === amenityId ? { ...a, isSelected: !a.isSelected } : a))
+    setAmenityOptions(next)
+    try {
+      const response = await fetch(`/api/properties/${propertyId}/amenities`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amenityIds: next.filter((a) => a.isSelected).map((a) => a.id) }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !data.success) throw new Error(data.error || tc('states.error'))
+      fetchProperty()
+    } catch (err) {
+      // Put the switch back: the change was not saved.
+      setAmenityOptions(amenityOptions)
+      toast.error(err instanceof Error ? err.message : tc('states.error'))
+    }
   }
 
   if (isLoading) {
@@ -403,13 +422,14 @@ export default function PropertyDetailPage() {
               <Globe className="w-4 h-4 mr-2" />
               {t('websiteBuilder')}
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" onClick={() => setShowEditModal(true)}>
               <Pencil className="w-4 h-4 mr-2" />
               {t('edit')}
             </Button>
           </div>
         }
       />
+      <EditPropertyModal property={property} isOpen={showEditModal} onClose={() => setShowEditModal(false)} onSaved={fetchProperty} />
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -870,11 +890,14 @@ export default function PropertyDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {defaultAmenities.map((amenity) => {
-                  const isSelected = property.amenities.some(a => a.amenity.id === amenity.id)
+                {amenityOptions.map((amenity) => {
+                  const isSelected = amenity.isSelected
+                  const Icon = getIcon(amenity.icon)
                   return (
                     <button
                       key={amenity.id}
+                      type="button"
+                      aria-pressed={isSelected}
                       onClick={() => handleToggleAmenity(amenity.id)}
                       className={`p-4 rounded-lg border-2 transition-all text-left ${
                         isSelected 
@@ -886,10 +909,10 @@ export default function PropertyDetailPage() {
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                           isSelected ? 'bg-acc-soft text-acc' : 'bg-fg/5 text-muted'
                         }`}>
-                          <Wifi className="w-5 h-5" />
+                          <Icon className="w-5 h-5" aria-hidden="true" />
                         </div>
                         <span className={`font-medium ${isSelected ? 'text-acc' : 'text-fg'}`}>
-                          {t(`amenities.items.${amenity.id}`)}
+                          {amenityName(amenity.slug, amenity.name, labels.locale)}
                         </span>
                       </div>
                     </button>
@@ -936,7 +959,7 @@ export default function PropertyDetailPage() {
                 
                 <div className="flex items-center justify-between p-4 bg-fg/[0.03] rounded-lg">
                   <div className="flex items-center gap-3">
-                    <Users className="w-5 h-5 text-muted" />
+                    <Baby className="w-5 h-5 text-muted" />
                     <div>
                       <p className="font-medium text-fg">{t('policy.children')}</p>
                       <p className="text-sm text-muted">{t('policy.childrenHint')}</p>
@@ -955,7 +978,7 @@ export default function PropertyDetailPage() {
 
                 <div className="flex items-center justify-between p-4 bg-fg/[0.03] rounded-lg">
                   <div className="flex items-center gap-3">
-                    <Baby className="w-5 h-5 text-muted" />
+                    <PawPrint className="w-5 h-5 text-muted" />
                     <div>
                       <p className="font-medium text-fg">{t('policy.pets')}</p>
                       <p className="text-sm text-muted">{t('policy.petsHint')}</p>
@@ -974,7 +997,7 @@ export default function PropertyDetailPage() {
 
                 <div className="flex items-center justify-between p-4 bg-fg/[0.03] rounded-lg">
                   <div className="flex items-center gap-3">
-                    <Clock className="w-5 h-5 text-muted" />
+                    <Cigarette className="w-5 h-5 text-muted" />
                     <div>
                       <p className="font-medium text-fg">{t('policy.smoking')}</p>
                       <p className="text-sm text-muted">{t('policy.smokingHint')}</p>
@@ -1025,7 +1048,7 @@ export default function PropertyDetailPage() {
                 <CardTitle>{t('website.title')}</CardTitle>
                 <p className="text-sm text-muted mt-1">{t('website.subtitle')}</p>
               </div>
-              <Button onClick={() => router.push(`/properties/${propertyId}/website`)}>
+              <Button onClick={() => router.push(routes.propertyWebsite(slug, propertyId))}>
                 <Globe className="w-4 h-4 mr-2" />
                 {t('website.open')}
               </Button>
@@ -1058,7 +1081,11 @@ export default function PropertyDetailPage() {
                     <ExternalLink className="w-4 h-4 mr-2" />
                     {t('viewWebsite')}
                   </Button>
-                  <Badge variant="success">{t('website.published')}</Badge>
+                  {property.websiteSettings?.isPublished ? (
+                    <Badge variant="success">{t('website.published')}</Badge>
+                  ) : (
+                    <Badge variant="gray">{t('website.unpublished')}</Badge>
+                  )}
                 </div>
               </div>
             </CardContent>

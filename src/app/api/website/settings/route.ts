@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth'
 import { normalizeHostname } from '@/lib/custom-domain'
 import { invalidatePublicSite } from '@/lib/public-site/site'
 import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
 
 // propertyId must be a string: undefined or a filter object reaching
 // Prisma would match the wrong property.
@@ -12,6 +13,9 @@ const putSchema = z.object({
   propertyId: z.string().min(1),
   settings: z.record(z.any()),
 })
+
+/** The SEO texts in English (settings.translations). */
+const seoTranslations = translationsInput(['metaTitle', 'metaDescription'], 500)
 
 /**
  * GET /api/website/settings?propertyId=xxx
@@ -87,6 +91,10 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Dữ liệu không hợp lệ' }, { status: 400 })
     }
     const { settings } = body.data
+    const translations = seoTranslations.safeParse(settings.translations ?? undefined)
+    if (!translations.success) {
+      return NextResponse.json({ success: false, error: 'Bản tiếng Anh không hợp lệ' }, { status: 400 })
+    }
 
     // Check property access
     const property = await prisma.property.findFirst({
@@ -117,7 +125,7 @@ export async function PUT(request: NextRequest) {
     // on any domain typed in).
     const current = await prisma.websiteSettings.findUnique({
       where: { propertyId },
-      select: { customDomain: true },
+      select: { customDomain: true, translations: true },
     })
     const requested = settings.customDomain
     const removeDomain = (requested === null || requested === '') && current?.customDomain != null
@@ -152,6 +160,7 @@ export async function PUT(request: NextRequest) {
         layout: settings.layout,
         metaTitle: settings.metaTitle,
         metaDescription: settings.metaDescription,
+        translations: mergeTranslations(current?.translations, translations.data),
         ...domainFields,
         isPublished: settings.isPublished,
         publishedAt: settings.isPublished ? new Date() : null,
@@ -166,6 +175,7 @@ export async function PUT(request: NextRequest) {
         layout: settings.layout || 'modern',
         metaTitle: settings.metaTitle,
         metaDescription: settings.metaDescription,
+        translations: mergeTranslations(null, translations.data),
         isPublished: settings.isPublished || false,
       },
     })

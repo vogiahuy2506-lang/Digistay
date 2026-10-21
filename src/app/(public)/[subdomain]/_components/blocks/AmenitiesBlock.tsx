@@ -1,5 +1,5 @@
 import { blockText } from '@/lib/i18n/content'
-import { getIcon } from '../icon-map'
+import { getIcon } from '@/lib/amenity-icons'
 import type { PublicAmenity, PublicBlock, PublicImage } from '../PropertySite'
 import { Eyebrow, Section, SectionTitle } from '../site-ui'
 import { useLocale, useTranslations } from 'next-intl'

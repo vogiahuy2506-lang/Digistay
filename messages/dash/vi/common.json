@@ -125,5 +125,10 @@
     "error": "Đã xảy ra lỗi, vui lòng thử lại",
     "saved": "Đã lưu",
     "noPermission": "Bạn không có quyền xem trang này"
+  },
+  "english": {
+    "title": "Bản tiếng Anh",
+    "optional": "không bắt buộc",
+    "hint": "Khách xem trang bằng tiếng Anh sẽ thấy các nội dung này. Ô nào để trống thì hiện bản tiếng Việt."
   }
 }

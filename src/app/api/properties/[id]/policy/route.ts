@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { isValidTiers } from '@/lib/bookings/late-checkout'
+import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
 
 const policySchema = z.object({
   checkInTime: z
@@ -34,6 +35,7 @@ const policySchema = z.object({
     .int()
     .refine((m) => m === 0 || (m >= 15 && m <= 1440), 'Hạn đặt cọc từ 15 phút tới 24 giờ, hoặc 0 (không tự huỷ)')
     .optional(),
+  translations: translationsInput(['cancellationPolicy', 'additionalRules'], 2000),
 })
 
 async function userCanEditProperty(propertyId: string, userId: string) {
@@ -125,13 +127,15 @@ export async function PATCH(
     }
 
     // Strip undefined fields so they don't overwrite existing data
-    const { lateCheckoutTiers, ...fields } = validation.data
+    const { lateCheckoutTiers, translations, ...fields } = validation.data
+    const stored = translations && (await prisma.policy.findUnique({ where: { propertyId: params.id }, select: { translations: true } }))
     const data = {
       ...Object.fromEntries(Object.entries(fields).filter(([, v]) => v !== undefined)),
       // null: back to the default tiers (a JSON column needs Prisma's DbNull).
       ...(lateCheckoutTiers !== undefined && {
         lateCheckoutTiers: lateCheckoutTiers === null ? Prisma.DbNull : (lateCheckoutTiers as unknown as Prisma.InputJsonValue),
       }),
+      ...(translations && { translations: mergeTranslations(stored?.translations, translations) }),
     }
 
     const policy = await prisma.policy.upsert({

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { invalidatePublicSite } from '@/lib/public-site/site'
+import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
 
 const updateSchema = z.object({
   name: z.string().min(2).optional(),
@@ -12,6 +13,7 @@ const updateSchema = z.object({
   price: z.number().nonnegative().optional(),
   perPerson: z.boolean().optional(),
   isActive: z.boolean().optional(),
+  translations: translationsInput(['name', 'description']),
 })
 
 async function userCanManageService(serviceId: string, userId: string) {
@@ -65,9 +67,10 @@ export async function PATCH(
       )
     }
 
+    const { translations, ...fields } = validation.data
     const updated = await prisma.extraService.update({
       where: { id: params.id },
-      data: validation.data,
+      data: { ...fields, translations: mergeTranslations(authz.service.translations, translations) },
     })
     invalidatePublicSite(updated.propertyId)
     return NextResponse.json({ success: true, data: updated })

@@ -1,0 +1,92 @@
+import {
+  ArrowUpDown,
+  Bath,
+  Briefcase,
+  Camera,
+  Car,
+  ChefHat,
+  ConciergeBell,
+  Coffee,
+  Dumbbell,
+  GlassWater,
+  Lock,
+  Mountain,
+  Music,
+  PawPrint,
+  Phone,
+  Plane,
+  Shield,
+  Shirt,
+  Snowflake,
+  Sparkles,
+  Sun,
+  Tv,
+  UserRound,
+  Utensils,
+  Waves,
+  Wifi,
+  Wind,
+  Wine,
+  type LucideIcon,
+} from 'lucide-react'
+
+/**
+ * A stored amenity icon name to a Lucide icon: the names prisma/seed.ts gives
+ * the shared amenities ("wifi", "utensils", "arrow-up"...) and older ones
+ * typed by hand ("pool", "aircon"...). Unknown names get Sparkles.
+ */
+const ICONS: Record<string, LucideIcon> = {
+  // prisma/seed.ts
+  wifi: Wifi,
+  car: Car,
+  utensils: Utensils,
+  snowflake: Snowflake,
+  waves: Waves,
+  dumbbell: Dumbbell,
+  sparkles: Sparkles,
+  wine: Wine,
+  concierge: ConciergeBell,
+  shirt: Shirt,
+  plane: Plane,
+  chef: ChefHat,
+  tv: Tv,
+  lock: Lock,
+  sun: Sun,
+  mountain: Mountain,
+  'arrow-up': ArrowUpDown,
+  user: UserRound,
+  shield: Shield,
+  camera: Camera,
+  // older names
+  parking: Car,
+  restaurant: Utensils,
+  food: Utensils,
+  pool: Waves,
+  swimming: Waves,
+  gym: Dumbbell,
+  fitness: Dumbbell,
+  coffee: Coffee,
+  bar: Wine,
+  bar2: Wine,
+  spa: Sparkles,
+  security: Shield,
+  television: Tv,
+  ac: Wind,
+  aircon: Wind,
+  'air-conditioner': Snowflake,
+  bathtub: Bath,
+  bath: Bath,
+  work: Briefcase,
+  business: Briefcase,
+  music: Music,
+  karaoke: Music,
+  phone: Phone,
+  pets: PawPrint,
+  'pet-friendly': PawPrint,
+  drinks: GlassWater,
+}
+
+export function getIcon(name: string | null | undefined): LucideIcon {
+  if (!name) return Sparkles
+  return ICONS[name.toLowerCase().trim()] ?? Sparkles
+}

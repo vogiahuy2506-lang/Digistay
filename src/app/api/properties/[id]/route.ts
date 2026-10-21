@@ -3,6 +3,10 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { updatePropertySchema } from '@/lib/validations'
 import { invalidatePublicSite } from '@/lib/public-site/site'
+import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
+
+/** The editable fields, and the description in English. */
+const patchSchema = updatePropertySchema.extend({ translations: translationsInput(['description'], 2000) })
 
 // Check if user has access to property's workspace
 async function checkPropertyAccess(propertyId: string, userId: string) {
@@ -69,6 +73,7 @@ export async function GET(
             slug: true,
           },
         },
+        websiteSettings: { select: { isPublished: true } },
         roomTypes: {
           where: { isActive: true },
           include: {
@@ -152,7 +157,7 @@ export async function PATCH(
     const body = await request.json()
     
     // Validate input
-    const validation = updatePropertySchema.safeParse(body)
+    const validation = patchSchema.safeParse(body)
     if (!validation.success) {
       return NextResponse.json(
         { success: false, error: validation.error.errors[0].message },
@@ -160,9 +165,11 @@ export async function PATCH(
       )
     }
 
+    const { translations, ...fields } = validation.data
+    const stored = translations && (await prisma.property.findUnique({ where: { id }, select: { translations: true } }))
     const property = await prisma.property.update({
       where: { id },
-      data: validation.data,
+      data: { ...fields, ...(translations && { translations: mergeTranslations(stored?.translations, translations) }) },
       include: {
         workspace: {
           select: {
