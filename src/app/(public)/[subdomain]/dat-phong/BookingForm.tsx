@@ -233,7 +233,7 @@ export function BookingForm({
             ? tf('failed')
             : problem
   const blocked = sending || problem === 'roomGone' || problem === 'badDates' || wait > 0
-  const unitOf = (s: Service) => (s.priceType === 'PER_NIGHT' ? t('units.perNight') : s.priceType === 'PER_PERSON' || s.perPerson ? t('units.perPerson') : `/ ${t('units.once')}`)
+  const unitOf = (s: Service) => (s.priceType === 'PER_NIGHT' ? t('units.perNight') : s.priceType === 'PER_PERSON' || s.perPerson ? t('units.perPerson') : `/${t('units.once')}`)
 
   return (
     <Container className="pt-8 lg:pt-12">

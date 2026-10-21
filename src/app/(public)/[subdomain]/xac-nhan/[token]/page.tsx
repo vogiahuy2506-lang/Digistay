@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { formatVnd } from '@/lib/bookings/display'
 import { loadDepositView } from '@/lib/payments/deposit-view'
-import { BookingFooter, BookingHeader, BookingSteps, loadBookingFrame } from '../../_components/booking/frame'
+import { BookingFooter, BookingHeader, BookingSteps, loadBookingFrame, sitePath } from '../../_components/booking/frame'
 import { SiteLink } from '../../_components/site-base'
 import { StaySummary } from '../../_components/booking/StaySummary'
 import { Container, bedLabel } from '../../_components/site-ui'
@@ -29,23 +29,8 @@ export default async function ConfirmationPage({ params }: PageProps) {
   const t = await getTranslations('site')
   const lang = (await getLocale()) === 'en' ? 'en' : 'vi'
 
-  if (view.state !== 'paid' && view.state !== 'none') {
-    // Not confirmed yet: pay (or see why it was cancelled) on the deposit page.
-    return (
-      <>
-        <BookingHeader frame={frame} />
-        <main>
-          <BookingSteps current={3} />
-          <Container className="pt-12">
-            <SiteLink path={`/dat-coc/${token}`} className="inline-flex h-[48px] items-center bg-ink px-6 text-[14px] font-medium text-on-ink">
-              {t('booking.deposit.pendingTitle')} →
-            </SiteLink>
-          </Container>
-        </main>
-        <BookingFooter property={frame.property} />
-      </>
-    )
-  }
+  // Not confirmed yet, or cancelled: the deposit page says what comes next.
+  if (view.state !== 'paid' && view.state !== 'none') redirect(await sitePath(subdomain, `/dat-coc/${token}`))
 
   const deposited = view.state === 'paid' && view.amounts.deposit > 0
   // No online deposit, and the hotel has confirmed it.

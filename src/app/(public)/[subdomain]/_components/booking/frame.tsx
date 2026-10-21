@@ -1,4 +1,7 @@
+import { headers } from 'next/headers'
+import { getLocale } from 'next-intl/server'
 import { prisma } from '@/lib/db'
+import { SITE_BASE_HEADER, siteBasePath, siteHref } from '@/lib/public-site/paths'
 import { loadVisibleSite } from '@/lib/public-site/visibility'
 import { useTranslations } from 'next-intl'
 import { SiteHeader, type SiteSection } from '../SiteHeader'
@@ -44,6 +47,13 @@ export async function loadBookingFrame(subdomain: string, { guestLink = false } 
     .filter(([type]) => blockTypes.size === 0 || blockTypes.has(type as never))
     .map(([, s]) => s)
   return { property, sections }
+}
+
+/** A page of this hotel's site in the visitor's language, for a server redirect (same base as [subdomain]/layout.tsx). */
+export async function sitePath(subdomain: string, path: string) {
+  const requestHeaders = await headers()
+  const base = requestHeaders.get(SITE_BASE_HEADER) ?? siteBasePath(subdomain, requestHeaders.get('host'))
+  return siteHref((await getLocale()) === 'en' ? `${base}/en` : base, path)
 }
 
 export type BookingStep = 1 | 2 | 3 | 4

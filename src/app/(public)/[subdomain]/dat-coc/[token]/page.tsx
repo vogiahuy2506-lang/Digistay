@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import QRCode from 'qrcode'
 import { getTranslations } from 'next-intl/server'
 import { loadDepositView } from '@/lib/payments/deposit-view'
-import { BookingFooter, BookingHeader, BookingSteps, loadBookingFrame } from '../../_components/booking/frame'
+import { BookingFooter, BookingHeader, BookingSteps, loadBookingFrame, sitePath } from '../../_components/booking/frame'
 import { StaySummary } from '../../_components/booking/StaySummary'
 import { bookedLines } from '../../_components/booking/booked-lines'
 import { Container, bedLabel } from '../../_components/site-ui'
@@ -28,6 +28,8 @@ export default async function DepositPage({ params }: PageProps) {
   const { subdomain, token } = await params
   const [frame, view] = await Promise.all([loadBookingFrame(subdomain, { guestLink: true }), loadDepositView(subdomain, token)])
   if (!frame || !view) notFound()
+  // Paid, or nothing to pay online: straight to the confirmation.
+  if (view.state === 'paid' || view.state === 'none') redirect(await sitePath(subdomain, `/xac-nhan/${token}`))
   const t = await getTranslations('site')
 
   const qrImage = view.payment?.qr ? await QRCode.toDataURL(view.payment.qr, { margin: 1, width: 560, errorCorrectionLevel: 'M' }) : null
@@ -79,7 +81,7 @@ export default async function DepositPage({ params }: PageProps) {
               children={view.children}
               lines={bookedLines(view, t)}
               total={view.amounts.total}
-              deposit={view.amounts.deposit > 0 ? { amount: view.amounts.deposit, paid: view.state === 'paid' } : null}
+              deposit={view.amounts.deposit > 0 ? { amount: view.amounts.deposit, paid: false } : null}
               note={view.property.cancellationHours != null ? t('booking.deposit.cancellation', { hours: view.property.cancellationHours }) : undefined}
             />
           </div>
