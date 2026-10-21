@@ -149,7 +149,11 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
     `extraCharges` = phụ thu + dịch vụ, `totalAmount` = tổng.
   - Phí trả phòng muộn: `src/lib/bookings/late-checkout.ts`, tính từ giờ trả phòng của khách sạn
     (Chính sách) vào **ngày trả đã đặt**, giờ Việt Nam. Cộng vào tổng hiện có (không dựng lại tổng
-    từ `subtotal`, sẽ mất giảm giá).
+    từ `subtotal`, sẽ mất giảm giá). Mức theo bậc của khách sạn (`Policy.lateCheckoutTiers`: null =
+    mặc định 30% trước 15:00 / 50% trước 18:00 / 100% giá một đêm, `[]` = không thu). Đây là **gợi
+    ý**: lễ tân áp dụng, thu số khác hoặc miễn trong hộp thoại trả phòng (`check-out-dialog.tsx`);
+    hai cách sau bắt buộc lý do, nhật ký ghi số gợi ý, số thu, lý do, người làm. Server luôn tự tính
+    lại lúc trả phòng, không lấy số của trình duyệt.
 - **Site công khai của khách sạn được cache** theo khách sạn (`src/lib/public-site/site.ts`, tối
   đa 5 phút). Handler nào ghi dữ liệu site hiển thị (khách sạn, ảnh, tiện ích, hạng phòng, giá,
   dịch vụ, website) phải gọi `invalidatePublicSite(propertyId)`; `public-site-cache.test.ts` chặn.

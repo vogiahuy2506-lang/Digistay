@@ -15,6 +15,7 @@ import { formatDate } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
 import { useProperty } from '@/lib/hooks/use-property'
 import { escapeHtml } from '@/lib/bookings/display'
+import { CheckOutDialog } from '@/components/bookings/check-out-dialog'
 import { fetchWindow, staysNight, toCsv } from '@/lib/bookings/calendar'
 import { format, addDays, parseISO } from 'date-fns'
 
@@ -302,32 +303,9 @@ export default function CalendarPage() {
     }
   }
 
-  // Handle check-out
-  const handleCheckOut = async (bookingId: string) => {
-    setIsActionLoading(true)
-    setActionLoadingType('checkout')
-    try {
-      const response = await fetch(`/api/bookings/${bookingId}/check-out`, { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      })
-      const data = await response.json()
-      if (data.success) {
-        toast.success(data.message || 'Check-out thành công')
-        setShowBookingDetailModal(false)
-        fetchCalendarData()
-      } else {
-        toast.error(data.error || 'Lỗi khi check-out')
-      }
-    } catch (err) {
-      console.error('Check-out error:', err)
-      toast.error('Lỗi khi check-out')
-    } finally {
-      setIsActionLoading(false)
-      setActionLoadingType('')
-    }
-  }
+  // Check-out goes through the dialog that settles the late fee (check-out-dialog.tsx).
+  const [checkOutBooking, setCheckOutBooking] = React.useState<{ id: string; code: string } | null>(null)
+  const handleCheckOut = (bookingId: string, bookingCode: string) => setCheckOutBooking({ id: bookingId, code: bookingCode })
 
   // Handle cancel booking
   const handleCancelBooking = async (bookingId: string) => {
@@ -1570,7 +1548,7 @@ export default function CalendarPage() {
               
               {selectedBooking.status === 'CHECKED_IN' && (
                 <Button
-                  onClick={() => handleCheckOut(selectedBooking.id)}
+                  onClick={() => handleCheckOut(selectedBooking.id, selectedBooking.bookingCode)}
                   disabled={isActionLoading}
                   className="bg-warn hover:bg-warn"
                 >
@@ -1735,6 +1713,20 @@ export default function CalendarPage() {
           z-index: 10;
         }
       `}</style>
+      {checkOutBooking && (
+        <CheckOutDialog
+          bookingId={checkOutBooking.id}
+          bookingCode={checkOutBooking.code}
+          isOpen
+          onClose={() => setCheckOutBooking(null)}
+          onDone={(message) => {
+            toast.success(message)
+            setCheckOutBooking(null)
+            setShowBookingDetailModal(false)
+            fetchCalendarData()
+          }}
+        />
+      )}
     </div>
   )
 }

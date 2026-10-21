@@ -481,6 +481,9 @@ model Policy {
   // Check-in/Check-out
   checkInTime     String  @default("14:00")
   checkOutTime    String  @default("12:00")
+  /// Late check-out tiers [{ until: "HH:mm" | null, percent }] (src/lib/bookings/late-checkout.ts);
+  /// null = the default (30% until 15:00, 50% until 18:00, then 100%), [] = no late fee.
+  lateCheckoutTiers Json?
   
   // Cancellation
   cancellationHours Int?   // Số giờ trước check-in để hủy miễn phí
