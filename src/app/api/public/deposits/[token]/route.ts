@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { readDepositToken } from '@/lib/payments/deposit-link'
+import { loadDepositView } from '@/lib/payments/deposit-view'
 import { DepositError, payDepositAgain } from '@/lib/payments/guest-deposit'
 import { PayosError } from '@/lib/payments/payos'
 import { getClientIp } from '@/lib/security/client-ip'
@@ -13,6 +14,19 @@ import { hit, tooManyRequests } from '@/lib/security/rate-limit'
  * load: mail scanners open links, and must not create PayOS links. It only
  * hands out a PayOS link; the money is recorded by the webhook as always.
  */
+/**
+ * GET /api/public/deposits/[token] — where the deposit stands, for the
+ * deposit page to move on by itself once PayOS reports the money
+ * (deposit-view.ts). Only the state: the page already shows the rest.
+ */
+export async function GET(request: NextRequest, props: { params: Promise<{ token: string }> }) {
+  const byIp = await hit(LIMITS.depositStatusIp, getClientIp(request.headers))
+  if (!byIp.allowed) return tooManyRequests('Bạn thao tác quá nhanh. Vui lòng thử lại sau ít phút.', byIp.retryAfterSec)
+  const view = await loadDepositView(null, (await props.params).token)
+  if (!view) return NextResponse.json({ success: false, error: 'Link đặt cọc không hợp lệ' }, { status: 404 })
+  return NextResponse.json({ success: true, data: { state: view.state } }, { headers: { 'Cache-Control': 'no-store' } })
+}
+
 export async function POST(request: NextRequest, props: { params: Promise<{ token: string }> }) {
   const byIp = await hit(LIMITS.depositRetryIp, getClientIp(request.headers))
   if (!byIp.allowed) {

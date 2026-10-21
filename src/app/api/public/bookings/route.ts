@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { BookingError, createBooking } from '@/lib/bookings/create-booking'
 import { sendAfterResponse } from '@/lib/email/outbox'
+import { depositToken, depositUrl } from '@/lib/payments/deposit-link'
 import { onlineDepositOf, startGuestDeposit, type OnlineDeposit } from '@/lib/payments/guest-deposit'
 import { getClientIp } from '@/lib/security/client-ip'
 import { LIMITS } from '@/lib/security/limits'
@@ -139,7 +140,8 @@ export async function POST(request: NextRequest) {
     let deposit: Awaited<ReturnType<typeof startGuestDeposit>> = null
     try {
       if (depositPolicy) {
-        const returnUrl = `${process.env.NEXTAUTH_URL}/${roomType.property.subdomain}/thanh-toan`
+        // Back from PayOS's own page: the deposit page, which moves on once the webhook marks it paid.
+        const returnUrl = depositUrl(roomType.property.subdomain, booking.id)
         deposit = await startGuestDeposit(booking, depositPolicy, returnUrl)
       }
     } catch (error) {
@@ -158,6 +160,8 @@ export async function POST(request: NextRequest) {
         deposit: deposit && { amount: deposit.amount, checkoutUrl: deposit.checkoutUrl, expiresAt: deposit.expiresAt },
         // The hotel takes a deposit but the link could not be made: it will call.
         depositUnavailable: Boolean(depositPolicy && !deposit),
+        // The guest's own link, as in the booking email (deposit-link.ts): the deposit and confirmation pages.
+        token: depositToken(booking.id),
       },
       message: deposit
         ? 'Đã giữ đặt phòng. Vui lòng thanh toán tiền cọc để khách sạn xác nhận.'

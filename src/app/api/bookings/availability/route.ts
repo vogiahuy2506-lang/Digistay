@@ -13,6 +13,8 @@ const querySchema = z.object({
   /** adults and children apart (the hotel's site): each checked against the room type, children priced as children */
   numAdults: z.coerce.number().int().min(1).max(20).optional(),
   numChildren: z.coerce.number().int().min(0).max(20).optional(),
+  /** "1": also the room types too small for these guests, with fits: false (the hotel site's results) */
+  all: z.enum(['1']).optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -26,6 +28,7 @@ export async function GET(request: NextRequest) {
       numGuests: searchParams.get('numGuests') || '1',
       numAdults: searchParams.get('numAdults') ?? undefined,
       numChildren: searchParams.get('numChildren') ?? undefined,
+      all: searchParams.get('all') ?? undefined,
     })
 
     if (!query.success) {
@@ -52,9 +55,11 @@ export async function GET(request: NextRequest) {
       where: {
         propertyId,
         isActive: true,
-        maxOccupancy: { gte: numGuests },
-        // Only with the split: the staff page's numGuests mixes adults and children.
-        ...(query.data.numAdults && { maxAdults: { gte: adults }, maxChildren: { gte: children } }),
+        ...(!query.data.all && {
+          maxOccupancy: { gte: numGuests },
+          // Only with the split: the staff page's numGuests mixes adults and children.
+          ...(query.data.numAdults && { maxAdults: { gte: adults }, maxChildren: { gte: children } }),
+        }),
         property: { isActive: true },
       },
       include: {
@@ -89,7 +94,13 @@ export async function GET(request: NextRequest) {
         area: roomType.area,
         bedType: roomType.bedType,
         maxOccupancy: roomType.maxOccupancy,
+        maxAdults: roomType.maxAdults,
+        maxChildren: roomType.maxChildren,
         baseOccupancy: roomType.baseOccupancy,
+        /** takes these guests (always true without all=1) */
+        fits:
+          roomType.maxOccupancy >= numGuests &&
+          (!query.data.numAdults || (roomType.maxAdults >= adults && roomType.maxChildren >= children)),
         totalRooms: roomType.totalRooms,
         availableRooms,
         isAvailable: availableRooms > 0,

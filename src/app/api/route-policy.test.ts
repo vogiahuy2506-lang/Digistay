@@ -52,6 +52,7 @@ const PUBLIC_HANDLERS: Record<string, string> = {
   'POST /api/public/bookings':
     'guests book on the hotel site: rate-limited per IP and per email, PENDING, never a payment (create-booking.ts)',
   'POST /api/public/contact': 'contact form on the marketing site; emails the Digistay team only, per-IP limit',
+  'GET /api/public/deposits/[token]': 'the deposit page polls where its deposit stands; the token is the credential, per-IP limit',
   'POST /api/public/deposits/[token]':
     'a guest pays their deposit again: the HMAC token is the credential (deposit-link.ts), rate-limited per IP; only a PayOS link, never marks anything paid',
   'POST /api/payments/webhook': 'disabled: always 404; gateways use /api/webhooks/<gateway>/...',

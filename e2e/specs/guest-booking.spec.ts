@@ -23,25 +23,26 @@ test('a guest books a room with a service; the quoted total is charged', async (
 
   await page.goto(`/${subdomain}/search?checkIn=${checkIn}&checkOut=${checkOut}&guests=2`)
   // The page used to never load the hotel (it expected an array): rooms must show.
-  await page.getByRole('button', { name: 'Đặt phòng này' }).first().click()
+  await page.getByRole('link', { name: 'Đặt phòng', exact: true }).first().click()
+  await page.waitForURL(/\/dat-phong\?/)
 
-  await page.getByPlaceholder('Nguyễn Văn A').fill('Phạm Minh Khách')
-  await page.getByPlaceholder('0912345678').fill('0912345678')
-  await page.getByPlaceholder('email@example.com').fill(email)
-  await page.getByRole('button', { name: 'Tiếp tục', exact: false }).first().click()
+  await page.locator('#bk-name').fill('Phạm Minh Khách')
+  await page.locator('#bk-phone').fill('0912345678')
+  await page.locator('#bk-email').fill(email)
 
   // The hotel's real services (no more hard-coded "Ăn sáng"/"Đưa đón").
-  await page.getByText('Ăn sáng buffet').click()
-  const summary = page.locator('div', { has: page.getByRole('heading', { name: 'Tóm tắt đặt phòng' }) }).last()
-  await expect(summary).toContainText('Ăn sáng buffet')
-  const total = digits(await summary.locator('div', { hasText: 'Tổng cộng' }).last().innerText())
+  await page.getByRole('button', { name: 'Thêm Ăn sáng buffet' }).click()
+  const summary = page.locator('aside').last()
+  await expect(summary).toContainText('Ăn sáng buffet × 1')
+  const total = digits(await summary.locator('div', { hasText: 'Tổng' }).last().locator('span').last().innerText())
   expect(total).toBeGreaterThan(0)
 
-  await page.getByRole('button', { name: 'Tiếp tục thanh toán' }).click()
-  await page.getByRole('button', { name: 'Xác nhận đặt phòng' }).click()
-  await expect(page.getByRole('heading', { name: 'Đã gửi yêu cầu đặt phòng' })).toBeVisible()
+  await page.getByRole('button', { name: 'Gửi yêu cầu đặt phòng' }).click()
+  await page.waitForURL(/\/xac-nhan\//)
+  await expect(page.getByText('Chờ khách sạn xác nhận')).toBeVisible()
+  await expect(page.getByText(email)).toBeVisible()
   const code = (await page.locator('p.font-mono').first().innerText()).trim()
-  await expect(page.getByText(/Tổng tiền:/)).toContainText(total.toLocaleString('vi-VN'))
+  await expect(page.locator('aside')).toContainText(total.toLocaleString('vi-VN'))
 
   const prisma = new PrismaClient()
   try {
@@ -107,14 +108,13 @@ test('a family picks a child on the room page; the search page keeps it, and the
     await page.locator('#dat-phong').getByRole('button', { name: 'Đặt phòng' }).click()
 
     await expect(page.getByText('2 người lớn, 1 trẻ em')).toBeVisible()
-    await page.getByRole('button', { name: 'Đặt phòng này' }).first().click()
-    await page.getByPlaceholder('Nguyễn Văn A').fill('Gia Đình Nhỏ')
-    await page.getByPlaceholder('0912345678').fill('0912345678')
-    await page.getByPlaceholder('email@example.com').fill(`giadinh-${Date.now()}@example.com`)
-    await page.getByRole('button', { name: 'Tiếp tục', exact: true }).click()
-    await page.getByRole('button', { name: 'Tiếp tục thanh toán' }).click()
-    await page.getByRole('button', { name: 'Xác nhận đặt phòng' }).click()
-    await expect(page.getByRole('heading', { name: 'Đã gửi yêu cầu đặt phòng' })).toBeVisible()
+    await page.getByRole('link', { name: 'Đặt phòng', exact: true }).first().click()
+    await page.waitForURL(/\/dat-phong\?/)
+    await page.locator('#bk-name').fill('Gia Đình Nhỏ')
+    await page.locator('#bk-phone').fill('0912345678')
+    await page.locator('#bk-email').fill(`giadinh-${Date.now()}@example.com`)
+    await page.getByRole('button', { name: 'Gửi yêu cầu đặt phòng' }).click()
+    await page.waitForURL(/\/xac-nhan\//)
     const code = (await page.locator('p.font-mono').first().innerText()).trim()
 
     // The child is a child: the property's 150,000 a night, two nights, no adult surcharge.

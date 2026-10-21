@@ -85,26 +85,29 @@ test("a guest books on the hotel's site and pays the hotel's 30% deposit through
   })
   const email = `coc-${Date.now()}@example.com`
   await guest.goto(`/${ids().subdomain}/search?checkIn=${day(60)}&checkOut=${day(62)}&guests=2`)
-  await guest.getByRole('button', { name: 'Đặt phòng này' }).first().click()
-  await guest.getByPlaceholder('Nguyễn Văn A').fill('Đỗ Văn Cọc')
-  await guest.getByPlaceholder('0912345678').fill('0912345678')
-  await guest.getByPlaceholder('email@example.com').fill(email)
-  await guest.getByRole('button', { name: 'Tiếp tục', exact: true }).click()
-  await guest.getByRole('button', { name: 'Tiếp tục thanh toán' }).click()
-
-  const box = guest.getByTestId('deposit-box')
-  await expect(box).toContainText('Đặt cọc 30%')
-  await expect(box).toContainText('Vui lòng đặt cọc trong 1 giờ')
-  const deposit = digits((await box.locator('p').first().innerText()).split(':')[1])
+  await guest.getByRole('link', { name: 'Đặt phòng', exact: true }).first().click()
+  await guest.locator('#bk-name').fill('Đỗ Văn Cọc')
+  await guest.locator('#bk-phone').fill('0912345678')
+  await guest.locator('#bk-email').fill(email)
+  await expect(guest.getByText('Cọc 30% tổng tiền')).toBeVisible()
+  await expect(guest.getByText('Thanh toán trong 60 phút')).toBeVisible()
+  const submit = guest.getByRole('button', { name: /Tiếp tục đặt cọc/ })
+  const deposit = digits((await submit.innerText()).replace('Tiếp tục đặt cọc', ''))
   expect(deposit).toBeGreaterThan(0)
-  await guest.getByRole('button', { name: 'Xác nhận và đặt cọc' }).click()
-  await guest.waitForURL(/pay\.payos\.vn/)
+  await submit.click()
+
+  // The QR is on the hotel's own page now; PayOS's page is the fallback link.
+  await guest.waitForURL(/\/dat-coc\//)
+  await expect(guest.getByRole('heading', { name: 'Chuyển khoản tiền cọc để giữ phòng' })).toBeVisible()
+  await expect(guest.getByAltText('Mã QR chuyển khoản tiền cọc, do PayOS tạo')).toBeVisible()
+  await expect(guest.getByText('0011223344')).toBeVisible()
+  orderCode = (await guest.getByRole('link', { name: 'Mở trang thanh toán PayOS' }).getAttribute('href'))?.match(/pl(\d+)/)?.[1] ?? ''
   expect(orderCode).not.toBe('')
 
-  // The guest pays: PayOS sends the signed webhook, then sends them back.
+  // The guest pays: PayOS sends the signed webhook; the page moves on by itself.
   expect(await control.pay(orderCode)).toEqual({ webhookStatus: 200 })
-  await guest.goto(`/${ids().subdomain}/thanh-toan?code=00&cancel=false&status=PAID&orderCode=${orderCode}`)
-  await expect(guest.getByRole('heading', { name: 'Đã nhận tiền thanh toán' })).toBeVisible()
+  await guest.waitForURL(/\/xac-nhan\//, { timeout: 15_000 })
+  await expect(guest.getByText('Đã cọc · Đã giữ phòng')).toBeVisible()
 
   const prisma = new PrismaClient()
   try {
@@ -120,42 +123,44 @@ test("a guest books on the hotel's site and pays the hotel's 30% deposit through
   await context.close()
 })
 
-test('a guest who left PayOS without paying pays again from the return page', async ({ browser }) => {
+test('a guest whose payment code ran out makes a new one, and PayOS sends them back to the deposit page', async ({ browser }) => {
   // The hotel still takes 30% within an hour (set by the test above).
   const context = await browser.newContext({ storageState: { cookies: [], origins: [] } })
   const guest = await context.newPage()
   const noErrors = failOnPageErrors(guest)
-  const visited: string[] = []
-  await guest.route('https://pay.payos.vn/**', (route) => {
-    visited.push(route.request().url().match(/pl(\d+)/)?.[1] ?? '')
-    return route.fulfill({ contentType: 'text/html', body: '<h1>PayOS checkout</h1>' })
-  })
+  await guest.route('https://pay.payos.vn/**', (route) => route.fulfill({ contentType: 'text/html', body: '<h1>PayOS checkout</h1>' }))
   const email = `lai-${Date.now()}@example.com`
   await guest.goto(`/${ids().subdomain}/search?checkIn=${day(80)}&checkOut=${day(82)}&guests=2`)
-  await guest.getByRole('button', { name: 'Đặt phòng này' }).first().click()
-  await guest.getByPlaceholder('Nguyễn Văn A').fill('Vũ Thị Lại')
-  await guest.getByPlaceholder('0912345678').fill('0912345678')
-  await guest.getByPlaceholder('email@example.com').fill(email)
-  await guest.getByRole('button', { name: 'Tiếp tục', exact: true }).click()
-  await guest.getByRole('button', { name: 'Tiếp tục thanh toán' }).click()
-  await guest.getByRole('button', { name: 'Xác nhận và đặt cọc' }).click()
-  await guest.waitForURL(/pay\.payos\.vn/)
-  const orderCode = visited[0]
+  await guest.getByRole('link', { name: 'Đặt phòng', exact: true }).first().click()
+  await guest.locator('#bk-name').fill('Vũ Thị Lại')
+  await guest.locator('#bk-phone').fill('0912345678')
+  await guest.locator('#bk-email').fill(email)
+  await guest.getByRole('button', { name: /Tiếp tục đặt cọc/ }).click()
+  await guest.waitForURL(/\/dat-coc\//)
+  const depositPage = guest.url()
+  const first = (await guest.getByRole('link', { name: 'Mở trang thanh toán PayOS' }).getAttribute('href'))?.match(/pl(\d+)/)?.[1] ?? ''
 
-  // "Huỷ" on PayOS sends the guest back with cancel=true.
-  await guest.goto(`/${ids().subdomain}/thanh-toan?code=00&cancel=true&status=CANCELLED&orderCode=${orderCode}`)
-  await expect(guest.getByRole('heading', { name: 'Bạn đã huỷ thanh toán' })).toBeVisible()
-  await guest.getByRole('link', { name: 'Thanh toán lại' }).click()
-  await expect(guest.getByRole('heading', { name: 'Đặt cọc để giữ phòng' })).toBeVisible()
-  await expect(guest.getByText('Hạn đặt cọc:')).toBeVisible()
-  await guest.getByRole('button', { name: /Đặt cọc .* qua PayOS/ }).click()
-  await guest.waitForURL(/pay\.payos\.vn/)
-  expect(visited.at(-1)).toBe(orderCode) // the link still open, handed out again
-
-  expect(await control.pay(orderCode)).toEqual({ webhookStatus: 200 })
-  await guest.goBack()
+  // PayOS's own page sends the guest back here (no longer /thanh-toan).
+  const prisma = new PrismaClient()
+  try {
+    const payment = await prisma.payment.findFirstOrThrow({ where: { gatewayOrderCode: first } })
+    // The link ran out before the deadline: the page offers a new code.
+    await prisma.payment.update({ where: { id: payment.id }, data: { expiresAt: new Date(Date.now() - 60_000) } })
+  } finally {
+    await prisma.$disconnect()
+  }
   await guest.reload()
-  await expect(guest.getByRole('heading', { name: 'Đã nhận tiền cọc' })).toBeVisible()
+  await expect(guest.getByRole('heading', { name: 'Mã thanh toán đã hết hạn' })).toBeVisible()
+  await guest.getByRole('button', { name: 'Tạo mã mới' }).click()
+  await expect(guest.getByRole('heading', { name: 'Chuyển khoản tiền cọc để giữ phòng' })).toBeVisible()
+  const second = (await guest.getByRole('link', { name: 'Mở trang thanh toán PayOS' }).getAttribute('href'))?.match(/pl(\d+)/)?.[1] ?? ''
+  expect(second).not.toBe('')
+  expect(second).not.toBe(first)
+  expect(guest.url()).toBe(depositPage)
+
+  expect(await control.pay(second)).toEqual({ webhookStatus: 200 })
+  await guest.waitForURL(/\/xac-nhan\//, { timeout: 15_000 })
+  await expect(guest.getByText('Đã cọc · Đã giữ phòng')).toBeVisible()
   noErrors()
   await context.close()
 })

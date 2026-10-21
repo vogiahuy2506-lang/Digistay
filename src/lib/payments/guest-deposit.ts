@@ -28,6 +28,7 @@ import { prisma } from '@/lib/db'
 import { queueDepositExpired, sendAfterResponse } from '@/lib/email/outbox'
 import { depositFor } from '@/lib/pricing/quote'
 import { lockBooking } from './booking-payments'
+import { depositUrl } from './deposit-link'
 import { cancelPayosPayment, createPayosLink, newOrderCode, PayosError, syncPayosPayment } from './payos'
 
 export interface OnlineDeposit {
@@ -203,7 +204,7 @@ export async function payDepositAgain(bookingId: string): Promise<{ checkoutUrl:
       deadlineMinutes: (latest?.metadata as { deadlineMinutes?: number } | null)?.deadlineMinutes ?? policy.deadlineMinutes,
       retryOf: latest?.id,
     },
-    `${process.env.NEXTAUTH_URL}/${booking.property.subdomain}/thanh-toan`
+    depositUrl(booking.property.subdomain, booking.id)
   )
   if (!created) throw new DepositError('PayOS chưa tạo được link thanh toán, vui lòng thử lại sau ít phút', 502)
   return { checkoutUrl: created.checkoutUrl }
