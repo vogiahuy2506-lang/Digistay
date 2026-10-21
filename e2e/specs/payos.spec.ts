@@ -85,7 +85,7 @@ test("a guest books on the hotel's site and pays the hotel's 30% deposit through
   })
   const email = `coc-${Date.now()}@example.com`
   await guest.goto(`/${ids().subdomain}/search?checkIn=${day(60)}&checkOut=${day(62)}&guests=2`)
-  await guest.getByRole('link', { name: 'Đặt phòng', exact: true }).first().click()
+  await guest.locator('article').getByRole('link', { name: 'Đặt phòng', exact: true }).first().click()
   await guest.locator('#bk-name').fill('Đỗ Văn Cọc')
   await guest.locator('#bk-phone').fill('0912345678')
   await guest.locator('#bk-email').fill(email)
@@ -131,7 +131,7 @@ test('a guest whose payment code ran out makes a new one, and PayOS sends them b
   await guest.route('https://pay.payos.vn/**', (route) => route.fulfill({ contentType: 'text/html', body: '<h1>PayOS checkout</h1>' }))
   const email = `lai-${Date.now()}@example.com`
   await guest.goto(`/${ids().subdomain}/search?checkIn=${day(80)}&checkOut=${day(82)}&guests=2`)
-  await guest.getByRole('link', { name: 'Đặt phòng', exact: true }).first().click()
+  await guest.locator('article').getByRole('link', { name: 'Đặt phòng', exact: true }).first().click()
   await guest.locator('#bk-name').fill('Vũ Thị Lại')
   await guest.locator('#bk-phone').fill('0912345678')
   await guest.locator('#bk-email').fill(email)

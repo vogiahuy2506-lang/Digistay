@@ -23,7 +23,7 @@ test('a guest books a room with a service; the quoted total is charged', async (
 
   await page.goto(`/${subdomain}/search?checkIn=${checkIn}&checkOut=${checkOut}&guests=2`)
   // The page used to never load the hotel (it expected an array): rooms must show.
-  await page.getByRole('link', { name: 'Đặt phòng', exact: true }).first().click()
+  await page.locator('article').getByRole('link', { name: 'Đặt phòng', exact: true }).first().click()
   await page.waitForURL(/\/dat-phong\?/)
 
   await page.locator('#bk-name').fill('Phạm Minh Khách')
@@ -108,7 +108,7 @@ test('a family picks a child on the room page; the search page keeps it, and the
     await page.locator('#dat-phong').getByRole('button', { name: 'Đặt phòng' }).click()
 
     await expect(page.getByText('2 người lớn, 1 trẻ em')).toBeVisible()
-    await page.getByRole('link', { name: 'Đặt phòng', exact: true }).first().click()
+    await page.locator('article').getByRole('link', { name: 'Đặt phòng', exact: true }).first().click()
     await page.waitForURL(/\/dat-phong\?/)
     await page.locator('#bk-name').fill('Gia Đình Nhỏ')
     await page.locator('#bk-phone').fill('0912345678')
