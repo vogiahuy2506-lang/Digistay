@@ -1,1 +1,182 @@
-{}
+{
+  "header": {
+    "title": "Website Builder",
+    "subtitle": "Kéo thả để sắp xếp giao diện website",
+    "undo": "Hoàn tác (Ctrl+Z)",
+    "redo": "Làm lại (Ctrl+Y)",
+    "template": "Template",
+    "preview": "Xem trước"
+  },
+  "tabs": {
+    "blocks": "Blocks",
+    "style": "Style",
+    "settings": "Cài đặt"
+  },
+  "toast": {
+    "saved": "Đã lưu thay đổi",
+    "saveFailed": "Không lưu được. Vui lòng thử lại.",
+    "offline": "Mất kết nối, chưa lưu được.",
+    "published": "Website đã được xuất bản",
+    "unpublished": "Đã gỡ xuất bản website"
+  },
+  "blockTypes": {
+    "HERO": { "name": "Banner Hero", "description": "Banner đầu trang với hình ảnh & tìm kiếm" },
+    "ROOMS": { "name": "Danh sách phòng", "description": "Hiển thị các hạng phòng" },
+    "AMENITIES": { "name": "Tiện ích", "description": "Danh sách tiện ích cơ sở" },
+    "ABOUT": { "name": "Giới thiệu", "description": "Thông tin giới thiệu" },
+    "GALLERY": { "name": "Thư viện ảnh", "description": "Bộ sưu tập hình ảnh" },
+    "REVIEWS": { "name": "Đánh giá", "description": "Hiển thị đánh giá khách" },
+    "MAP": { "name": "Bản đồ", "description": "Vị trí Google Maps" },
+    "CONTACT": { "name": "Liên hệ", "description": "Thông tin liên hệ" },
+    "CTA": { "name": "Call to Action", "description": "Nút kêu gọi hành động" }
+  },
+  "templates": {
+    "choose": "Chọn Template",
+    "subtitle": "Bắt đầu nhanh với template có sẵn",
+    "startBlank": "Hoặc bắt đầu trống và tự thiết kế theo ý bạn",
+    "classicHotel": { "name": "Khách sạn Cổ điển", "description": "Phong cách thanh lịch, chuyên nghiệp" },
+    "modernResort": { "name": "Resort Hiện đại", "description": "Tối giản, sang trọng, nghỉ dưỡng" },
+    "budgetFriendly": { "name": "Tiết kiệm", "description": "Đơn giản, dễ dùng, giá tốt" },
+    "premiumBoutique": { "name": "Boutique Cao cấp", "description": "Độc đáo, riêng tư, cao cấp" }
+  },
+  "sortable": {
+    "configure": "Cấu hình khối",
+    "hide": "Ẩn khối",
+    "show": "Hiện khối",
+    "remove": "Xóa khối",
+    "dragHint": "Kéo để sắp xếp",
+    "moving": "Di chuyển..."
+  },
+  "available": {
+    "addToPage": "Thêm vào trang",
+    "added": "Đã thêm"
+  },
+  "config": {
+    "heading": "Cấu hình: {name}",
+    "fields": {
+      "heroTitle": "Tiêu đề chính",
+      "subtitle": "Phụ đề",
+      "ctaButton": "Nút CTA",
+      "ctaLink": "Link CTA",
+      "title": "Tiêu đề",
+      "displayStyle": "Kiểu hiển thị",
+      "roomsLimit": "Số phòng hiển thị",
+      "columnsShown": "Số cột hiển thị",
+      "content": "Nội dung",
+      "columns": "Số cột",
+      "reviewsLimit": "Số đánh giá hiển thị",
+      "mapAddress": "Địa chỉ hiển thị",
+      "latitude": "Vĩ độ (Latitude)",
+      "longitude": "Kinh độ (Longitude)",
+      "zoom": "Zoom level",
+      "email": "Email",
+      "phone": "Số điện thoại",
+      "address": "Địa chỉ",
+      "description": "Mô tả",
+      "buttonText": "Text nút",
+      "buttonLink": "Link nút"
+    },
+    "placeholders": {
+      "heroTitle": "VD: Chào mừng đến với...",
+      "heroSubtitle": "VD: Trải nghiệm lưu trú tuyệt vời",
+      "ctaButton": "VD: Đặt phòng ngay",
+      "ctaLink": "VD: #rooms",
+      "about": "Giới thiệu về cơ sở của bạn...",
+      "mapAddress": "VD: 123 Đường ABC, Quận 1, TP.HCM",
+      "address": "123 Đường ABC..."
+    },
+    "display": {
+      "grid": "Grid (Lưới)",
+      "list": "List (Danh sách)"
+    },
+    "columnCount": "{count} cột",
+    "contactForm": "Hiển thị form liên hệ"
+  },
+  "preview": {
+    "propertyName": "Khách sạn của bạn",
+    "propertyDescription": "Mô tả ngắn về cơ sở của bạn",
+    "bookNow": "Đặt phòng ngay",
+    "roomsTitle": "Các hạng phòng",
+    "roomName": "Phòng {name}",
+    "roomMeta": "2 người • 25m²",
+    "roomPrice": "{price}/đêm",
+    "amenitiesTitle": "Tiện ích nổi bật",
+    "amenities": {
+      "wifi": "Wifi miễn phí",
+      "parking": "Bãi đỗ xe",
+      "pool": "Hồ bơi",
+      "restaurant": "Nhà hàng",
+      "spa": "Spa",
+      "karaoke": "Karaoke"
+    },
+    "aboutTitle": "Về chúng tôi",
+    "galleryTitle": "Thư viện hình ảnh",
+    "reviewsTitle": "Đánh giá từ khách hàng",
+    "reviews": {
+      "first": "Dịch vụ tuyệt vời, phòng sạch sẽ!",
+      "second": "Vị trí thuận tiện, nhân viên friendly.",
+      "third": "Sẽ quay lại lần sau!"
+    },
+    "mapTitle": "Vị trí của chúng tôi",
+    "mapNoLocation": "Chưa cài đặt vị trí",
+    "mapPreview": "Google Maps Preview",
+    "contactTitle": "Liên hệ với chúng tôi",
+    "form": {
+      "name": "Họ tên",
+      "email": "Email",
+      "message": "Nội dung",
+      "send": "Gửi liên hệ"
+    },
+    "ctaTitle": "Sẵn sàng trải nghiệm?",
+    "ctaSubtitle": "Đặt phòng ngay hôm nay!"
+  },
+  "blocks": {
+    "arrange": "Sắp xếp khối",
+    "arrangeHint": "Kéo thả để sắp xếp thứ tự",
+    "count": "{count} khối",
+    "empty": "Chưa có khối nào",
+    "emptyHint": "Chọn template hoặc thêm khối thủ công",
+    "addTitle": "Thêm khối mới",
+    "addHint": "Chọn khối để thêm vào website"
+  },
+  "style": {
+    "colors": "Màu sắc",
+    "primary": "Màu chính",
+    "secondary": "Màu phụ",
+    "accent": "Màu nhấn",
+    "fonts": "Phông chữ",
+    "bodyFont": "Phông chữ chính",
+    "headingFont": "Phông chữ tiêu đề",
+    "fontTraits": {
+      "modern": "Hiện đại",
+      "popular": "Phổ biến",
+      "readable": "Dễ đọc",
+      "elegant": "Thanh lịch",
+      "luxurious": "Sang trọng",
+      "traditional": "Truyền thống",
+      "youthful": "Trẻ trung",
+      "dynamic": "Năng động"
+    }
+  },
+  "settings": {
+    "seo": "SEO & Meta",
+    "metaTitle": "Tiêu đề trang (Meta Title)",
+    "metaTitlePlaceholder": "VD: Khách sạn ABC - Đặt phòng online",
+    "metaDescription": "Mô tả trang",
+    "metaDescriptionPlaceholder": "Mô tả ngắn về cơ sở của bạn..."
+  },
+  "publish": {
+    "title": "Xuất bản",
+    "published": "Đã xuất bản",
+    "unpublished": "Chưa xuất bản",
+    "publishedHint": "Khách xem và đặt phòng được trên website.",
+    "unpublishedHint": "Chỉ thành viên đã đăng nhập xem được (bản xem trước); khách chưa đặt phòng được.",
+    "unpublish": "Gỡ xuất bản",
+    "publishNow": "Xuất bản ngay"
+  },
+  "canvas": {
+    "dragging": "Đang kéo thả... Di chuyển khối đến vị trí mong muốn",
+    "emptyHint": "Thêm các khối từ panel bên trái hoặc chọn template để bắt đầu",
+    "allHidden": "Tất cả các khối đang bị ẩn"
+  }
+}

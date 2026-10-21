@@ -2,6 +2,8 @@
 
 import * as React from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { useDashLabels } from '@/lib/i18n/dash'
 import { PageContainer } from '@/components/layout'
 import { toast } from '@/components/ui/toast'
 import { useProperty } from '@/lib/hooks/use-property'
@@ -119,11 +121,14 @@ interface Block {
   config: BlockConfig
 }
 
+type BlockTypeKey = 'HERO' | 'ROOMS' | 'AMENITIES' | 'ABOUT' | 'GALLERY' | 'REVIEWS' | 'MAP' | 'CONTACT' | 'CTA'
+
 interface BlockType {
-  type: string
+  type: BlockTypeKey
+  // Saved as a new block's name (website content, kept as is); the dashboard
+  // shows the type's name and description from messages (dash.website.blockTypes).
   name: string
   icon: React.ElementType
-  description: string
   color: string
   bgGradient: string
   defaultConfig: BlockConfig
@@ -134,7 +139,6 @@ const blockTypes: BlockType[] = [
     type: 'HERO', 
     name: 'Banner Hero', 
     icon: LayoutGrid, 
-    description: 'Banner đầu trang với hình ảnh & tìm kiếm', 
     color: 'text-info', 
     bgGradient: 'from-blue-500 to-blue-600',
     defaultConfig: {
@@ -148,7 +152,6 @@ const blockTypes: BlockType[] = [
     type: 'ROOMS', 
     name: 'Danh sách phòng', 
     icon: Hotel, 
-    description: 'Hiển thị các hạng phòng', 
     color: 'text-ok', 
     bgGradient: 'from-emerald-500 to-emerald-600',
     defaultConfig: {
@@ -161,7 +164,6 @@ const blockTypes: BlockType[] = [
     type: 'AMENITIES', 
     name: 'Tiện ích', 
     icon: Zap, 
-    description: 'Danh sách tiện ích cơ sở', 
     color: 'text-warn', 
     bgGradient: 'from-amber-500 to-amber-600',
     defaultConfig: {
@@ -173,7 +175,6 @@ const blockTypes: BlockType[] = [
     type: 'ABOUT', 
     name: 'Giới thiệu', 
     icon: Sparkles, 
-    description: 'Thông tin giới thiệu', 
     color: 'text-refund', 
     bgGradient: 'from-purple-500 to-purple-600',
     defaultConfig: {
@@ -185,7 +186,6 @@ const blockTypes: BlockType[] = [
     type: 'GALLERY', 
     name: 'Thư viện ảnh', 
     icon: ImageIcon, 
-    description: 'Bộ sưu tập hình ảnh', 
     color: 'text-refund', 
     bgGradient: 'from-pink-500 to-pink-600',
     defaultConfig: {
@@ -198,7 +198,6 @@ const blockTypes: BlockType[] = [
     type: 'REVIEWS', 
     name: 'Đánh giá', 
     icon: Star, 
-    description: 'Hiển thị đánh giá khách', 
     color: 'text-warn', 
     bgGradient: 'from-yellow-500 to-yellow-600',
     defaultConfig: {
@@ -210,7 +209,6 @@ const blockTypes: BlockType[] = [
     type: 'MAP', 
     name: 'Bản đồ', 
     icon: MapPin, 
-    description: 'Vị trí Google Maps', 
     color: 'text-err', 
     bgGradient: 'from-red-500 to-red-600',
     defaultConfig: {
@@ -222,7 +220,6 @@ const blockTypes: BlockType[] = [
     type: 'CONTACT', 
     name: 'Liên hệ', 
     icon: Phone, 
-    description: 'Thông tin liên hệ', 
     color: 'text-info', 
     bgGradient: 'from-cyan-500 to-cyan-600',
     defaultConfig: {
@@ -234,7 +231,6 @@ const blockTypes: BlockType[] = [
     type: 'CTA', 
     name: 'Call to Action', 
     icon: MousePointer2, 
-    description: 'Nút kêu gọi hành động', 
     color: 'text-info', 
     bgGradient: 'from-indigo-500 to-indigo-600',
     defaultConfig: {
@@ -249,17 +245,17 @@ const blockTypes: BlockType[] = [
 // Website Templates
 interface WebsiteTemplate {
   id: string
-  name: string
-  description: string
+  // Its name and description: dash.website.templates.<key>
+  key: 'classicHotel' | 'modernResort' | 'budgetFriendly' | 'premiumBoutique'
   icon: React.ElementType
+  // The blocks' names are saved with them (website content, kept as is).
   blocks: Partial<Block>[]
 }
 
 const websiteTemplates: WebsiteTemplate[] = [
   {
     id: 'classic-hotel',
-    name: 'Khách sạn Cổ điển',
-    description: 'Phong cách thanh lịch, chuyên nghiệp',
+    key: 'classicHotel',
     icon: Hotel,
     blocks: [
       { type: 'HERO', name: 'Banner Hero', isEnabled: true },
@@ -272,8 +268,7 @@ const websiteTemplates: WebsiteTemplate[] = [
   },
   {
     id: 'modern-resort',
-    name: 'Resort Hiện đại',
-    description: 'Tối giản, sang trọng, nghỉ dưỡng',
+    key: 'modernResort',
     icon: Sparkles,
     blocks: [
       { type: 'HERO', name: 'Banner Hero', isEnabled: true },
@@ -287,8 +282,7 @@ const websiteTemplates: WebsiteTemplate[] = [
   },
   {
     id: 'budget-friendly',
-    name: 'Tiết kiệm',
-    description: 'Đơn giản, dễ dùng, giá tốt',
+    key: 'budgetFriendly',
     icon: LayoutGrid,
     blocks: [
       { type: 'HERO', name: 'Banner Hero', isEnabled: true },
@@ -299,8 +293,7 @@ const websiteTemplates: WebsiteTemplate[] = [
   },
   {
     id: 'premium-boutique',
-    name: 'Boutique Cao cấp',
-    description: 'Độc đáo, riêng tư, cao cấp',
+    key: 'premiumBoutique',
     icon: Star,
     blocks: [
       { type: 'HERO', name: 'Banner Hero', isEnabled: true },
@@ -315,6 +308,41 @@ const websiteTemplates: WebsiteTemplate[] = [
     ]
   }
 ]
+
+// The fonts on offer, each with a word on its character (dash.website.style.fontTraits).
+const bodyFonts = [
+  { value: 'Inter', trait: 'modern' },
+  { value: 'Roboto', trait: 'popular' },
+  { value: 'Open Sans', trait: 'readable' },
+  { value: 'Nunito Sans', trait: 'elegant' },
+] as const
+const headingFonts = [
+  { value: 'Playfair Display', trait: 'luxurious' },
+  { value: 'Merriweather', trait: 'traditional' },
+  { value: 'Be Vietnam Pro', trait: 'youthful' },
+  { value: 'Montserrat', trait: 'dynamic' },
+] as const
+
+/** A block type's name and description in the dashboard's language. */
+function useBlockText() {
+  const t = useTranslations('dash.website.blockTypes')
+  return React.useMemo(() => {
+    const info = (type?: string) => blockTypes.find((b) => b.type === type)
+    return {
+      typeName: (type: BlockTypeKey) => t(`${type}.name`),
+      description: (type?: string) => {
+        const found = info(type)
+        return found ? t(`${found.type}.description`) : undefined
+      },
+      // A block keeps the name it was saved with; the default one (its type's
+      // name) is shown in the dashboard's language, any other as it is.
+      blockName: (block: { type?: string; name?: string }) => {
+        const found = info(block.type)
+        return found && block.name === found.name ? t(`${found.type}.name`) : (block.name ?? '')
+      },
+    }
+  }, [t])
+}
 
 // Sortable Block Item Component
 function SortableBlockItem({
@@ -338,6 +366,8 @@ function SortableBlockItem({
     transition,
     isDragging,
   } = useSortable({ id: block.id })
+  const t = useTranslations('dash.website.sortable')
+  const text = useBlockText()
 
   const blockTypeInfo = blockTypes.find(b => b.type === block.type)
   const BlockIcon = blockTypeInfo?.icon || Layout
@@ -388,9 +418,9 @@ function SortableBlockItem({
         {/* Block Info */}
         <div className="flex-1 min-w-0">
           <p className={`font-medium text-sm ${block.isEnabled ? 'text-fg' : 'text-muted'}`}>
-            {block.name}
+            {text.blockName(block)}
           </p>
-          <p className="text-xs text-muted">{blockTypeInfo?.description}</p>
+          <p className="text-xs text-muted">{text.description(block.type)}</p>
         </div>
 
         {/* Actions */}
@@ -405,7 +435,7 @@ function SortableBlockItem({
                 : 'bg-fg/5 text-muted hover:bg-acc-soft hover:text-acc'
               }
             `}
-            title="Cấu hình khối"
+            title={t('configure')}
           >
             <Settings className="w-4 h-4" />
           </button>
@@ -420,7 +450,7 @@ function SortableBlockItem({
                 : 'bg-fg/5 text-muted hover:bg-fg/10'
               }
             `}
-            title={block.isEnabled ? 'Ẩn khối' : 'Hiện khối'}
+            title={block.isEnabled ? t('hide') : t('show')}
           >
             {block.isEnabled ? <Eye className="w-4 h-4" /> : <X className="w-4 h-4" />}
           </button>
@@ -429,7 +459,7 @@ function SortableBlockItem({
           <button
             onClick={(e) => { e.stopPropagation(); onRemove(); }}
             className="p-1.5 rounded-lg bg-fg/5 text-muted hover:bg-err-soft hover:text-err transition-all duration-200"
-            title="Xóa khối"
+            title={t('remove')}
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -442,7 +472,7 @@ function SortableBlockItem({
         bg-acc-soft px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none
         ${isDragging ? 'opacity-100' : ''}
       `}>
-        Kéo để sắp xếp
+        {t('dragHint')}
       </div>
     </div>
   )
@@ -460,6 +490,9 @@ function BlockConfigPanel({
   onClose: () => void
   propertyData: any
 }) {
+  const t = useTranslations('dash.website.config')
+  const tc = useTranslations('dash.common')
+  const text = useBlockText()
   const blockTypeInfo = blockTypes.find(b => b.type === block.type)
   const BlockIcon = blockTypeInfo?.icon || Layout
   const bgGradient = blockTypeInfo?.bgGradient || 'from-gray-500 to-gray-600'
@@ -485,8 +518,8 @@ function BlockConfigPanel({
               <BlockIcon className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="font-semibold text-fg">Cấu hình: {block.name}</h3>
-              <p className="text-xs text-muted">{blockTypeInfo?.description}</p>
+              <h3 className="font-semibold text-fg">{t('heading', { name: text.blockName(block) })}</h3>
+              <p className="text-xs text-muted">{text.description(block.type)}</p>
             </div>
           </div>
           <button 
@@ -503,35 +536,35 @@ function BlockConfigPanel({
           {block.type === 'HERO' && (
             <>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">Tiêu đề chính</label>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.heroTitle')}</label>
                 <Input 
                   value={config.heroTitle || ''} 
                   onChange={(e) => updateConfig('heroTitle', e.target.value)}
-                  placeholder="VD: Chào mừng đến với..."
+                  placeholder={t('placeholders.heroTitle')}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">Phụ đề</label>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.subtitle')}</label>
                 <Input 
                   value={config.heroSubtitle || ''} 
                   onChange={(e) => updateConfig('heroSubtitle', e.target.value)}
-                  placeholder="VD: Trải nghiệm lưu trú tuyệt vời"
+                  placeholder={t('placeholders.heroSubtitle')}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">Nút CTA</label>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.ctaButton')}</label>
                 <Input 
                   value={config.heroCtaText || ''} 
                   onChange={(e) => updateConfig('heroCtaText', e.target.value)}
-                  placeholder="VD: Đặt phòng ngay"
+                  placeholder={t('placeholders.ctaButton')}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">Link CTA</label>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.ctaLink')}</label>
                 <Input 
                   value={config.heroCtaLink || ''} 
                   onChange={(e) => updateConfig('heroCtaLink', e.target.value)}
-                  placeholder="VD: #rooms"
+                  placeholder={t('placeholders.ctaLink')}
                 />
               </div>
             </>
@@ -541,31 +574,31 @@ function BlockConfigPanel({
           {block.type === 'ROOMS' && (
             <>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">Tiêu đề</label>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.title')}</label>
                 <Input 
                   value={config.roomsTitle || ''} 
                   onChange={(e) => updateConfig('roomsTitle', e.target.value)}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">Kiểu hiển thị</label>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.displayStyle')}</label>
                 <div className="flex gap-2">
                   <button
                     onClick={() => updateConfig('roomsDisplay', 'grid')}
                     className={`flex-1 py-2 rounded-lg border transition-all ${config.roomsDisplay === 'grid' ? 'border-acc bg-acc-soft text-acc' : 'border-line text-muted'}`}
                   >
-                    Grid (Lưới)
+                    {t('display.grid')}
                   </button>
                   <button
                     onClick={() => updateConfig('roomsDisplay', 'list')}
                     className={`flex-1 py-2 rounded-lg border transition-all ${config.roomsDisplay === 'list' ? 'border-acc bg-acc-soft text-acc' : 'border-line text-muted'}`}
                   >
-                    List (Danh sách)
+                    {t('display.list')}
                   </button>
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">Số phòng hiển thị</label>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.roomsLimit')}</label>
                 <Input 
                   type="number"
                   value={config.roomsLimit || 6} 
@@ -581,22 +614,22 @@ function BlockConfigPanel({
           {block.type === 'AMENITIES' && (
             <>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">Tiêu đề</label>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.title')}</label>
                 <Input 
                   value={config.amenitiesTitle || ''} 
                   onChange={(e) => updateConfig('amenitiesTitle', e.target.value)}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">Số cột hiển thị</label>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.columnsShown')}</label>
                 <select
                   value={config.amenitiesColumns || 3}
                   onChange={(e) => updateConfig('amenitiesColumns', parseInt(e.target.value))}
                   className="w-full px-3 py-2 border rounded-lg"
                 >
-                  <option value={2}>2 cột</option>
-                  <option value={3}>3 cột</option>
-                  <option value={4}>4 cột</option>
+                  <option value={2}>{t('columnCount', { count: 2 })}</option>
+                  <option value={3}>{t('columnCount', { count: 3 })}</option>
+                  <option value={4}>{t('columnCount', { count: 4 })}</option>
                 </select>
               </div>
             </>
@@ -606,20 +639,20 @@ function BlockConfigPanel({
           {block.type === 'ABOUT' && (
             <>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">Tiêu đề</label>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.title')}</label>
                 <Input 
                   value={config.aboutTitle || ''} 
                   onChange={(e) => updateConfig('aboutTitle', e.target.value)}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">Nội dung</label>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.content')}</label>
                 <textarea
                   value={config.aboutContent || ''}
                   onChange={(e) => updateConfig('aboutContent', e.target.value)}
                   className="w-full px-3 py-2 border rounded-lg"
                   rows={4}
-                  placeholder="Giới thiệu về cơ sở của bạn..."
+                  placeholder={t('placeholders.about')}
                 />
               </div>
             </>
@@ -629,22 +662,22 @@ function BlockConfigPanel({
           {block.type === 'GALLERY' && (
             <>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">Tiêu đề</label>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.title')}</label>
                 <Input 
                   value={config.galleryTitle || ''} 
                   onChange={(e) => updateConfig('galleryTitle', e.target.value)}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">Số cột</label>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.columns')}</label>
                 <select
                   value={config.galleryColumns || 3}
                   onChange={(e) => updateConfig('galleryColumns', parseInt(e.target.value))}
                   className="w-full px-3 py-2 border rounded-lg"
                 >
-                  <option value={2}>2 cột</option>
-                  <option value={3}>3 cột</option>
-                  <option value={4}>4 cột</option>
+                  <option value={2}>{t('columnCount', { count: 2 })}</option>
+                  <option value={3}>{t('columnCount', { count: 3 })}</option>
+                  <option value={4}>{t('columnCount', { count: 4 })}</option>
                 </select>
               </div>
             </>
@@ -654,14 +687,14 @@ function BlockConfigPanel({
           {block.type === 'REVIEWS' && (
             <>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">Tiêu đề</label>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.title')}</label>
                 <Input 
                   value={config.reviewsTitle || ''} 
                   onChange={(e) => updateConfig('reviewsTitle', e.target.value)}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">Số đánh giá hiển thị</label>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.reviewsLimit')}</label>
                 <Input 
                   type="number"
                   value={config.reviewsLimit || 4} 
@@ -677,16 +710,16 @@ function BlockConfigPanel({
           {block.type === 'MAP' && (
             <>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">Địa chỉ hiển thị</label>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.mapAddress')}</label>
                 <Input 
                   value={config.mapAddress || ''} 
                   onChange={(e) => updateConfig('mapAddress', e.target.value)}
-                  placeholder="VD: 123 Đường ABC, Quận 1, TP.HCM"
+                  placeholder={t('placeholders.mapAddress')}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-fg block mb-1">Vĩ độ (Latitude)</label>
+                  <label className="text-sm font-medium text-fg block mb-1">{t('fields.latitude')}</label>
                   <Input 
                     type="number"
                     step="0.0001"
@@ -696,7 +729,7 @@ function BlockConfigPanel({
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-fg block mb-1">Kinh độ (Longitude)</label>
+                  <label className="text-sm font-medium text-fg block mb-1">{t('fields.longitude')}</label>
                   <Input 
                     type="number"
                     step="0.0001"
@@ -707,7 +740,7 @@ function BlockConfigPanel({
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">Zoom level</label>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.zoom')}</label>
                 <Input 
                   type="number"
                   value={config.mapZoom || 15} 
@@ -723,14 +756,14 @@ function BlockConfigPanel({
           {block.type === 'CONTACT' && (
             <>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">Tiêu đề</label>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.title')}</label>
                 <Input 
                   value={config.contactTitle || ''} 
                   onChange={(e) => updateConfig('contactTitle', e.target.value)}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">Email</label>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.email')}</label>
                 <Input 
                   type="email"
                   value={config.contactEmail || ''} 
@@ -739,7 +772,7 @@ function BlockConfigPanel({
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">Số điện thoại</label>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.phone')}</label>
                 <Input 
                   value={config.contactPhone || ''} 
                   onChange={(e) => updateConfig('contactPhone', e.target.value)}
@@ -747,11 +780,11 @@ function BlockConfigPanel({
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">Địa chỉ</label>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.address')}</label>
                 <Input 
                   value={config.contactAddress || ''} 
                   onChange={(e) => updateConfig('contactAddress', e.target.value)}
-                  placeholder="123 Đường ABC..."
+                  placeholder={t('placeholders.address')}
                 />
               </div>
               <div className="flex items-center gap-3 p-3 bg-fg/[0.03] rounded-lg">
@@ -763,7 +796,7 @@ function BlockConfigPanel({
                   className="w-4 h-4 rounded"
                 />
                 <label htmlFor="contactForm" className="text-sm font-medium text-fg">
-                  Hiển thị form liên hệ
+                  {t('contactForm')}
                 </label>
               </div>
             </>
@@ -773,14 +806,14 @@ function BlockConfigPanel({
           {block.type === 'CTA' && (
             <>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">Tiêu đề</label>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.title')}</label>
                 <Input 
                   value={config.ctaTitle || ''} 
                   onChange={(e) => updateConfig('ctaTitle', e.target.value)}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">Mô tả</label>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.description')}</label>
                 <Input 
                   value={config.ctaSubtitle || ''} 
                   onChange={(e) => updateConfig('ctaSubtitle', e.target.value)}
@@ -788,14 +821,14 @@ function BlockConfigPanel({
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-fg block mb-1">Text nút</label>
+                  <label className="text-sm font-medium text-fg block mb-1">{t('fields.buttonText')}</label>
                   <Input 
                     value={config.ctaButtonText || ''} 
                     onChange={(e) => updateConfig('ctaButtonText', e.target.value)}
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-fg block mb-1">Link nút</label>
+                  <label className="text-sm font-medium text-fg block mb-1">{t('fields.buttonLink')}</label>
                   <Input 
                     value={config.ctaButtonLink || ''} 
                     onChange={(e) => updateConfig('ctaButtonLink', e.target.value)}
@@ -808,7 +841,7 @@ function BlockConfigPanel({
 
         {/* Footer */}
         <div className="p-4 border-t bg-fg/[0.03]">
-          <Button onClick={onClose} className="w-full">Đóng</Button>
+          <Button onClick={onClose} className="w-full">{tc('actions.close')}</Button>
         </div>
       </div>
     </div>
@@ -823,6 +856,8 @@ function TemplateModal({
   onSelect: (template: WebsiteTemplate) => void
   onClose: () => void
 }) {
+  const t = useTranslations('dash.website.templates')
+  const text = useBlockText()
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-panel rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
@@ -833,8 +868,8 @@ function TemplateModal({
               <Wand2 className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="font-semibold text-fg">Chọn Template</h3>
-              <p className="text-xs text-muted">Bắt đầu nhanh với template có sẵn</p>
+              <h3 className="font-semibold text-fg">{t('choose')}</h3>
+              <p className="text-xs text-muted">{t('subtitle')}</p>
             </div>
           </div>
           <button 
@@ -862,13 +897,13 @@ function TemplateModal({
                     </div>
                     <div className="flex-1">
                       <h4 className="font-semibold text-fg group-hover:text-acc transition-colors">
-                        {template.name}
+                        {t(`${template.key}.name`)}
                       </h4>
-                      <p className="text-sm text-muted mt-1">{template.description}</p>
+                      <p className="text-sm text-muted mt-1">{t(`${template.key}.description`)}</p>
                       <div className="flex flex-wrap gap-1 mt-2">
                         {template.blocks.slice(0, 4).map((b, i) => (
                           <Badge key={i} className="text-xs bg-fg/5 text-muted border-0">
-                            {b.name}
+                            {text.blockName(b)}
                           </Badge>
                         ))}
                         {template.blocks.length > 4 && (
@@ -888,7 +923,7 @@ function TemplateModal({
         {/* Footer */}
         <div className="p-4 border-t bg-fg/[0.03]">
           <p className="text-sm text-muted text-center">
-            Hoặc bắt đầu trống và tự thiết kế theo ý bạn
+            {t('startBlank')}
           </p>
         </div>
       </div>
@@ -898,6 +933,8 @@ function TemplateModal({
 
 // Block Overlay for Drag
 function BlockOverlay({ block }: { block: Block }) {
+  const t = useTranslations('dash.website.sortable')
+  const text = useBlockText()
   const blockTypeInfo = blockTypes.find(b => b.type === block.type)
   const BlockIcon = blockTypeInfo?.icon || Layout
   const bgGradient = blockTypeInfo?.bgGradient || 'from-gray-500 to-gray-600'
@@ -912,11 +949,11 @@ function BlockOverlay({ block }: { block: Block }) {
           <BlockIcon className="w-5 h-5" />
         </div>
         <div className="flex-1">
-          <p className="font-medium text-sm text-fg">{block.name}</p>
-          <p className="text-xs text-muted">{blockTypeInfo?.description}</p>
+          <p className="font-medium text-sm text-fg">{text.blockName(block)}</p>
+          <p className="text-xs text-muted">{text.description(block.type)}</p>
         </div>
         <div className="px-2 py-1 bg-acc-soft rounded-lg">
-          <span className="text-xs text-acc font-medium">Di chuyển...</span>
+          <span className="text-xs text-acc font-medium">{t('moving')}</span>
         </div>
       </div>
     </div>
@@ -933,6 +970,8 @@ function AvailableBlockCard({
   isAdded: boolean
   onAdd: () => void
 }) {
+  const t = useTranslations('dash.website.available')
+  const text = useBlockText()
   const BlockIcon = blockType.icon
 
   return (
@@ -953,10 +992,10 @@ function AvailableBlockCard({
         </div>
         <div className="flex-1 min-w-0">
           <p className={`font-semibold text-sm ${isAdded ? 'text-muted' : 'text-fg'}`}>
-            {blockType.name}
+            {text.typeName(blockType.type)}
           </p>
           <p className="text-xs text-muted mt-0.5 line-clamp-2">
-            {blockType.description}
+            {text.description(blockType.type)}
           </p>
         </div>
       </div>
@@ -973,12 +1012,12 @@ function AvailableBlockCard({
           "
         >
           <Plus className="w-4 h-4" />
-          Thêm vào trang
+          {t('addToPage')}
         </button>
       ) : (
         <div className="mt-3 w-full py-2 rounded-lg text-sm font-medium bg-ok-soft text-ok flex items-center justify-center gap-2">
           <Check className="w-4 h-4" />
-          Đã thêm
+          {t('added')}
         </div>
       )}
     </div>
@@ -995,14 +1034,17 @@ function PreviewBlock({
   propertyData: any
   index: number
 }) {
+  const t = useTranslations('dash.website.preview')
+  const labels = useDashLabels()
+  const text = useBlockText()
   const blockTypeInfo = blockTypes.find(b => b.type === block.type)
   const BlockIcon = blockTypeInfo?.icon || Layout
   const bgGradient = blockTypeInfo?.bgGradient || 'from-slate-400 to-slate-500'
   const config = block.config || {}
 
   // Default property data if not provided
-  const propertyName = propertyData?.name || 'Khách sạn của bạn'
-  const propertyDescription = propertyData?.description || 'Mô tả ngắn về cơ sở của bạn'
+  const propertyName = propertyData?.name || t('propertyName')
+  const propertyDescription = propertyData?.description || t('propertyDescription')
 
   const renderBlockContent = () => {
     switch (block.type) {
@@ -1014,7 +1056,7 @@ function PreviewBlock({
               <h2 className="text-2xl font-bold mb-2">{config.heroTitle || propertyName}</h2>
               <p className="text-muted mb-4">{config.heroSubtitle || propertyDescription}</p>
               <button className="px-6 py-2 bg-panel text-fg rounded-lg font-medium">
-                {config.heroCtaText || 'Đặt phòng ngay'}
+                {config.heroCtaText || t('bookNow')}
               </button>
             </div>
           </div>
@@ -1025,7 +1067,7 @@ function PreviewBlock({
           <div className="p-4 bg-panel rounded-xl border border-line">
             <h3 className="text-lg font-semibold text-fg mb-4 flex items-center gap-2">
               <Hotel className="w-5 h-5 text-ok" />
-              {config.roomsTitle || 'Các hạng phòng'}
+              {config.roomsTitle || t('roomsTitle')}
             </h3>
             <div className={`grid gap-3 ${config.roomsDisplay === 'list' ? 'grid-cols-1' : 'grid-cols-2'}`}>
               {[1, 2, 3].map((i) => (
@@ -1034,9 +1076,9 @@ function PreviewBlock({
                     <Hotel className="w-6 h-6 text-muted" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-fg">Phòng {['Deluxe', 'Suite', 'Standard'][i-1]}</p>
-                    <p className="text-sm text-muted">2 người • 25m²</p>
-                    <p className="text-sm font-medium text-ok">500.000đ/đêm</p>
+                    <p className="font-medium text-fg">{t('roomName', { name: ['Deluxe', 'Suite', 'Standard'][i-1] })}</p>
+                    <p className="text-sm text-muted">{t('roomMeta')}</p>
+                    <p className="text-sm font-medium text-ok">{t('roomPrice', { price: labels.money(500000) })}</p>
                   </div>
                 </div>
               ))}
@@ -1046,19 +1088,19 @@ function PreviewBlock({
       
       case 'AMENITIES':
         const amenities = [
-          { icon: '📶', name: 'Wifi miễn phí' },
-          { icon: '🅿️', name: 'Bãi đỗ xe' },
-          { icon: '🏊', name: 'Hồ bơi' },
-          { icon: '🍽️', name: 'Nhà hàng' },
-          { icon: '💆', name: 'Spa' },
-          { icon: '🎤', name: 'Karaoke' },
+          { icon: '📶', name: t('amenities.wifi') },
+          { icon: '🅿️', name: t('amenities.parking') },
+          { icon: '🏊', name: t('amenities.pool') },
+          { icon: '🍽️', name: t('amenities.restaurant') },
+          { icon: '💆', name: t('amenities.spa') },
+          { icon: '🎤', name: t('amenities.karaoke') },
         ]
         const cols = config.amenitiesColumns || 3
         return (
           <div className="p-4 bg-panel rounded-xl border border-line">
             <h3 className="text-lg font-semibold text-fg mb-4 flex items-center gap-2">
               <Zap className="w-5 h-5 text-warn" />
-              {config.amenitiesTitle || 'Tiện ích nổi bật'}
+              {config.amenitiesTitle || t('amenitiesTitle')}
             </h3>
             <div className={`grid gap-2`} style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
               {amenities.slice(0, cols * 2).map((item, i) => (
@@ -1076,7 +1118,7 @@ function PreviewBlock({
           <div className="p-4 bg-panel rounded-xl border border-line">
             <h3 className="text-lg font-semibold text-fg mb-4 flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-refund" />
-              {config.aboutTitle || 'Về chúng tôi'}
+              {config.aboutTitle || t('aboutTitle')}
             </h3>
             <p className="text-muted leading-relaxed">
               {config.aboutContent || propertyDescription}
@@ -1089,7 +1131,7 @@ function PreviewBlock({
           <div className="p-4 bg-panel rounded-xl border border-line">
             <h3 className="text-lg font-semibold text-fg mb-4 flex items-center gap-2">
               <ImageIcon className="w-5 h-5 text-refund" />
-              {config.galleryTitle || 'Thư viện hình ảnh'}
+              {config.galleryTitle || t('galleryTitle')}
             </h3>
             <div className={`grid gap-2`} style={{ gridTemplateColumns: `repeat(${config.galleryColumns || 3}, 1fr)` }}>
               {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -1102,16 +1144,17 @@ function PreviewBlock({
         )
       
       case 'REVIEWS':
+        // Sample reviewers: names, the same in every language.
         const reviews = [
-          { name: 'Nguyễn Văn A', rating: 5, comment: 'Dịch vụ tuyệt vời, phòng sạch sẽ!' },
-          { name: 'Trần Thị B', rating: 4, comment: 'Vị trí thuận tiện, nhân viên friendly.' },
-          { name: 'Lê Văn C', rating: 5, comment: 'Sẽ quay lại lần sau!' },
+          { name: 'Nguyễn Văn A', rating: 5, comment: t('reviews.first') },
+          { name: 'Trần Thị B', rating: 4, comment: t('reviews.second') },
+          { name: 'Lê Văn C', rating: 5, comment: t('reviews.third') },
         ]
         return (
           <div className="p-4 bg-panel rounded-xl border border-line">
             <h3 className="text-lg font-semibold text-fg mb-4 flex items-center gap-2">
               <Star className="w-5 h-5 text-warn" />
-              {config.reviewsTitle || 'Đánh giá từ khách hàng'}
+              {config.reviewsTitle || t('reviewsTitle')}
             </h3>
             <div className="space-y-3">
               {reviews.slice(0, config.reviewsLimit || 3).map((r, i) => (
@@ -1136,13 +1179,13 @@ function PreviewBlock({
           <div className="p-4 bg-panel rounded-xl border border-line">
             <h3 className="text-lg font-semibold text-fg mb-4 flex items-center gap-2">
               <MapPin className="w-5 h-5 text-err" />
-              Vị trí của chúng tôi
+              {t('mapTitle')}
             </h3>
             <div className="h-40 bg-fg/5 rounded-lg flex items-center justify-center">
               <div className="text-center">
                 <MapPin className="w-8 h-8 text-err mx-auto mb-2" />
-                <p className="text-sm text-muted">{config.mapAddress || 'Chưa cài đặt vị trí'}</p>
-                <p className="text-xs text-muted mt-1">Google Maps Preview</p>
+                <p className="text-sm text-muted">{config.mapAddress || t('mapNoLocation')}</p>
+                <p className="text-xs text-muted mt-1">{t('mapPreview')}</p>
               </div>
             </div>
           </div>
@@ -1153,7 +1196,7 @@ function PreviewBlock({
           <div className="p-4 bg-panel rounded-xl border border-line">
             <h3 className="text-lg font-semibold text-fg mb-4 flex items-center gap-2">
               <Phone className="w-5 h-5 text-info" />
-              {config.contactTitle || 'Liên hệ với chúng tôi'}
+              {config.contactTitle || t('contactTitle')}
             </h3>
             <div className="space-y-2 mb-4">
               {config.contactPhone && (
@@ -1174,11 +1217,11 @@ function PreviewBlock({
             </div>
             {config.contactFormEnabled !== false && (
               <div className="space-y-2">
-                <input type="text" placeholder="Họ tên" className="w-full px-3 py-2 border rounded-lg text-sm" disabled />
-                <input type="email" placeholder="Email" className="w-full px-3 py-2 border rounded-lg text-sm" disabled />
-                <textarea placeholder="Nội dung" className="w-full px-3 py-2 border rounded-lg text-sm" rows={2} disabled />
+                <input type="text" placeholder={t('form.name')} className="w-full px-3 py-2 border rounded-lg text-sm" disabled />
+                <input type="email" placeholder={t('form.email')} className="w-full px-3 py-2 border rounded-lg text-sm" disabled />
+                <textarea placeholder={t('form.message')} className="w-full px-3 py-2 border rounded-lg text-sm" rows={2} disabled />
                 <button className="w-full py-2 bg-ink text-on-ink rounded-lg text-sm font-medium" disabled>
-                  Gửi liên hệ
+                  {t('form.send')}
                 </button>
               </div>
             )}
@@ -1188,10 +1231,10 @@ function PreviewBlock({
       case 'CTA':
         return (
           <div className="p-6 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl text-white text-center">
-            <h3 className="text-xl font-bold mb-2">{config.ctaTitle || 'Sẵn sàng trải nghiệm?'}</h3>
-            <p className="text-indigo-100 mb-4">{config.ctaSubtitle || 'Đặt phòng ngay hôm nay!'}</p>
+            <h3 className="text-xl font-bold mb-2">{config.ctaTitle || t('ctaTitle')}</h3>
+            <p className="text-indigo-100 mb-4">{config.ctaSubtitle || t('ctaSubtitle')}</p>
             <button className="px-6 py-2 bg-panel text-info rounded-lg font-medium">
-              {config.ctaButtonText || 'Đặt phòng ngay'}
+              {config.ctaButtonText || t('bookNow')}
             </button>
           </div>
         )
@@ -1202,7 +1245,7 @@ function PreviewBlock({
             <div className={`w-14 h-14 rounded-2xl mx-auto mb-3 bg-gradient-to-br ${bgGradient} flex items-center justify-center`}>
               <BlockIcon className="w-7 h-7 text-white" />
             </div>
-            <p className="font-semibold text-fg">{block.name}</p>
+            <p className="font-semibold text-fg">{text.blockName(block)}</p>
           </div>
         )
     }
@@ -1226,6 +1269,8 @@ export default function WebsiteBuilderPage() {
   const params = useParams()
   const propertyId = params.id as string
   const { property } = useProperty()
+  const t = useTranslations('dash.website')
+  const tc = useTranslations('dash.common')
 
   const [settings, setSettings] = React.useState<WebsiteSettings | null>(null)
   const [blocks, setBlocks] = React.useState<Block[]>([])
@@ -1320,7 +1365,7 @@ export default function WebsiteBuilderPage() {
    * pressed, which matters now that an unpublished site is hidden from
    * guests (src/lib/public-site/visibility.ts).
    */
-  const handleSave = async (next: WebsiteSettings | null = settings, successMessage = 'Đã lưu thay đổi') => {
+  const handleSave = async (next: WebsiteSettings | null = settings, successMessage: string = t('toast.saved')) => {
     setIsSaving(true)
     try {
       const blocksRes = await fetch('/api/website/blocks', {
@@ -1338,7 +1383,7 @@ export default function WebsiteBuilderPage() {
       const failed = [blocksRes, settingsRes].find((r) => r && !r.ok)
       if (failed) {
         const body = await failed.json().catch(() => null)
-        toast.error(body?.error || 'Không lưu được. Vui lòng thử lại.')
+        toast.error(body?.error || t('toast.saveFailed'))
         return false
       }
       if (next) setSettings(next)
@@ -1346,7 +1391,7 @@ export default function WebsiteBuilderPage() {
       return true
     } catch (err) {
       console.error('Save failed:', err)
-      toast.error('Mất kết nối, chưa lưu được.')
+      toast.error(t('toast.offline'))
       return false
     } finally {
       setIsSaving(false)
@@ -1356,7 +1401,7 @@ export default function WebsiteBuilderPage() {
   const togglePublish = () => {
     if (!settings) return
     const publish = !settings.isPublished
-    void handleSave({ ...settings, isPublished: publish }, publish ? 'Website đã được xuất bản' : 'Đã gỡ xuất bản website')
+    void handleSave({ ...settings, isPublished: publish }, publish ? t('toast.published') : t('toast.unpublished'))
   }
 
   const addBlock = (type: string, name: string) => {
@@ -1470,15 +1515,15 @@ export default function WebsiteBuilderPage() {
             className="gap-2"
           >
             <ChevronRight className="w-4 h-4 rotate-180" />
-            Quay lại
+            {tc('actions.back')}
           </Button>
           <div className="h-8 w-px bg-fg/10" />
           <div>
             <h1 className="text-xl font-bold text-fg flex items-center gap-2">
               <Layout className="w-5 h-5 text-acc" />
-              Website Builder
+              {t('header.title')}
             </h1>
-            <p className="text-sm text-muted">Kéo thả để sắp xếp giao diện website</p>
+            <p className="text-sm text-muted">{t('header.subtitle')}</p>
           </div>
         </div>
         
@@ -1489,7 +1534,7 @@ export default function WebsiteBuilderPage() {
               onClick={undo}
               disabled={historyIndex <= 0}
               className="p-2 rounded-md hover:bg-panel hover:shadow-sm transition-all disabled:opacity-40 disabled:hover:bg-transparent"
-              title="Hoàn tác (Ctrl+Z)"
+              title={t('header.undo')}
             >
               <Undo2 className="w-4 h-4 text-muted" />
             </button>
@@ -1497,7 +1542,7 @@ export default function WebsiteBuilderPage() {
               onClick={redo}
               disabled={historyIndex >= history.length - 1}
               className="p-2 rounded-md hover:bg-panel hover:shadow-sm transition-all disabled:opacity-40 disabled:hover:bg-transparent"
-              title="Làm lại (Ctrl+Y)"
+              title={t('header.redo')}
             >
               <Redo2 className="w-4 h-4 text-muted" />
             </button>
@@ -1511,7 +1556,7 @@ export default function WebsiteBuilderPage() {
             className="gap-2"
           >
             <Wand2 className="w-4 h-4" />
-            Template
+            {t('header.template')}
           </Button>
 
           {/* Preview Mode Toggle */}
@@ -1552,7 +1597,7 @@ export default function WebsiteBuilderPage() {
             className="gap-2"
           >
             <Eye className="w-4 h-4" />
-            Xem trước
+            {t('header.preview')}
           </Button>
           
           <Button 
@@ -1566,7 +1611,7 @@ export default function WebsiteBuilderPage() {
             ) : (
               <Save className="w-4 h-4" />
             )}
-            {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
+            {isSaving ? tc('actions.saving') : tc('actions.saveChanges')}
           </Button>
         </div>
       </div>
@@ -1581,21 +1626,21 @@ export default function WebsiteBuilderPage() {
                 className="rounded-lg data-[state=active]:bg-panel data-[state=active]:shadow-sm"
               >
                 <Layout className="w-4 h-4 mr-1.5" />
-                Blocks
+                {t('tabs.blocks')}
               </TabsTrigger>
               <TabsTrigger 
                 value="style"
                 className="rounded-lg data-[state=active]:bg-panel data-[state=active]:shadow-sm"
               >
                 <Palette className="w-4 h-4 mr-1.5" />
-                Style
+                {t('tabs.style')}
               </TabsTrigger>
               <TabsTrigger 
                 value="settings"
                 className="rounded-lg data-[state=active]:bg-panel data-[state=active]:shadow-sm"
               >
                 <Settings className="w-4 h-4 mr-1.5" />
-                Cài đặt
+                {t('tabs.settings')}
               </TabsTrigger>
             </TabsList>
 
@@ -1616,12 +1661,12 @@ export default function WebsiteBuilderPage() {
                         <LayoutGrid className="w-4 h-4 text-white" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-fg">Sắp xếp khối</h3>
-                        <p className="text-xs text-muted">Kéo thả để sắp xếp thứ tự</p>
+                        <h3 className="font-semibold text-fg">{t('blocks.arrange')}</h3>
+                        <p className="text-xs text-muted">{t('blocks.arrangeHint')}</p>
                       </div>
                     </div>
                     <Badge className="bg-acc-soft text-acc border-acc/30">
-                      {blocks.length} khối
+                      {t('blocks.count', { count: blocks.length })}
                     </Badge>
                   </div>
 
@@ -1630,9 +1675,9 @@ export default function WebsiteBuilderPage() {
                       <div className="w-16 h-16 rounded-2xl bg-info-soft flex items-center justify-center mx-auto mb-3">
                         <GripVertical className="w-8 h-8 text-info" />
                       </div>
-                      <p className="text-sm font-semibold text-muted mb-1">Chưa có khối nào</p>
+                      <p className="text-sm font-semibold text-muted mb-1">{t('blocks.empty')}</p>
                       <p className="text-xs text-muted max-w-[200px] mx-auto mb-3">
-                        Chọn template hoặc thêm khối thủ công
+                        {t('blocks.emptyHint')}
                       </p>
                       <Button 
                         size="sm" 
@@ -1640,7 +1685,7 @@ export default function WebsiteBuilderPage() {
                         className="gap-2"
                       >
                         <Wand2 className="w-4 h-4" />
-                        Chọn Template
+                        {t('templates.choose')}
                       </Button>
                     </div>
                   ) : (
@@ -1676,8 +1721,8 @@ export default function WebsiteBuilderPage() {
                     <Plus className="w-4 h-4 text-on-ink" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-fg">Thêm khối mới</h3>
-                    <p className="text-xs text-muted">Chọn khối để thêm vào website</p>
+                    <h3 className="font-semibold text-fg">{t('blocks.addTitle')}</h3>
+                    <p className="text-xs text-muted">{t('blocks.addHint')}</p>
                   </div>
                 </div>
                 
@@ -1703,12 +1748,12 @@ export default function WebsiteBuilderPage() {
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
                     <Palette className="w-4 h-4" />
-                    Màu sắc
+                    {t('style.colors')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-fg">Màu chính</label>
+                    <label className="text-sm font-medium text-fg">{t('style.primary')}</label>
                     <div className="flex items-center gap-2 mt-1">
                       <input
                         type="color"
@@ -1724,7 +1769,7 @@ export default function WebsiteBuilderPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-fg">Màu phụ</label>
+                    <label className="text-sm font-medium text-fg">{t('style.secondary')}</label>
                     <div className="flex items-center gap-2 mt-1">
                       <input
                         type="color"
@@ -1740,7 +1785,7 @@ export default function WebsiteBuilderPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-fg">Màu nhấn</label>
+                    <label className="text-sm font-medium text-fg">{t('style.accent')}</label>
                     <div className="flex items-center gap-2 mt-1">
                       <input
                         type="color"
@@ -1762,34 +1807,32 @@ export default function WebsiteBuilderPage() {
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
                     <Type className="w-4 h-4" />
-                    Phông chữ
+                    {t('style.fonts')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-fg">Phông chữ chính</label>
+                    <label className="text-sm font-medium text-fg">{t('style.bodyFont')}</label>
                     <select
                       value={normalizeFont(settings?.fontFamily, 'body')}
                       onChange={(e) => setSettings({ ...settings!, fontFamily: e.target.value })}
                       className="w-full mt-1 px-3 py-2 border rounded-lg"
                     >
-                      <option value="Inter">Inter - Hiện đại</option>
-                      <option value="Roboto">Roboto - Phổ biến</option>
-                      <option value="Open Sans">Open Sans - Dễ đọc</option>
-                      <option value="Nunito Sans">Nunito Sans - Thanh lịch</option>
+                      {bodyFonts.map((font) => (
+                        <option key={font.value} value={font.value}>{`${font.value} - ${t(`style.fontTraits.${font.trait}`)}`}</option>
+                      ))}
                     </select>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-fg">Phông chữ tiêu đề</label>
+                    <label className="text-sm font-medium text-fg">{t('style.headingFont')}</label>
                     <select
                       value={normalizeFont(settings?.headingFont, 'heading')}
                       onChange={(e) => setSettings({ ...settings!, headingFont: e.target.value })}
                       className="w-full mt-1 px-3 py-2 border rounded-lg"
                     >
-                      <option value="Playfair Display">Playfair Display - Sang trọng</option>
-                      <option value="Merriweather">Merriweather - Truyền thống</option>
-                      <option value="Be Vietnam Pro">Be Vietnam Pro - Trẻ trung</option>
-                      <option value="Montserrat">Montserrat - Năng động</option>
+                      {headingFonts.map((font) => (
+                        <option key={font.value} value={font.value}>{`${font.value} - ${t(`style.fontTraits.${font.trait}`)}`}</option>
+                      ))}
                     </select>
                   </div>
                 </CardContent>
@@ -1800,21 +1843,21 @@ export default function WebsiteBuilderPage() {
             <TabsContent value="settings" className="mt-4">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">SEO & Meta</CardTitle>
+                  <CardTitle className="text-base">{t('settings.seo')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Input
-                    label="Tiêu đề trang (Meta Title)"
+                    label={t('settings.metaTitle')}
                     value={settings?.metaTitle || ''}
                     onChange={(e) => setSettings({ ...settings!, metaTitle: e.target.value })}
-                    placeholder="VD: Khách sạn ABC - Đặt phòng online"
+                    placeholder={t('settings.metaTitlePlaceholder')}
                   />
                   <div>
-                    <label className="text-sm font-medium text-fg">Mô tả trang</label>
+                    <label className="text-sm font-medium text-fg">{t('settings.metaDescription')}</label>
                     <textarea
                       value={settings?.metaDescription || ''}
                       onChange={(e) => setSettings({ ...settings!, metaDescription: e.target.value })}
-                      placeholder="Mô tả ngắn về cơ sở của bạn..."
+                      placeholder={t('settings.metaDescriptionPlaceholder')}
                       className="w-full mt-1 px-3 py-2 border rounded-lg"
                       rows={3}
                     />
@@ -1824,18 +1867,16 @@ export default function WebsiteBuilderPage() {
 
               <Card className="mt-4">
                 <CardHeader>
-                  <CardTitle>Xuất bản</CardTitle>
+                  <CardTitle>{t('publish.title')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-medium">
-                        {settings?.isPublished ? 'Đã xuất bản' : 'Chưa xuất bản'}
+                        {settings?.isPublished ? t('publish.published') : t('publish.unpublished')}
                       </p>
                       <p className="text-sm text-muted">
-                        {settings?.isPublished
-                          ? 'Khách xem và đặt phòng được trên website.'
-                          : 'Chỉ thành viên đã đăng nhập xem được (bản xem trước); khách chưa đặt phòng được.'}
+                        {settings?.isPublished ? t('publish.publishedHint') : t('publish.unpublishedHint')}
                       </p>
                     </div>
                     <Button
@@ -1843,7 +1884,7 @@ export default function WebsiteBuilderPage() {
                       disabled={isSaving || !settings}
                       variant={settings?.isPublished ? 'danger' : 'primary'}
                     >
-                      {settings?.isPublished ? 'Gỡ xuất bản' : 'Xuất bản ngay'}
+                      {settings?.isPublished ? t('publish.unpublish') : t('publish.publishNow')}
                     </Button>
                   </div>
                 </CardContent>
@@ -1879,7 +1920,7 @@ export default function WebsiteBuilderPage() {
                   {isDragging && (
                     <div className="sticky top-0 z-50 bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-4 py-2 text-sm font-medium flex items-center gap-2 shadow-lg">
                       <div className="w-2 h-2 rounded-full bg-panel animate-pulse"></div>
-                      Đang kéo thả... Di chuyển khối đến vị trí mong muốn
+                      {t('canvas.dragging')}
                     </div>
                   )}
                   
@@ -1888,13 +1929,13 @@ export default function WebsiteBuilderPage() {
                       <div className="w-20 h-20 rounded-2xl bg-fg/5 flex items-center justify-center mb-4">
                         <LayoutGrid className="w-10 h-10 text-muted" />
                       </div>
-                      <h3 className="text-lg font-semibold text-muted mb-2">Chưa có khối nào</h3>
+                      <h3 className="text-lg font-semibold text-muted mb-2">{t('blocks.empty')}</h3>
                       <p className="text-sm text-muted max-w-xs mb-4">
-                        Thêm các khối từ panel bên trái hoặc chọn template để bắt đầu
+                        {t('canvas.emptyHint')}
                       </p>
                       <Button onClick={() => setShowTemplateModal(true)} className="gap-2">
                         <Wand2 className="w-4 h-4" />
-                        Chọn Template
+                        {t('templates.choose')}
                       </Button>
                     </div>
                   ) : (
@@ -1924,7 +1965,7 @@ export default function WebsiteBuilderPage() {
                       
                       {(isDragging ? previewBlocks : blocks).filter(b => b.isEnabled).length === 0 && (
                         <div className="text-center py-12">
-                          <p className="text-muted">Tất cả các khối đang bị ẩn</p>
+                          <p className="text-muted">{t('canvas.allHidden')}</p>
                         </div>
                       )}
                     </div>

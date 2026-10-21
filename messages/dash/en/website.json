@@ -1,1 +1,182 @@
-{}
+{
+  "header": {
+    "title": "Website Builder",
+    "subtitle": "Drag and drop to arrange your website",
+    "undo": "Undo (Ctrl+Z)",
+    "redo": "Redo (Ctrl+Y)",
+    "template": "Template",
+    "preview": "Preview"
+  },
+  "tabs": {
+    "blocks": "Blocks",
+    "style": "Style",
+    "settings": "Settings"
+  },
+  "toast": {
+    "saved": "Changes saved",
+    "saveFailed": "Couldn't save. Please try again.",
+    "offline": "Connection lost, nothing was saved.",
+    "published": "Website published",
+    "unpublished": "Website unpublished"
+  },
+  "blockTypes": {
+    "HERO": { "name": "Hero banner", "description": "Top banner with an image & search" },
+    "ROOMS": { "name": "Room list", "description": "Shows your room types" },
+    "AMENITIES": { "name": "Amenities", "description": "Your property's amenities" },
+    "ABOUT": { "name": "About", "description": "About your property" },
+    "GALLERY": { "name": "Photo gallery", "description": "A collection of photos" },
+    "REVIEWS": { "name": "Reviews", "description": "Shows guest reviews" },
+    "MAP": { "name": "Map", "description": "Google Maps location" },
+    "CONTACT": { "name": "Contact", "description": "Contact details" },
+    "CTA": { "name": "Call to action", "description": "A call-to-action button" }
+  },
+  "templates": {
+    "choose": "Choose a template",
+    "subtitle": "Get started fast with a ready-made template",
+    "startBlank": "Or start blank and design it your way",
+    "classicHotel": { "name": "Classic hotel", "description": "Elegant and professional" },
+    "modernResort": { "name": "Modern resort", "description": "Minimal, upscale, made for getaways" },
+    "budgetFriendly": { "name": "Budget", "description": "Simple, easy to use, good value" },
+    "premiumBoutique": { "name": "Premium boutique", "description": "Unique, private, high-end" }
+  },
+  "sortable": {
+    "configure": "Block settings",
+    "hide": "Hide block",
+    "show": "Show block",
+    "remove": "Remove block",
+    "dragHint": "Drag to reorder",
+    "moving": "Moving..."
+  },
+  "available": {
+    "addToPage": "Add to page",
+    "added": "Added"
+  },
+  "config": {
+    "heading": "Settings: {name}",
+    "fields": {
+      "heroTitle": "Main title",
+      "subtitle": "Subtitle",
+      "ctaButton": "CTA button",
+      "ctaLink": "CTA link",
+      "title": "Title",
+      "displayStyle": "Layout",
+      "roomsLimit": "Rooms shown",
+      "columnsShown": "Columns shown",
+      "content": "Content",
+      "columns": "Columns",
+      "reviewsLimit": "Reviews shown",
+      "mapAddress": "Address shown",
+      "latitude": "Latitude",
+      "longitude": "Longitude",
+      "zoom": "Zoom level",
+      "email": "Email",
+      "phone": "Phone number",
+      "address": "Address",
+      "description": "Description",
+      "buttonText": "Button text",
+      "buttonLink": "Button link"
+    },
+    "placeholders": {
+      "heroTitle": "e.g. Welcome to...",
+      "heroSubtitle": "e.g. A wonderful stay",
+      "ctaButton": "e.g. Book now",
+      "ctaLink": "e.g. #rooms",
+      "about": "Tell guests about your property...",
+      "mapAddress": "e.g. 123 ABC Street, District 1, Ho Chi Minh City",
+      "address": "123 ABC Street..."
+    },
+    "display": {
+      "grid": "Grid",
+      "list": "List"
+    },
+    "columnCount": "{count, plural, one {# column} other {# columns}}",
+    "contactForm": "Show the contact form"
+  },
+  "preview": {
+    "propertyName": "Your hotel",
+    "propertyDescription": "A short description of your property",
+    "bookNow": "Book now",
+    "roomsTitle": "Room types",
+    "roomName": "{name} Room",
+    "roomMeta": "2 guests • 25m²",
+    "roomPrice": "{price}/night",
+    "amenitiesTitle": "Top amenities",
+    "amenities": {
+      "wifi": "Free Wi-Fi",
+      "parking": "Parking",
+      "pool": "Swimming pool",
+      "restaurant": "Restaurant",
+      "spa": "Spa",
+      "karaoke": "Karaoke"
+    },
+    "aboutTitle": "About us",
+    "galleryTitle": "Photo gallery",
+    "reviewsTitle": "What our guests say",
+    "reviews": {
+      "first": "Great service, spotless room!",
+      "second": "Convenient location, friendly staff.",
+      "third": "Will definitely come back!"
+    },
+    "mapTitle": "Our location",
+    "mapNoLocation": "No location set yet",
+    "mapPreview": "Google Maps preview",
+    "contactTitle": "Contact us",
+    "form": {
+      "name": "Full name",
+      "email": "Email",
+      "message": "Message",
+      "send": "Send"
+    },
+    "ctaTitle": "Ready for your stay?",
+    "ctaSubtitle": "Book your room today!"
+  },
+  "blocks": {
+    "arrange": "Arrange blocks",
+    "arrangeHint": "Drag and drop to change the order",
+    "count": "{count, plural, one {# block} other {# blocks}}",
+    "empty": "No blocks yet",
+    "emptyHint": "Pick a template or add blocks yourself",
+    "addTitle": "Add a block",
+    "addHint": "Pick a block to add to your website"
+  },
+  "style": {
+    "colors": "Colors",
+    "primary": "Primary color",
+    "secondary": "Secondary color",
+    "accent": "Accent color",
+    "fonts": "Fonts",
+    "bodyFont": "Body font",
+    "headingFont": "Heading font",
+    "fontTraits": {
+      "modern": "Modern",
+      "popular": "Popular",
+      "readable": "Easy to read",
+      "elegant": "Elegant",
+      "luxurious": "Luxurious",
+      "traditional": "Traditional",
+      "youthful": "Youthful",
+      "dynamic": "Dynamic"
+    }
+  },
+  "settings": {
+    "seo": "SEO & Meta",
+    "metaTitle": "Page title (meta title)",
+    "metaTitlePlaceholder": "e.g. ABC Hotel - Book online",
+    "metaDescription": "Page description",
+    "metaDescriptionPlaceholder": "A short description of your property..."
+  },
+  "publish": {
+    "title": "Publishing",
+    "published": "Published",
+    "unpublished": "Not published",
+    "publishedHint": "Guests can see the website and book on it.",
+    "unpublishedHint": "Only signed-in members can see it (as a preview); guests can't book yet.",
+    "unpublish": "Unpublish",
+    "publishNow": "Publish now"
+  },
+  "canvas": {
+    "dragging": "Dragging... Drop the block where you want it",
+    "emptyHint": "Add blocks from the panel on the left or pick a template to get started",
+    "allHidden": "All blocks are hidden"
+  }
+}
