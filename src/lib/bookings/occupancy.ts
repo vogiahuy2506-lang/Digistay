@@ -39,7 +39,9 @@ function lockWhere({ propertyId, checkIn, checkOut, now = new Date(), ownHoldId 
     lockEnd: { gt: checkIn },
     AND: [
       { OR: [{ type: { in: ['MAINTENANCE', 'BLOCKED'] } }, { type: { in: ['HOLD', 'BOOKED'] }, expiresAt: { gt: now } }] },
-      ...(ownHoldId ? [{ id: { not: ownHoldId } }] : []),
+      // Only a HOLD is ever the guest's own: the id comes from the browser, and
+      // excluding any lock by id let a maintenance lock's id free its room.
+      ...(ownHoldId ? [{ NOT: { id: ownHoldId, type: 'HOLD' as const } }] : []),
     ],
   }
 }

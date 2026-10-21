@@ -223,7 +223,11 @@ export async function createBooking(input: NewBooking) {
     })
     // The guest's hold has done its job.
     if (input.holdId) {
-      await tx.roomLock.deleteMany({ where: { id: input.holdId, type: 'HOLD', bookingId: null } })
+      // Scoped: the id comes from the browser, and must not release another
+      // hotel's or another room type's hold.
+      await tx.roomLock.deleteMany({
+        where: { id: input.holdId, type: 'HOLD', bookingId: null, propertyId: input.propertyId, roomTypeId: roomType.id },
+      })
     }
     const emailIds = await queueBookingEmails(tx, booking)
     return { booking, emailIds, quote }
