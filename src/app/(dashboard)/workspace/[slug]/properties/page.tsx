@@ -7,6 +7,7 @@ import { Card, CardContent, Button, Badge, Modal, ModalFooter, Input, Select, Te
 import { Plus, Building2, MapPin, MoreVertical, Pencil, Trash2, Eye, EyeOff } from 'lucide-react'
 import { Dropdown, DropdownItem, DropdownDivider } from '@/components/ui'
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 import { useWorkspace } from '@/lib/hooks/use-workspace'
 import { routes } from '@/lib/utils/routes'
 
@@ -26,19 +27,8 @@ interface Property {
   }
 }
 
-const propertyTypes = [
-  { value: 'HOTEL', label: 'Khách sạn' },
-  { value: 'HOMESTAY', label: 'Homestay' },
-  { value: 'RESORT', label: 'Resort' },
-  { value: 'RESTAURANT', label: 'Nhà hàng' },
-  { value: 'VILLA', label: 'Villa' },
-  { value: 'MOTEL', label: 'Motel' },
-  { value: 'OTHER', label: 'Khác' },
-]
-
-const getPropertyTypeLabel = (type: string) => {
-  return propertyTypes.find(t => t.value === type)?.label || type
-}
+const PROPERTY_TYPES = ['HOTEL', 'HOMESTAY', 'RESORT', 'RESTAURANT', 'VILLA', 'MOTEL', 'OTHER'] as const
+type PropertyType = (typeof PROPERTY_TYPES)[number]
 
 const getPropertyTypeBadge = (type: string) => {
   const variants: Record<string, 'primary' | 'secondary' | 'success' | 'warning' | 'gray'> = {
@@ -55,6 +45,11 @@ const getPropertyTypeBadge = (type: string) => {
 
 export default function PropertiesPage() {
   const router = useRouter()
+  const t = useTranslations('dash.property')
+  const tc = useTranslations('dash.common')
+  const propertyTypes = PROPERTY_TYPES.map((value) => ({ value, label: t(`types.${value}`) }))
+  const getPropertyTypeLabel = (type: string) =>
+    PROPERTY_TYPES.includes(type as PropertyType) ? t(`types.${type as PropertyType}`) : type
   const { workspace, loading: wsLoading } = useWorkspace()
   const workspaceId = workspace?.id
 
@@ -117,7 +112,7 @@ export default function PropertiesPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || 'Đã xảy ra lỗi')
+        setError(data.error || t('form.error'))
         return
       }
 
@@ -126,7 +121,7 @@ export default function PropertiesPage() {
       fetchProperties()
       router.push(routes.property(workspace!.slug, data.data.id))
     } catch (err) {
-      setError('Đã xảy ra lỗi, vui lòng thử lại')
+      setError(tc('states.error'))
     } finally {
       setIsCreating(false)
     }
@@ -147,7 +142,7 @@ export default function PropertiesPage() {
   }
 
   const handleDeleteProperty = async (id: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa cơ sở này?')) return
+    if (!confirm(t('list.deleteConfirm'))) return
 
     try {
       const response = await fetch(`/api/properties/${id}`, {
@@ -192,13 +187,13 @@ export default function PropertiesPage() {
           <CardContent className="p-12 text-center">
             <Building2 className="w-16 h-16 text-muted mx-auto mb-4" />
             <h3 className="text-lg font-medium text-fg mb-2">
-              Vui lòng chọn Workspace
+              {t('list.noWorkspace.title')}
             </h3>
             <p className="text-muted mb-6">
-              Bạn cần chọn một workspace để xem và quản lý cơ sở kinh doanh.
+              {t('list.noWorkspace.text')}
             </p>
             <Button onClick={() => router.push(routes.workspaces())}>
-              Chuyển đến Workspace
+              {t('list.noWorkspace.action')}
             </Button>
           </CardContent>
         </Card>
@@ -209,12 +204,12 @@ export default function PropertiesPage() {
   return (
     <PageContainer>
       <Header
-        title="Cơ sở kinh doanh"
-        description="Quản lý khách sạn, homestay, resort của bạn"
+        title={t('list.title')}
+        description={t('list.description')}
         actions={
           <Button onClick={() => setIsCreateModalOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
-            Thêm cơ sở mới
+            {t('list.add')}
           </Button>
         }
       />
@@ -228,14 +223,14 @@ export default function PropertiesPage() {
           <CardContent className="p-12 text-center">
             <Building2 className="w-16 h-16 text-muted mx-auto mb-4" />
             <h3 className="text-lg font-medium text-fg mb-2">
-              Chưa có cơ sở nào
+              {t('list.empty.title')}
             </h3>
             <p className="text-muted mb-6">
-              Tạo cơ sở kinh doanh đầu tiên trong workspace này.
+              {t('list.empty.text')}
             </p>
             <Button onClick={() => setIsCreateModalOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
-              Tạo cơ sở đầu tiên
+              {t('list.empty.action')}
             </Button>
           </CardContent>
         </Card>
@@ -264,7 +259,7 @@ export default function PropertiesPage() {
                       {getPropertyTypeLabel(property.type)}
                     </Badge>
                     <Badge variant={property.isActive ? 'success' : 'gray'}>
-                      {property.isActive ? 'Hoạt động' : 'Tắt'}
+                      {property.isActive ? t('status.active') : t('status.inactive')}
                     </Badge>
                   </div>
                 </div>
@@ -283,13 +278,13 @@ export default function PropertiesPage() {
                         icon={<Pencil className="w-4 h-4" />}
                         onClick={() => router.push(routes.property(workspace!.slug, property.id))}
                       >
-                        Chỉnh sửa
+                        {t('list.menu.edit')}
                       </DropdownItem>
                       <DropdownItem 
                         icon={property.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         onClick={() => togglePropertyStatus(property.id, property.isActive)}
                       >
-                        {property.isActive ? 'Tắt hoạt động' : 'Bật hoạt động'}
+                        {property.isActive ? t('list.menu.deactivate') : t('list.menu.activate')}
                       </DropdownItem>
                       <DropdownDivider />
                       <DropdownItem 
@@ -297,7 +292,7 @@ export default function PropertiesPage() {
                         danger
                         onClick={() => handleDeleteProperty(property.id)}
                       >
-                        Xóa
+                        {tc('actions.delete')}
                       </DropdownItem>
                     </Dropdown>
                   </div>
@@ -308,12 +303,12 @@ export default function PropertiesPage() {
                   </div>
 
                   <div className="flex items-center justify-between text-sm text-muted mb-4">
-                    <span>{property._count.roomTypes} hạng phòng</span>
-                    <span>{property._count.images} hình ảnh</span>
+                    <span>{t('list.roomTypes', { count: property._count.roomTypes })}</span>
+                    <span>{t('list.images', { count: property._count.images })}</span>
                   </div>
 
                   <div className="text-xs text-muted mb-3">
-                    Subdomain: <code className="bg-fg/5 px-1 rounded">{property.subdomain}</code>
+                    {t('list.subdomain')} <code className="bg-fg/5 px-1 rounded">{property.subdomain}</code>
                   </div>
 
                   <Button 
@@ -321,7 +316,7 @@ export default function PropertiesPage() {
                     className="w-full"
                     onClick={() => router.push(routes.property(workspace!.slug, property.id))}
                   >
-                    Quản lý
+                    {t('list.manage')}
                   </Button>
                 </CardContent>
               </Card>
@@ -337,8 +332,8 @@ export default function PropertiesPage() {
           setIsCreateModalOpen(false)
           resetForm()
         }}
-        title="Thêm cơ sở mới"
-        description="Điền thông tin cơ bản để tạo cơ sở kinh doanh mới"
+        title={t('list.add')}
+        description={t('list.create.description')}
         size="lg"
       >
         <form onSubmit={handleCreateProperty}>
@@ -351,8 +346,8 @@ export default function PropertiesPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <Input
-                label="Tên cơ sở"
-                placeholder="VD: Khách sạn ABC"
+                label={t('form.name')}
+                placeholder={t('form.namePlaceholder')}
                 value={formData.name}
                 onChange={(e) => {
                   setFormData({ ...formData, name: e.target.value })
@@ -371,7 +366,7 @@ export default function PropertiesPage() {
               />
 
               <Select
-                label="Loại hình"
+                label={t('form.type')}
                 options={propertyTypes}
                 value={formData.type}
                 onChange={(e) => setFormData({ ...formData, type: e.target.value })}
@@ -380,29 +375,29 @@ export default function PropertiesPage() {
             </div>
 
             <Input
-              label="Subdomain"
-              placeholder="ten-khach-san"
+              label={t('form.subdomain')}
+              placeholder={t('form.subdomainPlaceholder')}
               value={formData.subdomain}
               onChange={(e) => setFormData({ 
                 ...formData, 
                 subdomain: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-')
               })}
-              hint="Link: ten-khach-san.digistay.vn"
+              hint={t('form.subdomainHint', { subdomain: t('form.subdomainPlaceholder') })}
               required
             />
 
             <div className="grid grid-cols-2 gap-4">
               <Input
-                label="Địa chỉ"
-                placeholder="VD: 123 Đường ABC"
+                label={t('form.address')}
+                placeholder={t('form.addressPlaceholder')}
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 required
               />
 
               <Input
-                label="Thành phố/Tỉnh"
-                placeholder="VD: Hà Nội"
+                label={t('form.city')}
+                placeholder={t('form.cityPlaceholder')}
                 value={formData.city}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                 required
@@ -411,31 +406,31 @@ export default function PropertiesPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <Input
-                label="Quận/Huyện (tùy chọn)"
-                placeholder="VD: Quận Ba Đình"
+                label={t('form.district')}
+                placeholder={t('form.districtPlaceholder')}
                 value={formData.district}
                 onChange={(e) => setFormData({ ...formData, district: e.target.value })}
               />
 
               <Input
-                label="Số điện thoại (tùy chọn)"
-                placeholder="VD: 0123456789"
+                label={t('form.phone')}
+                placeholder={t('list.create.phonePlaceholder')}
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               />
             </div>
 
             <Input
-              label="Email (tùy chọn)"
+              label={t('form.email')}
               type="email"
-              placeholder="VD: info@example.com"
+              placeholder={t('form.emailPlaceholder')}
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
 
             <Textarea
-              label="Mô tả (tùy chọn)"
-              placeholder="Giới thiệu ngắn về cơ sở của bạn"
+              label={t('form.description')}
+              placeholder={t('form.descriptionPlaceholder')}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
@@ -451,10 +446,10 @@ export default function PropertiesPage() {
                 resetForm()
               }}
             >
-              Hủy
+              {tc('actions.cancel')}
             </Button>
             <Button type="submit" isLoading={isCreating}>
-              Tạo cơ sở
+              {t('form.submit')}
             </Button>
           </ModalFooter>
         </form>

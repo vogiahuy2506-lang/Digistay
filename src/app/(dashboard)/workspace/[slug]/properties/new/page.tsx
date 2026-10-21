@@ -5,21 +5,17 @@ import { useRouter } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, Button, Modal, ModalFooter, Input, Select, Textarea } from '@/components/ui'
 import { Building2, ArrowLeft } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { useWorkspace } from '@/lib/hooks/use-workspace'
 import { routes } from '@/lib/utils/routes'
 
-const propertyTypes = [
-  { value: 'HOTEL', label: 'Khách sạn' },
-  { value: 'HOMESTAY', label: 'Homestay' },
-  { value: 'RESORT', label: 'Resort' },
-  { value: 'RESTAURANT', label: 'Nhà hàng' },
-  { value: 'VILLA', label: 'Villa' },
-  { value: 'MOTEL', label: 'Motel' },
-  { value: 'OTHER', label: 'Khác' },
-]
+const PROPERTY_TYPES = ['HOTEL', 'HOMESTAY', 'RESORT', 'RESTAURANT', 'VILLA', 'MOTEL', 'OTHER'] as const
 
 export default function NewPropertyPage() {
   const router = useRouter()
+  const t = useTranslations('dash.property')
+  const tc = useTranslations('dash.common')
+  const propertyTypes = PROPERTY_TYPES.map((value) => ({ value, label: t(`types.${value}`) }))
   const { workspace } = useWorkspace()
   const [isCreating, setIsCreating] = React.useState(false)
   const [error, setError] = React.useState('')
@@ -66,13 +62,13 @@ export default function NewPropertyPage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error || 'Đã xảy ra lỗi')
+        setError(data.error || t('form.error'))
         return
       }
       resetForm()
       router.push(routes.property(workspace.slug, data.data.id))
     } catch (err) {
-      setError('Đã xảy ra lỗi, vui lòng thử lại')
+      setError(tc('states.error'))
     } finally {
       setIsCreating(false)
     }
@@ -95,11 +91,11 @@ export default function NewPropertyPage() {
         className="flex items-center gap-1.5 text-sm text-muted hover:text-acc mb-3"
       >
         <ArrowLeft className="w-4 h-4" />
-        Quay lại
+        {tc('actions.back')}
       </button>
       <Header
-        title="Tạo cơ sở mới"
-        description={`Thêm cơ sở kinh doanh vào workspace ${workspace.name}`}
+        title={t('new.title')}
+        description={t('new.description', { workspace: workspace.name })}
       />
 
       <Card>
@@ -113,8 +109,8 @@ export default function NewPropertyPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
-                label="Tên cơ sở"
-                placeholder="VD: Khách sạn ABC"
+                label={t('form.name')}
+                placeholder={t('form.namePlaceholder')}
                 value={formData.name}
                 onChange={(e) => {
                   setFormData({ ...formData, name: e.target.value })
@@ -132,7 +128,7 @@ export default function NewPropertyPage() {
               />
 
               <Select
-                label="Loại hình"
+                label={t('form.type')}
                 options={propertyTypes}
                 value={formData.type}
                 onChange={(e) => setFormData({ ...formData, type: e.target.value })}
@@ -141,8 +137,8 @@ export default function NewPropertyPage() {
             </div>
 
             <Input
-              label="Subdomain"
-              placeholder="ten-khach-san"
+              label={t('form.subdomain')}
+              placeholder={t('form.subdomainPlaceholder')}
               value={formData.subdomain}
               onChange={(e) =>
                 setFormData({
@@ -150,21 +146,21 @@ export default function NewPropertyPage() {
                   subdomain: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
                 })
               }
-              hint={`Link: ${formData.subdomain || 'ten-khach-san'}.digistay.vn`}
+              hint={t('form.subdomainHint', { subdomain: formData.subdomain || t('form.subdomainPlaceholder') })}
               required
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
-                label="Địa chỉ"
-                placeholder="VD: 123 Đường ABC"
+                label={t('form.address')}
+                placeholder={t('form.addressPlaceholder')}
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 required
               />
               <Input
-                label="Thành phố/Tỉnh"
-                placeholder="VD: Hà Nội"
+                label={t('form.city')}
+                placeholder={t('form.cityPlaceholder')}
                 value={formData.city}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                 required
@@ -173,30 +169,30 @@ export default function NewPropertyPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
-                label="Quận/Huyện (tùy chọn)"
-                placeholder="VD: Quận Ba Đình"
+                label={t('form.district')}
+                placeholder={t('form.districtPlaceholder')}
                 value={formData.district}
                 onChange={(e) => setFormData({ ...formData, district: e.target.value })}
               />
               <Input
-                label="Số điện thoại (tùy chọn)"
-                placeholder="VD: 024 1234 5678"
+                label={t('form.phone')}
+                placeholder={t('new.phonePlaceholder')}
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               />
             </div>
 
             <Input
-              label="Email (tùy chọn)"
+              label={t('form.email')}
               type="email"
-              placeholder="VD: info@example.com"
+              placeholder={t('form.emailPlaceholder')}
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
 
             <Textarea
-              label="Mô tả (tùy chọn)"
-              placeholder="Giới thiệu ngắn về cơ sở của bạn"
+              label={t('form.description')}
+              placeholder={t('form.descriptionPlaceholder')}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
@@ -205,14 +201,14 @@ export default function NewPropertyPage() {
             <div className="flex items-center gap-2 pt-2">
               <Button type="submit" isLoading={isCreating}>
                 <Building2 className="w-4 h-4 mr-2" />
-                Tạo cơ sở
+                {t('form.submit')}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => router.push(routes.workspace(workspace.slug))}
               >
-                Hủy
+                {tc('actions.cancel')}
               </Button>
             </div>
           </form>

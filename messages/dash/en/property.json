@@ -1,1 +1,226 @@
-{}
+{
+  "status": {
+    "active": "Active",
+    "inactive": "Off"
+  },
+  "types": {
+    "HOTEL": "Hotel",
+    "HOMESTAY": "Homestay",
+    "RESORT": "Resort",
+    "RESTAURANT": "Restaurant",
+    "VILLA": "Villa",
+    "MOTEL": "Motel",
+    "OTHER": "Other"
+  },
+  "form": {
+    "name": "Property name",
+    "namePlaceholder": "e.g. ABC Hotel",
+    "type": "Type",
+    "subdomain": "Subdomain",
+    "subdomainPlaceholder": "hotel-name",
+    "subdomainHint": "Link: {subdomain}.digistay.vn",
+    "address": "Address",
+    "addressPlaceholder": "e.g. 123 ABC Street",
+    "city": "City/Province",
+    "cityPlaceholder": "e.g. Hanoi",
+    "district": "District (optional)",
+    "districtPlaceholder": "e.g. Ba Dinh District",
+    "phone": "Phone number (optional)",
+    "email": "Email (optional)",
+    "emailPlaceholder": "e.g. info@example.com",
+    "description": "Description (optional)",
+    "descriptionPlaceholder": "A short introduction to your property",
+    "submit": "Create property",
+    "error": "Something went wrong"
+  },
+  "list": {
+    "title": "Properties",
+    "description": "Manage your hotels, homestays and resorts",
+    "add": "Add property",
+    "noWorkspace": {
+      "title": "Please choose a workspace",
+      "text": "Choose a workspace to see and manage its properties.",
+      "action": "Go to workspaces"
+    },
+    "empty": {
+      "title": "No properties yet",
+      "text": "Create the first property in this workspace.",
+      "action": "Create the first property"
+    },
+    "menu": {
+      "edit": "Edit",
+      "deactivate": "Deactivate",
+      "activate": "Activate"
+    },
+    "roomTypes": "{count, plural, one {# room type} other {# room types}}",
+    "images": "{count, plural, one {# photo} other {# photos}}",
+    "subdomain": "Subdomain:",
+    "manage": "Manage",
+    "deleteConfirm": "Are you sure you want to delete this property?",
+    "create": {
+      "description": "Fill in the basics to create a new property",
+      "phonePlaceholder": "e.g. 0123456789"
+    }
+  },
+  "new": {
+    "title": "Create a property",
+    "description": "Add a property to the {workspace} workspace",
+    "phonePlaceholder": "e.g. 024 1234 5678"
+  },
+  "detail": {
+    "notFound": "Property not found",
+    "viewWebsite": "View website",
+    "websiteBuilder": "Website Builder",
+    "edit": "Edit",
+    "tabs": {
+      "overview": "Overview",
+      "rooms": "Room types",
+      "pricing": "Rates",
+      "amenities": "Amenities",
+      "policy": "Policies",
+      "website": "Website"
+    },
+    "overview": {
+      "images": "Photos",
+      "primaryImage": "Main photo",
+      "noImages": "No photos yet",
+      "info": "Basic information",
+      "address": "Address",
+      "phone": "Phone",
+      "email": "Email",
+      "website": "Website",
+      "description": "Description",
+      "roomsSummary": "Room types at a glance",
+      "viewDetails": "View details"
+    },
+    "images": {
+      "add": "Add photo",
+      "addTitle": "Add photos",
+      "url": "Image URL",
+      "urlHint": "Enter the image URL from a hosting service (Cloudinary, AWS S3, imgbb, ...)",
+      "urlRequired": "Please enter the image URL",
+      "preview": "Preview:",
+      "previewAlt": "Preview",
+      "alt": "Image description (alt)",
+      "altPlaceholder": "e.g. Deluxe room with sea view",
+      "category": "Category",
+      "categories": {
+        "none": "Choose a category",
+        "lobby": "Lobby",
+        "room": "Room",
+        "pool": "Pool",
+        "restaurant": "Restaurant",
+        "gym": "Gym",
+        "exterior": "Exterior",
+        "other": "Other"
+      },
+      "primary": "Set as main photo",
+      "uploading": "Uploading...",
+      "deleteConfirm": "Are you sure you want to delete this photo?"
+    },
+    "rooms": {
+      "title": "Room types",
+      "subtitle": "Set up your room types and how many rooms each has",
+      "add": "Add room type",
+      "addFirst": "Add the first room type",
+      "empty": "No room types yet",
+      "capacity": "{rooms, plural, one {# room} other {# rooms}} • Up to {guests, plural, one {# guest} other {# guests}}",
+      "deleteConfirm": "Are you sure you want to delete this room type?",
+      "modal": {
+        "editTitle": "Edit room type",
+        "addTitle": "New room type",
+        "name": "Room type name",
+        "namePlaceholder": "e.g. Deluxe Room",
+        "description": "Description (optional)",
+        "descriptionPlaceholder": "A detailed description of the room type",
+        "area": "Area (m²)",
+        "bedType": "Bed type",
+        "totalRooms": "Number of rooms",
+        "maxAdults": "Max adults",
+        "maxChildren": "Max children",
+        "baseOccupancy": "Base occupancy",
+        "baseOccupancyHint": "Guests included in the base rate",
+        "maxOccupancy": "Max occupancy"
+      }
+    },
+    "bedTypes": {
+      "SINGLE": "Single bed",
+      "DOUBLE": "Double bed",
+      "TWIN": "2 single beds",
+      "TRIPLE": "3 beds",
+      "QUADRUPLE": "4 beds",
+      "KING": "King bed",
+      "QUEEN": "Queen bed",
+      "SUITE": "Suite",
+      "BUNK": "Bunk bed"
+    },
+    "pricing": {
+      "title": "Rates",
+      "subtitle": "Set weekday and weekend room rates and surcharges",
+      "add": "Add rate plan",
+      "addFirst": "Create the first rate plan",
+      "empty": "No rate plans yet",
+      "weekday": "Weekday rate",
+      "weekend": "Weekend rate",
+      "extraAdult": "Extra adult",
+      "extraChild": "Extra child",
+      "modal": {
+        "title": "New rate plan",
+        "name": "Rate plan name",
+        "namePlaceholder": "e.g. Standard",
+        "weekday": "Weekday rate (VND)",
+        "weekend": "Weekend rate (VND)",
+        "extraAdult": "Extra adult (VND)",
+        "extraChild": "Extra child (VND)"
+      }
+    },
+    "amenities": {
+      "title": "Amenities",
+      "subtitle": "Choose the amenities your property offers",
+      "items": {
+        "wifi": "Free Wi-Fi",
+        "parking": "Parking",
+        "breakfast": "Breakfast",
+        "ac": "Air conditioning",
+        "pool": "Swimming pool",
+        "gym": "Gym",
+        "spa": "Spa",
+        "restaurant": "Restaurant",
+        "bar": "Bar",
+        "room_service": "Room service",
+        "laundry": "Laundry",
+        "airport": "Airport transfer"
+      }
+    },
+    "policy": {
+      "title": "Policies",
+      "subtitle": "Set check-in/out times and other house rules",
+      "checkIn": "Check-in time",
+      "checkOut": "Check-out time",
+      "rules": "General rules",
+      "children": "Children allowed",
+      "childrenHint": "Children may stay at the property",
+      "pets": "Pets allowed",
+      "petsHint": "Pets may stay at the property",
+      "smoking": "Smoking allowed",
+      "smokingHint": "Smoking is allowed on the premises",
+      "cancellation": "Cancellation policy",
+      "cancellationPlaceholder": "e.g. Free cancellation up to 24 hours before check-in...",
+      "additionalRules": "Additional house rules",
+      "additionalRulesPlaceholder": "Any other house rules..."
+    },
+    "website": {
+      "title": "Website Builder",
+      "subtitle": "Customize the look of your public website",
+      "open": "Open Website Builder",
+      "blocks": "Block Builder",
+      "blocksHint": "Drag and drop layout blocks",
+      "colors": "Custom colors",
+      "colorsHint": "Change the main color",
+      "publish": "Publish",
+      "publishHint": "Put your website online",
+      "public": "Public website",
+      "published": "Published"
+    }
+  }
+}
