@@ -33,6 +33,15 @@ const guestBookingSchema = z.object({
   vatEmail: z.string().trim().email('Email nhận hoá đơn không hợp lệ').max(200).optional().or(z.literal('')),
 })
 
+/** The signed link token (deposit-link.ts), or null when NEXTAUTH_SECRET is missing. */
+function guestToken(bookingId: string): string | null {
+  try {
+    return depositToken(bookingId)
+  } catch {
+    return null
+  }
+}
+
 /** Today in Vietnam, as yyyy-mm-dd. */
 const todayVn = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date())
 
@@ -160,8 +169,9 @@ export async function POST(request: NextRequest) {
         deposit: deposit && { amount: deposit.amount, checkoutUrl: deposit.checkoutUrl, expiresAt: deposit.expiresAt },
         // The hotel takes a deposit but the link could not be made: it will call.
         depositUnavailable: Boolean(depositPolicy && !deposit),
-        // The guest's own link, as in the booking email (deposit-link.ts): the deposit and confirmation pages.
-        token: depositToken(booking.id),
+        // The guest's own link, as in the booking email (deposit-link.ts): the deposit and confirmation
+        // pages. null without a secret to sign it: the booking stands, the page shows its code instead.
+        token: guestToken(booking.id),
       },
       message: deposit
         ? 'Đã giữ đặt phòng. Vui lòng thanh toán tiền cọc để khách sạn xác nhận.'

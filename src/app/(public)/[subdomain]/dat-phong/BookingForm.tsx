@@ -65,6 +65,8 @@ export function BookingForm({
   const [sending, setSending] = React.useState(false)
   const [problem, setProblem] = React.useState<'roomGone' | 'badDates' | 'tooMany' | 'failed' | string | null>(null)
   const [wait, setWait] = React.useState(0)
+  // Booked, but no link to the next pages (no signing secret on the server): the code here.
+  const [bookedCode, setBookedCode] = React.useState<string | null>(null)
   const holdId = React.useRef<string | null>(null)
 
   // Hold the room while the guest fills the form in.
@@ -146,6 +148,11 @@ export function BookingForm({
         }),
       })
       const data = await res.json().catch(() => ({}))
+      if (res.ok && data.success && !data.data.token) {
+        setBookedCode(data.data.bookingCode)
+        setSending(false)
+        return
+      }
       if (res.ok && data.success) {
         try {
           sessionStorage.setItem(guestEmailKey(data.data.token), guest.email.trim())
@@ -234,6 +241,19 @@ export function BookingForm({
             : problem
   const blocked = sending || problem === 'roomGone' || problem === 'badDates' || wait > 0
   const unitOf = (s: Service) => (s.priceType === 'PER_NIGHT' ? t('units.perNight') : s.priceType === 'PER_PERSON' || s.perPerson ? t('units.perPerson') : `/${t('units.once')}`)
+
+  if (bookedCode) {
+    return (
+      <Container className="pt-12">
+        <div role="status" className="max-w-[640px] border border-line bg-panel p-6 lg:p-8">
+          <h1 className="font-site text-[30px] leading-tight text-fg">{t('booking.done.title', { hotel: property.name })}</h1>
+          <p className="mt-3 text-[15px] text-fg/80">{t('booking.done.waitingLead', { hotel: property.name })}</p>
+          <p className="mt-5 text-label uppercase text-muted">{t('booking.done.code')}</p>
+          <p className="mt-1 font-mono text-[28px] font-medium text-fg">{bookedCode}</p>
+        </div>
+      </Container>
+    )
+  }
 
   return (
     <Container className="pt-8 lg:pt-12">
