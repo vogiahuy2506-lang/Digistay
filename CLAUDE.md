@@ -34,10 +34,12 @@ Trước khi commit: `npm test` và `npx tsc --noEmit` phải xanh; sửa API ch
 `npm run test:int`.
 Chạy một file test: lọc theo tên (`npx vitest run confirm`) — đường dẫn chứa `[id]` không khớp.
 
-Postgres cho integration test (một lần):
+Postgres cho integration test (một lần). Volume có tên để xoá/tạo lại container không bỏ lại
+volume ẩn danh mồ côi; muốn làm sạch hẳn thì `docker rm -f digistay-test-pg && docker volume rm digistay-test-pg-data`:
 
 ```bash
-docker run -d --name digistay-test-pg -e POSTGRES_PASSWORD=postgres -p 127.0.0.1:54329:5432 postgres:16-alpine
+docker run -d --name digistay-test-pg -e POSTGRES_PASSWORD=postgres -p 127.0.0.1:54329:5432 \
+  -v digistay-test-pg-data:/var/lib/postgresql/data postgres:16-alpine
 docker exec digistay-test-pg psql -U postgres -c "CREATE DATABASE digistay_test"
 DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54329/digistay_test" npm run test:int
 ```
