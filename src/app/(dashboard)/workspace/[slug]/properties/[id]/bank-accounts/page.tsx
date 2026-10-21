@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { useParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import QRCode from 'qrcode'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, Button, Badge, Input } from '@/components/ui'
@@ -25,6 +26,7 @@ interface BankAccount {
   isActive: boolean
 }
 
+// `name` is what is saved as the account's bankName (data); MB's label is translated.
 const bankList = [
   { code: 'MB', name: 'Ngân hàng Quân đội (MB Bank)' },
   { code: 'VCB', name: 'Vietcombank' },
@@ -39,6 +41,8 @@ const bankList = [
 ]
 
 export default function BankAccountsPage() {
+  const t = useTranslations('dash.money.bank')
+  const tc = useTranslations('dash.common')
   const params = useParams<{ slug: string; id: string }>()
   const propertyId = params.id
 
@@ -73,12 +77,12 @@ export default function BankAccountsPage() {
       if (data.success) {
         setAccounts(data.data)
       } else {
-        toast.error(data.error || 'Không thể tải danh sách tài khoản')
+        toast.error(data.error || t('toast.loadFailed'))
         setAccounts([])
       }
     } catch (err) {
       console.error('Failed to fetch accounts:', err)
-      toast.error('Đã xảy ra lỗi khi tải danh sách tài khoản')
+      toast.error(t('toast.loadError'))
       setAccounts([])
     } finally {
       setIsLoading(false)
@@ -87,11 +91,11 @@ export default function BankAccountsPage() {
 
   const handleSubmit = async () => {
     if (!propertyId) {
-      toast.error('Không xác định được cơ sở')
+      toast.error(t('toast.noProperty'))
       return
     }
     if (!formData.bankCode || !formData.accountNumber || !formData.accountHolder) {
-      toast.error('Vui lòng điền đầy đủ thông tin')
+      toast.error(t('toast.fillAll'))
       return
     }
 
@@ -113,38 +117,38 @@ export default function BankAccountsPage() {
       const data = await response.json()
 
       if (!data.success) {
-        toast.error(data.error || 'Không thể lưu tài khoản')
+        toast.error(data.error || t('toast.saveFailed'))
         return
       }
 
-      toast.success(editingAccount ? 'Đã cập nhật tài khoản' : 'Đã thêm tài khoản')
+      toast.success(editingAccount ? t('toast.updated') : t('toast.added'))
       setShowModal(false)
       resetForm()
       await fetchAccounts()
     } catch (err) {
       console.error('Failed to save account:', err)
-      toast.error('Đã xảy ra lỗi khi lưu tài khoản')
+      toast.error(t('toast.saveError'))
     } finally {
       setIsSubmitting(false)
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa tài khoản này?')) return
+    if (!confirm(t('confirmDelete'))) return
     try {
       const response = await fetch(`/api/bank-accounts/${id}`, {
         method: 'DELETE',
       })
       const data = await response.json()
       if (!data.success) {
-        toast.error(data.error || 'Không thể xóa tài khoản')
+        toast.error(data.error || t('toast.deleteFailed'))
         return
       }
-      toast.success('Đã xóa tài khoản')
+      toast.success(t('toast.deleted'))
       setAccounts(accounts.filter(a => a.id !== id))
     } catch (err) {
       console.error('Failed to delete account:', err)
-      toast.error('Đã xảy ra lỗi khi xóa tài khoản')
+      toast.error(t('toast.deleteError'))
     }
   }
 
@@ -171,12 +175,12 @@ export default function BankAccountsPage() {
     })
   }
 
-  const copyToClipboard = async (text: string, label = 'Đã copy') => {
+  const copyToClipboard = async (text: string, label = t('toast.copied')) => {
     try {
       await navigator.clipboard.writeText(text)
       toast.success(label)
     } catch {
-      toast.error('Không thể copy, vui lòng thử lại')
+      toast.error(t('toast.copyFailed'))
     }
   }
 
@@ -200,13 +204,13 @@ export default function BankAccountsPage() {
     return (
       <PageContainer>
         <Header
-          title="Tài Khoản Ngân Hàng"
-          description="Quản lý tài khoản ngân hàng để nhận thanh toán VietQR"
+          title={t('title')}
+          description={t('descriptionVietqr')}
         />
         <Card>
           <CardContent className="p-12 text-center">
             <Building className="w-12 h-12 text-muted mx-auto mb-4" />
-            <p className="text-muted">Không xác định được cơ sở.</p>
+            <p className="text-muted">{t('noProperty')}</p>
           </CardContent>
         </Card>
       </PageContainer>
@@ -216,12 +220,12 @@ export default function BankAccountsPage() {
   return (
     <PageContainer>
       <Header
-        title="Tài Khoản Ngân Hàng"
-        description="Quản lý tài khoản ngân hàng để nhận thanh toán"
+        title={t('title')}
+        description={t('description')}
         actions={
           <Button onClick={() => { resetForm(); setShowModal(true) }}>
             <Plus className="w-4 h-4 mr-2" />
-            Thêm tài khoản
+            {t('add')}
           </Button>
         }
       />
@@ -231,10 +235,9 @@ export default function BankAccountsPage() {
         <CardContent className="p-4 flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-info mt-0.5" />
           <div>
-            <p className="font-medium text-info">Tích hợp VietQR</p>
+            <p className="font-medium text-info">{t('infoTitle')}</p>
             <p className="text-sm text-info">
-              Khách hàng có thể quét mã QR để thanh toán nhanh chóng.
-              Hỗ trợ tất cả ngân hàng tại Việt Nam.
+              {t('infoText')}
             </p>
           </div>
         </CardContent>
@@ -251,10 +254,10 @@ export default function BankAccountsPage() {
         <Card>
           <CardContent className="p-12 text-center">
             <Building className="w-12 h-12 text-muted mx-auto mb-4" />
-            <p className="text-muted mb-4">Chưa có tài khoản ngân hàng nào</p>
+            <p className="text-muted mb-4">{t('empty')}</p>
             <Button onClick={() => { resetForm(); setShowModal(true) }}>
               <Plus className="w-4 h-4 mr-2" />
-              Thêm tài khoản
+              {t('add')}
             </Button>
           </CardContent>
         </Card>
@@ -270,10 +273,10 @@ export default function BankAccountsPage() {
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-fg">{account.bankName}</h3>
-                      <p className="text-sm text-muted">Mã ngân hàng: {account.bankCode}</p>
+                      <p className="text-sm text-muted">{t('bankCode', { code: account.bankCode })}</p>
                       <div className="flex items-center gap-2 mt-2">
                         <Badge variant={account.isActive ? 'success' : 'gray'}>
-                          {account.isActive ? 'Đang hoạt động' : 'Tắt'}
+                          {account.isActive ? t('active') : t('inactive')}
                         </Badge>
                         {account.qrEnabled && (
                           <Badge variant="outline" className="flex items-center gap-1">
@@ -297,7 +300,7 @@ export default function BankAccountsPage() {
                 <div className="mt-4 p-4 bg-fg/[0.03] rounded-lg">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-muted">Số tài khoản</p>
+                      <p className="text-sm text-muted">{t('accountNumber')}</p>
                       <div className="flex items-center gap-2">
                         <p className="font-mono text-lg font-semibold">
                           {formatAccountNumber(account.accountNumber)}
@@ -305,14 +308,14 @@ export default function BankAccountsPage() {
                         <button
                           onClick={() => copyToClipboard(account.accountNumber)}
                           className="p-1 hover:bg-fg/10 rounded"
-                          aria-label="Copy số tài khoản"
+                          aria-label={t('copyAccountNumber')}
                         >
                           <Copy className="w-4 h-4 text-muted" />
                         </button>
                       </div>
                     </div>
                     <div>
-                      <p className="text-sm text-muted">Tên tài khoản</p>
+                      <p className="text-sm text-muted">{t('accountHolder')}</p>
                       <p className="font-semibold">{account.accountHolder}</p>
                     </div>
                   </div>
@@ -338,11 +341,11 @@ export default function BankAccountsPage() {
                         className="text-xs"
                       >
                         <Download className="w-3 h-3 mr-1" />
-                        Tải QR
+                        {t('downloadQr')}
                       </Button>
                     </div>
                     <div>
-                      <p className="text-sm text-muted">Nội dung chuyển khoản</p>
+                      <p className="text-sm text-muted">{t('transferContent')}</p>
                       <p className="font-mono text-sm bg-fg/5 px-2 py-1 rounded mt-1">
                         DIGISTAY - {account.accountNumber}
                       </p>
@@ -361,13 +364,13 @@ export default function BankAccountsPage() {
           <div className="bg-panel rounded-xl max-w-md w-full">
             <div className="p-6 border-b border-line">
               <h2 className="text-xl font-semibold">
-                {editingAccount ? 'Sửa tài khoản' : 'Thêm tài khoản ngân hàng'}
+                {editingAccount ? t('form.editTitle') : t('form.addTitle')}
               </h2>
             </div>
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-fg mb-1">
-                  Ngân hàng <span className="text-err">*</span>
+                  {t('form.bank')} <span className="text-err">*</span>
                 </label>
                 <select
                   value={formData.bankCode}
@@ -381,32 +384,32 @@ export default function BankAccountsPage() {
                   }}
                   className="w-full px-3 py-2 border rounded-lg focus-visible:ring-2 focus-visible:ring-acc focus-visible:border-acc"
                 >
-                  <option value="">Chọn ngân hàng</option>
+                  <option value="">{t('form.chooseBank')}</option>
                   {bankList.map((bank) => (
                     <option key={bank.code} value={bank.code}>
-                      {bank.name}
+                      {bank.code === 'MB' ? t('form.mbBank') : bank.name}
                     </option>
                   ))}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-fg mb-1">
-                  Số tài khoản <span className="text-err">*</span>
+                  {t('accountNumber')} <span className="text-err">*</span>
                 </label>
                 <Input
                   value={formData.accountNumber}
                   onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
-                  placeholder="Nhập số tài khoản"
+                  placeholder={t('form.accountNumberPlaceholder')}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-fg mb-1">
-                  Tên tài khoản <span className="text-err">*</span>
+                  {t('accountHolder')} <span className="text-err">*</span>
                 </label>
                 <Input
                   value={formData.accountHolder}
                   onChange={(e) => setFormData({ ...formData, accountHolder: e.target.value })}
-                  placeholder="Tên chủ tài khoản"
+                  placeholder={t('form.accountHolderPlaceholder')}
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -418,7 +421,7 @@ export default function BankAccountsPage() {
                   className="w-4 h-4"
                 />
                 <label htmlFor="qrEnabled" className="text-sm text-fg">
-                  Bật thanh toán VietQR
+                  {t('form.enableQr')}
                 </label>
               </div>
             </div>
@@ -428,10 +431,10 @@ export default function BankAccountsPage() {
                 onClick={() => { setShowModal(false); resetForm() }}
                 disabled={isSubmitting}
               >
-                Hủy
+                {tc('actions.cancel')}
               </Button>
               <Button onClick={handleSubmit} isLoading={isSubmitting}>
-                {editingAccount ? 'Lưu thay đổi' : 'Thêm tài khoản'}
+                {editingAccount ? tc('actions.saveChanges') : t('form.submitAdd')}
               </Button>
             </div>
           </div>

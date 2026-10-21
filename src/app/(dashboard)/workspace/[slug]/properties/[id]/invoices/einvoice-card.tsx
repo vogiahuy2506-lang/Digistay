@@ -1,9 +1,10 @@
 'use client'
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 import { CheckCircle2, Copy, FileCheck2 } from 'lucide-react'
 import { Badge, Button, Card, CardContent, Input, Select } from '@/components/ui'
-import { VAT_CODES, VAT_LABELS } from '@/lib/einvoice/vat'
+import { VAT_CODES, VAT_LABELS, type VatCode } from '@/lib/einvoice/vat'
 
 export interface EinvoiceStatus {
   connected: boolean
@@ -27,6 +28,12 @@ export interface EinvoiceStatus {
 const yearPrefix = `C${String(new Date().getFullYear()).slice(-2)}`
 const EMPTY = { environment: 'DEMO', taxCode: '', username: '', password: '', templateCode: '1', series: '', vatCode: '' }
 
+/** A VAT code's label in the page's language: the rates as they are, KCT and KKKNT in words. */
+export function useVatLabel() {
+  const t = useTranslations('dash.money.einvoice.vat')
+  return (code: VatCode) => (code === -1 ? t('exempt') : code === -2 ? t('undeclared') : VAT_LABELS[code])
+}
+
 /**
  * The property's Mắt Bão account (Part 6): invoices are issued under the
  * hotel's tax code. Owner/ADMIN only (the API enforces it). The password
@@ -39,6 +46,9 @@ export function EinvoiceCard({
   propertyId: string
   onStatus: (status: EinvoiceStatus) => void
 }) {
+  const t = useTranslations('dash.money.einvoice')
+  const tc = useTranslations('dash.common')
+  const vatLabel = useVatLabel()
   const [status, setStatus] = React.useState<EinvoiceStatus | null>(null)
   const [editing, setEditing] = React.useState(false)
   const [form, setForm] = React.useState(EMPTY)
@@ -87,7 +97,7 @@ export function EinvoiceCard({
       })
       const data = await res.json().catch(() => ({}))
       if (!data.success) {
-        setError(data.error || 'Không kết nối được Mắt Bão')
+        setError(data.error || t('errors.connect'))
         return
       }
       setStatus(data.data)
@@ -103,9 +113,9 @@ export function EinvoiceCard({
       option === 'autoIssue' &&
       value &&
       !confirm(
-        `Tự xuất hoá đơn: từ bây giờ, mỗi đơn đặt phòng được thanh toán đủ sẽ tự được phát hành một hoá đơn bằng tổng tiền đơn${
-          status?.environment === 'PRODUCTION' ? ' (môi trường CHÍNH THỨC: hoá đơn thật)' : ''
-        }. Người mua là công ty khách nhập khi đặt phòng, không có thì là khách. Đơn đã có hoá đơn thì không xuất thêm. Bật?`
+        t('confirm.autoIssue', {
+          note: status?.environment === 'PRODUCTION' ? ` ${t('confirm.autoIssueProduction')}` : '',
+        })
       )
     ) {
       return
@@ -118,7 +128,7 @@ export function EinvoiceCard({
     })
     const data = await res.json().catch(() => ({}))
     if (!data.success) {
-      setError(data.error || 'Không lưu được')
+      setError(data.error || t('errors.save'))
       return
     }
     setStatus(data.data)
@@ -126,7 +136,7 @@ export function EinvoiceCard({
   }
 
   const disconnect = async () => {
-    if (!confirm('Ngắt kết nối Mắt Bão? Hoá đơn đã phát hành vẫn còn trên Mắt Bão; hoá đơn mới sẽ không phát hành được.')) return
+    if (!confirm(t('confirm.disconnect'))) return
     await fetch(`/api/properties/${propertyId}/einvoice`, { method: 'DELETE' })
     await load()
   }
@@ -142,27 +152,33 @@ export function EinvoiceCard({
             <FileCheck2 className="w-5 h-5 text-info mt-0.5" />
             <div>
               <p className="font-semibold text-fg flex items-center gap-2">
-                Hoá đơn điện tử (Mắt Bão)
+                {t('title')}
                 {status.connected ? (
                   <Badge variant={status.environment === 'PRODUCTION' ? 'success' : 'warning'}>
-                    {status.environment === 'PRODUCTION' ? 'Chính thức' : 'Thử nghiệm'}
+                    {status.environment === 'PRODUCTION' ? t('production') : t('demo')}
                   </Badge>
                 ) : (
-                  <Badge variant="gray">Chưa kết nối</Badge>
+                  <Badge variant="gray">{t('notConnected')}</Badge>
                 )}
               </p>
               {status.connected ? (
                 <p className="text-sm text-fg mt-1 flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-ok" />
-                  MST {status.taxCode} · Mẫu {status.templateCode} · Ký hiệu {status.series} · Thuế suất{' '}
-                  {VAT_LABELS[status.vatCode as keyof typeof VAT_LABELS]} ·{' '}
+                  {t('connectedLine', {
+                    taxCode: status.taxCode ?? '',
+                    template: status.templateCode ?? '',
+                    series: status.series ?? '',
+                    vat: VAT_CODES.includes(status.vatCode as VatCode) ? vatLabel(status.vatCode as VatCode) : '',
+                  })}{' '}
                   <span className={lowNumbers ? 'text-err font-semibold' : ''}>
-                    còn {status.remainingNumbers ?? '?'} số
+                    {status.remainingNumbers != null
+                      ? t('remaining', { count: status.remainingNumbers })
+                      : t('remainingUnknown')}
                   </span>
                 </p>
               ) : (
                 <p className="text-sm text-muted mt-1">
-                  Phát hành hoá đơn GTGT dưới mã số thuế của khách sạn, qua tài khoản Mắt Bão của khách sạn.
+                  {t('intro')}
                 </p>
               )}
             </div>
@@ -170,11 +186,11 @@ export function EinvoiceCard({
           {!editing && (
             <div className="flex gap-2 shrink-0">
               <Button variant={status.connected ? 'outline' : 'primary'} size="sm" onClick={startEditing}>
-                {status.connected ? 'Sửa' : 'Kết nối'}
+                {status.connected ? tc('actions.edit') : t('connect')}
               </Button>
               {status.connected && (
                 <Button variant="ghost" size="sm" onClick={disconnect}>
-                  Ngắt kết nối
+                  {t('disconnect')}
                 </Button>
               )}
             </div>
@@ -191,10 +207,9 @@ export function EinvoiceCard({
                 onChange={(e) => setOption('autoIssue', e.target.checked)}
               />
               <span>
-                <span className="font-medium text-fg">Tự xuất hoá đơn khi đơn đã thanh toán đủ</span>
+                <span className="font-medium text-fg">{t('autoIssue')}</span>
                 <span className="block text-xs text-muted">
-                  Áp dụng cho đơn thanh toán đủ từ lúc bật. Tiền cọc chưa đủ thì chưa xuất. Thông tin công ty không hợp
-                  lệ thì hoá đơn chờ nhân viên sửa.
+                  {t('autoIssueHint')}
                 </span>
               </span>
             </label>
@@ -206,7 +221,7 @@ export function EinvoiceCard({
                 onChange={(e) => setOption('emailInvoices', e.target.checked)}
               />
               <span>
-                <span className="font-medium text-fg">Gửi hoá đơn (PDF) qua email cho người mua sau khi phát hành</span>
+                <span className="font-medium text-fg">{t('emailInvoices')}</span>
               </span>
             </label>
             {error && <p className="text-sm text-err">{error}</p>}
@@ -216,8 +231,7 @@ export function EinvoiceCard({
         {status.connected && status.webhookUrl && !editing && (
           <div className="text-xs text-muted border-t pt-3">
             <p>
-              Để nhận trạng thái từ cơ quan thuế (đã cấp mã / bị từ chối), gửi địa chỉ này cho bộ phận hỗ trợ Mắt
-              Bão. Địa chỉ có mã bí mật: không chia sẻ nơi khác.
+              {t('webhookHint')}
             </p>
             <div className="mt-1 flex items-center gap-2">
               <code className="truncate bg-fg/5 px-1.5 py-0.5 rounded">{status.webhookUrl}</code>
@@ -225,7 +239,7 @@ export function EinvoiceCard({
                 type="button"
                 onClick={() => navigator.clipboard.writeText(status.webhookUrl!)}
                 className="text-muted hover:text-fg"
-                aria-label="Sao chép địa chỉ"
+                aria-label={t('copyAddress')}
               >
                 <Copy className="w-3.5 h-3.5" />
               </button>
@@ -236,58 +250,57 @@ export function EinvoiceCard({
         {editing && (
           <div className="border-t pt-4 space-y-3">
             <p className="text-sm text-muted">
-              Lấy các thông tin này từ Mắt Bão (hoặc kế toán). Ký hiệu đổi theo năm, ví dụ {yearPrefix}TAA cho năm nay.
-              Thuế suất do kế toán của khách sạn quyết định; giá phòng được coi là đã gồm thuế.
+              {t('formHint', { example: `${yearPrefix}TAA` })}
             </p>
             <div className="grid grid-cols-2 gap-3">
               <Select
-                label="Môi trường"
+                label={t('environment')}
                 value={form.environment}
                 onChange={(e) => setForm({ ...form, environment: e.target.value })}
                 options={[
-                  { value: 'DEMO', label: 'Thử nghiệm (demo.matbao.in)' },
-                  { value: 'PRODUCTION', label: 'Chính thức — hoá đơn có giá trị pháp lý' },
+                  { value: 'DEMO', label: t('envDemo') },
+                  { value: 'PRODUCTION', label: t('envProduction') },
                 ]}
               />
-              <Input label="Mã số thuế khách sạn" value={form.taxCode} onChange={(e) => setForm({ ...form, taxCode: e.target.value })} />
+              <Input label={t('taxCode')} value={form.taxCode} onChange={(e) => setForm({ ...form, taxCode: e.target.value })} />
               <Input
-                label="Tên đăng nhập Mắt Bão"
+                label={t('username')}
                 value={form.username}
                 onChange={(e) => setForm({ ...form, username: e.target.value })}
                 autoComplete="off"
               />
               <Input
-                label="Mật khẩu Mắt Bão"
+                label={t('password')}
                 type="password"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
-                placeholder={status.connected ? 'Để trống nếu không đổi' : ''}
+                placeholder={status.connected ? t('passwordKeep') : ''}
                 autoComplete="new-password"
               />
-              <Input label="Mẫu số" value={form.templateCode} onChange={(e) => setForm({ ...form, templateCode: e.target.value })} />
+              <Input label={t('template')} value={form.templateCode} onChange={(e) => setForm({ ...form, templateCode: e.target.value })} />
               <Input
-                label="Ký hiệu"
+                label={t('series')}
                 value={form.series}
                 onChange={(e) => setForm({ ...form, series: e.target.value.toUpperCase() })}
                 placeholder={`${yearPrefix}TAA`}
               />
               <Select
-                label="Thuế suất GTGT"
+                label={t('vatRate')}
                 value={form.vatCode}
                 onChange={(e) => setForm({ ...form, vatCode: e.target.value })}
                 options={[
-                  { value: '', label: 'Chọn thuế suất' },
-                  ...VAT_CODES.map((code) => ({ value: String(code), label: VAT_LABELS[code] })),
+                  { value: '', label: t('chooseVat') },
+                  ...VAT_CODES.map((code) => ({ value: String(code), label: vatLabel(code) })),
                 ]}
               />
             </div>
             {error && <p className="text-sm text-err">{error}</p>}
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setEditing(false)}>
-                Huỷ
+                {t('cancel')}
               </Button>
               <Button onClick={save} isLoading={busy}>
-                Lưu và kiểm tra
+                {t('save')}
               </Button>
             </div>
           </div>

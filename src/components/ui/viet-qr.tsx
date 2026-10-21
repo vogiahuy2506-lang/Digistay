@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 import QRCode from 'qrcode'
 import { buildVietQr, type VietQrInput } from '@/lib/vietqr'
 
@@ -21,6 +22,7 @@ export function VietQR({
   description,
   size = 200,
 }: VietQRProps) {
+  const t = useTranslations('dash.money.qr')
   const [qrDataUrl, setQrDataUrl] = React.useState<string>('')
   const [isLoading, setIsLoading] = React.useState(true)
 
@@ -91,7 +93,7 @@ export function VietQR({
         style={{ width: size, height: size }}
       >
         <span className="text-muted text-sm text-center p-4">
-          QR sẽ hiển thị ở đây
+          {t('placeholder')}
         </span>
       </div>
     )
