@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { BookingError, createBooking } from '@/lib/bookings/create-booking'
 import { sendAfterResponse } from '@/lib/email/outbox'
+import { onlineDepositOf, startGuestDeposit, type OnlineDeposit } from '@/lib/payments/guest-deposit'
 import { getClientIp } from '@/lib/security/client-ip'
 import { LIMITS } from '@/lib/security/limits'
 import { hit, tooManyRequests } from '@/lib/security/rate-limit'
@@ -37,10 +38,12 @@ const todayVn = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_
 /**
  * POST /api/public/bookings — a guest books on the hotel's site. Public:
  * rate-limited per IP and per guest email (each booking emails that
- * address). The booking is PENDING until the hotel confirms it; the guest
- * never records a payment here. Priced and checked by the same code as
- * staff bookings (src/lib/bookings/create-booking.ts), so the quote the
- * site showed is what is charged.
+ * address). The booking is PENDING until the hotel confirms it, or until
+ * the guest's deposit arrives when the hotel takes one through PayOS
+ * (src/lib/payments/guest-deposit.ts): the answer then carries the PayOS
+ * link. The guest never records money here. Priced and checked by the same
+ * code as staff bookings (src/lib/bookings/create-booking.ts), so the
+ * quote the site showed is what is charged.
  */
 export async function POST(request: NextRequest) {
   const byIp = await hit(LIMITS.guestBookingIp, getClientIp(request.headers))
@@ -77,7 +80,7 @@ export async function POST(request: NextRequest) {
       isActive: true,
       property: { isActive: true, websiteSettings: { isPublished: true } },
     },
-    select: { maxAdults: true, maxChildren: true, maxOccupancy: true, property: { select: { policy: { select: { childrenAllowed: true } } } } },
+    select: { maxAdults: true, maxChildren: true, maxOccupancy: true, property: { select: { subdomain: true, policy: { select: { childrenAllowed: true } } } } },
   })
   if (!roomType) return NextResponse.json({ success: false, error: 'Không tìm thấy hạng phòng' }, { status: 404 })
   if (data.numChildren > 0 && roomType.property.policy?.childrenAllowed === false) {
@@ -126,6 +129,21 @@ export async function POST(request: NextRequest) {
         metadata: { bookingCode: booking.bookingCode, by: 'guest' },
       },
     })
+
+    // The hotel's deposit, if it takes one. The booking is made: whatever
+    // goes wrong here, the guest is told it stands and the hotel will call.
+    let depositPolicy: OnlineDeposit | null = null
+    let deposit: Awaited<ReturnType<typeof startGuestDeposit>> = null
+    try {
+      depositPolicy = await onlineDepositOf(data.propertyId)
+      if (depositPolicy) {
+        const returnUrl = `${process.env.NEXTAUTH_URL}/${roomType.property.subdomain}/thanh-toan`
+        deposit = await startGuestDeposit(booking, depositPolicy, returnUrl)
+      }
+    } catch (error) {
+      console.error('Guest deposit error:', error)
+    }
+
     // Only what the guest needs: no internal ids.
     return NextResponse.json({
       success: true,
@@ -135,8 +153,13 @@ export async function POST(request: NextRequest) {
         totalAmount: booking.totalAmount,
         checkInDate: data.checkInDate,
         checkOutDate: data.checkOutDate,
+        deposit: deposit && { amount: deposit.amount, checkoutUrl: deposit.checkoutUrl, expiresAt: deposit.expiresAt },
+        // The hotel takes a deposit but the link could not be made: it will call.
+        depositUnavailable: Boolean(depositPolicy && !deposit),
       },
-      message: 'Đã gửi yêu cầu đặt phòng. Khách sạn sẽ liên hệ xác nhận.',
+      message: deposit
+        ? 'Đã giữ đặt phòng. Vui lòng thanh toán tiền cọc để khách sạn xác nhận.'
+        : 'Đã gửi yêu cầu đặt phòng. Khách sạn sẽ liên hệ xác nhận.',
     })
   } catch (error) {
     if (error instanceof BookingError) {

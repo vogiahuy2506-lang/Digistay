@@ -129,3 +129,14 @@ export function quoteStay(input: {
     total: basePrice + extraCharges,
   }
 }
+
+/**
+ * The deposit a guest pays online (Policy.onlineDepositPercent): that share
+ * of the total, rounded up to the next 1,000 ₫, never more than the total.
+ * 0 when the hotel takes none.
+ */
+export function depositFor(total: number, percent: number): number {
+  if (!(percent > 0) || !(total > 0)) return 0
+  const share = Math.ceil((total * Math.min(percent, 100)) / 100 / 1000) * 1000
+  return Math.min(Math.round(total), share)
+}

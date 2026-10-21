@@ -485,6 +485,13 @@ model Policy {
   // Cancellation
   cancellationHours Int?   // Số giờ trước check-in để hủy miễn phí
   cancellationPolicy String? @db.Text
+
+  /// Deposit a guest pays through PayOS when booking on the hotel's site,
+  /// in % of the total; 0 = none. Needs a connected PayOS account.
+  onlineDepositPercent Int @default(0)
+  /// Minutes a guest has to pay that deposit before the booking is
+  /// cancelled by the scheduled job; 0 = never (the hotel decides).
+  depositDeadlineMinutes Int @default(0)
   
   // Children policy
   childrenAllowed Boolean @default(true)
@@ -1199,7 +1206,7 @@ model AlertState {
 /// after 30 days.
 model EmailOutbox {
   id        String    @id
-  /// booking_confirmation, owner_new_booking, workspace_invite
+  /// booking_confirmation, owner_new_booking, workspace_invite, deposit_received, deposit_expired
   kind      String
   toEmail   String
   /// encrypted JSON { to, name, subject, text, html }

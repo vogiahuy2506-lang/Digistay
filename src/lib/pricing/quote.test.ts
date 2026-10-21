@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { nightsOf, quoteStay, ratesFrom, serviceAmount } from './quote'
+import { depositFor, nightsOf, quoteStay, ratesFrom, serviceAmount } from './quote'
 
 const d = (s: string) => new Date(s)
 
@@ -65,5 +65,16 @@ describe('quote', () => {
     expect(serviceAmount({ ...s, priceType: 'FIXED' }, 2, 3, 2)).toBe(100_000)
     expect(serviceAmount({ ...s, priceType: 'PER_NIGHT' }, 1, 3, 2)).toBe(150_000)
     expect(serviceAmount({ ...s, priceType: 'PER_PERSON' }, 1, 3, 2)).toBe(100_000)
+  })
+})
+
+describe('depositFor', () => {
+  it('is the share of the total rounded up to 1,000 ₫, at most the total, 0 when none', () => {
+    expect(depositFor(2_450_000, 30)).toBe(735_000)
+    expect(depositFor(2_450_500, 30)).toBe(736_000) // 735,150 → up
+    expect(depositFor(1_234_567, 100)).toBe(1_234_567) // never more than the total
+    expect(depositFor(1_000_000, 150)).toBe(1_000_000)
+    expect(depositFor(1_000_000, 0)).toBe(0)
+    expect(depositFor(0, 30)).toBe(0)
   })
 })
