@@ -32,7 +32,7 @@ const LEASE_MS = 3 * 60 * 1000
 const BACKOFF_MS = [10, 30, 120, 360].map((minutes) => minutes * 60 * 1000)
 const KEEP_SENT_MS = 30 * 24 * 60 * 60 * 1000
 
-type Kind = 'booking_confirmation' | 'owner_new_booking' | 'workspace_invite' | 'deposit_received'
+type Kind = 'booking_confirmation' | 'owner_new_booking' | 'workspace_invite' | 'deposit_received' | 'deposit_expired'
 interface Message {
   to: EmailRecipient
   subject: string
@@ -123,6 +123,25 @@ export function queueDepositReceived(data: DepositReceivedData, bookingId: strin
   // The guest's name comes from a public form: escape it for the HTML part.
   const html = escapeHtml(text).replace(/\n/g, '<br/>')
   return queueEmail('deposit_received', { to: { email: data.guestEmail, name: data.guestName }, subject, text, html }, bookingId, db)
+}
+
+/** To the guest when their unpaid booking is cancelled at the hotel's deposit deadline (guest-deposit.ts). */
+export function queueDepositExpired(
+  data: { guestEmail: string; guestName: string; bookingCode: string; propertyName: string; propertyPhone?: string | null },
+  bookingId: string,
+  db?: Db
+) {
+  const subject = `Đặt phòng #${data.bookingCode} đã được huỷ vì chưa nhận được tiền cọc`
+  const text = [
+    `Xin chào ${data.guestName},`,
+    '',
+    `${data.propertyName} chưa nhận được tiền cọc cho đặt phòng ${data.bookingCode} trong thời hạn, nên đặt phòng đã được huỷ và phòng được mở lại cho khách khác.`,
+    'Nếu bạn đã chuyển khoản, vui lòng liên hệ khách sạn để được xác nhận lại hoặc hoàn tiền.',
+    ...(data.propertyPhone ? [`Liên hệ khách sạn: ${data.propertyPhone}`] : []),
+  ].join('\n')
+  // The guest's name comes from a public form: escape it for the HTML part.
+  const html = escapeHtml(text).replace(/\n/g, '<br/>')
+  return queueEmail('deposit_expired', { to: { email: data.guestEmail, name: data.guestName }, subject, text, html }, bookingId, db)
 }
 
 export function queueWorkspaceInvite(data: WorkspaceInviteTemplateProps, invitationId: string, db?: Db) {

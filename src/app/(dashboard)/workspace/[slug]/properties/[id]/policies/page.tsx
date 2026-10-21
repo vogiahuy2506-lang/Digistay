@@ -20,9 +20,21 @@ interface Policy {
   smokingAllowed: boolean
   additionalRules: string | null
   onlineDepositPercent: number
+  depositDeadlineMinutes: number
   /** read-only: the deposit needs a connected PayOS account */
   payosConnected?: boolean
 }
+
+/** How long a guest has to pay the online deposit (Policy.depositDeadlineMinutes). */
+const DEADLINE_OPTIONS = [
+  { value: 0, label: 'Không tự huỷ' },
+  { value: 30, label: '30 phút' },
+  { value: 60, label: '1 giờ' },
+  { value: 120, label: '2 giờ' },
+  { value: 360, label: '6 giờ' },
+  { value: 720, label: '12 giờ' },
+  { value: 1440, label: '24 giờ' },
+]
 
 export default function PoliciesPage() {
   const params = useParams<{ slug: string; id: string }>()
@@ -80,6 +92,7 @@ export default function PoliciesPage() {
           smokingAllowed: policy.smokingAllowed,
           additionalRules: policy.additionalRules,
           onlineDepositPercent: policy.onlineDepositPercent,
+          depositDeadlineMinutes: policy.depositDeadlineMinutes,
         }),
       })
       const data = await res.json()
@@ -244,6 +257,30 @@ export default function PoliciesPage() {
                   0 = không thu cọc, khách trả tại quầy. Có cọc thì khách chuyển khoản qua PayOS ngay khi đặt,
                   tiền vào thẳng tài khoản khách sạn, và đặt phòng tự được xác nhận khi tiền về.
                 </p>
+                {policy.onlineDepositPercent > 0 && (
+                  <div className="mt-3">
+                    <label htmlFor="deposit-deadline" className="block text-sm font-medium text-fg mb-1">
+                      Tự huỷ đơn nếu khách chưa đặt cọc sau
+                    </label>
+                    <select
+                      id="deposit-deadline"
+                      value={policy.depositDeadlineMinutes}
+                      onChange={(e) => update('depositDeadlineMinutes', parseInt(e.target.value))}
+                      className="w-full h-10 px-3 border border-line rounded-ctl bg-raised text-fg focus-visible:ring-2 focus-visible:ring-acc"
+                    >
+                      {DEADLINE_OPTIONS.some((o) => o.value === policy.depositDeadlineMinutes) ? null : (
+                        <option value={policy.depositDeadlineMinutes}>{policy.depositDeadlineMinutes} phút</option>
+                      )}
+                      {DEADLINE_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-muted mt-1">
+                      Quá hạn mà tiền chưa về, đơn tự huỷ, phòng được mở lại và khách nhận email. App hỏi lại PayOS trước khi
+                      huỷ: khách đã trả thì đơn được xác nhận. Không tự huỷ thì đơn chờ khách sạn xử lý.
+                    </p>
+                  </div>
+                )}
                 {policy.onlineDepositPercent > 0 && !policy.payosConnected && (
                   <p className="text-xs text-warn mt-1">
                     Chưa kết nối PayOS (Tài khoản ngân hàng → Thanh toán online): khách chưa phải đặt cọc cho tới khi kết nối.

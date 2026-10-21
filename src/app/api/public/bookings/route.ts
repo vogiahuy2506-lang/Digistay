@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { BookingError, createBooking } from '@/lib/bookings/create-booking'
 import { sendAfterResponse } from '@/lib/email/outbox'
-import { onlineDepositOf, startGuestDeposit } from '@/lib/payments/guest-deposit'
+import { onlineDepositOf, startGuestDeposit, type OnlineDeposit } from '@/lib/payments/guest-deposit'
 import { getClientIp } from '@/lib/security/client-ip'
 import { LIMITS } from '@/lib/security/limits'
 import { hit, tooManyRequests } from '@/lib/security/rate-limit'
@@ -132,13 +132,13 @@ export async function POST(request: NextRequest) {
 
     // The hotel's deposit, if it takes one. The booking is made: whatever
     // goes wrong here, the guest is told it stands and the hotel will call.
-    let depositPolicy: { percent: number } | null = null
+    let depositPolicy: OnlineDeposit | null = null
     let deposit: Awaited<ReturnType<typeof startGuestDeposit>> = null
     try {
       depositPolicy = await onlineDepositOf(data.propertyId)
       if (depositPolicy) {
         const returnUrl = `${process.env.NEXTAUTH_URL}/${roomType.property.subdomain}/thanh-toan`
-        deposit = await startGuestDeposit(booking, depositPolicy.percent, returnUrl)
+        deposit = await startGuestDeposit(booking, depositPolicy, returnUrl)
       }
     } catch (error) {
       console.error('Guest deposit error:', error)
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
         totalAmount: booking.totalAmount,
         checkInDate: data.checkInDate,
         checkOutDate: data.checkOutDate,
-        deposit: deposit && { amount: deposit.amount, checkoutUrl: deposit.checkoutUrl },
+        deposit: deposit && { amount: deposit.amount, checkoutUrl: deposit.checkoutUrl, expiresAt: deposit.expiresAt },
         // The hotel takes a deposit but the link could not be made: it will call.
         depositUnavailable: Boolean(depositPolicy && !deposit),
       },

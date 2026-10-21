@@ -196,6 +196,11 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
     đối soát đánh dấu đã trả; `syncBookingPayments` xác nhận đơn, và khoản cọc của khách
     (`metadata.guestDeposit`) gửi email "đã nhận cọc" cho khách (trừ đơn đã huỷ). Trang
     `/thanh-toan` chỉ hiển thị trạng thái trong DB theo `orderCode`, không tin query string.
+    Hạn cọc (`Policy.depositDeadlineMinutes`, 0 = không tự huỷ): link hết hạn đúng lúc đó, và job
+    `payos-reconcile` (sau phần đối soát) gọi `expireUnpaidDeposits()`: **hỏi PayOS trước** (đã trả
+    thì xác nhận đơn, không huỷ), huỷ link, rồi huỷ đơn dưới khoá dòng nếu vẫn PENDING và chưa có
+    khoản nào PAID, mở lại phòng, email cho khách. Link tạo lỗi thì không tự huỷ (khách được báo
+    khách sạn sẽ gọi).
   Đối soát định kỳ: timer systemd `digistay-reconcile`, 10 phút một lần, gọi
   `/api/internal/payos-reconcile` (RUNBOOK, "Đối soát PayOS định kỳ").
 - Job định kỳ nằm ở `/api/internal/*`: kiểm `checkCronSecret()` (header `CRON_SECRET`), nginx

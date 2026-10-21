@@ -167,8 +167,9 @@ async function connectedRow(propertyId: string) {
  * (with gatewayOrderCode set). If PayOS refuses, the payment is marked
  * FAILED and the error is thrown; it is still kept, since PayOS may have
  * created the link anyway (timeout) and the webhook must find it.
+ * `ttlSec`: a guest deposit's link ends at the hotel's deadline.
  */
-export async function createPayosLink(paymentId: string, returnBase: string) {
+export async function createPayosLink(paymentId: string, returnBase: string, ttlSec = PAYOS_LINK_TTL_SEC) {
   const payment = await prisma.payment.findUniqueOrThrow({
     where: { id: paymentId },
     select: {
@@ -181,7 +182,7 @@ export async function createPayosLink(paymentId: string, returnBase: string) {
     },
   })
   const row = await connectedRow(payment.propertyId)
-  const expiredAt = Math.floor(Date.now() / 1000) + PAYOS_LINK_TTL_SEC
+  const expiredAt = Math.floor(Date.now() / 1000) + ttlSec
   try {
     const link = await payosClient(row).paymentRequests.create({
       orderCode: Number(payment.gatewayOrderCode),

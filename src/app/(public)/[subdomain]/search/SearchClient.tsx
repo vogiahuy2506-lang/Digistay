@@ -48,10 +48,13 @@ interface Property {
   /** the hotel's own cancellation terms */
   policy: { cancellationHours: number | null; cancellationPolicy: string | null } | null
   /** a deposit paid through PayOS when booking, or null */
-  onlineDeposit: { percent: number } | null
+  onlineDeposit: { percent: number; deadlineMinutes: number } | null
 }
 
 const SERVICE_UNIT: Record<string, string> = { FIXED: 'lần', PER_NIGHT: 'đêm', PER_PERSON: 'người' }
+
+/** 30 → "30 phút", 120 → "2 giờ". */
+const durationLabel = (minutes: number) => (minutes % 60 === 0 ? `${minutes / 60} giờ` : `${minutes} phút`)
 
 const AMENITY_ICONS: Record<string, React.ReactNode> = {
   wifi: <Wifi className="w-4 h-4" />,
@@ -723,6 +726,11 @@ export function SearchClient({ params }: { params: Promise<{ subdomain: string }
                           Chuyển khoản hoặc quét mã QR qua PayOS ngay sau khi xác nhận; tiền vào thẳng tài khoản của khách
                           sạn. Khi tiền về, đặt phòng được xác nhận và bạn nhận email. Phần còn lại trả khi nhận phòng.
                         </p>
+                        {property.onlineDeposit.deadlineMinutes > 0 && (
+                          <p className="text-sm text-warn mt-2">
+                            Vui lòng đặt cọc trong {durationLabel(property.onlineDeposit.deadlineMinutes)}: quá hạn, đặt phòng tự huỷ.
+                          </p>
+                        )}
                       </div>
                     ) : (
                       <div className="flex items-center justify-between p-4 border-2 border-info/30 bg-info-soft rounded-ctl">

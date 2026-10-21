@@ -21,6 +21,12 @@ const policySchema = z.object({
   additionalRules: z.string().max(2000).nullable().optional(),
   /** % of the total a guest pays through PayOS when booking on the site; 0 = none */
   onlineDepositPercent: z.coerce.number().int('Tiền cọc là số nguyên phần trăm').min(0).max(100, 'Tiền cọc tối đa 100%').optional(),
+  /** minutes to pay that deposit before the booking is cancelled; 0 = never */
+  depositDeadlineMinutes: z.coerce
+    .number()
+    .int()
+    .refine((m) => m === 0 || (m >= 15 && m <= 1440), 'Hạn đặt cọc từ 15 phút tới 24 giờ, hoặc 0 (không tự huỷ)')
+    .optional(),
 })
 
 async function userCanEditProperty(propertyId: string, userId: string) {

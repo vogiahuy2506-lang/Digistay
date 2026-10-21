@@ -32,22 +32,28 @@ export default async function PaymentReturnPage({ params, searchParams }: PagePr
   const payment = /^\d{1,20}$/.test(orderCode ?? '')
     ? await prisma.payment.findFirst({
         where: { propertyId: property.id, gatewayOrderCode: orderCode },
-        select: { status: true, amount: true, metadata: true, booking: { select: { bookingCode: true } } },
+        select: { status: true, amount: true, metadata: true, booking: { select: { bookingCode: true, status: true } } },
       })
     : null
   const paid = payment?.status === 'PAID'
   // A deposit taken on the site emails the guest once paid (payos.ts).
   const deposit = (payment?.metadata as { guestDeposit?: boolean } | null)?.guestDeposit === true
   const cancelled = !paid && (cancel === 'true' || status === 'CANCELLED')
+  // Cancelled at the hotel's deposit deadline (guest-deposit.ts).
+  const expired = !paid && payment?.booking.status === 'CANCELLED'
 
   const title = paid
     ? 'Đã nhận tiền thanh toán'
-    : cancelled
+    : expired
+      ? 'Đặt phòng đã bị huỷ'
+      : cancelled
       ? 'Bạn đã huỷ thanh toán'
       : payment
         ? 'Đang chờ ngân hàng xác nhận'
         : 'Cảm ơn bạn đã thanh toán'
-  const body = paid
+  const body = expired
+    ? `Đặt phòng ${payment!.booking.bookingCode} đã được huỷ vì chưa nhận được tiền cọc trong thời hạn. Nếu bạn đã chuyển khoản, vui lòng liên hệ ${property.name}.`
+    : paid
     ? `${property.name} đã nhận ${formatVnd(payment.amount)} cho đặt phòng ${payment.booking.bookingCode}. Đặt phòng của bạn đã được xác nhận${deposit ? '; email xác nhận đang được gửi tới bạn' : ''}.`
     : cancelled
       ? `Chưa có khoản tiền nào được chuyển.${payment ? ` Đặt phòng ${payment.booking.bookingCode} vẫn được giữ chờ khách sạn liên hệ.` : ''} Nếu cần, hãy liên hệ ${property.name} để nhận lại link thanh toán.`
@@ -60,7 +66,7 @@ export default async function PaymentReturnPage({ params, searchParams }: PagePr
       <div className="max-w-md w-full border border-line bg-raised p-8 text-center space-y-4 shadow-lift">
         <h1 className="font-site text-2xl font-semibold text-fg">{title}</h1>
         <p className="text-muted">{body}</p>
-        {payment && !paid && !cancelled && <WaitForPayment />}
+        {payment && !paid && !cancelled && !expired && <WaitForPayment />}
         {property.phone && <p className="text-small text-muted">Liên hệ khách sạn: {property.phone}</p>}
         <SiteLink
           path="/"

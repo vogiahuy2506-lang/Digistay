@@ -67,9 +67,10 @@ test('connect, pay by link, webhook updates the booking, cancel a link', async (
 })
 
 test("a guest books on the hotel's site and pays the hotel's 30% deposit through PayOS", async ({ page, browser }) => {
-  // The hotel takes 30% online (Chính sách).
+  // The hotel takes 30% online, to be paid within an hour (Chính sách).
   await page.goto(propertyPath('/policies'))
   await page.getByLabel('Đặt cọc khi khách đặt trên website (%)').fill('30')
+  await page.getByLabel('Tự huỷ đơn nếu khách chưa đặt cọc sau').selectOption({ label: '1 giờ' })
   await page.getByRole('button', { name: 'Lưu thay đổi' }).click()
   await expect(page.getByText('Đã lưu chính sách')).toBeVisible()
 
@@ -93,6 +94,7 @@ test("a guest books on the hotel's site and pays the hotel's 30% deposit through
 
   const box = guest.getByTestId('deposit-box')
   await expect(box).toContainText('Đặt cọc 30%')
+  await expect(box).toContainText('Vui lòng đặt cọc trong 1 giờ')
   const deposit = digits((await box.locator('p').first().innerText()).split(':')[1])
   expect(deposit).toBeGreaterThan(0)
   await guest.getByRole('button', { name: 'Xác nhận và đặt cọc' }).click()

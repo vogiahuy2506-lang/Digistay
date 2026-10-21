@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
         },
         // The hotel's own terms, shown before the guest books (the page used
         // to print made-up ones), and whether it takes a deposit online.
-        policy: { select: { cancellationHours: true, cancellationPolicy: true, onlineDepositPercent: true } },
+        policy: { select: { cancellationHours: true, cancellationPolicy: true, onlineDepositPercent: true, depositDeadlineMinutes: true } },
         payos: { select: { webhookConfirmedAt: true } },
       },
     })
