@@ -2,18 +2,23 @@ import { useLocale, useTranslations } from 'next-intl'
 import { formatVnd } from '@/lib/bookings/display'
 import { cn } from '@/lib/utils'
 
-const TZ = 'Asia/Ho_Chi_Minh'
+const WEEKDAYS = {
+  vi: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
+  en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+}
+const VN_OFFSET = 7 * 60 * 60 * 1000
 
-/** "T6, 23/10/2026" / "Fri, 23/10/2026" from a yyyy-mm-dd string or a date. */
+/**
+ * "T6, 23/10/2026" / "Fri, 23/10/2026" from a yyyy-mm-dd string or a date,
+ * in Vietnam time. Built by hand, not with toLocaleDateString: Node's and
+ * the browser's ICU spell Vietnamese weekdays differently ("Th 6" / "T6"),
+ * and the client components that show it would not hydrate.
+ */
 export function stayDate(value: string | Date, locale: string, withYear = true): string {
-  const date = typeof value === 'string' ? new Date(`${value}T00:00:00+07:00`) : value
-  return date.toLocaleDateString(locale === 'en' ? 'en-GB' : 'vi-VN', {
-    timeZone: TZ,
-    weekday: 'short',
-    day: '2-digit',
-    month: '2-digit',
-    ...(withYear && { year: 'numeric' }),
-  })
+  const date = typeof value === 'string' ? new Date(`${value}T00:00:00Z`) : new Date(value.getTime() + VN_OFFSET)
+  const two = (n: number) => String(n).padStart(2, '0')
+  const day = `${two(date.getUTCDate())}/${two(date.getUTCMonth() + 1)}${withYear ? `/${date.getUTCFullYear()}` : ''}`
+  return `${WEEKDAYS[locale === 'en' ? 'en' : 'vi'][date.getUTCDay()]}, ${day}`
 }
 
 export interface SummaryLine {

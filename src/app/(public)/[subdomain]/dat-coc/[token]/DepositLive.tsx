@@ -117,8 +117,12 @@ export function DepositLive({
   }
 
   const money = formatVnd(amount, lang)
-  const at = (iso: string) =>
-    new Date(iso).toLocaleString(lang === 'en' ? 'en-GB' : 'vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })
+  // "15:12 · 21/10/2026" in Vietnam time, by hand: Node's and the browser's ICU differ, and this renders on both.
+  const at = (iso: string) => {
+    const d = new Date(Date.parse(iso) + 7 * 60 * 60 * 1000)
+    const two = (n: number) => String(n).padStart(2, '0')
+    return `${two(d.getUTCHours())}:${two(d.getUTCMinutes())} · ${two(d.getUTCDate())}/${two(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`
+  }
   const call = hotel.phone && (
     <a href={`tel:${hotel.phone.replace(/\s/g, '')}`} className="flex h-[48px] items-center justify-center border border-ink px-5 text-[14px] font-medium text-fg">
       {t('help', { phone: hotel.phone })}
@@ -150,7 +154,7 @@ export function DepositLive({
               </div>
             )}
           </div>
-          <div className="grid gap-8 px-6 py-7 md:grid-cols-[minmax(0,280px)_minmax(0,1fr)] lg:px-8">
+          <div className="grid gap-8 px-4 py-6 sm:px-6 sm:py-7 md:grid-cols-[minmax(0,280px)_minmax(0,1fr)] lg:px-8">
             <div>
               {qrImage && (
                 // eslint-disable-next-line @next/next/no-img-element -- a data: URL made on the server
@@ -161,8 +165,8 @@ export function DepositLive({
             <div>
               <dl className="border-t border-line">
                 {rows.map((r) => (
-                  <div key={r.label} className="flex items-center gap-4 border-b border-line py-3">
-                    <dt className="w-[110px] flex-none text-[13.5px] text-muted">{r.label}</dt>
+                  <div key={r.label} className="flex items-center gap-3 border-b border-line py-3 sm:gap-4">
+                    <dt className="w-[88px] flex-none text-[13px] text-muted sm:w-[110px] sm:text-[13.5px]">{r.label}</dt>
                     <dd className="min-w-0 flex-1 break-words text-[15px] font-medium tabular-nums text-fg">{r.value}</dd>
                     {r.copy && <CopyButton value={r.copy} />}
                   </div>
