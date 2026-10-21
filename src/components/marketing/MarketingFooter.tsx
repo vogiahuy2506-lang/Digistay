@@ -3,7 +3,7 @@ import { getLocale, getTranslations } from 'next-intl/server'
 import { isLocale } from '@/i18n/locales'
 import { cn } from '@/lib/utils'
 import { LocaleToggle } from './LocaleToggle'
-import { Logo } from './MarketingHeader'
+import { Logo } from './Logo'
 import { frame } from './styles'
 
 /** Footer of Digistay's own public pages: product, account and legal links, languages. */

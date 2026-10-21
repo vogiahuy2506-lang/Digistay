@@ -18,14 +18,10 @@ import { redis } from '@/lib/db/redis'
 import { getClientIp } from '@/lib/security/client-ip'
 import { ACCOUNT_LOCK_SEC, LIMITS } from '@/lib/security/limits'
 import { clearLimit, isBlocked, recordFailure } from '@/lib/security/rate-limit'
+import { LOGIN_ERRORS } from './error-messages'
 
-export const LOGIN_ERRORS = {
-  missing: 'Vui lòng nhập tên đăng nhập và mật khẩu',
-  invalid: 'Tên đăng nhập hoặc mật khẩu không chính xác',
-  tooMany: 'Bạn đã đăng nhập sai quá nhiều lần. Vui lòng thử lại sau ít phút.',
-  locked: 'Tài khoản tạm khoá 30 phút do đăng nhập sai nhiều lần. Bạn có thể đặt lại mật khẩu để mở khoá ngay.',
-  unverified: 'Vui lòng xác thực email trước khi đăng nhập. Kiểm tra hộp thư đến của bạn.',
-}
+// Shown translated on the login page (error-messages.ts, AUTH_ERROR_KEYS).
+export { LOGIN_ERRORS }
 
 // bcrypt (cost 12) of a random string nobody knows: compared against when
 // the login name does not exist, so the response takes as long as a real one.

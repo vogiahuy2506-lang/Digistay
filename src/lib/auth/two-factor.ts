@@ -27,18 +27,12 @@ import { generateRecoveryCodes, hashRecoveryCode, normalizeRecoveryCode } from '
 import { generateTotpSecret, otpauthUrl, verifyTotp } from './totp'
 import { issueChallenge, type ChallengeMethod } from './two-factor-challenge'
 import { TWO_FACTOR_REQUIRED } from './two-factor-shared'
+import { TWO_FACTOR_ERRORS } from './error-messages'
 
 const ISSUER = 'Digistay'
 
-export const TWO_FACTOR_ERRORS = {
-  invalidCode: 'Mã xác thực không đúng',
-  locked: 'Bạn đã nhập sai mã quá nhiều lần. Vui lòng thử lại sau 15 phút.',
-  expired: 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại',
-  alreadyEnabled: 'Xác thực hai lớp đã được bật',
-  notPending: 'Hãy bắt đầu lại từ bước quét mã QR',
-  passwordRequired: 'Vui lòng nhập mật khẩu',
-  wrongPassword: 'Mật khẩu không đúng',
-} as const
+// Shown translated on the login page (error-messages.ts, AUTH_ERROR_KEYS).
+export { TWO_FACTOR_ERRORS }
 
 export class TwoFactorError extends Error {
   constructor(
