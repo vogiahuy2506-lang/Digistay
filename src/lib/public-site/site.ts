@@ -46,8 +46,8 @@ export async function loadSiteProps(propertyId: string) {
         },
       },
       websiteSettings: true,
+      // All of them, turned off or not: see `blocks` below.
       websiteBlocks: {
-        where: { isEnabled: true },
         orderBy: { sortOrder: 'asc' },
       },
       extraServices: { where: { isActive: true } },
@@ -57,11 +57,13 @@ export async function loadSiteProps(propertyId: string) {
   // The same rates a booking is charged (src/lib/pricing/quote.ts).
   const defaults = await propertyRateDefaults(prisma, propertyId)
 
-  // Fall back to a "default" block layout when the property has none yet
-  // so the public site is never blank for a freshly created property.
+  // The default layout only for a site never laid out (no block rows), so a
+  // new property is not blank. Blocks the hotel turned off stay off, all of
+  // them included: an empty choice is not "everything" (it used to bring
+  // back the full default layout).
   const blocks =
     property.websiteBlocks.length > 0
-      ? property.websiteBlocks
+      ? property.websiteBlocks.filter((b) => b.isEnabled)
       : defaultBlocksForProperty(property.type)
 
   return {
