@@ -17,7 +17,10 @@ export function Header({ title, description, eyebrow, actions }: HeaderProps) {
         <h1 className="text-[22px] leading-8 font-semibold tracking-tight text-fg">{title}</h1>
         {description && <p className="mt-1 text-small text-muted">{description}</p>}
       </div>
-      {actions && <div className="flex items-center gap-2 shrink-0 flex-wrap">{actions}</div>}
+      {/* Pages pass their own row of controls: it wraps too, so a long one never pushes the page sideways. */}
+      {actions && (
+        <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end [&>div]:flex-wrap sm:[&>div]:justify-end">{actions}</div>
+      )}
     </div>
   )
 }

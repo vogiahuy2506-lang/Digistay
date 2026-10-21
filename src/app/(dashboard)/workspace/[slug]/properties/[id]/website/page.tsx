@@ -1461,8 +1461,8 @@ export default function WebsiteBuilderPage() {
   return (
     <PageContainer className="max-w-full">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 bg-panel rounded-2xl p-4 shadow-sm border border-line">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6 bg-panel rounded-2xl p-4 shadow-sm border border-line">
+        <div className="flex min-w-0 items-center gap-4">
           <Button 
             variant="ghost" 
             size="sm"
@@ -1482,7 +1482,7 @@ export default function WebsiteBuilderPage() {
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {/* Undo/Redo */}
           <div className="flex items-center gap-1 bg-fg/5 rounded-lg p-1">
             <button

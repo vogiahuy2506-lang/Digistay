@@ -285,23 +285,19 @@ export default function WalkinBookingPage() {
   return (
     <div className="min-h-screen bg-page">
       {/* BEGIN: CRM Global Top Bar */}
-      <header className="h-16 bg-panel border-b border-line px-6 flex items-center justify-between sticky top-0 z-30">
+      <header className="min-h-16 bg-panel border-b border-line px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 sticky top-0 z-30">
         {/* Breadcrumb & Context Navigation */}
         <div className="flex items-center gap-2 text-xs text-muted font-medium">
           <span className="">Lễ tân & Vận hành</span>
           <ChevronRight className="w-2.5 h-2.5 text-muted" />
           <span className="text-fg font-bold">Đặt phòng Walk-in</span>
-          <span className="ml-2 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-err-soft text-err border border-err/30">
+          <span className="ml-2 hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-err-soft text-err border border-err/30">
             <span className="w-1.5 h-1.5 rounded-full bg-err animate-pulse"></span>
             Khách Vãng Lai / Trực Tiếp
           </span>
         </div>
         {/* Quick Topbar Utilities */}
         <div className="flex items-center gap-3">
-          <button className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-line text-fg bg-panel hover:bg-fg/[0.03] text-xs font-semibold shadow-xs transition-colors">
-            <Search className="w-3.5 h-3.5 text-muted" />
-            Tra cứu khách cũ (CRM Fast Lookup)
-          </button>
           <button 
             onClick={() => router.back()}
             className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-line text-fg bg-panel hover:bg-fg/5 text-xs font-semibold shadow-xs transition-colors"
