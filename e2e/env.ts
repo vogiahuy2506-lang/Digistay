@@ -45,4 +45,6 @@ export interface E2EIds {
   payosBooking: string
   invoiceBooking: string
   autoBooking: string
+  /** checked in, due out yesterday: late at any hour */
+  lateBooking: string
 }

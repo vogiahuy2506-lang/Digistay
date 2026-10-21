@@ -6,6 +6,7 @@ import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, CardHeader, CardTitle, Button, Input } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
 import { Save, ShieldCheck, Clock, Baby, Dog, Cigarette, FileText } from 'lucide-react'
+import { DEFAULT_LATE_TIERS, type LateTier } from '@/lib/bookings/late-checkout'
 
 interface Policy {
   id: string
@@ -21,9 +22,13 @@ interface Policy {
   additionalRules: string | null
   onlineDepositPercent: number
   depositDeadlineMinutes: number
+  /** null: the default tiers; []: no late fee */
+  lateCheckoutTiers: LateTier[] | null
   /** read-only: the deposit needs a connected PayOS account */
   payosConnected?: boolean
 }
+
+const TIER_INPUT = 'h-10 px-3 border border-line rounded-ctl bg-raised text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acc'
 
 /** How long a guest has to pay the online deposit (Policy.depositDeadlineMinutes). */
 const DEADLINE_OPTIONS = [
@@ -93,6 +98,7 @@ export default function PoliciesPage() {
           additionalRules: policy.additionalRules,
           onlineDepositPercent: policy.onlineDepositPercent,
           depositDeadlineMinutes: policy.depositDeadlineMinutes,
+          lateCheckoutTiers: policy.lateCheckoutTiers,
         }),
       })
       const data = await res.json()
@@ -113,6 +119,11 @@ export default function PoliciesPage() {
   const update = <K extends keyof Policy>(key: K, value: Policy[K]) => {
     setPolicy((p) => (p ? { ...p, [key]: value } : p))
   }
+
+  // Shown as stored, or the default the server applies when none is stored.
+  const lateTiers = policy?.lateCheckoutTiers ?? DEFAULT_LATE_TIERS
+  const setTier = (index: number, change: Partial<LateTier>) =>
+    update('lateCheckoutTiers', lateTiers.map((tier, i) => (i === index ? { ...tier, ...change } : tier)))
 
   if (!propertyId) {
     return (
@@ -191,6 +202,65 @@ export default function PoliciesPage() {
                   </p>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Late check-out (src/lib/bookings/late-checkout.ts) */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="w-5 h-5" />
+                Phí trả phòng muộn
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <label className="flex items-center gap-3 text-sm text-fg">
+                <input
+                  type="checkbox"
+                  checked={lateTiers.length > 0}
+                  onChange={(e) => update('lateCheckoutTiers', e.target.checked ? DEFAULT_LATE_TIERS : [])}
+                  className="w-4 h-4"
+                />
+                Thu phí khi khách trả phòng sau {policy.checkOutTime} của ngày trả đã đặt
+              </label>
+              {lateTiers.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted">Phụ thu tính theo % giá một đêm của đơn:</p>
+                  {lateTiers.map((tier, i) => (
+                    <div key={i} className="grid grid-cols-[84px_108px_1fr] items-center gap-2 sm:gap-3 text-sm text-fg">
+                      <span>{tier.until !== null ? 'Trả trước' : 'Muộn hơn nữa'}</span>
+                      {tier.until !== null ? (
+                        <input
+                          type="time"
+                          aria-label={`Mốc giờ ${i + 1}`}
+                          value={tier.until}
+                          onChange={(e) => setTier(i, { until: e.target.value })}
+                          className={TIER_INPUT}
+                        />
+                      ) : (
+                        <span aria-hidden="true" />
+                      )}
+                      <span className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={0}
+                          max={300}
+                          aria-label={tier.until !== null ? `Phụ thu nếu trả trước ${tier.until} (%)` : 'Phụ thu nếu muộn hơn (%)'}
+                          value={tier.percent}
+                          onChange={(e) => setTier(i, { percent: Math.min(300, Math.max(0, parseInt(e.target.value) || 0)) })}
+                          className={`${TIER_INPUT} w-16 sm:w-20`}
+                        />
+                        <span className="text-muted">%</span>
+                      </span>
+                    </div>
+                  ))}
+                  <p className="text-xs text-muted">
+                    Mặc định theo thông lệ: trước 15:00 phụ thu 30%, trước 18:00 phụ thu 50%, muộn hơn tính một đêm. Ở
+                    sang ngày hôm sau thì mỗi 24 giờ tính một đêm (nên gia hạn). Khi trả phòng, app gợi ý số tiền; lễ tân
+                    áp dụng, sửa hoặc miễn (sửa hay miễn phải ghi lý do, có lưu nhật ký).
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
