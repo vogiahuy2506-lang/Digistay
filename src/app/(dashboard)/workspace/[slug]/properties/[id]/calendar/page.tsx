@@ -11,8 +11,9 @@ import {
   Building2, PieChart, CheckCircle, Key, RefreshCw,
   Clock, ListChecks, Eye, Loader2, XCircle
 } from 'lucide-react'
-import { formatDate } from '@/lib/utils'
+import { useTranslations } from 'next-intl'
 import { routes } from '@/lib/utils/routes'
+import { useDashLabels } from '@/lib/i18n/dash'
 import { useProperty } from '@/lib/hooks/use-property'
 import { escapeHtml } from '@/lib/bookings/display'
 import { CheckOutDialog } from '@/components/bookings/check-out-dialog'
@@ -94,6 +95,12 @@ export default function CalendarPage() {
   const params = useParams<{ slug: string; id: string }>()
   const propertyId = params.id
   const { property } = useProperty()
+  const t = useTranslations('dash.calendar')
+  const tc = useTranslations('dash.common')
+  const labels = useDashLabels()
+  const intlLocale = labels.locale === 'en' ? 'en-GB' : 'vi-VN'
+  // Local (browser) dates, as the grid is built: no time zone, like before.
+  const formatLocal = (d: Date, options: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat(intlLocale, options).format(d)
 
   const [currentDate, setCurrentDate] = React.useState(new Date())
   const [roomTypes, setRoomTypes] = React.useState<RoomType[]>([])
@@ -238,7 +245,7 @@ export default function CalendarPage() {
       })
       const data = await response.json()
       if (data.success) {
-        toast.success('Tạo đơn đặt phòng thành công')
+        toast.success(t('create.success'))
         setShowCreateBookingModal(false)
         setNewBooking({
           guestName: '',
@@ -253,11 +260,11 @@ export default function CalendarPage() {
         })
         fetchCalendarData()
       } else {
-        toast.error(data.error || 'Lỗi khi tạo đơn đặt phòng')
+        toast.error(data.error || t('create.error'))
       }
     } catch (err) {
       console.error('Create booking error:', err)
-      toast.error('Lỗi khi tạo đơn đặt phòng')
+      toast.error(t('create.error'))
     } finally {
       setIsActionLoading(false)
     }
@@ -272,11 +279,11 @@ export default function CalendarPage() {
         setSelectedBooking(data.data)
         setShowBookingDetailModal(true)
       } else {
-        toast.error(data.error || 'Lỗi khi lấy thông tin đơn đặt phòng')
+        toast.error(data.error || t('detail.loadError'))
       }
     } catch (err) {
       console.error('Fetch booking error:', err)
-      toast.error('Lỗi khi lấy thông tin đơn đặt phòng')
+      toast.error(t('detail.loadError'))
     }
   }
 
@@ -288,15 +295,15 @@ export default function CalendarPage() {
       const response = await fetch(`/api/bookings/${bookingId}/check-in`, { method: 'POST' })
       const data = await response.json()
       if (data.success) {
-        toast.success('Check-in thành công')
+        toast.success(t('detail.checkInSuccess'))
         setShowBookingDetailModal(false)
         fetchCalendarData()
       } else {
-        toast.error(data.error || 'Lỗi khi check-in')
+        toast.error(data.error || t('detail.checkInError'))
       }
     } catch (err) {
       console.error('Check-in error:', err)
-      toast.error('Lỗi khi check-in')
+      toast.error(t('detail.checkInError'))
     } finally {
       setIsActionLoading(false)
       setActionLoadingType('')
@@ -309,22 +316,22 @@ export default function CalendarPage() {
 
   // Handle cancel booking
   const handleCancelBooking = async (bookingId: string) => {
-    if (!confirm('Bạn có chắc chắn muốn hủy đơn đặt phòng này?')) return
+    if (!confirm(t('detail.cancelConfirm'))) return
     setIsActionLoading(true)
     setActionLoadingType('cancel')
     try {
       const response = await fetch(`/api/bookings/${bookingId}/cancel`, { method: 'POST' })
       const data = await response.json()
       if (data.success) {
-        toast.success('Hủy đơn đặt phòng thành công')
+        toast.success(t('detail.cancelSuccess'))
         setShowBookingDetailModal(false)
         fetchCalendarData()
       } else {
-        toast.error(data.error || 'Lỗi khi hủy đơn đặt phòng')
+        toast.error(data.error || t('detail.cancelError'))
       }
     } catch (err) {
       console.error('Cancel booking error:', err)
-      toast.error('Lỗi khi hủy đơn đặt phòng')
+      toast.error(t('detail.cancelError'))
     } finally {
       setIsActionLoading(false)
       setActionLoadingType('')
@@ -355,7 +362,7 @@ export default function CalendarPage() {
 
       // Generate report content
       const reportData = {
-        title: `Báo Cáo Doanh Thu Tháng ${currentDate.getMonth() + 1}/${currentDate.getFullYear()}`,
+        title: t('export.doc.title', { month: currentDate.getMonth() + 1, year: String(currentDate.getFullYear()) }),
         generatedAt: new Date().toISOString(),
         propertyId,
         summary: {
@@ -374,19 +381,23 @@ export default function CalendarPage() {
           checkIn: b.checkInDate,
           checkOut: b.checkOutDate,
           status: b.status,
-          rooms: b.bookingItems.map(i => i.roomNumber || 'Chưa gán').join(', '),
+          rooms: b.bookingItems.map(i => i.roomNumber || t('unassigned')).join(', '),
         })),
       }
+
+      const doc = (key: 'code' | 'guest' | 'checkIn' | 'checkOut' | 'status' | 'room' | 'totalRooms' | 'totalBookings' | 'checkedIn' | 'checkedOut' | 'occupancy' | 'titleShort') =>
+        escapeHtml(t(`export.doc.${key}`))
+      const fileName = t('export.fileName', { month: currentDate.getMonth() + 1, year: String(currentDate.getFullYear()) })
 
       // Export based on selected type
       if (exportType === 'csv') {
         // Generate CSV
-        const csvHeaders = ['Mã đơn', 'Khách', 'Nhận phòng', 'Trả phòng', 'Trạng thái', 'Phòng']
+        const csvHeaders = (['code', 'guest', 'checkIn', 'checkOut', 'status', 'room'] as const).map((key) => t(`export.doc.${key}`))
         const csvRows = reportData.bookings.map(b => [
           b.bookingCode,
           b.guestName,
-          new Date(b.checkIn).toLocaleDateString('vi-VN'),
-          new Date(b.checkOut).toLocaleDateString('vi-VN'),
+          new Date(b.checkIn).toLocaleDateString(intlLocale),
+          new Date(b.checkOut).toLocaleDateString(intlLocale),
           b.status,
           b.rooms,
         ])
@@ -397,10 +408,10 @@ export default function CalendarPage() {
         const url = URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.download = `bao-cao-${currentDate.getMonth() + 1}-${currentDate.getFullYear()}.csv`
+        link.download = `${fileName}.csv`
         link.click()
         URL.revokeObjectURL(url)
-        toast.success('Đã tải báo cáo CSV!')
+        toast.success(t('export.csvDone'))
       } else if (exportType === 'excel') {
         // For Excel, we'll create a simple HTML table that Excel can open
         const excelHTML = `
@@ -408,7 +419,7 @@ export default function CalendarPage() {
           <html>
           <head>
             <meta charset="utf-8">
-            <title>Báo Cáo Doanh Thu</title>
+            <title>${doc('titleShort')}</title>
             <style>
               body { font-family: Arial, sans-serif; padding: 20px; }
               h1 { color: #d95338; }
@@ -421,24 +432,24 @@ export default function CalendarPage() {
             </style>
           </head>
           <body>
-            <h1>${reportData.title}</h1>
+            <h1>${escapeHtml(reportData.title)}</h1>
             <div class="summary">
-              <div class="summary-item"><strong>Tổng phòng:</strong> ${reportData.summary.totalRooms}</div>
-              <div class="summary-item"><strong>Tổng đơn:</strong> ${reportData.summary.totalBookings}</div>
-              <div class="summary-item"><strong>Đã xác nhận:</strong> ${reportData.summary.confirmedBookings}</div>
-              <div class="summary-item"><strong>Đã nhận:</strong> ${reportData.summary.checkedInBookings}</div>
-              <div class="summary-item"><strong>Đã trả:</strong> ${reportData.summary.checkedOutBookings}</div>
-              <div class="summary-item"><strong>Công suất:</strong> ${reportData.summary.occupancyRate}%</div>
+              <div class="summary-item"><strong>${doc('totalRooms')}:</strong> ${reportData.summary.totalRooms}</div>
+              <div class="summary-item"><strong>${doc('totalBookings')}:</strong> ${reportData.summary.totalBookings}</div>
+              <div class="summary-item"><strong>${escapeHtml(labels.bookingStatus('CONFIRMED'))}:</strong> ${reportData.summary.confirmedBookings}</div>
+              <div class="summary-item"><strong>${doc('checkedIn')}:</strong> ${reportData.summary.checkedInBookings}</div>
+              <div class="summary-item"><strong>${doc('checkedOut')}:</strong> ${reportData.summary.checkedOutBookings}</div>
+              <div class="summary-item"><strong>${doc('occupancy')}:</strong> ${reportData.summary.occupancyRate}%</div>
           </div>
             <table>
               <thead>
                 <tr>
-                  <th>Mã đơn</th>
-                  <th>Khách</th>
-                  <th>Nhận phòng</th>
-                  <th>Trả phòng</th>
-                  <th>Trạng thái</th>
-                  <th>Phòng</th>
+                  <th>${doc('code')}</th>
+                  <th>${doc('guest')}</th>
+                  <th>${doc('checkIn')}</th>
+                  <th>${doc('checkOut')}</th>
+                  <th>${doc('status')}</th>
+                  <th>${doc('room')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -446,15 +457,15 @@ export default function CalendarPage() {
                   <tr>
                     <td>${escapeHtml(b.bookingCode)}</td>
                     <td>${escapeHtml(b.guestName)}</td>
-                    <td>${new Date(b.checkIn).toLocaleDateString('vi-VN')}</td>
-                    <td>${new Date(b.checkOut).toLocaleDateString('vi-VN')}</td>
+                    <td>${new Date(b.checkIn).toLocaleDateString(intlLocale)}</td>
+                    <td>${new Date(b.checkOut).toLocaleDateString(intlLocale)}</td>
                     <td>${escapeHtml(b.status)}</td>
                     <td>${escapeHtml(b.rooms)}</td>
                   </tr>
                 `).join('')}
               </tbody>
             </table>
-            <p style="margin-top: 20px; color: #666;">Xuất lúc: ${new Date().toLocaleString('vi-VN')}</p>
+            <p style="margin-top: 20px; color: #666;">${escapeHtml(t('export.doc.exportedAt', { time: new Date().toLocaleString(intlLocale) }))}</p>
           </body>
           </html>
         `
@@ -462,10 +473,10 @@ export default function CalendarPage() {
         const url = URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.download = `bao-cao-${currentDate.getMonth() + 1}-${currentDate.getFullYear()}.xls`
+        link.download = `${fileName}.xls`
         link.click()
         URL.revokeObjectURL(url)
-        toast.success('Đã tải báo cáo Excel!')
+        toast.success(t('export.excelDone'))
       } else {
         // PDF - show print dialog which can save as PDF
         const printWindow = window.open('', '_blank')
@@ -475,7 +486,7 @@ export default function CalendarPage() {
             <html>
             <head>
               <meta charset="utf-8">
-              <title>Báo Cáo Doanh Thu</title>
+              <title>${doc('titleShort')}</title>
               <style>
                 body { font-family: Arial, sans-serif; padding: 30px; max-width: 800px; margin: 0 auto; }
                 h1 { color: #d95338; text-align: center; border-bottom: 2px solid #d95338; padding-bottom: 10px; }
@@ -492,42 +503,42 @@ export default function CalendarPage() {
               </style>
             </head>
             <body>
-              <h1>${reportData.title}</h1>
+              <h1>${escapeHtml(reportData.title)}</h1>
               <div class="summary">
                 <div class="summary-item">
                   <strong>${reportData.summary.totalRooms}</strong>
-                  <span>Tổng phòng</span>
+                  <span>${doc('totalRooms')}</span>
                 </div>
                 <div class="summary-item">
                   <strong>${reportData.summary.totalBookings}</strong>
-                  <span>Tổng đơn</span>
+                  <span>${doc('totalBookings')}</span>
                 </div>
                 <div class="summary-item">
                   <strong>${reportData.summary.occupancyRate}%</strong>
-                  <span>Công suất</span>
+                  <span>${doc('occupancy')}</span>
                 </div>
                 <div class="summary-item">
                   <strong>${reportData.summary.confirmedBookings}</strong>
-                  <span>Đã xác nhận</span>
+                  <span>${escapeHtml(labels.bookingStatus('CONFIRMED'))}</span>
                 </div>
                 <div class="summary-item">
                   <strong>${reportData.summary.checkedInBookings}</strong>
-                  <span>Đã nhận phòng</span>
+                  <span>${escapeHtml(labels.bookingStatus('CHECKED_IN'))}</span>
                 </div>
                 <div class="summary-item">
                   <strong>${reportData.summary.checkedOutBookings}</strong>
-                  <span>Đã trả phòng</span>
+                  <span>${escapeHtml(labels.bookingStatus('CHECKED_OUT'))}</span>
                 </div>
               </div>
               <table>
                 <thead>
                   <tr>
-                    <th>Mã đơn</th>
-                    <th>Khách</th>
-                    <th>Nhận phòng</th>
-                    <th>Trả phòng</th>
-                    <th>Trạng thái</th>
-                    <th>Phòng</th>
+                    <th>${doc('code')}</th>
+                    <th>${doc('guest')}</th>
+                    <th>${doc('checkIn')}</th>
+                    <th>${doc('checkOut')}</th>
+                    <th>${doc('status')}</th>
+                    <th>${doc('room')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -535,8 +546,8 @@ export default function CalendarPage() {
                     <tr>
                       <td>${escapeHtml(b.bookingCode)}</td>
                       <td>${escapeHtml(b.guestName)}</td>
-                      <td>${new Date(b.checkIn).toLocaleDateString('vi-VN')}</td>
-                      <td>${new Date(b.checkOut).toLocaleDateString('vi-VN')}</td>
+                      <td>${new Date(b.checkIn).toLocaleDateString(intlLocale)}</td>
+                      <td>${new Date(b.checkOut).toLocaleDateString(intlLocale)}</td>
                       <td>${escapeHtml(b.status)}</td>
                       <td>${escapeHtml(b.rooms)}</td>
                     </tr>
@@ -544,7 +555,7 @@ export default function CalendarPage() {
                 </tbody>
               </table>
               <div class="footer">
-                Xuất báo cáo lúc: ${new Date().toLocaleString('vi-VN')}
+                ${escapeHtml(t('export.doc.generatedAt', { time: new Date().toLocaleString(intlLocale) }))}
               </div>
             </body>
             </html>
@@ -554,13 +565,13 @@ export default function CalendarPage() {
             printWindow.print()
           }, 500)
         }
-        toast.success('Đang mở cửa sổ in để lưu PDF...')
+        toast.success(t('export.pdfOpening'))
       }
       
       setShowExportModal(false)
     } catch (err) {
       console.error('Export error:', err)
-      toast.error('Lỗi khi xuất báo cáo')
+      toast.error(t('export.error'))
     } finally {
       setIsActionLoading(false)
     }
@@ -569,7 +580,7 @@ export default function CalendarPage() {
   // Handle refresh
   const handleRefresh = () => {
     fetchCalendarData()
-    toast.success('Đã làm mới dữ liệu')
+    toast.success(t('toolbar.refreshed'))
   }
 
   // Open create booking modal for a specific date
@@ -583,8 +594,8 @@ export default function CalendarPage() {
     setShowCreateBookingModal(true)
   }
 
-  // formatDate adds day / month / year unless they are turned off: this read "20 tháng 10, 2026".
-  const monthLabel = formatDate(currentDate, { day: undefined, month: 'long', year: 'numeric' })
+  // Month and year only ("tháng 10 năm 2026" / "October 2026").
+  const monthLabel = formatLocal(currentDate, { month: 'long', year: 'numeric' })
   const today = startOfDay(new Date())
   const days = buildMonthGrid(currentDate)
   const totalRooms = roomTypes.reduce((sum, rt) => sum + rt.totalRooms, 0)
@@ -666,12 +677,12 @@ export default function CalendarPage() {
     const percent = totalRooms > 0 ? Math.round((occupied / totalRooms) * 100) : 0
     
     if (percent >= 80) {
-      return { label: `${occupied}/${totalRooms} bận`, className: 'bg-warn-soft text-warn border-warn/30' }
+      return { label: t('grid.busy', { occupied, total: totalRooms }), className: 'bg-warn-soft text-warn border-warn/30' }
     }
     if (occupied >= totalRooms * 0.5) {
-      return { label: `${occupied}/${totalRooms} bận`, className: 'bg-ok-soft text-ok border-ok/30' }
+      return { label: t('grid.busy', { occupied, total: totalRooms }), className: 'bg-ok-soft text-ok border-ok/30' }
     }
-    return { label: `${occupied}/${totalRooms} bận`, className: 'bg-fg/5 text-muted border-line' }
+    return { label: t('grid.busy', { occupied, total: totalRooms }), className: 'bg-fg/5 text-muted border-line' }
   }
 
   const isWeekend = (day: Date) => {
@@ -703,9 +714,9 @@ export default function CalendarPage() {
             </div>
             {/* CRM Breadcrumbs */}
             <nav className="hidden md:flex items-center gap-2 text-xs text-muted pl-1 font-medium">
-              <span>Quản lý vận hành</span>
+              <span>{t('header.section')}</span>
               <i className="fa-solid fa-chevron-right text-[9px] text-muted" />
-              <span className="text-acc font-semibold">Lịch phòng trực quan</span>
+              <span className="text-acc font-semibold">{t('header.page')}</span>
             </nav>
           </div>
 
@@ -715,7 +726,13 @@ export default function CalendarPage() {
             <div className="hidden xl:flex items-center gap-2 px-3 py-1 bg-ok-soft border border-ok/30 rounded-lg text-ok text-[11px] font-medium">
               <span className="w-2 h-2 rounded-full bg-ok animate-pulse" />
               {currentTime && (
-                <span>Trực tuyến: <strong>{formatDate(currentTime, { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}</strong> • {formatDate(currentTime, { day: undefined, month: undefined, year: undefined, hour: '2-digit', minute: '2-digit' })}</span>
+                <span>
+                  {t.rich('header.live', {
+                    date: formatLocal(currentTime, { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }),
+                    time: formatLocal(currentTime, { hour: '2-digit', minute: '2-digit' }),
+                    b: (c) => <strong>{c}</strong>,
+                  })}
+                </span>
               )}
             </div>
           </div>
@@ -730,7 +747,7 @@ export default function CalendarPage() {
               <button 
                 onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}
                 className="w-7 h-7 rounded hover:bg-fg/[0.03] flex items-center justify-center text-muted transition-colors" 
-                title="Tháng trước"
+                title={t('toolbar.prevMonth')}
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
               </button>
@@ -741,7 +758,7 @@ export default function CalendarPage() {
               <button 
                 onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}
                 className="w-7 h-7 rounded hover:bg-fg/[0.03] flex items-center justify-center text-muted transition-colors" 
-                title="Tháng sau"
+                title={t('toolbar.nextMonth')}
               >
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
@@ -751,7 +768,7 @@ export default function CalendarPage() {
               onClick={() => setCurrentDate(new Date())}
               className="px-2.5 py-1.5 bg-panel border border-line hover:bg-fg/[0.03] rounded-lg text-xs font-semibold text-fg shadow-xs transition-colors"
             >
-              Hôm nay
+              {t('toolbar.today')}
             </button>
           </div>
 
@@ -760,32 +777,32 @@ export default function CalendarPage() {
             <button 
               onClick={handleRefresh}
               className="px-3 py-1.5 rounded-lg border border-line bg-panel text-fg hover:bg-fg/[0.03] text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs"
-              title="Làm mới dữ liệu"
+              title={t('toolbar.refreshTitle')}
             >
               <RefreshCw className="w-3 h-3" />
-              <span className="hidden md:inline">Làm mới</span>
+              <span className="hidden md:inline">{tc('actions.refresh')}</span>
             </button>
             <button 
               onClick={() => setShowExportModal(true)}
               className="px-3 py-1.5 rounded-lg border border-line bg-panel text-fg hover:bg-fg/[0.03] text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs"
-              title="Xuất báo cáo công suất"
+              title={t('toolbar.exportTitle')}
             >
               <Receipt className="w-3 h-3 text-ok" />
-              <span className="hidden md:inline">Xuất báo cáo</span>
+              <span className="hidden md:inline">{t('toolbar.export')}</span>
             </button>
             <button 
               onClick={() => setShowCreateBookingModal(true)}
               className="px-3 py-1.5 rounded-lg border border-line bg-panel text-fg hover:bg-fg/[0.03] text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs"
             >
               <CheckCircle className="w-3 h-3 text-acc" />
-              <span>Khách Walk-in</span>
+              <span>{t('toolbar.walkIn')}</span>
             </button>
             <button 
               onClick={() => setShowCreateBookingModal(true)}
               className="px-3.5 py-1.5 rounded-lg bg-ink hover:bg-ink/90 text-on-ink text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
             >
               <Plus className="w-3 h-3 text-[10px]" />
-              <span>Tạo Đặt Phòng</span>
+              <span>{t('toolbar.createBooking')}</span>
             </button>
           </div>
         </div>
@@ -798,14 +815,19 @@ export default function CalendarPage() {
           {/* Card 1: Tổng số phòng */}
           <div className="bg-panel rounded-xl border border-line p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)] flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">Tổng số phòng</span>
+              <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">{t('stats.totalRooms')}</span>
               <div className="flex items-baseline gap-2 mt-0.5">
                 <span className="text-2xl font-black text-fg">{stats.totalRooms}</span>
-                <span className="text-[11px] text-muted font-medium">phòng vật lý</span>
+                <span className="text-[11px] text-muted font-medium">{t('stats.physicalRooms')}</span>
             </div>
               <div className="text-[11px] text-ok font-semibold mt-0.5 flex items-center gap-1">
                 <PieChart className="w-3 h-3 text-ok" />
-                <span>Công suất tháng: <strong className="text-acc">{monthOccupancy.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}%</strong></span>
+                <span>
+                  {t.rich('stats.monthOccupancy', {
+                    percent: monthOccupancy.toLocaleString(intlLocale, { maximumFractionDigits: 1 }),
+                    b: (c) => <strong className="text-acc">{c}</strong>,
+                  })}
+                </span>
               </div>
             </div>
             <div className="w-10 h-10 rounded-lg bg-info-soft text-info border border-info/30 flex items-center justify-center text-base shrink-0">
@@ -816,14 +838,14 @@ export default function CalendarPage() {
           {/* Card 2: Đang lưu trú (In-house) */}
           <div className="bg-panel rounded-xl border border-line p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)] flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">Đang ở (In-House)</span>
+              <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">{t('stats.inHouse')}</span>
               <div className="flex items-baseline gap-2 mt-0.5">
                 <span className="text-2xl font-black text-ok">{stats.checkedIn}</span>
-                <span className="text-[11px] text-muted font-medium">/ {stats.totalRooms} phòng</span>
+                <span className="text-[11px] text-muted font-medium">{t('stats.ofRooms', { count: stats.totalRooms })}</span>
             </div>
               <div className="text-[11px] text-muted font-medium mt-0.5 flex items-center gap-1">
                 <Users className="w-3 h-3 text-ok" />
-                <span>{stats.guestsInHouse} khách đang lưu trú</span>
+                <span>{t('stats.guestsInHouse', { count: stats.guestsInHouse })}</span>
               </div>
             </div>
             <div className="w-10 h-10 rounded-lg bg-ok-soft text-ok border border-ok/30 flex items-center justify-center text-base shrink-0">
@@ -834,14 +856,14 @@ export default function CalendarPage() {
           {/* Card 3: Dự kiến đến hôm nay (Check-in) */}
           <div className="bg-panel rounded-xl border border-line p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)] flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">Dự kiến đến hôm nay</span>
+              <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">{t('stats.arrivingToday')}</span>
               <div className="flex items-baseline gap-2 mt-0.5">
                 <span className="text-2xl font-black text-warn">{todayCheckIns.length}</span>
-                <span className="text-[11px] text-warn bg-warn-soft px-1.5 py-0.2 rounded font-bold border border-warn/30">Lượt check-in</span>
+                <span className="text-[11px] text-warn bg-warn-soft px-1.5 py-0.2 rounded font-bold border border-warn/30">{t('stats.checkIns')}</span>
             </div>
               <div className="text-[11px] text-warn font-medium mt-0.5 flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                <span>{todayCheckIns.filter(b => b.status === 'PENDING').length} đơn chờ thanh toán</span>
+                <span>{t('stats.awaitingPayment', { count: todayCheckIns.filter(b => b.status === 'PENDING').length })}</span>
               </div>
             </div>
             <div className="w-10 h-10 rounded-lg bg-warn-soft text-warn border border-warn/30 flex items-center justify-center text-base shrink-0">
@@ -852,13 +874,13 @@ export default function CalendarPage() {
           {/* Card 4: Doanh thu dự kiến */}
           <div className="bg-panel rounded-xl border border-line p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)] flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">Doanh thu dự kiến T{currentDate.getMonth() + 1}</span>
+              <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">{t('stats.expectedRevenue', { month: currentDate.getMonth() + 1 })}</span>
               <div className="flex items-baseline gap-2 mt-0.5">
-                <span className="text-2xl font-black text-fg">{(stats.revenue / 1_000_000).toLocaleString('vi-VN', { maximumFractionDigits: 1 })} tr</span>
+                <span className="text-2xl font-black text-fg">{t('stats.millions', { amount: (stats.revenue / 1_000_000).toLocaleString(intlLocale, { maximumFractionDigits: 1 }) })}</span>
             </div>
               <div className="text-[11px] text-muted font-medium mt-0.5 flex items-center gap-1">
                 <CheckCircle className="w-3 h-3 text-acc" />
-                <span>{stats.activeBookings - stats.pending} booking đã xác nhận</span>
+                <span>{t('stats.confirmed', { count: stats.activeBookings - stats.pending })}</span>
       </div>
             </div>
             <div className="w-10 h-10 rounded-lg bg-refund-soft text-refund border border-refund/30 flex items-center justify-center text-base shrink-0">
@@ -874,15 +896,15 @@ export default function CalendarPage() {
             {/* Calendar Matrix Header Bar */}
             <div className="px-4 py-2.5 bg-panel border-b border-line flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-xs text-fg">Lưới Lịch Đặt Buồng Theo Tháng</span>
-                <span className="text-[10px] text-muted bg-fg/5 px-2 py-0.5 rounded-full font-medium">{days.length} ngày hiển thị</span>
+                <span className="font-bold text-xs text-fg">{t('grid.title')}</span>
+                <span className="text-[10px] text-muted bg-fg/5 px-2 py-0.5 rounded-full font-medium">{t('grid.daysShown', { count: days.length })}</span>
                   </div>
             </div>
 
             {/* Days of Week Header */}
             <div className="grid grid-cols-7 border-b border-line bg-fg/[0.03] text-center text-xs font-bold text-muted divide-x divide-line">
-              {['Thứ 2 (T2)', 'Thứ 3 (T3)', 'Thứ 4 (T4)', 'Thứ 5 (T5)', 'Thứ 6 (T6)', 'Thứ 7 (T7)', 'Chủ Nhật (CN)'].map((day, i) => (
-                <div key={day} className={`py-2 ${i >= 5 ? 'text-acc' : ''}`}>{day}</div>
+              {(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const).map((day, i) => (
+                <div key={day} className={`py-2 ${i >= 5 ? 'text-acc' : ''}`}>{t(`grid.weekdays.${day}`)}</div>
                 ))}
               </div>
 
@@ -929,7 +951,7 @@ export default function CalendarPage() {
                             </span>
                           )}
                           {!day.isCurrentMonth && (
-                            <span className="text-[10px] text-muted">{formatDate(day.date, { day: undefined, year: undefined, month: 'short' })}</span>
+                            <span className="text-[10px] text-muted">{formatLocal(day.date, { month: 'short' })}</span>
                           )}
                     </div>
 
@@ -948,14 +970,14 @@ export default function CalendarPage() {
                                 </span>
                                 {b.bookingItems[0]?.roomNumber && (
                                   <span className="text-[9px] bg-info-soft px-1 rounded shrink-0">
-                                    P.{b.bookingItems[0].roomNumber}
+                                    {t('grid.room', { number: b.bookingItems[0].roomNumber })}
                                   </span>
                                 )}
                         </div>
                       ))}
                             {dayBookings.length > 2 && (
                               <div className="text-[10px] text-muted text-center">
-                                +{dayBookings.length - 2} đơn
+                                {t('grid.more', { count: dayBookings.length - 2 })}
                               </div>
                       )}
                     </div>
@@ -967,7 +989,7 @@ export default function CalendarPage() {
                           onClick={() => openCreateBookingForDate(day.date)}
                           className="text-[10px] text-muted group-hover:text-acc cursor-pointer font-medium mt-1"
                         >
-                          + Thêm
+                          + {tc('actions.add')}
                         </span>
                       )}
               </div>
@@ -986,14 +1008,14 @@ export default function CalendarPage() {
                   <div className="w-6 h-6 rounded-md bg-acc-soft text-acc flex items-center justify-center text-xs">
                     <BedDouble className="w-3 h-3" />
                   </div>
-                  <h2 className="font-bold text-xs text-fg">Tình Trạng Hạng Phòng</h2>
+                  <h2 className="font-bold text-xs text-fg">{t('roomTypes.title')}</h2>
                 </div>
-                <span className="text-[11px] font-semibold text-muted">{totalRooms} phòng • hôm nay</span>
+                <span className="text-[11px] font-semibold text-muted">{t('roomTypes.summary', { count: totalRooms })}</span>
               </div>
 
               <div className="divide-y divide-line text-xs">
                 {roomTypes.length === 0 ? (
-                  <p className="py-4 text-center text-muted text-xs">Chưa có hạng phòng nào.</p>
+                  <p className="py-4 text-center text-muted text-xs">{t('roomTypes.empty')}</p>
                 ) : (
                   roomTypes.map((rt) => {
                     const occupied = Math.min(rt.totalRooms, occupancyToday.get(rt.id) ?? 0)
@@ -1005,7 +1027,7 @@ export default function CalendarPage() {
                             <div>
                             <h3 className="font-bold text-fg">{rt.name}</h3>
                             <p className="text-[11px] text-muted">
-                              {rt.totalRooms} phòng
+                              {t('roomTypes.rooms', { count: rt.totalRooms })}
                             </p>
                             </div>
                           <div className="text-right">
@@ -1014,9 +1036,9 @@ export default function CalendarPage() {
                               empty <= 3 ? 'bg-warn-soft text-warn border-warn/30' :
                               'bg-ok-soft text-ok border-ok/30'
                             }`}>
-                              Trống {empty}p
+                              {t('roomTypes.free', { count: empty })}
                             </span>
-                            <div className="text-[10px] text-muted mt-0.5">{percent}% kín</div>
+                            <div className="text-[10px] text-muted mt-0.5">{t('roomTypes.full', { percent })}</div>
                           </div>
                         </div>
                         <div className="w-full bg-fg/5 h-1.5 rounded-full mt-1.5 overflow-hidden">
@@ -1043,20 +1065,20 @@ export default function CalendarPage() {
                   <div className="w-6 h-6 rounded-md bg-info-soft text-info flex items-center justify-center text-xs">
                     <ListChecks className="w-3 h-3" />
                   </div>
-                  <h2 className="font-bold text-xs text-fg">Lượt Đến & Đi Hôm Nay</h2>
+                  <h2 className="font-bold text-xs text-fg">{t('today.title')}</h2>
                 </div>
                 <Link
                   href={routes.propertyBookings(params.slug, params.id)}
                   className="text-[11px] text-acc font-semibold hover:underline"
                 >
-                  Xem tất cả ({todayCheckIns.length + todayCheckOuts.length})
+                  {t('today.viewAll', { count: todayCheckIns.length + todayCheckOuts.length })}
                 </Link>
               </div>
 
               <div className="space-y-2 mt-2.5">
                 {/* Check-ins */}
                 {todayCheckIns.length === 0 ? (
-                  <div className="text-center py-4 text-muted text-xs">Không có lượt đến nào hôm nay</div>
+                  <div className="text-center py-4 text-muted text-xs">{t('today.noArrivals')}</div>
                 ) : (
                   todayCheckIns.slice(0, 3).map((b) => (
                     <div key={`in-${b.id}`} className="p-2.5 rounded-lg border border-line bg-page/60 hover:bg-panel hover:border-acc/40 transition-all">
@@ -1064,10 +1086,10 @@ export default function CalendarPage() {
                         <div>
                           <div className="flex items-center gap-1.5">
                             <span className="font-bold text-fg text-xs">{b.guestName}</span>
-                            <span className="text-[9px] bg-ok-soft text-ok border border-ok/30 px-1 rounded font-bold">Check-in</span>
+                            <span className="text-[9px] bg-ok-soft text-ok border border-ok/30 px-1 rounded font-bold">{t('checkIn')}</span>
                           </div>
                           <p className="text-[11px] text-muted mt-0.5">
-                            Phòng {b.bookingItems[0]?.roomNumber || '---'} • #{b.bookingCode}
+                            {t('today.roomLine', { room: b.bookingItems[0]?.roomNumber || '---', code: b.bookingCode })}
                           </p>
                         </div>
                         <PaymentStatusBadge status={b.paymentStatus} className="shrink-0" />
@@ -1083,10 +1105,10 @@ export default function CalendarPage() {
                       <div>
                         <div className="flex items-center gap-1.5">
                           <span className="font-bold text-fg text-xs">{b.guestName}</span>
-                          <span className="text-[9px] bg-warn-soft text-warn border border-warn/30 px-1 rounded font-bold">Check-out</span>
+                          <span className="text-[9px] bg-warn-soft text-warn border border-warn/30 px-1 rounded font-bold">{t('checkOut')}</span>
                         </div>
                         <p className="text-[11px] text-muted mt-0.5">
-                          Phòng {b.bookingItems[0]?.roomNumber || '---'} • #{b.bookingCode}
+                          {t('today.roomLine', { room: b.bookingItems[0]?.roomNumber || '---', code: b.bookingCode })}
                         </p>
                       </div>
                       <PaymentStatusBadge status={b.paymentStatus} className="shrink-0" />
@@ -1106,7 +1128,7 @@ export default function CalendarPage() {
       <Modal
         isOpen={showCreateBookingModal}
         onClose={() => setShowCreateBookingModal(false)}
-        title="Tạo đặt phòng mới"
+        title={t('create.title')}
         size="full"
       >
             {/* Modal Header */}
@@ -1119,9 +1141,9 @@ export default function CalendarPage() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2.5">
-                    <h1 className="text-xl font-bold text-fg tracking-tight">Tạo Đặt Phòng Mới</h1>
+                    <h1 className="text-xl font-bold text-fg tracking-tight">{t('create.heading')}</h1>
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-ok-soft text-ok border border-ok/30">
-                      <span className="w-1.5 h-1.5 rounded-full bg-ok mr-1.5 animate-pulse"></span> Lễ tân / Walk-in
+                      <span className="w-1.5 h-1.5 rounded-full bg-ok mr-1.5 animate-pulse"></span> {t('create.badge')}
                     </span>
                   </div>
                 </div>
@@ -1149,14 +1171,14 @@ export default function CalendarPage() {
                     <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-line">
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-err"></span>
-                        <h2 className="text-sm font-bold uppercase tracking-wider text-fg">1. Thông tin khách lưu trú</h2>
+                        <h2 className="text-sm font-bold uppercase tracking-wider text-fg">{t('create.guestSection')}</h2>
                       </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {/* Họ và tên */}
                       <div className="space-y-1.5">
                         <label className="block text-xs font-semibold text-fg">
-                          Họ và tên khách hàng <span className="text-err">*</span>
+                          {t('create.guestName')} <span className="text-err">*</span>
                         </label>
                         <div className="relative rounded-lg shadow-xs">
                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted">
@@ -1164,7 +1186,7 @@ export default function CalendarPage() {
                           </div>
                           <input
                             className="block w-full pl-9 pr-3 py-2 text-sm text-fg rounded-lg border-line focus:ring-2 focus:ring-err/30 focus:border-err/30 transition placeholder:text-muted"
-                            placeholder="Ví dụ: Nguyễn Văn An"
+                            placeholder={t('create.guestNamePlaceholder')}
                             required
                             type="text"
                             value={newBooking.guestName}
@@ -1175,7 +1197,7 @@ export default function CalendarPage() {
                       {/* Số điện thoại */}
                       <div className="space-y-1.5">
                         <label className="block text-xs font-semibold text-fg">
-                          Số điện thoại liên hệ <span className="text-err">*</span>
+                          {t('create.phone')} <span className="text-err">*</span>
                         </label>
                         <div className="relative rounded-lg shadow-xs flex">
                           <span className="inline-flex items-center px-2.5 rounded-l-lg border border-r-0 border-line bg-fg/[0.03] text-muted text-xs font-medium">
@@ -1194,7 +1216,7 @@ export default function CalendarPage() {
                       {/* Email */}
                       <div className="space-y-1.5">
                         <label className="block text-xs font-semibold text-fg">
-                          Email <span className="text-err">*</span> <span className="text-xs font-normal text-muted">(Nhận email xác nhận)</span>
+                          {t('create.email')} <span className="text-err">*</span> <span className="text-xs font-normal text-muted">{t('create.emailHint')}</span>
                         </label>
                         <div className="relative rounded-lg shadow-xs">
                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted">
@@ -1218,10 +1240,10 @@ export default function CalendarPage() {
                     <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-line">
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-err"></span>
-                        <h2 className="text-sm font-bold uppercase tracking-wider text-fg">2. Lịch trình & Xếp phòng</h2>
+                        <h2 className="text-sm font-bold uppercase tracking-wider text-fg">{t('create.staySection')}</h2>
                       </div>
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-warn-soft text-warn border border-warn/30">
-                        Lưu trú: {Math.ceil((new Date(newBooking.checkOutDate).getTime() - new Date(newBooking.checkInDate).getTime()) / (1000 * 60 * 60 * 24))} đêm
+                        {t('create.stayNights', { count: Math.ceil((new Date(newBooking.checkOutDate).getTime() - new Date(newBooking.checkInDate).getTime()) / (1000 * 60 * 60 * 24)) })}
                       </span>
                     </div>
 
@@ -1231,9 +1253,9 @@ export default function CalendarPage() {
                       <div className="bg-fg/[0.03] p-3.5 rounded-xl border border-line/70">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-xs font-bold text-fg flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-ok"></span> Nhận phòng (Check-in) *
+                            <span className="w-2 h-2 rounded-full bg-ok"></span> {t('create.checkIn')}
                           </span>
-                          {stayTimes && <span className="text-[11px] text-muted">Nhận từ {stayTimes.checkIn}</span>}
+                          {stayTimes && <span className="text-[11px] text-muted">{t('create.checkInFrom', { time: stayTimes.checkIn })}</span>}
                         </div>
                         <input
                           className="w-full text-xs font-medium rounded-lg border-line py-1.5 px-2 bg-panel focus:ring-err/30 focus:border-err/30"
@@ -1247,9 +1269,9 @@ export default function CalendarPage() {
                       <div className="bg-fg/[0.03] p-3.5 rounded-xl border border-line/70">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-xs font-bold text-fg flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-err"></span> Trả phòng (Check-out) *
+                            <span className="w-2 h-2 rounded-full bg-err"></span> {t('create.checkOut')}
                           </span>
-                          {stayTimes && <span className="text-[11px] text-muted">Trả trước {stayTimes.checkOut}</span>}
+                          {stayTimes && <span className="text-[11px] text-muted">{t('create.checkOutBy', { time: stayTimes.checkOut })}</span>}
                         </div>
                         <input
                           className="w-full text-xs font-medium rounded-lg border-line py-1.5 px-2 bg-panel focus:ring-err/30 focus:border-err/30"
@@ -1265,7 +1287,7 @@ export default function CalendarPage() {
                     <div className="mb-4">
                       <div className="space-y-1.5">
                         <label className="block text-xs font-semibold text-fg">
-                          Hạng phòng <span className="text-err">*</span>
+                          {t('create.roomType')} <span className="text-err">*</span>
                         </label>
                         <select
                           className="block w-full rounded-lg border-line py-2.5 px-3 text-xs font-medium text-fg focus:ring-2 focus:ring-err/30 focus:border-err/30"
@@ -1273,9 +1295,9 @@ export default function CalendarPage() {
                           onChange={(e) => setNewBooking(prev => ({ ...prev, roomTypeId: e.target.value }))}
                           required
                         >
-                          <option value="">Chọn hạng phòng</option>
+                          <option value="">{t('create.chooseRoomType')}</option>
                           {roomTypes.map(rt => (
-                            <option key={rt.id} value={rt.id}>{rt.name} — {rt.totalRooms} phòng</option>
+                            <option key={rt.id} value={rt.id}>{t('create.roomTypeOption', { name: rt.name, count: rt.totalRooms })}</option>
                           ))}
                         </select>
               </div>
@@ -1284,7 +1306,7 @@ export default function CalendarPage() {
                     {/* Số lượng khách */}
                     <div className="grid grid-cols-2 gap-3 pt-1">
                       <div>
-                        <label className="block text-[11px] font-medium text-muted mb-1">Người lớn</label>
+                        <label className="block text-[11px] font-medium text-muted mb-1">{t('create.adults')}</label>
                         <div className="flex items-center border border-line rounded-lg overflow-hidden bg-panel">
                           <button 
                             type="button"
@@ -1307,7 +1329,7 @@ export default function CalendarPage() {
             </div>
               </div>
                   <div>
-                        <label className="block text-[11px] font-medium text-muted mb-1">Trẻ em (&lt;12t)</label>
+                        <label className="block text-[11px] font-medium text-muted mb-1">{t('create.children')}</label>
                         <div className="flex items-center border border-line rounded-lg overflow-hidden bg-panel">
                           <button 
                             type="button"
@@ -1337,17 +1359,17 @@ export default function CalendarPage() {
                     <div className="flex items-center justify-between pb-3 mb-3 border-b border-line">
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-err"></span>
-                        <h2 className="text-sm font-bold uppercase tracking-wider text-fg">3. Dịch vụ & Ghi chú</h2>
+                        <h2 className="text-sm font-bold uppercase tracking-wider text-fg">{t('create.notesSection')}</h2>
                       </div>
                     </div>
                     {/* Ghi chú / Special request */}
                   <div>
                       <label className="block text-xs font-semibold text-fg mb-1">
-                        Ghi chú nội bộ / Yêu cầu từ khách:
+                        {t('create.notes')}
                       </label>
                       <textarea
                         className="block w-full text-xs rounded-lg border-line shadow-xs focus:ring-2 focus:ring-err/30 focus:border-err/30 placeholder:text-muted"
-                        placeholder="Ví dụ: Khách check-in muộn lúc 18h, phòng tầng cao, view thoáng..."
+                        placeholder={t('create.notesPlaceholder')}
                         rows={3}
                         value={newBooking.guestNote}
                         onChange={(e) => setNewBooking(prev => ({ ...prev, guestNote: e.target.value }))}
@@ -1363,25 +1385,25 @@ export default function CalendarPage() {
                     <div className="bg-warn-soft/40 rounded-xl border border-warn/30 p-4 shadow-xs">
                       <div className="flex items-start justify-between">
                   <div>
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-warn bg-warn-soft/70 px-2 py-0.5 rounded">Chi tiết lưu trú</span>
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-warn bg-warn-soft/70 px-2 py-0.5 rounded">{t('create.stayDetails')}</span>
                           <h3 className="text-base font-bold text-fg mt-1">
-                            {roomTypes.find(rt => rt.id === newBooking.roomTypeId)?.name || 'Chọn hạng phòng'}
+                            {roomTypes.find(rt => rt.id === newBooking.roomTypeId)?.name || t('create.chooseRoomType')}
                           </h3>
                   </div>
                         <div className="text-right">
-                          <span className="text-xs text-muted block">Thời gian</span>
+                          <span className="text-xs text-muted block">{t('create.duration')}</span>
                           <span className="text-sm font-bold text-fg">
-                            {Math.ceil((new Date(newBooking.checkOutDate).getTime() - new Date(newBooking.checkInDate).getTime()) / (1000 * 60 * 60 * 24))} đêm
+                            {labels.nights(Math.ceil((new Date(newBooking.checkOutDate).getTime() - new Date(newBooking.checkInDate).getTime()) / (1000 * 60 * 60 * 24)))}
                           </span>
                 </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-warn/30 text-xs">
                         <div>
-                          <span className="text-muted text-[11px] block">Nhận:</span>
+                          <span className="text-muted text-[11px] block">{t('create.arrive')}</span>
                           <span className="font-semibold text-fg">{newBooking.checkInDate ? format(parseISO(newBooking.checkInDate), 'dd/MM/yyyy') : '--'}{stayTimes ? ` • ${stayTimes.checkIn}` : ''}</span>
                         </div>
                         <div>
-                          <span className="text-muted text-[11px] block">Trả:</span>
+                          <span className="text-muted text-[11px] block">{t('create.depart')}</span>
                           <span className="font-semibold text-fg">{newBooking.checkOutDate ? format(parseISO(newBooking.checkOutDate), 'dd/MM/yyyy') : '--'}{stayTimes ? ` • ${stayTimes.checkOut}` : ''}</span>
                         </div>
                       </div>
@@ -1390,7 +1412,7 @@ export default function CalendarPage() {
                     {/* Quick Tip / Policy info */}
                     <div className="text-[11px] text-muted bg-fg/[0.03] px-3.5 py-2.5 rounded-lg border border-line/60 flex items-center gap-2">
                       <svg className="w-4 h-4 text-warn shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path></svg>
-                      <span>Tiền phòng được tính theo giá ngày thường / cuối tuần của hạng phòng khi tạo đơn.</span>
+                      <span>{t('create.priceTip')}</span>
                     </div>
                   </div>
                 </aside>
@@ -1401,7 +1423,7 @@ export default function CalendarPage() {
             <footer className="px-7 py-4 bg-warn-soft/50 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
               <div className="flex items-center gap-2 text-xs text-muted">
                 <span className="w-2 h-2 rounded-full bg-ok"></span>
-                <span>Điền thông tin và nhấn &quot;Tạo đơn&quot; để hoàn tất</span>
+                <span>{t('create.footerHint')}</span>
               </div>
               <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
                 {/* Nút Hủy */}
@@ -1410,7 +1432,7 @@ export default function CalendarPage() {
                   onClick={() => setShowCreateBookingModal(false)}
                   className="w-1/3 sm:w-auto px-4 py-2 text-xs font-semibold text-muted bg-panel border border-line rounded-lg hover:bg-fg/5 hover:text-fg transition"
                 >
-                  Hủy bỏ
+                  {t('create.cancel')}
                 </button>
                 {/* Nút Tạo đơn chính */}
                 <button 
@@ -1429,7 +1451,7 @@ export default function CalendarPage() {
                       <path d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
                     </svg>
                   )}
-                  <span>Tạo đơn</span>
+                  <span>{t('create.submit')}</span>
                 </button>
             </div>
             </footer>
@@ -1439,13 +1461,13 @@ export default function CalendarPage() {
       <Modal
         isOpen={showBookingDetailModal}
         onClose={() => setShowBookingDetailModal(false)}
-        title={`Chi tiết đơn #${selectedBooking?.bookingCode || ''}`}
+        title={t('detail.title', { code: selectedBooking?.bookingCode || '' })}
       >
         {selectedBooking && (
           <div className="space-y-4">
             <div className="bg-fg/[0.03] rounded-lg p-4 space-y-2">
               <div className="flex justify-between">
-                <span className="text-sm text-muted">Trạng thái:</span>
+                <span className="text-sm text-muted">{t('detail.status')}</span>
                 <span className={`text-sm font-medium px-2 py-0.5 rounded ${
                   selectedBooking.status === 'CHECKED_IN' ? 'bg-ok-soft text-ok' :
                   selectedBooking.status === 'CONFIRMED' ? 'bg-info-soft text-info' :
@@ -1453,80 +1475,76 @@ export default function CalendarPage() {
                   selectedBooking.status === 'CHECKED_OUT' ? 'bg-fg/5 text-fg' :
                   'bg-err-soft text-err'
                 }`}>
-                  {selectedBooking.status === 'CHECKED_IN' ? 'Đã nhận phòng' :
-                   selectedBooking.status === 'CONFIRMED' ? 'Đã xác nhận' :
-                   selectedBooking.status === 'PENDING' ? 'Chờ thanh toán' :
-                   selectedBooking.status === 'CHECKED_OUT' ? 'Đã trả phòng' :
-                   selectedBooking.status === 'CANCELLED' ? 'Đã hủy' : 'Không đến'}
+                  {labels.bookingStatus(selectedBooking.status)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted">Khách:</span>
+                <span className="text-sm text-muted">{t('detail.guest')}</span>
                 <span className="text-sm font-medium">{selectedBooking.guestName}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted">Điện thoại:</span>
+                <span className="text-sm text-muted">{t('detail.phone')}</span>
                 <span className="text-sm">{selectedBooking.guestPhone}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted">Email:</span>
+                <span className="text-sm text-muted">{t('detail.email')}</span>
                 <span className="text-sm">{selectedBooking.guestEmail}</span>
               </div>
             </div>
 
             <div className="bg-fg/[0.03] rounded-lg p-4 space-y-2">
               <div className="flex justify-between">
-                <span className="text-sm text-muted">Nhận phòng:</span>
+                <span className="text-sm text-muted">{t('detail.checkIn')}</span>
                 <span className="text-sm font-medium">
                   {selectedBooking.checkInDate ? format(new Date(selectedBooking.checkInDate), 'dd/MM/yyyy') : '-'}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted">Trả phòng:</span>
+                <span className="text-sm text-muted">{t('detail.checkOut')}</span>
                 <span className="text-sm font-medium">
                   {selectedBooking.checkOutDate ? format(new Date(selectedBooking.checkOutDate), 'dd/MM/yyyy') : '-'}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted">Phòng:</span>
+                <span className="text-sm text-muted">{t('detail.room')}</span>
                 <span className="text-sm font-medium">
-                  {selectedBooking.bookingItems[0]?.roomNumber || 'Chưa gán'}
+                  {selectedBooking.bookingItems[0]?.roomNumber || t('unassigned')}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted">Người lớn:</span>
+                <span className="text-sm text-muted">{t('detail.adults')}</span>
                 <span className="text-sm">{selectedBooking.numAdults}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted">Trẻ em:</span>
+                <span className="text-sm text-muted">{t('detail.children')}</span>
                 <span className="text-sm">{selectedBooking.numChildren}</span>
               </div>
             </div>
 
             <div className="bg-fg/[0.03] rounded-lg p-4 space-y-2">
               <div className="flex justify-between">
-                <span className="text-sm text-muted">Tổng tiền:</span>
+                <span className="text-sm text-muted">{t('detail.total')}</span>
                 <span className="text-lg font-bold text-acc">
-                  {selectedBooking.totalAmount?.toLocaleString('vi-VN')} VNĐ
+                  {labels.money(selectedBooking.totalAmount)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted">Đã cọc:</span>
+                <span className="text-sm text-muted">{t('detail.deposit')}</span>
                 <span className="text-sm text-ok font-medium">
-                  {selectedBooking.depositAmount?.toLocaleString('vi-VN')} VNĐ
+                  {labels.money(selectedBooking.depositAmount)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted">Còn lại:</span>
+                <span className="text-sm text-muted">{t('detail.remaining')}</span>
                 <span className="text-sm font-medium">
-                  {(selectedBooking.totalAmount - selectedBooking.depositAmount)?.toLocaleString('vi-VN')} VNĐ
+                  {labels.money(selectedBooking.totalAmount - selectedBooking.depositAmount)}
                 </span>
               </div>
             </div>
 
             {selectedBooking.guestNote && (
               <div className="bg-warn-soft rounded-lg p-4">
-                <span className="text-sm font-medium text-warn">Ghi chú:</span>
+                <span className="text-sm font-medium text-warn">{t('detail.note')}</span>
                 <p className="text-sm text-warn mt-1">{selectedBooking.guestNote}</p>
               </div>
             )}
@@ -1542,7 +1560,7 @@ export default function CalendarPage() {
                   ) : (
                     <Key className="w-4 h-4 mr-2" />
                   )}
-                  Check-in
+                  {t('checkIn')}
               </Button>
               )}
               
@@ -1557,7 +1575,7 @@ export default function CalendarPage() {
                   ) : (
                     <DoorOpen className="w-4 h-4 mr-2" />
                   )}
-                  Check-out
+                  {t('checkOut')}
                 </Button>
               )}
 
@@ -1569,7 +1587,7 @@ export default function CalendarPage() {
                 variant="outline"
               >
                 <Eye className="w-4 h-4 mr-2" />
-                Xem chi tiết
+                {t('detail.viewDetails')}
               </Button>
 
               {(selectedBooking.status === 'PENDING' || selectedBooking.status === 'CONFIRMED') && (
@@ -1584,7 +1602,7 @@ export default function CalendarPage() {
                   ) : (
                     <XCircle className="w-4 h-4 mr-2" />
                   )}
-                  Hủy đơn
+                  {t('detail.cancelBooking')}
                 </Button>
               )}
             </div>
@@ -1596,20 +1614,24 @@ export default function CalendarPage() {
       <Modal
         isOpen={showExportModal}
         onClose={() => setShowExportModal(false)}
-        title="Xuất báo cáo công suất"
+        title={t('toolbar.exportTitle')}
       >
         <div className="space-y-4">
           <div className="bg-warn-soft border border-warn/30 rounded-lg p-4">
             <p className="text-sm text-warn">
-              <strong>Báo cáo tháng {currentDate.getMonth() + 1}/{currentDate.getFullYear()}</strong>
+              <strong>{t('export.monthReport', { month: currentDate.getMonth() + 1, year: String(currentDate.getFullYear()) })}</strong>
             </p>
             <p className="text-xs text-warn mt-1">
-              Tổng đơn: {bookings.length} | Đã xác nhận: {bookings.filter(b => b.status === 'CONFIRMED' || b.status === 'CHECKED_IN').length} | Công suất: {Math.round(monthOccupancy)}%
+              {t('export.summaryLine', {
+                total: bookings.length,
+                confirmed: bookings.filter(b => b.status === 'CONFIRMED' || b.status === 'CHECKED_IN').length,
+                occupancy: Math.round(monthOccupancy),
+              })}
             </p>
         </div>
 
           <div>
-            <label className="block text-sm font-medium text-fg mb-2">Chọn định dạng xuất:</label>
+            <label className="block text-sm font-medium text-fg mb-2">{t('export.chooseFormat')}</label>
             <div className="grid grid-cols-3 gap-3">
               <button
                 onClick={() => setExportType('pdf')}
@@ -1626,7 +1648,7 @@ export default function CalendarPage() {
                   <span className={`text-sm font-medium ${
                     exportType === 'pdf' ? 'text-acc' : 'text-fg'
                   }`}>PDF</span>
-                  <p className="text-[10px] text-muted mt-1">In và lưu PDF</p>
+                  <p className="text-[10px] text-muted mt-1">{t('export.pdfHint')}</p>
                 </div>
               </button>
               
@@ -1645,7 +1667,7 @@ export default function CalendarPage() {
                   <span className={`text-sm font-medium ${
                     exportType === 'excel' ? 'text-acc' : 'text-fg'
                   }`}>Excel</span>
-                  <p className="text-[10px] text-muted mt-1">Bảng tính Excel</p>
+                  <p className="text-[10px] text-muted mt-1">{t('export.excelHint')}</p>
                 </div>
               </button>
               
@@ -1664,19 +1686,19 @@ export default function CalendarPage() {
                   <span className={`text-sm font-medium ${
                     exportType === 'csv' ? 'text-acc' : 'text-fg'
                   }`}>CSV</span>
-                  <p className="text-[10px] text-muted mt-1">Dữ liệu text</p>
+                  <p className="text-[10px] text-muted mt-1">{t('export.csvHint')}</p>
                 </div>
               </button>
             </div>
           </div>
 
           <div className="bg-fg/[0.03] rounded-lg p-3">
-            <h4 className="text-sm font-medium text-fg mb-2">Nội dung báo cáo:</h4>
+            <h4 className="text-sm font-medium text-fg mb-2">{t('export.contents')}</h4>
             <ul className="text-xs text-muted space-y-1">
-              <li>• Tổng quan: Số phòng, tổng đơn, công suất</li>
-              <li>• Danh sách đặt phòng trong tháng</li>
-              <li>• Thông tin khách: Tên, ngày nhận/trả phòng</li>
-              <li>• Trạng thái và phòng được gán</li>
+              <li>{t('export.contentsOverview')}</li>
+              <li>{t('export.contentsList')}</li>
+              <li>{t('export.contentsGuests')}</li>
+              <li>{t('export.contentsStatus')}</li>
             </ul>
           </div>
 
@@ -1686,7 +1708,7 @@ export default function CalendarPage() {
               variant="outline"
               onClick={() => setShowExportModal(false)}
             >
-              Đóng
+              {tc('actions.close')}
             </Button>
             <Button 
               onClick={handleExportReport}
@@ -1697,7 +1719,7 @@ export default function CalendarPage() {
               ) : (
                 <Receipt className="w-4 h-4 mr-2" />
               )}
-              Xuất báo cáo
+              {t('toolbar.export')}
             </Button>
           </div>
         </div>

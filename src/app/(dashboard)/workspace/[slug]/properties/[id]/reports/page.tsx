@@ -4,8 +4,9 @@ import * as React from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, CardHeader, CardTitle, Button, Select, Input } from '@/components/ui'
+import { useTranslations } from 'next-intl'
 import { routes } from '@/lib/utils/routes'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { useDashLabels } from '@/lib/i18n/dash'
 import { 
   TrendingUp, TrendingDown, DollarSign, Calendar, Users, 
   CreditCard, Building2, Download
@@ -35,6 +36,14 @@ export default function ReportsPage() {
   const router = useRouter()
   const params = useParams<{ slug: string; id: string }>()
   const propertyIdFromUrl = params.id
+  const t = useTranslations('dash.reports.revenue')
+  const tc = useTranslations('dash.common')
+  const labels = useDashLabels()
+  // The API's days are "YYYY-MM-DD" (UTC midnight): shown in Vietnam time, as dd/mm/yyyy.
+  const dayLabel = (date: string) =>
+    new Intl.DateTimeFormat(labels.locale === 'en' ? 'en-GB' : 'vi-VN', {
+      timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric',
+    }).format(new Date(date))
 
   const [report, setReport] = React.useState<RevenueReport | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
@@ -76,15 +85,15 @@ export default function ReportsPage() {
     return (
       <PageContainer>
         <Header
-          title="Báo cáo doanh thu"
-          description="Xem thống kê và báo cáo tài chính"
+          title={t('title')}
+          description={t('noPropertyDescription')}
         />
         <Card>
           <CardContent className="p-12 text-center">
             <TrendingUp className="w-12 h-12 text-muted mx-auto mb-4" />
-            <p className="text-muted mb-4">Vui lòng chọn cơ sở để xem báo cáo</p>
+            <p className="text-muted mb-4">{t('selectProperty')}</p>
             <Button onClick={() => router.push(routes.properties(params.slug))}>
-              Chọn cơ sở
+              {t('chooseProperty')}
             </Button>
           </CardContent>
         </Card>
@@ -95,23 +104,19 @@ export default function ReportsPage() {
   return (
     <PageContainer>
       <Header
-        title="Báo cáo doanh thu"
-        description="Thống kê doanh thu và hoạt động kinh doanh"
+        title={t('title')}
+        description={t('description')}
         actions={
           <div className="flex items-center gap-4">
             <Select
-              options={[
-                { value: '7', label: '7 ngày' },
-                { value: '30', label: '30 ngày' },
-                { value: '90', label: '90 ngày' },
-              ]}
+              options={[7, 30, 90].map((count) => ({ value: String(count), label: t('range', { count }) }))}
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
               className="w-[140px]"
             />
             <Button variant="outline">
               <Download className="w-4 h-4 mr-2" />
-              Xuất Excel
+              {tc('actions.export')}
             </Button>
           </div>
         }
@@ -129,13 +134,13 @@ export default function ReportsPage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted">Tổng doanh thu</p>
+                    <p className="text-sm font-medium text-muted">{t('totalRevenue')}</p>
                     <p className="text-2xl font-bold text-fg mt-1">
-                      {formatCurrency(report.summary.totalRevenue)}
+                      {labels.money(report.summary.totalRevenue)}
                     </p>
                     <p className="text-sm text-ok mt-1 flex items-center">
                       <TrendingUp className="w-4 h-4 mr-1" />
-                      {dateRange} ngày qua
+                      {t('lastDays', { count: Number(dateRange) })}
                     </p>
                   </div>
                   <div className="w-12 h-12 rounded-lg bg-ok-soft flex items-center justify-center">
@@ -149,12 +154,12 @@ export default function ReportsPage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted">Số đơn đặt phòng</p>
+                    <p className="text-sm font-medium text-muted">{t('bookings')}</p>
                     <p className="text-2xl font-bold text-fg mt-1">
                       {report.summary.totalBookings}
                     </p>
                     <p className="text-sm text-muted mt-1">
-                      TB: {formatCurrency(report.summary.averageBookingValue)}/đơn
+                      {t('average', { amount: labels.money(report.summary.averageBookingValue) })}
                     </p>
                   </div>
                   <div className="w-12 h-12 rounded-lg bg-info-soft flex items-center justify-center">
@@ -168,12 +173,12 @@ export default function ReportsPage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted">Số phòng</p>
+                    <p className="text-sm font-medium text-muted">{t('rooms')}</p>
                     <p className="text-2xl font-bold text-fg mt-1">
                       {report.summary.totalRooms}
                     </p>
                     <p className="text-sm text-muted mt-1">
-                      Tỷ lệ lấp đầy: {report.summary.occupancyRate}%
+                      {t('occupancy', { percent: report.summary.occupancyRate })}
                     </p>
                   </div>
                   <div className="w-12 h-12 rounded-lg bg-refund-soft flex items-center justify-center">
@@ -187,9 +192,9 @@ export default function ReportsPage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted">Doanh thu trung bình/ngày</p>
+                    <p className="text-sm font-medium text-muted">{t('dailyAverage')}</p>
                     <p className="text-2xl font-bold text-fg mt-1">
-                      {formatCurrency(report.summary.totalRevenue / parseInt(dateRange))}
+                      {labels.money(report.summary.totalRevenue / parseInt(dateRange))}
                     </p>
                   </div>
                   <div className="w-12 h-12 rounded-lg bg-warn-soft flex items-center justify-center">
@@ -203,7 +208,7 @@ export default function ReportsPage() {
           {/* Revenue Chart Placeholder */}
           <Card>
             <CardHeader>
-              <CardTitle>Biểu đồ doanh thu</CardTitle>
+              <CardTitle>{t('chart')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-64 flex items-end justify-between gap-2">
@@ -215,10 +220,10 @@ export default function ReportsPage() {
                       <div 
                         className="w-full bg-ink rounded-t transition-all hover:bg-ink"
                         style={{ height: `${Math.max(height, 4)}%` }}
-                        title={formatCurrency(day.revenue)}
+                        title={labels.money(day.revenue)}
                       />
                       <span className="text-xs text-muted">
-                        {formatDate(day.date, { day: '2-digit', month: '2-digit' })}
+                        {dayLabel(day.date)}
                       </span>
                     </div>
                   )
@@ -233,15 +238,15 @@ export default function ReportsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CreditCard className="w-5 h-5" />
-                  Doanh thu theo hình thức thanh toán
+                  {t('byMethod')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div>
                     <div className="flex justify-between text-sm mb-1">
-                      <span>Chuyển khoản</span>
-                      <span className="font-medium">{formatCurrency(report.summary.bankRevenue)}</span>
+                      <span>{labels.paymentMethod('BANK_TRANSFER')}</span>
+                      <span className="font-medium">{labels.money(report.summary.bankRevenue)}</span>
                     </div>
                     <div className="h-2 bg-fg/5 rounded-full overflow-hidden">
                       <div 
@@ -252,8 +257,8 @@ export default function ReportsPage() {
                   </div>
                   <div>
                     <div className="flex justify-between text-sm mb-1">
-                      <span>QR VietQR</span>
-                      <span className="font-medium">{formatCurrency(report.summary.qrRevenue)}</span>
+                      <span>{t('qr')}</span>
+                      <span className="font-medium">{labels.money(report.summary.qrRevenue)}</span>
                     </div>
                     <div className="h-2 bg-fg/5 rounded-full overflow-hidden">
                       <div 
@@ -264,8 +269,8 @@ export default function ReportsPage() {
                   </div>
                   <div>
                     <div className="flex justify-between text-sm mb-1">
-                      <span>Thẻ</span>
-                      <span className="font-medium">{formatCurrency(report.summary.cardRevenue)}</span>
+                      <span>{t('card')}</span>
+                      <span className="font-medium">{labels.money(report.summary.cardRevenue)}</span>
                     </div>
                     <div className="h-2 bg-fg/5 rounded-full overflow-hidden">
                       <div 
@@ -276,8 +281,8 @@ export default function ReportsPage() {
                   </div>
                   <div>
                     <div className="flex justify-between text-sm mb-1">
-                      <span>Tiền mặt</span>
-                      <span className="font-medium">{formatCurrency(report.summary.cashRevenue)}</span>
+                      <span>{labels.paymentMethod('CASH')}</span>
+                      <span className="font-medium">{labels.money(report.summary.cashRevenue)}</span>
                     </div>
                     <div className="h-2 bg-fg/5 rounded-full overflow-hidden">
                       <div 
@@ -293,20 +298,20 @@ export default function ReportsPage() {
             {/* Daily Summary */}
             <Card>
               <CardHeader>
-                <CardTitle>Chi tiết theo ngày</CardTitle>
+                <CardTitle>{t('daily')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 max-h-80 overflow-y-auto">
                   {report.daily.slice().reverse().slice(0, 10).map((day) => (
                     <div key={day.date} className="flex items-center justify-between p-3 bg-fg/[0.03] rounded-lg">
                       <div>
-                        <p className="font-medium">{formatDate(day.date, { day: '2-digit', month: '2-digit' })}</p>
-                        <p className="text-sm text-muted">{day.bookings} đơn</p>
+                        <p className="font-medium">{dayLabel(day.date)}</p>
+                        <p className="text-sm text-muted">{t('dayBookings', { count: day.bookings })}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold text-ok">{formatCurrency(day.revenue)}</p>
+                        <p className="font-semibold text-ok">{labels.money(day.revenue)}</p>
                         {day.checkedIn > 0 && (
-                          <p className="text-sm text-muted">{day.checkedIn} đã nhận</p>
+                          <p className="text-sm text-muted">{t('dayCheckedIn', { count: day.checkedIn })}</p>
                         )}
                       </div>
                     </div>
@@ -319,7 +324,7 @@ export default function ReportsPage() {
       ) : (
         <Card>
           <CardContent className="p-12 text-center">
-            <p className="text-muted">Không có dữ liệu báo cáo</p>
+            <p className="text-muted">{t('empty')}</p>
           </CardContent>
         </Card>
       )}
