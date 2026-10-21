@@ -199,7 +199,8 @@
       "register": "Sign up",
       "openMenu": "Open menu",
       "closeMenu": "Close menu",
-      "language": "Language"
+      "language": "Language",
+      "dashboard": "Open your management pages ({email})"
     },
     "footer": {
       "tagline": "Websites and management software for hotels, homestays and resorts.",

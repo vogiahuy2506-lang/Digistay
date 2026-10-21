@@ -213,7 +213,8 @@
       "register": "Đăng ký",
       "openMenu": "Mở menu",
       "closeMenu": "Đóng menu",
-      "language": "Ngôn ngữ"
+      "language": "Ngôn ngữ",
+      "dashboard": "Vào trang quản lý ({email})"
     },
     "footer": {
       "tagline": "Website và phần mềm quản lý cho khách sạn, homestay, resort.",
