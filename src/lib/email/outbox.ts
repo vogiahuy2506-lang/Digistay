@@ -32,7 +32,13 @@ const LEASE_MS = 3 * 60 * 1000
 const BACKOFF_MS = [10, 30, 120, 360].map((minutes) => minutes * 60 * 1000)
 const KEEP_SENT_MS = 30 * 24 * 60 * 60 * 1000
 
-type Kind = 'booking_confirmation' | 'owner_new_booking' | 'workspace_invite' | 'deposit_received' | 'deposit_expired'
+type Kind =
+  | 'booking_confirmation'
+  | 'owner_new_booking'
+  | 'workspace_invite'
+  | 'deposit_received'
+  | 'deposit_expired'
+  | 'contact_request'
 interface Message {
   to: EmailRecipient
   subject: string

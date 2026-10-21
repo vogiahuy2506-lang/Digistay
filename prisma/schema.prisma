@@ -1209,7 +1209,7 @@ model AlertState {
 /// after 30 days.
 model EmailOutbox {
   id        String    @id
-  /// booking_confirmation, owner_new_booking, workspace_invite, deposit_received, deposit_expired
+  /// booking_confirmation, owner_new_booking, workspace_invite, deposit_received, deposit_expired, contact_request
   kind      String
   toEmail   String
   /// encrypted JSON { to, name, subject, text, html }

@@ -171,5 +171,313 @@
       }
     },
     "preview": "Preview: this site is not published; only the hotel's signed-in members can see it."
+  },
+  "marketing": {
+    "meta": {
+      "homeTitle": "Digistay — Booking website and hotel management software",
+      "homeDescription": "Build your own website with online booking and PayOS deposits, then run bookings, check-in and check-out, invoices and reports in one place.",
+      "pricingTitle": "Pricing · Digistay",
+      "pricingDescription": "Three plans by hotel size. Every plan has the website, direct booking and the management pages.",
+      "termsTitle": "Terms of use · Digistay",
+      "privacyTitle": "Privacy policy · Digistay",
+      "contactTitle": "Contact · Digistay",
+      "contactDescription": "Ask Digistay about plans, technical help or partnerships."
+    },
+    "nav": {
+      "main": "Main navigation",
+      "features": "Features",
+      "pricing": "Pricing",
+      "contact": "Contact",
+      "login": "Sign in",
+      "register": "Sign up",
+      "openMenu": "Open menu",
+      "closeMenu": "Close menu",
+      "language": "Language"
+    },
+    "footer": {
+      "tagline": "Websites and management software for hotels, homestays and resorts.",
+      "product": "Product",
+      "account": "Account",
+      "legal": "Legal",
+      "terms": "Terms of use",
+      "privacy": "Privacy policy",
+      "copyright": "© {year} Digistay"
+    },
+    "legal": {
+      "pending": "This page is being written and will be published before Digistay opens sign-ups. If you need it now, please contact us.",
+      "contact": "Contact us"
+    },
+    "plans": {
+      "starter": {
+        "name": "Starter",
+        "fit": "Homestays and small single-property hotels"
+      },
+      "growth": {
+        "name": "Growth",
+        "fit": "Growing hotels with a few properties"
+      },
+      "business": {
+        "name": "Business",
+        "fit": "Hotel chains and resorts"
+      },
+      "perMonth": "/ month",
+      "vat": "Prices exclude VAT.",
+      "properties": "Properties",
+      "rooms": "Rooms",
+      "staff": "Staff accounts",
+      "invoices": "E-invoices a month",
+      "none": "Not included"
+    },
+    "home": {
+      "eyebrow": "For hotels, homestays and resorts in Vietnam",
+      "title": "Your hotel's booking website and front desk, in one account",
+      "lead": "Build your own website with online booking and PayOS deposits, then run bookings, check-in and check-out, invoices and reports in one place.",
+      "register": "Sign up",
+      "seePricing": "See pricing",
+      "captionAdmin": "Left: the bookings page",
+      "captionSite": "Right: a hotel website built with Digistay",
+      "altAdmin": "The bookings list in Digistay's management pages",
+      "altSite": "A hotel's website built with Digistay",
+      "customers": "Hotels using Digistay",
+      "features": {
+        "title": "What Digistay does today",
+        "lead": "All five groups of features below are live. The pictures are the real hotel website and management pages.",
+        "site": {
+          "title": "A hotel website you build yourself, no code",
+          "desc": "Put ready-made blocks together into a full website, and edit text and photos right on the page.",
+          "p1": "Banner, rooms, amenities, gallery, map, contact blocks…",
+          "p2": "Runs on your-hotel.digistay.vn or your own domain",
+          "p3": "An English version for international guests",
+          "alt": "The home page of a hotel website built with Digistay"
+        },
+        "booking": {
+          "title": "Guests book directly on your website",
+          "desc": "Prices, extra charges and deposits are worked out from the hotel's own settings.",
+          "p1": "Prices by room type, weekend rates, extra charges",
+          "p2": "PayOS deposits by QR bank transfer",
+          "p3": "Deposits go straight to the hotel's bank account",
+          "alt": "A room page with nightly prices and the booking button"
+        },
+        "admin": {
+          "title": "Day-to-day bookings",
+          "desc": "The front desk sees and handles every booking, from the website or at the door, in one list.",
+          "p1": "Bookings list and room calendar",
+          "p2": "Walk-in bookings",
+          "p3": "Check-in, check-out and late check-out fees",
+          "alt": "The bookings list by status in the management pages"
+        },
+        "money": {
+          "title": "PayOS reconciliation and e-invoices",
+          "desc": "Each transfer is matched to its booking, and the invoice is issued from that booking.",
+          "p1": "Automatic PayOS reconciliation",
+          "p2": "Mắt Bão e-invoices: issue, adjust, replace",
+          "p3": "Invoices emailed to guests",
+          "alt": "Payments matched to their bookings"
+        },
+        "scale": {
+          "title": "Reports, several properties and security",
+          "desc": "One workspace for a whole chain, where everyone sees only their own work.",
+          "p1": "Revenue reports and a daily cash book",
+          "p2": "Several properties in one workspace",
+          "p3": "Owner, Manager and Front desk roles",
+          "p4": "A dark theme for night shifts",
+          "p5": "Two-step sign-in",
+          "alt": "The bookings page in the dark theme"
+        }
+      },
+      "steps": {
+        "title": "Start in three steps",
+        "s1": {
+          "title": "Create an account",
+          "text": "Sign up with your email, create a workspace and add your first property."
+        },
+        "s2": {
+          "title": "Build the website",
+          "text": "Pick blocks, enter room types, prices and policies, and connect PayOS."
+        },
+        "s3": {
+          "title": "Take bookings",
+          "text": "Guests book and pay deposits on the website; bookings show up in your management pages at once."
+        }
+      },
+      "pricing": {
+        "title": "Pricing",
+        "compare": "Compare all plans",
+        "details": "See plan details"
+      },
+      "faq": {
+        "title": "Frequently asked questions",
+        "q1": {
+          "q": "Which account do guests' deposits go to?",
+          "a": "Straight to the hotel's bank account connected to PayOS. Digistay never holds the hotel's money."
+        },
+        "q2": {
+          "q": "Can I use my own domain?",
+          "a": "Yes. The website runs on your-hotel.digistay.vn, and you can point your hotel's own domain to it."
+        },
+        "q3": {
+          "q": "Does the website have an English version?",
+          "a": "Yes. International guests switch to English right on the website."
+        },
+        "q4": {
+          "q": "How many properties can one account manage?",
+          "a": "A workspace holds several properties: {starter} on Starter, {growth} on Growth, {business} on Business. You can buy more."
+        },
+        "q5": {
+          "q": "Does Digistay issue e-invoices?",
+          "a": "Yes, through Mắt Bão: issue, adjust and replace invoices, and email them to guests."
+        },
+        "q6": {
+          "q": "Can front desk staff see revenue?",
+          "a": "No. Revenue reports are only shown to Owners and Managers; the front desk sees and handles bookings, check-in and check-out."
+        }
+      },
+      "cta": {
+        "title": "Open an account and build your hotel's website",
+        "lead": "Want to talk first? Leave your details and the Digistay team will get in touch.",
+        "register": "Sign up",
+        "contact": "Talk to us"
+      }
+    },
+    "pricing": {
+      "title": "Pricing",
+      "lead": "Three plans by hotel size. Every plan has the website, direct booking and the management pages; add more when you need it.",
+      "fit": "Best for:",
+      "choose": "Choose this plan",
+      "addons": {
+        "title": "Add-ons",
+        "property": {
+          "name": "Extra property",
+          "desc": "Add another hotel or homestay to the same workspace.",
+          "unit": "/ property / month"
+        },
+        "staff": {
+          "name": "Extra staff account",
+          "desc": "For a new receptionist or manager, with a role of their own.",
+          "unit": "/ account / month"
+        },
+        "domain": {
+          "name": "Custom domain",
+          "desc": "Use the hotel's own domain instead of your-hotel.digistay.vn.",
+          "unit": "/ year"
+        },
+        "invoices": {
+          "name": "Extra Mắt Bão e-invoices",
+          "desc": "When you go over the invoices in your plan.",
+          "unit": "/ 100 invoices"
+        }
+      },
+      "compare": {
+        "title": "Compare features",
+        "feature": "Feature",
+        "choosePlan": "Choose a plan",
+        "yes": "Included",
+        "no": "Not included",
+        "invoicesCell": "{count}/month",
+        "propertiesCell": "{count, plural, one {# property} other {# properties}}",
+        "groups": {
+          "site": "Hotel website",
+          "booking": "Direct booking",
+          "operations": "Operations",
+          "money": "Invoices and reports",
+          "account": "Accounts and security"
+        },
+        "rows": {
+          "builder": "Website builder with ready-made blocks",
+          "subdomain": "Runs on your-hotel.digistay.vn",
+          "customDomain": "Custom domain",
+          "english": "English version",
+          "pricing": "Prices by room type, weekends, extra charges",
+          "deposit": "PayOS deposits",
+          "reconcile": "Automatic PayOS reconciliation",
+          "bookings": "Bookings and room calendar",
+          "walkIn": "Walk-in guests",
+          "checkInOut": "Check-in / check-out, late check-out fees",
+          "einvoice": "Mắt Bão e-invoices",
+          "revenue": "Revenue reports",
+          "cashbook": "Daily cash book",
+          "properties": "Several properties in one workspace",
+          "roles": "Owner / Manager / Front desk roles",
+          "twoFactor": "Two-step sign-in",
+          "darkMode": "Dark theme"
+        }
+      },
+      "faq": {
+        "title": "Billing questions",
+        "q1": {
+          "q": "How do I pay for Digistay?",
+          "a": "By bank transfer, monthly or yearly. Paying yearly saves two months."
+        },
+        "q2": {
+          "q": "Does Digistay issue VAT invoices for its fees?",
+          "a": "Yes. An e-invoice is emailed to the workspace owner after each payment."
+        },
+        "q3": {
+          "q": "Are PayOS transaction fees included?",
+          "a": "No. Any PayOS fee follows the hotel's own contract with PayOS; Digistay takes nothing from guests' deposits."
+        },
+        "q4": {
+          "q": "What if I change plans mid-cycle?",
+          "a": "Upgrades apply at once and you pay the difference for the days left in the cycle. Downgrades apply from the next cycle."
+        },
+        "q5": {
+          "q": "What happens to my bookings if I stop?",
+          "a": "You can export your bookings before you stop. The data is kept for 30 more days, then deleted."
+        }
+      },
+      "cta": {
+        "title": "Not sure which plan fits?",
+        "lead": "Tell us how many properties and rooms you have and we'll suggest one.",
+        "contact": "Talk to us",
+        "register": "Sign up"
+      }
+    },
+    "contact": {
+      "title": "Contact",
+      "lead": "Ask about plans, get technical help or talk partnerships. We reply by email or on the phone number you leave.",
+      "emailLabel": "Email",
+      "hotlineLabel": "Hotline",
+      "addressLabel": "Address",
+      "pending": "Coming soon",
+      "form": {
+        "name": "Full name",
+        "hotel": "Hotel name",
+        "hotelPlaceholder": "Hotel, homestay or resort",
+        "email": "Email",
+        "phone": "Phone number",
+        "topic": "You need",
+        "topics": {
+          "sales": "Advice",
+          "support": "Technical help",
+          "partnership": "Partnership"
+        },
+        "message": "Message",
+        "hints": {
+          "sales": "How many rooms and properties, which software you use now…",
+          "support": "Your workspace, what you were doing and the error you saw…",
+          "partnership": "Who you are and what you'd like to work on together…"
+        },
+        "submit": "Send request",
+        "sending": "Sending…",
+        "retry": "Send again",
+        "privacy": "We only use this to answer your request. See the <link>privacy policy</link>."
+      },
+      "errors": {
+        "summary": "{count, plural, one {Check the field below.} other {Check the # fields below.}}",
+        "name": "Enter your full name",
+        "email": "This email doesn't look right",
+        "phone": "A phone number has 8 to 15 digits",
+        "message": "Write a few lines so we understand what you need",
+        "failTitle": "Your request wasn't sent.",
+        "failText": "What you typed is still here. Try again in a few minutes.",
+        "tooMany": "You've sent several requests this hour. Please try again later."
+      },
+      "done": {
+        "title": "We've got your request",
+        "text": "Topic: <b>{topic}</b>. We'll reply to <b>{email}</b> or call {phone}.",
+        "another": "Send another request",
+        "home": "Back to home"
+      }
+    }
   }
 }

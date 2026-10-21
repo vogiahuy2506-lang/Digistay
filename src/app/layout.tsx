@@ -38,7 +38,9 @@ export default async function RootLayout({
         {/* The client components' messages, for every area. One provider only: a second one
             nested in the hotel site's layout made its pages fail to hydrate now and then
             (React #418) in production builds. Add an area's namespace here when it needs one. */}
-        <NextIntlClientProvider messages={{ common: messages.common, site: messages.site }}>
+        <NextIntlClientProvider
+          messages={{ common: messages.common, site: messages.site, marketing: { contact: messages.marketing.contact } }}
+        >
           <Providers>{children}</Providers>
         </NextIntlClientProvider>
       </body>

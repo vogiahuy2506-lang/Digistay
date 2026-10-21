@@ -185,5 +185,313 @@
       }
     },
     "preview": "Bản xem trước: website chưa xuất bản, chỉ thành viên của khách sạn đang đăng nhập mới xem được."
+  },
+  "marketing": {
+    "meta": {
+      "homeTitle": "Digistay — Website đặt phòng và phần mềm quản lý khách sạn",
+      "homeDescription": "Tự dựng website có đặt phòng và đặt cọc qua PayOS, rồi quản lý đặt phòng, nhận trả phòng, hoá đơn và báo cáo ở cùng một nơi.",
+      "pricingTitle": "Bảng giá · Digistay",
+      "pricingDescription": "Ba gói theo quy mô khách sạn. Gói nào cũng có website, đặt phòng trực tiếp và trang quản lý.",
+      "termsTitle": "Điều khoản sử dụng · Digistay",
+      "privacyTitle": "Chính sách bảo mật · Digistay",
+      "contactTitle": "Liên hệ · Digistay",
+      "contactDescription": "Hỏi về gói dịch vụ, nhờ hỗ trợ kỹ thuật hoặc bàn chuyện hợp tác với Digistay."
+    },
+    "nav": {
+      "main": "Điều hướng chính",
+      "features": "Tính năng",
+      "pricing": "Bảng giá",
+      "contact": "Liên hệ",
+      "login": "Đăng nhập",
+      "register": "Đăng ký",
+      "openMenu": "Mở menu",
+      "closeMenu": "Đóng menu",
+      "language": "Ngôn ngữ"
+    },
+    "footer": {
+      "tagline": "Website và phần mềm quản lý cho khách sạn, homestay, resort.",
+      "product": "Sản phẩm",
+      "account": "Tài khoản",
+      "legal": "Pháp lý",
+      "terms": "Điều khoản sử dụng",
+      "privacy": "Chính sách bảo mật",
+      "copyright": "© {year} Digistay"
+    },
+    "legal": {
+      "pending": "Nội dung trang này đang được soạn và sẽ có trước khi Digistay mở đăng ký chính thức. Nếu bạn cần ngay, hãy liên hệ với chúng tôi.",
+      "contact": "Liên hệ"
+    },
+    "plans": {
+      "starter": {
+        "name": "Starter",
+        "fit": "Homestay, khách sạn nhỏ một cơ sở"
+      },
+      "growth": {
+        "name": "Growth",
+        "fit": "Khách sạn đang mở rộng, vài cơ sở"
+      },
+      "business": {
+        "name": "Business",
+        "fit": "Chuỗi khách sạn và resort"
+      },
+      "perMonth": "/ tháng",
+      "vat": "Giá chưa gồm VAT.",
+      "properties": "Số cơ sở",
+      "rooms": "Số phòng",
+      "staff": "Tài khoản nhân viên",
+      "invoices": "Hoá đơn điện tử mỗi tháng",
+      "none": "Không có"
+    },
+    "home": {
+      "eyebrow": "Cho khách sạn, homestay và resort tại Việt Nam",
+      "title": "Website đặt phòng và sổ quản lý của khách sạn, trong một tài khoản",
+      "lead": "Tự dựng website có đặt phòng và đặt cọc qua PayOS, rồi quản lý đặt phòng, nhận trả phòng, hoá đơn và báo cáo ở cùng một nơi.",
+      "register": "Đăng ký",
+      "seePricing": "Xem bảng giá",
+      "captionAdmin": "Trái: trang quản lý đặt phòng",
+      "captionSite": "Phải: website khách sạn dựng bằng Digistay",
+      "altAdmin": "Danh sách đặt phòng trong trang quản lý Digistay",
+      "altSite": "Website của một khách sạn dựng bằng Digistay",
+      "customers": "Khách sạn đang dùng Digistay",
+      "features": {
+        "title": "Những gì Digistay làm được hôm nay",
+        "lead": "Năm nhóm tính năng dưới đây đều đang chạy. Ảnh là giao diện thật của website khách sạn và trang quản lý.",
+        "site": {
+          "title": "Website khách sạn, tự dựng không cần code",
+          "desc": "Ghép các khối có sẵn thành website hoàn chỉnh, sửa chữ và ảnh ngay trên trang.",
+          "p1": "Khối banner, phòng, tiện ích, thư viện ảnh, bản đồ, liên hệ…",
+          "p2": "Chạy trên ten-khach-san.digistay.vn hoặc tên miền riêng",
+          "p3": "Có bản tiếng Anh cho khách nước ngoài",
+          "alt": "Trang chủ website của một khách sạn dựng bằng Digistay"
+        },
+        "booking": {
+          "title": "Khách đặt phòng thẳng trên website của bạn",
+          "desc": "Giá, phụ thu và tiền cọc tính tự động theo cài đặt của khách sạn.",
+          "p1": "Giá theo hạng phòng, giá cuối tuần, phụ thu",
+          "p2": "Đặt cọc qua PayOS bằng mã QR chuyển khoản",
+          "p3": "Tiền cọc vào thẳng tài khoản ngân hàng của khách sạn",
+          "alt": "Trang hạng phòng với giá theo từng đêm và nút đặt phòng"
+        },
+        "admin": {
+          "title": "Quản lý đặt phòng hằng ngày",
+          "desc": "Lễ tân xem và xử lý mọi đặt phòng từ website và khách đến trực tiếp ở cùng một danh sách.",
+          "p1": "Danh sách đặt phòng và lịch phòng",
+          "p2": "Tạo đặt phòng cho khách walk-in",
+          "p3": "Nhận phòng, trả phòng, tính phí trả phòng muộn",
+          "alt": "Danh sách đặt phòng theo trạng thái trong trang quản lý"
+        },
+        "money": {
+          "title": "Đối soát PayOS và hoá đơn điện tử",
+          "desc": "Khoản chuyển khoản được khớp với đơn đặt phòng; hoá đơn phát hành từ chính đơn đó.",
+          "p1": "Đối soát PayOS tự động",
+          "p2": "Hoá đơn điện tử Mắt Bão: phát hành, điều chỉnh, thay thế",
+          "p3": "Gửi hoá đơn cho khách qua email",
+          "alt": "Danh sách thanh toán đã khớp với đặt phòng"
+        },
+        "scale": {
+          "title": "Báo cáo, nhiều cơ sở và bảo mật",
+          "desc": "Một workspace cho cả chuỗi, mỗi người chỉ thấy phần việc của mình.",
+          "p1": "Báo cáo doanh thu và sổ quỹ hằng ngày",
+          "p2": "Nhiều cơ sở trong một workspace",
+          "p3": "Phân quyền Chủ, Quản lý, Lễ tân",
+          "p4": "Giao diện tối cho ca đêm",
+          "p5": "Đăng nhập hai lớp",
+          "alt": "Trang quản lý đặt phòng ở giao diện tối"
+        }
+      },
+      "steps": {
+        "title": "Bắt đầu trong ba bước",
+        "s1": {
+          "title": "Tạo tài khoản",
+          "text": "Đăng ký bằng email, tạo workspace và thêm cơ sở đầu tiên."
+        },
+        "s2": {
+          "title": "Dựng website",
+          "text": "Chọn khối, nhập hạng phòng, giá, chính sách và kết nối PayOS."
+        },
+        "s3": {
+          "title": "Nhận đặt phòng",
+          "text": "Khách đặt và cọc trên website; đơn hiện ngay trong trang quản lý."
+        }
+      },
+      "pricing": {
+        "title": "Bảng giá",
+        "compare": "So sánh đầy đủ các gói",
+        "details": "Xem chi tiết gói"
+      },
+      "faq": {
+        "title": "Câu hỏi thường gặp",
+        "q1": {
+          "q": "Tiền đặt cọc của khách vào tài khoản nào?",
+          "a": "Vào thẳng tài khoản ngân hàng của khách sạn đã kết nối với PayOS. Digistay không giữ tiền của khách sạn."
+        },
+        "q2": {
+          "q": "Tôi có dùng tên miền riêng được không?",
+          "a": "Có. Website chạy sẵn trên ten-khach-san.digistay.vn, và bạn có thể trỏ tên miền riêng của khách sạn về đó."
+        },
+        "q3": {
+          "q": "Website có bản tiếng Anh không?",
+          "a": "Có. Khách nước ngoài chuyển sang tiếng Anh ngay trên website."
+        },
+        "q4": {
+          "q": "Một tài khoản quản lý được mấy cơ sở?",
+          "a": "Một workspace chứa nhiều cơ sở: {starter} ở gói Starter, {growth} ở gói Growth, {business} ở gói Business. Cần thêm thì mua thêm cơ sở."
+        },
+        "q5": {
+          "q": "Digistay có xuất hoá đơn điện tử không?",
+          "a": "Có, qua Mắt Bão: phát hành, điều chỉnh, thay thế hoá đơn và gửi email cho khách."
+        },
+        "q6": {
+          "q": "Nhân viên lễ tân có xem được doanh thu không?",
+          "a": "Không. Báo cáo doanh thu chỉ hiện với Chủ và Quản lý; Lễ tân xem và xử lý đặt phòng, nhận và trả phòng."
+        }
+      },
+      "cta": {
+        "title": "Mở tài khoản và dựng website cho khách sạn của bạn",
+        "lead": "Cần tư vấn trước? Để lại thông tin, đội ngũ Digistay sẽ liên hệ.",
+        "register": "Đăng ký",
+        "contact": "Liên hệ tư vấn"
+      }
+    },
+    "pricing": {
+      "title": "Bảng giá",
+      "lead": "Ba gói theo quy mô khách sạn. Gói nào cũng có website, đặt phòng trực tiếp và trang quản lý; cần thêm thì mua thêm.",
+      "fit": "Phù hợp:",
+      "choose": "Đăng ký gói này",
+      "addons": {
+        "title": "Mua thêm",
+        "property": {
+          "name": "Thêm cơ sở",
+          "desc": "Thêm một khách sạn hoặc homestay vào cùng workspace.",
+          "unit": "/ cơ sở / tháng"
+        },
+        "staff": {
+          "name": "Thêm tài khoản nhân viên",
+          "desc": "Cho lễ tân hoặc quản lý mới, phân quyền theo vai trò.",
+          "unit": "/ tài khoản / tháng"
+        },
+        "domain": {
+          "name": "Tên miền riêng",
+          "desc": "Dùng tên miền của khách sạn thay cho ten-khach-san.digistay.vn.",
+          "unit": "/ năm"
+        },
+        "invoices": {
+          "name": "Thêm hoá đơn điện tử Mắt Bão",
+          "desc": "Khi vượt số hoá đơn có sẵn trong gói.",
+          "unit": "/ 100 hoá đơn"
+        }
+      },
+      "compare": {
+        "title": "So sánh tính năng",
+        "feature": "Tính năng",
+        "choosePlan": "Chọn gói",
+        "yes": "Có",
+        "no": "Không có",
+        "invoicesCell": "{count}/tháng",
+        "propertiesCell": "{count} cơ sở",
+        "groups": {
+          "site": "Website khách sạn",
+          "booking": "Đặt phòng trực tiếp",
+          "operations": "Vận hành",
+          "money": "Hoá đơn và báo cáo",
+          "account": "Tài khoản và bảo mật"
+        },
+        "rows": {
+          "builder": "Trình dựng website, các khối có sẵn",
+          "subdomain": "Chạy trên ten-khach-san.digistay.vn",
+          "customDomain": "Tên miền riêng",
+          "english": "Bản tiếng Anh",
+          "pricing": "Giá theo hạng phòng, cuối tuần, phụ thu",
+          "deposit": "Đặt cọc qua PayOS",
+          "reconcile": "Đối soát PayOS tự động",
+          "bookings": "Quản lý đặt phòng và lịch phòng",
+          "walkIn": "Khách walk-in",
+          "checkInOut": "Nhận / trả phòng, phí trả phòng muộn",
+          "einvoice": "Hoá đơn điện tử Mắt Bão",
+          "revenue": "Báo cáo doanh thu",
+          "cashbook": "Sổ quỹ hằng ngày",
+          "properties": "Nhiều cơ sở trong một workspace",
+          "roles": "Phân quyền Chủ / Quản lý / Lễ tân",
+          "twoFactor": "Đăng nhập hai lớp",
+          "darkMode": "Giao diện tối"
+        }
+      },
+      "faq": {
+        "title": "Câu hỏi về thanh toán",
+        "q1": {
+          "q": "Tôi thanh toán phí Digistay bằng cách nào?",
+          "a": "Chuyển khoản ngân hàng theo tháng hoặc theo năm. Trả theo năm được giảm hai tháng."
+        },
+        "q2": {
+          "q": "Digistay có xuất hoá đơn VAT cho phí dịch vụ không?",
+          "a": "Có. Hoá đơn điện tử gửi tới email của chủ workspace sau mỗi kỳ thanh toán."
+        },
+        "q3": {
+          "q": "Phí giao dịch PayOS có nằm trong gói không?",
+          "a": "Không. Phí PayOS, nếu có, tính theo hợp đồng giữa khách sạn và PayOS; Digistay không thu thêm trên tiền cọc của khách."
+        },
+        "q4": {
+          "q": "Đổi gói giữa kỳ thì tính tiền thế nào?",
+          "a": "Nâng gói có hiệu lực ngay, phần chênh lệch tính theo số ngày còn lại của kỳ. Hạ gói áp dụng từ kỳ sau."
+        },
+        "q5": {
+          "q": "Ngừng dùng thì dữ liệu đặt phòng ra sao?",
+          "a": "Bạn xuất được danh sách đặt phòng trước khi ngừng. Dữ liệu được giữ thêm 30 ngày rồi xoá."
+        }
+      },
+      "cta": {
+        "title": "Chưa chắc gói nào hợp?",
+        "lead": "Gửi số cơ sở và số phòng của bạn, chúng tôi gợi ý gói phù hợp.",
+        "contact": "Liên hệ tư vấn",
+        "register": "Đăng ký"
+      }
+    },
+    "contact": {
+      "title": "Liên hệ",
+      "lead": "Hỏi về gói dịch vụ, nhờ hỗ trợ kỹ thuật hoặc bàn chuyện hợp tác. Chúng tôi trả lời qua email hoặc điện thoại bạn để lại.",
+      "emailLabel": "Email",
+      "hotlineLabel": "Hotline",
+      "addressLabel": "Địa chỉ",
+      "pending": "Đang cập nhật",
+      "form": {
+        "name": "Họ và tên",
+        "hotel": "Tên khách sạn",
+        "hotelPlaceholder": "Khách sạn, homestay hoặc resort",
+        "email": "Email",
+        "phone": "Số điện thoại",
+        "topic": "Bạn cần",
+        "topics": {
+          "sales": "Tư vấn",
+          "support": "Hỗ trợ kỹ thuật",
+          "partnership": "Hợp tác"
+        },
+        "message": "Nội dung",
+        "hints": {
+          "sales": "Số phòng, số cơ sở, bạn đang dùng phần mềm nào…",
+          "support": "Tên workspace, việc bạn đang làm và lỗi gặp phải…",
+          "partnership": "Bạn là ai và muốn hợp tác ở mảng nào…"
+        },
+        "submit": "Gửi yêu cầu",
+        "sending": "Đang gửi…",
+        "retry": "Gửi lại",
+        "privacy": "Thông tin chỉ dùng để trả lời yêu cầu này. Xem <link>Chính sách bảo mật</link>."
+      },
+      "errors": {
+        "summary": "Kiểm tra lại {count} mục bên dưới.",
+        "name": "Nhập họ và tên",
+        "email": "Email chưa đúng định dạng",
+        "phone": "Số điện thoại cần từ 8 đến 15 chữ số",
+        "message": "Viết vài dòng để chúng tôi hiểu yêu cầu",
+        "failTitle": "Chưa gửi được yêu cầu.",
+        "failText": "Nội dung bạn nhập vẫn còn. Bấm gửi lại sau ít phút.",
+        "tooMany": "Bạn đã gửi nhiều yêu cầu trong một giờ. Vui lòng thử lại sau."
+      },
+      "done": {
+        "title": "Đã nhận yêu cầu của bạn",
+        "text": "Nhu cầu: <b>{topic}</b>. Chúng tôi sẽ trả lời qua <b>{email}</b> hoặc số {phone}.",
+        "another": "Gửi yêu cầu khác",
+        "home": "Về trang chủ"
+      }
+    }
   }
 }

@@ -335,9 +335,16 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
 - Chữ cho client component gửi ở **một** `NextIntlClientProvider` duy nhất trong layout gốc
   (`common` + `site`); khu vực mới thì thêm nhóm của nó vào đó. Không lồng provider thứ hai trong
   layout con: bản build production khi đó thỉnh thoảng lỗi hydrate (React #418) ở website khách sạn.
-- Tiến độ: (1) khung + giao diện website khách sạn — xong; còn: form tìm/đặt phòng và trang thanh
-  toán của website, ô tiếng Anh cho nội dung khách sạn nhập, email gửi khách theo ngôn ngữ, trang
-  quản lý, trang đăng nhập / giới thiệu, thông báo lỗi từ API.
+- Trang của chính Digistay (`src/app/(marketing)`: trang chủ, bảng giá, liên hệ, điều khoản, bảo
+  mật) theo Claude Design "Digistay Gioi Thieu" / "Bang Gia" / "Lien He": đầu và chân trang ở
+  `src/components/marketing`, nút VI | EN (`LocaleToggle`) ghi cookie `NEXT_LOCALE`. Tên gói, giá,
+  giới hạn là **nội dung mẫu** (Digistay chưa ra mắt) trong `src/lib/marketing/plans.ts`; app chưa
+  có gói và không chặn theo giới hạn nào. Form liên hệ gửi email cho `CONTACT_EMAILS` (không có thì
+  `ALERT_EMAILS`) qua outbox; không có ai nhận thì báo chưa gửi được, không giả vờ đã nhận.
+- Tiến độ: (1) khung + giao diện website khách sạn — xong; (2) trang chủ / bảng giá / liên hệ — xong;
+  còn: form tìm/đặt phòng và trang thanh toán của website, ô tiếng Anh cho nội dung khách sạn nhập,
+  email gửi khách theo ngôn ngữ, trang quản lý, trang đăng nhập / đăng ký / quên mật khẩu / lời mời,
+  thông báo lỗi từ API.
 
 ## Kế hoạch gia cố
 

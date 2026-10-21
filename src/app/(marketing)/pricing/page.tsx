@@ -1,338 +1,178 @@
-'use client'
-
-import * as React from 'react'
+import type { Metadata } from 'next'
 import Link from 'next/link'
-import { MaterialSymbol } from '@/components/ui/material-symbol'
+import { getLocale, getTranslations } from 'next-intl/server'
+import { Faq } from '@/components/marketing/Faq'
+import { MarketingHeader } from '@/components/marketing/MarketingHeader'
+import { frame, inkButton, lineButton, sectionTitle, softText } from '@/components/marketing/styles'
+import { formatVnd } from '@/lib/bookings/display'
+import { ADDON_IDS, ADDON_PRICES, COMPARE, PLANS, type Cell, type Plan } from '@/lib/marketing/plans'
+import { cn } from '@/lib/utils'
+import { ComparePicker, CompareCell, type CompareGroupView } from './ComparePicker'
 
-const plans = [
-  {
-    name: 'Starter',
-    description: 'Dành cho khách sạn nhỏ mới bắt đầu',
-    price: '990.000',
-    period: 'tháng',
-    highlight: false,
-    features: [
-      '1 khách sạn',
-      '10 phòng',
-      'Website cơ bản',
-      'Quản lý đặt phòng',
-      'Thanh toán VietQR',
-      'Hỗ trợ qua chat',
-    ],
-    limitations: [
-      'Không có app di động',
-      'Không có email marketing',
-      'Không có API access',
-    ],
-  },
-  {
-    name: 'Growth',
-    description: 'Phù hợp cho khách sạn đang phát triển',
-    price: '1.990.000',
-    period: 'tháng',
-    highlight: true,
-    popular: true,
-    features: [
-      '3 khách sạn',
-      '30 phòng',
-      'Website nâng cao',
-      'Quản lý đặt phòng',
-      'Thanh toán đa kênh',
-      'App di động',
-      'Email marketing',
-      'Hỗ trợ ưu tiên',
-    ],
-    limitations: [],
-  },
-  {
-    name: 'Business',
-    description: 'Giải pháp toàn diện cho chuỗi khách sạn',
-    price: '4.990.000',
-    period: 'tháng',
-    highlight: false,
-    features: [
-      '10 khách sạn',
-      '100 phòng',
-      'Website cao cấp',
-      'Quản lý đặt phòng',
-      'Thanh toán đa kênh',
-      'App di động',
-      'Email & SMS marketing',
-      'API access',
-      'White-label',
-      'Hỗ trợ 24/7',
-      'Dedicated account manager',
-    ],
-    limitations: [],
-  },
-]
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('marketing.meta')
+  return { title: t('pricingTitle'), description: t('pricingDescription') }
+}
 
-const addOns = [
-  {
-    name: 'Extra Property',
-    description: 'Thêm 1 khách sạn',
-    price: '500.000đ/tháng',
-    icon: 'apartment',
-  },
-  {
-    name: 'Extra Rooms',
-    description: 'Thêm 10 phòng',
-    price: '200.000đ/tháng',
-    icon: 'meeting_room',
-  },
-  {
-    name: 'SMS Marketing',
-    description: '1000 SMS/tháng',
-    price: '300.000đ/tháng',
-    icon: 'chat',
-  },
-  {
-    name: 'API Access',
-    description: 'Truy cập API đầy đủ',
-    price: '500.000đ/tháng',
-    icon: 'code',
-  },
-]
+const FAQ = ['q1', 'q2', 'q3', 'q4', 'q5'] as const
 
-const faqs = [
-  {
-    question: 'Tôi có thể hủy gói dịch vụ bất cứ lúc nào không?',
-    answer: 'Có, bạn có thể hủy gói dịch vụ bất cứ lúc nào mà không mất phí. Dịch vụ sẽ tiếp tục hoạt động đến cuối kỳ thanh toán đã đóng tiền.',
-  },
-  {
-    question: 'Tôi có cần thuê developer để sử dụng DigiStay không?',
-    answer: 'Không, DigiStay được thiết kế để bạn có thể tự quản lý mà không cần kiến thức kỹ thuật. Giao diện kéo-thả trực quan giúp bạn tạo website và quản lý dễ dàng.',
-  },
-  {
-    question: 'Thanh toán như thế nào?',
-    answer: 'Chúng tôi chấp nhận thanh toán qua chuyển khoản ngân hàng, VietQR, hoặc thẻ tín dụng/ghi nợ quốc tế (Visa, Mastercard).',
-  },
-  {
-    question: 'Có dùng thử miễn phí không?',
-    answer: 'Có, tất cả các gói đều có dùng thử miễn phí 14 ngày. Bạn có thể trải nghiệm đầy đủ tính năng trước khi quyết định đăng ký.',
-  },
-  {
-    question: 'Dữ liệu của tôi có an toàn không?',
-    answer: 'Chúng tôi sử dụng mã hóa AES-256, backup hàng ngày, và tuân thủ các tiêu chuẩn bảo mật quốc tế. Dữ liệu của bạn được lưu trữ tại các datacenter ở Singapore.',
-  },
-]
+/** Plans, add-ons and the feature comparison (Claude Design "Digistay Bang Gia"). Sample content: src/lib/marketing/plans.ts. */
+export default async function PricingPage() {
+  const t = await getTranslations('marketing.pricing')
+  const tp = await getTranslations('marketing.plans')
+  const locale = (await getLocale()) === 'en' ? 'en' : 'vi'
+  const n = new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'vi-VN')
 
-export default function PricingPage() {
-  const [annual, setAnnual] = React.useState(true)
-  const [openFaq, setOpenFaq] = React.useState<number | null>(null)
+  const limit = (p: Plan, k: 'properties' | 'rooms' | 'staff' | 'invoices') =>
+    k === 'invoices' && p.invoices === 0 ? tp('none') : n.format(p[k])
+  const cell = (p: Plan, c: Cell): string | boolean =>
+    c === 'invoices'
+      ? t('compare.invoicesCell', { count: n.format(p.invoices) })
+      : c === 'properties'
+        ? t('compare.propertiesCell', { count: p.properties })
+        : c
+
+  const planNames = PLANS.map((p) => tp(`${p.id}.name`))
+  const groups: CompareGroupView[] = COMPARE.map((g) => ({
+    title: t(`compare.groups.${g.group}`),
+    rows: g.rows.map((r) => ({ label: t(`compare.rows.${r.id}`), cells: PLANS.map((p) => cell(p, r.cells[p.id])) })),
+  }))
 
   return (
     <>
-      {/* Hero */}
-      <section className="pt-8 pb-12 sm:pt-12 sm:pb-16 lg:pt-16 lg:pb-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <span className="inline-block px-4 py-1.5 rounded-full bg-primary-fixed/20 text-on-primary-fixed-variant text-sm font-semibold mb-6">
-            Bảng Giá
-          </span>
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6">
-            Chọn Gói Phù Hợp
-            <br />
-            <span className="bg-gradient-to-r from-primary-fixed to-terracotta-300 bg-clip-text text-transparent">
-              Với Ngân Sách Của Bạn
-            </span>
+      <MarketingHeader active="pricing" />
+      <main>
+        <section className={cn(frame, 'grid gap-4 pt-11 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-end lg:gap-24 lg:pt-[88px]')}>
+          <h1 className="font-serif text-[40px] font-medium leading-[1.1] tracking-[-0.02em] lg:text-[72px] lg:leading-[1.05] lg:tracking-[-0.025em]">
+            {t('title')}
           </h1>
-          <p className="text-lg text-white/60 max-w-2xl mx-auto mb-8">
-            Giá cả minh bạch, không phí ẩn. Bắt đầu với dùng thử miễn phí 14 ngày.
-          </p>
+          <p className={cn('text-[15.5px] leading-[1.7] lg:text-[16px]', softText)}>{t('lead')}</p>
+        </section>
 
-          {/* Billing Toggle */}
-          <div className="inline-flex items-center gap-2 p-1.5 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10">
-            <button
-              onClick={() => setAnnual(false)}
-              className={`px-6 py-2.5 rounded-xl font-medium transition-all ${
-                !annual 
-                  ? 'bg-primary-fixed text-on-primary-fixed-variant shadow-lg' 
-                  : 'text-white/60 hover:text-white'
-              }`}
-            >
-              Hàng tháng
-            </button>
-            <button
-              onClick={() => setAnnual(true)}
-              className={`px-6 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2 ${
-                annual 
-                  ? 'bg-primary-fixed text-on-primary-fixed-variant shadow-lg' 
-                  : 'text-white/60 hover:text-white'
-              }`}
-            >
-              Hàng năm
-              <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold">
-                -20%
-              </span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Cards */}
-      <section className="pb-16 sm:pb-24 lg:pb-32 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
-            {plans.map((plan) => (
-              <div
-                key={plan.name}
-                className={`relative p-8 rounded-2xl backdrop-blur-xl border ${
-                  plan.highlight 
-                    ? 'bg-primary-fixed/10 border-primary-fixed/50 ring-2 ring-primary-fixed/30' 
-                    : 'bg-white/5 border-white/10'
-                }`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <span className="px-4 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-sm font-bold shadow-lg">
-                      Phổ Biến Nhất
-                    </span>
-                  </div>
-                )}
-
-                <div className="mb-6">
-                  <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
-                  <p className="text-white/60 text-sm">{plan.description}</p>
-                </div>
-
-                <div className="mb-6">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl md:text-5xl font-bold text-white">
-                      {plan.price}
-                    </span>
-                    <span className="text-white/60">đ/{plan.period}</span>
-                  </div>
-                  {annual && (
-                    <p className="text-emerald-400 text-sm mt-1">
-                      Tiết kiệm {Math.round(parseInt(plan.price.replace(/\./g, '')) * 0.2 / 1000) * 1000}đ/năm
-                    </p>
-                  )}
-                </div>
-
-                <ul className="space-y-3 mb-8">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-3 text-white/80">
-                      <MaterialSymbol name="check" className="text-emerald-400 text-xl shrink-0 mt-0.5" />
-                      {feature}
-                    </li>
-                  ))}
-                  {plan.limitations?.map((limitation) => (
-                    <li key={limitation} className="flex items-start gap-3 text-white/40">
-                      <MaterialSymbol name="close" className="text-white/30 text-xl shrink-0 mt-0.5" />
-                      {limitation}
-                    </li>
-                  ))}
-                </ul>
-
-                <Link
-                  href="/register"
-                  className={`w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-semibold transition-all duration-300 ${
-                    plan.highlight
-                      ? 'bg-primary-fixed text-on-primary-fixed-variant shadow-lg hover:bg-primary-container hover:scale-[1.02]'
-                      : 'bg-white/10 text-white border border-white/20 hover:bg-white/20'
-                  }`}
-                >
-                  Bắt Đầu Dùng Thử
-                </Link>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Add-ons */}
-      <section className="pb-16 sm:pb-24 lg:pb-32 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
-              Tiện Ích Bổ Sung
-            </h2>
-            <p className="text-white/60">
-              Mở rộng tính năng theo nhu cầu của bạn
-            </p>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {addOns.map((addon) => (
-              <div key={addon.name} className="p-6 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10">
-                <div className="w-12 h-12 rounded-xl bg-primary-fixed/10 flex items-center justify-center text-primary-fixed mb-4">
-                  <MaterialSymbol name={addon.icon} className="text-2xl" />
-                </div>
-                <h4 className="text-lg font-bold text-white mb-1">{addon.name}</h4>
-                <p className="text-white/60 text-sm mb-3">{addon.description}</p>
-                <p className="text-primary-fixed font-bold">{addon.price}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="pb-16 sm:pb-24 lg:pb-32 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
-              Câu Hỏi Thường Gặp
-            </h2>
-          </div>
-
-          <div className="space-y-4">
-            {faqs.map((faq, index) => (
-              <div key={index} className="rounded-2xl overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10">
-                <button
-                  onClick={() => setOpenFaq(openFaq === index ? null : index)}
-                  className="w-full flex items-center justify-between p-6 text-left"
-                >
-                  <span className="text-lg font-medium text-white pr-4">{faq.question}</span>
-                  <MaterialSymbol 
-                    name={openFaq === index ? 'expand_less' : 'expand_more'} 
-                    className="text-white/60 text-2xl shrink-0" 
-                  />
-                </button>
-                {openFaq === index && (
-                  <div className="px-6 pb-6 text-white/60">
-                    {faq.answer}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="pb-16 sm:pb-24 lg:pb-32 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="p-12 sm:p-16 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 text-center relative overflow-hidden">
-            {/* Background decoration */}
-            <div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-br from-primary-fixed/20 to-transparent rounded-full blur-3xl" />
-            <div className="absolute bottom-0 right-0 w-48 h-48 bg-gradient-to-br from-terracotta-400/20 to-transparent rounded-full blur-3xl" />
-            
-            <div className="relative z-10">
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6">
-                Cần Tư Vấn Thêm?
-              </h2>
-              <p className="text-lg text-white/60 mb-8 max-w-xl mx-auto">
-                Đội ngũ của chúng tôi sẵn sàng hỗ trợ bạn chọn gói phù hợp nhất
+        {/* Plans */}
+        <section className={cn(frame, 'mt-8 grid gap-4 lg:mt-14 lg:grid-cols-3 lg:gap-5')}>
+          {PLANS.map((p) => (
+            <div key={p.id} className="flex flex-col rounded-box border border-line bg-panel p-6 lg:p-8">
+              <h2 className="text-label font-medium uppercase text-muted">{tp(`${p.id}.name`)}</h2>
+              <p className="mt-2 text-[14px] text-muted">
+                {t('fit')} <span className="text-fg">{tp(`${p.id}.fit`)}</span>
               </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link
-                  href="/contact"
-                  className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-primary-fixed text-on-primary-fixed-variant font-bold text-lg shadow-xl hover:bg-primary-container hover:scale-105 transition-all duration-300"
-                >
-                  Liên Hệ Tư Vấn
-                </Link>
-                <Link
-                  href="/register"
-                  className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-white/10 text-white font-semibold border border-white/20 hover:bg-white/20 transition-all duration-300"
-                >
-                  Dùng Thử Miễn Phí
-                </Link>
-              </div>
+              <p className="mt-6 flex flex-wrap items-baseline gap-2">
+                <span className="text-[34px] font-semibold leading-none tracking-[-0.015em] tabular-nums">{formatVnd(p.price, locale)}</span>
+                <span className="text-[14px] text-muted">{tp('perMonth')}</span>
+              </p>
+              <p className="mt-2 text-[13px] text-muted">{tp('vat')}</p>
+              <Link href="/register" className={cn(inkButton, 'mt-7 h-12 text-[15px]')}>
+                {t('choose')}
+              </Link>
+              <dl className="mt-7 border-t border-line/70">
+                {(['properties', 'rooms', 'staff', 'invoices'] as const).map((k) => (
+                  <div key={k} className="flex items-center justify-between gap-4 border-b border-line/70 py-3 text-[14px]">
+                    <dt>{tp(k)}</dt>
+                    <dd className={cn('font-medium tabular-nums', k === 'invoices' && p.invoices === 0 ? 'text-muted' : 'text-fg')}>
+                      {limit(p, k)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          ))}
+        </section>
+
+        {/* Add-ons */}
+        <section className={cn(frame, 'pt-24 lg:pt-28')}>
+          <h2 className={sectionTitle}>{t('addons.title')}</h2>
+          <ul className="mt-6 border-t border-line lg:mt-10 lg:rounded-box lg:border lg:bg-panel">
+            {ADDON_IDS.map((a) => (
+              <li
+                key={a}
+                className="grid gap-1 border-b border-line/70 py-4 last:border-b-0 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_260px] lg:items-center lg:gap-8 lg:px-7 lg:py-[22px]"
+              >
+                <span className="flex items-baseline justify-between gap-4 text-[15px] font-medium lg:text-[16px]">
+                  {t(`addons.${a}.name`)}
+                  <span className="whitespace-nowrap text-[14px] font-semibold tabular-nums lg:hidden">{formatVnd(ADDON_PRICES[a], locale)}</span>
+                </span>
+                <span className="text-[13.5px] leading-[1.55] text-muted lg:text-[14px]">
+                  {t(`addons.${a}.desc`)}
+                  <span className="lg:hidden"> {t(`addons.${a}.unit`)}</span>
+                </span>
+                <span className="hidden whitespace-nowrap text-right lg:block">
+                  <span className="text-[15px] font-semibold tabular-nums">{formatVnd(ADDON_PRICES[a], locale)}</span>{' '}
+                  <span className="text-[13.5px] text-muted">{t(`addons.${a}.unit`)}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* Comparison */}
+        <section className={cn(frame, 'pt-24 lg:pt-28')}>
+          <h2 className={sectionTitle}>{t('compare.title')}</h2>
+          <div className="mt-6 lg:hidden">
+            <ComparePicker plans={planNames} groups={groups} label={t('compare.choosePlan')} yes={t('compare.yes')} no={t('compare.no')} />
+          </div>
+          <div className="mt-10 hidden overflow-hidden rounded-box border border-line bg-panel lg:block">
+            <table className="w-full border-collapse text-[14.5px]">
+              <thead>
+                <tr className="border-b border-ink">
+                  <th scope="col" className="w-[40%] px-7 py-[18px] text-left text-[13px] font-normal text-muted">
+                    {t('compare.feature')}
+                  </th>
+                  {planNames.map((name) => (
+                    <th key={name} scope="col" className="px-4 py-[18px] text-center text-[14px] font-semibold">
+                      {name}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              {groups.map((g) => (
+                <tbody key={g.title}>
+                  <tr className="bg-page">
+                    <th colSpan={1 + PLANS.length} scope="colgroup" className="border-b border-line/70 px-7 pb-3 pt-5 text-left text-label font-semibold uppercase text-muted">
+                      {g.title}
+                    </th>
+                  </tr>
+                  {g.rows.map((r) => (
+                    <tr key={r.label} className="border-b border-line/70 last:border-b-0">
+                      <th scope="row" className="px-7 py-[15px] text-left font-normal">
+                        {r.label}
+                      </th>
+                      {r.cells.map((c, i) => (
+                        <td key={i} className="px-4 py-[15px] text-center">
+                          <CompareCell value={c} yes={t('compare.yes')} no={t('compare.no')} />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              ))}
+            </table>
+          </div>
+        </section>
+
+        {/* Billing questions */}
+        <section className={cn(frame, 'grid gap-8 pt-24 lg:grid-cols-[420px_minmax(0,1fr)] lg:items-start lg:gap-24 lg:pt-28')}>
+          <h2 className={sectionTitle}>{t('faq.title')}</h2>
+          <Faq items={FAQ.map((q) => ({ q: t(`faq.${q}.q`), a: t(`faq.${q}.a`) }))} />
+        </section>
+
+        <section className={cn(frame, 'pt-24 lg:pt-28')}>
+          <div className="grid gap-6 rounded-box bg-plain-soft px-6 py-9 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-12 lg:px-14 lg:py-14">
+            <div>
+              <h2 className="font-serif text-[28px] font-medium leading-[1.2] tracking-[-0.015em] lg:text-[36px]">{t('cta.title')}</h2>
+              <p className={cn('mt-3 text-[15.5px] leading-[1.7]', softText)}>{t('cta.lead')}</p>
+            </div>
+            <div className="flex flex-col gap-2.5 sm:flex-row">
+              <Link href="/contact" className={cn(lineButton, 'h-[52px] px-6 text-[15px]')}>
+                {t('cta.contact')}
+              </Link>
+              <Link href="/register" className={cn(inkButton, 'h-[52px] px-7 text-[15px]')}>
+                {t('cta.register')}
+              </Link>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
     </>
   )
 }

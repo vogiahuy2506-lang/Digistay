@@ -40,6 +40,9 @@ const schema = z.object({
   // Who gets the ops alert emails (src/lib/ops/alerts.ts), comma separated.
   // Optional: without it, every SUPER_ADMIN user.
   ALERT_EMAILS: z.string().optional(),
+  // Who gets the /contact form's requests (src/lib/marketing/contact.ts), comma
+  // separated. Optional: without it, ALERT_EMAILS.
+  CONTACT_EMAILS: z.string().optional(),
 
   // Cache — optional; falls back to in-memory stub when missing
   REDIS_URL: z.string().optional(),

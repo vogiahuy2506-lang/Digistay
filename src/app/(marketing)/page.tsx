@@ -1,416 +1,257 @@
-'use client'
-
-import * as React from 'react'
+import type { Metadata } from 'next'
+import Image from 'next/image'
 import Link from 'next/link'
-import { MaterialSymbol } from '@/components/ui/material-symbol'
+import { getLocale, getTranslations } from 'next-intl/server'
+import { BrowserFrame } from '@/components/marketing/BrowserFrame'
+import { Faq } from '@/components/marketing/Faq'
+import { MarketingHeader } from '@/components/marketing/MarketingHeader'
+import { frame, inkButton, lineButton, sectionTitle, softText } from '@/components/marketing/styles'
+import { formatVnd } from '@/lib/bookings/display'
+import { PLANS } from '@/lib/marketing/plans'
+import { cn } from '@/lib/utils'
 
-const stats = [
-  { value: '10K+', label: 'Khách sạn tin dùng', icon: 'hotel' },
-  { value: '0%', label: 'Phí hoa hồng', icon: 'percent' },
-  { value: '50+', label: 'Quốc gia', icon: 'public' },
-  { value: '99.9%', label: 'Uptime', icon: 'verified' },
-]
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('marketing.meta')
+  return { title: t('homeTitle'), description: t('homeDescription') }
+}
 
-const features = [
-  {
-    icon: 'desktop_windows',
-    title: 'Website Builder',
-    description: 'Tạo website đẹp không cần code với 20+ mẫu được thiết kế sẵn cho khách sạn boutique',
-  },
-  {
-    icon: 'event_available',
-    title: 'Quản Lý Đặt Phòng',
-    description: 'Quản lý booking, phòng trống, và lịch đặt phòng thông minh theo thời gian thực',
-  },
-  {
-    icon: 'payments',
-    title: 'Thanh Toán Tự Động',
-    description: 'Tích hợp VietQR, Stripe, PayOS. Thanh toán tự động, hoàn tiền dễ dàng',
-  },
-  {
-    icon: 'receipt_long',
-    title: 'Hóa Đơn & Báo Cáo',
-    description: 'Xuất hóa đơn điện tử, báo cáo doanh thu chi tiết theo ngày, tháng, năm',
-  },
-  {
-    icon: 'star',
-    title: 'Đánh Giá Khách Hàng',
-    description: 'Thu thập và quản lý đánh giá từ khách hàng, nâng cao uy tín trực tuyến',
-  },
-  {
-    icon: 'smartphone',
-    title: 'Ứng Dụng Di Động',
-    description: 'Quản lý mọi lúc mọi nơi với ứng dụng trên iOS và Android',
-  },
-]
+/** Fictional hotels for the "Khách sạn đang dùng Digistay" strip until real ones agree to be listed (sample content). */
+const SAMPLE_CUSTOMERS = ['Mây Biển Boutique Hotel', 'Đồi Thông Homestay', 'Lá Cọ Resort', 'Phố Cổ Inn', 'Sương Mai Villa']
 
-const templates = [
-  {
-    name: 'Mountain Lodge',
-    description: 'Thiết kế ấm cúng cho homestay, cabin',
-    image: 'https://images.unsplash.com/photo-1587061949409-02df41d5e562?w=600&h=400&fit=crop',
-  },
-  {
-    name: 'Beach Resort',
-    description: 'Phong cách biển xanh, thư giãn',
-    image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=600&h=400&fit=crop',
-  },
-  {
-    name: 'City Boutique',
-    description: 'Hiện đại, sang trọng cho khách sạn thành phố',
-    image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&h=400&fit=crop',
-  },
-]
+/** The screenshots in public/marketing are the real app (demo data), 1440 px wide. */
+const FEATURES = [
+  { id: 'site', points: 3, url: 'khach-san-demo.digistay.vn', src: '/marketing/site-home.jpg', height: 2016 },
+  { id: 'booking', points: 3, url: 'khach-san-demo.digistay.vn/rooms/standard', src: '/marketing/site-room.jpg', height: 880 },
+  { id: 'admin', points: 3, url: 'digistay.vn/workspace/…/bookings', src: '/marketing/admin-bookings.jpg', height: 1040 },
+  { id: 'money', points: 3, url: 'digistay.vn/workspace/…/payments', src: '/marketing/admin-payments.jpg', height: 1040 },
+  { id: 'scale', points: 5, url: 'digistay.vn/workspace/…/bookings', src: '/marketing/admin-bookings-dark.jpg', height: 1040 },
+] as const
 
-const otaComparison = [
-  { feature: 'Phí hoa hồng', digistay: '0%', booking: '15-20%', agoda: '15-18%' },
-  { feature: 'Đặt phòng trực tiếp', digistay: true, booking: false, agoda: false },
-  { feature: 'Kiểm soát thương hiệu', digistay: true, booking: false, agoda: false },
-  { feature: 'Dữ liệu khách hàng', digistay: '100%', booking: '0%', agoda: '0%' },
-  { feature: 'Chương trình khách hàng thân thiết', digistay: true, booking: false, agoda: false },
-]
+const FAQ = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6'] as const
+const STEPS = ['s1', 's2', 's3'] as const
 
-const savingsData = [
-  { months: '12', savings: '36M', traditional: '54M' },
-  { months: '24', savings: '72M', traditional: '108M' },
-  { months: '36', savings: '108M', traditional: '162M' },
-]
+/** Digistay's home page (Claude Design "Digistay Gioi Thieu"). */
+export default async function HomePage() {
+  const t = await getTranslations('marketing.home')
+  const tp = await getTranslations('marketing.plans')
+  const locale = (await getLocale()) === 'en' ? 'en' : 'vi'
+  const [starter, growth, business] = PLANS
+  const n = new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'vi-VN')
 
-export default function HomePage() {
   return (
     <>
-      {/* Hero Section */}
-      <section id="hero" className="min-h-[90vh] flex items-center justify-center relative px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto py-16 text-center">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-xl mb-8 animate-fade-in-up shadow-xl">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-white/90 text-sm font-medium">
-              Nền tảng No-Code Xây Dựng Kênh Bán Phòng Độc Quyền
-            </span>
-            <span className="text-primary-fixed font-bold">• 0% Phí Sàn</span>
-          </div>
-
-          {/* Headline */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.1] mb-8 animate-fade-in-up animation-delay-200">
-            Biến Khách Sạn Của Bạn
-            <br />
-            <span className="bg-gradient-to-r from-primary-fixed via-terracotta-300 to-primary-fixed bg-clip-text text-transparent">
-              Thành Thương Hiệu
-            </span>
+      <MarketingHeader />
+      <main>
+        {/* Hero */}
+        <section className={cn(frame, 'pt-11 lg:flex lg:flex-col lg:items-center lg:pt-[88px] lg:text-center')}>
+          <p className="text-[11px] font-medium uppercase leading-[1.6] tracking-[0.16em] text-muted lg:text-[12px]">{t('eyebrow')}</p>
+          <h1 className="mt-3.5 max-w-[1040px] text-balance font-serif text-[38px] font-medium leading-[1.12] tracking-[-0.02em] lg:mt-[22px] lg:text-[72px] lg:leading-[1.08] lg:tracking-[-0.025em]">
+            {t('title')}
           </h1>
-
-          {/* Subheadline */}
-          <p className="text-lg sm:text-xl text-white/60 max-w-3xl mx-auto mb-12 animate-fade-in-up animation-delay-400 leading-relaxed">
-            DigiStay giúp bạn xây dựng website bán phòng chuyên nghiệp, 
-            quản lý booking thông minh, và tăng doanh thu từ kênh độc quyền 
-            thay vì phụ thuộc vào các sàn OTA.
-          </p>
-
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20 animate-fade-in-up animation-delay-600">
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-primary-fixed text-on-primary-fixed-variant font-bold text-lg shadow-2xl shadow-primary/40 hover:bg-primary-container hover:scale-105 transition-all duration-300"
-            >
-              <span>Dùng Thử Miễn Phí 14 Ngày</span>
-              <MaterialSymbol name="arrow_forward" className="text-xl" />
+          <p className={cn('mt-4 max-w-[720px] text-pretty text-[16px] leading-[1.65] lg:mt-6 lg:text-[18px]', softText)}>{t('lead')}</p>
+          <div className="mt-6 flex flex-col gap-2.5 sm:flex-row lg:mt-9 lg:justify-center lg:gap-3">
+            <Link href="/register" className={cn(inkButton, 'h-[52px] px-7 text-[15px]')}>
+              {t('register')}
             </Link>
-            <Link
-              href="/#features"
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-white/10 text-white font-semibold text-lg border border-white/20 backdrop-blur-sm hover:bg-white/20 transition-all duration-300"
-            >
-              <MaterialSymbol name="explore" className="text-xl" />
-              <span>Khám Phá Tính Năng</span>
+            <Link href="/pricing" className={cn(lineButton, 'h-[52px] px-[26px] text-[15px]')}>
+              {t('seePricing')}
             </Link>
           </div>
+        </section>
 
-          {/* Hero Image */}
-          <div className="relative max-w-5xl mx-auto animate-fade-in-up animation-delay-800">
-            <div className="rounded-3xl overflow-hidden shadow-2xl shadow-black/30 border border-white/10">
-              <img
-                src="https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=1200&h=675&fit=crop"
-                alt="DigiStay Dashboard Preview"
-                className="w-full"
-              />
-            </div>
-            
-            {/* Floating Stats Card */}
-            <div className="absolute -right-4 sm:right-8 top-1/4 p-5 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl animate-float">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg">
-                  <MaterialSymbol name="trending_up" className="text-2xl text-white" />
-                </div>
-                <div>
-                  <p className="text-white font-bold text-2xl">+127%</p>
-                  <p className="text-white/60 text-sm">Booking trực tiếp</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Floating Booking Card */}
-            <div className="absolute -left-4 sm:left-8 bottom-1/4 p-5 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl animate-float-delay-1">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-terracotta-600 flex items-center justify-center shadow-lg">
-                  <MaterialSymbol name="check_circle" className="text-2xl text-white" />
-                </div>
-                <div>
-                  <p className="text-white font-bold text-xl">Đơn mới</p>
-                  <p className="text-white/60 text-sm">2 phút trước</p>
-                </div>
+        {/* The app and a hotel website, side by side */}
+        <section className={cn(frame, 'mt-10 lg:mt-[72px]')}>
+          <div className="relative mx-auto aspect-[350/420] max-w-[560px] lg:hidden">
+            <BrowserFrame
+              url="digistay.vn"
+              src="/marketing/admin-bookings.jpg"
+              alt={t('altAdmin')}
+              width={1440}
+              height={1040}
+              aspect="330/238"
+              className="absolute left-0 top-0 w-[94.3%] shadow-[0_24px_48px_-32px_rgba(28,27,25,.45)]"
+            />
+            <div className="absolute right-0 top-[28.6%] w-[48.6%] overflow-hidden rounded-[14px] border border-line bg-panel shadow-[0_24px_48px_-24px_rgba(28,27,25,.5)]">
+              <div className="aspect-[170/290] overflow-hidden">
+                <Image src="/marketing/site-home-mobile.jpg" alt={t('altSite')} width={390} height={666} className="block h-auto w-full" />
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce-slow">
-          <MaterialSymbol name="keyboard_arrow_down" className="text-3xl text-white/40" />
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-16 sm:py-20 relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {stats.map((stat) => (
-              <div key={stat.label} className="p-6 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 text-center">
-                <MaterialSymbol name={stat.icon} className="text-3xl text-primary-fixed mx-auto mb-3" />
-                <p className="text-3xl sm:text-4xl font-bold text-white mb-1">
-                  {stat.value}
-                </p>
-                <p className="text-white/60 text-sm">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className="py-16 sm:py-24 lg:py-32 relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Section Header */}
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <span className="inline-block px-4 py-1.5 rounded-full bg-primary-fixed/20 text-on-primary-fixed-variant text-sm font-semibold mb-4">
-              Tính Năng
-            </span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6">
-              Mọi Thứ Bạn Cần Để
-              <span className="bg-gradient-to-r from-primary-fixed to-terracotta-300 bg-clip-text text-transparent"> Quản Lý Khách Sạn</span>
-            </h2>
-            <p className="text-lg text-white/60">
-              DigiStay cung cấp giải pháp toàn diện cho việc quản lý khách sạn boutique, 
-              từ website đến thanh toán, tất cả trong một nền tảng.
+          <div className="relative hidden lg:block">
+            <BrowserFrame
+              url="digistay.vn/workspace/…/bookings"
+              src="/marketing/admin-bookings.jpg"
+              alt={t('altAdmin')}
+              width={1440}
+              height={1040}
+              aspect="1040/640"
+              className="w-[81.25%] shadow-[0_40px_80px_-48px_rgba(28,27,25,.45)]"
+            />
+            <BrowserFrame
+              url="khach-san-demo.digistay.vn"
+              src="/marketing/site-home.jpg"
+              alt={t('altSite')}
+              width={1440}
+              height={2016}
+              aspect="400/560"
+              className="absolute right-0 top-[120px] w-[31.25%] shadow-[0_40px_80px_-40px_rgba(28,27,25,.5)]"
+            />
+            <p className="mt-6 flex gap-6 text-[13px] text-muted">
+              <span>{t('captionAdmin')}</span>
+              <span>{t('captionSite')}</span>
             </p>
           </div>
+        </section>
 
-          {/* Features Grid */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature) => (
-              <div key={feature.title} className="p-6 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 hover:bg-white/10 hover:border-primary-fixed/30 transition-all duration-300 group">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-terracotta-500/20 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
-                  <MaterialSymbol name={feature.icon} className="text-2xl text-primary-fixed" />
-                </div>
-                <h3 className="text-xl font-bold text-white mb-2">{feature.title}</h3>
-                <p className="text-white/60 leading-relaxed">{feature.description}</p>
-              </div>
-            ))}
+        {/* Hotels using Digistay (sample names) */}
+        <section className={cn(frame, 'mt-7 lg:mt-16')}>
+          <div className="flex flex-col gap-3 rounded-box border border-dashed border-line px-4 py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6 lg:px-7 lg:py-[22px]">
+            <h2 className="text-[13px] text-muted lg:text-[14px]">{t('customers')}</h2>
+            <ul className="flex flex-wrap gap-x-5 gap-y-1.5 text-[14px] font-medium text-fg/70 lg:gap-x-8">
+              {SAMPLE_CUSTOMERS.map((name) => (
+                <li key={name}>{name}</li>
+              ))}
+            </ul>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Templates Section */}
-      <section id="templates" className="py-16 sm:py-24 lg:py-32 relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Section Header */}
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <span className="inline-block px-4 py-1.5 rounded-full bg-primary-fixed/20 text-on-primary-fixed-variant text-sm font-semibold mb-4">
-              Mẫu Giao Diện
-            </span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6">
-              Website Đẹp,
-              <span className="bg-gradient-to-r from-primary-fixed to-terracotta-300 bg-clip-text text-transparent"> Không Cần Code</span>
-            </h2>
-            <p className="text-lg text-white/60">
-              Chọn từ hàng chục mẫu được thiết kế chuyên nghiệp cho mọi loại hình khách sạn boutique
-            </p>
+        {/* Features */}
+        <section id="tinh-nang" className={cn(frame, 'scroll-mt-6 pt-[72px] lg:pt-32')}>
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-end lg:gap-24">
+            <h2 className={cn(sectionTitle, 'max-w-[760px]')}>{t('features.title')}</h2>
+            <p className="text-[15px] leading-[1.7] text-muted">{t('features.lead')}</p>
           </div>
 
-          {/* Templates Grid */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {templates.map((template) => (
-              <div key={template.name} className="rounded-2xl overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 group cursor-pointer hover:scale-[1.02] transition-all duration-300">
-                <div className="aspect-[4/3] overflow-hidden">
-                  <img
-                    src={template.image}
-                    alt={template.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-white mb-2">{template.name}</h3>
-                  <p className="text-white/60 text-sm">{template.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="text-center mt-12">
-            <Link
-              href="/templates"
-              className="inline-flex items-center gap-2 text-primary-fixed hover:text-primary-container font-semibold transition-colors"
-            >
-              Xem tất cả mẫu giao diện
-              <MaterialSymbol name="arrow_forward" className="text-xl" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* OTA Comparison Section */}
-      <section id="compare" className="py-16 sm:py-24 lg:py-32 relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Content */}
-            <div>
-              <span className="inline-block px-4 py-1.5 rounded-full bg-primary-fixed/20 text-on-primary-fixed-variant text-sm font-semibold mb-4">
-                So Sánh OTA
-              </span>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6">
-                Tại Sao Nên
-                <span className="bg-gradient-to-r from-primary-fixed to-terracotta-300 bg-clip-text text-transparent"> Bán Trực Tiếp?</span>
-              </h2>
-              <p className="text-lg text-white/60 mb-8 leading-relaxed">
-                Các sàn OTA như Booking.com hay Agoda thu phí hoa hồng 15-20% cho mỗi booking. 
-                Với DigiStay, bạn giữ 100% doanh thu từ kênh bán phòng độc quyền.
-              </p>
-              
-              {/* Comparison Table */}
-              <div className="rounded-2xl overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-white/10 bg-white/5">
-                      <th className="text-left p-4 text-white/60 font-medium">Tính năng</th>
-                      <th className="text-center p-4 text-primary-fixed font-bold">DigiStay</th>
-                      <th className="text-center p-4 text-white/40 font-medium">Booking</th>
-                      <th className="text-center p-4 text-white/40 font-medium">Agoda</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {otaComparison.map((row) => (
-                      <tr key={row.feature} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                        <td className="p-4 text-white/80">{row.feature}</td>
-                        <td className="p-4 text-center">
-                          {typeof row.digistay === 'boolean' ? (
-                            row.digistay ? (
-                              <MaterialSymbol name="check" className="text-emerald-400 text-xl mx-auto" />
-                            ) : (
-                              <MaterialSymbol name="close" className="text-red-400 text-xl mx-auto" />
-                            )
-                          ) : (
-                            <span className="text-emerald-400 font-bold">{row.digistay}</span>
-                          )}
-                        </td>
-                        <td className="p-4 text-center">
-                          {typeof row.booking === 'boolean' ? (
-                            row.booking ? (
-                              <MaterialSymbol name="check" className="text-red-400 text-xl mx-auto" />
-                            ) : (
-                              <MaterialSymbol name="close" className="text-red-400 text-xl mx-auto" />
-                            )
-                          ) : (
-                            <span className="text-red-400">{row.booking}</span>
-                          )}
-                        </td>
-                        <td className="p-4 text-center">
-                          {typeof row.agoda === 'boolean' ? (
-                            row.agoda ? (
-                              <MaterialSymbol name="check" className="text-red-400 text-xl mx-auto" />
-                            ) : (
-                              <MaterialSymbol name="close" className="text-red-400 text-xl mx-auto" />
-                            )
-                          ) : (
-                            <span className="text-red-400">{row.agoda}</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Savings Calculator */}
-            <div className="p-8 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10">
-              <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                <MaterialSymbol name="savings" className="text-primary-fixed text-3xl" />
-                Tiết Kiệm Của Bạn
-              </h3>
-              
-              <div className="space-y-4 mb-8">
-                {savingsData.map((item) => (
-                  <div key={item.months} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
-                    <div>
-                      <p className="text-white font-bold text-lg">{item.months} tháng</p>
-                      <p className="text-white/40 text-sm">với 10 phòng</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-emerald-400 font-bold text-xl">{item.savings}đ</p>
-                      <p className="text-white/40 text-sm line-through">{item.traditional}đ</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <Link
-                href="/pricing"
-                className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-white/10 text-white font-semibold border border-white/20 hover:bg-white/20 transition-all duration-300"
+          <div className="mt-9 flex flex-col gap-14 lg:mt-20 lg:gap-[120px]">
+            {FEATURES.map((f, i) => (
+              <article
+                key={f.id}
+                className={cn(
+                  'grid items-center gap-5 lg:gap-[72px]',
+                  i % 2 ? 'lg:grid-cols-[minmax(0,1.33fr)_minmax(0,1fr)]' : 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1.33fr)]',
+                )}
               >
-                Xem Bảng Giá Chi Tiết
-                <MaterialSymbol name="arrow_forward" className="text-xl" />
+                <div className={cn('order-2 min-w-0', i % 2 ? 'lg:order-2' : 'lg:order-1')}>
+                  <p className="font-mono text-[12px] font-medium text-brand">
+                    0{i + 1} / 0{FEATURES.length}
+                  </p>
+                  <h3 className="mt-2.5 text-balance font-serif text-[28px] font-medium leading-[1.2] tracking-[-0.015em] lg:mt-3.5 lg:text-[36px]">
+                    {t(`features.${f.id}.title`)}
+                  </h3>
+                  <p className={cn('mt-3 text-pretty text-[15px] leading-[1.65] lg:mt-4 lg:text-[16px] lg:leading-[1.7]', softText)}>
+                    {t(`features.${f.id}.desc`)}
+                  </p>
+                  <ul className="mt-5 border-t border-line lg:mt-6">
+                    {Array.from({ length: f.points }, (_, p) => (
+                      <li
+                        key={p}
+                        className="grid grid-cols-[16px_minmax(0,1fr)] gap-3 border-b border-line/70 py-3 text-[14.5px] leading-[1.55] lg:py-[13px]"
+                      >
+                        <span aria-hidden className="mt-2 h-1.5 w-1.5 rounded-[1px] bg-ink" />
+                        {/* p1..p5: the feature's points in messages */}
+                        <span>{t(`features.${f.id}.p${p + 1}` as `features.scale.p1`)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <BrowserFrame
+                  url={f.url}
+                  src={f.src}
+                  alt={t(`features.${f.id}.alt`)}
+                  width={1440}
+                  height={f.height}
+                  aspect="720/440"
+                  className={cn(
+                    'order-1 shadow-[0_32px_64px_-44px_rgba(28,27,25,.4)]',
+                    i % 2 ? 'lg:order-1' : 'lg:order-2',
+                  )}
+                />
+              </article>
+            ))}
+          </div>
+        </section>
+
+        {/* Three steps */}
+        <section className={cn(frame, 'pt-24 lg:pt-36')}>
+          <h2 className={sectionTitle}>{t('steps.title')}</h2>
+          <ol className="mt-9 grid border-t border-ink lg:mt-14 lg:grid-cols-3">
+            {STEPS.map((s, i) => (
+              <li key={s} className="border-b border-line/70 py-6 lg:border-b-0 lg:pb-0 lg:pr-10 lg:pt-7">
+                <p className="font-mono text-[13px] font-medium text-muted">0{i + 1}</p>
+                <h3 className="mt-3 font-serif text-[24px] font-medium leading-[1.25] lg:mt-[18px] lg:text-[28px]">{t(`steps.${s}.title`)}</h3>
+                <p className={cn('mt-2.5 max-w-[340px] text-[15px] leading-[1.7] lg:mt-3', softText)}>{t(`steps.${s}.text`)}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        {/* Pricing summary */}
+        <section className={cn(frame, 'pt-24 lg:pt-36')}>
+          <div className="flex flex-wrap items-end justify-between gap-x-12 gap-y-3">
+            <h2 className={sectionTitle}>{t('pricing.title')}</h2>
+            <Link href="/pricing" className="pb-2 text-[15px] font-medium text-fg hover:underline">
+              {t('pricing.compare')} →
+            </Link>
+          </div>
+          <div className="mt-8 grid gap-4 lg:mt-12 lg:grid-cols-3 lg:gap-5">
+            {PLANS.map((p) => (
+              <div key={p.id} className="flex flex-col gap-5 rounded-box border border-line bg-panel p-6 lg:p-8">
+                <h3 className="text-label font-medium uppercase text-muted">{tp(`${p.id}.name`)}</h3>
+                <p className="flex flex-wrap items-baseline gap-2">
+                  <span className="text-[30px] font-semibold leading-none tracking-[-0.01em] tabular-nums">{formatVnd(p.price, locale)}</span>
+                  <span className="text-[14px] text-muted">{tp('perMonth')}</span>
+                </p>
+                <dl className={cn('flex flex-col gap-2.5 border-t border-line/70 pt-[18px] text-[14px]', softText)}>
+                  {(['properties', 'rooms', 'staff'] as const).map((k) => (
+                    <div key={k} className="flex gap-1.5">
+                      <dt>{tp(k)}:</dt>
+                      <dd className="font-medium text-fg">{n.format(p[k])}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <Link href="/pricing" className={cn(lineButton, 'mt-auto h-11 text-[14px] hover:bg-ink hover:text-on-ink')}>
+                  {t('pricing.details')}
+                </Link>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section className={cn(frame, 'grid gap-8 pt-24 lg:grid-cols-[420px_minmax(0,1fr)] lg:items-start lg:gap-24 lg:pt-36')}>
+          <h2 className={sectionTitle}>{t('faq.title')}</h2>
+          <Faq
+            items={FAQ.map((q) => ({
+              q: t(`faq.${q}.q`),
+              a:
+                q === 'q4'
+                  ? t('faq.q4.a', { starter: starter.properties, growth: growth.properties, business: business.properties })
+                  : t(`faq.${q}.a` as 'faq.q1.a'),
+            }))}
+          />
+        </section>
+
+        {/* Call to action */}
+        <section className={cn(frame, 'pt-24 lg:pt-36')}>
+          <div className="grid gap-8 rounded-box bg-plain-soft px-6 py-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-12 lg:px-16 lg:py-[72px]">
+            <div>
+              <h2 className="max-w-[720px] text-balance font-serif text-[30px] font-medium leading-[1.15] tracking-[-0.02em] lg:text-[44px]">
+                {t('cta.title')}
+              </h2>
+              <p className={cn('mt-4 max-w-[600px] text-[16px] leading-[1.7]', softText)}>{t('cta.lead')}</p>
+            </div>
+            <div className="flex flex-col gap-2.5 lg:min-w-[220px]">
+              <Link href="/register" className={cn(inkButton, 'h-[52px] px-7 text-[15px]')}>
+                {t('cta.register')}
+              </Link>
+              <Link href="/contact" className={cn(lineButton, 'h-[52px] px-6 text-[15px]')}>
+                {t('cta.contact')}
               </Link>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16 sm:py-24 lg:py-32 relative">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="p-12 sm:p-16 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 relative overflow-hidden">
-            {/* Background decoration */}
-            <div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-br from-primary-fixed/20 to-transparent rounded-full blur-3xl" />
-            <div className="absolute bottom-0 right-0 w-48 h-48 bg-gradient-to-br from-terracotta-400/20 to-transparent rounded-full blur-3xl" />
-            
-            <div className="relative z-10">
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6">
-                Sẵn Sàng Biến Ý Tưởng
-                <br />
-                <span className="bg-gradient-to-r from-primary-fixed to-terracotta-300 bg-clip-text text-transparent">Thành Hiện Thực?</span>
-              </h2>
-              <p className="text-lg text-white/60 mb-10 max-w-2xl mx-auto">
-                Bắt đầu dùng thử miễn phí 14 ngày. Không cần thẻ tín dụng, không cam kết.
-              </p>
-              
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link
-                  href="/register"
-                  className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-primary-fixed text-on-primary-fixed-variant font-bold text-lg shadow-xl hover:bg-primary-container hover:scale-105 transition-all duration-300"
-                >
-                  Bắt Đầu Miễn Phí
-                  <MaterialSymbol name="arrow_forward" className="text-xl" />
-                </Link>
-                <Link
-                  href="/contact"
-                  className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-white/10 text-white font-semibold border border-white/20 hover:bg-white/20 transition-all duration-300"
-                >
-                  Liên Hệ Tư Vấn
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
+      </main>
     </>
   )
 }
