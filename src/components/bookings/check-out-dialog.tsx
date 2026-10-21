@@ -1,8 +1,9 @@
 'use client'
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Textarea } from '@/components/ui'
-import { formatVnd } from '@/lib/bookings/display'
+import { useDashLabels } from '@/lib/i18n/dash'
 
 interface Preview {
   hoursLate: number
@@ -33,6 +34,9 @@ export function CheckOutDialog({
   /** after a successful check-out, with the server's message */
   onDone: (message: string) => void
 }) {
+  const t = useTranslations('dash.bookings')
+  const tc = useTranslations('dash.common')
+  const labels = useDashLabels()
   const [preview, setPreview] = React.useState<Preview | null>(null)
   const [decision, setDecision] = React.useState<Decision>('apply')
   const [amount, setAmount] = React.useState('')
@@ -53,24 +57,24 @@ export function CheckOutDialog({
       .then((d) => {
         if (!alive) return
         if (d.success) setPreview(d.data)
-        else setError(d.error || 'Không tính được phí trả phòng')
+        else setError(d.error || t('checkOut.previewError'))
       })
-      .catch(() => alive && setError('Không kết nối được máy chủ'))
+      .catch(() => alive && setError(t('actions.noConnection')))
     return () => {
       alive = false
     }
-  }, [isOpen, bookingId])
+  }, [isOpen, bookingId, t])
 
   const late = (preview?.suggestedFee ?? 0) > 0
   const needsReason = late && decision !== 'apply'
 
   const submit = async () => {
     if (needsReason && reason.trim().length < 3) {
-      setError('Ghi lý do khi sửa hoặc miễn phí trả muộn')
+      setError(t('checkOut.reasonRequired'))
       return
     }
     if (late && decision === 'edit' && !(Number(amount) >= 0 && amount !== '')) {
-      setError('Nhập số tiền phụ thu')
+      setError(t('checkOut.amountRequired'))
       return
     }
     setBusy(true)
@@ -92,10 +96,10 @@ export function CheckOutDialog({
         ),
       })
       const data = await res.json()
-      if (data.success) onDone(data.message || 'Đã trả phòng')
-      else setError(data.error || 'Thao tác không thành công')
+      if (data.success) onDone(data.message || t('checkOut.done'))
+      else setError(data.error || t('actions.failed'))
     } catch {
-      setError('Không kết nối được máy chủ')
+      setError(t('actions.noConnection'))
     } finally {
       setBusy(false)
     }
@@ -111,35 +115,40 @@ export function CheckOutDialog({
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="sm">
       <ModalHeader onClose={onClose}>
-        <span className="font-semibold">Trả phòng {bookingCode}</span>
+        <span className="font-semibold">{t('checkOut.title', { code: bookingCode })}</span>
       </ModalHeader>
       <ModalBody>
-        {!preview && !error && <p className="text-small text-muted">Đang tính phí trả phòng…</p>}
+        {!preview && !error && <p className="text-small text-muted">{t('checkOut.calculating')}</p>}
         {preview && !late && (
-          <p className="text-small text-fg">Khách trả phòng đúng giờ (trước {preview.checkOutTime} ngày trả đã đặt): không có phụ thu.</p>
+          <p className="text-small text-fg">{t('checkOut.onTime', { time: preview.checkOutTime })}</p>
         )}
         {preview && late && (
           <div className="space-y-3">
             <p className="text-small text-fg rounded-ctl bg-warn-soft px-3 py-2">
-              Trả muộn {preview.hoursLate} giờ so với {preview.checkOutTime} ngày trả đã đặt. Theo chính sách: phụ thu{' '}
-              {preview.percent}% giá một đêm = <strong>{formatVnd(preview.suggestedFee)}</strong>.
+              {t.rich('checkOut.late', {
+                hours: preview.hoursLate,
+                time: preview.checkOutTime,
+                percent: preview.percent,
+                fee: labels.money(preview.suggestedFee),
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })}
             </p>
-            <div className="space-y-2" role="radiogroup" aria-label="Phí trả phòng muộn">
-              {option('apply', `Áp dụng ${formatVnd(preview.suggestedFee)}`)}
-              {option('edit', 'Thu số khác')}
+            <div className="space-y-2" role="radiogroup" aria-label={t('checkOut.feeGroup')}>
+              {option('apply', t('checkOut.apply', { fee: labels.money(preview.suggestedFee) }))}
+              {option('edit', t('checkOut.edit'))}
               {decision === 'edit' && (
                 <Input
                   type="number"
                   min={0}
-                  label="Số tiền phụ thu (đồng)"
+                  label={t('checkOut.amount')}
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                 />
               )}
-              {option('waive', 'Miễn phí trả muộn')}
+              {option('waive', t('checkOut.waive'))}
             </div>
             {needsReason && (
-              <Textarea label="Lý do (bắt buộc, lưu vào nhật ký)" value={reason} onChange={(e) => setReason(e.target.value)} rows={2} />
+              <Textarea label={t('checkOut.reason')} value={reason} onChange={(e) => setReason(e.target.value)} rows={2} />
             )}
           </div>
         )}
@@ -147,10 +156,10 @@ export function CheckOutDialog({
       </ModalBody>
       <ModalFooter>
         <Button variant="ghost" onClick={onClose}>
-          Đóng
+          {tc('actions.close')}
         </Button>
         <Button isLoading={busy} disabled={!preview} onClick={submit}>
-          Trả phòng
+          {t('checkOut.submit')}
         </Button>
       </ModalFooter>
     </Modal>

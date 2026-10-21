@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { Check, Copy, MoreHorizontal, Phone } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import {
   Button,
@@ -19,16 +20,8 @@ import {
 } from '@/components/ui'
 import { canManageBookings, useWorkspaceRole } from '@/components/layout/workspace-context'
 import { CheckOutDialog } from './check-out-dialog'
-import {
-  buildPrintHtml,
-  formatDateTime,
-  formatLongDate,
-  formatVnd,
-  guestsLabel,
-  nightsBetween,
-  paymentMethodLabel,
-  remainingAmount,
-} from '@/lib/bookings/display'
+import { buildPrintHtml, nightsBetween, remainingAmount } from '@/lib/bookings/display'
+import { useDashLabels } from '@/lib/i18n/dash'
 
 /**
  * A booking's details and actions, shared by the side panel on the bookings
@@ -74,6 +67,7 @@ export interface BookingDetailData {
 
 /** Loads one booking; `reload` refetches after an action. */
 export function useBooking(bookingId: string | null) {
+  const t = useTranslations('dash.bookings')
   const [booking, setBooking] = React.useState<BookingDetailData | null>(null)
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState('')
@@ -88,14 +82,14 @@ export function useBooking(bookingId: string | null) {
         const data = await res.json()
         if (signal?.aborted) return
         if (data.success) setBooking(data.data)
-        else setError(data.error || 'Không tải được đặt phòng')
+        else setError(data.error || t('detail.loadError'))
       } catch (err) {
-        if ((err as Error).name !== 'AbortError') setError('Không tải được đặt phòng')
+        if ((err as Error).name !== 'AbortError') setError(t('detail.loadError'))
       } finally {
         if (!signal?.aborted) setLoading(false)
       }
     },
-    [bookingId]
+    [bookingId, t]
   )
 
   React.useEffect(() => {
@@ -108,6 +102,7 @@ export function useBooking(bookingId: string | null) {
   return { booking, loading, error, reload: () => load() }
 }
 
+/** The room line on the printed slip, which stays in Vietnamese (buildPrintHtml). */
 export function roomLabel(booking: Pick<BookingDetailData, 'bookingItems'>): string {
   const item = booking.bookingItems[0]
   if (!item) return 'Chưa có phòng'
@@ -148,6 +143,9 @@ function MoneyRow({ label, value, strong, tone }: { label: string; value: string
 
 export function BookingDetailContent({ booking, onChanged }: { booking: BookingDetailData; onChanged: () => void }) {
   const role = useWorkspaceRole()
+  const t = useTranslations('dash.bookings.detail')
+  const tb = useTranslations('dash.bookings')
+  const labels = useDashLabels()
   const nights = nightsBetween(booking.checkInDate, booking.checkOutDate)
   const remaining = remainingAmount(booking)
   const checkInTime = booking.property.policy?.checkInTime || '14:00'
@@ -156,15 +154,15 @@ export function BookingDetailContent({ booking, onChanged }: { booking: BookingD
   const copyPhone = async () => {
     try {
       await navigator.clipboard.writeText(booking.guestPhone)
-      toast.success('Đã sao chép số điện thoại')
+      toast.success(t('guest.copied'))
     } catch {
-      toast.error('Không sao chép được', booking.guestPhone)
+      toast.error(t('guest.copyFailed'), booking.guestPhone)
     }
   }
 
   return (
     <div>
-      <Section title="Khách">
+      <Section title={t('guest.title')}>
         <p className="text-body font-medium text-fg">{booking.guestName}</p>
         <div className="mt-2 flex items-center justify-between gap-3">
           <span className="text-small text-fg tabular-nums">{booking.guestPhone}</span>
@@ -174,83 +172,83 @@ export function BookingDetailContent({ booking, onChanged }: { booking: BookingD
               className="inline-flex items-center gap-1.5 h-9 sm:h-8 px-3 rounded-ctl border border-line text-small text-fg hover:border-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
             >
               <Phone className="w-3.5 h-3.5" aria-hidden="true" />
-              Gọi
+              {t('guest.call')}
             </a>
             <Button variant="outline" size="sm" onClick={copyPhone}>
               <Copy className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
-              Sao chép
+              {t('guest.copy')}
             </Button>
           </span>
         </div>
         <dl className="mt-2">
-          <Field label="Email">
+          <Field label={t('email')}>
             <a href={`mailto:${booking.guestEmail}`} className="hover:underline">
               {booking.guestEmail}
             </a>
           </Field>
-          <Field label="Số khách">{guestsLabel(booking.numAdults, booking.numChildren)}</Field>
+          <Field label={t('guest.guests')}>{labels.guests(booking.numAdults, booking.numChildren)}</Field>
         </dl>
         {booking.guestNote && (
           <p className="mt-2 rounded-ctl bg-fg/5 px-3 py-2 text-small text-fg">
-            <span className="text-muted">Ghi chú: </span>
+            <span className="text-muted">{t('guest.note')} </span>
             {booking.guestNote}
           </p>
         )}
       </Section>
 
-      <Section title="Phòng">
+      <Section title={t('stay.title')}>
         <dl>
-          <Field label="Loại phòng">
+          <Field label={t('stay.roomType')}>
             {booking.bookingItems.length === 0
-              ? 'Chưa có phòng'
-              : booking.bookingItems[0].roomTypeName ?? 'Hạng phòng đã xoá'}
+              ? tb('room.none')
+              : booking.bookingItems[0].roomTypeName ?? tb('room.deletedType')}
           </Field>
-          <Field label="Số phòng">
+          <Field label={t('stay.roomNumber')}>
             <RoomNumber booking={booking} onChanged={onChanged} editable={canManageBookings(role)} />
           </Field>
-          <Field label="Nhận phòng">
-            {formatLongDate(booking.checkInDate)} · {checkInTime}
+          <Field label={t('stay.checkIn')}>
+            {labels.longDate(booking.checkInDate)} · {checkInTime}
             {booking.actualCheckIn && (
-              <span className="block text-ok">Đã nhận lúc {formatDateTime(booking.actualCheckIn)}</span>
+              <span className="block text-ok">{t('stay.checkedInAt', { time: labels.dateTime(booking.actualCheckIn) })}</span>
             )}
           </Field>
-          <Field label="Trả phòng">
-            {formatLongDate(booking.checkOutDate)} · {checkOutTime}
+          <Field label={t('stay.checkOut')}>
+            {labels.longDate(booking.checkOutDate)} · {checkOutTime}
             {booking.actualCheckOut && (
-              <span className="block text-muted">Đã trả lúc {formatDateTime(booking.actualCheckOut)}</span>
+              <span className="block text-muted">{t('stay.checkedOutAt', { time: labels.dateTime(booking.actualCheckOut) })}</span>
             )}
           </Field>
-          <Field label="Số đêm">{nights} đêm</Field>
+          <Field label={t('stay.nights')}>{labels.nights(nights)}</Field>
         </dl>
       </Section>
 
-      <Section title="Tiền">
-        <MoneyRow label="Tiền phòng" value={formatVnd(booking.subtotal)} />
-        {booking.extraCharges > 0 && <MoneyRow label="Phụ phí" value={formatVnd(booking.extraCharges)} />}
-        {booking.discount > 0 && <MoneyRow label="Giảm giá" value={`−${formatVnd(booking.discount)}`} />}
+      <Section title={t('money.title')}>
+        <MoneyRow label={t('money.room')} value={labels.money(booking.subtotal)} />
+        {booking.extraCharges > 0 && <MoneyRow label={t('money.extraCharges')} value={labels.money(booking.extraCharges)} />}
+        {booking.discount > 0 && <MoneyRow label={t('money.discount')} value={`−${labels.money(booking.discount)}`} />}
         <div className="my-2 border-t border-line" />
-        <MoneyRow label="Tổng cộng" value={formatVnd(booking.totalAmount)} strong />
-        <MoneyRow label="Đã thanh toán" value={formatVnd(booking.depositAmount)} />
+        <MoneyRow label={t('money.total')} value={labels.money(booking.totalAmount)} strong />
+        <MoneyRow label={t('money.paid')} value={labels.money(booking.depositAmount)} />
         <MoneyRow
-          label="Còn lại"
-          value={formatVnd(remaining)}
+          label={t('money.remaining')}
+          value={labels.money(remaining)}
           strong
           tone={remaining > 0 && booking.status !== 'CANCELLED' ? 'warn' : undefined}
         />
 
-        <h4 className="mt-4 mb-2 text-small font-medium text-fg">Các lần thanh toán</h4>
+        <h4 className="mt-4 mb-2 text-small font-medium text-fg">{t('money.payments')}</h4>
         {booking.payments.length === 0 ? (
-          <p className="text-small text-muted">Chưa có lần thanh toán nào.</p>
+          <p className="text-small text-muted">{t('money.noPayments')}</p>
         ) : (
           <ul className="space-y-2">
             {booking.payments.map((p) => (
               <li key={p.id} className="flex items-start justify-between gap-3 rounded-ctl border border-line px-3 py-2.5">
                 <span className="min-w-0">
-                  <span className="block text-small text-fg">{paymentMethodLabel(p.method)}</span>
-                  <span className="block text-xs text-muted">{formatDateTime(p.paidAt ?? p.createdAt)}</span>
+                  <span className="block text-small text-fg">{labels.paymentMethod(p.method)}</span>
+                  <span className="block text-xs text-muted">{labels.dateTime(p.paidAt ?? p.createdAt)}</span>
                 </span>
                 <span className="flex flex-col items-end gap-1">
-                  <span className="text-small font-medium tabular-nums whitespace-nowrap">{formatVnd(p.amount)}</span>
+                  <span className="text-small font-medium tabular-nums whitespace-nowrap">{labels.money(p.amount)}</span>
                   <PaymentStatusBadge status={p.status} />
                 </span>
               </li>
@@ -260,12 +258,12 @@ export function BookingDetailContent({ booking, onChanged }: { booking: BookingD
       </Section>
 
       {booking.vatCompany && (
-        <Section title="Xuất hóa đơn công ty">
+        <Section title={t('vat.title')}>
           <dl>
-            <Field label="Tên công ty">{booking.vatCompany}</Field>
-            {booking.vatTaxCode && <Field label="MST">{booking.vatTaxCode}</Field>}
-            {booking.vatAddress && <Field label="Địa chỉ">{booking.vatAddress}</Field>}
-            {booking.vatEmail && <Field label="Email">{booking.vatEmail}</Field>}
+            <Field label={t('vat.company')}>{booking.vatCompany}</Field>
+            {booking.vatTaxCode && <Field label={t('vat.taxCode')}>{booking.vatTaxCode}</Field>}
+            {booking.vatAddress && <Field label={t('vat.address')}>{booking.vatAddress}</Field>}
+            {booking.vatEmail && <Field label={t('email')}>{booking.vatEmail}</Field>}
           </dl>
         </Section>
       )}
@@ -274,6 +272,8 @@ export function BookingDetailContent({ booking, onChanged }: { booking: BookingD
 }
 
 function RoomNumber({ booking, onChanged, editable }: { booking: BookingDetailData; onChanged: () => void; editable: boolean }) {
+  const t = useTranslations('dash.bookings.detail.roomNumber')
+  const tc = useTranslations('dash.common')
   const current = booking.bookingItems[0]?.roomNumber ?? ''
   const [editing, setEditing] = React.useState(false)
   const [value, setValue] = React.useState(current)
@@ -291,14 +291,14 @@ function RoomNumber({ booking, onChanged, editable }: { booking: BookingDetailDa
       })
       const data = await res.json()
       if (data.success) {
-        toast.success('Đã gán số phòng')
+        toast.success(t('assigned'))
         setEditing(false)
         onChanged()
       } else {
-        toast.error('Không gán được số phòng', data.error)
+        toast.error(t('assignFailed'), data.error)
       }
     } catch {
-      toast.error('Không gán được số phòng')
+      toast.error(t('assignFailed'))
     } finally {
       setSaving(false)
     }
@@ -307,10 +307,10 @@ function RoomNumber({ booking, onChanged, editable }: { booking: BookingDetailDa
   if (!editing) {
     return (
       <span className="inline-flex items-center gap-2">
-        {current || <span className="text-muted">Chưa gán</span>}
+        {current || <span className="text-muted">{t('unassigned')}</span>}
         {editable && (
           <button type="button" onClick={() => setEditing(true)} className="text-small text-acc hover:underline focus:outline-none focus-visible:underline">
-            {current ? 'Sửa' : 'Gán phòng'}
+            {current ? tc('actions.edit') : t('assign')}
           </button>
         )}
       </span>
@@ -325,12 +325,12 @@ function RoomNumber({ booking, onChanged, editable }: { booking: BookingDetailDa
         if (value.trim()) save()
       }}
     >
-      <Input value={value} onChange={(e) => setValue(e.target.value)} placeholder="VD: 203" aria-label="Số phòng" className="h-9 sm:h-8 w-28" autoFocus />
-      <Button type="submit" size="sm" isLoading={saving} disabled={!value.trim()} aria-label="Lưu số phòng">
+      <Input value={value} onChange={(e) => setValue(e.target.value)} placeholder={t('placeholder')} aria-label={t('label')} className="h-9 sm:h-8 w-28" autoFocus />
+      <Button type="submit" size="sm" isLoading={saving} disabled={!value.trim()} aria-label={t('save')}>
         <Check className="w-3.5 h-3.5" aria-hidden="true" />
       </Button>
       <Button type="button" size="sm" variant="ghost" onClick={() => { setValue(current); setEditing(false) }}>
-        Hủy
+        {tc('actions.cancel')}
       </Button>
     </form>
   )
@@ -368,6 +368,9 @@ export function BookingActions({
 }) {
   const role = useWorkspaceRole()
   const canManage = canManageBookings(role)
+  const t = useTranslations('dash.bookings')
+  const tc = useTranslations('dash.common')
+  const labels = useDashLabels()
   const [busy, setBusy] = React.useState<ActionKey | null>(null)
   const [dialog, setDialog] = React.useState<'cancel' | 'extend' | 'noshow' | 'checkout' | null>(null)
   const [cancelReason, setCancelReason] = React.useState('')
@@ -391,12 +394,12 @@ export function BookingActions({
         setDialog(null)
         onChanged()
       } else if (dialog) {
-        setDialogError(data.error || 'Thao tác không thành công')
+        setDialogError(data.error || t('actions.failed'))
       } else {
-        toast.error('Thao tác không thành công', data.error)
+        toast.error(t('actions.failed'), data.error)
       }
     } catch {
-      toast.error('Không kết nối được máy chủ')
+      toast.error(t('actions.noConnection'))
     } finally {
       setBusy(null)
     }
@@ -406,7 +409,7 @@ export function BookingActions({
     const html = buildPrintHtml({ ...booking, roomLabel: roomLabel(booking), property: booking.property })
     const w = window.open('', '_blank')
     if (!w) {
-      toast.error('Trình duyệt chặn cửa sổ in', 'Cho phép cửa sổ bật lên rồi thử lại.')
+      toast.error(t('actions.popupBlocked'), t('actions.popupBlockedHint'))
       return
     }
     w.document.write(html)
@@ -427,10 +430,10 @@ export function BookingActions({
   const primary = !canManage
     ? null
     : canCheckIn
-      ? { label: 'Nhận phòng', key: 'checkin' as const, run: () => run('checkin', 'check-in', undefined, () => 'Đã nhận phòng') }
+      ? { label: t('actions.checkIn'), key: 'checkin' as const, run: () => run('checkin', 'check-in', undefined, () => t('actions.checkedIn')) }
       : canCheckOut
         ? {
-            label: 'Trả phòng',
+            label: t('actions.checkOut'),
             key: 'checkout' as const,
             // The late fee is decided in the dialog (check-out-dialog.tsx).
             run: () => setDialog('checkout'),
@@ -445,52 +448,52 @@ export function BookingActions({
         </Button>
       ) : (
         <Button variant="outline" className="flex-1" onClick={print}>
-          In phiếu
+          {t('actions.printSlip')}
         </Button>
       )}
       {canManage && canExtend && (
         <Button variant="outline" onClick={openExtend} disabled={!!busy}>
-          Gia hạn
+          {t('actions.extend')}
         </Button>
       )}
       {primary && (
         <Button variant="outline" onClick={print} className="hidden sm:inline-flex">
-          In phiếu
+          {t('actions.printSlip')}
         </Button>
       )}
       <Dropdown
         align="right"
         className="bottom-full mb-2 mt-0"
         trigger={
-          <Button variant="outline" aria-label="Thao tác khác" className="px-3">
+          <Button variant="outline" aria-label={t('actions.more')} className="px-3">
             <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
           </Button>
         }
       >
         {primary && (
           <DropdownItem onClick={print} className="sm:hidden">
-            In phiếu
+            {t('actions.printSlip')}
           </DropdownItem>
         )}
         {canManage && (
           <DropdownItem
             disabled={busy === 'email'}
-            onClick={() => run('email', 'send-confirmation', undefined, () => 'Đã gửi email xác nhận')}
+            onClick={() => run('email', 'send-confirmation', undefined, () => t('actions.confirmationSent'))}
           >
-            Gửi email xác nhận
+            {t('actions.sendConfirmation')}
           </DropdownItem>
         )}
         {canManage && canNoShow && (
-          <DropdownItem onClick={() => { setDialogError(''); setDialog('noshow') }}>Đánh dấu không đến</DropdownItem>
+          <DropdownItem onClick={() => { setDialogError(''); setDialog('noshow') }}>{t('actions.markNoShow')}</DropdownItem>
         )}
         {openPageHref && (
-          <DropdownItem onClick={() => window.location.assign(openPageHref)}>Mở trang đầy đủ</DropdownItem>
+          <DropdownItem onClick={() => window.location.assign(openPageHref)}>{t('actions.openFullPage')}</DropdownItem>
         )}
         {/* Dropdown clones each direct child, so no fragments here. */}
         {canManage && canCancel && <DropdownDivider />}
         {canManage && canCancel && (
           <DropdownItem danger onClick={() => { setCancelReason(''); setDialogError(''); setDialog('cancel') }}>
-            Hủy đặt phòng
+            {t('actions.cancelBooking')}
           </DropdownItem>
         )}
       </Dropdown>
@@ -509,17 +512,17 @@ export function BookingActions({
 
       <Modal isOpen={dialog === 'cancel'} onClose={() => setDialog(null)} size="sm">
         <ModalHeader onClose={() => setDialog(null)}>
-          <span className="font-semibold">Hủy đặt phòng {booking.bookingCode}?</span>
+          <span className="font-semibold">{t('cancelDialog.title', { code: booking.bookingCode })}</span>
         </ModalHeader>
         <ModalBody>
-          <p className="text-small text-muted">Không hoàn tác được.</p>
+          <p className="text-small text-muted">{t('cancelDialog.irreversible')}</p>
           {booking.depositAmount > 0 && (
             <p className="text-small text-fg rounded-ctl bg-info-soft px-3 py-2">
-              Khách đã thanh toán {formatVnd(booking.depositAmount)}. Số tiền hoàn (nếu có) tính theo chính sách hủy.
+              {t('cancelDialog.deposit', { amount: labels.money(booking.depositAmount) })}
             </p>
           )}
           <Textarea
-            label="Lý do hủy (tùy chọn)"
+            label={t('cancelDialog.reason')}
             value={cancelReason}
             onChange={(e) => setCancelReason(e.target.value)}
             rows={3}
@@ -528,70 +531,72 @@ export function BookingActions({
         </ModalBody>
         <ModalFooter>
           <Button variant="ghost" onClick={() => setDialog(null)}>
-            Không
+            {tc('actions.no')}
           </Button>
           <Button
             variant="danger"
             isLoading={busy === 'cancel'}
             onClick={() =>
               run('cancel', 'cancel', { reason: cancelReason }, (d) =>
-                d.refundInfo?.refundAmount ? `Đã hủy. Hoàn ${formatVnd(d.refundInfo.refundAmount)}` : 'Đã hủy đặt phòng'
+                d.refundInfo?.refundAmount
+                  ? t('cancelDialog.cancelledRefund', { amount: labels.money(d.refundInfo.refundAmount) })
+                  : t('cancelDialog.cancelled')
               )
             }
           >
-            Hủy đặt phòng
+            {t('actions.cancelBooking')}
           </Button>
         </ModalFooter>
       </Modal>
 
       <Modal isOpen={dialog === 'extend'} onClose={() => setDialog(null)} size="sm">
         <ModalHeader onClose={() => setDialog(null)}>
-          <span className="font-semibold">Gia hạn {booking.bookingCode}</span>
+          <span className="font-semibold">{t('extendDialog.title', { code: booking.bookingCode })}</span>
         </ModalHeader>
         <ModalBody>
-          <p className="text-small text-muted">Trả phòng hiện tại: {formatLongDate(booking.checkOutDate)}</p>
+          <p className="text-small text-muted">{t('extendDialog.current', { date: labels.longDate(booking.checkOutDate) })}</p>
           <Input
             type="date"
-            label="Ngày trả phòng mới"
+            label={t('extendDialog.newDate')}
             value={extendDate}
             min={addDays(booking.checkOutDate, 1)}
             onChange={(e) => setExtendDate(e.target.value)}
-            hint="Phụ thu tính theo giá phòng, ghi nhận là tiền mặt."
+            hint={t('extendDialog.hint')}
           />
           {dialogError && <p className="text-small text-err">{dialogError}</p>}
         </ModalBody>
         <ModalFooter>
           <Button variant="ghost" onClick={() => setDialog(null)}>
-            Đóng
+            {tc('actions.close')}
           </Button>
           <Button
             isLoading={busy === 'extend'}
             disabled={!extendDate}
             onClick={() =>
-              run('extend', 'extend', { newCheckOutDate: extendDate, addPayment: true, paymentMethod: 'CASH' }, (d) => d.message || 'Đã gia hạn')
+              run('extend', 'extend', { newCheckOutDate: extendDate, addPayment: true, paymentMethod: 'CASH' }, (d) => d.message || t('extendDialog.done'))
             }
           >
-            Gia hạn
+            {t('actions.extend')}
           </Button>
         </ModalFooter>
       </Modal>
 
       <Modal isOpen={dialog === 'noshow'} onClose={() => setDialog(null)} size="sm">
         <ModalHeader onClose={() => setDialog(null)}>
-          <span className="font-semibold">Khách không đến?</span>
+          <span className="font-semibold">{t('noShowDialog.title')}</span>
         </ModalHeader>
         <ModalBody>
           <p className="text-small text-fg">
-            Đánh dấu {booking.bookingCode} của {booking.guestName} là không đến. Chỉ làm được từ ngày nhận phòng.
+            {t('noShowDialog.body', { code: booking.bookingCode, guest: booking.guestName })}
           </p>
           {dialogError && <p className="text-small text-err">{dialogError}</p>}
         </ModalBody>
         <ModalFooter>
           <Button variant="ghost" onClick={() => setDialog(null)}>
-            Không
+            {tc('actions.no')}
           </Button>
-          <Button isLoading={busy === 'noshow'} onClick={() => run('noshow', 'no-show', undefined, () => 'Đã đánh dấu không đến')}>
-            Đánh dấu không đến
+          <Button isLoading={busy === 'noshow'} onClick={() => run('noshow', 'no-show', undefined, () => t('noShowDialog.done'))}>
+            {t('actions.markNoShow')}
           </Button>
         </ModalFooter>
       </Modal>
