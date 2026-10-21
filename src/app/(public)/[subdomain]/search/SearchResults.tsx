@@ -78,6 +78,7 @@ export function SearchResults({
       numAdults: String(query.adults),
       numChildren: String(query.children),
       all: '1',
+      locale: lang,
     })
     fetch(`/api/bookings/availability?${params}`)
       .then((res) => res.json())
@@ -91,7 +92,7 @@ export function SearchResults({
     return () => {
       live = false
     }
-  }, [propertyId, query])
+  }, [propertyId, query, lang])
 
   const search = (next: StayQuery) => {
     setForm(next)

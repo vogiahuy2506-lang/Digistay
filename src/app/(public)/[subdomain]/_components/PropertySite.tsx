@@ -1,3 +1,4 @@
+import { blockText } from '@/lib/i18n/content'
 import { HeroBlock } from './blocks/HeroBlock'
 import { RoomsBlock } from './blocks/RoomsBlock'
 import { AmenitiesBlock } from './blocks/AmenitiesBlock'
@@ -12,7 +13,7 @@ import { ServicesBlock } from './blocks/ServicesBlock'
 import { SiteHeader, type SiteSection } from './SiteHeader'
 import { SiteLink } from './site-base'
 import { Container, cfgText } from './site-ui'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 
 type BlockType =
   | 'HERO'
@@ -197,11 +198,12 @@ function BlockRenderer(props: {
 
 /** Call to action: a dark band with one button (ctaTitle / ctaSubtitle / ctaButtonText / ctaButtonLink). */
 function CtaBlock({ block }: { block: PublicBlock }) {
+  const locale = useLocale()
   const t = useTranslations('site.blocks.cta')
   const cfg = block.config || {}
-  const title = cfgText(cfg, 'ctaTitle', 'title') ?? t('title')
-  const subtitle = cfgText(cfg, 'ctaSubtitle', 'subtitle')
-  const label = cfgText(cfg, 'ctaButtonText', 'buttonText') ?? t('button')
+  const title = blockText(cfg, locale, 'ctaTitle', 'title') ?? t('title')
+  const subtitle = blockText(cfg, locale, 'ctaSubtitle', 'subtitle')
+  const label = blockText(cfg, locale, 'ctaButtonText', 'buttonText') ?? t('button')
   const link = cfgText(cfg, 'ctaButtonLink') ?? '#booking'
   const buttonClass =
     'mt-8 inline-flex h-12 items-center rounded-ctl bg-page px-6 text-body font-medium text-fg hover:bg-page/90 transition-colors'

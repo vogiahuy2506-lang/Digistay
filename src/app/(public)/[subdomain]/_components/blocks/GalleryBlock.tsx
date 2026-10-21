@@ -1,6 +1,7 @@
+import { useLocale } from 'next-intl'
+import { blockText } from '@/lib/i18n/content'
 import { GalleryClient } from './GalleryClient'
 import type { PublicBlock, PublicImage } from '../PropertySite'
-import { cfgText } from '../site-ui'
 
 interface Props {
   block: PublicBlock
@@ -8,5 +9,6 @@ interface Props {
 }
 
 export function GalleryBlock({ block, images }: Props) {
-  return <GalleryClient images={images} title={cfgText(block.config, 'galleryTitle', 'title')} />
+  const locale = useLocale()
+  return <GalleryClient images={images} title={blockText(block.config, locale, 'galleryTitle', 'title')} />
 }

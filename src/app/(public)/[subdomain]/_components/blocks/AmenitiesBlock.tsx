@@ -1,7 +1,8 @@
+import { blockText } from '@/lib/i18n/content'
 import { getIcon } from '../icon-map'
 import type { PublicAmenity, PublicBlock, PublicImage } from '../PropertySite'
-import { Eyebrow, Section, SectionTitle, cfgText } from '../site-ui'
-import { useTranslations } from 'next-intl'
+import { Eyebrow, Section, SectionTitle } from '../site-ui'
+import { useLocale, useTranslations } from 'next-intl'
 
 interface Props {
   block: PublicBlock
@@ -11,9 +12,10 @@ interface Props {
 
 /** Amenities (redesign 3a): a ruled list next to a large photo. */
 export function AmenitiesBlock({ block, amenities, images }: Props) {
+  const locale = useLocale()
   const t = useTranslations('site.blocks.amenities')
   const cfg = block.config || {}
-  const title = cfgText(cfg, 'amenitiesTitle', 'title') ?? t('title')
+  const title = blockText(cfg, locale, 'amenitiesTitle', 'title') ?? t('title')
   // The hero shows the first photos; take a later one when there is one.
   const photo = images[2] ?? images[1] ?? images[0]
 

@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { prisma } from '@/lib/db'
+import { localized, localizeRow } from '@/lib/i18n/content'
 import { SITE_BASE_HEADER, SITE_PATH_HEADER, siteBasePath, siteHref } from '@/lib/public-site/paths'
 import { hotelAccentVariables } from '@/lib/public-site/accent'
 import { fontStack } from '@/lib/public-site/font-stack'
@@ -17,8 +18,9 @@ const loadSiteFrame = cache((subdomain: string) =>
     select: {
       name: true,
       description: true,
+      translations: true,
       websiteSettings: {
-        select: { primaryColor: true, fontFamily: true, headingFont: true, metaTitle: true, metaDescription: true },
+        select: { primaryColor: true, fontFamily: true, headingFont: true, metaTitle: true, metaDescription: true, translations: true },
       },
     },
   })
@@ -31,9 +33,12 @@ export async function generateMetadata({ params }: { params: Promise<{ subdomain
   const site = await loadSiteFrame(subdomain)
   if (!site) return {}
   // Hotel pages used to carry Digistay's own title ("DigiStay - Nền Tảng No-Code...").
+  // In English: the hotel's English SEO texts and description when it wrote them (src/lib/i18n/content.ts).
+  const lang = (await getLocale()) === 'en' ? 'en' : 'vi'
+  const seo = site.websiteSettings && localizeRow(site.websiteSettings, ['metaTitle', 'metaDescription'], lang)
   return {
-    title: site.websiteSettings?.metaTitle || site.name,
-    description: site.websiteSettings?.metaDescription || site.description || undefined,
+    title: seo?.metaTitle || site.name,
+    description: seo?.metaDescription || localized(site, 'description', lang) || undefined,
   }
 }
 

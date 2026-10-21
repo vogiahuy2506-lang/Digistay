@@ -1,7 +1,8 @@
+import { blockText } from '@/lib/i18n/content'
 import { Mail, MapPin, MessageCircle, Phone } from 'lucide-react'
 import type { PublicBlock, PublicProperty } from '../PropertySite'
 import { Eyebrow, Section, SectionTitle, cfgText } from '../site-ui'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 
 interface Props {
   block: PublicBlock
@@ -9,9 +10,10 @@ interface Props {
 }
 
 export function ContactBlock({ block, property }: Props) {
+  const locale = useLocale()
   const t = useTranslations('site.blocks.contact')
   const cfg = block.config || {}
-  const title = cfgText(cfg, 'contactTitle', 'title') ?? t('title')
+  const title = blockText(cfg, locale, 'contactTitle', 'title') ?? t('title')
   const phone = cfgText(cfg, 'contactPhone') ?? property.phone
   const email = cfgText(cfg, 'contactEmail') ?? property.email
   const address = cfgText(cfg, 'contactAddress') ?? [property.address, property.city].filter(Boolean).join(', ')

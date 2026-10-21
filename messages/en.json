@@ -343,6 +343,33 @@
         "confirmedChip": "Confirmed by the hotel",
         "confirmedLead": "{hotel} has confirmed your booking. You pay at check-in."
       }
+    },
+    "amenityNames": {
+      "wifi": "Free Wi-Fi",
+      "parking": "Parking",
+      "breakfast": "Free breakfast",
+      "ac": "Air conditioning",
+      "pool": "Swimming pool",
+      "gym": "Gym",
+      "spa": "Spa & massage",
+      "restaurant": "Restaurant",
+      "bar": "Bar",
+      "room-service": "Room service",
+      "laundry": "Laundry",
+      "airport": "Airport transfer",
+      "kitchen": "Shared kitchen",
+      "kitchenette": "Kitchenette",
+      "washing-machine": "Washing machine",
+      "tv": "TV",
+      "minibar": "Minibar",
+      "safe": "Safe",
+      "balcony": "Balcony",
+      "sea-view": "Sea view",
+      "mountain-view": "Mountain view",
+      "elevator": "Lift",
+      "reception": "24-hour front desk",
+      "security": "Security staff",
+      "cctv": "CCTV"
     }
   },
   "marketing": {

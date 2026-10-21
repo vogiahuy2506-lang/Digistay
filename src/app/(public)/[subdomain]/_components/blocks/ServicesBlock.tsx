@@ -1,6 +1,7 @@
+import { blockText } from '@/lib/i18n/content'
 import { formatVnd } from '@/lib/bookings/display'
 import type { PublicBlock, PublicService } from '../PropertySite'
-import { Section, SectionHeader, cfgText } from '../site-ui'
+import { Section, SectionHeader } from '../site-ui'
 import { useLocale, useTranslations } from 'next-intl'
 import type { SiteT } from '../site-ui'
 
@@ -13,7 +14,7 @@ export function ServicesBlock({ block, services }: Props) {
   const t = useTranslations('site')
   const locale = useLocale()
   const cfg = block.config || {}
-  const title = cfgText(cfg, 'servicesTitle', 'title') ?? t('blocks.services.title')
+  const title = blockText(cfg, locale, 'servicesTitle', 'title') ?? t('blocks.services.title')
 
   return (
     <Section id="services">

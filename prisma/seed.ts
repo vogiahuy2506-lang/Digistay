@@ -25,7 +25,7 @@ async function main() {
     { name: 'Máy giặt', slug: 'washing-machine', icon: 'shirt', category: 'service' },
     { name: 'Tivi', slug: 'tv', icon: 'tv', category: 'entertainment' },
     { name: 'Minibar', slug: 'minibar', icon: 'wine', category: 'food' },
-    { name: ' сейф', slug: 'safe', icon: 'lock', category: 'security' },
+    { name: 'Két sắt', slug: 'safe', icon: 'lock', category: 'security' },
     { name: 'Ban công', slug: 'balcony', icon: 'sun', category: 'comfort' },
     { name: 'View biển', slug: 'sea-view', icon: 'waves', category: 'view' },
     { name: 'View núi', slug: 'mountain-view', icon: 'mountain', category: 'view' },

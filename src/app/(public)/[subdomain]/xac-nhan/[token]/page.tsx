@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { formatVnd } from '@/lib/bookings/display'
+import { localized } from '@/lib/i18n/content'
 import { loadDepositView } from '@/lib/payments/deposit-view'
 import { BookingFooter, BookingHeader, BookingSteps, loadBookingFrame, sitePath } from '../../_components/booking/frame'
 import { SiteLink } from '../../_components/site-base'
@@ -83,7 +84,7 @@ export default async function ConfirmationPage({ params }: PageProps) {
           </div>
           <div>
             <StaySummary
-              room={view.room && { name: view.room.name, image: view.room.image, spec: view.room.bedType ? bedLabel(view.room.bedType, t) : '' }}
+              room={view.room && { name: localized(view.room, 'name', lang), image: view.room.image, spec: view.room.bedType ? bedLabel(view.room.bedType, t) : '' }}
               checkIn={view.checkIn}
               checkOut={view.checkOut}
               checkInTime={view.property.checkInTime}

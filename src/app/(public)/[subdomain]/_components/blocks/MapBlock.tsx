@@ -1,3 +1,4 @@
+import { blockText } from '@/lib/i18n/content'
 import type { PublicBlock, PublicProperty } from '../PropertySite'
 import { Eyebrow, Section, SectionTitle, cfgText } from '../site-ui'
 import { useLocale, useTranslations } from 'next-intl'
@@ -21,7 +22,7 @@ export function MapBlock({ block, property }: Props) {
     cfgText(cfg, 'mapAddress') ??
     [property.address, property.district, property.city, property.country].filter(Boolean).join(', ')
   // The default layout titles this block "Vị trí", which is already the eyebrow: show the address instead (3a).
-  const custom = cfgText(cfg, 'title')
+  const custom = blockText(cfg, locale, 'title')
   const title =
     custom && custom.toLowerCase() !== 'vị trí' ? custom : [property.address, property.city].filter(Boolean).join(', ')
   const lat = coordinate(cfg.mapLat) ?? property.latitude

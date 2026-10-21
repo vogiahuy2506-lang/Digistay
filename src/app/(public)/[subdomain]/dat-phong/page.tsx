@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
+import { localized, localizeRow } from '@/lib/i18n/content'
 import { prisma } from '@/lib/db'
 import { roomsTakenByType } from '@/lib/bookings/occupancy'
 import { onlineDepositOf } from '@/lib/payments/guest-deposit'
@@ -56,11 +57,12 @@ export default async function BookingPage({ params, searchParams }: PageProps) {
     prisma.extraService.findMany({
       where: { propertyId, isActive: true },
       orderBy: { createdAt: 'asc' },
-      select: { id: true, name: true, description: true, price: true, priceType: true, perPerson: true },
+      select: { id: true, name: true, description: true, price: true, priceType: true, perPerson: true, translations: true },
     }),
     onlineDepositOf(propertyId),
   ])
 
+  const lang = (await getLocale()) === 'en' ? 'en' : 'vi'
   const rates = roomType ? ratesFrom(roomType.pricing[0], defaults) : null
   const validDates = !!checkIn && !!checkOut && checkOut > checkIn
   const taken = roomType && validDates
@@ -70,7 +72,9 @@ export default async function BookingPage({ params, searchParams }: PageProps) {
     roomType && rates && validDates && roomType.totalRooms - taken > 0 && roomType.maxAdults >= adults && roomType.maxChildren >= children
 
   const policies: { title: string; text: string }[] = []
-  if (policy) {
+  const localPolicy = policy && localizeRow(policy, ['cancellationPolicy'], lang)
+  if (localPolicy) {
+    const policy = localPolicy
     policies.push({ title: t('policy.checkInOut'), text: t('policy.checkInOutText', { checkIn: policy.checkInTime, checkOut: policy.checkOutTime }) })
     if (policy.cancellationHours != null || policy.cancellationPolicy) {
       policies.push({
@@ -102,14 +106,17 @@ export default async function BookingPage({ params, searchParams }: PageProps) {
             property={{ id: propertyId, name: frame.property.name, phone: frame.property.phone }}
             room={{
               id: roomType.id,
-              name: roomType.name,
+              name: localized(roomType, 'name', lang),
               image: roomType.images[0]?.url ?? null,
               spec: roomMeta(roomType, t),
               baseOccupancy: roomType.baseOccupancy,
             }}
             rates={rates}
             stay={{ checkIn, checkOut, adults, children }}
-            services={services}
+            services={services.map((s) => {
+              const { translations: _, ...service } = localizeRow(s, ['name', 'description'], lang)
+              return service
+            })}
             policies={policies}
             times={{ checkIn: policy?.checkInTime ?? '14:00', checkOut: policy?.checkOutTime ?? '12:00' }}
             deposit={deposit}

@@ -28,7 +28,7 @@ export interface DepositView {
   nights: number
   adults: number
   children: number
-  room: { name: string; area: number | null; bedType: string | null; image: string | null } | null
+  room: { name: string; area: number | null; bedType: string | null; image: string | null; translations: unknown } | null
   amounts: {
     room: number
     extraGuests: number
@@ -117,7 +117,7 @@ export async function loadDepositView(subdomain: string | null, token: string, n
   const roomType = item
     ? await prisma.roomType.findUnique({
         where: { id: item.roomTypeId },
-        select: { name: true, area: true, bedType: true, images: { where: { isPrimary: true }, take: 1, select: { url: true } } },
+        select: { name: true, area: true, bedType: true, translations: true, images: { where: { isPrimary: true }, take: 1, select: { url: true } } },
       })
     : null
 
@@ -160,7 +160,7 @@ export async function loadDepositView(subdomain: string | null, token: string, n
     nights: Math.max(1, Math.round((booking.checkOutDate.getTime() - booking.checkInDate.getTime()) / DAY)),
     adults: booking.numAdults,
     children: booking.numChildren,
-    room: roomType && { name: roomType.name, area: roomType.area, bedType: roomType.bedType, image: roomType.images[0]?.url ?? null },
+    room: roomType && { name: roomType.name, area: roomType.area, bedType: roomType.bedType, image: roomType.images[0]?.url ?? null, translations: roomType.translations },
     amounts: {
       room,
       extraGuests: Math.max(0, booking.totalAmount - room - servicesTotal),

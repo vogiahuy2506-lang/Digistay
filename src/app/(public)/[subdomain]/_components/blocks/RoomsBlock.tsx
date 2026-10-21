@@ -1,7 +1,8 @@
+import { blockText } from '@/lib/i18n/content'
 import { formatVnd } from '@/lib/bookings/display'
 import type { PublicBlock, PublicProperty, PublicRoomType } from '../PropertySite'
 import { SiteLink } from '../site-base'
-import { PhotoPlaceholder, Section, SectionHeader, cfgText, roomMeta } from '../site-ui'
+import { PhotoPlaceholder, Section, SectionHeader, roomMeta } from '../site-ui'
 import { useLocale, useTranslations } from 'next-intl'
 
 interface Props {
@@ -15,7 +16,7 @@ export function RoomsBlock({ block, roomTypes, property }: Props) {
   const t = useTranslations('site')
   const locale = useLocale()
   const cfg = block.config || {}
-  const title = cfgText(cfg, 'roomsTitle', 'title') ?? t('blocks.rooms.title')
+  const title = blockText(cfg, locale, 'roomsTitle', 'title') ?? t('blocks.rooms.title')
   const showPrice = cfg.showPrice !== false
   const showCTA = cfg.showCTA !== false
   const limit = Number(cfg.roomsLimit) > 0 ? Number(cfg.roomsLimit) : undefined

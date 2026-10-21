@@ -11,6 +11,8 @@
  * deactivating a hotel or changing its subdomain applies at once.
  */
 import { revalidateTag, unstable_cache } from 'next/cache'
+import type { Locale } from '@/i18n/locales'
+import { localizeRow } from '@/lib/i18n/content'
 import { prisma } from '@/lib/db'
 import { ratesFrom } from '@/lib/pricing/quote'
 import { ROOM_RATE_INCLUDE, propertyRateDefaults } from '@/lib/pricing/rates'
@@ -82,6 +84,7 @@ export async function loadSiteProps(propertyId: string) {
       coverImage: property.coverImage,
       latitude: property.latitude,
       longitude: property.longitude,
+      translations: property.translations,
     },
     images: property.images.map((i) => ({
       url: i.url,
@@ -90,6 +93,7 @@ export async function loadSiteProps(propertyId: string) {
     })),
     amenities: property.amenities.map((pa) => ({
       id: pa.amenity.id,
+      slug: pa.amenity.slug,
       name: pa.amenity.name,
       icon: pa.amenity.icon,
       category: pa.amenity.category,
@@ -107,6 +111,8 @@ export async function loadSiteProps(propertyId: string) {
       fromPrice: ratesFrom(rt.pricing[0], defaults)?.weekdayPrice ?? null,
       weekendPrice: ratesFrom(rt.pricing[0], defaults)?.weekendPrice ?? null,
       amenities: rt.amenities.map((a) => a.amenity.name),
+      amenitySlugs: rt.amenities.map((a) => a.amenity.slug),
+      translations: rt.translations,
     })),
     services: property.extraServices.map((s) => ({
       id: s.id,
@@ -115,6 +121,7 @@ export async function loadSiteProps(propertyId: string) {
       price: s.price,
       priceType: s.priceType,
       perPerson: s.perPerson,
+      translations: s.translations,
     })),
     blocks: blocks.map((b) => ({
       id: b.id,
@@ -133,12 +140,34 @@ export async function loadSiteProps(propertyId: string) {
           metaTitle: property.websiteSettings.metaTitle,
           metaDescription: property.websiteSettings.metaDescription,
           isPublished: property.websiteSettings.isPublished,
+          translations: property.websiteSettings.translations,
         }
       : null,
   }
 }
 
 export type SiteProps = NonNullable<Awaited<ReturnType<typeof loadSiteProps>>>
+
+/**
+ * The site in the visitor's language (outside the cache, which holds both):
+ * the hotel's English texts where it wrote them (src/lib/i18n/content.ts),
+ * amenity names from `amenityName(slug, name)` (the shared amenities have
+ * Vietnamese names; their English ones are in messages, site.amenityNames).
+ */
+export function localizeSiteProps(site: SiteProps, locale: Locale, amenityName: (slug: string, name: string) => string): SiteProps {
+  if (locale !== 'en') return site
+  return {
+    ...site,
+    property: localizeRow(site.property, ['description'], locale),
+    amenities: site.amenities.map((a) => ({ ...a, name: amenityName(a.slug, a.name) })),
+    roomTypes: site.roomTypes.map((rt) => ({
+      ...localizeRow(rt, ['name', 'description'], locale),
+      amenities: rt.amenities.map((name, i) => amenityName(rt.amenitySlugs[i], name)),
+    })),
+    services: site.services.map((s) => localizeRow(s, ['name', 'description'], locale)),
+    settings: site.settings && localizeRow(site.settings, ['metaTitle', 'metaDescription'], locale),
+  }
+}
 
 export function getPublicSiteProps(propertyId: string) {
   return unstable_cache(() => loadSiteProps(propertyId), ['public-site', propertyId], {

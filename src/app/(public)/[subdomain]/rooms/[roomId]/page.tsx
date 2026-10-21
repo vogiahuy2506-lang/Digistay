@@ -3,6 +3,9 @@ import { ROOM_RATE_INCLUDE, propertyRateDefaults } from '@/lib/pricing/rates'
 import { notFound } from 'next/navigation'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { prisma } from '@/lib/db'
+import { isLocale } from '@/i18n/locales'
+import { amenityName } from '@/lib/i18n/amenities'
+import { localizeRow } from '@/lib/i18n/content'
 import { SiteHeader, type SiteSection } from '../../_components/SiteHeader'
 import { SiteLink } from '../../_components/site-base'
 import { Container, bedLabel, roomMeta } from '../../_components/site-ui'
@@ -63,14 +66,16 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
     notFound()
   }
 
-  const room = property.roomTypes[0]
+  // The hotel's English texts when the visitor reads English (src/lib/i18n/content.ts).
+  const lang = isLocale(locale) ? locale : 'vi'
+  const room = localizeRow(property.roomTypes[0], ['name', 'description'], lang)
   // The rates a booking is charged (src/lib/pricing/quote.ts); null: no price yet.
   const rates = ratesFrom(room.pricing[0], await propertyRateDefaults(prisma, property.id))
   const blockTypes = new Set(property.websiteBlocks.map((b) => b.type))
   const sections = Object.entries(SECTIONS)
     .filter(([type]) => blockTypes.size === 0 || blockTypes.has(type as never))
     .map(([, s]) => s)
-  const policy = property.policy
+  const policy = property.policy && localizeRow(property.policy, ['cancellationPolicy', 'additionalRules'], lang)
   const photos = room.images
 
   const specs = [
@@ -179,7 +184,7 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
                       return (
                         <li key={amenity.id} className="flex items-center gap-3 border-b border-line py-3 text-body text-fg">
                           <Icon className="h-4 w-4 shrink-0 text-acc" aria-hidden="true" />
-                          {amenity.name}
+                          {amenityName(amenity.slug, amenity.name, lang)}
                         </li>
                       )
                     })}

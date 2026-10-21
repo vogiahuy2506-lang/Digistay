@@ -4,6 +4,8 @@ import { z } from 'zod'
 import { ROOM_RATE_INCLUDE, propertyRateDefaults } from '@/lib/pricing/rates'
 import { roomsTakenByType } from '@/lib/bookings/occupancy'
 import { quoteStay, ratesFrom } from '@/lib/pricing/quote'
+import { amenityName } from '@/lib/i18n/amenities'
+import { localized } from '@/lib/i18n/content'
 
 const querySchema = z.object({
   propertyId: z.string(),
@@ -15,6 +17,8 @@ const querySchema = z.object({
   numChildren: z.coerce.number().int().min(0).max(20).optional(),
   /** "1": also the room types too small for these guests, with fits: false (the hotel site's results) */
   all: z.enum(['1']).optional(),
+  /** "en": room type names, descriptions and amenities in English where the hotel wrote them (the hotel site) */
+  locale: z.enum(['vi', 'en']).optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -29,6 +33,7 @@ export async function GET(request: NextRequest) {
       numAdults: searchParams.get('numAdults') ?? undefined,
       numChildren: searchParams.get('numChildren') ?? undefined,
       all: searchParams.get('all') ?? undefined,
+      locale: searchParams.get('locale') ?? undefined,
     })
 
     if (!query.success) {
@@ -80,6 +85,7 @@ export async function GET(request: NextRequest) {
       propertyRateDefaults(prisma, propertyId),
     ])
 
+    const lang = query.data.locale ?? 'vi'
     const availability = roomTypes.flatMap((roomType) => {
       const rates = ratesFrom(roomType.pricing[0], defaults)
       // A room type without a price cannot be booked: not offered.
@@ -89,8 +95,8 @@ export async function GET(request: NextRequest) {
 
       return [{
         id: roomType.id,
-        name: roomType.name,
-        description: roomType.description,
+        name: localized(roomType, 'name', lang),
+        description: localized(roomType, 'description', lang),
         area: roomType.area,
         bedType: roomType.bedType,
         maxOccupancy: roomType.maxOccupancy,
@@ -107,7 +113,7 @@ export async function GET(request: NextRequest) {
         image: roomType.images[0]?.url || null,
         amenities: roomType.amenities.map(a => ({
           id: a.amenity.id,
-          name: a.amenity.name,
+          name: amenityName(a.amenity.slug, a.amenity.name, lang),
           icon: a.amenity.icon,
         })),
         pricing: {

@@ -1,7 +1,8 @@
+import { blockText } from '@/lib/i18n/content'
 import { Star } from 'lucide-react'
 import type { PublicBlock } from '../PropertySite'
-import { Section, SectionHeader, cfgText } from '../site-ui'
-import { useTranslations } from 'next-intl'
+import { Section, SectionHeader } from '../site-ui'
+import { useLocale, useTranslations } from 'next-intl'
 
 interface Props {
   block: PublicBlock
@@ -34,6 +35,7 @@ function reviewsFrom(config: Record<string, unknown>): Review[] {
  * every hotel's site; with no reviews it now renders nothing.
  */
 export function ReviewsBlock({ block }: Props) {
+  const locale = useLocale()
   const t = useTranslations('site.blocks.reviews')
   const cfg = block.config || {}
   const limit = Number(cfg.reviewsLimit) > 0 ? Number(cfg.reviewsLimit) : 6
@@ -42,7 +44,7 @@ export function ReviewsBlock({ block }: Props) {
 
   return (
     <Section id="reviews">
-      <SectionHeader eyebrow={t('eyebrow')} title={cfgText(cfg, 'reviewsTitle', 'title') ?? t('title')} />
+      <SectionHeader eyebrow={t('eyebrow')} title={blockText(cfg, locale, 'reviewsTitle', 'title') ?? t('title')} />
       <ul className="grid gap-5 md:grid-cols-3">
         {reviews.map((review, i) => (
           <li key={i} className="border border-line bg-panel p-6">

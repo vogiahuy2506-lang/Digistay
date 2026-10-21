@@ -1,7 +1,8 @@
+import { blockText } from '@/lib/i18n/content'
 import { SearchBar } from '../SearchBar'
 import type { PublicBlock, PublicImage, PublicProperty } from '../PropertySite'
-import { Container, Eyebrow, cfgText, propertyTypeLabel } from '../site-ui'
-import { useTranslations } from 'next-intl'
+import { Container, Eyebrow, propertyTypeLabel, cfgText } from '../site-ui'
+import { useLocale, useTranslations } from 'next-intl'
 
 interface Props {
   block: PublicBlock
@@ -22,11 +23,12 @@ interface Photo {
  * search bar overlapping the strip.
  */
 export function HeroBlock({ block, property, images, hasMap }: Props) {
+  const locale = useLocale()
   const t = useTranslations('site')
   const cfg = block.config || {}
-  const title = cfgText(cfg, 'heroTitle', 'title') ?? property.name
+  const title = blockText(cfg, locale, 'heroTitle', 'title') ?? property.name
   const subtitle =
-    cfgText(cfg, 'heroSubtitle', 'subtitle') ?? property.description ?? t('blocks.hero.welcome', { name: property.name })
+    blockText(cfg, locale, 'heroSubtitle', 'subtitle') ?? property.description ?? t('blocks.hero.welcome', { name: property.name })
   const showSearchBar = cfg.showSearchBar !== false
 
   const urls = [cfgText(cfg, 'backgroundImage'), property.coverImage, ...images.map((i) => i.url)].filter(

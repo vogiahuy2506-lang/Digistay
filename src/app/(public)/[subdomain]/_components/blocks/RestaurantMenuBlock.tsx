@@ -1,6 +1,7 @@
+import { blockText } from '@/lib/i18n/content'
 import type { PublicBlock } from '../PropertySite'
-import { Eyebrow, Section, SectionTitle, cfgText } from '../site-ui'
-import { useTranslations } from 'next-intl'
+import { Eyebrow, Section, SectionTitle } from '../site-ui'
+import { useLocale, useTranslations } from 'next-intl'
 
 interface Props {
   block: PublicBlock
@@ -12,9 +13,10 @@ interface Props {
  * render its items here.
  */
 export function RestaurantMenuBlock({ block }: Props) {
+  const locale = useLocale()
   const t = useTranslations('site.blocks.menu')
   const cfg = block.config || {}
-  const title = cfgText(cfg, 'title') ?? t('title')
+  const title = blockText(cfg, locale, 'title') ?? t('title')
 
   return (
     <Section id="menu">
@@ -22,7 +24,7 @@ export function RestaurantMenuBlock({ block }: Props) {
         <Eyebrow>{t('eyebrow')}</Eyebrow>
         <SectionTitle>{title}</SectionTitle>
         <p className="mt-6 text-body text-muted">{t('empty')}</p>
-        {cfgText(cfg, 'contactNote') && <p className="mt-2 text-small text-muted">{cfgText(cfg, 'contactNote')}</p>}
+        {blockText(cfg, locale, 'contactNote') && <p className="mt-2 text-small text-muted">{blockText(cfg, locale, 'contactNote')}</p>}
       </div>
     </Section>
   )

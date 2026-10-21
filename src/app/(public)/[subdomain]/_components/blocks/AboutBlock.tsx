@@ -1,6 +1,7 @@
+import { blockText } from '@/lib/i18n/content'
 import type { PublicBlock, PublicProperty } from '../PropertySite'
-import { Eyebrow, Section, SectionTitle, cfgText } from '../site-ui'
-import { useTranslations } from 'next-intl'
+import { Eyebrow, Section, SectionTitle } from '../site-ui'
+import { useLocale, useTranslations } from 'next-intl'
 
 interface Props {
   block: PublicBlock
@@ -8,10 +9,11 @@ interface Props {
 }
 
 export function AboutBlock({ block, property }: Props) {
+  const locale = useLocale()
   const t = useTranslations('site.blocks.about')
   const cfg = block.config || {}
-  const title = cfgText(cfg, 'aboutTitle', 'title') ?? t('title')
-  const description = cfgText(cfg, 'aboutContent', 'description') ?? property.description
+  const title = blockText(cfg, locale, 'aboutTitle', 'title') ?? t('title')
+  const description = blockText(cfg, locale, 'aboutContent', 'description') ?? property.description
 
   if (!description) return null
 

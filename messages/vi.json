@@ -343,6 +343,33 @@
         "confirmedChip": "Khách sạn đã xác nhận",
         "confirmedLead": "{hotel} đã xác nhận đặt phòng của bạn. Bạn thanh toán khi nhận phòng."
       }
+    },
+    "amenityNames": {
+      "wifi": "Wifi miễn phí",
+      "parking": "Bãi đỗ xe",
+      "breakfast": "Ăn sáng miễn phí",
+      "ac": "Điều hòa không khí",
+      "pool": "Hồ bơi",
+      "gym": "Phòng gym",
+      "spa": "Spa & Massage",
+      "restaurant": "Nhà hàng",
+      "bar": "Quầy bar",
+      "room-service": "Dịch vụ phòng",
+      "laundry": "Giặt ủi",
+      "airport": "Đưa đón sân bay",
+      "kitchen": "Bếp chung",
+      "kitchenette": "Khu vực bếp",
+      "washing-machine": "Máy giặt",
+      "tv": "Tivi",
+      "minibar": "Minibar",
+      "safe": "Két sắt",
+      "balcony": "Ban công",
+      "sea-view": "View biển",
+      "mountain-view": "View núi",
+      "elevator": "Thang máy",
+      "reception": "Lễ tân 24/7",
+      "security": "Bảo vệ",
+      "cctv": "Camera an ninh"
     }
   },
   "marketing": {

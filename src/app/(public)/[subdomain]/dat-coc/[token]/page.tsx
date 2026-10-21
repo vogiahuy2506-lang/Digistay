@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import QRCode from 'qrcode'
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
+import { localized } from '@/lib/i18n/content'
 import { loadDepositView } from '@/lib/payments/deposit-view'
 import { BookingFooter, BookingHeader, BookingSteps, loadBookingFrame, sitePath } from '../../_components/booking/frame'
 import { StaySummary } from '../../_components/booking/StaySummary'
@@ -31,6 +32,7 @@ export default async function DepositPage({ params }: PageProps) {
   // Paid, or nothing to pay online: straight to the confirmation.
   if (view.state === 'paid' || view.state === 'none') redirect(await sitePath(subdomain, `/xac-nhan/${token}`))
   const t = await getTranslations('site')
+  const lang = (await getLocale()) === 'en' ? 'en' : 'vi'
 
   const qrImage = view.payment?.qr ? await QRCode.toDataURL(view.payment.qr, { margin: 1, width: 560, errorCorrectionLevel: 'M' }) : null
   const titles = {
@@ -71,7 +73,7 @@ export default async function DepositPage({ params }: PageProps) {
           <div>
             <StaySummary
               compact
-              room={view.room && { name: view.room.name, image: view.room.image, spec: view.room.bedType ? bedLabel(view.room.bedType, t) : '' }}
+              room={view.room && { name: localized(view.room, 'name', lang), image: view.room.image, spec: view.room.bedType ? bedLabel(view.room.bedType, t) : '' }}
               checkIn={view.checkIn}
               checkOut={view.checkOut}
               checkInTime={view.property.checkInTime}

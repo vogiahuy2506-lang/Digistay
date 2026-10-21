@@ -239,6 +239,8 @@ model Property {
   logo        String?
   coverImage  String?
   description String?  @db.Text
+  /// The hotel's own texts in English: { en: { name?, description?, ... } }. Empty: the Vietnamese shows (src/lib/i18n/content.ts).
+  translations Json?
   
   // Subdomain
   subdomain   String   @unique
@@ -293,6 +295,8 @@ model RoomType {
   
   // Room details
   description String?  @db.Text
+  /// The hotel's own texts in English: { en: { name?, description?, ... } }. Empty: the Vietnamese shows (src/lib/i18n/content.ts).
+  translations Json?
   area        Float?   // Diện tích (m2)
   bedType     BedType
   maxAdults   Int      @default(2)
@@ -508,6 +512,8 @@ model Policy {
   
   // Other rules
   additionalRules  String? @db.Text
+  /// The hotel's own texts in English: { en: { name?, description?, ... } }. Empty: the Vietnamese shows (src/lib/i18n/content.ts).
+  translations Json?
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -576,6 +582,8 @@ model WebsiteSettings {
   // SEO
   metaTitle       String?
   metaDescription  String?
+  /// The hotel's own texts in English: { en: { name?, description?, ... } }. Empty: the Vietnamese shows (src/lib/i18n/content.ts).
+  translations Json?
   metaKeywords    String?
   
   // Custom domain
@@ -776,6 +784,8 @@ model ExtraService {
   
   name        String
   description String?
+  /// The hotel's own texts in English: { en: { name?, description?, ... } }. Empty: the Vietnamese shows (src/lib/i18n/content.ts).
+  translations Json?
   
   // Pricing
   priceType   PriceType @default(FIXED)

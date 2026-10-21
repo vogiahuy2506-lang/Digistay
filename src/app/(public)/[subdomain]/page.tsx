@@ -1,5 +1,8 @@
 import { notFound } from 'next/navigation'
-import { getPublicSiteProps } from '@/lib/public-site/site'
+import { getLocale } from 'next-intl/server'
+import { amenityName } from '@/lib/i18n/amenities'
+import { isLocale } from '@/i18n/locales'
+import { getPublicSiteProps, localizeSiteProps } from '@/lib/public-site/site'
 import { loadVisibleSite } from '@/lib/public-site/visibility'
 import { PropertySite } from './_components/PropertySite'
 
@@ -23,5 +26,7 @@ export default async function PublicPropertyPage({ params }: PageProps) {
   const site = await getPublicSiteProps(visible.propertyId)
   if (!site) notFound()
 
-  return <PropertySite {...site} />
+  const current = await getLocale()
+  const locale = isLocale(current) ? current : 'vi'
+  return <PropertySite {...localizeSiteProps(site, locale, (slug, name) => amenityName(slug, name, locale))} />
 }
