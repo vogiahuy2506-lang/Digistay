@@ -15,10 +15,10 @@ import {
 interface DailyTransaction {
   id: string
   type: 'IN' | 'OUT'
-  category: string
-  description: string
+  category: 'PAYMENT' | 'REFUND' | 'CHECK_IN' | 'CHECK_OUT'
+  description: string | null
   amount: number
-  paymentMethod: string
+  method: string | null
   createdAt: string
 }
 
@@ -36,7 +36,6 @@ interface MethodBreakdown {
   method: string
   amount: number
   count: number
-  label: string
 }
 
 const METHOD_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -256,15 +255,15 @@ export default function DailyReportPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <p className="font-medium">{tx.description}</p>
-                      <p className="text-sm text-muted">{tx.category}</p>
+                      <p className="font-medium">{tx.description ?? t('paymentNumber', { id: tx.id })}</p>
+                      <p className="text-sm text-muted">{t(`category.${tx.category}`)}</p>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        {tx.paymentMethod === 'Tiền mặt' && <Banknote className="w-4 h-4 text-muted" />}
-                        {tx.paymentMethod === 'Chuyển khoản' && <CreditCard className="w-4 h-4 text-muted" />}
-                        {tx.paymentMethod === 'QR VietQR' && <DollarSign className="w-4 h-4 text-muted" />}
-                        {tx.paymentMethod}
+                        {tx.method === 'CASH' && <Banknote className="w-4 h-4 text-muted" aria-hidden="true" />}
+                        {tx.method === 'BANK_TRANSFER' && <CreditCard className="w-4 h-4 text-muted" aria-hidden="true" />}
+                        {tx.method === 'QR_VIETQR' && <DollarSign className="w-4 h-4 text-muted" aria-hidden="true" />}
+                        {tx.method ? labels.paymentMethod(tx.method) : '—'}
                       </div>
                     </TableCell>
                     <TableCell

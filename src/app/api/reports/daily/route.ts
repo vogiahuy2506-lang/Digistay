@@ -63,9 +63,9 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Date range: 00:00 → 23:59:59 in UTC
-    const start = new Date(`${dateStr}T00:00:00.000Z`)
-    const end = new Date(`${dateStr}T23:59:59.999Z`)
+    // The hotel's day: 00:00 → 23:59:59 in Vietnam time (UTC+7, no daylight saving)
+    const start = new Date(`${dateStr}T00:00:00.000+07:00`)
+    const end = new Date(`${dateStr}T23:59:59.999+07:00`)
     if (Number.isNaN(start.getTime())) {
       return NextResponse.json(
         { success: false, error: 'date không hợp lệ (YYYY-MM-DD)' },
@@ -152,12 +152,12 @@ export async function GET(request: NextRequest) {
     // Group PAID payments by method for the 3 breakdown cards
     const byMethod: Record<
       string,
-      { amount: number; count: number; label: string }
+      { amount: number; count: number }
     > = {}
     for (const p of paidByMethod) {
       const key = p.method
       if (!byMethod[key]) {
-        byMethod[key] = { amount: 0, count: 0, label: methodLabel(key) }
+        byMethod[key] = { amount: 0, count: 0 }
       }
       byMethod[key].amount += p.amount
       byMethod[key].count += 1
@@ -167,30 +167,31 @@ export async function GET(request: NextRequest) {
       ...value,
     }))
 
-    // Flatten to a unified "transaction" list for the report table
+    // Flatten to a unified "transaction" list for the report table. `category`
+    // and `method` are codes: the page names them in the viewer's language.
     const transactions: Array<{
       id: string
       type: 'IN' | 'OUT'
-      category: string
-      description: string
+      category: 'PAYMENT' | 'REFUND' | 'CHECK_IN' | 'CHECK_OUT'
+      /** the booking ("MB-10206 — guest"), null for a payment without one */
+      description: string | null
       amount: number
-      paymentMethod: string
+      /** PaymentMethod code, null for check-in / check-out */
+      method: string | null
+      /** HH:mm, Vietnam time */
       createdAt: string
     }> = []
 
     for (const p of payments) {
       const isRefund = p.status === 'REFUNDED'
-      const time = (p.paidAt ?? p.updatedAt).toISOString().slice(11, 16)
       transactions.push({
         id: p.id,
         type: isRefund ? 'OUT' : 'IN',
-        category: isRefund ? 'Hoàn tiền' : 'Thanh toán',
-        description: p.booking
-          ? `${p.booking.bookingCode} — ${p.booking.guestName}`
-          : `Thanh toán #${p.id}`,
+        category: isRefund ? 'REFUND' : 'PAYMENT',
+        description: p.booking ? `${p.booking.bookingCode} — ${p.booking.guestName}` : null,
         amount: p.amount,
-        paymentMethod: methodLabel(p.method),
-        createdAt: time,
+        method: p.method,
+        createdAt: vnTime(p.paidAt ?? p.updatedAt),
       })
     }
 
@@ -199,22 +200,22 @@ export async function GET(request: NextRequest) {
       transactions.push({
         id: `checkin-${b.id}`,
         type: 'OUT', // not strictly cash flow, marked as a service event
-        category: 'Check-in',
+        category: 'CHECK_IN',
         description: `${b.bookingCode} — ${b.guestName}`,
         amount: 0,
-        paymentMethod: '—',
-        createdAt: b.actualCheckIn!.toISOString().slice(11, 16),
+        method: null,
+        createdAt: vnTime(b.actualCheckIn!),
       })
     }
     for (const b of checkOuts) {
       transactions.push({
         id: `checkout-${b.id}`,
         type: 'IN',
-        category: 'Check-out',
+        category: 'CHECK_OUT',
         description: `${b.bookingCode} — ${b.guestName}`,
         amount: 0,
-        paymentMethod: '—',
-        createdAt: b.actualCheckOut!.toISOString().slice(11, 16),
+        method: null,
+        createdAt: vnTime(b.actualCheckOut!),
       })
     }
 
@@ -246,20 +247,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function methodLabel(m: string): string {
-  switch (m) {
-    case 'BANK_TRANSFER':
-      return 'Chuyển khoản'
-    case 'QR_VIETQR':
-      return 'QR VietQR'
-    case 'CARD':
-    case 'CREDIT_CARD':
-      return 'Thẻ tín dụng'
-    case 'E_WALLET':
-      return 'Ví điện tử'
-    case 'CASH':
-      return 'Tiền mặt'
-    default:
-      return m
-  }
+/** HH:mm in Vietnam time (UTC+7). */
+function vnTime(d: Date): string {
+  return new Date(d.getTime() + 7 * 3_600_000).toISOString().slice(11, 16)
 }

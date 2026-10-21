@@ -43,6 +43,13 @@
     },
     "count": "{count, plural, one {# transaction} other {# transactions}}",
     "loadError": "Could not load the cash book",
-    "error": "Something went wrong loading the cash book"
+    "error": "Something went wrong loading the cash book",
+    "paymentNumber": "Payment #{id}",
+    "category": {
+      "PAYMENT": "Payment",
+      "REFUND": "Refund",
+      "CHECK_IN": "Check-in",
+      "CHECK_OUT": "Check-out"
+    }
   }
 }

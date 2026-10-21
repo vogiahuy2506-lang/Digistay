@@ -43,6 +43,13 @@
     },
     "count": "{count} giao dịch",
     "loadError": "Không thể tải sổ quỹ",
-    "error": "Đã xảy ra lỗi khi tải sổ quỹ"
+    "error": "Đã xảy ra lỗi khi tải sổ quỹ",
+    "paymentNumber": "Thanh toán #{id}",
+    "category": {
+      "PAYMENT": "Thanh toán",
+      "REFUND": "Hoàn tiền",
+      "CHECK_IN": "Check-in",
+      "CHECK_OUT": "Check-out"
+    }
   }
 }

@@ -786,6 +786,8 @@ model ExtraService {
   description String?
   /// The hotel's own texts in English: { en: { name?, description?, ... } }. Empty: the Vietnamese shows (src/lib/i18n/content.ts).
   translations Json?
+  /// laundry | transport | food | entertainment | other (the services page's groups)
+  category    String?
   
   // Pricing
   priceType   PriceType @default(FIXED)
