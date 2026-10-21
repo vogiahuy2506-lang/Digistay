@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Card, CardHeader, CardTitle, CardContent, Badge, BookingStatusBadge, Button } from '@/components/ui'
 import { useWorkspace } from '@/lib/hooks/use-workspace'
 import { routes } from '@/lib/utils/routes'
+import { useDashLabels } from '@/lib/i18n/dash'
 import {
   Building2,
   Users,
@@ -44,6 +46,9 @@ interface Booking {
 }
 
 export default function WorkspaceDashboardPage() {
+  const t = useTranslations('dash.workspace')
+  const tc = useTranslations('dash.common')
+  const labels = useDashLabels()
   const { workspace, loading: wsLoading } = useWorkspace()
   const [stats, setStats] = useState<Stats | null>(null)
   const [properties, setProperties] = useState<Property[]>([])
@@ -108,20 +113,12 @@ export default function WorkspaceDashboardPage() {
 
   if (!workspace) return null
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
-
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-fg">Tổng quan</h1>
-        <p className="text-muted mt-1">Xem nhanh tình trạng workspace của bạn</p>
+        <h1 className="text-2xl font-bold text-fg">{tc('nav.overview')}</h1>
+        <p className="text-muted mt-1">{t('overview.subtitle')}</p>
       </div>
 
       {/* Stats Cards */}
@@ -130,7 +127,7 @@ export default function WorkspaceDashboardPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted">Tổng cơ sở</p>
+                <p className="text-sm text-muted">{t('overview.totalProperties')}</p>
                 <p className="text-3xl font-bold text-fg mt-1">{stats?.totalProperties || 0}</p>
               </div>
               <div className="w-12 h-12 rounded-lg bg-info-soft flex items-center justify-center">
@@ -138,7 +135,7 @@ export default function WorkspaceDashboardPage() {
               </div>
             </div>
             <p className="text-sm text-ok mt-2">
-              {stats?.activeProperties || 0} đang hoạt động
+              {t('overview.activeCount', { count: stats?.activeProperties || 0 })}
             </p>
           </CardContent>
         </Card>
@@ -147,7 +144,7 @@ export default function WorkspaceDashboardPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted">Đặt phòng</p>
+                <p className="text-sm text-muted">{tc('nav.bookings')}</p>
                 <p className="text-3xl font-bold text-fg mt-1">{stats?.totalBookings || 0}</p>
               </div>
               <div className="w-12 h-12 rounded-lg bg-refund-soft flex items-center justify-center">
@@ -155,7 +152,7 @@ export default function WorkspaceDashboardPage() {
               </div>
             </div>
             <p className="text-sm text-warn mt-2">
-              {stats?.pendingBookings || 0} chờ xử lý
+              {t('pendingCount', { count: stats?.pendingBookings || 0 })}
             </p>
           </CardContent>
         </Card>
@@ -164,9 +161,9 @@ export default function WorkspaceDashboardPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted">Doanh thu tháng</p>
+                <p className="text-sm text-muted">{t('overview.monthlyRevenue')}</p>
                 <p className="text-2xl font-bold text-fg mt-1">
-                  {formatCurrency(stats?.monthlyRevenue || 0)}
+                  {labels.money(stats?.monthlyRevenue || 0)}
                 </p>
               </div>
               <div className="w-12 h-12 rounded-lg bg-ok-soft flex items-center justify-center">
@@ -180,7 +177,7 @@ export default function WorkspaceDashboardPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted">Thành viên</p>
+                <p className="text-sm text-muted">{tc('nav.members')}</p>
                 <p className="text-3xl font-bold text-fg mt-1">-</p>
               </div>
               <div className="w-12 h-12 rounded-lg bg-warn-soft flex items-center justify-center">
@@ -191,7 +188,7 @@ export default function WorkspaceDashboardPage() {
               href={routes.members(workspace.slug)}
               className="text-sm text-acc hover:underline mt-2 inline-block"
             >
-              Quản lý thành viên
+              {t('overview.manageMembers')}
             </Link>
           </CardContent>
         </Card>
@@ -201,10 +198,10 @@ export default function WorkspaceDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Cơ sở của bạn</CardTitle>
+            <CardTitle>{t('overview.yourProperties')}</CardTitle>
             <Link href={routes.properties(workspace.slug)}>
               <Button variant="outline" size="sm">
-                Xem tất cả
+                {t('overview.viewAll')}
                 <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
             </Link>
@@ -224,11 +221,11 @@ export default function WorkspaceDashboardPage() {
                       </div>
                       <div>
                         <p className="font-medium text-fg">{p.name}</p>
-                        <p className="text-sm text-muted">{p._count?.roomTypes || 0} hạng phòng</p>
+                        <p className="text-sm text-muted">{t('roomTypeCount', { count: p._count?.roomTypes || 0 })}</p>
                       </div>
                     </div>
                     <Badge variant={p.isActive ? 'success' : 'gray'}>
-                      {p.isActive ? 'Hoạt động' : 'Tạm dừng'}
+                      {p.isActive ? t('propertyStatus.active') : t('propertyStatus.paused')}
                     </Badge>
                   </Link>
                 ))}
@@ -236,9 +233,9 @@ export default function WorkspaceDashboardPage() {
             ) : (
               <div className="text-center py-8">
                 <Building2 className="w-12 h-12 text-muted mx-auto mb-3" />
-                <p className="text-muted mb-3">Chưa có cơ sở nào</p>
+                <p className="text-muted mb-3">{t('overview.noProperties')}</p>
                 <Link href={routes.properties(workspace.slug)}>
-                  <Button size="sm">Tạo cơ sở đầu tiên</Button>
+                  <Button size="sm">{t('createFirstProperty')}</Button>
                 </Link>
               </div>
             )}
@@ -248,9 +245,9 @@ export default function WorkspaceDashboardPage() {
         {/* Recent Bookings */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Đặt phòng gần đây</CardTitle>
+            <CardTitle>{t('overview.recentBookings')}</CardTitle>
             <Button variant="outline" size="sm">
-              Xem tất cả
+              {t('overview.viewAll')}
               <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           </CardHeader>
@@ -275,7 +272,7 @@ export default function WorkspaceDashboardPage() {
             ) : (
               <div className="text-center py-8">
                 <BookOpen className="w-12 h-12 text-muted mx-auto mb-3" />
-                <p className="text-muted">Chưa có đặt phòng nào</p>
+                <p className="text-muted">{t('overview.noBookings')}</p>
               </div>
             )}
           </CardContent>
@@ -285,32 +282,32 @@ export default function WorkspaceDashboardPage() {
       {/* Quick Actions */}
       <Card>
         <CardHeader>
-          <CardTitle>Thao tác nhanh</CardTitle>
+          <CardTitle>{t('overview.quickActions')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Link href={routes.properties(workspace.slug)}>
               <div className="p-4 rounded-lg border hover:border-acc hover:bg-acc-soft transition-colors cursor-pointer text-center">
                 <Building2 className="w-8 h-8 text-acc mx-auto mb-2" />
-                <p className="font-medium text-fg">Quản lý cơ sở</p>
+                <p className="font-medium text-fg">{t('overview.manageProperties')}</p>
               </div>
             </Link>
             <Link href={routes.members(workspace.slug)}>
               <div className="p-4 rounded-lg border hover:border-acc hover:bg-acc-soft transition-colors cursor-pointer text-center">
                 <Users className="w-8 h-8 text-acc mx-auto mb-2" />
-                <p className="font-medium text-fg">Thành viên</p>
+                <p className="font-medium text-fg">{tc('nav.members')}</p>
               </div>
             </Link>
             <Link href={routes.properties(workspace.slug)}>
               <div className="p-4 rounded-lg border hover:border-acc hover:bg-acc-soft transition-colors cursor-pointer text-center">
                 <Bed className="w-8 h-8 text-acc mx-auto mb-2" />
-                <p className="font-medium text-fg">Hạng phòng</p>
+                <p className="font-medium text-fg">{tc('nav.rooms')}</p>
               </div>
             </Link>
             <Link href={routes.properties(workspace.slug)}>
               <div className="p-4 rounded-lg border hover:border-acc hover:bg-acc-soft transition-colors cursor-pointer text-center">
                 <Calendar className="w-8 h-8 text-acc mx-auto mb-2" />
-                <p className="font-medium text-fg">Lịch phòng</p>
+                <p className="font-medium text-fg">{tc('nav.calendar')}</p>
               </div>
             </Link>
           </div>

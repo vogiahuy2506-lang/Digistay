@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
+import { useLocale, useTranslations } from 'next-intl'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, Button, Badge, Modal, ModalFooter, Input, Select } from '@/components/ui'
 import { Plus, Users, Mail, MoreVertical, Shield, User, Trash2, UserPlus } from 'lucide-react'
@@ -9,7 +10,7 @@ import { Dropdown, DropdownItem, DropdownDivider } from '@/components/ui'
 import { Avatar } from '@/components/ui'
 import { useWorkspace } from '@/lib/hooks/use-workspace'
 import { routes } from '@/lib/utils/routes'
-import { formatDate } from '@/lib/utils'
+import { useDashLabels } from '@/lib/i18n/dash'
 
 interface Member {
   id: string
@@ -42,6 +43,10 @@ interface Invitation {
 }
 
 export default function MembersPage() {
+  const t = useTranslations('dash.workspace')
+  const tc = useTranslations('dash.common')
+  const labels = useDashLabels()
+  const locale = useLocale()
   const router = useRouter()
   const { workspace } = useWorkspace()
   const workspaceId = workspace?.id
@@ -105,7 +110,7 @@ export default function MembersPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || 'Đã xảy ra lỗi')
+        setError(data.error || t('errors.generic'))
         return
       }
 
@@ -113,7 +118,7 @@ export default function MembersPage() {
       setInviteForm({ email: '', role: 'STAFF' })
       fetchData()
     } catch (err) {
-      setError('Đã xảy ra lỗi, vui lòng thử lại')
+      setError(tc('states.error'))
     } finally {
       setIsInviting(false)
     }
@@ -133,7 +138,7 @@ export default function MembersPage() {
   }
 
   const handleRemoveMember = async (memberId: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa thành viên này?')) return
+    if (!confirm(t('members.confirmRemove'))) return
 
     try {
       await fetch(`/api/workspaces/${workspaceId}/members?memberId=${memberId}`, {
@@ -145,17 +150,25 @@ export default function MembersPage() {
     }
   }
 
+  // The invitation date, as formatDate (src/lib/utils) wrote it, in the page's language.
+  const invitedOn = new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'vi-VN', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+
   const getRoleBadge = (role: string, isOwner?: boolean) => {
-    if (isOwner) return <Badge variant="warning">Chủ sở hữu</Badge>
+    if (isOwner) return <Badge variant="warning">{t('members.owner')}</Badge>
     switch (role) {
       case 'ADMIN':
-        return <Badge variant="danger">Quản trị viên</Badge>
+        return <Badge variant="danger">{t('members.roleAdmin')}</Badge>
       case 'MANAGER':
-        return <Badge variant="primary">Quản lý</Badge>
+        return <Badge variant="primary">{labels.role(role)}</Badge>
       case 'RECEPTIONIST':
-        return <Badge variant="secondary">Lễ tân</Badge>
+        return <Badge variant="secondary">{labels.role(role)}</Badge>
       case 'USER':
-        return <Badge variant="gray">Nhân viên</Badge>
+        return <Badge variant="gray">{labels.role(role)}</Badge>
       default:
         return <Badge variant="gray">{role}</Badge>
     }
@@ -164,13 +177,13 @@ export default function MembersPage() {
   const getInvitationStatusBadge = (status: string) => {
     switch (status) {
       case 'PENDING':
-        return <Badge variant="warning">Đang chờ</Badge>
+        return <Badge variant="warning">{t('members.invitationStatus.PENDING')}</Badge>
       case 'ACCEPTED':
-        return <Badge variant="success">Đã chấp nhận</Badge>
+        return <Badge variant="success">{t('members.invitationStatus.ACCEPTED')}</Badge>
       case 'DECLINED':
-        return <Badge variant="danger">Đã từ chối</Badge>
+        return <Badge variant="danger">{t('members.invitationStatus.DECLINED')}</Badge>
       case 'EXPIRED':
-        return <Badge variant="gray">Hết hạn</Badge>
+        return <Badge variant="gray">{t('members.invitationStatus.EXPIRED')}</Badge>
       default:
         return <Badge variant="gray">{status}</Badge>
     }
@@ -183,13 +196,13 @@ export default function MembersPage() {
           <CardContent className="p-12 text-center">
             <Users className="w-16 h-16 text-muted mx-auto mb-4" />
             <h3 className="text-lg font-medium text-fg mb-2">
-              Vui lòng chọn Workspace
+              {t('noWorkspace.title')}
             </h3>
             <p className="text-muted mb-6">
-              Bạn cần chọn một workspace để quản lý thành viên.
+              {t('members.noWorkspaceText')}
             </p>
             <Button onClick={() => router.push(routes.workspaces())}>
-              Chuyển đến Workspace
+              {t('noWorkspace.goTo')}
             </Button>
           </CardContent>
         </Card>
@@ -200,12 +213,12 @@ export default function MembersPage() {
   return (
     <PageContainer>
       <Header
-        title="Thành viên"
-        description="Quản lý thành viên và phân quyền trong workspace"
+        title={tc('nav.members')}
+        description={t('members.description')}
         actions={
           <Button onClick={() => setShowInviteModal(true)}>
             <UserPlus className="w-4 h-4 mr-2" />
-            Mời thành viên
+            {t('members.invite')}
           </Button>
         }
       />
@@ -221,17 +234,17 @@ export default function MembersPage() {
             <CardContent className="p-0">
               <div className="px-6 py-4 border-b border-line">
                 <h2 className="font-semibold text-fg">
-                  Thành viên ({members.length})
+                  {t('members.listTitle', { count: members.length })}
                 </h2>
               </div>
               
               {members.length === 0 ? (
                 <div className="p-12 text-center">
                   <Users className="w-12 h-12 text-muted mx-auto mb-4" />
-                  <p className="text-muted mb-4">Chưa có thành viên nào</p>
+                  <p className="text-muted mb-4">{t('members.empty')}</p>
                   <Button onClick={() => setShowInviteModal(true)}>
                     <UserPlus className="w-4 h-4 mr-2" />
-                    Mời thành viên đầu tiên
+                    {t('members.inviteFirst')}
                   </Button>
                 </div>
               ) : (
@@ -246,7 +259,7 @@ export default function MembersPage() {
                         />
                         <div>
                           <p className="font-medium text-fg">
-                            {member.user.name || 'Chưa đặt tên'}
+                            {member.user.name || t('members.noName')}
                           </p>
                           <p className="text-sm text-muted">{member.user.email}</p>
                         </div>
@@ -266,25 +279,25 @@ export default function MembersPage() {
                               icon={<Shield className="w-4 h-4" />}
                               onClick={() => handleUpdateRole(member.id, 'ADMIN')}
                             >
-                              Thăng lên Quản trị viên
+                              {t('members.makeAdmin')}
                             </DropdownItem>
                             <DropdownItem 
                               icon={<Shield className="w-4 h-4" />}
                               onClick={() => handleUpdateRole(member.id, 'MANAGER')}
                             >
-                              Thăng lên Quản lý
+                              {t('members.makeManager')}
                             </DropdownItem>
                             <DropdownItem 
                               icon={<User className="w-4 h-4" />}
                               onClick={() => handleUpdateRole(member.id, 'RECEPTIONIST')}
                             >
-                              Đặt làm Lễ tân
+                              {t('members.makeReceptionist')}
                             </DropdownItem>
                             <DropdownItem 
                               icon={<User className="w-4 h-4" />}
                               onClick={() => handleUpdateRole(member.id, 'USER')}
                             >
-                              Đặt làm Nhân viên
+                              {t('members.makeUser')}
                             </DropdownItem>
                             <DropdownDivider />
                             <DropdownItem 
@@ -292,7 +305,7 @@ export default function MembersPage() {
                               danger
                               onClick={() => handleRemoveMember(member.id)}
                             >
-                              Xóa khỏi Workspace
+                              {t('members.remove')}
                             </DropdownItem>
                           </Dropdown>
                         )}
@@ -310,7 +323,7 @@ export default function MembersPage() {
               <CardContent className="p-0">
                 <div className="px-6 py-4 border-b border-line">
                   <h2 className="font-semibold text-fg">
-                    Lời mời đang chờ ({invitations.filter(i => i.status === 'PENDING').length})
+                    {t('members.pendingTitle', { count: invitations.filter(i => i.status === 'PENDING').length })}
                   </h2>
                 </div>
                 
@@ -324,8 +337,10 @@ export default function MembersPage() {
                         <div>
                           <p className="font-medium text-fg">{invitation.email}</p>
                           <p className="text-sm text-muted">
-                            Mời bởi {invitation.sender.name || invitation.sender.email} •
-                            {' '}{formatDate(invitation.createdAt)}
+                            {t('members.invitedBy', {
+                              name: invitation.sender.name || invitation.sender.email,
+                              date: invitedOn.format(new Date(invitation.createdAt)),
+                            })}
                           </p>
                         </div>
                       </div>
@@ -346,8 +361,8 @@ export default function MembersPage() {
       <Modal
         isOpen={showInviteModal}
         onClose={() => setShowInviteModal(false)}
-        title="Mời thành viên"
-        description="Gửi lời mời qua email để tham gia workspace này"
+        title={t('members.invite')}
+        description={t('members.modal.description')}
       >
         <form onSubmit={handleInvite}>
           {error && (
@@ -360,23 +375,23 @@ export default function MembersPage() {
             <Input
               label="Email"
               type="email"
-              placeholder="nguoi-moi@example.com"
+              placeholder={t('members.modal.emailPlaceholder')}
               value={inviteForm.email}
               onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
               required
             />
 
             <Select
-              label="Vai trò"
+              label={t('members.modal.role')}
               options={[
-                { value: 'USER', label: 'Nhân viên' },
-                { value: 'RECEPTIONIST', label: 'Lễ tân' },
-                { value: 'MANAGER', label: 'Quản lý' },
-                { value: 'ADMIN', label: 'Quản trị viên' },
+                { value: 'USER', label: labels.role('USER') },
+                { value: 'RECEPTIONIST', label: labels.role('RECEPTIONIST') },
+                { value: 'MANAGER', label: labels.role('MANAGER') },
+                { value: 'ADMIN', label: t('members.roleAdmin') },
               ]}
               value={inviteForm.role}
               onChange={(e) => setInviteForm({ ...inviteForm, role: e.target.value })}
-              hint="Quản trị viên có thể quản lý cơ sở và mời thành viên khác"
+              hint={t('members.modal.roleHint')}
             />
           </div>
 
@@ -386,11 +401,11 @@ export default function MembersPage() {
               variant="outline"
               onClick={() => setShowInviteModal(false)}
             >
-              Hủy
+              {tc('actions.cancel')}
             </Button>
             <Button type="submit" isLoading={isInviting}>
               <Mail className="w-4 h-4 mr-2" />
-              Gửi lời mời
+              {t('members.modal.send')}
             </Button>
           </ModalFooter>
         </form>

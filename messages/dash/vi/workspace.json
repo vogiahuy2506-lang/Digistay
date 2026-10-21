@@ -1,1 +1,277 @@
-{}
+{
+  "errors": {
+    "generic": "Đã xảy ra lỗi"
+  },
+  "noWorkspace": {
+    "title": "Vui lòng chọn Workspace",
+    "goTo": "Chuyển đến Workspace"
+  },
+  "logo": {
+    "upload": "Tải logo lên",
+    "tooLarge": "Kích thước file không được vượt quá 2MB"
+  },
+  "defaultCurrency": "Tiền tệ mặc định",
+  "currencies": {
+    "VND": "VND (₫) - Đồng Việt Nam",
+    "USD": "USD ($) - US Dollar",
+    "EUR": "EUR (€) - Euro",
+    "SGD": "SGD ($) - Singapore Dollar"
+  },
+  "descriptionOptional": "Mô tả (tùy chọn)",
+  "propertyStatus": {
+    "active": "Hoạt động",
+    "paused": "Tạm dừng"
+  },
+  "roomTypeCount": "{count} hạng phòng",
+  "memberCount": "{count} thành viên",
+  "pendingCount": "{count} chờ xử lý",
+  "createFirstProperty": "Tạo cơ sở đầu tiên",
+  "list": {
+    "breadcrumb": "Không gian làm việc",
+    "createWorkspace": "Tạo workspace mới",
+    "hero": {
+      "badge": "Hệ điều hành vận hành khách sạn & chuỗi Boutique",
+      "welcome": "Chào mừng bạn quay lại, {name}",
+      "welcomeNoName": "Chào mừng bạn quay lại, bạn",
+      "intro": "Quản trị tập trung danh mục khách sạn, chuỗi villa và hệ thống booking trực tiếp của bạn. Bạn có thể mở rộng cơ sở, kiểm tra công suất phòng hoặc chuyển đổi giữa các không gian quản trị."
+    },
+    "tabs": {
+      "all": "Tất cả",
+      "owned": "Chuỗi sở hữu",
+      "invited": "Được mời quản lý"
+    },
+    "searchPlaceholder": "Tìm nhanh workspace...",
+    "card": {
+      "owner": "Chủ sở hữu",
+      "member": "Thành viên",
+      "options": "Tùy chọn",
+      "edit": "Chỉnh sửa",
+      "delete": "Xoá workspace",
+      "staff": "Nhân sự",
+      "propertyCount": "{count, plural, =0 {# cơ sở} =1 {# cơ sở} other {# chi nhánh}}",
+      "open": "Vào workspace"
+    },
+    "newCard": {
+      "title": "Khởi tạo Workspace mới",
+      "text": "Mở rộng chuỗi khách sạn, khu nghỉ dưỡng sinh thái, villa hoặc homestay mới.",
+      "start": "Bắt đầu thiết lập"
+    },
+    "invitations": {
+      "title": "Lời mời cộng tác mới",
+      "new": "Mới",
+      "proposedRole": "Vai trò đề xuất: <b>{role}</b>",
+      "from": "Gửi từ: {sender}",
+      "accept": "Chấp nhận lời mời",
+      "decline": "Từ chối",
+      "empty": "Không có lời mời cộng tác nào",
+      "accepted": "Đã chấp nhận lời mời!",
+      "acceptFailed": "Không thể chấp nhận lời mời",
+      "declined": "Đã từ chối lời mời",
+      "declineFailed": "Không thể từ chối lời mời"
+    },
+    "updated": "Cập nhật workspace thành công",
+    "confirmDelete": "Bạn có chắc chắn muốn xoá workspace này? Toàn bộ cơ sở và thành viên sẽ bị xoá.",
+    "create": {
+      "title": "Tạo không gian làm việc mới",
+      "subtitle": "Thiết lập môi trường vận hành riêng biệt cho cơ sở hoặc chuỗi lưu trú của bạn",
+      "name": "Tên Workspace / Thương hiệu",
+      "namePlaceholder": "VD: An Nam Boutique Hotel, Hoi An Retreat...",
+      "slugEmpty": "Nhập tên để tạo slug...",
+      "slugPrompt": "Nhập slug tùy chỉnh:",
+      "customizeSlug": "Tùy chỉnh slug",
+      "businessType": "Mô hình kinh doanh lưu trú",
+      "types": {
+        "boutiqueHotel": {
+          "name": "Boutique Hotel",
+          "text": "Khách sạn phố, mini hotel phong cách"
+        },
+        "resort": {
+          "name": "Resort & Biệt thự",
+          "text": "Khu nghỉ dưỡng, villa ven biển/núi"
+        },
+        "homestay": {
+          "name": "Chuỗi Homestay",
+          "text": "Căn hộ dịch vụ, phòng chia sẻ"
+        }
+      },
+      "brand": "Nhận diện thương hiệu",
+      "removeLogo": "Xóa logo",
+      "uploaded": "Đã tải lên ✓",
+      "monogram": "hoặc tự sinh monogram",
+      "logoHint": "Hỗ trợ PNG, SVG, JPG (Khuyến nghị 512x512px, tối đa 2MB)",
+      "description": "Mô tả ngắn gọn & Ghi chú vận hành",
+      "descriptionPlaceholder": "Mô tả định vị khách sạn, phong cách dịch vụ hoặc ghi chú cho nội bộ...",
+      "timezone": "Múi giờ vận hành",
+      "timezoneVietnam": "GMT+07:00 (Hà Nội, TP.HCM)",
+      "cancel": "Hủy bỏ",
+      "submit": "Tạo Workspace & Thiết lập cơ sở"
+    },
+    "edit": {
+      "title": "Chỉnh sửa workspace",
+      "name": "Tên workspace"
+    }
+  },
+  "overview": {
+    "subtitle": "Xem nhanh tình trạng workspace của bạn",
+    "totalProperties": "Tổng cơ sở",
+    "activeCount": "{count} đang hoạt động",
+    "monthlyRevenue": "Doanh thu tháng",
+    "manageMembers": "Quản lý thành viên",
+    "yourProperties": "Cơ sở của bạn",
+    "viewAll": "Xem tất cả",
+    "noProperties": "Chưa có cơ sở nào",
+    "recentBookings": "Đặt phòng gần đây",
+    "noBookings": "Chưa có đặt phòng nào",
+    "quickActions": "Thao tác nhanh",
+    "manageProperties": "Quản lý cơ sở"
+  },
+  "members": {
+    "description": "Quản lý thành viên và phân quyền trong workspace",
+    "noWorkspaceText": "Bạn cần chọn một workspace để quản lý thành viên.",
+    "invite": "Mời thành viên",
+    "listTitle": "Thành viên ({count})",
+    "empty": "Chưa có thành viên nào",
+    "inviteFirst": "Mời thành viên đầu tiên",
+    "noName": "Chưa đặt tên",
+    "owner": "Chủ sở hữu",
+    "roleAdmin": "Quản trị viên",
+    "makeAdmin": "Thăng lên Quản trị viên",
+    "makeManager": "Thăng lên Quản lý",
+    "makeReceptionist": "Đặt làm Lễ tân",
+    "makeUser": "Đặt làm Nhân viên",
+    "remove": "Xóa khỏi Workspace",
+    "confirmRemove": "Bạn có chắc chắn muốn xóa thành viên này?",
+    "pendingTitle": "Lời mời đang chờ ({count})",
+    "invitedBy": "Mời bởi {name} • {date}",
+    "invitationStatus": {
+      "PENDING": "Đang chờ",
+      "ACCEPTED": "Đã chấp nhận",
+      "DECLINED": "Đã từ chối",
+      "EXPIRED": "Hết hạn"
+    },
+    "modal": {
+      "description": "Gửi lời mời qua email để tham gia workspace này",
+      "emailPlaceholder": "nguoi-moi@example.com",
+      "role": "Vai trò",
+      "roleHint": "Quản trị viên có thể quản lý cơ sở và mời thành viên khác",
+      "send": "Gửi lời mời"
+    }
+  },
+  "settings": {
+    "back": "Quay lại workspace",
+    "title": "Cài đặt Workspace",
+    "description": "Quản lý cấu hình cho {name}",
+    "saved": "Lưu cài đặt thành công!",
+    "saveFailed": "Lỗi khi lưu",
+    "logoUploaded": "Logo đã được tải lên!",
+    "tabs": {
+      "general": "Chung",
+      "notifications": "Thông báo",
+      "security": "Bảo mật"
+    },
+    "general": {
+      "basicInfo": "Thông tin cơ bản",
+      "logo": "Logo Workspace",
+      "logoHint": "PNG, SVG, JPG (tối đa 2MB)",
+      "name": "Tên Workspace",
+      "namePlaceholder": "VD: Khách sạn ABC",
+      "description": "Mô tả",
+      "descriptionPlaceholder": "Mô tả ngắn về workspace...",
+      "domain": "Tên miền tùy chỉnh",
+      "domainPlaceholder": "VD: khachsanabc.com",
+      "domainHint": "Liên kết workspace với tên miền riêng",
+      "regional": "Cài đặt khu vực",
+      "timezone": "Múi giờ",
+      "businessType": "Loại hình kinh doanh",
+      "businessTypes": {
+        "HOTEL": "Khách sạn (Hotel)",
+        "RESORT": "Resort / Khu nghỉ dưỡng",
+        "HOMESTAY": "Homestay / Căn hộ dịch vụ",
+        "BOUTIQUE": "Boutique Hotel",
+        "VILLA": "Villa / Biệt thự",
+        "MOTEL": "Motel",
+        "HOSTEL": "Hostel / Backpacker"
+      }
+    },
+    "notifications": {
+      "title": "Cài đặt thông báo",
+      "intro": "Chọn cách bạn nhận thông báo từ hệ thống",
+      "email": "Thông báo qua Email",
+      "emailText": "Nhận email về booking mới và cập nhật",
+      "push": "Thông báo đẩy",
+      "pushText": "Nhận thông báo trên trình duyệt",
+      "booking": "Thông báo booking mới",
+      "bookingText": "Thông báo ngay khi có đặt phòng mới"
+    },
+    "security": {
+      "title": "Thông tin bảo mật",
+      "owner": "Chủ sở hữu Workspace",
+      "propertyCount": "{count} cơ sở",
+      "dangerZone": "Vùng nguy hiểm",
+      "delete": "Xóa Workspace",
+      "deleteText": "Khi xóa workspace, toàn bộ dữ liệu bao gồm cơ sở, đặt phòng, và thành viên sẽ bị xóa vĩnh viễn.",
+      "confirmDelete": "Bạn có chắc chắn muốn xóa workspace này? Hành động này không thể hoàn tác.",
+      "comingSoon": "Tính năng đang được phát triển"
+    }
+  },
+  "picker": {
+    "notFound": {
+      "title": "Không tìm thấy Workspace",
+      "text": "Workspace này không tồn tại hoặc bạn không có quyền truy cập.",
+      "back": "Về danh sách Workspace"
+    },
+    "subtitle": "Chọn cơ sở",
+    "switchWorkspace": "Đổi workspace",
+    "newProperty": "Tạo cơ sở mới",
+    "title": "Chọn cơ sở trong {name}",
+    "intro": "Click vào cơ sở để vào trang quản lý phòng, đặt phòng, lịch phòng, báo cáo và website. Mỗi cơ sở có 1 website công khai riêng qua subdomain.",
+    "searchPlaceholder": "Tìm theo tên hoặc thành phố...",
+    "allTypes": "Tất cả loại hình",
+    "types": {
+      "HOTEL": "Khách sạn",
+      "HOMESTAY": "Homestay",
+      "RESORT": "Resort",
+      "RESTAURANT": "Nhà hàng",
+      "VILLA": "Villa",
+      "MOTEL": "Motel",
+      "OTHER": "Khác"
+    },
+    "empty": {
+      "title": "Chưa có cơ sở nào trong {name}",
+      "text": "Tạo cơ sở kinh doanh đầu tiên (khách sạn, homestay, nhà hàng...) để bắt đầu quản lý phòng, đặt phòng và website."
+    },
+    "count": "<b>{shown}</b> / {total} cơ sở",
+    "card": {
+      "edit": "Chỉnh sửa",
+      "pause": "Tạm dừng",
+      "activate": "Kích hoạt",
+      "openWebsite": "Mở website",
+      "delete": "Xoá cơ sở",
+      "manage": "Vào quản lý"
+    },
+    "newTileText": "Khách sạn, homestay, resort...",
+    "noMatch": "Không tìm thấy cơ sở nào phù hợp với bộ lọc",
+    "created": "Tạo cơ sở thành công",
+    "confirmDelete": "Bạn có chắc chắn muốn xoá cơ sở này?",
+    "create": {
+      "description": "Thêm cơ sở kinh doanh vào {name}",
+      "name": "Tên cơ sở",
+      "namePlaceholder": "VD: Khách sạn ABC",
+      "type": "Loại hình",
+      "subdomainPlaceholder": "ten-khach-san",
+      "subdomainHint": "Link: {subdomain}.digistay.vn",
+      "address": "Địa chỉ",
+      "addressPlaceholder": "VD: 123 Đường ABC",
+      "city": "Thành phố/Tỉnh",
+      "cityPlaceholder": "VD: Hà Nội",
+      "district": "Quận/Huyện (tùy chọn)",
+      "districtPlaceholder": "VD: Quận Ba Đình",
+      "phone": "Số điện thoại (tùy chọn)",
+      "phonePlaceholder": "VD: 024 1234 5678",
+      "email": "Email (tùy chọn)",
+      "emailPlaceholder": "VD: info@example.com",
+      "descriptionPlaceholder": "Giới thiệu ngắn về cơ sở của bạn",
+      "submit": "Tạo cơ sở"
+    }
+  }
+}
