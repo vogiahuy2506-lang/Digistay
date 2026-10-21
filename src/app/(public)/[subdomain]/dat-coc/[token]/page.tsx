@@ -78,7 +78,7 @@ export default async function DepositPage({ params }: PageProps) {
               checkOutTime={view.property.checkOutTime}
               nights={view.nights}
               adults={view.adults}
-              children={view.children}
+              childGuests={view.children}
               lines={bookedLines(view, t)}
               total={view.amounts.total}
               deposit={view.amounts.deposit > 0 ? { amount: view.amounts.deposit, paid: false } : null}

@@ -90,7 +90,7 @@ export default async function ConfirmationPage({ params }: PageProps) {
               checkOutTime={view.property.checkOutTime}
               nights={view.nights}
               adults={view.adults}
-              children={view.children}
+              childGuests={view.children}
               lines={bookedLines(view, t)}
               total={view.amounts.total}
               deposit={deposited ? { amount: view.amounts.deposit, paid: true } : null}

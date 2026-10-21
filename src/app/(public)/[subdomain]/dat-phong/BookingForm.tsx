@@ -196,7 +196,7 @@ export function BookingForm({
       checkOutTime={times.checkOut}
       nights={quote.nights}
       adults={stay.adults}
-      children={stay.children}
+      childGuests={stay.children}
       lines={lines}
       total={quote.total}
       deposit={deposit ? { amount: depositAmount, paid: false } : null}

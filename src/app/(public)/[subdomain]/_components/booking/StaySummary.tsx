@@ -35,7 +35,7 @@ export function StaySummary({
   checkOutTime,
   nights,
   adults,
-  children,
+  childGuests,
   lines,
   total,
   deposit,
@@ -49,7 +49,8 @@ export function StaySummary({
   checkOutTime: string
   nights: number
   adults: number
-  children: number
+  /** children among the guests (not React children) */
+  childGuests: number
   lines: SummaryLine[]
   total: number
   deposit?: { amount: number; paid: boolean } | null
@@ -59,7 +60,7 @@ export function StaySummary({
   const t = useTranslations('site')
   const locale = useLocale()
   const lang = locale === 'en' ? 'en' : 'vi'
-  const guests = [t('units.adults', { count: adults }), ...(children > 0 ? [t('units.children', { count: children })] : [])].join(', ')
+  const guests = [t('units.adults', { count: adults }), ...(childGuests > 0 ? [t('units.children', { count: childGuests })] : [])].join(', ')
   const money = (n: number) => formatVnd(n, lang)
 
   return (
