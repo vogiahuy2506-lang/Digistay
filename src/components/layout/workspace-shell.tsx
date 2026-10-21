@@ -4,7 +4,10 @@ import Link from 'next/link'
 import * as React from 'react'
 import { usePathname, useRouter, useParams } from 'next/navigation'
 import { signOut } from 'next-auth/react'
+import { useLocale, useTranslations } from 'next-intl'
 import { ChevronDown, LogOut, Menu, Moon, Sun, X } from 'lucide-react'
+import { LOCALE_COOKIE, type Locale } from '@/i18n/locales'
+import { useDashLabels } from '@/lib/i18n/dash'
 import { cn } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
 import { useProperty, type PropertyContext } from '@/lib/hooks/use-property'
@@ -12,7 +15,7 @@ import { Avatar, Dropdown, DropdownItem, DropdownDivider } from '@/components/ui
 import { useDialogBehavior } from '@/components/ui/dialog-behavior'
 import { useTheme } from './theme-root'
 import { WorkspaceRoleContext } from './workspace-context'
-import { activeHref, primaryNav, roleLabels, workspaceNav, type NavItem, type WorkspaceRole } from './nav'
+import { activeHref, primaryNav, workspaceNav, type NavItem, type WorkspaceRole } from './nav'
 
 interface WorkspaceShellProps {
   workspace: {
@@ -33,6 +36,7 @@ interface WorkspaceShellProps {
  * top bar whose menu button opens the same sidebar as a drawer.
  */
 export function WorkspaceShell(props: WorkspaceShellProps) {
+  const t = useTranslations('dash.common.nav')
   const pathname = usePathname()
   const { property } = useProperty()
   const [drawerOpen, setDrawerOpen] = React.useState(false)
@@ -53,7 +57,7 @@ export function WorkspaceShell(props: WorkspaceShellProps) {
         <button
           type="button"
           onClick={() => setDrawerOpen(true)}
-          aria-label="Mở menu"
+          aria-label={t('openMenu')}
           aria-expanded={drawerOpen}
           className="w-11 h-11 rounded-ctl flex items-center justify-center text-fg hover:bg-fg/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
         >
@@ -69,14 +73,14 @@ export function WorkspaceShell(props: WorkspaceShellProps) {
             ref={drawerRef}
             role="dialog"
             aria-modal="true"
-            aria-label="Menu"
+            aria-label={t('menu')}
             tabIndex={-1}
             className="absolute inset-y-0 left-0 w-72 max-w-[85vw] flex flex-col bg-page border-r border-line animate-drawer-in motion-reduce:animate-none focus:outline-none"
           >
             <button
               type="button"
               onClick={closeDrawer}
-              aria-label="Đóng menu"
+              aria-label={t('closeMenu')}
               className="absolute top-3 right-3 w-9 h-9 rounded-ctl flex items-center justify-center text-muted hover:text-fg hover:bg-fg/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
             >
               <X className="w-4 h-4" aria-hidden="true" />
@@ -114,6 +118,8 @@ function SidebarContent({
   pathname,
   property,
 }: WorkspaceShellProps & { pathname: string; property: PropertyContext | null }) {
+  const t = useTranslations('dash.common.nav')
+  const labels = useDashLabels()
   const router = useRouter()
   const params = useParams<{ slug: string; id?: string }>()
   const slug = params.slug ?? workspace.slug
@@ -137,7 +143,7 @@ function SidebarContent({
           active ? 'bg-acc-soft text-acc font-medium' : 'text-fg/80 hover:text-fg hover:bg-fg/5'
         )}
       >
-        {item.name}
+        {t(item.key)}
       </Link>
     )
   }
@@ -167,7 +173,7 @@ function SidebarContent({
                     ? property
                       ? `${property.subdomain}.digistay.vn`
                       : ''
-                    : roleLabels[workspace.role]}
+                    : labels.role(workspace.role)}
                 </span>
               </span>
               <ChevronDown className="w-4 h-4 text-muted shrink-0" aria-hidden="true" />
@@ -175,20 +181,20 @@ function SidebarContent({
           }
         >
           {/* Dropdown clones each direct child, so no fragments here. */}
-          {propertyId && <DropdownItem onClick={() => router.push(routes.properties(slug))}>Đổi cơ sở</DropdownItem>}
+          {propertyId && <DropdownItem onClick={() => router.push(routes.properties(slug))}>{t('switchProperty')}</DropdownItem>}
           {propertyId && <DropdownDivider />}
           {workspaces.map((ws) => (
             <DropdownItem key={ws.id} onClick={() => router.push(routes.workspace(ws.slug))}>
               <span className="flex-1 truncate">{ws.name}</span>
-              {ws.slug === workspace.slug && <span className="text-acc" aria-label="Đang chọn">✓</span>}
+              {ws.slug === workspace.slug && <span className="text-acc" aria-label={t('current')}>✓</span>}
             </DropdownItem>
           ))}
           <DropdownDivider />
-          <DropdownItem onClick={() => router.push(routes.workspaces())}>Tất cả workspace</DropdownItem>
+          <DropdownItem onClick={() => router.push(routes.workspaces())}>{t('allWorkspaces')}</DropdownItem>
         </Dropdown>
       </div>
 
-      <nav aria-label="Menu chính" className="flex-1 min-h-0 overflow-y-auto px-3 pb-4">
+      <nav aria-label={t('main')} className="flex-1 min-h-0 overflow-y-auto px-3 pb-4">
         <div className="space-y-0.5">{main.map(renderItem)}</div>
         {bottom.length > 0 && (
           <>
@@ -204,6 +210,10 @@ function SidebarContent({
 }
 
 function UserBlock({ name, email, image, role }: { name?: string; email?: string; image?: string; role: WorkspaceRole }) {
+  const t = useTranslations('dash.common.shell')
+  const labels = useDashLabels()
+  const locale = useLocale() as Locale
+  const router = useRouter()
   const theme = useTheme()
   const dark = theme?.preference === 'dark'
   const iconButton =
@@ -212,38 +222,46 @@ function UserBlock({ name, email, image, role }: { name?: string; email?: string
 
   return (
     <div className="shrink-0 border-t border-line px-3 py-3 flex items-center gap-2.5">
-      <Avatar src={image} name={name || 'User'} size="sm" />
+      <Avatar src={image} name={name || t('user')} size="sm" />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-fg truncate" title={email}>
-          {name || email || 'User'}
+          {name || email || t('user')}
         </p>
-        <p className="text-xs text-muted truncate">{roleLabels[role]}</p>
+        <p className="text-xs text-muted truncate">{labels.role(role)}</p>
       </div>
       {theme && (
         <button
           type="button"
           onClick={() => theme.setPreference(dark ? 'light' : 'dark')}
           aria-pressed={dark}
-          aria-label="Giao diện tối"
-          title={
-            theme.darkAvailable
-              ? dark
-                ? 'Chuyển sang giao diện sáng'
-                : 'Chuyển sang giao diện tối'
-              : 'Trang này chưa có giao diện tối; lựa chọn vẫn được lưu cho các trang đã có'
-          }
+          aria-label={t('darkTheme')}
+          title={theme.darkAvailable ? (dark ? t('toLight') : t('toDark')) : t('noDarkHere')}
           className={iconButton}
         >
           {dark ? <Sun className="w-4 h-4" aria-hidden="true" /> : <Moon className="w-4 h-4" aria-hidden="true" />}
         </button>
       )}
+      {/* VI | EN for the dashboard: the visitor's language cookie (src/i18n/request.ts). */}
+      <button
+        type="button"
+        onClick={() => {
+          const next: Locale = locale === 'en' ? 'vi' : 'en'
+          document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=31536000; samesite=lax`
+          router.refresh()
+        }}
+        aria-label={t('language')}
+        title={t('language')}
+        className={cn(iconButton, 'text-[12px] font-semibold uppercase')}
+      >
+        {locale === 'en' ? 'vi' : 'en'}
+      </button>
       {/* signOut() sends NextAuth's CSRF token; the old bare form POST had none,
           so NextAuth ignored it and the session survived. */}
       <button
         type="button"
         onClick={() => signOut({ callbackUrl: '/login' })}
-        aria-label="Đăng xuất"
-        title="Đăng xuất"
+        aria-label={t('signOut')}
+        title={t('signOut')}
         className={cn(iconButton, 'hover:text-err hover:bg-err-soft')}
       >
         <LogOut className="w-4 h-4" aria-hidden="true" />

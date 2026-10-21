@@ -22,15 +22,15 @@ describe('dashboard menu', () => {
   })
 
   it('shows the workspace menu outside a property', () => {
-    expect(primaryNav('demo').map((i) => i.name)).toEqual(['Tổng quan', 'Cơ sở'])
+    expect(primaryNav('demo').map((i) => i.key)).toEqual(['overview', 'properties'])
   })
 
   it('hides bank accounts and settings from everyone but the owner', () => {
     const forRole = (role: 'ADMIN' | 'MANAGER' | 'RECEPTIONIST' | 'USER') =>
-      items.filter((i) => i.roles.includes(role)).map((i) => i.name)
-    expect(forRole('MANAGER')).not.toContain('Ngân hàng')
-    expect(forRole('MANAGER')).not.toContain('Cài đặt')
-    expect(forRole('ADMIN')).toEqual(expect.arrayContaining(['Ngân hàng', 'Cài đặt']))
-    expect(forRole('USER')).toEqual(['Tổng quan', 'Đặt phòng'])
+      items.filter((i) => i.roles.includes(role)).map((i) => i.key)
+    expect(forRole('MANAGER')).not.toContain('bankAccounts')
+    expect(forRole('MANAGER')).not.toContain('settings')
+    expect(forRole('ADMIN')).toEqual(expect.arrayContaining(['bankAccounts', 'settings']))
+    expect(forRole('USER')).toEqual(['overview', 'bookings'])
   })
 })

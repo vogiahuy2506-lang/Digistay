@@ -2,8 +2,27 @@ import { routes } from '@/lib/utils/routes'
 
 export type WorkspaceRole = 'ADMIN' | 'MANAGER' | 'RECEPTIONIST' | 'USER'
 
+/** A menu entry's label: dash.common.nav.<key> in messages/dash/<locale>/common.json. */
+export type NavKey =
+  | 'overview'
+  | 'properties'
+  | 'bookings'
+  | 'calendar'
+  | 'walkIn'
+  | 'rooms'
+  | 'services'
+  | 'payments'
+  | 'invoices'
+  | 'reports'
+  | 'cashbook'
+  | 'bankAccounts'
+  | 'policies'
+  | 'website'
+  | 'members'
+  | 'settings'
+
 export interface NavItem {
-  name: string
+  key: NavKey
   href: string
   roles: WorkspaceRole[]
 }
@@ -16,33 +35,33 @@ const managers: WorkspaceRole[] = ['ADMIN', 'MANAGER']
 export function primaryNav(slug: string, propertyId?: string): NavItem[] {
   if (!propertyId) {
     return [
-      { name: 'Tổng quan', href: routes.workspace(slug), roles: everyone },
-      { name: 'Cơ sở', href: routes.properties(slug), roles: everyone },
+      { key: 'overview', href: routes.workspace(slug), roles: everyone },
+      { key: 'properties', href: routes.properties(slug), roles: everyone },
     ]
   }
   const id = propertyId
   return [
-    { name: 'Tổng quan', href: routes.property(slug, id), roles: everyone },
-    { name: 'Đặt phòng', href: routes.propertyBookings(slug, id), roles: everyone },
-    { name: 'Lịch phòng', href: routes.propertyCalendar(slug, id), roles: staff },
-    { name: 'Walk-in', href: routes.propertyBookingNew(slug, id), roles: staff },
-    { name: 'Hạng phòng', href: routes.propertyRooms(slug, id), roles: staff },
-    { name: 'Dịch vụ', href: routes.propertyServices(slug, id), roles: managers },
-    { name: 'Thanh toán', href: routes.propertyPayments(slug, id), roles: staff },
-    { name: 'Hóa đơn', href: routes.propertyInvoices(slug, id), roles: managers },
-    { name: 'Báo cáo', href: routes.propertyReports(slug, id), roles: managers },
-    { name: 'Sổ quay', href: routes.propertyDailyReport(slug, id), roles: ['ADMIN', 'RECEPTIONIST'] },
-    { name: 'Ngân hàng', href: routes.propertyBankAccounts(slug, id), roles: ['ADMIN'] },
-    { name: 'Chính sách', href: routes.propertyPolicies(slug, id), roles: managers },
-    { name: 'Website khách sạn', href: routes.propertyWebsite(slug, id), roles: managers },
+    { key: 'overview', href: routes.property(slug, id), roles: everyone },
+    { key: 'bookings', href: routes.propertyBookings(slug, id), roles: everyone },
+    { key: 'calendar', href: routes.propertyCalendar(slug, id), roles: staff },
+    { key: 'walkIn', href: routes.propertyBookingNew(slug, id), roles: staff },
+    { key: 'rooms', href: routes.propertyRooms(slug, id), roles: staff },
+    { key: 'services', href: routes.propertyServices(slug, id), roles: managers },
+    { key: 'payments', href: routes.propertyPayments(slug, id), roles: staff },
+    { key: 'invoices', href: routes.propertyInvoices(slug, id), roles: managers },
+    { key: 'reports', href: routes.propertyReports(slug, id), roles: managers },
+    { key: 'cashbook', href: routes.propertyDailyReport(slug, id), roles: ['ADMIN', 'RECEPTIONIST'] },
+    { key: 'bankAccounts', href: routes.propertyBankAccounts(slug, id), roles: ['ADMIN'] },
+    { key: 'policies', href: routes.propertyPolicies(slug, id), roles: managers },
+    { key: 'website', href: routes.propertyWebsite(slug, id), roles: managers },
   ]
 }
 
 /** Workspace-wide links under the divider. */
 export function workspaceNav(slug: string): NavItem[] {
   return [
-    { name: 'Thành viên', href: routes.members(slug), roles: managers },
-    { name: 'Cài đặt', href: routes.settings(slug), roles: ['ADMIN'] },
+    { key: 'members', href: routes.members(slug), roles: managers },
+    { key: 'settings', href: routes.settings(slug), roles: ['ADMIN'] },
   ]
 }
 
@@ -59,6 +78,7 @@ export function activeHref(pathname: string, items: NavItem[]): string | undefin
   return best
 }
 
+/** Vietnamese role names, for code without a translator; pages use useDashLabels().role. */
 export const roleLabels: Record<WorkspaceRole, string> = {
   ADMIN: 'Chủ sở hữu',
   MANAGER: 'Quản lý',

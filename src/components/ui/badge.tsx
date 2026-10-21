@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 import { getBookingStatusMeta, getPaymentStatusMeta, type StatusMeta, type StatusTone } from '@/lib/booking-status'
+import { useDashLabels } from '@/lib/i18n/dash'
 
 const tones: Record<StatusTone, string> = {
   ok: 'bg-ok-soft text-ok',
@@ -55,20 +56,22 @@ export function Badge({ variant = 'primary', size = 'sm', className, textColor, 
   )
 }
 
-function MetaBadge({ meta, size, className }: { meta: StatusMeta; size?: BadgeProps['size']; className?: string }) {
+function MetaBadge({ meta, label, size, className }: { meta: StatusMeta; label: string; size?: BadgeProps['size']; className?: string }) {
   return (
     <Badge variant={meta.tone} size={size} className={cn(meta.struck && 'line-through', className)}>
-      {meta.label}
+      {label}
     </Badge>
   )
 }
 
 /** Chip for `Booking.status` (string so API JSON can be passed straight in). */
 export function BookingStatusBadge({ status, ...rest }: { status: string; size?: BadgeProps['size']; className?: string }) {
-  return <MetaBadge meta={getBookingStatusMeta(status)} {...rest} />
+  const labels = useDashLabels()
+  return <MetaBadge meta={getBookingStatusMeta(status)} label={labels.bookingStatus(status)} {...rest} />
 }
 
 /** Chip for `Booking.paymentStatus` and `Payment.status`. */
 export function PaymentStatusBadge({ status, ...rest }: { status: string; size?: BadgeProps['size']; className?: string }) {
-  return <MetaBadge meta={getPaymentStatusMeta(status)} {...rest} />
+  const labels = useDashLabels()
+  return <MetaBadge meta={getPaymentStatusMeta(status)} label={labels.paymentStatus(status)} {...rest} />
 }

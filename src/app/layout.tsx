@@ -7,7 +7,9 @@ import '@fontsource-variable/jetbrains-mono/wght.css'
 import '@/styles/fonts.css'
 import './globals.css'
 import { NextIntlClientProvider } from 'next-intl'
+import { headers } from 'next/headers'
 import { getLocale, getMessages } from 'next-intl/server'
+import { SITE_LOCALE_HEADER } from '@/i18n/locales'
 import Providers from '@/components/providers'
 
 export const metadata: Metadata = {
@@ -26,6 +28,9 @@ export default async function RootLayout({
 }) {
   const locale = await getLocale()
   const messages = await getMessages()
+  // A hotel's website (the middleware marks it) only needs its own messages; Digistay's
+  // pages and the dashboard get theirs too. Guests on phones download the site's alone.
+  const hotelSite = (await headers()).has(SITE_LOCALE_HEADER)
   return (
     <html lang={locale}>
       <head>
@@ -35,16 +40,20 @@ export default async function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet" />
       </head>
       <body className="min-h-screen bg-background text-on-surface antialiased selection:bg-primary-fixed selection:text-on-primary-fixed-variant">
-        {/* The client components' messages, for every area. One provider only: a second one
-            nested in the hotel site's layout made its pages fail to hydrate now and then
-            (React #418) in production builds. Add an area's namespace here when it needs one. */}
+        {/* The client components' messages. One provider only: a second one nested in the
+            hotel site's layout made its pages fail to hydrate now and then (React #418) in
+            production builds. Add an area's namespace here when it needs one. */}
         <NextIntlClientProvider
-          messages={{
-            common: messages.common,
-            site: messages.site,
-            marketing: { contact: messages.marketing.contact },
-            auth: messages.auth,
-          }}
+          messages={
+            hotelSite
+              ? { common: messages.common, site: messages.site }
+              : {
+                  common: messages.common,
+                  marketing: { contact: messages.marketing.contact },
+                  auth: messages.auth,
+                  dash: messages.dash,
+                }
+          }
         >
           <Providers>{children}</Providers>
         </NextIntlClientProvider>

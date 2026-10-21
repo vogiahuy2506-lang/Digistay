@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { IntlMessageFormat } from 'intl-messageformat'
 import vi from '../../messages/vi.json'
 import en from '../../messages/en.json'
+import dashVi from '../../messages/dash/vi'
+import dashEn from '../../messages/dash/en'
 
 type Tree = { [key: string]: string | Tree }
 
@@ -15,7 +17,8 @@ function flatten(tree: Tree, prefix = ''): Record<string, string> {
 /** The arguments a message takes: {name}, {count, plural, ...}. */
 const args = (message: string) => [...new Set([...message.matchAll(/\{(\w+)(?=[,}])/g)].map((m) => m[1]))].sort()
 
-const flat = { vi: flatten(vi as Tree), en: flatten(en as Tree) }
+// The dashboard's files (messages/dash) are checked with the rest, as `dash`.
+const flat = { vi: flatten({ ...vi, dash: dashVi } as Tree), en: flatten({ ...en, dash: dashEn } as Tree) }
 
 describe('messages', () => {
   it('English has exactly the Vietnamese keys', () => {

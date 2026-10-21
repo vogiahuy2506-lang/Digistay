@@ -1,0 +1,129 @@
+{
+  "nav": {
+    "main": "Menu chính",
+    "menu": "Menu",
+    "openMenu": "Mở menu",
+    "closeMenu": "Đóng menu",
+    "overview": "Tổng quan",
+    "properties": "Cơ sở",
+    "bookings": "Đặt phòng",
+    "calendar": "Lịch phòng",
+    "walkIn": "Walk-in",
+    "rooms": "Hạng phòng",
+    "services": "Dịch vụ",
+    "payments": "Thanh toán",
+    "invoices": "Hóa đơn",
+    "reports": "Báo cáo",
+    "cashbook": "Sổ quỹ",
+    "bankAccounts": "Ngân hàng",
+    "policies": "Chính sách",
+    "website": "Website khách sạn",
+    "members": "Thành viên",
+    "settings": "Cài đặt",
+    "switchProperty": "Đổi cơ sở",
+    "allWorkspaces": "Tất cả workspace",
+    "current": "Đang chọn"
+  },
+  "shell": {
+    "toDark": "Chuyển sang giao diện tối",
+    "toLight": "Chuyển sang giao diện sáng",
+    "darkTheme": "Giao diện tối",
+    "noDarkHere": "Trang này chưa có giao diện tối; lựa chọn vẫn được lưu cho các trang đã có",
+    "signOut": "Đăng xuất",
+    "language": "Ngôn ngữ",
+    "user": "Người dùng"
+  },
+  "roles": {
+    "ADMIN": "Chủ sở hữu",
+    "MANAGER": "Quản lý",
+    "RECEPTIONIST": "Lễ tân",
+    "USER": "Nhân viên"
+  },
+  "bookingStatus": {
+    "PENDING": "Chờ thanh toán",
+    "CONFIRMED": "Đã xác nhận",
+    "CHECKED_IN": "Đã nhận phòng",
+    "CHECKED_OUT": "Đã trả phòng",
+    "CANCELLED": "Đã hủy",
+    "NO_SHOW": "Không đến",
+    "unknown": "Không rõ"
+  },
+  "paymentStatus": {
+    "PENDING": "Chưa thanh toán",
+    "PROCESSING": "Đang xử lý",
+    "PAID": "Đã thanh toán",
+    "PARTIAL": "Đã cọc",
+    "FAILED": "Thất bại",
+    "REFUNDED": "Hoàn tiền",
+    "CANCELLED": "Đã hủy",
+    "EXPIRED": "Hết hạn",
+    "unknown": "Không rõ"
+  },
+  "paymentLine": {
+    "PENDING": "Chưa thanh toán",
+    "PROCESSING": "Đang xử lý thanh toán",
+    "PAID": "Đã thanh toán",
+    "PARTIAL": "Đã cọc · còn {remaining}",
+    "FAILED": "Thanh toán thất bại",
+    "REFUNDED": "Đã hoàn tiền",
+    "CANCELLED": "Thanh toán đã hủy",
+    "EXPIRED": "Hết hạn thanh toán"
+  },
+  "source": {
+    "DIRECT": "Website",
+    "WALK_IN": "Tại quầy",
+    "PHONE": "Gọi điện",
+    "OTA": "OTA",
+    "AGENT": "Đại lý"
+  },
+  "paymentMethod": {
+    "BANK_TRANSFER": "Chuyển khoản",
+    "QR_VIETQR": "VietQR",
+    "CARD": "Thẻ ATM",
+    "CREDIT_CARD": "Thẻ tín dụng",
+    "E_WALLET": "Ví điện tử",
+    "CASH": "Tiền mặt"
+  },
+  "guests": {
+    "adults": "{count} người lớn",
+    "children": "{count} trẻ em",
+    "nights": "{count} đêm"
+  },
+  "weekdays": {
+    "0": "Chủ Nhật",
+    "1": "Thứ Hai",
+    "2": "Thứ Ba",
+    "3": "Thứ Tư",
+    "4": "Thứ Năm",
+    "5": "Thứ Sáu",
+    "6": "Thứ Bảy"
+  },
+  "actions": {
+    "save": "Lưu",
+    "saveChanges": "Lưu thay đổi",
+    "saving": "Đang lưu…",
+    "cancel": "Hủy",
+    "close": "Đóng",
+    "delete": "Xóa",
+    "edit": "Sửa",
+    "add": "Thêm",
+    "create": "Tạo",
+    "back": "Quay lại",
+    "search": "Tìm kiếm",
+    "refresh": "Làm mới",
+    "retry": "Thử lại",
+    "confirm": "Xác nhận",
+    "export": "Xuất Excel",
+    "print": "In",
+    "details": "Chi tiết",
+    "yes": "Có",
+    "no": "Không"
+  },
+  "states": {
+    "loading": "Đang tải…",
+    "empty": "Chưa có dữ liệu",
+    "error": "Đã xảy ra lỗi, vui lòng thử lại",
+    "saved": "Đã lưu",
+    "noPermission": "Bạn không có quyền xem trang này"
+  }
+}

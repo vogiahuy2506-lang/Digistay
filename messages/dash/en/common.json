@@ -1,0 +1,129 @@
+{
+  "nav": {
+    "main": "Main menu",
+    "menu": "Menu",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "overview": "Overview",
+    "properties": "Properties",
+    "bookings": "Bookings",
+    "calendar": "Calendar",
+    "walkIn": "Walk-in",
+    "rooms": "Room types",
+    "services": "Services",
+    "payments": "Payments",
+    "invoices": "Invoices",
+    "reports": "Reports",
+    "cashbook": "Cash book",
+    "bankAccounts": "Bank accounts",
+    "policies": "Policies",
+    "website": "Hotel website",
+    "members": "Members",
+    "settings": "Settings",
+    "switchProperty": "Switch property",
+    "allWorkspaces": "All workspaces",
+    "current": "Current"
+  },
+  "shell": {
+    "toDark": "Switch to the dark theme",
+    "toLight": "Switch to the light theme",
+    "darkTheme": "Dark theme",
+    "noDarkHere": "This page has no dark theme yet; your choice is kept for the pages that do",
+    "signOut": "Sign out",
+    "language": "Language",
+    "user": "User"
+  },
+  "roles": {
+    "ADMIN": "Owner",
+    "MANAGER": "Manager",
+    "RECEPTIONIST": "Front desk",
+    "USER": "Staff"
+  },
+  "bookingStatus": {
+    "PENDING": "Awaiting payment",
+    "CONFIRMED": "Confirmed",
+    "CHECKED_IN": "Checked in",
+    "CHECKED_OUT": "Checked out",
+    "CANCELLED": "Cancelled",
+    "NO_SHOW": "No-show",
+    "unknown": "Unknown"
+  },
+  "paymentStatus": {
+    "PENDING": "Unpaid",
+    "PROCESSING": "Processing",
+    "PAID": "Paid",
+    "PARTIAL": "Deposit paid",
+    "FAILED": "Failed",
+    "REFUNDED": "Refunded",
+    "CANCELLED": "Cancelled",
+    "EXPIRED": "Expired",
+    "unknown": "Unknown"
+  },
+  "paymentLine": {
+    "PENDING": "Unpaid",
+    "PROCESSING": "Payment processing",
+    "PAID": "Paid",
+    "PARTIAL": "Deposit paid · {remaining} left",
+    "FAILED": "Payment failed",
+    "REFUNDED": "Refunded",
+    "CANCELLED": "Payment cancelled",
+    "EXPIRED": "Payment expired"
+  },
+  "source": {
+    "DIRECT": "Website",
+    "WALK_IN": "Front desk",
+    "PHONE": "Phone",
+    "OTA": "OTA",
+    "AGENT": "Agent"
+  },
+  "paymentMethod": {
+    "BANK_TRANSFER": "Bank transfer",
+    "QR_VIETQR": "VietQR",
+    "CARD": "Debit card",
+    "CREDIT_CARD": "Credit card",
+    "E_WALLET": "E-wallet",
+    "CASH": "Cash"
+  },
+  "guests": {
+    "adults": "{count, plural, one {# adult} other {# adults}}",
+    "children": "{count, plural, one {# child} other {# children}}",
+    "nights": "{count, plural, one {# night} other {# nights}}"
+  },
+  "weekdays": {
+    "0": "Sunday",
+    "1": "Monday",
+    "2": "Tuesday",
+    "3": "Wednesday",
+    "4": "Thursday",
+    "5": "Friday",
+    "6": "Saturday"
+  },
+  "actions": {
+    "save": "Save",
+    "saveChanges": "Save changes",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "close": "Close",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "create": "Create",
+    "back": "Back",
+    "search": "Search",
+    "refresh": "Refresh",
+    "retry": "Try again",
+    "confirm": "Confirm",
+    "export": "Export to Excel",
+    "print": "Print",
+    "details": "Details",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "states": {
+    "loading": "Loading…",
+    "empty": "Nothing here yet",
+    "error": "Something went wrong, please try again",
+    "saved": "Saved",
+    "noPermission": "You don't have access to this page"
+  }
+}
