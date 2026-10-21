@@ -8,6 +8,7 @@
  */
 import * as React from 'react'
 import Link from 'next/link'
+import { useLocale, useTranslations } from 'next-intl'
 
 interface Problem {
   key: string
@@ -32,23 +33,17 @@ interface Status {
   recentRuns: { id: string; job: string; status: string; startedAt: string; durationMs: number | null; error: string | null }[]
 }
 
-const JOB_LABELS: Record<string, string> = {
-  'payos-reconcile': 'Đối soát PayOS',
-  'einvoice-jobs': 'Hoá đơn điện tử',
-  'email-outbox': 'Hàng đợi email',
-  'ops-alerts': 'Cảnh báo vận hành',
-  backup: 'Backup database',
-}
-const QUEUE_LABELS: Record<string, string> = {
-  PENDING: 'Chờ gửi',
-  SENDING: 'Đang gửi',
-  SENT: 'Đã gửi',
-  FAILED: 'Lỗi',
-  SKIPPED: 'Bỏ qua',
-}
+// Job names (messages: system.jobs.names) and email queue states (system.queues.status).
+const JOB_KEYS = {
+  'payos-reconcile': 'payosReconcile',
+  'einvoice-jobs': 'einvoiceJobs',
+  'email-outbox': 'emailOutbox',
+  'ops-alerts': 'opsAlerts',
+  backup: 'backup',
+} as const
+const QUEUE_STATES = ['PENDING', 'SENDING', 'SENT', 'FAILED', 'SKIPPED'] as const
+const has = (record: object, key: string) => Object.prototype.hasOwnProperty.call(record, key)
 
-const time = (iso: string | null) =>
-  iso ? new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'medium', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(iso)) : '—'
 const duration = (ms: number | null) => (ms == null ? '—' : ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(1)} s`)
 
 function Pill({ tone, children }: { tone: 'ok' | 'warn' | 'bad' | 'muted'; children: React.ReactNode }) {
@@ -76,6 +71,9 @@ function Section({ title, children, aside }: { title: string; children: React.Re
 }
 
 export default function SystemPage() {
+  const t = useTranslations('dash.account.system')
+  const tc = useTranslations('dash.common')
+  const locale = useLocale()
   const [status, setStatus] = React.useState<Status | null>(null)
   const [state, setState] = React.useState<'loading' | 'ready' | 'forbidden' | 'error'>('loading')
 
@@ -98,12 +96,26 @@ export default function SystemPage() {
     return () => clearInterval(timer)
   }, [load])
 
+  const dateTime = React.useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'vi-VN', {
+        dateStyle: 'short',
+        timeStyle: 'medium',
+        timeZone: 'Asia/Ho_Chi_Minh',
+      }),
+    [locale]
+  )
+  const time = (iso: string | null) => (iso ? dateTime.format(new Date(iso)) : '—')
+  const jobLabel = (job: string) => (has(JOB_KEYS, job) ? t(`jobs.names.${JOB_KEYS[job as keyof typeof JOB_KEYS]}`) : job)
+  const queueLabel = (queueState: string) =>
+    QUEUE_STATES.includes(queueState as never) ? t(`queues.status.${queueState as (typeof QUEUE_STATES)[number]}`) : queueState
+
   if (state === 'forbidden') {
     return (
       <div className="mx-auto max-w-xl p-10 text-center">
-        <h1 className="text-xl font-semibold text-fg">Không tìm thấy trang</h1>
+        <h1 className="text-xl font-semibold text-fg">{t('notFound')}</h1>
         <Link href="/workspaces" className="mt-4 inline-block text-sm text-acc underline">
-          Về danh sách workspace
+          {t('backToWorkspaces')}
         </Link>
       </div>
     )
@@ -113,9 +125,9 @@ export default function SystemPage() {
     <div className="mx-auto max-w-6xl space-y-5 p-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-fg">Hệ thống</h1>
+          <h1 className="text-2xl font-bold text-fg">{t('title')}</h1>
           <p className="text-sm text-muted">
-            {status ? `Kiểm lúc ${time(status.checkedAt)} · tự làm mới mỗi phút` : 'Đang tải…'}
+            {status ? t('checkedAt', { time: time(status.checkedAt) }) : tc('states.loading')}
           </p>
         </div>
         <button
@@ -123,46 +135,50 @@ export default function SystemPage() {
           onClick={load}
           className="rounded-ctl border border-line bg-panel px-3 py-1.5 text-sm font-medium text-fg hover:bg-fg/[0.03]"
         >
-          Làm mới
+          {tc('actions.refresh')}
         </button>
       </header>
 
-      {state === 'error' && <p className="rounded-lg border border-err/30 bg-err-soft p-3 text-sm text-err">Không tải được tình trạng hệ thống.</p>}
+      {state === 'error' && <p className="rounded-lg border border-err/30 bg-err-soft p-3 text-sm text-err">{t('loadFailed')}</p>}
 
       {status && (
         <>
-          <Section title="Tình trạng">
+          <Section title={t('health.title')}>
             <div className="flex flex-wrap gap-6 text-sm">
               <div>
-                <p className="text-muted">Phiên bản</p>
+                <p className="text-muted">{t('health.version')}</p>
                 <p className="font-mono text-fg">{status.health.version.slice(0, 12)}</p>
               </div>
               <div>
-                <p className="text-muted">Database (migration)</p>
+                <p className="text-muted">{t('health.schema')}</p>
                 <Pill tone={status.health.schema === 'ok' ? 'ok' : status.health.schema === 'unknown' ? 'muted' : 'bad'}>
-                  {status.health.schema === 'ok' ? 'Đủ' : status.health.schema === 'unknown' ? 'Không rõ' : `Thiếu ${status.health.schema.replace('missing ', '')}`}
+                  {status.health.schema === 'ok'
+                    ? t('health.schemaOk')
+                    : status.health.schema === 'unknown'
+                      ? t('health.schemaUnknown')
+                      : t('health.schemaMissing', { migrations: status.health.schema.replace('missing ', '') })}
                 </Pill>
               </div>
               <div>
-                <p className="text-muted">Redis</p>
-                <Pill tone={status.health.redis === 'ok' ? 'ok' : 'warn'}>{status.health.redis === 'ok' ? 'Hoạt động' : 'Không kết nối'}</Pill>
+                <p className="text-muted">{t('health.redis')}</p>
+                <Pill tone={status.health.redis === 'ok' ? 'ok' : 'warn'}>{status.health.redis === 'ok' ? t('health.redisOk') : t('health.redisDown')}</Pill>
               </div>
               <div>
-                <p className="text-muted">Email cảnh báo gửi tới</p>
-                <p className="text-fg">{status.alertRecipients.length ? status.alertRecipients.join(', ') : <span className="text-err">chưa có ai (đặt ALERT_EMAILS)</span>}</p>
+                <p className="text-muted">{t('health.alertRecipients')}</p>
+                <p className="text-fg">{status.alertRecipients.length ? status.alertRecipients.join(', ') : <span className="text-err">{t('health.noRecipients')}</span>}</p>
               </div>
             </div>
           </Section>
 
-          <Section title="Vấn đề hiện tại" aside={<Pill tone={status.problems.length ? 'bad' : 'ok'}>{status.problems.length || 'Không có'}</Pill>}>
+          <Section title={t('problems.title')} aside={<Pill tone={status.problems.length ? 'bad' : 'ok'}>{status.problems.length || t('problems.none')}</Pill>}>
             {status.problems.length === 0 ? (
-              <p className="text-sm text-muted">Không có vấn đề nào theo các luật cảnh báo.</p>
+              <p className="text-sm text-muted">{t('problems.empty')}</p>
             ) : (
               <ul className="space-y-3">
                 {status.problems.map((p) => (
                   <li key={p.key} className={`rounded-lg border p-3 ${p.severity === 'critical' ? 'border-err/30 bg-err-soft' : 'border-warn/30 bg-warn-soft'}`}>
                     <p className="text-sm font-semibold text-fg">
-                      <Pill tone={p.severity === 'critical' ? 'bad' : 'warn'}>{p.severity === 'critical' ? 'Nghiêm trọng' : 'Cảnh báo'}</Pill> {p.title}
+                      <Pill tone={p.severity === 'critical' ? 'bad' : 'warn'}>{p.severity === 'critical' ? t('problems.critical') : t('problems.warning')}</Pill> {p.title}
                     </p>
                     <ul className="mt-1 space-y-0.5 text-xs text-fg">
                       {p.lines.map((line, i) => (
@@ -175,26 +191,26 @@ export default function SystemPage() {
             )}
           </Section>
 
-          <Section title="Job định kỳ">
+          <Section title={t('jobs.title')}>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="text-left text-xs uppercase text-muted">
                   <tr>
-                    <th className="py-2 pr-4">Job</th>
-                    <th className="py-2 pr-4">Lần gần nhất</th>
-                    <th className="py-2 pr-4">Kết quả</th>
-                    <th className="py-2 pr-4">Thời gian chạy</th>
-                    <th className="py-2 pr-4">Thành công gần nhất</th>
-                    <th className="py-2 pr-4">Lỗi 24 giờ</th>
+                    <th className="py-2 pr-4">{t('jobs.job')}</th>
+                    <th className="py-2 pr-4">{t('jobs.last')}</th>
+                    <th className="py-2 pr-4">{t('jobs.result')}</th>
+                    <th className="py-2 pr-4">{t('jobs.duration')}</th>
+                    <th className="py-2 pr-4">{t('jobs.lastSuccess')}</th>
+                    <th className="py-2 pr-4">{t('jobs.failures24h')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
                   {status.jobs.map((j) => (
                     <tr key={j.job}>
-                      <td className="py-2 pr-4 font-medium text-fg">{JOB_LABELS[j.job] ?? j.job}</td>
+                      <td className="py-2 pr-4 font-medium text-fg">{jobLabel(j.job)}</td>
                       <td className="py-2 pr-4 tabular-nums">{time(j.last?.startedAt ?? null)}</td>
                       <td className="py-2 pr-4">
-                        {j.last ? <Pill tone={statusTone(j.last.status)}>{j.last.status}</Pill> : <Pill tone="bad">Chưa chạy lần nào</Pill>}
+                        {j.last ? <Pill tone={statusTone(j.last.status)}>{j.last.status}</Pill> : <Pill tone="bad">{t('jobs.neverRan')}</Pill>}
                         {j.last?.error && <p className="mt-1 max-w-xs break-words text-xs text-err">{j.last.error}</p>}
                       </td>
                       <td className="py-2 pr-4 tabular-nums">{duration(j.last?.durationMs ?? null)}</td>
@@ -210,18 +226,18 @@ export default function SystemPage() {
           <div className="grid gap-5 md:grid-cols-2">
             {(
               [
-                ['Email đặt phòng và lời mời', status.queues.outbox],
-                ['Email hoá đơn', status.queues.invoiceEmails],
+                ['outbox', status.queues.outbox],
+                ['invoiceEmails', status.queues.invoiceEmails],
               ] as const
-            ).map(([title, counts]) => (
-              <Section key={title} title={title}>
+            ).map(([queue, counts]) => (
+              <Section key={queue} title={t(`queues.${queue}`)}>
                 {Object.keys(counts).length === 0 ? (
-                  <p className="text-sm text-muted">Chưa có email nào.</p>
+                  <p className="text-sm text-muted">{t('queues.empty')}</p>
                 ) : (
                   <div className="flex flex-wrap gap-4 text-sm">
                     {Object.entries(counts).map(([s, n]) => (
                       <div key={s}>
-                        <p className="text-muted">{QUEUE_LABELS[s] ?? s}</p>
+                        <p className="text-muted">{queueLabel(s)}</p>
                         <p className={`text-lg font-semibold tabular-nums ${s === 'FAILED' ? 'text-err' : 'text-fg'}`}>{n}</p>
                       </div>
                     ))}
@@ -231,14 +247,14 @@ export default function SystemPage() {
             ))}
           </div>
 
-          <Section title="Lần chạy gần đây">
+          <Section title={t('runs.title')}>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <tbody className="divide-y divide-line">
                   {status.recentRuns.map((r) => (
                     <tr key={r.id}>
                       <td className="py-1.5 pr-4 tabular-nums text-muted">{time(r.startedAt)}</td>
-                      <td className="py-1.5 pr-4">{JOB_LABELS[r.job] ?? r.job}</td>
+                      <td className="py-1.5 pr-4">{jobLabel(r.job)}</td>
                       <td className="py-1.5 pr-4"><Pill tone={statusTone(r.status)}>{r.status}</Pill></td>
                       <td className="py-1.5 pr-4 tabular-nums">{duration(r.durationMs)}</td>
                       <td className="py-1.5 pr-4 break-words text-xs text-err">{r.error}</td>
@@ -246,7 +262,7 @@ export default function SystemPage() {
                   ))}
                   {status.recentRuns.length === 0 && (
                     <tr>
-                      <td className="py-2 text-muted">Chưa có job nào chạy. Timer digistay-reconcile đã cài chưa?</td>
+                      <td className="py-2 text-muted">{t('runs.empty')}</td>
                     </tr>
                   )}
                 </tbody>
@@ -254,18 +270,19 @@ export default function SystemPage() {
             </div>
           </Section>
 
-          <Section title="Cảnh báo đã gửi">
+          <Section title={t('alerts.title')}>
             {status.alerts.length === 0 ? (
-              <p className="text-sm text-muted">Chưa có cảnh báo nào.</p>
+              <p className="text-sm text-muted">{t('alerts.empty')}</p>
             ) : (
               <ul className="divide-y divide-line text-sm">
                 {status.alerts.map((a) => (
                   <li key={a.key} className="flex flex-wrap items-center gap-x-4 gap-y-1 py-2">
-                    <Pill tone={a.resolvedAt ? 'ok' : a.severity === 'critical' ? 'bad' : 'warn'}>{a.resolvedAt ? 'Đã hết' : 'Đang có'}</Pill>
+                    <Pill tone={a.resolvedAt ? 'ok' : a.severity === 'critical' ? 'bad' : 'warn'}>{a.resolvedAt ? t('alerts.resolved') : t('alerts.active')}</Pill>
                     <span className="min-w-0 flex-1 text-fg">{a.title}</span>
                     <span className="text-xs text-muted">
-                      từ {time(a.firstSeenAt)} · gửi gần nhất {time(a.lastSentAt)}
-                      {a.resolvedAt && ` · hết lúc ${time(a.resolvedAt)}`}
+                      {a.resolvedAt
+                        ? t('alerts.timesResolved', { first: time(a.firstSeenAt), last: time(a.lastSentAt), resolved: time(a.resolvedAt) })
+                        : t('alerts.times', { first: time(a.firstSeenAt), last: time(a.lastSentAt) })}
                     </span>
                   </li>
                 ))}

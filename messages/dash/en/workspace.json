@@ -1,1 +1,277 @@
-{}
+{
+  "errors": {
+    "generic": "Something went wrong"
+  },
+  "noWorkspace": {
+    "title": "Please choose a workspace",
+    "goTo": "Go to workspaces"
+  },
+  "logo": {
+    "upload": "Upload logo",
+    "tooLarge": "The file must be 2MB or smaller"
+  },
+  "defaultCurrency": "Default currency",
+  "currencies": {
+    "VND": "VND (₫) - Vietnamese dong",
+    "USD": "USD ($) - US Dollar",
+    "EUR": "EUR (€) - Euro",
+    "SGD": "SGD ($) - Singapore Dollar"
+  },
+  "descriptionOptional": "Description (optional)",
+  "propertyStatus": {
+    "active": "Active",
+    "paused": "Paused"
+  },
+  "roomTypeCount": "{count, plural, one {# room type} other {# room types}}",
+  "memberCount": "{count, plural, one {# member} other {# members}}",
+  "pendingCount": "{count} pending",
+  "createFirstProperty": "Create your first property",
+  "list": {
+    "breadcrumb": "Workspaces",
+    "createWorkspace": "New workspace",
+    "hero": {
+      "badge": "The operating system for hotels & boutique chains",
+      "welcome": "Welcome back, {name}",
+      "welcomeNoName": "Welcome back",
+      "intro": "Run your hotels, villa chains and direct bookings from one place. Add properties, check occupancy or switch between workspaces."
+    },
+    "tabs": {
+      "all": "All",
+      "owned": "Owned",
+      "invited": "Shared with me"
+    },
+    "searchPlaceholder": "Quick search workspaces...",
+    "card": {
+      "owner": "Owner",
+      "member": "Member",
+      "options": "Options",
+      "edit": "Edit",
+      "delete": "Delete workspace",
+      "staff": "Team",
+      "propertyCount": "{count, plural, one {# property} other {# properties}}",
+      "open": "Open workspace"
+    },
+    "newCard": {
+      "title": "Create a new workspace",
+      "text": "Add a new hotel, eco-resort, villa or homestay to your portfolio.",
+      "start": "Start setup"
+    },
+    "invitations": {
+      "title": "New invitations",
+      "new": "New",
+      "proposedRole": "Proposed role: <b>{role}</b>",
+      "from": "From: {sender}",
+      "accept": "Accept invitation",
+      "decline": "Decline",
+      "empty": "No invitations",
+      "accepted": "Invitation accepted!",
+      "acceptFailed": "Could not accept the invitation",
+      "declined": "Invitation declined",
+      "declineFailed": "Could not decline the invitation"
+    },
+    "updated": "Workspace updated",
+    "confirmDelete": "Are you sure you want to delete this workspace? All its properties and members will be deleted.",
+    "create": {
+      "title": "Create a new workspace",
+      "subtitle": "Set up a separate workspace for your property or hospitality chain",
+      "name": "Workspace / brand name",
+      "namePlaceholder": "e.g. An Nam Boutique Hotel, Hoi An Retreat...",
+      "slugEmpty": "Enter a name to generate the slug...",
+      "slugPrompt": "Enter a custom slug:",
+      "customizeSlug": "Customize slug",
+      "businessType": "Type of business",
+      "types": {
+        "boutiqueHotel": {
+          "name": "Boutique Hotel",
+          "text": "City hotels, stylish mini hotels"
+        },
+        "resort": {
+          "name": "Resort & villas",
+          "text": "Resorts, beach or mountain villas"
+        },
+        "homestay": {
+          "name": "Homestay chain",
+          "text": "Serviced apartments, shared rooms"
+        }
+      },
+      "brand": "Brand identity",
+      "removeLogo": "Remove logo",
+      "uploaded": "Uploaded ✓",
+      "monogram": "or use a generated monogram",
+      "logoHint": "PNG, SVG or JPG (512x512px recommended, 2MB max)",
+      "description": "Short description & operating notes",
+      "descriptionPlaceholder": "Your hotel's positioning, service style or notes for the team...",
+      "timezone": "Operating time zone",
+      "timezoneVietnam": "GMT+07:00 (Hanoi, Ho Chi Minh City)",
+      "cancel": "Cancel",
+      "submit": "Create workspace & set up properties"
+    },
+    "edit": {
+      "title": "Edit workspace",
+      "name": "Workspace name"
+    }
+  },
+  "overview": {
+    "subtitle": "A quick look at your workspace",
+    "totalProperties": "Total properties",
+    "activeCount": "{count} active",
+    "monthlyRevenue": "Revenue this month",
+    "manageMembers": "Manage members",
+    "yourProperties": "Your properties",
+    "viewAll": "View all",
+    "noProperties": "No properties yet",
+    "recentBookings": "Recent bookings",
+    "noBookings": "No bookings yet",
+    "quickActions": "Quick actions",
+    "manageProperties": "Manage properties"
+  },
+  "members": {
+    "description": "Manage members and their roles in this workspace",
+    "noWorkspaceText": "Choose a workspace to manage its members.",
+    "invite": "Invite member",
+    "listTitle": "Members ({count})",
+    "empty": "No members yet",
+    "inviteFirst": "Invite your first member",
+    "noName": "No name",
+    "owner": "Owner",
+    "roleAdmin": "Admin",
+    "makeAdmin": "Promote to admin",
+    "makeManager": "Promote to manager",
+    "makeReceptionist": "Set as front desk",
+    "makeUser": "Set as staff",
+    "remove": "Remove from workspace",
+    "confirmRemove": "Are you sure you want to remove this member?",
+    "pendingTitle": "Pending invitations ({count})",
+    "invitedBy": "Invited by {name} • {date}",
+    "invitationStatus": {
+      "PENDING": "Pending",
+      "ACCEPTED": "Accepted",
+      "DECLINED": "Declined",
+      "EXPIRED": "Expired"
+    },
+    "modal": {
+      "description": "Send an email invitation to join this workspace",
+      "emailPlaceholder": "new-member@example.com",
+      "role": "Role",
+      "roleHint": "Admins can manage properties and invite other members",
+      "send": "Send invitation"
+    }
+  },
+  "settings": {
+    "back": "Back to workspace",
+    "title": "Workspace settings",
+    "description": "Manage the settings of {name}",
+    "saved": "Settings saved!",
+    "saveFailed": "Could not save",
+    "logoUploaded": "Logo uploaded!",
+    "tabs": {
+      "general": "General",
+      "notifications": "Notifications",
+      "security": "Security"
+    },
+    "general": {
+      "basicInfo": "Basic information",
+      "logo": "Workspace logo",
+      "logoHint": "PNG, SVG, JPG (2MB max)",
+      "name": "Workspace name",
+      "namePlaceholder": "e.g. ABC Hotel",
+      "description": "Description",
+      "descriptionPlaceholder": "A short description of the workspace...",
+      "domain": "Custom domain",
+      "domainPlaceholder": "e.g. abchotel.com",
+      "domainHint": "Connect the workspace to your own domain",
+      "regional": "Regional settings",
+      "timezone": "Time zone",
+      "businessType": "Business type",
+      "businessTypes": {
+        "HOTEL": "Hotel",
+        "RESORT": "Resort",
+        "HOMESTAY": "Homestay / serviced apartment",
+        "BOUTIQUE": "Boutique hotel",
+        "VILLA": "Villa",
+        "MOTEL": "Motel",
+        "HOSTEL": "Hostel / backpacker"
+      }
+    },
+    "notifications": {
+      "title": "Notification settings",
+      "intro": "Choose how the system notifies you",
+      "email": "Email notifications",
+      "emailText": "Get emails about new bookings and updates",
+      "push": "Push notifications",
+      "pushText": "Get notifications in your browser",
+      "booking": "New booking alerts",
+      "bookingText": "Get notified as soon as a new booking comes in"
+    },
+    "security": {
+      "title": "Security information",
+      "owner": "Workspace owner",
+      "propertyCount": "{count, plural, one {# property} other {# properties}}",
+      "dangerZone": "Danger zone",
+      "delete": "Delete workspace",
+      "deleteText": "Deleting the workspace permanently deletes all its data, including properties, bookings and members.",
+      "confirmDelete": "Are you sure you want to delete this workspace? This cannot be undone.",
+      "comingSoon": "This feature is coming soon"
+    }
+  },
+  "picker": {
+    "notFound": {
+      "title": "Workspace not found",
+      "text": "This workspace doesn't exist or you don't have access to it.",
+      "back": "Back to workspaces"
+    },
+    "subtitle": "Choose a property",
+    "switchWorkspace": "Switch workspace",
+    "newProperty": "New property",
+    "title": "Choose a property in {name}",
+    "intro": "Open a property to manage its rooms, bookings, calendar, reports and website. Each property has its own public website on a subdomain.",
+    "searchPlaceholder": "Search by name or city...",
+    "allTypes": "All types",
+    "types": {
+      "HOTEL": "Hotel",
+      "HOMESTAY": "Homestay",
+      "RESORT": "Resort",
+      "RESTAURANT": "Restaurant",
+      "VILLA": "Villa",
+      "MOTEL": "Motel",
+      "OTHER": "Other"
+    },
+    "empty": {
+      "title": "No properties in {name} yet",
+      "text": "Create your first property (hotel, homestay, restaurant...) to start managing rooms, bookings and your website."
+    },
+    "count": "<b>{shown}</b> / {total, plural, one {# property} other {# properties}}",
+    "card": {
+      "edit": "Edit",
+      "pause": "Pause",
+      "activate": "Activate",
+      "openWebsite": "Open website",
+      "delete": "Delete property",
+      "manage": "Manage"
+    },
+    "newTileText": "Hotel, homestay, resort...",
+    "noMatch": "No properties match the filters",
+    "created": "Property created",
+    "confirmDelete": "Are you sure you want to delete this property?",
+    "create": {
+      "description": "Add a property to {name}",
+      "name": "Property name",
+      "namePlaceholder": "e.g. ABC Hotel",
+      "type": "Type",
+      "subdomainPlaceholder": "hotel-name",
+      "subdomainHint": "Link: {subdomain}.digistay.vn",
+      "address": "Address",
+      "addressPlaceholder": "e.g. 123 ABC Street",
+      "city": "City/Province",
+      "cityPlaceholder": "e.g. Hanoi",
+      "district": "District (optional)",
+      "districtPlaceholder": "e.g. Ba Dinh District",
+      "phone": "Phone number (optional)",
+      "phonePlaceholder": "e.g. 024 1234 5678",
+      "email": "Email (optional)",
+      "emailPlaceholder": "e.g. info@example.com",
+      "descriptionPlaceholder": "A short introduction to your property",
+      "submit": "Create property"
+    }
+  }
+}

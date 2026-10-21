@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, Button, Modal, ModalFooter, Input, Textarea, Select } from '@/components/ui'
 import { useWorkspace } from '@/lib/hooks/use-workspace'
 import { routes } from '@/lib/utils/routes'
@@ -39,28 +40,28 @@ interface Property {
   _count: { roomTypes: number; images: number }
 }
 
-const propertyTypeLabels: Record<string, { label: string; color: string }> = {
-  HOTEL: { label: 'Khách sạn', color: 'bg-blue-100 text-blue-700' },
-  HOMESTAY: { label: 'Homestay', color: 'bg-green-100 text-green-700' },
-  RESORT: { label: 'Resort', color: 'bg-emerald-100 text-emerald-700' },
-  RESTAURANT: { label: 'Nhà hàng', color: 'bg-orange-100 text-orange-700' },
-  VILLA: { label: 'Villa', color: 'bg-purple-100 text-purple-700' },
-  MOTEL: { label: 'Motel', color: 'bg-gray-100 text-gray-700' },
-  OTHER: { label: 'Khác', color: 'bg-gray-100 text-gray-700' },
+// Labels: dash.workspace.picker.types.<type>.
+const PROPERTY_TYPES = ['HOTEL', 'HOMESTAY', 'RESORT', 'RESTAURANT', 'VILLA', 'MOTEL', 'OTHER'] as const
+type PropertyType = (typeof PROPERTY_TYPES)[number]
+
+const propertyTypeColors: Record<PropertyType, string> = {
+  HOTEL: 'bg-blue-100 text-blue-700',
+  HOMESTAY: 'bg-green-100 text-green-700',
+  RESORT: 'bg-emerald-100 text-emerald-700',
+  RESTAURANT: 'bg-orange-100 text-orange-700',
+  VILLA: 'bg-purple-100 text-purple-700',
+  MOTEL: 'bg-gray-100 text-gray-700',
+  OTHER: 'bg-gray-100 text-gray-700',
 }
 
-const propertyTypes = [
-  { value: 'HOTEL', label: 'Khách sạn' },
-  { value: 'HOMESTAY', label: 'Homestay' },
-  { value: 'RESORT', label: 'Resort' },
-  { value: 'RESTAURANT', label: 'Nhà hàng' },
-  { value: 'VILLA', label: 'Villa' },
-  { value: 'MOTEL', label: 'Motel' },
-  { value: 'OTHER', label: 'Khác' },
-]
+const asPropertyType = (type: string): PropertyType =>
+  PROPERTY_TYPES.includes(type as PropertyType) ? (type as PropertyType) : 'OTHER'
 
 export default function WorkspaceHomePage() {
+  const t = useTranslations('dash.workspace')
+  const tc = useTranslations('dash.common')
   const router = useRouter()
+  const propertyTypes = PROPERTY_TYPES.map((value) => ({ value, label: t(`picker.types.${value}`) }))
   const { workspace, loading: wsLoading } = useWorkspace()
 
   const [properties, setProperties] = useState<Property[]>([])
@@ -124,7 +125,7 @@ export default function WorkspaceHomePage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        setCreateError(data.error || 'Đã xảy ra lỗi')
+        setCreateError(data.error || t('errors.generic'))
         return
       }
       setIsCreateOpen(false)
@@ -132,16 +133,16 @@ export default function WorkspaceHomePage() {
       // Refresh list
       const list = await fetch(`/api/properties?workspaceId=${workspace.id}`).then((r) => r.json())
       if (list?.success) setProperties(list.data || [])
-      toast.success('Tạo cơ sở thành công')
+      toast.success(t('picker.created'))
     } catch {
-      setCreateError('Đã xảy ra lỗi, vui lòng thử lại')
+      setCreateError(tc('states.error'))
     } finally {
       setIsCreating(false)
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xoá cơ sở này?')) return
+    if (!confirm(t('picker.confirmDelete'))) return
     try {
       await fetch(`/api/properties/${id}`, { method: 'DELETE' })
       setProperties((prev) => prev.filter((p) => p.id !== id))
@@ -179,12 +180,12 @@ export default function WorkspaceHomePage() {
         <Card className="max-w-md">
           <CardContent className="p-12 text-center">
             <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Không tìm thấy Workspace</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{t('picker.notFound.title')}</h3>
             <p className="text-gray-500 mb-6">
-              Workspace này không tồn tại hoặc bạn không có quyền truy cập.
+              {t('picker.notFound.text')}
             </p>
             <Button onClick={() => router.push(routes.workspaces())}>
-              Về danh sách Workspace
+              {t('picker.notFound.back')}
             </Button>
           </CardContent>
         </Card>
@@ -212,7 +213,7 @@ export default function WorkspaceHomePage() {
             </div>
             <div className="hidden sm:block">
               <p className="text-sm font-semibold text-gray-900">Digistay</p>
-              <p className="text-[10px] text-gray-500 -mt-0.5">Chọn cơ sở</p>
+              <p className="text-[10px] text-gray-500 -mt-0.5">{t('picker.subtitle')}</p>
             </div>
             <div className="h-6 w-px bg-gray-200 mx-2" />
             <Button
@@ -221,7 +222,7 @@ export default function WorkspaceHomePage() {
               onClick={() => router.push(routes.workspaces())}
             >
               <ChevronLeft className="w-4 h-4 mr-1" />
-              Đổi workspace
+              {t('picker.switchWorkspace')}
             </Button>
             <div className="hidden md:flex items-center gap-2 pl-1">
               <div className="w-7 h-7 rounded bg-primary-100 text-primary-700 flex items-center justify-center text-xs font-bold">
@@ -233,11 +234,11 @@ export default function WorkspaceHomePage() {
           <div className="flex items-center gap-2">
             <Button onClick={() => setIsCreateOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
-              Tạo cơ sở mới
+              {t('picker.newProperty')}
             </Button>
             <form action="/api/auth/signout" method="POST">
               <Button type="submit" variant="ghost" size="sm">
-                Đăng xuất
+                {tc('shell.signOut')}
               </Button>
             </form>
           </div>
@@ -248,11 +249,10 @@ export default function WorkspaceHomePage() {
         {/* Hero */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Chọn cơ sở trong {workspace.name}
+            {t('picker.title', { name: workspace.name })}
           </h1>
           <p className="text-gray-600 max-w-2xl">
-            Click vào cơ sở để vào trang quản lý phòng, đặt phòng, lịch phòng, báo cáo và website.
-            Mỗi cơ sở có 1 website công khai riêng qua subdomain.
+            {t('picker.intro')}
           </p>
         </div>
 
@@ -263,7 +263,7 @@ export default function WorkspaceHomePage() {
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Tìm theo tên hoặc thành phố..."
+                placeholder={t('picker.searchPlaceholder')}
                 className="pl-9"
               />
             </div>
@@ -272,10 +272,10 @@ export default function WorkspaceHomePage() {
               onChange={(e) => setFilterType(e.target.value)}
               className="px-3 py-2 rounded-lg border border-gray-200 text-sm bg-white"
             >
-              <option value="ALL">Tất cả loại hình</option>
-              {Object.entries(propertyTypeLabels).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v.label}
+              <option value="ALL">{t('picker.allTypes')}</option>
+              {propertyTypes.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
                 </option>
               ))}
             </select>
@@ -290,15 +290,14 @@ export default function WorkspaceHomePage() {
                 <Building2 className="w-8 h-8 text-primary" />
               </div>
               <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                Chưa có cơ sở nào trong {workspace.name}
+                {t('picker.empty.title', { name: workspace.name })}
               </h2>
               <p className="text-gray-500 mb-6 max-w-md mx-auto">
-                Tạo cơ sở kinh doanh đầu tiên (khách sạn, homestay, nhà hàng...) để bắt đầu
-                quản lý phòng, đặt phòng và website.
+                {t('picker.empty.text')}
               </p>
               <Button onClick={() => setIsCreateOpen(true)} size="lg">
                 <Plus className="w-5 h-5 mr-2" />
-                Tạo cơ sở đầu tiên
+                {t('createFirstProperty')}
               </Button>
             </CardContent>
           </Card>
@@ -306,14 +305,18 @@ export default function WorkspaceHomePage() {
           <>
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm text-gray-500">
-                <strong className="text-gray-900">{filtered.length}</strong> / {properties.length} cơ sở
+                {t.rich('picker.count', {
+                  shown: filtered.length,
+                  total: properties.length,
+                  b: (chunks) => <strong className="text-gray-900">{chunks}</strong>,
+                })}
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {filtered.map((p) => {
                 const primary = p.images?.find((i) => i.isPrimary)
-                const typeMeta = propertyTypeLabels[p.type] || propertyTypeLabels.OTHER
+                const type = asPropertyType(p.type)
                 const href = routes.property(workspace.slug, p.id)
                 return (
                   <Link
@@ -339,9 +342,9 @@ export default function WorkspaceHomePage() {
                       )}
                       <div className="absolute top-3 left-3 flex gap-2">
                         <span
-                          className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${typeMeta.color}`}
+                          className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${propertyTypeColors[type]}`}
                         >
-                          {typeMeta.label}
+                          {t(`picker.types.${type}`)}
                         </span>
                         <span
                           className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
@@ -350,7 +353,7 @@ export default function WorkspaceHomePage() {
                               : 'bg-gray-100 text-gray-600'
                           }`}
                         >
-                          {p.isActive ? 'Hoạt động' : 'Tạm dừng'}
+                          {p.isActive ? t('propertyStatus.active') : t('propertyStatus.paused')}
                         </span>
                       </div>
 
@@ -372,19 +375,19 @@ export default function WorkspaceHomePage() {
                             icon={<Pencil className="w-4 h-4" />}
                             onClick={() => router.push(href)}
                           >
-                            Chỉnh sửa
+                            {t('picker.card.edit')}
                           </DropdownItem>
                           <DropdownItem
                             icon={p.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                             onClick={() => handleToggleStatus(p)}
                           >
-                            {p.isActive ? 'Tạm dừng' : 'Kích hoạt'}
+                            {p.isActive ? t('picker.card.pause') : t('picker.card.activate')}
                           </DropdownItem>
                           <DropdownItem
                             icon={<Globe className="w-4 h-4" />}
                             onClick={() => window.open(routes.publicSite(p.subdomain), '_blank')}
                           >
-                            Mở website
+                            {t('picker.card.openWebsite')}
                           </DropdownItem>
                           <DropdownDivider />
                           <DropdownItem
@@ -392,7 +395,7 @@ export default function WorkspaceHomePage() {
                             danger
                             onClick={() => handleDelete(p.id)}
                           >
-                            Xoá cơ sở
+                            {t('picker.card.delete')}
                           </DropdownItem>
                         </Dropdown>
                       </div>
@@ -412,7 +415,7 @@ export default function WorkspaceHomePage() {
                       <div className="flex items-center gap-3 text-xs text-gray-500 mb-3 pb-3 border-b border-gray-100">
                         <span className="flex items-center gap-1">
                           <BedDouble className="w-3.5 h-3.5" />
-                          {p._count?.roomTypes || 0} hạng phòng
+                          {t('roomTypeCount', { count: p._count?.roomTypes || 0 })}
                         </span>
                         <span className="text-gray-300">|</span>
                         <span className="font-mono text-[10px] text-gray-400 truncate">
@@ -434,7 +437,7 @@ export default function WorkspaceHomePage() {
                           Website
                         </span>
                         <span className="text-xs text-primary font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
-                          Vào quản lý
+                          {t('picker.card.manage')}
                           <ArrowRight className="w-3.5 h-3.5" />
                         </span>
                       </div>
@@ -452,16 +455,16 @@ export default function WorkspaceHomePage() {
                   <Plus className="w-7 h-7 text-primary" />
                 </div>
                 <p className="text-sm font-medium text-gray-700 group-hover:text-primary">
-                  Tạo cơ sở mới
+                  {t('picker.newProperty')}
                 </p>
-                <p className="text-xs text-gray-400 mt-1">Khách sạn, homestay, resort...</p>
+                <p className="text-xs text-gray-400 mt-1">{t('picker.newTileText')}</p>
               </button>
             </div>
 
             {filtered.length === 0 && (
               <Card>
                 <CardContent className="p-8 text-center text-gray-500">
-                  Không tìm thấy cơ sở nào phù hợp với bộ lọc
+                  {t('picker.noMatch')}
                 </CardContent>
               </Card>
             )}
@@ -476,8 +479,8 @@ export default function WorkspaceHomePage() {
           setIsCreateOpen(false)
           resetCreateForm()
         }}
-        title="Tạo cơ sở mới"
-        description={`Thêm cơ sở kinh doanh vào ${workspace.name}`}
+        title={t('picker.newProperty')}
+        description={t('picker.create.description', { name: workspace.name })}
         size="lg"
       >
         <form onSubmit={handleCreate}>
@@ -489,8 +492,8 @@ export default function WorkspaceHomePage() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
-                label="Tên cơ sở"
-                placeholder="VD: Khách sạn ABC"
+                label={t('picker.create.name')}
+                placeholder={t('picker.create.namePlaceholder')}
                 value={createForm.name}
                 onChange={(e) => {
                   setCreateForm({ ...createForm, name: e.target.value })
@@ -508,7 +511,7 @@ export default function WorkspaceHomePage() {
                 autoFocus
               />
               <Select
-                label="Loại hình"
+                label={t('picker.create.type')}
                 options={propertyTypes}
                 value={createForm.type}
                 onChange={(e) => setCreateForm({ ...createForm, type: e.target.value })}
@@ -518,7 +521,7 @@ export default function WorkspaceHomePage() {
 
             <Input
               label="Subdomain"
-              placeholder="ten-khach-san"
+              placeholder={t('picker.create.subdomainPlaceholder')}
               value={createForm.subdomain}
               onChange={(e) =>
                 setCreateForm({
@@ -526,21 +529,21 @@ export default function WorkspaceHomePage() {
                   subdomain: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
                 })
               }
-              hint={`Link: ${createForm.subdomain || 'ten-khach-san'}.digistay.vn`}
+              hint={t('picker.create.subdomainHint', { subdomain: createForm.subdomain || t('picker.create.subdomainPlaceholder') })}
               required
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
-                label="Địa chỉ"
-                placeholder="VD: 123 Đường ABC"
+                label={t('picker.create.address')}
+                placeholder={t('picker.create.addressPlaceholder')}
                 value={createForm.address}
                 onChange={(e) => setCreateForm({ ...createForm, address: e.target.value })}
                 required
               />
               <Input
-                label="Thành phố/Tỉnh"
-                placeholder="VD: Hà Nội"
+                label={t('picker.create.city')}
+                placeholder={t('picker.create.cityPlaceholder')}
                 value={createForm.city}
                 onChange={(e) => setCreateForm({ ...createForm, city: e.target.value })}
                 required
@@ -549,30 +552,30 @@ export default function WorkspaceHomePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
-                label="Quận/Huyện (tùy chọn)"
-                placeholder="VD: Quận Ba Đình"
+                label={t('picker.create.district')}
+                placeholder={t('picker.create.districtPlaceholder')}
                 value={createForm.district}
                 onChange={(e) => setCreateForm({ ...createForm, district: e.target.value })}
               />
               <Input
-                label="Số điện thoại (tùy chọn)"
-                placeholder="VD: 024 1234 5678"
+                label={t('picker.create.phone')}
+                placeholder={t('picker.create.phonePlaceholder')}
                 value={createForm.phone}
                 onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
               />
             </div>
 
             <Input
-              label="Email (tùy chọn)"
+              label={t('picker.create.email')}
               type="email"
-              placeholder="VD: info@example.com"
+              placeholder={t('picker.create.emailPlaceholder')}
               value={createForm.email}
               onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
             />
 
             <Textarea
-              label="Mô tả (tùy chọn)"
-              placeholder="Giới thiệu ngắn về cơ sở của bạn"
+              label={t('descriptionOptional')}
+              placeholder={t('picker.create.descriptionPlaceholder')}
               value={createForm.description}
               onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
               rows={3}
@@ -587,11 +590,11 @@ export default function WorkspaceHomePage() {
                 resetCreateForm()
               }}
             >
-              Hủy
+              {tc('actions.cancel')}
             </Button>
             <Button type="submit" isLoading={isCreating}>
               <Check className="w-4 h-4 mr-2" />
-              Tạo cơ sở
+              {t('picker.create.submit')}
             </Button>
           </ModalFooter>
         </form>

@@ -1,1 +1,10 @@
-{}
+{
+  "loading": {
+    "label": "Loading",
+    "page": "Loading...",
+    "overlay": "Processing..."
+  },
+  "toast": {
+    "close": "Close notification"
+  }
+}

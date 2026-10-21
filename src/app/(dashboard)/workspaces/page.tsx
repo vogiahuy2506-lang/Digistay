@@ -4,10 +4,12 @@ import * as React from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { signOut } from 'next-auth/react'
+import { useTranslations } from 'next-intl'
 import { Modal, ModalFooter, Input, Textarea } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
 import { routes } from '@/lib/utils/routes'
-import { roleLabels, type WorkspaceRole } from '@/components/layout/nav'
+import type { WorkspaceRole } from '@/components/layout/nav'
+import { useDashLabels } from '@/lib/i18n/dash'
 import {
   Building2,
   Plus,
@@ -76,11 +78,10 @@ interface Invitation {
   createdAt: string
 }
 
-/** Invitation roles come from the API as plain strings. */
-const roleLabel = (role: string) =>
-  Object.prototype.hasOwnProperty.call(roleLabels, role) ? roleLabels[role as WorkspaceRole] : role
-
 export default function WorkspacesPage() {
+  const t = useTranslations('dash.workspace')
+  const tc = useTranslations('dash.common')
+  const labels = useDashLabels()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [workspaces, setWorkspaces] = React.useState<Workspace[]>([])
@@ -223,16 +224,16 @@ export default function WorkspacesPage() {
       })
 
       if (res.ok) {
-        toast.success('Đã chấp nhận lời mời!')
+        toast.success(t('list.invitations.accepted'))
         await fetchInvitations()
         await fetchWorkspaces()
       } else {
         const data = await res.json().catch(() => ({}))
-        toast.error(data.error || 'Không thể chấp nhận lời mời')
+        toast.error(data.error || t('list.invitations.acceptFailed'))
       }
     } catch (err) {
       console.error(err)
-      toast.error('Đã xảy ra lỗi')
+      toast.error(t('errors.generic'))
     }
   }
 
@@ -246,15 +247,15 @@ export default function WorkspacesPage() {
       })
 
       if (res.ok) {
-        toast.success('Đã từ chối lời mời')
+        toast.success(t('list.invitations.declined'))
         await fetchInvitations()
       } else {
         const data = await res.json().catch(() => ({}))
-        toast.error(data.error || 'Không thể từ chối lời mời')
+        toast.error(data.error || t('list.invitations.declineFailed'))
       }
     } catch (err) {
       console.error(err)
-      toast.error('Đã xảy ra lỗi')
+      toast.error(t('errors.generic'))
     }
   }
 
@@ -278,7 +279,7 @@ export default function WorkspacesPage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error || 'Đã xảy ra lỗi')
+        setError(data.error || t('errors.generic'))
         return
       }
       setIsCreateOpen(false)
@@ -294,7 +295,7 @@ export default function WorkspacesPage() {
       await fetchWorkspaces()
       router.push(routes.workspace(data.data.slug))
     } catch {
-      setError('Đã xảy ra lỗi, vui lòng thử lại')
+      setError(tc('states.error'))
     } finally {
       setIsCreating(false)
     }
@@ -327,22 +328,22 @@ export default function WorkspacesPage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error || 'Đã xảy ra lỗi')
+        setError(data.error || t('errors.generic'))
         return
       }
       setIsEditOpen(false)
       setSelected(null)
       fetchWorkspaces()
-      toast.success('Cập nhật workspace thành công')
+      toast.success(t('list.updated'))
     } catch {
-      setError('Đã xảy ra lỗi, vui lòng thử lại')
+      setError(tc('states.error'))
     } finally {
       setIsUpdating(false)
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xoá workspace này? Toàn bộ cơ sở và thành viên sẽ bị xoá.')) return
+    if (!confirm(t('list.confirmDelete'))) return
     try {
       await fetch(`/api/workspaces/${id}`, { method: 'DELETE' })
       fetchWorkspaces()
@@ -374,6 +375,8 @@ export default function WorkspacesPage() {
   const ownedCount = workspaces.filter((ws) => ws.ownerId === currentUser?.id).length
   const invitedCount = workspaces.filter((ws) => ws.ownerId !== currentUser?.id).length
   const pendingInvitationsCount = invitations.length
+
+  const firstName = currentUser?.name?.split(' ').pop()
 
   // Get user initials for avatar
   const getUserInitials = (name: string | null) => {
@@ -415,7 +418,7 @@ export default function WorkspacesPage() {
               {/* Breadcrumb */}
               <div className="hidden sm:flex items-center gap-2 text-xs font-medium text-muted bg-fg/5 px-3.5 py-1.5 rounded-full border border-line/90">
                 <Layers className="w-3.5 h-3.5 text-acc" />
-                <span>Không gian làm việc</span>
+                <span>{t('list.breadcrumb')}</span>
                 <span className="text-muted">/</span>
                 <span className="text-fg font-semibold flex items-center gap-1.5">
                   Workspace Hub
@@ -434,7 +437,7 @@ export default function WorkspacesPage() {
                 className="inline-flex items-center gap-2 bg-ink hover:bg-ink/90 text-on-ink px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm transition shadow-sm active:scale-[0.98] "
               >
                 <PlusCircle className="w-4 h-4 stroke-[2.5]" />
-                <span>Tạo workspace mới</span>
+                <span>{t('list.createWorkspace')}</span>
               </button>
 
               <div className="h-6 w-px bg-fg/10 hidden md:block" />
@@ -449,7 +452,7 @@ export default function WorkspacesPage() {
                 </div>
                 <div className="hidden lg:flex flex-col text-left">
                   <span className="text-xs font-bold text-fg leading-tight">
-                    {currentUser?.name || 'Người dùng'}
+                    {currentUser?.name || tc('shell.user')}
                   </span>
                   {currentUser?.email && (
                     <span className="text-[10px] text-muted mt-0.5 truncate max-w-[180px]">{currentUser.email}</span>
@@ -461,7 +464,7 @@ export default function WorkspacesPage() {
                     await signOut({ callbackUrl: '/' })
                   }}
                   className="text-muted hover:text-acc p-1.5 rounded-lg hover:bg-fg/5 transition"
-                  title="Đăng xuất"
+                  title={tc('shell.signOut')}
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -477,17 +480,16 @@ export default function WorkspacesPage() {
         <div className="mb-10 max-w-3xl">
           <div className="inline-flex items-center gap-2.5 px-3.5 py-1 bg-acc-soft/90 border border-acc/30 text-acc text-xs font-bold rounded-full mb-3.5 shadow-sm">
             <span className="w-2 h-2 rounded-full bg-ink animate-pulse" />
-            Hệ điều hành vận hành khách sạn &amp; chuỗi Boutique
+            {t('list.hero.badge')}
           </div>
           <h1 className="text-3xl md:text-4xl lg:text-[42px] font-serif font-bold text-fg tracking-tight flex items-center gap-3 leading-tight">
-            Chào mừng bạn quay lại, {currentUser?.name?.split(' ').pop() || 'bạn'}{' '}
+            {firstName ? t('list.hero.welcome', { name: firstName }) : t('list.hero.welcomeNoName')}{' '}
             <span className="inline-block transform origin-bottom-right hover:rotate-12 transition-transform duration-300">
               👋
             </span>
           </h1>
           <p className="mt-3 text-muted text-base md:text-lg leading-relaxed">
-            Quản trị tập trung danh mục khách sạn, chuỗi villa và hệ thống booking trực tiếp của bạn.
-            Bạn có thể mở rộng cơ sở, kiểm tra công suất phòng hoặc chuyển đổi giữa các không gian quản trị.
+            {t('list.hero.intro')}
           </p>
         </div>
 
@@ -503,7 +505,7 @@ export default function WorkspacesPage() {
                   : 'text-muted hover:text-fg hover:bg-panel/60'
               }`}
             >
-              <span>Tất cả</span>
+              <span>{t('list.tabs.all')}</span>
               <span className={`px-1.5 py-0.2 rounded text-[11px] font-bold ${
                 filterTab === 'all' ? 'bg-acc-soft text-acc' : 'bg-fg/10 text-fg'
               }`}>
@@ -518,7 +520,7 @@ export default function WorkspacesPage() {
                   : 'text-muted hover:text-fg hover:bg-panel/60'
               }`}
             >
-              <span>Chuỗi sở hữu</span>
+              <span>{t('list.tabs.owned')}</span>
               <span className={`px-1.5 py-0.2 rounded text-[11px] ${
                 filterTab === 'owned' ? 'bg-acc-soft text-acc font-bold' : 'bg-fg/10 text-fg'
               }`}>
@@ -533,7 +535,7 @@ export default function WorkspacesPage() {
                   : 'text-muted hover:text-fg hover:bg-panel/60'
               }`}
             >
-              <span>Được mời quản lý</span>
+              <span>{t('list.tabs.invited')}</span>
               <span className={`px-1.5 py-0.2 rounded text-[11px] ${
                 filterTab === 'invited' ? 'bg-acc-soft text-acc font-bold' : 'bg-fg/10 text-fg'
               }`}>
@@ -551,7 +553,7 @@ export default function WorkspacesPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 text-xs md:text-sm bg-panel border border-line rounded-xl focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 outline-none placeholder:text-muted shadow-sm transition"
-                placeholder="Tìm nhanh workspace..."
+                placeholder={t('list.searchPlaceholder')}
               />
             </div>
           </div>
@@ -588,12 +590,12 @@ export default function WorkspacesPage() {
                           {isOwner ? (
                             <>
                               <Crown className="w-3 h-3 text-warn-soft" />
-                              Chủ sở hữu
+                              {t('list.card.owner')}
                             </>
                           ) : (
                             <>
                               <Building2 className="w-3 h-3 text-warn" />
-                              {memberRole ? roleLabels[memberRole] : 'Thành viên'}
+                              {memberRole ? labels.role(memberRole) : t('list.card.member')}
                             </>
                           )}
                         </span>
@@ -622,7 +624,7 @@ export default function WorkspacesPage() {
                                   menu?.classList.toggle('hidden')
                                 }}
                                 className="text-muted hover:text-fg p-1.5 rounded-lg hover:bg-fg/5 transition"
-                                aria-label="Tùy chọn"
+                                aria-label={t('list.card.options')}
                               >
                                 <MoreVertical className="w-4 h-4" />
                               </button>
@@ -636,7 +638,7 @@ export default function WorkspacesPage() {
                                   className="w-full px-3 py-2 text-left text-sm text-fg hover:bg-fg/[0.03] flex items-center gap-2"
                                 >
                                   <Pencil className="w-4 h-4" />
-                                  Chỉnh sửa
+                                  {t('list.card.edit')}
                                 </button>
                                 <div className="border-t border-line my-1" />
                                 <button
@@ -648,7 +650,7 @@ export default function WorkspacesPage() {
                                   className="w-full px-3 py-2 text-left text-sm text-err hover:bg-err-soft flex items-center gap-2"
                                 >
                                   <Trash2 className="w-4 h-4" />
-                                  Xoá workspace
+                                  {t('list.card.delete')}
                                 </button>
                               </div>
                             </div>
@@ -668,9 +670,9 @@ export default function WorkspacesPage() {
                               <Hotel className="w-3.5 h-3.5" />
                             </div>
                             <div>
-                              <div className="text-[10px] text-muted uppercase font-semibold">Cơ sở</div>
+                              <div className="text-[10px] text-muted uppercase font-semibold">{tc('nav.properties')}</div>
                               <div className="text-xs font-bold text-fg">
-                                {ws._count.properties} {ws._count.properties > 1 ? 'chi nhánh' : 'cơ sở'}
+                                {t('list.card.propertyCount', { count: ws._count.properties })}
                               </div>
                             </div>
                           </div>
@@ -679,9 +681,9 @@ export default function WorkspacesPage() {
                               <Users className="w-3.5 h-3.5" />
                             </div>
                             <div>
-                              <div className="text-[10px] text-muted uppercase font-semibold">Nhân sự</div>
+                              <div className="text-[10px] text-muted uppercase font-semibold">{t('list.card.staff')}</div>
                               <div className="text-xs font-bold text-fg">
-                                {ws._count.members} thành viên
+                                {t('memberCount', { count: ws._count.members })}
                               </div>
                             </div>
                           </div>
@@ -694,7 +696,7 @@ export default function WorkspacesPage() {
                           href={routes.workspace(ws.slug)}
                           className="inline-flex items-center gap-1.5 text-xs font-bold text-acc hover:text-on-ink bg-acc-soft hover:bg-ink px-3 py-1.5 rounded-lg group-hover:translate-x-1 transition-all shadow-sm"
                         >
-                          <span>Vào workspace</span>
+                          <span>{t('list.card.open')}</span>
                           <ArrowRight className="w-4 h-4" />
                         </Link>
                       </div>
@@ -712,13 +714,13 @@ export default function WorkspacesPage() {
                   <Plus className="w-8 h-8 stroke-[2.2]" />
                 </div>
                 <h3 className="mt-6 font-bold text-lg text-fg group-hover:text-acc transition-colors">
-                  Khởi tạo Workspace mới
+                  {t('list.newCard.title')}
                 </h3>
                 <p className="mt-2 text-xs md:text-sm text-muted max-w-[260px] leading-relaxed">
-                  Mở rộng chuỗi khách sạn, khu nghỉ dưỡng sinh thái, villa hoặc homestay mới.
+                  {t('list.newCard.text')}
                 </p>
                 <div className="mt-6 inline-flex items-center gap-2 text-xs font-bold text-acc group-hover:text-on-ink bg-panel group-hover:bg-ink px-4 py-2 rounded-xl border border-line group-hover:border-acc shadow-sm transition-all">
-                  <span>Bắt đầu thiết lập</span>
+                  <span>{t('list.newCard.start')}</span>
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                 </div>
               </button>
@@ -732,11 +734,11 @@ export default function WorkspacesPage() {
                   <div className="w-7 h-7 rounded-lg bg-acc-soft text-acc flex items-center justify-center">
                     <MailCheck className="w-4 h-4" />
                   </div>
-                  <span>Lời mời cộng tác mới</span>
+                  <span>{t('list.invitations.title')}</span>
                 </h4>
                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold bg-warn-soft text-warn border border-warn/30">
                   <span className="w-1.5 h-1.5 rounded-full bg-warn animate-ping" />
-                  {pendingInvitationsCount} chờ xử lý
+                  {t('pendingCount', { count: pendingInvitationsCount })}
                 </span>
               </div>
 
@@ -751,14 +753,17 @@ export default function WorkspacesPage() {
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <h5 className="text-xs sm:text-sm font-bold text-fg truncate">{invitation.workspace.name}</h5>
-                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-acc-soft text-acc shrink-0">Mới</span>
+                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-acc-soft text-acc shrink-0">{t('list.invitations.new')}</span>
                           </div>
                           <p className="text-xs text-muted mt-0.5">
-                            Vai trò đề xuất: <span className="font-bold text-fg">{roleLabel(invitation.role)}</span>
+                            {t.rich('list.invitations.proposedRole', {
+                              role: labels.role(invitation.role),
+                              b: (chunks) => <span className="font-bold text-fg">{chunks}</span>,
+                            })}
                           </p>
                           <div className="text-[11px] text-muted mt-0.5 flex items-center gap-1 min-w-0">
                             <Clock className="w-3 h-3 shrink-0" />
-                            <span className="truncate">Gửi từ: {invitation.sender?.name || invitation.sender?.email}</span>
+                            <span className="truncate">{t('list.invitations.from', { sender: invitation.sender?.name || invitation.sender?.email })}</span>
                           </div>
                         </div>
                       </div>
@@ -773,13 +778,13 @@ export default function WorkspacesPage() {
                           className="flex-1 py-2.5 px-4 text-xs font-bold text-on-ink bg-ink hover:bg-ink/90 rounded-xl transition shadow-sm text-center flex items-center justify-center gap-1.5"
                         >
                           <Check className="w-3.5 h-3.5" />
-                          Chấp nhận lời mời
+                          {t('list.invitations.accept')}
                         </button>
                         <button
                           onClick={() => handleDeclineInvitation(invitation.id)}
                           className="py-2.5 px-4 text-xs font-bold text-muted hover:text-fg bg-fg/5 hover:bg-fg/10 rounded-xl transition text-center border border-line"
                         >
-                          Từ chối
+                          {t('list.invitations.decline')}
                         </button>
                       </div>
                     </div>
@@ -790,7 +795,7 @@ export default function WorkspacesPage() {
                   <div className="w-12 h-12 rounded-xl bg-panel border border-line flex items-center justify-center mx-auto mb-3 shadow-sm">
                     <MailCheck className="w-6 h-6 text-muted" />
                   </div>
-                  <p className="text-sm text-muted">Không có lời mời cộng tác nào</p>
+                  <p className="text-sm text-muted">{t('list.invitations.empty')}</p>
                 </div>
               )}
             </section>
@@ -813,10 +818,10 @@ export default function WorkspacesPage() {
             </div>
             <div>
               <h3 className="text-base sm:text-lg font-bold text-fg flex items-center gap-2">
-                Tạo không gian làm việc mới 
+                {t('list.create.title')}
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-acc-soft text-acc border border-acc/30">Boutique OS</span>
               </h3>
-              <p className="text-xs text-muted">Thiết lập môi trường vận hành riêng biệt cho cơ sở hoặc chuỗi lưu trú của bạn</p>
+              <p className="text-xs text-muted">{t('list.create.subtitle')}</p>
             </div>
           </div>
           <button
@@ -839,7 +844,7 @@ export default function WorkspacesPage() {
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-fg uppercase tracking-wide">
-                Tên Workspace / Thương hiệu <span className="text-acc">*</span>
+                {t('list.create.name')} <span className="text-acc">*</span>
               </label>
             </div>
             <input
@@ -847,7 +852,7 @@ export default function WorkspacesPage() {
               value={formData.name}
               onChange={(e) => handleNameChange(e.target.value)}
               className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-panel border border-line rounded-xl focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 outline-none text-fg shadow-sm font-medium"
-              placeholder="VD: An Nam Boutique Hotel, Hoi An Retreat..."
+              placeholder={t('list.create.namePlaceholder')}
               required
               autoFocus
             />
@@ -855,18 +860,18 @@ export default function WorkspacesPage() {
               <div className="flex items-center gap-1.5 font-mono text-[11px] sm:text-xs text-muted truncate">
                 <span className="text-muted">slug:</span>
                 <span className="text-acc font-semibold">
-                  {formData.slug || 'Nhập tên để tạo slug...'}
+                  {formData.slug || t('list.create.slugEmpty')}
                 </span>
               </div>
-              <button 
+              <button
                 type="button"
                 onClick={() => {
-                  const newSlug = prompt('Nhập slug tùy chỉnh:', formData.slug)
+                  const newSlug = prompt(t('list.create.slugPrompt'), formData.slug)
                   if (newSlug) handleSlugChange(newSlug)
                 }}
                 className="text-[11px] font-semibold text-acc hover:text-acc underline shrink-0 ml-2"
               >
-                Tùy chỉnh slug
+                {t('list.create.customizeSlug')}
               </button>
             </div>
           </div>
@@ -874,7 +879,7 @@ export default function WorkspacesPage() {
           {/* Business Type */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-fg uppercase tracking-wide">
-              Mô hình kinh doanh lưu trú <span className="text-acc">*</span>
+              {t('list.create.businessType')} <span className="text-acc">*</span>
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               <label className={`relative flex flex-col p-3 rounded-xl border-2 cursor-pointer shadow-sm transition ${formData.businessType === 'boutique_hotel' ? 'border-acc bg-acc-soft/40' : 'border-line bg-panel hover:border-line'}`}>
@@ -892,8 +897,8 @@ export default function WorkspacesPage() {
                     {formData.businessType === 'boutique_hotel' && <span className="w-1.5 h-1.5 rounded-full bg-ink"></span>}
                   </span>
                 </div>
-                <span className="text-xs font-bold text-fg">Boutique Hotel</span>
-                <span className="text-[11px] text-muted mt-0.5 leading-snug">Khách sạn phố, mini hotel phong cách</span>
+                <span className="text-xs font-bold text-fg">{t('list.create.types.boutiqueHotel.name')}</span>
+                <span className="text-[11px] text-muted mt-0.5 leading-snug">{t('list.create.types.boutiqueHotel.text')}</span>
               </label>
 
               <label className={`relative flex flex-col p-3 rounded-xl border-2 cursor-pointer shadow-sm transition ${formData.businessType === 'resort' ? 'border-acc bg-acc-soft/40' : 'border-line bg-panel hover:border-line'}`}>
@@ -911,8 +916,8 @@ export default function WorkspacesPage() {
                     {formData.businessType === 'resort' && <span className="w-1.5 h-1.5 rounded-full bg-ink"></span>}
                   </span>
                 </div>
-                <span className="text-xs font-bold text-fg">Resort &amp; Biệt thự</span>
-                <span className="text-[11px] text-muted mt-0.5 leading-snug">Khu nghỉ dưỡng, villa ven biển/núi</span>
+                <span className="text-xs font-bold text-fg">{t('list.create.types.resort.name')}</span>
+                <span className="text-[11px] text-muted mt-0.5 leading-snug">{t('list.create.types.resort.text')}</span>
               </label>
 
               <label className={`relative flex flex-col p-3 rounded-xl border-2 cursor-pointer shadow-sm transition ${formData.businessType === 'homestay' ? 'border-acc bg-acc-soft/40' : 'border-line bg-panel hover:border-line'}`}>
@@ -930,15 +935,15 @@ export default function WorkspacesPage() {
                     {formData.businessType === 'homestay' && <span className="w-1.5 h-1.5 rounded-full bg-ink"></span>}
                   </span>
                 </div>
-                <span className="text-xs font-bold text-fg">Chuỗi Homestay</span>
-                <span className="text-[11px] text-muted mt-0.5 leading-snug">Căn hộ dịch vụ, phòng chia sẻ</span>
+                <span className="text-xs font-bold text-fg">{t('list.create.types.homestay.name')}</span>
+                <span className="text-[11px] text-muted mt-0.5 leading-snug">{t('list.create.types.homestay.text')}</span>
               </label>
             </div>
           </div>
 
           {/* Brand Identity */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-fg uppercase tracking-wide">Nhận diện thương hiệu</label>
+            <label className="text-xs font-bold text-fg uppercase tracking-wide">{t('list.create.brand')}</label>
             <div className="flex items-center gap-4 p-3 bg-fg/[0.03] rounded-xl border border-line">
               <div className="w-14 h-14 rounded-xl overflow-hidden bg-acc-soft border-2 border-acc flex items-center justify-center shadow-inner shrink-0">
                 {formData.logo ? (
@@ -965,7 +970,7 @@ export default function WorkspacesPage() {
                       const file = e.target.files?.[0]
                       if (file) {
                         if (file.size > 2 * 1024 * 1024) {
-                          toast.error('Kích thước file không được vượt quá 2MB')
+                          toast.error(t('logo.tooLarge'))
                           return
                         }
                         const reader = new FileReader()
@@ -986,7 +991,7 @@ export default function WorkspacesPage() {
                     }}
                     className="px-3 py-1.5 text-xs font-bold bg-panel text-fg border border-line rounded-lg hover:border-acc hover:text-acc shadow-sm transition cursor-pointer"
                   >
-                    Tải logo lên
+                    {t('logo.upload')}
                   </button>
                   {formData.logo && (
                     <button
@@ -994,12 +999,12 @@ export default function WorkspacesPage() {
                       onClick={() => setFormData(prev => ({ ...prev, logo: null }))}
                       className="px-3 py-1.5 text-xs font-bold bg-err-soft text-err border border-err/30 rounded-lg hover:bg-err-soft hover:border-err/30 shadow-sm transition"
                     >
-                      Xóa logo
+                      {t('list.create.removeLogo')}
                     </button>
                   )}
-                  <span className="text-[11px] text-muted">{formData.logo ? 'Đã tải lên ✓' : 'hoặc tự sinh monogram'}</span>
+                  <span className="text-[11px] text-muted">{formData.logo ? t('list.create.uploaded') : t('list.create.monogram')}</span>
                 </div>
-                <p className="text-[10px] sm:text-[11px] text-muted mt-1.5">Hỗ trợ PNG, SVG, JPG (Khuyến nghị 512x512px, tối đa 2MB)</p>
+                <p className="text-[10px] sm:text-[11px] text-muted mt-1.5">{t('list.create.logoHint')}</p>
               </div>
             </div>
           </div>
@@ -1007,14 +1012,14 @@ export default function WorkspacesPage() {
           {/* Description */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-fg uppercase tracking-wide">Mô tả ngắn gọn &amp; Ghi chú vận hành</label>
+              <label className="text-xs font-bold text-fg uppercase tracking-wide">{t('list.create.description')}</label>
               <span className="text-[11px] text-muted font-mono">{formData.description.length}/250</span>
             </div>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value.slice(0, 250) }))}
               className="w-full px-3.5 py-2 text-xs sm:text-sm bg-panel border border-line rounded-xl focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 outline-none text-fg placeholder:text-muted shadow-sm transition"
-              placeholder="Mô tả định vị khách sạn, phong cách dịch vụ hoặc ghi chú cho nội bộ..."
+              placeholder={t('list.create.descriptionPlaceholder')}
               rows={2}
             />
           </div>
@@ -1022,25 +1027,25 @@ export default function WorkspacesPage() {
           {/* Currency & Timezone */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-fg uppercase tracking-wide">Tiền tệ mặc định</label>
+              <label className="text-xs font-bold text-fg uppercase tracking-wide">{t('defaultCurrency')}</label>
               <select
                 value={formData.currency}
                 onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value }))}
                 className="w-full px-3 py-2 text-xs font-semibold bg-panel border border-line rounded-xl focus-visible:border-acc outline-none text-fg shadow-sm"
               >
-                <option value="VND">VND (₫) - Đồng Việt Nam</option>
-                <option value="USD">USD ($) - US Dollar</option>
-                <option value="EUR">EUR (€) - Euro</option>
+                <option value="VND">{t('currencies.VND')}</option>
+                <option value="USD">{t('currencies.USD')}</option>
+                <option value="EUR">{t('currencies.EUR')}</option>
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-fg uppercase tracking-wide">Múi giờ vận hành</label>
+              <label className="text-xs font-bold text-fg uppercase tracking-wide">{t('list.create.timezone')}</label>
               <select
                 value={formData.timezone}
                 onChange={(e) => setFormData(prev => ({ ...prev, timezone: e.target.value }))}
                 className="w-full px-3 py-2 text-xs font-semibold bg-panel border border-line rounded-xl focus-visible:border-acc outline-none text-fg shadow-sm"
               >
-                <option value="GMT+07:00">GMT+07:00 (Hà Nội, TP.HCM)</option>
+                <option value="GMT+07:00">{t('list.create.timezoneVietnam')}</option>
                 <option value="GMT+08:00">GMT+08:00 (Singapore, Bali)</option>
                 <option value="GMT+09:00">GMT+09:00 (Tokyo, Seoul)</option>
               </select>
@@ -1056,7 +1061,7 @@ export default function WorkspacesPage() {
               onClick={() => setIsCreateOpen(false)}
               className="flex-1 sm:flex-none px-4 py-2.5 text-xs font-bold text-muted hover:text-fg bg-panel hover:bg-fg/5 rounded-xl border border-line transition shadow-sm"
             >
-              Hủy bỏ
+              {t('list.create.cancel')}
             </button>
             <button
               type="button"
@@ -1069,7 +1074,7 @@ export default function WorkspacesPage() {
               ) : (
                 <>
                   <Plus className="w-4 h-4 stroke-[2.5]" />
-                  <span>Tạo Workspace &amp; Thiết lập cơ sở</span>
+                  <span>{t('list.create.submit')}</span>
                 </>
               )}
             </button>
@@ -1078,7 +1083,7 @@ export default function WorkspacesPage() {
       </Modal>
 
       {/* Edit Modal */}
-      <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="Chỉnh sửa workspace">
+      <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title={t('list.edit.title')}>
         <form onSubmit={handleEdit}>
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-err-soft border border-err/30 text-err text-sm">
@@ -1087,13 +1092,13 @@ export default function WorkspacesPage() {
           )}
           <div className="space-y-4">
             <Input
-              label="Tên workspace"
+              label={t('list.edit.name')}
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
             />
             <Textarea
-              label="Mô tả (tùy chọn)"
+              label={t('descriptionOptional')}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
@@ -1105,7 +1110,7 @@ export default function WorkspacesPage() {
               className="px-4 py-2 text-sm font-medium text-fg bg-fg/5 hover:bg-fg/10 rounded-xl transition"
               onClick={() => setIsEditOpen(false)}
             >
-              Hủy
+              {tc('actions.cancel')}
             </button>
             <button
               type="submit"
@@ -1117,7 +1122,7 @@ export default function WorkspacesPage() {
               ) : (
                 <Check className="w-4 h-4" />
               )}
-              Lưu thay đổi
+              {tc('actions.saveChanges')}
             </button>
           </ModalFooter>
         </form>

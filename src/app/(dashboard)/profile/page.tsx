@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { signOut, useSession } from 'next-auth/react'
+import { useLocale, useTranslations } from 'next-intl'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Badge } from '@/components/ui'
 import { Alert, AlertDescription, AlertIcon } from '@/components/ui/alert'
@@ -13,7 +14,7 @@ import {
   Save, Lock, Shield, LogOut, Check, Loader2
 } from 'lucide-react'
 import { format } from 'date-fns'
-import { vi } from 'date-fns/locale'
+import { enGB, vi } from 'date-fns/locale'
 import { TwoFactorCard } from './two-factor-card'
 
 interface UserProfile {
@@ -37,6 +38,9 @@ interface PasswordForm {
 }
 
 export default function ProfilePage() {
+  const t = useTranslations('dash.account.profile')
+  const tc = useTranslations('dash.common')
+  const locale = useLocale()
   const router = useRouter()
   const { data: session, update: updateSession } = useSession()
   const [profile, setProfile] = React.useState<UserProfile | null>(null)
@@ -92,7 +96,7 @@ export default function ProfilePage() {
       }
     } catch (err) {
       console.error('Failed to fetch profile:', err)
-      setError('Không thể tải thông tin profile')
+      setError(t('loadFailed'))
     } finally {
       setIsLoading(false)
     }
@@ -104,13 +108,13 @@ export default function ProfilePage() {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      setError('Vui lòng chọn file hình ảnh')
+      setError(t('avatar.notImage'))
       return
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      setError('Kích thước file không được vượt quá 5MB')
+      setError(t('avatar.tooBig'))
       return
     }
 
@@ -133,29 +137,29 @@ export default function ProfilePage() {
         
         if (data.success) {
           setProfile(prev => prev ? { ...prev, image: data.data.image } : null)
-          setSuccess('Cập nhật avatar thành công!')
+          setSuccess(t('avatar.updated'))
           // Update session
           await updateSession()
         } else {
-          setError(data.error || 'Lỗi khi upload avatar')
+          setError(data.error || t('avatar.uploadFailed'))
         }
         setIsUploadingAvatar(false)
       }
       reader.onerror = () => {
-        setError('Lỗi khi đọc file')
+        setError(t('avatar.readFailed'))
         setIsUploadingAvatar(false)
       }
       reader.readAsDataURL(file)
     } catch (err) {
       console.error('Avatar upload error:', err)
-      setError('Đã xảy ra lỗi khi upload avatar')
+      setError(t('avatar.uploadError'))
       setIsUploadingAvatar(false)
     }
   }
 
   const handleSaveProfile = async () => {
     if (!formData.name.trim()) {
-      setError('Vui lòng nhập tên hiển thị')
+      setError(t('info.nameRequired'))
       return
     }
 
@@ -180,15 +184,15 @@ export default function ProfilePage() {
 
       if (data.success) {
         setProfile(prev => prev ? { ...prev, ...data.data } : null)
-        setSuccess('Cập nhật thông tin thành công!')
+        setSuccess(t('info.saved'))
         // Update session
         await updateSession()
       } else {
-        setError(data.error || 'Lỗi khi cập nhật thông tin')
+        setError(data.error || t('info.saveFailed'))
       }
     } catch (err) {
       console.error('Save profile error:', err)
-      setError('Đã xảy ra lỗi khi lưu thông tin')
+      setError(t('info.saveError'))
     } finally {
       setIsSaving(false)
     }
@@ -196,19 +200,19 @@ export default function ProfilePage() {
 
   const handleChangePassword = async () => {
     if (!passwordForm.currentPassword) {
-      setError('Vui lòng nhập mật khẩu hiện tại')
+      setError(t('password.currentRequired'))
       return
     }
     if (!passwordForm.newPassword) {
-      setError('Vui lòng nhập mật khẩu mới')
+      setError(t('password.newRequired'))
       return
     }
     if (passwordForm.newPassword.length < 8) {
-      setError('Mật khẩu mới phải có ít nhất 8 ký tự')
+      setError(t('password.tooShort'))
       return
     }
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setError('Mật khẩu xác nhận không khớp')
+      setError(t('password.mismatch'))
       return
     }
 
@@ -229,18 +233,18 @@ export default function ProfilePage() {
       const data = await res.json()
 
       if (data.success) {
-        setSuccess('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.')
+        setSuccess(t('password.changed'))
         setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
         // The server signed out every device, this one included.
         if (data.signedOut) {
           setTimeout(() => signOut({ callbackUrl: '/login' }), 1500)
         }
       } else {
-        setError(data.error || 'Lỗi khi đổi mật khẩu')
+        setError(data.error || t('password.failed'))
       }
     } catch (err) {
       console.error('Change password error:', err)
-      setError('Đã xảy ra lỗi khi đổi mật khẩu')
+      setError(t('password.error'))
     } finally {
       setIsChangingPassword(false)
     }
@@ -248,15 +252,15 @@ export default function ProfilePage() {
 
   const handleChangeEmail = async () => {
     if (!emailForm.newEmail) {
-      setError('Vui lòng nhập email mới')
+      setError(t('email.newRequired'))
       return
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailForm.newEmail)) {
-      setError('Email không hợp lệ')
+      setError(t('email.invalid'))
       return
     }
     if (!emailForm.password) {
-      setError('Vui lòng nhập mật khẩu để xác nhận')
+      setError(t('email.passwordRequired'))
       return
     }
 
@@ -280,20 +284,20 @@ export default function ProfilePage() {
       if (data.success) {
         setEmailChangeInfo(data.message)
         setEmailForm({ newEmail: '', password: '' })
-        setSuccess('Đã gửi email xác nhận. Vui lòng kiểm tra hộp thư mới.')
+        setSuccess(t('email.sent'))
       } else {
-        setError(data.error || 'Lỗi khi đổi email')
+        setError(data.error || t('email.failed'))
       }
     } catch (err) {
       console.error('Change email error:', err)
-      setError('Đã xảy ra lỗi khi đổi email')
+      setError(t('email.error'))
     } finally {
       setIsChangingEmail(false)
     }
   }
 
   const handleLogout = () => {
-    if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+    if (confirm(t('account.confirmSignOut'))) {
       signOut({ callbackUrl: '/login' })
     }
   }
@@ -304,20 +308,20 @@ export default function ProfilePage() {
     const params = new URLSearchParams(window.location.search)
     const status = params.get('email_change')
     if (status === 'success') {
-      setSuccess('Đổi email thành công! Vui lòng đăng nhập lại.')
+      setSuccess(t('email.changed.success'))
       fetchProfile()
       window.history.replaceState({}, '', '/profile')
     } else if (status === 'expired') {
-      setError('Link xác nhận đã hết hạn. Vui lòng thử lại.')
+      setError(t('email.changed.expired'))
       window.history.replaceState({}, '', '/profile')
     } else if (status === 'taken') {
-      setError('Email này đã được sử dụng bởi tài khoản khác.')
+      setError(t('email.changed.taken'))
       window.history.replaceState({}, '', '/profile')
     } else if (status === 'unauthorized') {
-      setError('Bạn cần đăng nhập để xác nhận đổi email.')
+      setError(t('email.changed.unauthorized'))
       window.history.replaceState({}, '', '/profile')
     } else if (status === 'error') {
-      setError('Đã xảy ra lỗi khi xác nhận đổi email.')
+      setError(t('email.changed.error'))
       window.history.replaceState({}, '', '/profile')
     }
   }, [])
@@ -335,8 +339,8 @@ export default function ProfilePage() {
   return (
     <PageContainer>
       <Header
-        title="Tài khoản của tôi"
-        description="Quản lý thông tin cá nhân và cài đặt bảo mật"
+        title={t('title')}
+        description={t('description')}
       />
 
       {/* Messages */}
@@ -364,7 +368,7 @@ export default function ProfilePage() {
           }`}
         >
           <User className="w-4 h-4" />
-          Thông tin cá nhân
+          {t('tabs.profile')}
         </button>
         <button
           onClick={() => setActiveTab('security')}
@@ -375,7 +379,7 @@ export default function ProfilePage() {
           }`}
         >
           <Shield className="w-4 h-4" />
-          Bảo mật
+          {t('tabs.security')}
         </button>
       </div>
 
@@ -385,7 +389,7 @@ export default function ProfilePage() {
           {/* Avatar Card */}
           <Card className="lg:col-span-1">
             <CardHeader>
-              <CardTitle>Ảnh đại diện</CardTitle>
+              <CardTitle>{t('avatar.title')}</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center">
               <div className="relative mb-4">
@@ -393,7 +397,7 @@ export default function ProfilePage() {
                   {profile?.image ? (
                     <Image
                       src={profile.image}
-                      alt={profile.name || 'Avatar'}
+                      alt={profile.name || t('avatar.alt')}
                       width={128}
                       height={128}
                       className="w-full h-full object-cover"
@@ -425,27 +429,31 @@ export default function ProfilePage() {
               </div>
               
               <p className="text-sm text-muted text-center">
-                Nhấn vào icon máy ảnh để thay đổi avatar
+                {t('avatar.hint')}
               </p>
               <p className="text-xs text-muted mt-1">
-                JPG, PNG (tối đa 5MB)
+                {t('avatar.formats')}
               </p>
 
               {/* User Info Summary */}
               <div className="w-full mt-6 pt-6 border-t border-line space-y-3">
                 <div className="flex items-center gap-2 text-sm">
                   <Badge variant={profile?.role === 'SUPER_ADMIN' || profile?.role === 'ADMIN' ? 'primary' : 'secondary'}>
-                    {profile?.role === 'SUPER_ADMIN' ? 'Super Admin' : profile?.role === 'ADMIN' ? 'Admin' : 'Người dùng'}
+                    {profile?.role === 'SUPER_ADMIN' ? t('role.superAdmin') : profile?.role === 'ADMIN' ? t('role.admin') : t('role.user')}
                   </Badge>
                   {/* /api/admin/system checks the role again, in the database. */}
                   {profile?.role === 'SUPER_ADMIN' && (
                     <Link href="/admin/system" className="text-xs font-medium text-acc underline">
-                      Trang Hệ thống
+                      {t('systemLink')}
                     </Link>
                   )}
                 </div>
                 <p className="text-xs text-muted">
-                  Tham gia: {profile?.createdAt ? format(new Date(profile.createdAt), 'dd MMMM yyyy', { locale: vi }) : '-'}
+                  {t('joined', {
+                    date: profile?.createdAt
+                      ? format(new Date(profile.createdAt), 'dd MMMM yyyy', { locale: locale === 'en' ? enGB : vi })
+                      : '-',
+                  })}
                 </p>
               </div>
             </CardContent>
@@ -455,44 +463,44 @@ export default function ProfilePage() {
           <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Thông tin cá nhân</CardTitle>
+                <CardTitle>{t('info.title')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <Input
-                  label="Tên hiển thị"
+                  label={t('info.name')}
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Nhập tên của bạn"
+                  placeholder={t('info.namePlaceholder')}
                   icon={<User className="w-4 h-4" />}
                   required
                 />
 
                 <Input
-                  label="Email"
+                  label={t('info.email')}
                   value={profile?.email || ''}
                   disabled
                   icon={<Mail className="w-4 h-4" />}
-                  hint="Vào tab Bảo mật để thay đổi email"
+                  hint={t('info.emailHint')}
                 />
 
                 <Input
-                  label="Số điện thoại"
+                  label={t('info.phone')}
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="VD: 0901234567"
+                  placeholder={t('info.phonePlaceholder')}
                   icon={<Phone className="w-4 h-4" />}
                 />
 
                 <Input
-                  label="Địa chỉ"
+                  label={t('info.address')}
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="VD: 123 Nguyễn Trãi, Quận 1, TP.HCM"
+                  placeholder={t('info.addressPlaceholder')}
                   icon={<MapPin className="w-4 h-4" />}
                 />
 
                 <Input
-                  label="Ngày sinh"
+                  label={t('info.dateOfBirth')}
                   type="date"
                   value={formData.dateOfBirth}
                   onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
@@ -502,21 +510,21 @@ export default function ProfilePage() {
                 <div>
                   <label className="block text-sm font-medium text-fg mb-1.5">
                     <FileText className="w-4 h-4 inline mr-1.5" />
-                    Giới thiệu bản thân
+                    {t('info.bio')}
                   </label>
                   <textarea
                     className="w-full px-4 py-3 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-charcoal placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none resize-none"
                     rows={3}
                     value={formData.bio}
                     onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                    placeholder="Viết vài dòng giới thiệu về bản thân..."
+                    placeholder={t('info.bioPlaceholder')}
                   />
                 </div>
 
                 <div className="flex justify-end pt-2">
                   <Button onClick={handleSaveProfile} isLoading={isSaving}>
                     <Save className="w-4 h-4 mr-2" />
-                    Lưu thay đổi
+                    {tc('actions.saveChanges')}
                   </Button>
                 </div>
               </CardContent>
@@ -527,7 +535,7 @@ export default function ProfilePage() {
               <CardHeader>
                 <CardTitle className="text-warn flex items-center gap-2">
                   <LogOut className="w-5 h-5" />
-                  Tài khoản
+                  {t('account.title')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -537,7 +545,7 @@ export default function ProfilePage() {
                   className="border-warn/30 text-warn hover:bg-warn-soft"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
-                  Đăng xuất
+                  {tc('shell.signOut')}
                 </Button>
               </CardContent>
             </Card>
@@ -553,30 +561,33 @@ export default function ProfilePage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Mail className="w-5 h-5" />
-                Đổi địa chỉ email
+                {t('email.title')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted">
-                Hiện tại: <span className="font-semibold text-fg">{profile?.email}</span>
+                {t.rich('email.current', {
+                  email: profile?.email ?? '',
+                  b: (chunks) => <span className="font-semibold text-fg">{chunks}</span>,
+                })}
               </p>
 
               <div>
                 <label className="block text-sm font-medium text-fg mb-1.5">
-                  Email mới
+                  {t('email.newEmail')}
                 </label>
                 <input
                   type="email"
                   value={emailForm.newEmail}
                   onChange={(e) => setEmailForm({ ...emailForm, newEmail: e.target.value })}
                   className="w-full px-4 py-3 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-charcoal placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none"
-                  placeholder="email-moi@example.com"
+                  placeholder={t('email.newEmailPlaceholder')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-fg mb-1.5">
-                  Nhập mật khẩu để xác nhận
+                  {t('email.password')}
                 </label>
                 <div className="relative">
                   <input
@@ -584,7 +595,7 @@ export default function ProfilePage() {
                     value={emailForm.password}
                     onChange={(e) => setEmailForm({ ...emailForm, password: e.target.value })}
                     className="w-full px-4 py-3 pr-12 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-charcoal placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none"
-                    placeholder="Mật khẩu hiện tại"
+                    placeholder={t('email.passwordPlaceholder')}
                   />
                   <button
                     type="button"
@@ -595,14 +606,14 @@ export default function ProfilePage() {
                   </button>
                 </div>
                 <p className="text-xs text-muted mt-1">
-                  Một email xác nhận sẽ được gửi đến địa chỉ mới. Vui lòng nhấp vào link trong email để hoàn tất.
+                  {t('email.help')}
                 </p>
               </div>
 
               <div className="flex justify-end pt-2">
                 <Button onClick={handleChangeEmail} isLoading={isChangingEmail}>
                   <Mail className="w-4 h-4 mr-2" />
-                  Gửi email xác nhận
+                  {t('email.send')}
                 </Button>
               </div>
             </CardContent>
@@ -613,17 +624,17 @@ export default function ProfilePage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Lock className="w-5 h-5" />
-                Đổi mật khẩu
+                {t('password.title')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted mb-4">
-                Sử dụng mật khẩu mạnh để bảo vệ tài khoản của bạn
+                {t('password.intro')}
               </p>
 
               <div>
                 <label className="block text-sm font-medium text-fg mb-1.5">
-                  Mật khẩu hiện tại
+                  {t('password.current')}
                 </label>
                 <div className="relative">
                   <input
@@ -631,7 +642,7 @@ export default function ProfilePage() {
                     value={passwordForm.currentPassword}
                     onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
                     className="w-full px-4 py-3 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-charcoal placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none pr-12"
-                    placeholder="Nhập mật khẩu hiện tại"
+                    placeholder={t('password.currentPlaceholder')}
                   />
                   <button
                     type="button"
@@ -645,7 +656,7 @@ export default function ProfilePage() {
 
               <div>
                 <label className="block text-sm font-medium text-fg mb-1.5">
-                  Mật khẩu mới
+                  {t('password.new')}
                 </label>
                 <div className="relative">
                   <input
@@ -653,7 +664,7 @@ export default function ProfilePage() {
                     value={passwordForm.newPassword}
                     onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
                     className="w-full px-4 py-3 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-charcoal placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none pr-12"
-                    placeholder="Nhập mật khẩu mới (ít nhất 8 ký tự)"
+                    placeholder={t('password.newPlaceholder')}
                   />
                   <button
                     type="button"
@@ -664,27 +675,27 @@ export default function ProfilePage() {
                   </button>
                 </div>
                 <p className="text-xs text-muted mt-1">
-                  Tối thiểu 8 ký tự
+                  {t('password.newHint')}
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-fg mb-1.5">
-                  Xác nhận mật khẩu mới
+                  {t('password.confirm')}
                 </label>
                 <input
                   type="password"
                   value={passwordForm.confirmPassword}
                   onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
                   className="w-full px-4 py-3 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-charcoal placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none"
-                  placeholder="Nhập lại mật khẩu mới"
+                  placeholder={t('password.confirmPlaceholder')}
                 />
               </div>
 
               <div className="flex justify-end pt-2">
                 <Button onClick={handleChangePassword} isLoading={isChangingPassword}>
                   <Check className="w-4 h-4 mr-2" />
-                  Cập nhật mật khẩu
+                  {t('password.submit')}
                 </Button>
               </div>
             </CardContent>
@@ -697,26 +708,26 @@ export default function ProfilePage() {
             <CardHeader>
               <CardTitle className="text-ok flex items-center gap-2">
                 <Shield className="w-5 h-5" />
-                Bảo mật tài khoản
+                {t('securityInfo.title')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-start gap-3">
                 <div className="w-2 h-2 rounded-full bg-ok mt-2"></div>
                 <p className="text-sm text-fg">
-                  Mật khẩu được mã hóa và lưu trữ an toàn
+                  {t('securityInfo.encrypted')}
                 </p>
               </div>
               <div className="flex items-start gap-3">
                 <div className="w-2 h-2 rounded-full bg-ok mt-2"></div>
                 <p className="text-sm text-fg">
-                  Phiên đăng nhập có thời hạn và có thể bị thu hồi
+                  {t('securityInfo.sessions')}
                 </p>
               </div>
               <div className="flex items-start gap-3">
                 <div className="w-2 h-2 rounded-full bg-ok mt-2"></div>
                 <p className="text-sm text-fg">
-                  Khuyến nghị sử dụng mật khẩu mạnh với ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt
+                  {t('securityInfo.strong')}
                 </p>
               </div>
             </CardContent>

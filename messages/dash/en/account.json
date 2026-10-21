@@ -1,1 +1,227 @@
-{}
+{
+  "profile": {
+    "title": "My account",
+    "description": "Manage your personal details and security settings",
+    "loadFailed": "Couldn't load your profile",
+    "tabs": {
+      "profile": "Personal details",
+      "security": "Security"
+    },
+    "avatar": {
+      "title": "Profile photo",
+      "alt": "Profile photo",
+      "hint": "Click the camera icon to change your photo",
+      "formats": "JPG, PNG (up to 5MB)",
+      "notImage": "Please choose an image file",
+      "tooBig": "The file can't be larger than 5MB",
+      "updated": "Profile photo updated!",
+      "uploadFailed": "Couldn't upload the photo",
+      "readFailed": "Couldn't read the file",
+      "uploadError": "Something went wrong while uploading the photo"
+    },
+    "role": {
+      "superAdmin": "Super Admin",
+      "admin": "Admin",
+      "user": "User"
+    },
+    "systemLink": "System page",
+    "joined": "Joined: {date}",
+    "info": {
+      "title": "Personal details",
+      "name": "Display name",
+      "namePlaceholder": "Enter your name",
+      "nameRequired": "Please enter a display name",
+      "email": "Email",
+      "emailHint": "Go to the Security tab to change your email",
+      "phone": "Phone number",
+      "phonePlaceholder": "e.g. 0901234567",
+      "address": "Address",
+      "addressPlaceholder": "e.g. 123 Nguyen Trai, District 1, HCMC",
+      "dateOfBirth": "Date of birth",
+      "bio": "About me",
+      "bioPlaceholder": "Write a few lines about yourself...",
+      "saved": "Details updated!",
+      "saveFailed": "Couldn't update your details",
+      "saveError": "Something went wrong while saving your details"
+    },
+    "account": {
+      "title": "Account",
+      "confirmSignOut": "Are you sure you want to sign out?"
+    },
+    "email": {
+      "title": "Change email address",
+      "current": "Current: <b>{email}</b>",
+      "newEmail": "New email",
+      "newEmailPlaceholder": "new-email@example.com",
+      "password": "Enter your password to confirm",
+      "passwordPlaceholder": "Current password",
+      "help": "A confirmation email will be sent to the new address. Click the link in it to finish.",
+      "send": "Send confirmation email",
+      "newRequired": "Please enter the new email",
+      "invalid": "Invalid email",
+      "passwordRequired": "Please enter your password to confirm",
+      "sent": "Confirmation email sent. Please check the new inbox.",
+      "failed": "Couldn't change the email",
+      "error": "Something went wrong while changing the email",
+      "changed": {
+        "success": "Email changed! Please sign in again.",
+        "expired": "The confirmation link has expired. Please try again.",
+        "taken": "This email is already used by another account.",
+        "unauthorized": "You need to sign in to confirm the email change.",
+        "error": "Something went wrong while confirming the email change."
+      }
+    },
+    "password": {
+      "title": "Change password",
+      "intro": "Use a strong password to protect your account",
+      "current": "Current password",
+      "currentPlaceholder": "Enter your current password",
+      "new": "New password",
+      "newPlaceholder": "Enter a new password (at least 8 characters)",
+      "newHint": "At least 8 characters",
+      "confirm": "Confirm new password",
+      "confirmPlaceholder": "Re-enter the new password",
+      "submit": "Update password",
+      "currentRequired": "Please enter your current password",
+      "newRequired": "Please enter a new password",
+      "tooShort": "The new password must be at least 8 characters",
+      "mismatch": "The passwords don't match",
+      "changed": "Password changed! Please sign in again.",
+      "failed": "Couldn't change the password",
+      "error": "Something went wrong while changing the password"
+    },
+    "securityInfo": {
+      "title": "Account security",
+      "encrypted": "Passwords are encrypted and stored securely",
+      "sessions": "Sign-in sessions expire and can be revoked",
+      "strong": "Use a strong password of at least 8 characters, with uppercase and lowercase letters, numbers and special characters"
+    }
+  },
+  "twoFactor": {
+    "title": "Two-factor authentication",
+    "on": "On",
+    "loadFailed": "Couldn't load the two-factor status",
+    "cancel": "Cancel",
+    "codeInputPlaceholder": "6-digit code from the app, or a recovery code",
+    "off": {
+      "intro": "Optional. When it's on, besides your password (or Google) you also enter a 6-digit code from an app on your phone. Someone who gets hold of your password still can't sign in.",
+      "enable": "Turn on two-factor authentication"
+    },
+    "status": {
+      "enabled": "On since {date}. <b>{count, plural, one {# recovery code} other {# recovery codes}}</b> left.",
+      "enabledLow": "On since {date}. Only <b>{count, plural, one {# recovery code} other {# recovery codes}}</b> left — create a new set.",
+      "regenerate": "Create new recovery codes",
+      "disable": "Turn off two-factor authentication"
+    },
+    "setup": {
+      "step1": "Step 1 — Install an authenticator app",
+      "step1Help": "Google Authenticator or Microsoft Authenticator (App Store, Google Play). The Passwords app built into iPhone works too.",
+      "step2": "Step 2 — Scan the QR code with that app",
+      "step2Help": "In the app, choose to add an account, then scan the code. On iPhone, scanning with the Camera opens the Passwords app — that's fine, carry on.",
+      "qrAlt": "Two-factor authentication QR code",
+      "manualKey": "Opening this page on your phone? Enter this key in the app:",
+      "keyCopied": "Key copied.",
+      "step3": "Step 3 — Enter the 6-digit code the app shows",
+      "codePlaceholder": "6 digits",
+      "enable": "Turn on"
+    },
+    "codes": {
+      "saveTitle": "Keep these recovery codes somewhere safe",
+      "saveHelp": "If you lose your phone, use a code in place of the 6-digit one; each code works once. The codes are shown <strong>only once</strong>.",
+      "copy": "Copy",
+      "download": "Download",
+      "saved": "I've saved the recovery codes",
+      "signedOut": "Two-factor authentication is on. Every device has been signed out; sign in again with your password and a 6-digit code.",
+      "doneSignIn": "Done, sign in again",
+      "done": "Done",
+      "copied": "Recovery codes copied.",
+      "fileTitle": "DigiStay recovery codes ({date})",
+      "fileHelp": "Each code works once, for when you don't have your phone to get a code.",
+      "fileName": "digistay-recovery-codes.txt"
+    },
+    "regenerate": {
+      "intro": "A new set replaces all the old codes (the old ones stop working).",
+      "submit": "Create new codes"
+    },
+    "disable": {
+      "intro": "Once it's off, signing in only needs your password (or Google).",
+      "passwordPlaceholder": "Current password",
+      "submit": "Turn off two-factor authentication",
+      "done": "Two-factor authentication turned off."
+    }
+  },
+  "system": {
+    "notFound": "Page not found",
+    "backToWorkspaces": "Back to workspaces",
+    "title": "System",
+    "checkedAt": "Checked at {time} · refreshes every minute",
+    "loadFailed": "Couldn't load the system status.",
+    "health": {
+      "title": "Health",
+      "version": "Version",
+      "schema": "Database (migrations)",
+      "schemaOk": "Up to date",
+      "schemaUnknown": "Unknown",
+      "schemaMissing": "Missing {migrations}",
+      "redis": "Redis",
+      "redisOk": "Running",
+      "redisDown": "Not connected",
+      "alertRecipients": "Alert emails go to",
+      "noRecipients": "no one yet (set ALERT_EMAILS)"
+    },
+    "problems": {
+      "title": "Current problems",
+      "none": "None",
+      "empty": "No problems under the alert rules.",
+      "critical": "Critical",
+      "warning": "Warning"
+    },
+    "jobs": {
+      "title": "Scheduled jobs",
+      "job": "Job",
+      "last": "Last run",
+      "result": "Result",
+      "duration": "Duration",
+      "lastSuccess": "Last success",
+      "failures24h": "Failures (24h)",
+      "neverRan": "Never run",
+      "names": {
+        "payosReconcile": "PayOS reconciliation",
+        "einvoiceJobs": "E-invoices",
+        "emailOutbox": "Email queue",
+        "opsAlerts": "Ops alerts",
+        "backup": "Database backup"
+      }
+    },
+    "queues": {
+      "outbox": "Booking and invitation emails",
+      "invoiceEmails": "Invoice emails",
+      "empty": "No emails yet.",
+      "status": {
+        "PENDING": "Waiting",
+        "SENDING": "Sending",
+        "SENT": "Sent",
+        "FAILED": "Failed",
+        "SKIPPED": "Skipped"
+      }
+    },
+    "runs": {
+      "title": "Recent runs",
+      "empty": "No job has run yet. Is the digistay-reconcile timer installed?"
+    },
+    "alerts": {
+      "title": "Alerts sent",
+      "empty": "No alerts yet.",
+      "resolved": "Resolved",
+      "active": "Active",
+      "times": "since {first} · last sent {last}",
+      "timesResolved": "since {first} · last sent {last} · resolved {resolved}"
+    }
+  },
+  "error": {
+    "title": "Something went wrong on this page",
+    "fallback": "An unexpected error occurred. Please try again or go back to the dashboard.",
+    "toWorkspaces": "Back to workspaces",
+    "digest": "Error code: {digest}"
+  }
+}

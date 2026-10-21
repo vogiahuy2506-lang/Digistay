@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Select, Textarea, Badge } from '@/components/ui'
 import {
@@ -40,12 +41,9 @@ interface WorkspaceSettings {
   }
 }
 
-const currencies = [
-  { value: 'VND', label: 'VND (₫) - Đồng Việt Nam' },
-  { value: 'USD', label: 'USD ($) - US Dollar' },
-  { value: 'EUR', label: 'EUR (€) - Euro' },
-  { value: 'SGD', label: 'SGD ($) - Singapore Dollar' },
-]
+// Option labels come from the messages: dash.workspace.currencies.<value> and
+// dash.workspace.settings.general.businessTypes.<value>.
+const CURRENCIES = ['VND', 'USD', 'EUR', 'SGD'] as const
 
 const timezones = [
   { value: 'Asia/Ho_Chi_Minh', label: 'Asia/Ho_Chi_Minh (GMT+7)' },
@@ -54,18 +52,14 @@ const timezones = [
   { value: 'UTC', label: 'UTC (GMT+0)' },
 ]
 
-const businessTypes = [
-  { value: 'HOTEL', label: 'Khách sạn (Hotel)' },
-  { value: 'RESORT', label: 'Resort / Khu nghỉ dưỡng' },
-  { value: 'HOMESTAY', label: 'Homestay / Căn hộ dịch vụ' },
-  { value: 'BOUTIQUE', label: 'Boutique Hotel' },
-  { value: 'VILLA', label: 'Villa / Biệt thự' },
-  { value: 'MOTEL', label: 'Motel' },
-  { value: 'HOSTEL', label: 'Hostel / Backpacker' },
-]
+const BUSINESS_TYPES = ['HOTEL', 'RESORT', 'HOMESTAY', 'BOUTIQUE', 'VILLA', 'MOTEL', 'HOSTEL'] as const
 
 export default function WorkspaceSettingsPage() {
+  const t = useTranslations('dash.workspace')
+  const tc = useTranslations('dash.common')
   const router = useRouter()
+  const currencies = CURRENCIES.map((value) => ({ value, label: t(`currencies.${value}`) }))
+  const businessTypes = BUSINESS_TYPES.map((value) => ({ value, label: t(`settings.general.businessTypes.${value}`) }))
   const { workspace } = useWorkspace()
   const [settings, setSettings] = React.useState<WorkspaceSettings | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
@@ -137,7 +131,7 @@ export default function WorkspaceSettingsPage() {
 
       if (!basicRes.ok) {
         const basicData = await basicRes.json()
-        throw new Error(basicData.error || 'Lỗi khi lưu')
+        throw new Error(basicData.error || t('settings.saveFailed'))
       }
 
       // Then update settings
@@ -156,10 +150,10 @@ export default function WorkspaceSettingsPage() {
         console.warn('Settings save partial failure:', settingsData.error)
       }
 
-      setSuccess('Lưu cài đặt thành công!')
+      setSuccess(t('settings.saved'))
       fetchSettings()
     } catch (err: any) {
-      setError(err.message || 'Đã xảy ra lỗi')
+      setError(err.message || t('errors.generic'))
     } finally {
       setIsSaving(false)
     }
@@ -171,7 +165,7 @@ export default function WorkspaceSettingsPage() {
 
     // Validate file
     if (file.size > 2 * 1024 * 1024) {
-      setError('Kích thước file không được vượt quá 2MB')
+      setError(t('logo.tooLarge'))
       return
     }
 
@@ -194,7 +188,7 @@ export default function WorkspaceSettingsPage() {
         const data = await res.json()
         if (data.success) {
           setFormData(prev => ({ ...prev, logo: data.data.url }))
-          setSuccess('Logo đã được tải lên!')
+          setSuccess(t('settings.logoUploaded'))
         } else {
           // Fallback: use base64 directly
           setFormData(prev => ({ ...prev, logo: base64 }))
@@ -213,9 +207,9 @@ export default function WorkspaceSettingsPage() {
         <Card>
           <CardContent className="p-12 text-center">
             <Settings className="w-16 h-16 text-muted mx-auto mb-4" />
-            <p className="text-muted mb-4">Vui lòng chọn Workspace</p>
+            <p className="text-muted mb-4">{t('noWorkspace.title')}</p>
             <Button onClick={() => router.push(routes.workspaces())}>
-              Chuyển đến Workspace
+              {t('noWorkspace.goTo')}
             </Button>
           </CardContent>
         </Card>
@@ -240,12 +234,12 @@ export default function WorkspaceSettingsPage() {
         className="flex items-center gap-1.5 text-sm text-muted hover:text-acc mb-3"
       >
         <ArrowLeft className="w-4 h-4" />
-        Quay lại workspace
+        {t('settings.back')}
       </button>
 
       <Header
-        title="Cài đặt Workspace"
-        description={`Quản lý cấu hình cho ${workspace.name}`}
+        title={t('settings.title')}
+        description={t('settings.description', { name: workspace.name })}
       />
 
       {/* Success/Error Messages */}
@@ -271,7 +265,7 @@ export default function WorkspaceSettingsPage() {
           }`}
         >
           <Settings className="w-4 h-4 inline mr-2" />
-          Chung
+          {t('settings.tabs.general')}
         </button>
         <button
           onClick={() => setActiveTab('notifications')}
@@ -282,7 +276,7 @@ export default function WorkspaceSettingsPage() {
           }`}
         >
           <Bell className="w-4 h-4 inline mr-2" />
-          Thông báo
+          {t('settings.tabs.notifications')}
         </button>
         <button
           onClick={() => setActiveTab('security')}
@@ -293,7 +287,7 @@ export default function WorkspaceSettingsPage() {
           }`}
         >
           <Shield className="w-4 h-4 inline mr-2" />
-          Bảo mật
+          {t('settings.tabs.security')}
         </button>
       </div>
 
@@ -303,13 +297,13 @@ export default function WorkspaceSettingsPage() {
           {/* Basic Info */}
           <Card>
             <CardHeader>
-              <CardTitle>Thông tin cơ bản</CardTitle>
+              <CardTitle>{t('settings.general.basicInfo')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Logo */}
               <div>
                 <label className="block text-sm font-medium text-fg mb-2">
-                  Logo Workspace
+                  {t('settings.general.logo')}
                 </label>
                 <div className="flex items-center gap-4">
                   <div className="w-20 h-20 rounded-xl border-2 border-dashed border-line flex items-center justify-center overflow-hidden bg-fg/[0.03]">
@@ -338,35 +332,35 @@ export default function WorkspaceSettingsPage() {
                       className="inline-flex items-center gap-2 px-4 py-2 bg-panel border border-line rounded-lg text-sm font-medium text-fg hover:bg-fg/[0.03] cursor-pointer"
                     >
                       <Upload className="w-4 h-4" />
-                      Tải logo lên
+                      {t('logo.upload')}
                     </label>
-                    <p className="text-xs text-muted mt-1">PNG, SVG, JPG (tối đa 2MB)</p>
+                    <p className="text-xs text-muted mt-1">{t('settings.general.logoHint')}</p>
                   </div>
                 </div>
               </div>
 
               <Input
-                label="Tên Workspace"
+                label={t('settings.general.name')}
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="VD: Khách sạn ABC"
+                placeholder={t('settings.general.namePlaceholder')}
                 required
               />
 
               <Textarea
-                label="Mô tả"
+                label={t('settings.general.description')}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Mô tả ngắn về workspace..."
+                placeholder={t('settings.general.descriptionPlaceholder')}
                 rows={3}
               />
 
               <Input
-                label="Tên miền tùy chỉnh"
+                label={t('settings.general.domain')}
                 value={formData.domain}
                 onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
-                placeholder="VD: khachsanabc.com"
-                hint="Liên kết workspace với tên miền riêng"
+                placeholder={t('settings.general.domainPlaceholder')}
+                hint={t('settings.general.domainHint')}
               />
             </CardContent>
           </Card>
@@ -374,19 +368,19 @@ export default function WorkspaceSettingsPage() {
           {/* Regional Settings */}
           <Card>
             <CardHeader>
-              <CardTitle>Cài đặt khu vực</CardTitle>
+              <CardTitle>{t('settings.general.regional')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Select
-                  label="Tiền tệ mặc định"
+                  label={t('defaultCurrency')}
                   options={currencies}
                   value={formData.currency}
                   onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
                 />
 
                 <Select
-                  label="Múi giờ"
+                  label={t('settings.general.timezone')}
                   options={timezones}
                   value={formData.timezone}
                   onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
@@ -394,7 +388,7 @@ export default function WorkspaceSettingsPage() {
               </div>
 
               <Select
-                label="Loại hình kinh doanh"
+                label={t('settings.general.businessType')}
                 options={businessTypes}
                 value={formData.businessType}
                 onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
@@ -406,7 +400,7 @@ export default function WorkspaceSettingsPage() {
           <div className="flex justify-end">
             <Button onClick={handleSave} isLoading={isSaving}>
               <Save className="w-4 h-4 mr-2" />
-              Lưu thay đổi
+              {tc('actions.saveChanges')}
             </Button>
           </div>
         </div>
@@ -416,11 +410,11 @@ export default function WorkspaceSettingsPage() {
       {activeTab === 'notifications' && (
         <Card>
           <CardHeader>
-            <CardTitle>Cài đặt thông báo</CardTitle>
+            <CardTitle>{t('settings.notifications.title')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted mb-4">
-              Chọn cách bạn nhận thông báo từ hệ thống
+              {t('settings.notifications.intro')}
             </p>
 
             <div className="space-y-4">
@@ -428,8 +422,8 @@ export default function WorkspaceSettingsPage() {
                 <div className="flex items-center gap-3">
                   <Mail className="w-5 h-5 text-muted" />
                   <div>
-                    <p className="font-medium text-fg">Thông báo qua Email</p>
-                    <p className="text-sm text-muted">Nhận email về booking mới và cập nhật</p>
+                    <p className="font-medium text-fg">{t('settings.notifications.email')}</p>
+                    <p className="text-sm text-muted">{t('settings.notifications.emailText')}</p>
                   </div>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -442,8 +436,8 @@ export default function WorkspaceSettingsPage() {
                 <div className="flex items-center gap-3">
                   <Bell className="w-5 h-5 text-muted" />
                   <div>
-                    <p className="font-medium text-fg">Thông báo đẩy</p>
-                    <p className="text-sm text-muted">Nhận thông báo trên trình duyệt</p>
+                    <p className="font-medium text-fg">{t('settings.notifications.push')}</p>
+                    <p className="text-sm text-muted">{t('settings.notifications.pushText')}</p>
                   </div>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -456,8 +450,8 @@ export default function WorkspaceSettingsPage() {
                 <div className="flex items-center gap-3">
                   <DollarSign className="w-5 h-5 text-muted" />
                   <div>
-                    <p className="font-medium text-fg">Thông báo booking mới</p>
-                    <p className="text-sm text-muted">Thông báo ngay khi có đặt phòng mới</p>
+                    <p className="font-medium text-fg">{t('settings.notifications.booking')}</p>
+                    <p className="text-sm text-muted">{t('settings.notifications.bookingText')}</p>
                   </div>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -475,36 +469,36 @@ export default function WorkspaceSettingsPage() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Thông tin bảo mật</CardTitle>
+              <CardTitle>{t('settings.security.title')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="p-4 bg-fg/[0.03] rounded-lg">
                 <div className="flex items-center gap-3 mb-2">
                   <Shield className="w-5 h-5 text-acc" />
-                  <p className="font-medium text-fg">Chủ sở hữu Workspace</p>
+                  <p className="font-medium text-fg">{t('settings.security.owner')}</p>
                 </div>
                 <p className="text-sm text-muted ml-8">
-                  {settings?.owner.name || 'Người dùng'} ({settings?.owner.email})
+                  {settings?.owner.name || tc('shell.user')} ({settings?.owner.email})
                 </p>
               </div>
 
               <div className="p-4 bg-fg/[0.03] rounded-lg">
                 <div className="flex items-center gap-3 mb-2">
                   <Users className="w-5 h-5 text-acc" />
-                  <p className="font-medium text-fg">Thành viên</p>
+                  <p className="font-medium text-fg">{tc('nav.members')}</p>
                 </div>
                 <p className="text-sm text-muted ml-8">
-                  {settings?._count.members || 0} thành viên
+                  {t('memberCount', { count: settings?._count.members || 0 })}
                 </p>
               </div>
 
               <div className="p-4 bg-fg/[0.03] rounded-lg">
                 <div className="flex items-center gap-3 mb-2">
                   <Building2 className="w-5 h-5 text-acc" />
-                  <p className="font-medium text-fg">Cơ sở</p>
+                  <p className="font-medium text-fg">{tc('nav.properties')}</p>
                 </div>
                 <p className="text-sm text-muted ml-8">
-                  {settings?._count.properties || 0} cơ sở
+                  {t('settings.security.propertyCount', { count: settings?._count.properties || 0 })}
                 </p>
               </div>
             </CardContent>
@@ -512,24 +506,24 @@ export default function WorkspaceSettingsPage() {
 
           <Card className="border-err/30">
             <CardHeader>
-              <CardTitle className="text-err">Vùng nguy hiểm</CardTitle>
+              <CardTitle className="text-err">{t('settings.security.dangerZone')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="p-4 bg-err-soft rounded-lg border border-err/30">
-                <p className="font-medium text-err mb-1">Xóa Workspace</p>
+                <p className="font-medium text-err mb-1">{t('settings.security.delete')}</p>
                 <p className="text-sm text-err mb-3">
-                  Khi xóa workspace, toàn bộ dữ liệu bao gồm cơ sở, đặt phòng, và thành viên sẽ bị xóa vĩnh viễn.
+                  {t('settings.security.deleteText')}
                 </p>
                 <Button
                   variant="danger"
                   onClick={() => {
-                    if (confirm('Bạn có chắc chắn muốn xóa workspace này? Hành động này không thể hoàn tác.')) {
+                    if (confirm(t('settings.security.confirmDelete'))) {
                       // TODO: Implement workspace deletion
-                      alert('Tính năng đang được phát triển')
+                      alert(t('settings.security.comingSoon'))
                     }
                   }}
                 >
-                  Xóa Workspace
+                  {t('settings.security.delete')}
                 </Button>
               </div>
             </CardContent>

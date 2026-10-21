@@ -12,6 +12,7 @@
  * different workspace.
  */
 import { useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react'
 
 export default function DashboardError({
@@ -21,6 +22,8 @@ export default function DashboardError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  const t = useTranslations('dash.account.error')
+  const tc = useTranslations('dash.common')
   useEffect(() => {
     // Log to the browser console so the error shows up in dev-tools
     // and the server-side digest (when present) is captured.
@@ -35,10 +38,10 @@ export default function DashboardError({
           <AlertTriangle className="w-7 h-7 text-err" />
         </div>
         <h2 className="text-lg font-semibold text-fg mb-2">
-          Trang này gặp sự cố
+          {t('title')}
         </h2>
         <p className="text-sm text-muted mb-5">
-          {error.message || 'Đã xảy ra lỗi không mong muốn. Vui lòng thử lại hoặc quay về dashboard.'}
+          {error.message || t('fallback')}
         </p>
         <div className="flex items-center justify-center gap-2">
           <button
@@ -46,7 +49,7 @@ export default function DashboardError({
             className="inline-flex items-center gap-2 px-4 py-2 bg-ink text-on-ink rounded-lg text-sm font-semibold hover:bg-ink/90 transition"
           >
             <RefreshCw className="w-4 h-4" />
-            Thử lại
+            {tc('actions.retry')}
           </button>
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- a full page load leaves the broken state behind */}
           <a
@@ -54,11 +57,11 @@ export default function DashboardError({
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-fg bg-fg/5 hover:bg-fg/10 rounded-lg transition"
           >
             <Home className="w-4 h-4" />
-            Về workspaces
+            {t('toWorkspaces')}
           </a>
         </div>
         {error.digest && (
-          <p className="mt-4 text-xs text-muted font-mono">Mã lỗi: {error.digest}</p>
+          <p className="mt-4 text-xs text-muted font-mono">{t('digest', { digest: error.digest })}</p>
         )}
       </div>
     </div>
