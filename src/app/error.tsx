@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { Logo } from '@/components/marketing/Logo'
 import { frame, inkButton, lineButton, softText } from '@/components/marketing/styles'
+import { THEME_COOKIE, parseThemePreference, type ThemePreference } from '@/lib/theme'
 import { cn } from '@/lib/utils'
 
 /**
@@ -19,13 +20,18 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
   const [tries, setTries] = React.useState(0)
   const [copied, setCopied] = React.useState(false)
   const code = error.digest ? `ERR-${error.digest}` : null
+  // The visitor's light / dark choice (src/lib/theme.ts); this page only renders in the browser.
+  const [theme, setTheme] = React.useState<ThemePreference>('light')
+  React.useEffect(() => {
+    setTheme(parseThemePreference(document.cookie.match(new RegExp(`(?:^|; )${THEME_COOKIE}=([^;]*)`))?.[1]))
+  }, [])
 
   React.useEffect(() => {
     console.error(error)
   }, [error])
 
   return (
-    <div className="flex min-h-screen flex-col bg-page font-sans text-fg">
+    <div data-public-theme data-theme={theme} className="flex min-h-screen flex-col bg-page font-sans text-fg">
       <header className="border-b border-line/70">
         <div className={cn(frame, 'py-4 lg:py-5')}>
           <Link href="/" className="inline-block rounded-ctl">

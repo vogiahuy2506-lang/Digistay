@@ -200,7 +200,10 @@
       "openMenu": "Open menu",
       "closeMenu": "Close menu",
       "language": "Language",
-      "dashboard": "Open your management pages ({email})"
+      "dashboard": "Open your management pages ({email})",
+      "toDark": "Switch to the dark theme",
+      "toLight": "Switch to the light theme",
+      "theme": "Theme"
     },
     "footer": {
       "tagline": "Websites and management software for hotels, homestays and resorts.",

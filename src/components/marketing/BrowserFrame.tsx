@@ -4,11 +4,13 @@ import { cn } from '@/lib/utils'
 /**
  * A screenshot of the real app in a browser window (address bar, three
  * dots). The picture fills the width and is cut at the bottom by `aspect`,
- * so a tall screenshot shows its top.
+ * so a tall screenshot shows its top. `darkSrc`: the same screen in the
+ * dark theme, shown instead when the page is dark.
  */
 export function BrowserFrame({
   url,
   src,
+  darkSrc,
   alt,
   width,
   height,
@@ -18,6 +20,7 @@ export function BrowserFrame({
 }: {
   url?: string
   src: string
+  darkSrc?: string
   alt: string
   width: number
   height: number
@@ -39,7 +42,8 @@ export function BrowserFrame({
         </div>
       )}
       <div className="relative overflow-hidden bg-page" style={{ aspectRatio: aspect }}>
-        <Image src={src} alt={alt} width={width} height={height} priority={priority} className="block h-auto w-full" />
+        <Image src={src} alt={alt} width={width} height={height} priority={priority} className={cn('block h-auto w-full', darkSrc && 'dark:hidden')} />
+        {darkSrc && <Image src={darkSrc} alt={alt} width={width} height={height} className="hidden h-auto w-full dark:block" />}
       </div>
     </div>
   )

@@ -22,7 +22,7 @@ const SAMPLE_CUSTOMERS = ['Mây Biển Boutique Hotel', 'Đồi Thông Homestay'
 const FEATURES = [
   { id: 'site', points: 3, url: 'khach-san-demo.digistay.vn', src: '/marketing/site-home.jpg', height: 2016 },
   { id: 'booking', points: 3, url: 'khach-san-demo.digistay.vn/rooms/standard', src: '/marketing/site-room.jpg', height: 880 },
-  { id: 'admin', points: 3, url: 'digistay.vn/workspace/…/bookings', src: '/marketing/admin-bookings.jpg', height: 1040 },
+  { id: 'admin', points: 3, url: 'digistay.vn/workspace/…/bookings', src: '/marketing/admin-bookings.jpg', darkSrc: '/marketing/admin-bookings-dark.jpg', height: 1040 },
   { id: 'money', points: 3, url: 'digistay.vn/workspace/…/payments', src: '/marketing/admin-payments.jpg', height: 1040 },
   { id: 'scale', points: 5, url: 'digistay.vn/workspace/…/bookings', src: '/marketing/admin-bookings-dark.jpg', height: 1040 },
 ] as const
@@ -65,6 +65,7 @@ export default async function HomePage() {
             <BrowserFrame
               url="digistay.vn"
               src="/marketing/admin-bookings.jpg"
+              darkSrc="/marketing/admin-bookings-dark.jpg"
               alt={t('altAdmin')}
               width={1440}
               height={1040}
@@ -82,6 +83,7 @@ export default async function HomePage() {
             <BrowserFrame
               url="digistay.vn/workspace/…/bookings"
               src="/marketing/admin-bookings.jpg"
+              darkSrc="/marketing/admin-bookings-dark.jpg"
               alt={t('altAdmin')}
               width={1440}
               height={1040}
@@ -158,6 +160,7 @@ export default async function HomePage() {
                 <BrowserFrame
                   url={f.url}
                   src={f.src}
+                  darkSrc={'darkSrc' in f ? f.darkSrc : undefined}
                   alt={t(`features.${f.id}.alt`)}
                   width={1440}
                   height={f.height}

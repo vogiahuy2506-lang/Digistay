@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils'
 import { LocaleToggle } from './LocaleToggle'
 import { Logo } from './Logo'
 import { MobileMenu } from './MobileMenu'
+import { publicTheme } from './PublicFrame'
+import { ThemeToggle } from './ThemeToggle'
 import { frame, inkButton } from './styles'
 
 export type MarketingPage = 'features' | 'pricing' | 'contact' | 'login' | 'register'
@@ -30,6 +32,7 @@ export async function MarketingHeader({ active }: { active?: MarketingPage }) {
   // A session that cannot be read (revoked, broken cookie) just shows the signed-out header.
   const email = await auth().then((session) => session?.user?.email ?? null, () => null)
   const initials = email ? email.slice(0, 2).toUpperCase() : ''
+  const theme = await publicTheme()
 
   return (
     <header className="relative border-b border-line/70">
@@ -61,7 +64,8 @@ export async function MarketingHeader({ active }: { active?: MarketingPage }) {
         </div>
 
         <div className="flex items-center gap-1 text-[14px] lg:gap-5">
-          <div className="hidden lg:block">
+          <div className="hidden items-center gap-2 lg:flex">
+            <ThemeToggle initial={theme} toDark={t('toDark')} toLight={t('toLight')} />
             <LocaleToggle locale={locale} label={t('language')} />
           </div>
           {email ? (
@@ -105,9 +109,13 @@ export async function MarketingHeader({ active }: { active?: MarketingPage }) {
                 </Link>
               ))}
             </nav>
-            <div className="flex min-h-14 items-center justify-between">
+            <div className="flex min-h-14 items-center justify-between border-b border-line/70">
               <span className="text-[14px] text-muted">{t('language')}</span>
               <LocaleToggle locale={locale} label={t('language')} size="lg" />
+            </div>
+            <div className="flex min-h-14 items-center justify-between">
+              <span className="text-[14px] text-muted">{t('theme')}</span>
+              <ThemeToggle initial={theme} toDark={t('toDark')} toLight={t('toLight')} className="h-11 w-11 border border-line" />
             </div>
             {!email && (
               <Link

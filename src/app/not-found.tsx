@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getTranslations } from 'next-intl/server'
-import { MarketingFooter } from '@/components/marketing/MarketingFooter'
 import { MarketingHeader } from '@/components/marketing/MarketingHeader'
+import { PublicFrame } from '@/components/marketing/PublicFrame'
 import { frame, inkButton, lineButton, softText } from '@/components/marketing/styles'
 import { cn } from '@/lib/utils'
 
@@ -20,9 +20,9 @@ export default async function NotFound() {
     { href: '/login', label: t('login') },
   ]
   return (
-    <div className="flex min-h-screen flex-col bg-page font-sans text-fg">
+    <PublicFrame>
       <MarketingHeader />
-      <main className={cn(frame, 'flex flex-1 justify-center pb-6 pt-12 lg:pt-24')}>
+      <main className={cn(frame, 'flex justify-center pb-6 pt-12 lg:pt-24')}>
         <div className="w-full max-w-[640px]">
           <p className="font-mono text-[13px] font-medium text-brand">{t('code')}</p>
           <h1 className="mt-4 font-serif text-[36px] font-medium leading-[1.12] tracking-[-0.02em] lg:text-[52px]">{t('title')}</h1>
@@ -50,7 +50,6 @@ export default async function NotFound() {
           </div>
         </div>
       </main>
-      <MarketingFooter />
-    </div>
+    </PublicFrame>
   )
 }

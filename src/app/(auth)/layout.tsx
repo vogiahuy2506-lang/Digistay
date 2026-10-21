@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { MarketingFooter } from '@/components/marketing/MarketingFooter'
+import { PublicFrame } from '@/components/marketing/PublicFrame'
 
 /**
  * Sign-in, sign-up and password reset, in the frame of Digistay's public
@@ -8,11 +8,8 @@ import { MarketingFooter } from '@/components/marketing/MarketingFooter'
  */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col bg-page font-sans text-fg">
-      <div className="flex-1">
-        <Suspense fallback={null}>{children}</Suspense>
-      </div>
-      <MarketingFooter />
-    </div>
+    <PublicFrame>
+      <Suspense fallback={null}>{children}</Suspense>
+    </PublicFrame>
   )
 }

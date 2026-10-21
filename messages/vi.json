@@ -214,7 +214,10 @@
       "openMenu": "Mở menu",
       "closeMenu": "Đóng menu",
       "language": "Ngôn ngữ",
-      "dashboard": "Vào trang quản lý ({email})"
+      "dashboard": "Vào trang quản lý ({email})",
+      "toDark": "Chuyển sang giao diện tối",
+      "toLight": "Chuyển sang giao diện sáng",
+      "theme": "Giao diện"
     },
     "footer": {
       "tagline": "Website và phần mềm quản lý cho khách sạn, homestay, resort.",

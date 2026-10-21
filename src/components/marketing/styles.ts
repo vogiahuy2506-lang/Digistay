@@ -7,9 +7,9 @@
 const focus =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acc focus-visible:ring-offset-2 focus-visible:ring-offset-page'
 
-/** The main call to action: warm ink, black on hover. */
+/** The main call to action: warm ink (light in the dark theme), a shade softer on hover. */
 export const inkButton =
-  'inline-flex items-center justify-center rounded-ctl bg-ink font-medium text-on-ink transition-[background-color,transform] duration-160 ease-ds hover:-translate-y-px hover:bg-black motion-reduce:transition-none motion-reduce:hover:translate-y-0 ' +
+  'inline-flex items-center justify-center rounded-ctl bg-ink font-medium text-on-ink transition-[background-color,transform] duration-160 ease-ds hover:-translate-y-px hover:bg-ink/90 motion-reduce:transition-none motion-reduce:hover:translate-y-0 ' +
   focus
 
 /** The second action next to it: an ink outline. */
