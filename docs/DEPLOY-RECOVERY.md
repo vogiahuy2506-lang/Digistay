@@ -10,6 +10,7 @@ the order the steps run.**
 | 1 | `Resolve the commit to deploy`  | GitHub API; almost never fails unless `permissions` is wrong.   |
 | 2 | `Probe SSH + VPS environment`   | SSH key, port, firewall, deploy user, /opt/digistay, `digistay-deploy.sh`. |
 | 3 | `Probe VPS + git reachability`  | The checkout's owner can fetch the repo; current HEAD.          |
+| 3b | `Check the installed deploy script` | `/usr/local/bin/digistay-deploy.sh` is the one in this commit. |
 | 4 | `Deploy to VPS`                 | The real deploy. `docker/deploy.sh` on the VPS.                 |
 | 5 | `Post-deploy smoke test`        | `/api/health` confirms the new SHA is what answered.            |
 
@@ -64,6 +65,19 @@ pull, no `docker login`). This step only checks that the owner of
 `/opt/digistay` (`stat -c '%U' /opt/digistay/.git`; currently
 `hotro_digibook`, not `deploy`) can `git ls-remote` the repo. If not,
 follow RUNBOOK → "Deploy an toàn", step 1.
+
+---
+
+## Step 3b red — the installed deploy script is not the reviewed one
+
+The workflow compares the sha256 of `/usr/local/bin/digistay-deploy.sh`
+with `docker/vps/digistay-deploy.sh` of the commit being deployed. A
+different script is not run: an older one can start the new code without
+its migrations (the hand-written script on the VPS did exactly that until
+2026-10-21). Install the reviewed one (RUNBOOK → "Deploy an toàn", step
+2; the failing step prints the commands) and re-run. This also fails,
+on purpose, after a commit that changes the wrapper, until it is
+reinstalled.
 
 ---
 
