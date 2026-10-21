@@ -149,7 +149,11 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
     `extraCharges` = phụ thu + dịch vụ, `totalAmount` = tổng.
   - Phí trả phòng muộn: `src/lib/bookings/late-checkout.ts`, tính từ giờ trả phòng của khách sạn
     (Chính sách) vào **ngày trả đã đặt**, giờ Việt Nam. Cộng vào tổng hiện có (không dựng lại tổng
-    từ `subtotal`, sẽ mất giảm giá).
+    từ `subtotal`, sẽ mất giảm giá). Mức theo bậc của khách sạn (`Policy.lateCheckoutTiers`: null =
+    mặc định 30% trước 15:00 / 50% trước 18:00 / 100% giá một đêm, `[]` = không thu). Đây là **gợi
+    ý**: lễ tân áp dụng, thu số khác hoặc miễn trong hộp thoại trả phòng (`check-out-dialog.tsx`);
+    hai cách sau bắt buộc lý do, nhật ký ghi số gợi ý, số thu, lý do, người làm. Server luôn tự tính
+    lại lúc trả phòng, không lấy số của trình duyệt.
 - **Site công khai của khách sạn được cache** theo khách sạn (`src/lib/public-site/site.ts`, tối
   đa 5 phút). Handler nào ghi dữ liệu site hiển thị (khách sạn, ảnh, tiện ích, hạng phòng, giá,
   dịch vụ, website) phải gọi `invalidatePublicSite(propertyId)`; `public-site-cache.test.ts` chặn.
@@ -189,6 +193,18 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
   thắng), và số tiền phải khớp đúng. Tiền về cho link đã huỷ/hết hạn vẫn được ghi nhận và gắn cờ;
   khoản `REFUNDED` không bao giờ sống lại. Return URL không bao giờ đánh dấu đã trả.
   `PAYOS_BASE_URL` chỉ dùng cho test (PayOS giả ở `src/test/integration/fake-payos.ts`).
+  - **Khách đặt cọc trên website** (`src/lib/payments/guest-deposit.ts`): khách sạn đặt % ở trang
+    Chính sách (`Policy.onlineDepositPercent`) và phải đã kết nối PayOS, không thì không thu cọc.
+    Số tiền chỉ tính bằng `depositFor()` (`src/lib/pricing/quote.ts`). Đơn tạo như thường (PENDING)
+    rồi mới tạo link; PayOS lỗi thì đơn vẫn giữ, khách được báo khách sạn sẽ liên hệ. Chỉ webhook /
+    đối soát đánh dấu đã trả; `syncBookingPayments` xác nhận đơn, và khoản cọc của khách
+    (`metadata.guestDeposit`) gửi email "đã nhận cọc" cho khách (trừ đơn đã huỷ). Trang
+    `/thanh-toan` chỉ hiển thị trạng thái trong DB theo `orderCode`, không tin query string.
+    Hạn cọc (`Policy.depositDeadlineMinutes`, 0 = không tự huỷ): link hết hạn đúng lúc đó, và job
+    `payos-reconcile` (sau phần đối soát) gọi `expireUnpaidDeposits()`: **hỏi PayOS trước** (đã trả
+    thì xác nhận đơn, không huỷ), huỷ link, rồi huỷ đơn dưới khoá dòng nếu vẫn PENDING và chưa có
+    khoản nào PAID, mở lại phòng, email cho khách. Link tạo lỗi thì không tự huỷ (khách được báo
+    khách sạn sẽ gọi).
   Đối soát định kỳ: timer systemd `digistay-reconcile`, 10 phút một lần, gọi
   `/api/internal/payos-reconcile` (RUNBOOK, "Đối soát PayOS định kỳ").
 - Job định kỳ nằm ở `/api/internal/*`: kiểm `checkCronSecret()` (header `CRON_SECRET`), nginx
@@ -226,8 +242,11 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
     lệch, có dấu: `totalAmount` âm là điều chỉnh giảm (NĐ 123 Điều 19: "ghi dấu âm"). Hoá đơn
     gốc vẫn `PUBLISHED`. Mỗi lúc chỉ một bản nháp điều chỉnh; giảm không quá giá trị hiện tại của
     hoá đơn gốc; một hoá đơn hoặc bị thay thế, hoặc được điều chỉnh, không cả hai.
-    - Tài liệu Mắt Bão không nói dấu của số tiền: đang **giả định số âm** (Mắt Bão giả kiểm theo
-      giả định này). Phải phát hành thử một điều chỉnh giảm trên DEMO trước khi dùng Chính thức.
+    - Dấu âm **đã kiểm trên DEMO của Mắt Bão** ngày 21/10/2026: gốc số 11368, giảm 11369
+      (−108.000, PDF ghi "Hóa đơn điều chỉnh giảm cho hóa đơn điện tử số 11368…"), tăng 11370.
+      Ví dụ Postman của Mắt Bão cũng ghi âm toàn bộ (đặt dấu ở số lượng; mình đặt ở đơn giá, DEMO
+      nhận cả hai). Tài khoản DEMO dùng chung: MST `0302712571-999`, ký hiệu `C26TAT`, mẫu số 1
+      (mật khẩu trong file Postman Mắt Bão gửi; không ghi vào repo).
     - Điều chỉnh thông tin (TCHDon 4) không hỗ trợ: sai thông tin người mua thì thay thế.
     - Khi tính tổng đã xuất của một đơn, bản nháp điều chỉnh giảm chưa được trừ cho tới khi
       phát hành (`invoicedTotal`).
@@ -330,8 +349,8 @@ dùng duyệt rồi mới làm, trên nhánh riêng. Cập nhật trạng thái 
    OAuth, 4f xác thực hai lớp TOTP (**không bắt buộc** — người dùng tự bật) — xong.
    Thêm: lên Next 15.5.28 + React 19 (hết các lỗ hổng của Next 14) — xong.
 5. Thanh toán PayOS, mỗi khách sạn một bộ khoá; sửa các nhánh tiền mặt đặt `PAID` bất kể số
-   tiền và không cập nhật `depositAmount` — xong; có thêm đối soát định kỳ 10 phút. Còn: SePay
-   (nếu khách sạn cần), khách tự trả cọc trên site công khai.
+   tiền và không cập nhật `depositAmount` — xong; có thêm đối soát định kỳ 10 phút, và khách tự
+   đặt cọc khi đặt trên website. Còn: SePay (nếu khách sạn cần).
 6. Hoá đơn điện tử Mắt Bão, mỗi khách sạn một tài khoản, kèm trạng thái từ cơ quan thuế — xong.
    Thêm: hoá đơn thay thế, hoá đơn điều chỉnh tăng/giảm, tự gửi email hoá đơn (kèm PDF), tự xuất
    hoá đơn khi đơn thanh toán đủ — xong.

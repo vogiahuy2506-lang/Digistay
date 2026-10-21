@@ -26,6 +26,7 @@ import { PayOS, type Webhook } from '@payos/node'
 import type { Prisma, PropertyPayos } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { decryptSecret, encryptSecret, secretContext } from '@/lib/security/secret-box'
+import { queueDepositReceived, sendAfterResponse } from '@/lib/email/outbox'
 import { lockBooking, syncBookingPayments } from './booking-payments'
 
 /** How long a guest can pay a link: staff often send it by Zalo. */
@@ -166,8 +167,9 @@ async function connectedRow(propertyId: string) {
  * (with gatewayOrderCode set). If PayOS refuses, the payment is marked
  * FAILED and the error is thrown; it is still kept, since PayOS may have
  * created the link anyway (timeout) and the webhook must find it.
+ * `ttlSec`: a guest deposit's link ends at the hotel's deadline.
  */
-export async function createPayosLink(paymentId: string, returnBase: string) {
+export async function createPayosLink(paymentId: string, returnBase: string, ttlSec = PAYOS_LINK_TTL_SEC) {
   const payment = await prisma.payment.findUniqueOrThrow({
     where: { id: paymentId },
     select: {
@@ -180,7 +182,7 @@ export async function createPayosLink(paymentId: string, returnBase: string) {
     },
   })
   const row = await connectedRow(payment.propertyId)
-  const expiredAt = Math.floor(Date.now() / 1000) + PAYOS_LINK_TTL_SEC
+  const expiredAt = Math.floor(Date.now() / 1000) + ttlSec
   try {
     const link = await payosClient(row).paymentRequests.create({
       orderCode: Number(payment.gatewayOrderCode),
@@ -262,13 +264,13 @@ export async function applyPayosPaid(input: {
     return 'amount_mismatch'
   }
 
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     await lockBooking(tx, payment.bookingId)
     const claimed = await tx.payment.updateMany({
       where: { id: payment.id, status: { in: [...PAYABLE_STATUSES] } },
       data: { status: 'PAID', paidAt: new Date(), transactionId: input.reference ?? null },
     })
-    if (claimed.count === 0) return 'duplicate' as const
+    if (claimed.count === 0) return { outcome: 'duplicate' as const, emailIds: [] }
 
     const lateLink = payment.status !== 'PENDING'
     await tx.payment.update({
@@ -303,8 +305,49 @@ export async function applyPayosPaid(input: {
         },
       },
     })
-    return 'paid' as const
+
+    // A guest's deposit from the hotel's site (guest-deposit.ts): tell them
+    // the booking is confirmed. Not for a booking already cancelled: staff
+    // sort that money out (it is flagged above).
+    const emailIds: string[] = []
+    if (asObject(payment.metadata).guestDeposit === true && !closed) {
+      const booking = await tx.booking.findUniqueOrThrow({
+        where: { id: payment.bookingId },
+        select: {
+          guestEmail: true,
+          guestName: true,
+          bookingCode: true,
+          checkInDate: true,
+          checkOutDate: true,
+          totalAmount: true,
+          depositAmount: true,
+          property: { select: { name: true, phone: true } },
+        },
+      })
+      if (booking.guestEmail) {
+        emailIds.push(
+          await queueDepositReceived(
+            {
+              guestEmail: booking.guestEmail,
+              guestName: booking.guestName,
+              bookingCode: booking.bookingCode,
+              propertyName: booking.property.name,
+              propertyPhone: booking.property.phone,
+              checkIn: booking.checkInDate,
+              checkOut: booking.checkOutDate,
+              deposit: payment.amount,
+              remaining: Math.max(0, booking.totalAmount - booking.depositAmount),
+            },
+            payment.bookingId,
+            tx
+          )
+        )
+      }
+    }
+    return { outcome: 'paid' as const, emailIds }
   })
+  sendAfterResponse(result.emailIds)
+  return result.outcome
 }
 
 /**

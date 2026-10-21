@@ -18,6 +18,7 @@ import {
   toast,
 } from '@/components/ui'
 import { canManageBookings, useWorkspaceRole } from '@/components/layout/workspace-context'
+import { CheckOutDialog } from './check-out-dialog'
 import {
   buildPrintHtml,
   formatDateTime,
@@ -368,7 +369,7 @@ export function BookingActions({
   const role = useWorkspaceRole()
   const canManage = canManageBookings(role)
   const [busy, setBusy] = React.useState<ActionKey | null>(null)
-  const [dialog, setDialog] = React.useState<'cancel' | 'extend' | 'noshow' | null>(null)
+  const [dialog, setDialog] = React.useState<'cancel' | 'extend' | 'noshow' | 'checkout' | null>(null)
   const [cancelReason, setCancelReason] = React.useState('')
   const [extendDate, setExtendDate] = React.useState('')
   const [dialogError, setDialogError] = React.useState('')
@@ -431,7 +432,8 @@ export function BookingActions({
         ? {
             label: 'Trả phòng',
             key: 'checkout' as const,
-            run: () => run('checkout', 'check-out', undefined, (d) => d.message || 'Đã trả phòng'),
+            // The late fee is decided in the dialog (check-out-dialog.tsx).
+            run: () => setDialog('checkout'),
           }
         : null
 
@@ -492,6 +494,18 @@ export function BookingActions({
           </DropdownItem>
         )}
       </Dropdown>
+
+      <CheckOutDialog
+        bookingId={booking.id}
+        bookingCode={booking.bookingCode}
+        isOpen={dialog === 'checkout'}
+        onClose={() => setDialog(null)}
+        onDone={(message) => {
+          toast.success(message)
+          setDialog(null)
+          onChanged()
+        }}
+      />
 
       <Modal isOpen={dialog === 'cancel'} onClose={() => setDialog(null)} size="sm">
         <ModalHeader onClose={() => setDialog(null)}>

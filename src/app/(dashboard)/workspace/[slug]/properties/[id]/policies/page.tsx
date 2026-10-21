@@ -6,6 +6,7 @@ import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, CardHeader, CardTitle, Button, Input } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
 import { Save, ShieldCheck, Clock, Baby, Dog, Cigarette, FileText } from 'lucide-react'
+import { DEFAULT_LATE_TIERS, type LateTier } from '@/lib/bookings/late-checkout'
 
 interface Policy {
   id: string
@@ -19,7 +20,26 @@ interface Policy {
   petsAllowed: boolean
   smokingAllowed: boolean
   additionalRules: string | null
+  onlineDepositPercent: number
+  depositDeadlineMinutes: number
+  /** null: the default tiers; []: no late fee */
+  lateCheckoutTiers: LateTier[] | null
+  /** read-only: the deposit needs a connected PayOS account */
+  payosConnected?: boolean
 }
+
+const TIER_INPUT = 'h-10 px-3 border border-line rounded-ctl bg-raised text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acc'
+
+/** How long a guest has to pay the online deposit (Policy.depositDeadlineMinutes). */
+const DEADLINE_OPTIONS = [
+  { value: 0, label: 'Không tự huỷ' },
+  { value: 30, label: '30 phút' },
+  { value: 60, label: '1 giờ' },
+  { value: 120, label: '2 giờ' },
+  { value: 360, label: '6 giờ' },
+  { value: 720, label: '12 giờ' },
+  { value: 1440, label: '24 giờ' },
+]
 
 export default function PoliciesPage() {
   const params = useParams<{ slug: string; id: string }>()
@@ -76,6 +96,9 @@ export default function PoliciesPage() {
           petsAllowed: policy.petsAllowed,
           smokingAllowed: policy.smokingAllowed,
           additionalRules: policy.additionalRules,
+          onlineDepositPercent: policy.onlineDepositPercent,
+          depositDeadlineMinutes: policy.depositDeadlineMinutes,
+          lateCheckoutTiers: policy.lateCheckoutTiers,
         }),
       })
       const data = await res.json()
@@ -84,7 +107,7 @@ export default function PoliciesPage() {
         return
       }
       toast.success('Đã lưu chính sách')
-      setPolicy(data.data)
+      setPolicy({ ...data.data, payosConnected: policy.payosConnected })
     } catch (err) {
       console.error('Save policy error:', err)
       toast.error('Đã xảy ra lỗi khi lưu')
@@ -96,6 +119,11 @@ export default function PoliciesPage() {
   const update = <K extends keyof Policy>(key: K, value: Policy[K]) => {
     setPolicy((p) => (p ? { ...p, [key]: value } : p))
   }
+
+  // Shown as stored, or the default the server applies when none is stored.
+  const lateTiers = policy?.lateCheckoutTiers ?? DEFAULT_LATE_TIERS
+  const setTier = (index: number, change: Partial<LateTier>) =>
+    update('lateCheckoutTiers', lateTiers.map((tier, i) => (i === index ? { ...tier, ...change } : tier)))
 
   if (!propertyId) {
     return (
@@ -177,6 +205,65 @@ export default function PoliciesPage() {
             </CardContent>
           </Card>
 
+          {/* Late check-out (src/lib/bookings/late-checkout.ts) */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="w-5 h-5" />
+                Phí trả phòng muộn
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <label className="flex items-center gap-3 text-sm text-fg">
+                <input
+                  type="checkbox"
+                  checked={lateTiers.length > 0}
+                  onChange={(e) => update('lateCheckoutTiers', e.target.checked ? DEFAULT_LATE_TIERS : [])}
+                  className="w-4 h-4"
+                />
+                Thu phí khi khách trả phòng sau {policy.checkOutTime} của ngày trả đã đặt
+              </label>
+              {lateTiers.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted">Phụ thu tính theo % giá một đêm của đơn:</p>
+                  {lateTiers.map((tier, i) => (
+                    <div key={i} className="grid grid-cols-[84px_108px_1fr] items-center gap-2 sm:gap-3 text-sm text-fg">
+                      <span>{tier.until !== null ? 'Trả trước' : 'Muộn hơn nữa'}</span>
+                      {tier.until !== null ? (
+                        <input
+                          type="time"
+                          aria-label={`Mốc giờ ${i + 1}`}
+                          value={tier.until}
+                          onChange={(e) => setTier(i, { until: e.target.value })}
+                          className={TIER_INPUT}
+                        />
+                      ) : (
+                        <span aria-hidden="true" />
+                      )}
+                      <span className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={0}
+                          max={300}
+                          aria-label={tier.until !== null ? `Phụ thu nếu trả trước ${tier.until} (%)` : 'Phụ thu nếu muộn hơn (%)'}
+                          value={tier.percent}
+                          onChange={(e) => setTier(i, { percent: Math.min(300, Math.max(0, parseInt(e.target.value) || 0)) })}
+                          className={`${TIER_INPUT} w-16 sm:w-20`}
+                        />
+                        <span className="text-muted">%</span>
+                      </span>
+                    </div>
+                  ))}
+                  <p className="text-xs text-muted">
+                    Mặc định theo thông lệ: trước 15:00 phụ thu 30%, trước 18:00 phụ thu 50%, muộn hơn tính một đêm. Ở
+                    sang ngày hôm sau thì mỗi 24 giờ tính một đêm (nên gia hạn). Khi trả phòng, app gợi ý số tiền; lễ tân
+                    áp dụng, sửa hoặc miễn (sửa hay miễn phải ghi lý do, có lưu nhật ký).
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Cancellation */}
           <Card>
             <CardHeader>
@@ -218,6 +305,57 @@ export default function PoliciesPage() {
                   rows={4}
                   className="w-full px-3 py-2 border rounded-lg focus-visible:ring-2 focus-visible:ring-2 focus-visible:ring-acc focus-visible:border-acc focus-visible:border-acc"
                 />
+                <p className="text-xs text-muted mt-1">
+                  Khách thấy chính sách này trước khi đặt phòng trên website.
+                </p>
+              </div>
+              <div>
+                <label htmlFor="online-deposit" className="block text-sm font-medium text-fg mb-1">
+                  Đặt cọc khi khách đặt trên website (%)
+                </label>
+                <Input
+                  id="online-deposit"
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={policy.onlineDepositPercent}
+                  onChange={(e) =>
+                    update('onlineDepositPercent', Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))
+                  }
+                />
+                <p className="text-xs text-muted mt-1">
+                  0 = không thu cọc, khách trả tại quầy. Có cọc thì khách chuyển khoản qua PayOS ngay khi đặt,
+                  tiền vào thẳng tài khoản khách sạn, và đặt phòng tự được xác nhận khi tiền về.
+                </p>
+                {policy.onlineDepositPercent > 0 && (
+                  <div className="mt-3">
+                    <label htmlFor="deposit-deadline" className="block text-sm font-medium text-fg mb-1">
+                      Tự huỷ đơn nếu khách chưa đặt cọc sau
+                    </label>
+                    <select
+                      id="deposit-deadline"
+                      value={policy.depositDeadlineMinutes}
+                      onChange={(e) => update('depositDeadlineMinutes', parseInt(e.target.value))}
+                      className="w-full h-10 px-3 border border-line rounded-ctl bg-raised text-fg focus-visible:ring-2 focus-visible:ring-acc"
+                    >
+                      {DEADLINE_OPTIONS.some((o) => o.value === policy.depositDeadlineMinutes) ? null : (
+                        <option value={policy.depositDeadlineMinutes}>{policy.depositDeadlineMinutes} phút</option>
+                      )}
+                      {DEADLINE_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-muted mt-1">
+                      Quá hạn mà tiền chưa về, đơn tự huỷ, phòng được mở lại và khách nhận email. App hỏi lại PayOS trước khi
+                      huỷ: khách đã trả thì đơn được xác nhận. Không tự huỷ thì đơn chờ khách sạn xử lý.
+                    </p>
+                  </div>
+                )}
+                {policy.onlineDepositPercent > 0 && !policy.payosConnected && (
+                  <p className="text-xs text-warn mt-1">
+                    Chưa kết nối PayOS (Tài khoản ngân hàng → Thanh toán online): khách chưa phải đặt cọc cho tới khi kết nối.
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>

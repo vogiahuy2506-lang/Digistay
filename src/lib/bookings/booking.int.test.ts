@@ -176,6 +176,28 @@ describe('rooms', () => {
     expect((await call(guestBooking(json(body(3), freshIp())))).status).toBe(409) // booked now
   })
 
+  it("a hold id from the browser frees only that guest's hold: not maintenance, not another room type's", async () => {
+    const { property } = await createTenant()
+    await publishSite(property.id)
+    const room = await createRoomType(property.id, { totalRooms: 1 })
+    const other = await createRoomType(property.id, { name: 'Suite', totalRooms: 1 })
+    const maintenance = await prisma.roomLock.create({
+      data: { propertyId: property.id, roomTypeId: room.id, lockStart: new Date('2026-12-01'), lockEnd: new Date('2026-12-31'), type: 'MAINTENANCE', expiresAt: null },
+    })
+    const body = (roomTypeId: string, n: number, holdId: string) =>
+      json({ propertyId: property.id, roomTypeId, ...guest(n), ...WEEKDAYS, numAdults: 2, holdId }, freshIp())
+
+    // A maintenance lock's id used to take it out of the count.
+    expect((await call(guestBooking(body(room.id, 1, maintenance.id)))).status).toBe(409)
+    expect(await prisma.roomLock.count({ where: { id: maintenance.id } })).toBe(1)
+
+    // Another room type's hold: the booking goes through, that hold stays.
+    const hold = await call(holdRoom(json({ propertyId: property.id, roomTypeId: room.id, checkInDate: '2027-01-04', checkOutDate: '2027-01-06' }, { ...freshIp(), 'x-session-id': 'guest-b' })))
+    expect(hold.status).toBe(200)
+    expect((await call(guestBooking(body(other.id, 2, hold.body.data.lockId)))).status).toBe(200)
+    expect(await prisma.roomLock.count({ where: { id: hold.body.data.lockId } })).toBe(1)
+  })
+
   it('three guests at once for the last room: one booking', async () => {
     const { property } = await createTenant()
     await publishSite(property.id)
@@ -222,7 +244,9 @@ describe('the public booking route', () => {
     const room = await createRoomType(property.id)
     const res = await call(guestBooking(json({ propertyId: property.id, roomTypeId: room.id, ...guest(), ...WEEKDAYS, numAdults: 2 }, freshIp())))
     expect(res.status).toBe(200)
-    expect(Object.keys(res.body.data).sort()).toEqual(['bookingCode', 'checkInDate', 'checkOutDate', 'status', 'totalAmount'])
+    // deposit: the PayOS link when the hotel takes one (guest-deposit.int.test.ts); none here.
+    expect(Object.keys(res.body.data).sort()).toEqual(['bookingCode', 'checkInDate', 'checkOutDate', 'deposit', 'depositUnavailable', 'status', 'totalAmount'])
+    expect(res.body.data).toMatchObject({ deposit: null, depositUnavailable: false })
     const booking = await prisma.booking.findFirstOrThrow({ where: { bookingCode: res.body.data.bookingCode }, include: { payments: true } })
     expect(booking).toMatchObject({ status: 'PENDING', source: 'DIRECT', createdById: null, depositAmount: 0 })
     expect(booking.payments).toEqual([])

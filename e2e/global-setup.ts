@@ -41,7 +41,7 @@ export default async function globalSetup() {
       data: { propertyId: property.id, name: 'Ăn sáng buffet', price: 120_000, priceType: 'PER_NIGHT', perPerson: true },
     })
 
-    const booking = (code: string, totalAmount: number, status: 'CONFIRMED' | 'CHECKED_OUT', extra = {}) =>
+    const booking = (code: string, totalAmount: number, status: 'CONFIRMED' | 'CHECKED_OUT' | 'CHECKED_IN', extra = {}) =>
       prisma.booking.create({
         data: {
           bookingCode: code,
@@ -71,7 +71,19 @@ export default async function globalSetup() {
           vatEmail: 'hoadon@mai.vn',
         })
       ).id,
+      lateBooking: (
+        await booking('DSE2ELATE', 2_400_000, 'CHECKED_IN', {
+          checkInDate: new Date(Date.now() - 3 * 86_400_000),
+          checkOutDate: new Date(Date.now() - 86_400_000),
+          paymentStatus: 'PAID',
+          depositAmount: 2_400_000,
+        })
+      ).id,
     }
+    // Paid in full at check-in, in cash: waiving the late fee keeps it PAID.
+    await prisma.payment.create({
+      data: { bookingId: ids.lateBooking, propertyId: property.id, amount: 2_400_000, netAmount: 2_400_000, method: 'CASH', status: 'PAID', paidAt: new Date() },
+    })
     mkdirSync(dirname(E2E.idsFile), { recursive: true })
     writeFileSync(E2E.idsFile, JSON.stringify(ids, null, 2))
   } finally {
