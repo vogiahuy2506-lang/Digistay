@@ -5,6 +5,8 @@ import { useParams } from 'next/navigation'
 import { PageContainer } from '@/components/layout'
 import { Button, Badge, Input } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
+import { useTranslations } from 'next-intl'
+import { useDashLabels } from '@/lib/i18n/dash'
 import {
   Star, Plus, Trash2, Edit, Wifi, Car, Utensils, Waves, Dumbbell,
   Coffee, Sun, Shield, Dog, Save, Check, ConciergeBell,
@@ -37,27 +39,17 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Shirt, Bike, Music, ConciergeBell
 }
 
-const serviceCategories = [
-  { value: 'laundry', label: 'Giặt ủi' },
-  { value: 'transport', label: 'Vận chuyển' },
-  { value: 'food', label: 'Ăn uống' },
-  { value: 'entertainment', label: 'Giải trí' },
-  { value: 'other', label: 'Khác' },
-]
+// Labels: messages dash.rooms.services.serviceCategory.* and .amenityCategory.*
+const SERVICE_CATEGORIES = ['laundry', 'transport', 'food', 'entertainment', 'other'] as const
+type ServiceCategory = (typeof SERVICE_CATEGORIES)[number]
 
-const categoryLabels: Record<string, string> = {
-  comfort: 'Tiện nghi',
-  entertainment: 'Giải trí',
-  facility: 'Cơ sở',
-  food: 'Ăn uống',
-  internet: 'Internet',
-  leisure: 'Giải trí',
-  parking: 'Đỗ xe',
-  security: 'An ninh',
-  service: 'Dịch vụ',
-}
+const AMENITY_CATEGORIES = ['comfort', 'entertainment', 'facility', 'food', 'internet', 'leisure', 'parking', 'security', 'service'] as const
+type AmenityCategory = (typeof AMENITY_CATEGORIES)[number]
 
 export default function ServicesPage() {
+  const t = useTranslations('dash.rooms.services')
+  const tc = useTranslations('dash.common')
+  const labels = useDashLabels()
   const params = useParams<{ slug: string; id: string }>()
   const propertyId = params.id
 
@@ -106,7 +98,7 @@ export default function ServicesPage() {
       }
     } catch (err) {
       console.error('Failed to fetch data:', err)
-      toast.error('Đã xảy ra lỗi khi tải dữ liệu')
+      toast.error(t('loadError'))
     } finally {
       setIsLoading(false)
     }
@@ -127,42 +119,42 @@ export default function ServicesPage() {
       })
       const data = await res.json()
       if (!data.success) {
-        toast.error(data.error || 'Không thể lưu tiện ích')
+        toast.error(data.error || t('amenities.saveFailed'))
         return
       }
-      toast.success('Đã lưu tiện ích thành công!')
+      toast.success(t('amenities.saved'))
     } catch (err) {
       console.error('Save amenities error:', err)
-      toast.error('Đã xảy ra lỗi khi lưu tiện ích')
+      toast.error(t('amenities.saveError'))
     } finally {
       setIsSubmitting(false)
     }
   }
 
   const handleDeleteService = async (id: string) => {
-    if (!confirm('Xóa dịch vụ này?')) return
+    if (!confirm(t('list.deleteConfirm'))) return
     try {
       const res = await fetch(`/api/extra-services/${id}`, { method: 'DELETE' })
       const data = await res.json()
       if (!data.success) {
-        toast.error(data.error || 'Không thể xóa dịch vụ')
+        toast.error(data.error || t('list.deleteFailed'))
         return
       }
-      toast.success('Đã xóa dịch vụ')
+      toast.success(t('list.deleted'))
       setServices(services.filter(s => s.id !== id))
     } catch (err) {
       console.error('Delete service error:', err)
-      toast.error('Đã xảy ra lỗi khi xóa dịch vụ')
+      toast.error(t('list.deleteError'))
     }
   }
 
   const handleSubmitService = async () => {
     if (!propertyId) {
-      toast.error('Không xác định được cơ sở')
+      toast.error(t('noPropertyToast'))
       return
     }
     if (!serviceForm.name || serviceForm.price < 0) {
-      toast.error('Vui lòng điền tên và giá hợp lệ')
+      toast.error(t('modal.invalid'))
       return
     }
 
@@ -183,16 +175,16 @@ export default function ServicesPage() {
       })
       const data = await res.json()
       if (!data.success) {
-        toast.error(data.error || 'Không thể lưu dịch vụ')
+        toast.error(data.error || t('modal.saveFailed'))
         return
       }
-      toast.success(editingService ? 'Đã cập nhật dịch vụ' : 'Đã thêm dịch vụ mới')
+      toast.success(editingService ? t('modal.updated') : t('modal.added'))
       setShowServiceModal(false)
       resetServiceForm()
       await fetchData()
     } catch (err) {
       console.error('Save service error:', err)
-      toast.error('Đã xảy ra lỗi khi lưu dịch vụ')
+      toast.error(t('modal.saveError'))
     } finally {
       setIsSubmitting(false)
     }
@@ -222,12 +214,16 @@ export default function ServicesPage() {
   }
 
   const formatPrice = (price: number, priceType: string, perPerson: boolean) => {
-    const formatted = new Intl.NumberFormat('vi-VN').format(price)
-    if (priceType === 'FIXED') return `${formatted} ₫`
-    if (priceType === 'PER_NIGHT') return `${formatted} ₫/đêm`
-    if (priceType === 'PER_PERSON') return `${formatted} ₫/${perPerson ? 'người' : 'lần'}`
-    return `${formatted} ₫`
+    const formatted = labels.money(price)
+    if (priceType === 'PER_NIGHT') return t('price.perNight', { price: formatted })
+    if (priceType === 'PER_PERSON') return perPerson ? t('price.perPerson', { price: formatted }) : t('price.perUse', { price: formatted })
+    return formatted
   }
+
+  const serviceCategoryLabel = (category: string | null) =>
+    t(`serviceCategory.${SERVICE_CATEGORIES.includes(category as ServiceCategory) ? (category as ServiceCategory) : 'other'}`)
+  const amenityCategoryLabel = (category: string) =>
+    AMENITY_CATEGORIES.includes(category as AmenityCategory) ? t(`amenityCategory.${category as AmenityCategory}`) : category
 
   const groupedAmenities = React.useMemo(() => {
     const filtered = amenities.filter(a =>
@@ -247,7 +243,7 @@ export default function ServicesPage() {
     return (
       <PageContainer>
         <div className="max-w-5xl mx-auto py-16 text-center">
-          <p className="text-muted">Không xác định được cơ sở.</p>
+          <p className="text-muted">{t('noProperty')}</p>
         </div>
       </PageContainer>
     )
@@ -258,9 +254,9 @@ export default function ServicesPage() {
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-semibold text-fg">Tiện ích & Dịch vụ</h1>
+          <h1 className="text-2xl font-semibold text-fg">{t('title')}</h1>
           <p className="text-sm text-muted mt-1">
-            Quản lý tiện ích và dịch vụ cho cơ sở của bạn
+            {t('description')}
           </p>
         </div>
 
@@ -268,9 +264,9 @@ export default function ServicesPage() {
         <section className="bg-panel rounded-xl border border-line p-6">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="text-lg font-medium text-fg">Tiện ích</h2>
+              <h2 className="text-lg font-medium text-fg">{t('amenities.title')}</h2>
               <p className="text-sm text-muted mt-0.5">
-                {selectedCount > 0 ? `${selectedCount} tiện ích đã chọn` : 'Chọn tiện ích cho cơ sở'}
+                {selectedCount > 0 ? t('amenities.selected', { count: selectedCount }) : t('amenities.choose')}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -278,7 +274,7 @@ export default function ServicesPage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                 <input
                   type="text"
-                  placeholder="Tìm kiếm..."
+                  placeholder={t('amenities.search')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9 pr-4 py-2 text-sm border border-line rounded-lg focus:outline-none focus:border-muted w-56"
@@ -290,7 +286,7 @@ export default function ServicesPage() {
                 size="sm"
               >
                 <Save className="w-4 h-4 mr-2" />
-                Lưu
+                {tc('actions.save')}
               </Button>
             </div>
           </div>
@@ -304,10 +300,9 @@ export default function ServicesPage() {
           ) : amenities.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed border-line rounded-lg">
               <p className="text-sm text-muted">
-                Chưa có tiện ích. Chạy{' '}
-                <code className="bg-fg/5 px-2 py-0.5 rounded text-xs">
-                  npx tsx prisma/seed-amenities.ts
-                </code>
+                {t.rich('amenities.empty', {
+                  code: (chunks) => <code className="bg-fg/5 px-2 py-0.5 rounded text-xs">{chunks}</code>,
+                })}
               </p>
             </div>
           ) : (
@@ -315,7 +310,7 @@ export default function ServicesPage() {
               {Object.entries(groupedAmenities).map(([category, items]) => (
                 <div key={category}>
                   <h3 className="text-sm font-medium text-fg mb-3">
-                    {categoryLabels[category] || category}
+                    {amenityCategoryLabel(category)}
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                     {items.map((amenity) => {
@@ -351,9 +346,9 @@ export default function ServicesPage() {
         <section className="bg-panel rounded-xl border border-line p-6">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="text-lg font-medium text-fg">Dịch vụ bổ sung</h2>
+              <h2 className="text-lg font-medium text-fg">{t('list.title')}</h2>
               <p className="text-sm text-muted mt-0.5">
-                {services.length > 0 ? `${services.length} dịch vụ` : 'Chưa có dịch vụ nào'}
+                {services.length > 0 ? t('list.count', { count: services.length }) : t('list.empty')}
               </p>
             </div>
             <Button
@@ -361,7 +356,7 @@ export default function ServicesPage() {
               size="sm"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Thêm dịch vụ
+              {t('list.add')}
             </Button>
           </div>
 
@@ -374,21 +369,20 @@ export default function ServicesPage() {
           ) : services.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed border-line rounded-lg">
               <ConciergeBell className="w-10 h-10 text-muted mx-auto mb-3" />
-              <p className="text-sm text-muted font-medium">Chưa có dịch vụ nào</p>
-              <p className="text-xs text-muted mt-1 mb-4">Tạo dịch vụ để khách có thể đặt thêm</p>
+              <p className="text-sm text-muted font-medium">{t('list.empty')}</p>
+              <p className="text-xs text-muted mt-1 mb-4">{t('list.emptyHint')}</p>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => { resetServiceForm(); setShowServiceModal(true) }}
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Thêm dịch vụ đầu tiên
+                {t('list.addFirst')}
               </Button>
             </div>
           ) : (
             <div className="divide-y divide-line">
               {services.map((service) => {
-                const categoryInfo = serviceCategories.find(c => c.value === service.category)
                 return (
                   <div
                     key={service.id}
@@ -403,13 +397,13 @@ export default function ServicesPage() {
                           {service.name}
                         </span>
                         {!service.isActive && (
-                          <Badge variant="secondary" className="text-xs">Tắt</Badge>
+                          <Badge variant="secondary" className="text-xs">{t('list.off')}</Badge>
                         )}
                       </div>
                       <p className="text-sm text-muted mt-0.5">
-                        {categoryInfo?.label || 'Khác'}
-                        {service.priceType === 'PER_NIGHT' && ' · Theo đêm'}
-                        {service.priceType === 'PER_PERSON' && (service.perPerson ? ' · Theo người' : ' · Theo lần')}
+                        {serviceCategoryLabel(service.category)}
+                        {service.priceType === 'PER_NIGHT' && ` · ${t('priceType.PER_NIGHT')}`}
+                        {service.priceType === 'PER_PERSON' && ` · ${service.perPerson ? t('priceType.PER_PERSON') : t('list.perUse')}`}
                       </p>
                     </div>
                     <span className="text-base font-semibold text-fg tabular-nums">
@@ -444,10 +438,10 @@ export default function ServicesPage() {
             <div className="flex items-center justify-between p-5 border-b border-line">
               <div>
                 <h2 className="text-lg font-semibold text-fg">
-                  {editingService ? 'Chỉnh sửa dịch vụ' : 'Dịch vụ mới'}
+                  {editingService ? t('modal.editTitle') : t('modal.newTitle')}
                 </h2>
                 <p className="text-sm text-muted mt-0.5">
-                  {editingService ? 'Cập nhật thông tin dịch vụ' : 'Tạo dịch vụ mới'}
+                  {editingService ? t('modal.editSubtitle') : t('modal.newSubtitle')}
                 </p>
               </div>
               <button
@@ -461,31 +455,31 @@ export default function ServicesPage() {
             <div className="p-5 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-fg mb-1.5">
-                  Tên dịch vụ
+                  {t('modal.name')}
                 </label>
                 <Input
                   value={serviceForm.name}
                   onChange={(e) => setServiceForm({ ...serviceForm, name: e.target.value })}
-                  placeholder="VD: Giặt ủi quần áo"
+                  placeholder={t('modal.namePlaceholder')}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-fg mb-1.5">Danh mục</label>
+                <label className="block text-sm font-medium text-fg mb-1.5">{t('modal.category')}</label>
                 <div className="flex flex-wrap gap-2">
-                  {serviceCategories.map(cat => (
+                  {SERVICE_CATEGORIES.map(cat => (
                     <button
-                      key={cat.value}
-                      onClick={() => setServiceForm({ ...serviceForm, category: cat.value })}
+                      key={cat}
+                      onClick={() => setServiceForm({ ...serviceForm, category: cat })}
                       className={`
                         px-3 py-1.5 rounded-md text-sm font-medium transition-colors
-                        ${serviceForm.category === cat.value
+                        ${serviceForm.category === cat
                           ? 'bg-info text-on-ink'
                           : 'bg-fg/5 text-muted hover:bg-fg/10'
                         }
                       `}
                     >
-                      {cat.label}
+                      {t(`serviceCategory.${cat}`)}
                     </button>
                   ))}
                 </div>
@@ -493,7 +487,7 @@ export default function ServicesPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-fg mb-1.5">Loại giá</label>
+                  <label className="block text-sm font-medium text-fg mb-1.5">{t('modal.priceType')}</label>
                   <select
                     value={serviceForm.priceType}
                     onChange={(e) =>
@@ -504,13 +498,13 @@ export default function ServicesPage() {
                     }
                     className="w-full px-3 py-2 text-sm border border-line rounded-lg focus:outline-none focus:border-muted bg-panel"
                   >
-                    <option value="FIXED">Cố định</option>
-                    <option value="PER_NIGHT">Theo đêm</option>
-                    <option value="PER_PERSON">Theo người</option>
+                    <option value="FIXED">{t('priceType.FIXED')}</option>
+                    <option value="PER_NIGHT">{t('priceType.PER_NIGHT')}</option>
+                    <option value="PER_PERSON">{t('priceType.PER_PERSON')}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-fg mb-1.5">Giá (₫)</label>
+                  <label className="block text-sm font-medium text-fg mb-1.5">{t('modal.price')}</label>
                   <Input
                     type="number"
                     value={serviceForm.price}
@@ -530,7 +524,7 @@ export default function ServicesPage() {
                     onChange={(e) => setServiceForm({ ...serviceForm, perPerson: e.target.checked })}
                     className="w-4 h-4 rounded border-line text-info"
                   />
-                  <span className="text-sm text-fg">Tính theo số người</span>
+                  <span className="text-sm text-fg">{t('modal.perPerson')}</span>
                 </label>
               )}
             </div>
@@ -541,13 +535,13 @@ export default function ServicesPage() {
                 onClick={() => { setShowServiceModal(false); resetServiceForm() }}
                 disabled={isSubmitting}
               >
-                Hủy
+                {tc('actions.cancel')}
               </Button>
               <Button
                 onClick={handleSubmitService}
                 isLoading={isSubmitting}
               >
-                {editingService ? 'Lưu thay đổi' : 'Tạo dịch vụ'}
+                {editingService ? tc('actions.saveChanges') : t('modal.create')}
               </Button>
             </div>
           </div>

@@ -1,1 +1,231 @@
-{}
+{
+  "rooms": {
+    "header": {
+      "title": "Hạng Phòng & Kho Phòng",
+      "description": "Quản lý hạng phòng, sức chứa và hình ảnh",
+      "add": "Thêm Hạng Phòng Mới"
+    },
+    "tabs": {
+      "rooms": "Hạng Phòng",
+      "maintenance": "Bảo Trì"
+    },
+    "bedType": {
+      "SINGLE": "Giường đơn",
+      "DOUBLE": "Giường đôi",
+      "TWIN": "Hai giường đơn",
+      "TRIPLE": "Ba giường",
+      "QUADRUPLE": "Bốn giường"
+    },
+    "banner": {
+      "summary": "{types} hạng phòng • {rooms} phòng",
+      "totalRooms": "Tổng số phòng",
+      "roomTypes": "Hạng phòng",
+      "available": "Đang trống"
+    },
+    "list": {
+      "selectProperty": "Vui lòng chọn cơ sở để xem hạng phòng",
+      "empty": "Chưa có hạng phòng nào",
+      "addFirst": "Thêm Hạng Phòng Đầu Tiên"
+    },
+    "card": {
+      "photos": "{count} ảnh lưu trữ",
+      "perNight": "/đêm",
+      "inventory": "KHO PHÒNG",
+      "roomCount": "{count} Phòng",
+      "area": "DIỆN TÍCH",
+      "capacity": "SỨC CHỨA",
+      "capacityValue": "{adults}L • {children}TE",
+      "amenities": "Tiện ích đặc quyền:",
+      "inactive": "Không hoạt động"
+    },
+    "form": {
+      "name": "Tên hạng phòng",
+      "namePlaceholder": "VD: Phòng Deluxe River View",
+      "description": "Mô tả",
+      "descriptionPlaceholder": "Mô tả về hạng phòng...",
+      "bedType": "Loại giường",
+      "area": "Diện tích (m²)",
+      "totalRooms": "Số phòng",
+      "baseOccupancy": "Số khách tối thiểu",
+      "maxOccupancy": "Số khách tối đa",
+      "weekdayPrice": "Giá ngày thường (VND)",
+      "weekendPrice": "Giá cuối tuần (VND)"
+    },
+    "create": {
+      "submit": "Tạo Hạng Phòng",
+      "failed": "Không thể tạo hạng phòng"
+    },
+    "edit": {
+      "title": "Chỉnh Sửa Hạng Phòng",
+      "submit": "Lưu Thay Đổi",
+      "failed": "Không thể cập nhật hạng phòng"
+    },
+    "delete": {
+      "confirm": "Bạn có chắc muốn xóa hạng phòng này?",
+      "failed": "Không thể xóa hạng phòng"
+    },
+    "error": "Đã xảy ra lỗi",
+    "maintenance": {
+      "title": "Lịch Bảo Trì",
+      "description": "Quản lý lịch bảo trì sửa chữa phòng",
+      "add": "Thêm Lịch Bảo Trì",
+      "empty": "Chưa có lịch bảo trì nào",
+      "addFirst": "Thêm Lịch Bảo Trì Đầu Tiên",
+      "fillAll": "Vui lòng điền đầy đủ thông tin",
+      "created": "Đã tạo lịch bảo trì",
+      "createFailed": "Lỗi khi tạo lịch bảo trì",
+      "deleteConfirm": "Bạn có chắc muốn xóa lịch bảo trì này?",
+      "deleteFailed": "Lỗi khi xóa lịch bảo trì",
+      "form": {
+        "roomType": "Hạng phòng",
+        "chooseRoomType": "Chọn hạng phòng",
+        "startDate": "Ngày bắt đầu",
+        "endDate": "Ngày kết thúc",
+        "reason": "Lý do bảo trì",
+        "reasonPlaceholder": "VD: Sơn lại tường, thay máy lạnh...",
+        "notes": "Ghi chú thêm",
+        "notesPlaceholder": "Thông tin chi tiết...",
+        "warning": "Phòng sẽ bị khóa không cho đặt trong khoảng thời gian bảo trì",
+        "submit": "Tạo Lịch Bảo Trì"
+      }
+    }
+  },
+  "services": {
+    "title": "Tiện ích & Dịch vụ",
+    "description": "Quản lý tiện ích và dịch vụ cho cơ sở của bạn",
+    "noProperty": "Không xác định được cơ sở.",
+    "noPropertyToast": "Không xác định được cơ sở",
+    "loadError": "Đã xảy ra lỗi khi tải dữ liệu",
+    "amenities": {
+      "title": "Tiện ích",
+      "selected": "{count} tiện ích đã chọn",
+      "choose": "Chọn tiện ích cho cơ sở",
+      "search": "Tìm kiếm...",
+      "empty": "Chưa có tiện ích. Chạy <code>npx tsx prisma/seed-amenities.ts</code>",
+      "saveFailed": "Không thể lưu tiện ích",
+      "saved": "Đã lưu tiện ích thành công!",
+      "saveError": "Đã xảy ra lỗi khi lưu tiện ích"
+    },
+    "amenityCategory": {
+      "comfort": "Tiện nghi",
+      "entertainment": "Giải trí",
+      "facility": "Cơ sở",
+      "food": "Ăn uống",
+      "internet": "Internet",
+      "leisure": "Giải trí",
+      "parking": "Đỗ xe",
+      "security": "An ninh",
+      "service": "Dịch vụ"
+    },
+    "serviceCategory": {
+      "laundry": "Giặt ủi",
+      "transport": "Vận chuyển",
+      "food": "Ăn uống",
+      "entertainment": "Giải trí",
+      "other": "Khác"
+    },
+    "priceType": {
+      "FIXED": "Cố định",
+      "PER_NIGHT": "Theo đêm",
+      "PER_PERSON": "Theo người"
+    },
+    "price": {
+      "perNight": "{price}/đêm",
+      "perPerson": "{price}/người",
+      "perUse": "{price}/lần"
+    },
+    "list": {
+      "title": "Dịch vụ bổ sung",
+      "count": "{count} dịch vụ",
+      "empty": "Chưa có dịch vụ nào",
+      "emptyHint": "Tạo dịch vụ để khách có thể đặt thêm",
+      "add": "Thêm dịch vụ",
+      "addFirst": "Thêm dịch vụ đầu tiên",
+      "off": "Tắt",
+      "perUse": "Theo lần",
+      "deleteConfirm": "Xóa dịch vụ này?",
+      "deleteFailed": "Không thể xóa dịch vụ",
+      "deleted": "Đã xóa dịch vụ",
+      "deleteError": "Đã xảy ra lỗi khi xóa dịch vụ"
+    },
+    "modal": {
+      "editTitle": "Chỉnh sửa dịch vụ",
+      "newTitle": "Dịch vụ mới",
+      "editSubtitle": "Cập nhật thông tin dịch vụ",
+      "newSubtitle": "Tạo dịch vụ mới",
+      "name": "Tên dịch vụ",
+      "namePlaceholder": "VD: Giặt ủi quần áo",
+      "category": "Danh mục",
+      "priceType": "Loại giá",
+      "price": "Giá (₫)",
+      "perPerson": "Tính theo số người",
+      "create": "Tạo dịch vụ",
+      "invalid": "Vui lòng điền tên và giá hợp lệ",
+      "saveFailed": "Không thể lưu dịch vụ",
+      "updated": "Đã cập nhật dịch vụ",
+      "added": "Đã thêm dịch vụ mới",
+      "saveError": "Đã xảy ra lỗi khi lưu dịch vụ"
+    }
+  },
+  "policies": {
+    "description": "Giờ check-in/out, hủy phòng và các quy định của cơ sở",
+    "noPropertyDescription": "Chính sách check-in, hủy phòng và quy định",
+    "noProperty": "Không xác định được cơ sở.",
+    "loadFailed": "Không thể tải chính sách",
+    "loadError": "Đã xảy ra lỗi khi tải chính sách",
+    "saveFailed": "Không thể lưu chính sách",
+    "saved": "Đã lưu chính sách",
+    "saveError": "Đã xảy ra lỗi khi lưu",
+    "times": {
+      "title": "Giờ check-in / check-out",
+      "checkIn": "Giờ check-in",
+      "checkInHint": "Khách có thể nhận phòng từ giờ này",
+      "checkOut": "Giờ check-out",
+      "checkOutHint": "Khách phải trả phòng trước giờ này"
+    },
+    "late": {
+      "title": "Phí trả phòng muộn",
+      "enable": "Thu phí khi khách trả phòng sau {time} của ngày trả đã đặt",
+      "intro": "Phụ thu tính theo % giá một đêm của đơn:",
+      "before": "Trả trước",
+      "later": "Muộn hơn nữa",
+      "tierTime": "Mốc giờ {n}",
+      "surchargeBefore": "Phụ thu nếu trả trước {time} (%)",
+      "surchargeLater": "Phụ thu nếu muộn hơn (%)",
+      "hint": "Mặc định theo thông lệ: trước 15:00 phụ thu 30%, trước 18:00 phụ thu 50%, muộn hơn tính một đêm. Ở sang ngày hôm sau thì mỗi 24 giờ tính một đêm (nên gia hạn). Khi trả phòng, app gợi ý số tiền; lễ tân áp dụng, sửa hoặc miễn (sửa hay miễn phải ghi lý do, có lưu nhật ký)."
+    },
+    "cancellation": {
+      "title": "Chính sách hủy phòng",
+      "freeHours": "Hủy miễn phí trước (giờ)",
+      "freeHoursPlaceholder": "VD: 24 (hủy trước 24 giờ được miễn phí)",
+      "freeHoursHint": "Để trống nếu không có chính sách hủy miễn phí",
+      "details": "Mô tả chi tiết",
+      "detailsPlaceholder": "Mô tả chi tiết về chính sách hủy phòng, phí hủy, hoàn tiền...",
+      "detailsHint": "Khách thấy chính sách này trước khi đặt phòng trên website."
+    },
+    "deposit": {
+      "label": "Đặt cọc khi khách đặt trên website (%)",
+      "hint": "0 = không thu cọc, khách trả tại quầy. Có cọc thì khách chuyển khoản qua PayOS ngay khi đặt, tiền vào thẳng tài khoản khách sạn, và đặt phòng tự được xác nhận khi tiền về.",
+      "deadline": "Tự huỷ đơn nếu khách chưa đặt cọc sau",
+      "deadlineHint": "Quá hạn mà tiền chưa về, đơn tự huỷ, phòng được mở lại và khách nhận email. App hỏi lại PayOS trước khi huỷ: khách đã trả thì đơn được xác nhận. Không tự huỷ thì đơn chờ khách sạn xử lý.",
+      "noAutoCancel": "Không tự huỷ",
+      "minutes": "{count} phút",
+      "hours": "{count} giờ",
+      "payosMissing": "Chưa kết nối PayOS (Tài khoản ngân hàng → Thanh toán online): khách chưa phải đặt cọc cho tới khi kết nối."
+    },
+    "rules": {
+      "title": "Quy định khác",
+      "children": "Cho phép trẻ em",
+      "childrenHint": "Có cho phép khách mang theo trẻ em?",
+      "minChildAge": "Tuổi trẻ em tối thiểu được tính giá người lớn",
+      "pets": "Cho phép thú cưng",
+      "petsHint": "Có cho phép khách mang theo thú cưng?",
+      "smoking": "Cho phép hút thuốc",
+      "smokingHint": "Có cho phép hút thuốc trong phòng?"
+    },
+    "additional": {
+      "title": "Quy định bổ sung",
+      "placeholder": "Các quy định khác của cơ sở (giờ yên tĩnh, quy định về khách đến thăm, ...)..."
+    }
+  }
+}
