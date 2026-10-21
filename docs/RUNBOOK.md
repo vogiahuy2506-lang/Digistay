@@ -806,6 +806,7 @@ migration đó là "failed" và **chặn mọi lần deploy sau** (`P3009`) cho 
 | Deploy đỏ ở bước 3/5, `P3018` hoặc `P3009` | Migration fail. Xem mục "Migration fail khi deploy". |
 | Deploy đỏ ở bước 5/5 "did not become healthy" | App mới không lên; script đã tự quay về bản trước. Log `[app]` ngay trong job. |
 | Deploy đỏ ở bước 1/5 (build image) | Đọc log build ngay trong job. Hết đĩa/RAM: `sudo docker system df`, `sudo docker builder prune`. App cũ vẫn chạy. |
+| Deploy đỏ ở bước "Check the installed deploy script" | Script ở `/usr/local/bin/digistay-deploy.sh` không phải bản đã review trong commit này (bản cũ có thể bật code mới mà không chạy migration). Cài lại theo mục "Deploy an toàn", bước 2, rồi chạy lại workflow. |
 | Deploy đỏ ngay đầu: `another deploy is running` | Đang có deploy khác (CI hoặc tay). Chờ nó xong rồi chạy lại. |
 | Deploy đỏ ngay đầu: `Host key verification failed` | User `deploy` chưa đọc được repo (mục "Deploy an toàn", bước 1). |
 | App exit ngay khi start | `docker compose logs app` — thường do sai env var. |

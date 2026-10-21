@@ -168,6 +168,53 @@ jobs:
             echo '== current HEAD =='
             sudo -u "${OWNER%:*}" bash -c "cd /opt/digistay && git rev-parse HEAD"
 
+      # --------------------------------------------------------------
+      # The deploy script installed on the VPS must be the one reviewed in
+      # the commit being deployed (docker/vps/digistay-deploy.sh). On
+      # 2026-10-21 the VPS still ran an older hand-written script that
+      # builds and starts the new code without running its migrations.
+      # --------------------------------------------------------------
+      - name: Fetch the reviewed VPS deploy script
+        if: steps.target.outputs.skip != 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.target.outputs.sha }}
+          sparse-checkout: docker/vps
+          persist-credentials: false
+
+      - name: Checksum of the reviewed VPS deploy script
+        if: steps.target.outputs.skip != 'true'
+        id: wrapper
+        run: echo "sha256=$(sha256sum docker/vps/digistay-deploy.sh | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Check the installed deploy script
+        if: steps.target.outputs.skip != 'true'
+        uses: appleboy/ssh-action@v1
+        env:
+          WANT: ${{ steps.wrapper.outputs.sha256 }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 2m
+          envs: WANT
+          script: |
+            set -eu
+            HAVE="$(sha256sum /usr/local/bin/digistay-deploy.sh 2>/dev/null | cut -d' ' -f1 || true)"
+            echo "installed: ${HAVE:-<missing>}"
+            echo "reviewed:  $WANT"
+            if [ "$HAVE" != "$WANT" ]; then
+              echo "::error::/usr/local/bin/digistay-deploy.sh is not the script reviewed in this commit; an outdated one can start new code without its migrations."
+              echo 'FAIL: install the reviewed script (docs/RUNBOOK.md, "Deploy an toàn", bước 2), then re-run this workflow:'
+              echo '  OWNER="$(stat -c %U /opt/digistay/.git)"'
+              echo '  sudo -u "$OWNER" git -C /opt/digistay fetch origin main'
+              echo '  sudo -u "$OWNER" git -C /opt/digistay checkout --detach origin/main'
+              echo '  sudo install -m 0755 -o root -g root /opt/digistay/docker/vps/digistay-deploy.sh /usr/local/bin/digistay-deploy.sh'
+              exit 1
+            fi
+            echo "OK: the installed deploy script is the reviewed one"
+
       - name: Deploy to VPS
         if: steps.target.outputs.skip != 'true'
         uses: appleboy/ssh-action@v1
