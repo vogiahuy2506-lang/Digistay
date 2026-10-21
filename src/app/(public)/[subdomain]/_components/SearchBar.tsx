@@ -68,7 +68,7 @@ export function SearchBar() {
     e.preventDefault()
     if (!valid) return
     // The search page takes the total guest count.
-    const params = new URLSearchParams({ checkIn, checkOut, guests: String(adults + children) })
+    const params = new URLSearchParams({ checkIn, checkOut, adults: String(adults), children: String(children) })
     router.push(href(`/search?${params.toString()}`))
   }
 

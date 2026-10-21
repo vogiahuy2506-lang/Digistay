@@ -149,6 +149,23 @@ describe('rooms', () => {
     expect((await call(staffBooking(json({ propertyId: property.id, roomTypeId: standard.id, ...guest(6), checkInDate: '2026-12-09', checkOutDate: '2026-12-10', numAdults: 2 })))).status).toBe(200)
   })
 
+  it('the site asks with adults and children apart: rooms that take no children are left out, a child is priced as a child', async () => {
+    const { property } = await createTenant()
+    // The first room type sets the property's surcharges: 100,000 a child a night.
+    await createRoomType(property.id, { name: 'Đơn', maxChildren: 0, weekdayPrice: 500_000, propertyExtraChild: 100_000 })
+    await createRoomType(property.id, { name: 'Gia đình', maxChildren: 2, maxOccupancy: 4, weekdayPrice: 900_000 })
+    const offer = async (query: string) =>
+      (await call(availability(new NextRequest(`http://x/api/bookings/availability?propertyId=${property.id}&checkInDate=2026-12-07&checkOutDate=2026-12-09&${query}`)))).body
+
+    const family = await offer('numGuests=3&numAdults=2&numChildren=1')
+    expect(family.data.map((r: { name: string }) => r.name)).toEqual(['Gia đình'])
+    expect(family.data[0].pricing.total).toBe(2 * 900_000 + 2 * 100_000)
+    expect(family.meta).toMatchObject({ numAdults: 2, numChildren: 1 })
+
+    // Without the split (the staff page), as before: everyone an adult, only the total checked.
+    expect((await offer('numGuests=3')).data).toHaveLength(2)
+  })
+
   it('maintenance blocks booking, with no end date, and shows as taken', async () => {
     const { owner, property } = await createTenant()
     signInAs(owner)

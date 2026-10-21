@@ -30,6 +30,8 @@ export const LIMITS = {
   guestBookingIp: { name: 'guest-booking-ip', limit: 5, windowSec: 60 * MIN },
   /** Bookings for one guest email: each emails that address a confirmation. */
   guestBookingEmail: { name: 'guest-booking-email', limit: 3, windowSec: 60 * MIN },
+  /** "Pay the deposit again" from one IP: each may create a PayOS link on the hotel's account. */
+  depositRetryIp: { name: 'deposit-retry-ip', limit: 10, windowSec: 10 * MIN },
   /** Wrong two-factor codes at sign-in from one IP, across accounts (failures only). */
   twoFactorVerifyIp: { name: '2fa-verify-ip', limit: 20, windowSec: 15 * MIN },
   /** Wrong codes while turning two-factor on, per user (failures only). */

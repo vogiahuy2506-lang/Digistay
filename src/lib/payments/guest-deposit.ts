@@ -16,8 +16,12 @@
  *   function the booking page shows it with.
  * - Deadline (Policy.depositDeadlineMinutes, 0 = none): the link ends then,
  *   and expireUnpaidDeposits() (in the 10-minute PayOS job) cancels the
- *   booking and frees its room, but only after PayOS itself says the link
- *   was not paid: a missed webhook is applied instead of cancelling.
+ *   booking and frees its room, but only after PayOS itself says none of
+ *   its links was paid: a missed webhook is applied instead of cancelling.
+ * - Paying again (payDepositAgain, from the link in deposit-link.ts): the
+ *   live link if there is one, otherwise a new one for the same amount that
+ *   ends at the same deadline; never after the deadline or once the booking
+ *   is no longer waiting.
  */
 import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
@@ -68,7 +72,18 @@ export async function startGuestDeposit(
 ): Promise<{ amount: number; checkoutUrl: string; expiresAt: Date | null } | null> {
   const amount = depositFor(booking.totalAmount, deposit.percent)
   if (amount <= 0) return null
-  const autoCancel = deposit.deadlineMinutes > 0
+  const deadline = deposit.deadlineMinutes > 0 ? new Date(Date.now() + deposit.deadlineMinutes * 60_000) : null
+  return createDepositPayment(booking, { amount, percent: deposit.percent, deadline, deadlineMinutes: deposit.deadlineMinutes }, returnUrl)
+}
+
+/** A PENDING deposit payment and its PayOS link; null if PayOS failed (the payment is kept as FAILED). */
+async function createDepositPayment(
+  booking: { id: string; propertyId: string; bookingCode: string },
+  deposit: { amount: number; percent: number; deadline: Date | null; deadlineMinutes: number; retryOf?: string },
+  returnUrl: string
+): Promise<{ amount: number; checkoutUrl: string; expiresAt: Date | null } | null> {
+  const { amount, deadline } = deposit
+  const autoCancel = deadline !== null
 
   // Recorded before PayOS hears of it, so a webhook can always find it.
   const payment = await prisma.$transaction(async (tx) => {
@@ -85,7 +100,8 @@ export async function startGuestDeposit(
         metadata: {
           guestDeposit: true,
           percent: deposit.percent,
-          ...(autoCancel && { autoCancel: true, deadlineMinutes: deposit.deadlineMinutes }),
+          ...(autoCancel && { autoCancel: true, deadlineMinutes: deposit.deadlineMinutes, deadline: deadline.toISOString() }),
+          ...(deposit.retryOf && { retryOf: deposit.retryOf }),
         },
       },
     })
@@ -95,20 +111,102 @@ export async function startGuestDeposit(
         action: 'CREATE',
         entityType: 'PAYMENT',
         entityId: created.id,
-        metadata: { bookingCode: booking.bookingCode, method: 'PAYOS', amount, by: 'guest', depositPercent: deposit.percent },
+        metadata: { bookingCode: booking.bookingCode, method: 'PAYOS', amount, by: 'guest', depositPercent: deposit.percent, ...(deposit.retryOf && { retryOf: deposit.retryOf }) },
       },
     })
     return created
   })
 
   try {
-    const linked = await createPayosLink(payment.id, returnUrl, autoCancel ? deposit.deadlineMinutes * 60 : undefined)
+    // The link ends at the deadline (at least a minute from now).
+    const ttlSec = deadline ? Math.max(60, Math.floor((deadline.getTime() - Date.now()) / 1000)) : undefined
+    const linked = await createPayosLink(payment.id, returnUrl, ttlSec)
     if (!linked.checkoutUrl) return null
     return { amount, checkoutUrl: linked.checkoutUrl, expiresAt: linked.expiresAt }
   } catch (error) {
     console.error('[deposit] PayOS link failed:', error instanceof PayosError ? error.message : error)
     return null
   }
+}
+
+export class DepositError extends Error {
+  constructor(
+    message: string,
+    readonly status = 409
+  ) {
+    super(message)
+    this.name = 'DepositError'
+  }
+}
+
+/** The deadline of a booking's deposit, from its latest deposit payment; null = none. */
+function deadlineOf(payment: { metadata: Prisma.JsonValue; expiresAt: Date | null }): Date | null {
+  const m = payment.metadata as { autoCancel?: boolean; deadline?: string } | null
+  if (!m?.autoCancel) return null
+  // Links made before the deadline was recorded end at it.
+  return m.deadline ? new Date(m.deadline) : payment.expiresAt
+}
+
+/**
+ * The guest pays their deposit again (the link from deposit-link.ts): the
+ * live PayOS link if there is one, otherwise a new one for the same amount
+ * that ends at the same deadline. Refused once the booking is no longer
+ * waiting, after the deadline, or when the hotel no longer takes deposits.
+ */
+export async function payDepositAgain(bookingId: string): Promise<{ checkoutUrl: string } | { paid: true }> {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    select: {
+      id: true,
+      status: true,
+      propertyId: true,
+      bookingCode: true,
+      totalAmount: true,
+      createdAt: true,
+      property: { select: { subdomain: true, isActive: true } },
+      payments: {
+        where: { paymentGateway: 'PAYOS', metadata: { path: ['guestDeposit'], equals: true } },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true, status: true, amount: true, checkoutUrl: true, expiresAt: true, metadata: true },
+      },
+    },
+  })
+  if (!booking || !booking.property.isActive) throw new DepositError('Không tìm thấy đặt phòng', 404)
+  if (booking.payments.some((p) => p.status === 'PAID') || booking.status === 'CONFIRMED') return { paid: true }
+  if (booking.status !== 'PENDING') throw new DepositError('Đặt phòng này không còn chờ đặt cọc')
+
+  const policy = await onlineDepositOf(booking.propertyId)
+  if (!policy) throw new DepositError('Khách sạn hiện không nhận đặt cọc online; khách sạn sẽ liên hệ với bạn')
+
+  const latest = booking.payments[0]
+  const deadline = latest
+    ? deadlineOf(latest)
+    : policy.deadlineMinutes > 0
+      ? new Date(booking.createdAt.getTime() + policy.deadlineMinutes * 60_000)
+      : null
+  if (deadline && deadline.getTime() <= Date.now() + 60_000) throw new DepositError('Đã quá hạn đặt cọc cho đặt phòng này')
+
+  // A live link: ask PayOS first (it may have been paid), then reuse it.
+  if (latest?.status === 'PENDING' && latest.checkoutUrl && latest.expiresAt && latest.expiresAt.getTime() > Date.now()) {
+    const status = await syncPayosPayment(latest.id)
+    if (status === 'PAID') return { paid: true }
+    if (status === 'PENDING') return { checkoutUrl: latest.checkoutUrl }
+  }
+
+  const amount = latest?.amount ?? depositFor(booking.totalAmount, policy.percent)
+  const created = await createDepositPayment(
+    booking,
+    {
+      amount,
+      percent: (latest?.metadata as { percent?: number } | null)?.percent ?? policy.percent,
+      deadline,
+      deadlineMinutes: (latest?.metadata as { deadlineMinutes?: number } | null)?.deadlineMinutes ?? policy.deadlineMinutes,
+      retryOf: latest?.id,
+    },
+    `${process.env.NEXTAUTH_URL}/${booking.property.subdomain}/thanh-toan`
+  )
+  if (!created) throw new DepositError('PayOS chưa tạo được link thanh toán, vui lòng thử lại sau ít phút', 502)
+  return { checkoutUrl: created.checkoutUrl }
 }
 
 export interface DepositExpirySummary {
@@ -144,13 +242,30 @@ export async function expireUnpaidDeposits(now = new Date()): Promise<DepositExp
   })
 
   const summary: DepositExpirySummary = { checked: 0, cancelled: 0, paid: 0, errors: 0 }
+  const seen = new Set<string>()
   for (const payment of due) {
+    // One booking can have several links (paid again after leaving PayOS).
+    if (seen.has(payment.bookingId)) continue
+    seen.add(payment.bookingId)
     summary.checked++
     try {
-      // PayOS is the truth: paid means confirmed, not cancelled.
-      let status = await syncPayosPayment(payment.id)
-      if (status === 'PENDING') status = await cancelPayosPayment(payment.id)
-      if (status === 'PAID') {
+      // PayOS is the truth, for every link of the booking still open here
+      // and the one that came due: paid means confirmed, not cancelled.
+      const open = await prisma.payment.findMany({
+        where: {
+          bookingId: payment.bookingId,
+          paymentGateway: 'PAYOS',
+          OR: [{ id: payment.id }, { status: 'PENDING' }],
+        },
+        select: { id: true },
+      })
+      let paid = false
+      for (const link of open) {
+        let status = await syncPayosPayment(link.id)
+        if (status === 'PENDING') status = await cancelPayosPayment(link.id)
+        if (status === 'PAID') paid = true
+      }
+      if (paid) {
         summary.paid++
         continue
       }

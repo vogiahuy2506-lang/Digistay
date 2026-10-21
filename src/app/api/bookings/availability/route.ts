@@ -10,6 +10,9 @@ const querySchema = z.object({
   checkInDate: z.string(),
   checkOutDate: z.string(),
   numGuests: z.coerce.number().int().min(1).default(1),
+  /** adults and children apart (the hotel's site): each checked against the room type, children priced as children */
+  numAdults: z.coerce.number().int().min(1).max(20).optional(),
+  numChildren: z.coerce.number().int().min(0).max(20).optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -21,6 +24,8 @@ export async function GET(request: NextRequest) {
       checkInDate: searchParams.get('checkInDate'),
       checkOutDate: searchParams.get('checkOutDate'),
       numGuests: searchParams.get('numGuests') || '1',
+      numAdults: searchParams.get('numAdults') ?? undefined,
+      numChildren: searchParams.get('numChildren') ?? undefined,
     })
 
     if (!query.success) {
@@ -30,7 +35,11 @@ export async function GET(request: NextRequest) {
       }, { status: 400 })
     }
 
-    const { propertyId, checkInDate, checkOutDate, numGuests } = query.data
+    const { propertyId, checkInDate, checkOutDate } = query.data
+    // Without the split, every guest counts as an adult (the staff page).
+    const adults = query.data.numAdults ?? query.data.numGuests
+    const children = query.data.numAdults ? (query.data.numChildren ?? 0) : 0
+    const numGuests = adults + children
     const checkIn = new Date(checkInDate)
     const checkOut = new Date(checkOutDate)
     if (Number.isNaN(checkIn.getTime()) || Number.isNaN(checkOut.getTime()) || checkOut <= checkIn) {
@@ -44,6 +53,8 @@ export async function GET(request: NextRequest) {
         propertyId,
         isActive: true,
         maxOccupancy: { gte: numGuests },
+        // Only with the split: the staff page's numGuests mixes adults and children.
+        ...(query.data.numAdults && { maxAdults: { gte: adults }, maxChildren: { gte: children } }),
         property: { isActive: true },
       },
       include: {
@@ -69,7 +80,7 @@ export async function GET(request: NextRequest) {
       // A room type without a price cannot be booked: not offered.
       if (!rates) return []
       const availableRooms = Math.max(0, roomType.totalRooms - (taken.get(roomType.id) ?? 0))
-      const quote = quoteStay({ rates, checkIn, checkOut, numAdults: numGuests, numChildren: 0, baseOccupancy: roomType.baseOccupancy })
+      const quote = quoteStay({ rates, checkIn, checkOut, numAdults: adults, numChildren: children, baseOccupancy: roomType.baseOccupancy })
 
       return [{
         id: roomType.id,
@@ -90,7 +101,7 @@ export async function GET(request: NextRequest) {
         })),
         pricing: {
           basePrice: quote.basePrice,
-          /** room nights + surcharges for numGuests, before services */
+          /** room nights + surcharges for these guests, before services */
           total: quote.total,
           ...rates,
         },
@@ -112,6 +123,8 @@ export async function GET(request: NextRequest) {
         checkIn: checkInDate,
         checkOut: checkOutDate,
         numGuests,
+        numAdults: adults,
+        numChildren: children,
         numNights: Math.round((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)),
       },
     })

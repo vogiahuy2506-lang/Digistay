@@ -119,3 +119,43 @@ test("a guest books on the hotel's site and pays the hotel's 30% deposit through
   noErrors()
   await context.close()
 })
+
+test('a guest who left PayOS without paying pays again from the return page', async ({ browser }) => {
+  // The hotel still takes 30% within an hour (set by the test above).
+  const context = await browser.newContext({ storageState: { cookies: [], origins: [] } })
+  const guest = await context.newPage()
+  const noErrors = failOnPageErrors(guest)
+  const visited: string[] = []
+  await guest.route('https://pay.payos.vn/**', (route) => {
+    visited.push(route.request().url().match(/pl(\d+)/)?.[1] ?? '')
+    return route.fulfill({ contentType: 'text/html', body: '<h1>PayOS checkout</h1>' })
+  })
+  const email = `lai-${Date.now()}@example.com`
+  await guest.goto(`/${ids().subdomain}/search?checkIn=${day(80)}&checkOut=${day(82)}&guests=2`)
+  await guest.getByRole('button', { name: 'Đặt phòng này' }).first().click()
+  await guest.getByPlaceholder('Nguyễn Văn A').fill('Vũ Thị Lại')
+  await guest.getByPlaceholder('0912345678').fill('0912345678')
+  await guest.getByPlaceholder('email@example.com').fill(email)
+  await guest.getByRole('button', { name: 'Tiếp tục', exact: true }).click()
+  await guest.getByRole('button', { name: 'Tiếp tục thanh toán' }).click()
+  await guest.getByRole('button', { name: 'Xác nhận và đặt cọc' }).click()
+  await guest.waitForURL(/pay\.payos\.vn/)
+  const orderCode = visited[0]
+
+  // "Huỷ" on PayOS sends the guest back with cancel=true.
+  await guest.goto(`/${ids().subdomain}/thanh-toan?code=00&cancel=true&status=CANCELLED&orderCode=${orderCode}`)
+  await expect(guest.getByRole('heading', { name: 'Bạn đã huỷ thanh toán' })).toBeVisible()
+  await guest.getByRole('link', { name: 'Thanh toán lại' }).click()
+  await expect(guest.getByRole('heading', { name: 'Đặt cọc để giữ phòng' })).toBeVisible()
+  await expect(guest.getByText('Hạn đặt cọc:')).toBeVisible()
+  await guest.getByRole('button', { name: /Đặt cọc .* qua PayOS/ }).click()
+  await guest.waitForURL(/pay\.payos\.vn/)
+  expect(visited.at(-1)).toBe(orderCode) // the link still open, handed out again
+
+  expect(await control.pay(orderCode)).toEqual({ webhookStatus: 200 })
+  await guest.goBack()
+  await guest.reload()
+  await expect(guest.getByRole('heading', { name: 'Đã nhận tiền cọc' })).toBeVisible()
+  noErrors()
+  await context.close()
+})

@@ -34,10 +34,12 @@ Trước khi commit: `npm test` và `npx tsc --noEmit` phải xanh; sửa API ch
 `npm run test:int`.
 Chạy một file test: lọc theo tên (`npx vitest run confirm`) — đường dẫn chứa `[id]` không khớp.
 
-Postgres cho integration test (một lần):
+Postgres cho integration test (một lần). Volume có tên để xoá/tạo lại container không bỏ lại
+volume ẩn danh mồ côi; muốn làm sạch hẳn thì `docker rm -f digistay-test-pg && docker volume rm digistay-test-pg-data`:
 
 ```bash
-docker run -d --name digistay-test-pg -e POSTGRES_PASSWORD=postgres -p 127.0.0.1:54329:5432 postgres:16-alpine
+docker run -d --name digistay-test-pg -e POSTGRES_PASSWORD=postgres -p 127.0.0.1:54329:5432 \
+  -v digistay-test-pg-data:/var/lib/postgresql/data postgres:16-alpine
 docker exec digistay-test-pg psql -U postgres -c "CREATE DATABASE digistay_test"
 DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54329/digistay_test" npm run test:int
 ```
@@ -205,6 +207,12 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
     thì xác nhận đơn, không huỷ), huỷ link, rồi huỷ đơn dưới khoá dòng nếu vẫn PENDING và chưa có
     khoản nào PAID, mở lại phòng, email cho khách. Link tạo lỗi thì không tự huỷ (khách được báo
     khách sạn sẽ gọi).
+    Đặt cọc lại: trang `/<subdomain>/dat-coc/<token>` (link trong email xác nhận và nút "Thanh toán
+    lại" ở `/thanh-toan`), token = id đơn + HMAC (`deposit-link.ts`, khoá dẫn xuất từ
+    `NEXTAUTH_SECRET`). **Mở trang không tạo gì** (trình quét email mở link); chỉ nút bấm gọi
+    `POST /api/public/deposits/[token]`: dùng lại link còn hạn, không thì tạo link mới cùng số tiền,
+    hết hạn đúng hạn cọc cũ; quá hạn hay đơn không còn chờ thì từ chối. Một đơn có thể có nhiều link:
+    job hết hạn hỏi PayOS **mọi** link của đơn trước khi huỷ.
   Đối soát định kỳ: timer systemd `digistay-reconcile`, 10 phút một lần, gọi
   `/api/internal/payos-reconcile` (RUNBOOK, "Đối soát PayOS định kỳ").
 - Job định kỳ nằm ở `/api/internal/*`: kiểm `checkCronSecret()` (header `CRON_SECRET`), nginx

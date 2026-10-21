@@ -52,7 +52,7 @@ export function BookingBox({ rates, baseOccupancy, maxAdults, maxChildren, check
 
   const book = () => {
     if (!validDates) return
-    const params = new URLSearchParams({ checkIn, checkOut, guests: String(adults + children) })
+    const params = new URLSearchParams({ checkIn, checkOut, adults: String(adults), children: String(children) })
     router.push(href(`/search?${params}`))
   }
 
