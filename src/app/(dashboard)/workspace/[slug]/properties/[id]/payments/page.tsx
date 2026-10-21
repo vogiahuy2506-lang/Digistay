@@ -11,6 +11,8 @@ import {
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import QRCode from 'qrcode'
+import { useTranslations } from 'next-intl'
+import { useDashLabels } from '@/lib/i18n/dash'
 
 interface Payment {
   id: string
@@ -53,50 +55,56 @@ interface Booking {
   guestName: string
 }
 
-const paymentMethodOptions = [
-  { value: 'BANK_TRANSFER', label: 'Chuyển khoản ngân hàng' },
-  { value: 'QR_VIETQR', label: 'QR VietQR' },
-  { value: 'CARD', label: 'Thẻ nội địa' },
-  { value: 'CREDIT_CARD', label: 'Thẻ quốc tế' },
-  { value: 'E_WALLET', label: 'Ví điện tử' },
-  { value: 'CASH', label: 'Tiền mặt' },
-]
-
-// Offered first when the property has connected its PayOS account (Part 5).
-const PAYOS_OPTION = { value: 'PAYOS', label: 'PayOS — khách quét mã, tự xác nhận' }
+// Labels: messages dash.money.payments.methodOptions / methods / status.
+const PAYMENT_METHODS = ['BANK_TRANSFER', 'QR_VIETQR', 'CARD', 'CREDIT_CARD', 'E_WALLET', 'CASH'] as const
+type PaymentMethodKey = (typeof PAYMENT_METHODS)[number]
+const isPaymentMethod = (method: string): method is PaymentMethodKey => (PAYMENT_METHODS as readonly string[]).includes(method)
 
 /** Renders a VietQR/PayOS payload as an image. */
 function QrImage({ payload }: { payload: string }) {
+  const t = useTranslations('dash.money.payments')
   const [src, setSrc] = React.useState('')
   React.useEffect(() => {
     QRCode.toDataURL(payload, { margin: 1, width: 220 }).then(setSrc).catch(() => setSrc(''))
   }, [payload])
   // eslint-disable-next-line @next/next/no-img-element -- data: URL rendered in the browser
-  return src ? <img src={src} alt="Mã QR thanh toán" className="w-48 h-48 mx-auto" /> : null
+  return src ? <img src={src} alt={t('qrAlt')} className="w-48 h-48 mx-auto" /> : null
 }
 
-const paymentMethodLabels: Record<string, { label: string; icon: any }> = {
-  BANK_TRANSFER: { label: 'Chuyển khoản', icon: Building },
-  QR_VIETQR: { label: 'QR VietQR', icon: QrCode },
-  CARD: { label: 'Thẻ nội địa', icon: CreditCard },
-  CREDIT_CARD: { label: 'Thẻ quốc tế', icon: CreditCard },
-  E_WALLET: { label: 'Ví điện tử', icon: Smartphone },
-  CASH: { label: 'Tiền mặt', icon: Banknote },
+const paymentMethodIcons: Record<string, any> = {
+  BANK_TRANSFER: Building,
+  QR_VIETQR: QrCode,
+  CARD: CreditCard,
+  CREDIT_CARD: CreditCard,
+  E_WALLET: Smartphone,
+  CASH: Banknote,
 }
 
-const paymentStatusConfig: Record<string, { label: string; color: string; bgColor: string; borderColor: string; icon: any }> = {
-  PENDING: { label: 'Chờ thanh toán', color: 'text-warn', bgColor: 'bg-warn-soft', borderColor: 'border-warn/30', icon: Clock },
-  PAID: { label: 'Đã thanh toán', color: 'text-ok', bgColor: 'bg-ok-soft', borderColor: 'border-ok/30', icon: CheckCircle },
-  FAILED: { label: 'Thất bại', color: 'text-err', bgColor: 'bg-err-soft', borderColor: 'border-err/30', icon: XCircle },
-  EXPIRED: { label: 'Hết hạn', color: 'text-plain', bgColor: 'bg-plain-soft', borderColor: 'border-line', icon: AlertCircle },
-  REFUNDED: { label: 'Đã hoàn tiền', color: 'text-refund', bgColor: 'bg-refund-soft', borderColor: 'border-refund/30', icon: RefreshCw },
+type PaymentStatusKey = 'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED' | 'REFUNDED' | 'CANCELLED' | 'PROCESSING' | 'PARTIAL'
+
+const paymentStatusConfig: Record<PaymentStatusKey, { color: string; bgColor: string; borderColor: string; icon: any }> = {
+  PENDING: { color: 'text-warn', bgColor: 'bg-warn-soft', borderColor: 'border-warn/30', icon: Clock },
+  PAID: { color: 'text-ok', bgColor: 'bg-ok-soft', borderColor: 'border-ok/30', icon: CheckCircle },
+  FAILED: { color: 'text-err', bgColor: 'bg-err-soft', borderColor: 'border-err/30', icon: XCircle },
+  EXPIRED: { color: 'text-plain', bgColor: 'bg-plain-soft', borderColor: 'border-line', icon: AlertCircle },
+  REFUNDED: { color: 'text-refund', bgColor: 'bg-refund-soft', borderColor: 'border-refund/30', icon: RefreshCw },
   // Every PaymentStatus needs an entry: rows render config[status].icon.
-  CANCELLED: { label: 'Đã huỷ', color: 'text-plain', bgColor: 'bg-plain-soft', borderColor: 'border-line', icon: XCircle },
-  PROCESSING: { label: 'Đang xử lý', color: 'text-info', bgColor: 'bg-info-soft', borderColor: 'border-info/30', icon: Clock },
-  PARTIAL: { label: 'Thanh toán một phần', color: 'text-info', bgColor: 'bg-info-soft', borderColor: 'border-info/30', icon: Clock },
+  CANCELLED: { color: 'text-plain', bgColor: 'bg-plain-soft', borderColor: 'border-line', icon: XCircle },
+  PROCESSING: { color: 'text-info', bgColor: 'bg-info-soft', borderColor: 'border-info/30', icon: Clock },
+  PARTIAL: { color: 'text-info', bgColor: 'bg-info-soft', borderColor: 'border-info/30', icon: Clock },
 }
+const PAYMENT_STATUSES = Object.keys(paymentStatusConfig) as PaymentStatusKey[]
+/** A status this page knows, else PENDING (as the rows did before). */
+const statusKey = (status: string): PaymentStatusKey =>
+  status in paymentStatusConfig ? (status as PaymentStatusKey) : 'PENDING'
 
 export default function PaymentsPage() {
+  const t = useTranslations('dash.money.payments')
+  const tc = useTranslations('dash.common')
+  const labels = useDashLabels()
+  const methodOptions = PAYMENT_METHODS.map((value) => ({ value, label: t(`methodOptions.${value}`) }))
+  // Offered first when the property has connected its PayOS account (Part 5).
+  const payosOption = { value: 'PAYOS', label: t('methodOptions.PAYOS') }
   const [payments, setPayments] = React.useState<Payment[]>([])
   const [filteredPayments, setFilteredPayments] = React.useState<Payment[]>([])
   const [properties, setProperties] = React.useState<Property[]>([])
@@ -229,16 +237,16 @@ export default function PaymentsPage() {
   }
 
   const handlePayosAction = async (paymentId: string, action: 'sync' | 'cancel') => {
-    if (action === 'cancel' && !confirm('Huỷ link thanh toán này? Khách sẽ không trả được bằng link này nữa.')) return
+    if (action === 'cancel' && !confirm(t('confirm.cancelLink'))) return
     setPayosBusy(true)
     try {
       const res = await fetch(`/api/payments/${paymentId}/${action}`, { method: 'POST' })
       const data = await res.json()
       if (!data.success) {
-        alert(data.error || 'Có lỗi xảy ra')
+        alert(data.error || t('errors.generic'))
         return
       }
-      if (action === 'sync' && data.data.status === 'PENDING') alert('PayOS chưa nhận được tiền cho link này.')
+      if (action === 'sync' && data.data.status === 'PENDING') alert(t('payosNotPaid'))
       const list = await fetchPayments(selectedProperty, { syncPayos: false })
       setSelectedPayment(list.find((p) => p.id === paymentId) ?? null)
     } finally {
@@ -259,9 +267,7 @@ export default function PaymentsPage() {
   }
 
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(price)
-  }
+  const formatPrice = labels.money
 
   const handleRefresh = () => {
     if (selectedProperty) {
@@ -287,11 +293,11 @@ export default function PaymentsPage() {
 
   const handleCreatePayment = async () => {
     if (!createForm.bookingId) {
-      setCreateError('Vui lòng chọn đơn đặt phòng')
+      setCreateError(t('createModal.bookingRequired'))
       return
     }
     if (!createForm.amount || parseFloat(createForm.amount) <= 0) {
-      setCreateError('Vui lòng nhập số tiền hợp lệ')
+      setCreateError(t('createModal.amountInvalid'))
       return
     }
 
@@ -317,7 +323,7 @@ export default function PaymentsPage() {
         const list = await fetchPayments(selectedProperty, { syncPayos: false })
         setSelectedPayment(list.find((p) => p.id === data.data.id) ?? null)
       } else if (data.success) {
-        setCreateSuccess('Tạo thanh toán thành công!')
+        setCreateSuccess(t('createModal.success'))
         setTimeout(() => {
           setIsCreating(false)
           if (selectedProperty) {
@@ -325,10 +331,10 @@ export default function PaymentsPage() {
           }
         }, 1500)
       } else {
-        setCreateError(data.error || 'Có lỗi xảy ra')
+        setCreateError(data.error || t('errors.generic'))
       }
     } catch (err) {
-      setCreateError('Có lỗi xảy ra, vui lòng thử lại')
+      setCreateError(t('errors.retry'))
     } finally {
       setIsSubmitting(false)
     }
@@ -345,7 +351,7 @@ export default function PaymentsPage() {
   }
 
   const handleConfirmPayment = async (paymentId: string) => {
-    if (!confirm('Xác nhận đã nhận đủ tiền cho khoản thanh toán này? Thao tác sẽ được ghi lại tên bạn.')) {
+    if (!confirm(t('confirm.markPaid'))) {
       return
     }
     try {
@@ -362,10 +368,10 @@ export default function PaymentsPage() {
         }
         setSelectedPayment(null)
       } else {
-        alert(data.error || 'Có lỗi xảy ra')
+        alert(data.error || t('errors.generic'))
       }
     } catch (err) {
-      alert('Có lỗi xảy ra')
+      alert(t('errors.generic'))
     }
   }
 
@@ -373,8 +379,8 @@ export default function PaymentsPage() {
     <div>
       <PageContainer>
         <Header
-          title="Thanh Toán"
-          description="Quản lý các khoản thanh toán"
+          title={t('header.title')}
+          description={t('header.description')}
           actions={
             <div className="flex items-center gap-2 shrink-0">
               <Select
@@ -385,11 +391,11 @@ export default function PaymentsPage() {
               />
               <Button size="sm" variant="secondary" onClick={handleRefresh} className="gap-1.5 shrink-0">
                 <RefreshCw className="w-3.5 h-3.5" />
-                <span className="hidden lg:inline">Làm mới</span>
+                <span className="hidden lg:inline">{tc('actions.refresh')}</span>
               </Button>
               <Button size="sm" onClick={handleOpenCreateModal} className="gap-1.5 shrink-0">
                 <Plus className="w-3.5 h-3.5" />
-                <span className="hidden lg:inline">Tạo thanh toán</span>
+                <span className="hidden lg:inline">{t('header.create')}</span>
               </Button>
             </div>
           }
@@ -404,11 +410,11 @@ export default function PaymentsPage() {
                 <TrendingUp className="w-5 h-5 text-fg" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-muted truncate">Tổng thanh toán</p>
+                <p className="text-xs font-medium text-muted truncate">{t('stats.total')}</p>
                 <p className="text-lg font-bold text-fg truncate">{formatPrice(stats.total)}</p>
               </div>
             </div>
-            <p className="text-xs text-muted mt-2">{stats.count} giao dịch</p>
+            <p className="text-xs text-muted mt-2">{t('stats.transactions', { count: stats.count })}</p>
           </div>
 
           {/* Paid Card */}
@@ -418,13 +424,13 @@ export default function PaymentsPage() {
                 <CheckCircle className="w-5 h-5 text-ok" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-ok truncate">Đã thanh toán</p>
+                <p className="text-xs font-medium text-ok truncate">{t('stats.paid')}</p>
                 <p className="text-lg font-bold text-ok truncate">{formatPrice(stats.paid)}</p>
               </div>
             </div>
             <p className="text-xs text-ok mt-2 flex items-center gap-1">
               <ArrowUpRight className="w-3 h-3" />
-              {stats.paidCount} giao dịch
+              {t('stats.transactions', { count: stats.paidCount })}
             </p>
           </div>
 
@@ -435,13 +441,13 @@ export default function PaymentsPage() {
                 <Clock className="w-5 h-5 text-warn" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-warn truncate">Chờ thanh toán</p>
+                <p className="text-xs font-medium text-warn truncate">{t('stats.pending')}</p>
                 <p className="text-lg font-bold text-warn truncate">{formatPrice(stats.pending)}</p>
               </div>
             </div>
             <p className="text-xs text-warn mt-2 flex items-center gap-1">
               <Wallet className="w-3 h-3" />
-              {stats.pendingCount} giao dịch
+              {t('stats.transactions', { count: stats.pendingCount })}
             </p>
           </div>
 
@@ -452,13 +458,13 @@ export default function PaymentsPage() {
                 <XCircle className="w-5 h-5 text-err" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-err truncate">Thất bại/Hết hạn</p>
+                <p className="text-xs font-medium text-err truncate">{t('stats.failed')}</p>
                 <p className="text-lg font-bold text-err truncate">{formatPrice(stats.failed)}</p>
               </div>
             </div>
             <p className="text-xs text-err mt-2 flex items-center gap-1">
               <AlertTriangle className="w-3 h-3" />
-              {stats.failedCount} giao dịch
+              {t('stats.transactions', { count: stats.failedCount })}
             </p>
           </div>
         </div>
@@ -470,7 +476,7 @@ export default function PaymentsPage() {
               <div className="w-7 h-7 rounded-lg bg-fg/5 flex items-center justify-center">
                 <Filter className="w-3.5 h-3.5 text-muted" />
               </div>
-              <span className="text-sm font-semibold text-fg">Bộ lọc</span>
+              <span className="text-sm font-semibold text-fg">{t('filters.title')}</span>
             </div>
             {(searchQuery || statusFilter || methodFilter || dateFrom || dateTo) && (
               <button
@@ -484,7 +490,7 @@ export default function PaymentsPage() {
                 className="text-xs text-muted hover:text-err font-medium flex items-center gap-1"
               >
                 <XCircle className="w-3 h-3" />
-                Xóa
+                {t('filters.clear')}
               </button>
             )}
           </div>
@@ -493,7 +499,7 @@ export default function PaymentsPage() {
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted" />
               <input
                 type="text"
-                placeholder="Mã GD, tên khách..."
+                placeholder={t('filters.search')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-8 pr-3 py-2 text-sm bg-fg/[0.03] border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-acc/20 focus:border-acc transition"
@@ -504,9 +510,9 @@ export default function PaymentsPage() {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-3 py-2 text-sm bg-fg/[0.03] border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-acc/20 focus:border-acc transition appearance-none cursor-pointer"
             >
-              <option value="">Trạng thái</option>
-              {Object.entries(paymentStatusConfig).map(([key, { label }]) => (
-                <option key={key} value={key}>{label}</option>
+              <option value="">{t('filters.status')}</option>
+              {PAYMENT_STATUSES.map((key) => (
+                <option key={key} value={key}>{t(`status.${key}`)}</option>
               ))}
             </select>
             <select
@@ -514,8 +520,8 @@ export default function PaymentsPage() {
               onChange={(e) => setMethodFilter(e.target.value)}
               className="px-3 py-2 text-sm bg-fg/[0.03] border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-acc/20 focus:border-acc transition appearance-none cursor-pointer"
             >
-              <option value="">Phương thức</option>
-              {paymentMethodOptions.map((opt) => (
+              <option value="">{t('filters.method')}</option>
+              {methodOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
@@ -543,31 +549,31 @@ export default function PaymentsPage() {
                 <CreditCard className="w-3.5 h-3.5 text-acc" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-fg">Danh sách thanh toán</h3>
-                <p className="text-xs text-muted">{pagination.total} giao dịch</p>
+                <h3 className="text-sm font-semibold text-fg">{t('list.title')}</h3>
+                <p className="text-xs text-muted">{t('stats.transactions', { count: pagination.total })}</p>
               </div>
             </div>
             <Button size="sm" variant="ghost" className="gap-2 text-muted hover:text-fg">
               <Download className="w-4 h-4" />
-              <span className="hidden lg:inline">Xuất Excel</span>
+              <span className="hidden lg:inline">{tc('actions.export')}</span>
             </Button>
           </div>
 
           {isLoading ? (
             <div className="p-10 text-center">
               <div className="w-10 h-10 border-4 border-acc/20 border-t-acc rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-sm text-muted">Đang tải dữ liệu...</p>
+              <p className="text-sm text-muted">{t('list.loading')}</p>
             </div>
           ) : filteredPayments.length === 0 ? (
             <div className="p-10 text-center">
               <div className="w-16 h-16 bg-fg/5 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <CreditCard className="w-8 h-8 text-muted" />
               </div>
-              <h3 className="text-base font-semibold text-fg mb-1">Chưa có thanh toán nào</h3>
-              <p className="text-sm text-muted mb-4">Tạo thanh toán mới để bắt đầu</p>
+              <h3 className="text-base font-semibold text-fg mb-1">{t('list.empty')}</h3>
+              <p className="text-sm text-muted mb-4">{t('list.emptyHint')}</p>
               <Button onClick={handleOpenCreateModal} className="gap-2">
                 <Plus className="w-4 h-4" />
-                Tạo thanh toán
+                {t('header.create')}
               </Button>
             </div>
           ) : (
@@ -575,22 +581,25 @@ export default function PaymentsPage() {
               <table className="w-full">
                 <thead>
                   <tr className="bg-fg/[0.03] border-b border-line">
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">Mã GD</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">Đặt phòng</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">Khách hàng</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">Số tiền</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">Phương thức</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">Trạng thái</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">Ngày</th>
-                    <th className="px-4 py-2.5 text-right text-xs font-semibold text-muted uppercase tracking-wider">Thao tác</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">{t('columns.code')}</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">{t('columns.booking')}</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">{t('columns.guest')}</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">{t('columns.amount')}</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">{t('columns.method')}</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">{t('columns.status')}</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">{t('columns.date')}</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-semibold text-muted uppercase tracking-wider">{t('columns.actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
                   {filteredPayments.map((payment, index) => {
-                    const statusInfo = paymentStatusConfig[payment.status] || paymentStatusConfig.PENDING
+                    const status = statusKey(payment.status)
+                    const statusInfo = paymentStatusConfig[status]
                     const methodInfo = payment.paymentGateway === 'PAYOS'
                       ? { label: 'PayOS', icon: QrCode }
-                      : paymentMethodLabels[payment.method] || { label: payment.method, icon: CreditCard }
+                      : isPaymentMethod(payment.method)
+                        ? { label: t(`methods.${payment.method}`), icon: paymentMethodIcons[payment.method] }
+                        : { label: payment.method, icon: CreditCard }
                     const MethodIcon = methodInfo.icon
                     const StatusIcon = statusInfo.icon
                     
@@ -604,7 +613,7 @@ export default function PaymentsPage() {
                             <button
                               onClick={() => handleCopyToClipboard(payment.id, payment.id)}
                               className="p-1 hover:bg-fg/10 rounded transition"
-                              title="Sao chép"
+                              title={t('list.copy')}
                             >
                               {copiedId === payment.id ? (
                                 <Check className="w-3 h-3 text-ok" />
@@ -628,7 +637,7 @@ export default function PaymentsPage() {
                         <td className="px-4 py-3">
                           <span className="text-sm font-semibold text-fg">{formatPrice(payment.amount)}</span>
                           {payment.fee > 0 && (
-                            <span className="block text-xs text-muted">Phí: {formatPrice(payment.fee)}</span>
+                            <span className="block text-xs text-muted">{t('list.fee', { amount: formatPrice(payment.fee) })}</span>
                           )}
                         </td>
                         <td className="px-4 py-3">
@@ -642,7 +651,7 @@ export default function PaymentsPage() {
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${statusInfo.bgColor} ${statusInfo.color}`}>
                             <StatusIcon className="w-3 h-3" />
-                            {statusInfo.label}
+                            {t(`status.${status}`)}
                           </span>
                         </td>
                         <td className="px-4 py-3">
@@ -653,7 +662,7 @@ export default function PaymentsPage() {
                         <td className="px-4 py-3 text-right">
                           <Button size="sm" variant="ghost" onClick={() => handleViewPayment(payment)} className="gap-1.5 text-muted hover:text-acc">
                             <Eye className="w-4 h-4" />
-                            <span className="hidden sm:inline">Chi tiết</span>
+                            <span className="hidden sm:inline">{tc('actions.details')}</span>
                           </Button>
                         </td>
                       </tr>
@@ -666,14 +675,14 @@ export default function PaymentsPage() {
           {pagination.totalPages > 1 && (
             <div className="flex items-center justify-between border-t border-line px-4 py-3 text-sm text-muted">
               <span>
-                Trang {pagination.page} / {pagination.totalPages}
+                {t('pagination.page', { page: pagination.page, totalPages: pagination.totalPages })}
               </span>
               <div className="flex gap-2">
                 <Button size="sm" variant="secondary" disabled={page <= 1 || isLoading} onClick={() => setPage(page - 1)}>
-                  Trước
+                  {t('pagination.prev')}
                 </Button>
                 <Button size="sm" variant="secondary" disabled={page >= pagination.totalPages || isLoading} onClick={() => setPage(page + 1)}>
-                  Sau
+                  {t('pagination.next')}
                 </Button>
               </div>
             </div>
@@ -685,7 +694,7 @@ export default function PaymentsPage() {
       <Modal
         isOpen={isCreating}
         onClose={() => setIsCreating(false)}
-        title="Tạo thanh toán mới"
+        title={t('createModal.title')}
         size="md"
       >
         {createSuccess ? (
@@ -694,45 +703,44 @@ export default function PaymentsPage() {
               <CheckCircle className="w-8 h-8 text-ok" />
             </div>
             <h3 className="text-lg font-semibold text-fg mb-2">{createSuccess}</h3>
-            <p className="text-muted">Đang chuyển hướng...</p>
+            <p className="text-muted">{t('createModal.redirecting')}</p>
           </div>
         ) : (
           <>
             <div className="space-y-5 p-6 overflow-y-auto">
               <Select
-                label="Đơn đặt phòng"
+                label={t('createModal.booking')}
                 required
                 value={createForm.bookingId}
                 onChange={(e) => setCreateForm({ ...createForm, bookingId: e.target.value })}
                 options={[
-                  { value: '', label: 'Chọn đơn đặt phòng' },
+                  { value: '', label: t('createModal.chooseBooking') },
                   ...bookings.map((b) => ({ value: b.id, label: `${b.bookingCode} - ${b.guestName}` })),
                 ]}
               />
-              
+
               <Select
-                label="Phương thức thanh toán"
+                label={t('createModal.method')}
                 required
                 value={createForm.method}
                 onChange={(e) => setCreateForm({ ...createForm, method: e.target.value })}
-                options={payosConnected ? [PAYOS_OPTION, ...paymentMethodOptions] : paymentMethodOptions}
+                options={payosConnected ? [payosOption, ...methodOptions] : methodOptions}
               />
               {createForm.method === 'PAYOS' && (
                 <p className="text-xs text-muted -mt-2">
-                  Tiền vào thẳng tài khoản của khách sạn đã gắn với PayOS; khoản này tự chuyển sang
-                  &quot;Đã thanh toán&quot; khi khách chuyển khoản. Link có hạn 24 giờ.
+                  {t('createModal.payosHint')}
                 </p>
               )}
-              
+
               <Input
-                label="Số tiền (VNĐ)"
+                label={t('createModal.amount')}
                 required
                 type="number"
                 min="0"
                 step="1000"
                 value={createForm.amount}
                 onChange={(e) => setCreateForm({ ...createForm, amount: e.target.value })}
-                placeholder="Nhập số tiền"
+                placeholder={t('createModal.amountPlaceholder')}
               />
 
               {createError && (
@@ -744,11 +752,11 @@ export default function PaymentsPage() {
             </div>
             <ModalFooter>
               <Button variant="secondary" onClick={() => setIsCreating(false)}>
-                Hủy bỏ
+                {t('createModal.cancel')}
               </Button>
               <Button onClick={handleCreatePayment} isLoading={isSubmitting} disabled={isSubmitting} className="gap-2">
                 <Plus className="w-4 h-4" />
-                Tạo thanh toán
+                {t('createModal.submit')}
               </Button>
             </ModalFooter>
           </>
@@ -759,7 +767,7 @@ export default function PaymentsPage() {
       <Modal
         isOpen={!!selectedPayment}
         onClose={() => setSelectedPayment(null)}
-        title="Chi tiết thanh toán"
+        title={t('detail.title')}
         size="lg"
       >
         {selectedPayment && (
@@ -784,24 +792,24 @@ export default function PaymentsPage() {
                     </button>
                   </div>
                   <p className="text-sm text-muted">
-                    Tạo lúc: {format(new Date(selectedPayment.createdAt), 'dd/MM/yyyy HH:mm')}
+                    {t('detail.createdAt', { date: format(new Date(selectedPayment.createdAt), 'dd/MM/yyyy HH:mm') })}
                   </p>
                 </div>
-                <span className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border ${paymentStatusConfig[selectedPayment.status]?.bgColor} ${paymentStatusConfig[selectedPayment.status]?.color} ${paymentStatusConfig[selectedPayment.status]?.borderColor}`}>
-                  {React.createElement(paymentStatusConfig[selectedPayment.status]?.icon, { className: 'w-4 h-4' })}
-                  {paymentStatusConfig[selectedPayment.status]?.label}
+                <span className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border ${paymentStatusConfig[statusKey(selectedPayment.status)].bgColor} ${paymentStatusConfig[statusKey(selectedPayment.status)].color} ${paymentStatusConfig[statusKey(selectedPayment.status)].borderColor}`}>
+                  {React.createElement(paymentStatusConfig[statusKey(selectedPayment.status)].icon, { className: 'w-4 h-4' })}
+                  {t(`status.${statusKey(selectedPayment.status)}`)}
                 </span>
               </div>
 
               {/* Amount */}
               <div className="bg-acc-soft rounded-2xl p-6 text-center border border-acc/30">
-                <p className="text-sm text-acc mb-2 font-medium">Số tiền thanh toán</p>
+                <p className="text-sm text-acc mb-2 font-medium">{t('detail.amount')}</p>
                 <p className="text-4xl font-bold text-acc">{formatPrice(selectedPayment.amount)}</p>
                 {selectedPayment.fee > 0 && (
                   <p className="text-sm text-acc mt-3 flex items-center justify-center gap-4">
-                    <span>Phí: {formatPrice(selectedPayment.fee)}</span>
+                    <span>{t('detail.fee', { amount: formatPrice(selectedPayment.fee) })}</span>
                     <span className="text-acc/60">•</span>
-                    <span className="font-semibold">Thực nhận: {formatPrice(selectedPayment.netAmount)}</span>
+                    <span className="font-semibold">{t('detail.net', { amount: formatPrice(selectedPayment.netAmount) })}</span>
                   </p>
                 )}
               </div>
@@ -810,31 +818,33 @@ export default function PaymentsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-fg/[0.03] rounded-xl border border-line">
                   <div className="flex items-center gap-2 mb-2">
-                    {React.createElement(paymentMethodLabels[selectedPayment.method]?.icon || CreditCard, { className: 'w-4 h-4 text-acc' })}
-                    <span className="text-xs font-semibold text-muted uppercase">Phương thức</span>
+                    {React.createElement(paymentMethodIcons[selectedPayment.method] || CreditCard, { className: 'w-4 h-4 text-acc' })}
+                    <span className="text-xs font-semibold text-muted uppercase">{t('detail.method')}</span>
                   </div>
                   <p className="font-semibold text-fg">
-                    {selectedPayment.paymentGateway === 'PAYOS' ? 'PayOS' : paymentMethodLabels[selectedPayment.method]?.label}
+                    {selectedPayment.paymentGateway === 'PAYOS'
+                      ? 'PayOS'
+                      : isPaymentMethod(selectedPayment.method) && t(`methods.${selectedPayment.method}`)}
                   </p>
                 </div>
                 <div className="p-4 bg-fg/[0.03] rounded-xl border border-line">
                   <div className="flex items-center gap-2 mb-2">
                     <FileText className="w-4 h-4 text-acc" />
-                    <span className="text-xs font-semibold text-muted uppercase">Đơn đặt phòng</span>
+                    <span className="text-xs font-semibold text-muted uppercase">{t('detail.booking')}</span>
                   </div>
                   <p className="font-semibold text-fg">{selectedPayment.booking?.bookingCode}</p>
                 </div>
                 <div className="p-4 bg-fg/[0.03] rounded-xl border border-line">
                   <div className="flex items-center gap-2 mb-2">
                     <Building className="w-4 h-4 text-acc" />
-                    <span className="text-xs font-semibold text-muted uppercase">Cơ sở</span>
+                    <span className="text-xs font-semibold text-muted uppercase">{t('detail.property')}</span>
                   </div>
                   <p className="font-semibold text-fg">{selectedPayment.booking?.property?.name}</p>
                 </div>
                 <div className="p-4 bg-fg/[0.03] rounded-xl border border-line">
                   <div className="flex items-center gap-2 mb-2">
                     <CheckCircle className="w-4 h-4 text-acc" />
-                    <span className="text-xs font-semibold text-muted uppercase">Khách hàng</span>
+                    <span className="text-xs font-semibold text-muted uppercase">{t('detail.guest')}</span>
                   </div>
                   <p className="font-semibold text-fg">{selectedPayment.booking?.guestName}</p>
                 </div>
@@ -843,27 +853,25 @@ export default function PaymentsPage() {
               {/* PayOS: what staff need to know and to send */}
               {selectedPayment.metadata?.payos?.amountMismatch != null && (
                 <div className="p-3 rounded-xl bg-err-soft border border-err/30 text-sm text-err">
-                  PayOS báo nhận {formatPrice(selectedPayment.metadata.payos.amountMismatch)}, khác số tiền của khoản này.
-                  Khoản này chưa được xác nhận: kiểm tra sao kê rồi xử lý tay.
+                  {t('detail.payosMismatch', { amount: formatPrice(selectedPayment.metadata.payos.amountMismatch) })}
                 </div>
               )}
               {selectedPayment.metadata?.payos?.paidAfter && (
                 <div className="p-3 rounded-xl bg-warn-soft border border-warn/30 text-sm text-warn">
-                  Khách trả tiền sau khi link đã bị huỷ hoặc hết hạn. Tiền đã vào tài khoản khách sạn và đã được ghi nhận;
-                  kiểm tra lại đơn đặt phòng.
+                  {t('detail.paidAfter')}
                 </div>
               )}
               {selectedPayment.paymentGateway === 'PAYOS' && selectedPayment.checkoutUrl && selectedPayment.status === 'PENDING' && (
                 <div className="p-4 rounded-2xl border border-line space-y-2">
                   <p className="text-sm text-muted">
-                    Gửi link này cho khách (Zalo, email...) hoặc cho khách quét mã bên dưới. Khoản này tự xác nhận khi khách chuyển khoản.
+                    {t('detail.sendLink')}
                   </p>
                   <div className="flex items-center gap-2">
                     <code className="flex-1 truncate text-xs bg-fg/5 px-2 py-1.5 rounded">{selectedPayment.checkoutUrl}</code>
                     <button
                       onClick={() => handleCopyToClipboard(selectedPayment.checkoutUrl!, 'checkoutUrl')}
                       className="p-1.5 hover:bg-fg/10 rounded-lg transition"
-                      aria-label="Sao chép link"
+                      aria-label={t('detail.copyLink')}
                     >
                       {copiedId === 'checkoutUrl' ? <Check className="w-4 h-4 text-ok" /> : <Copy className="w-4 h-4 text-muted" />}
                     </button>
@@ -877,16 +885,16 @@ export default function PaymentsPage() {
                   <div className="px-4 py-3 bg-fg/[0.03] border-b border-line">
                     <h4 className="font-semibold text-fg flex items-center gap-2">
                       <Building className="w-4 h-4 text-acc" />
-                      Thông tin chuyển khoản
+                      {t('detail.transferInfo')}
                     </h4>
                   </div>
                   <div className="p-4 space-y-3">
                     <div className="flex justify-between items-center py-2 border-b border-line">
-                      <span className="text-muted">Ngân hàng</span>
+                      <span className="text-muted">{t('detail.bank')}</span>
                       <span className="font-semibold text-fg">{selectedPayment.bankCode || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-line">
-                      <span className="text-muted">Số tài khoản</span>
+                      <span className="text-muted">{t('detail.accountNumber')}</span>
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-semibold text-fg">{selectedPayment.bankAccount || 'N/A'}</span>
                         {selectedPayment.bankAccount && (
@@ -904,11 +912,11 @@ export default function PaymentsPage() {
                       </div>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-line">
-                      <span className="text-muted">Tên tài khoản</span>
+                      <span className="text-muted">{t('detail.accountName')}</span>
                       <span className="font-semibold text-fg">{selectedPayment.accountHolder || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between items-center py-3 bg-acc-soft -mx-4 -mb-4 px-4 mt-2">
-                      <span className="text-acc font-medium">Nội dung CK</span>
+                      <span className="text-acc font-medium">{t('detail.transferContent')}</span>
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-bold text-acc text-lg">{selectedPayment.transferContent || 'N/A'}</span>
                         {selectedPayment.transferContent && (
@@ -935,7 +943,7 @@ export default function PaymentsPage() {
                   <div className="px-4 py-3 bg-fg/[0.03] border-b border-line">
                     <h4 className="font-semibold text-fg flex items-center gap-2">
                       <QrCode className="w-4 h-4 text-acc" />
-                      Quét mã QR để thanh toán
+                      {t('detail.scanQr')}
                     </h4>
                   </div>
                   <div className="p-6 text-center bg-fg/[0.03]">
@@ -950,7 +958,7 @@ export default function PaymentsPage() {
                     {selectedPayment.expiresAt && (
                       <p className="text-sm text-warn flex items-center justify-center gap-2">
                         <Clock className="w-4 h-4" />
-                        Hết hạn: {format(new Date(selectedPayment.expiresAt), 'dd/MM/yyyy HH:mm')}
+                        {t('detail.expires', { date: format(new Date(selectedPayment.expiresAt), 'dd/MM/yyyy HH:mm') })}
                       </p>
                     )}
                   </div>
@@ -962,33 +970,36 @@ export default function PaymentsPage() {
                 <div className="bg-ok-soft rounded-2xl p-5 text-center border border-ok/30">
                   <CheckCircle className="w-10 h-10 text-ok mx-auto mb-3" />
                   <p className="text-ok font-semibold text-lg">
-                    Thanh toán thành công
+                    {t('detail.paid')}
                   </p>
                   <p className="text-ok text-sm mt-1">
-                    Lúc {format(new Date(selectedPayment.paidAt), 'HH:mm')} ngày {format(new Date(selectedPayment.paidAt), 'dd/MM/yyyy')}
+                    {t('detail.paidAt', {
+                      time: format(new Date(selectedPayment.paidAt), 'HH:mm'),
+                      date: format(new Date(selectedPayment.paidAt), 'dd/MM/yyyy'),
+                    })}
                   </p>
                 </div>
               )}
             </div>
             <ModalFooter>
               <Button variant="secondary" onClick={() => setSelectedPayment(null)} className="gap-2">
-                Đóng
+                {tc('actions.close')}
               </Button>
               {selectedPayment.paymentGateway === 'PAYOS' && selectedPayment.status === 'PENDING' && (
                 <>
                   <Button variant="secondary" onClick={() => handlePayosAction(selectedPayment.id, 'cancel')} isLoading={payosBusy}>
-                    Huỷ link
+                    {t('detail.cancelLink')}
                   </Button>
                   <Button variant="secondary" onClick={() => handlePayosAction(selectedPayment.id, 'sync')} isLoading={payosBusy} className="gap-2">
                     <RefreshCw className="w-4 h-4" />
-                    Kiểm tra ngay
+                    {t('detail.checkNow')}
                   </Button>
                 </>
               )}
               {selectedPayment.status === 'PENDING' && (
                 <Button onClick={() => handleConfirmPayment(selectedPayment.id)} className="gap-2">
                   <CheckCircle className="w-4 h-4" />
-                  Xác nhận đã thanh toán
+                  {t('detail.markPaid')}
                 </Button>
               )}
             </ModalFooter>

@@ -1,10 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import QRCode from 'qrcode'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui'
 import { Copy, CheckCircle2, QrCode as QrIcon } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
+import { useDashLabels } from '@/lib/i18n/dash'
 
 interface Props {
   qrString: string
@@ -34,6 +36,8 @@ export function VietQRDisplay({
   expiresAt,
   size = 320,
 }: Props) {
+  const t = useTranslations('dash.money.qr')
+  const labels = useDashLabels()
   const [dataUrl, setDataUrl] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
@@ -68,7 +72,7 @@ export function VietQRDisplay({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <QrIcon className="w-5 h-5" />
-          Quét mã QR để thanh toán
+          {t('scanToPay')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -83,19 +87,23 @@ export function VietQRDisplay({
             />
           ) : (
             <div className="w-72 h-72 flex items-center justify-center text-muted border border-line rounded-lg">
-              Đang tạo mã QR...
+              {t('generating')}
             </div>
           )}
         </div>
 
         <p className="text-center text-sm text-muted">
-          Mở app ngân hàng và quét mã để chuyển khoản tự động
+          {t('hint')}
         </p>
 
         {/* Bank info table */}
         <div className="space-y-2 text-sm">
-          <Row label="Số tiền" value={formatCurrency(amount, currency)} highlight />
-          <Row label="Nội dung CK">
+          <Row
+            label={t('amount')}
+            value={currency === 'VND' ? labels.money(amount) : formatCurrency(amount, currency)}
+            highlight
+          />
+          <Row label={t('transferContent')}>
             <button
               onClick={() => copy(transferContent)}
               className="inline-flex items-center gap-1.5 text-acc hover:underline"
@@ -108,19 +116,19 @@ export function VietQRDisplay({
               )}
             </button>
           </Row>
-          <Row label="Ngân hàng" value={bankName} />
-          <Row label="Số tài khoản" value={accountNumber} />
-          <Row label="Chủ tài khoản" value={accountHolder} />
+          <Row label={t('bank')} value={bankName} />
+          <Row label={t('accountNumber')} value={accountNumber} />
+          <Row label={t('accountHolder')} value={accountHolder} />
           {expiresAt && (
             <Row
-              label="Hết hạn"
-              value={new Date(expiresAt).toLocaleString('vi-VN')}
+              label={t('expires')}
+              value={labels.dateTime(expiresAt)}
             />
           )}
         </div>
 
         <p className="text-xs text-muted text-center">
-          Hệ thống tự động xác nhận khoản thanh toán trong vài giây sau khi chuyển khoản thành công.
+          {t('autoConfirm')}
         </p>
       </CardContent>
     </Card>
