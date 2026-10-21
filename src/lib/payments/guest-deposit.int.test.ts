@@ -40,6 +40,9 @@ import { POST as guestBooking } from '@/app/api/public/bookings/route'
 import { GET as publicProperty } from '@/app/api/properties/public/route'
 import { GET as getPolicy, PATCH as patchPolicy } from '@/app/api/properties/[id]/policy/route'
 import { POST as webhook } from '@/app/api/webhooks/payos/[propertyId]/route'
+import { POST as payAgainRoute } from '@/app/api/public/deposits/[token]/route'
+import { depositToken } from './deposit-link'
+import { decryptSecret, secretContext } from '@/lib/security/secret-box'
 
 const fake = new FakePayos()
 const ACCOUNT: FakeAccount = { clientId: 'client-dep', apiKey: 'api-key-dep', checksumKey: 'checksum-key-dep' }
@@ -95,6 +98,7 @@ const depositOf = (bookingCode: string) => prisma.payment.findFirstOrThrow({ whe
 const depositEmails = (to: string) => prisma.emailOutbox.count({ where: { kind: 'deposit_received', toEmail: to } })
 
 beforeAll(async () => {
+  process.env.NEXTAUTH_SECRET ??= 'guest-deposit-test-secret' // signs the pay-again link (deposit-link.ts)
   await fake.start()
   fake.deliver = async (url, body) => (await postWebhook(url.split('/').pop()!, body)).status
   process.env.PAYOS_BASE_URL = fake.url
@@ -273,6 +277,126 @@ describe("the hotel's deposit deadline", () => {
     for (const { body } of [a, confirmed, failed]) {
       expect((await prisma.booking.findUniqueOrThrow({ where: { bookingCode: body.data.bookingCode } })).status).not.toBe('CANCELLED')
     }
+  })
+})
+
+describe('paying the deposit again', () => {
+  const payAgain = async (bookingId: string, token = depositToken(bookingId)) => {
+    const res = await payAgainRoute(
+      new NextRequest('http://digistay.test/api/x', { method: 'POST', headers: { 'x-real-ip': `198.51.100.${++ip}` } }),
+      { params: Promise.resolve({ token }) }
+    )
+    return { status: res.status, body: await res.json() }
+  }
+  const bookingOf = (bookingCode: string) => prisma.booking.findUniqueOrThrow({ where: { bookingCode } })
+  const deposits = (bookingId: string) =>
+    prisma.payment.findMany({ where: { bookingId }, orderBy: { createdAt: 'asc' } })
+
+  it('after leaving PayOS: a new link for the same amount, ending at the same deadline; paying it confirms', async () => {
+    const { property, room } = await hotel({ connected: true, percent: 30, deadlineMinutes: 60 })
+    const { body } = await book(property.id, room.id)
+    const booking = await bookingOf(body.data.bookingCode)
+    const [first] = await deposits(booking.id)
+    fake.links.get(Number(first.gatewayOrderCode))!.status = 'CANCELLED' // the guest pressed "Huỷ" on PayOS
+    await reconcilePendingPayos()
+
+    const again = await payAgain(booking.id)
+    expect(again.status).toBe(200)
+    const [, second] = await deposits(booking.id)
+    expect(again.body.data.checkoutUrl).toContain(`pl${second.gatewayOrderCode}`)
+    expect(second).toMatchObject({ status: 'PENDING', amount: first.amount })
+    expect((second.metadata as { retryOf: string; deadline: string }).retryOf).toBe(first.id)
+    expect((second.metadata as { deadline: string }).deadline).toBe((first.metadata as { deadline: string }).deadline)
+    expect(Math.abs(second.expiresAt!.getTime() - first.expiresAt!.getTime())).toBeLessThan(2_000)
+
+    expect((await postWebhook(property.id, await fake.pay(Number(second.gatewayOrderCode)))).status).toBe(200)
+    expect((await bookingOf(body.data.bookingCode)).status).toBe('CONFIRMED')
+    expect((await payAgain(booking.id)).body.data).toEqual({ paid: true })
+  })
+
+  it('a link still open is handed out again, not a second one', async () => {
+    const { property, room } = await hotel({ connected: true, percent: 30 })
+    const { body } = await book(property.id, room.id)
+    const booking = await bookingOf(body.data.bookingCode)
+    expect((await payAgain(booking.id)).body.data.checkoutUrl).toBe(body.data.deposit.checkoutUrl)
+    expect(await prisma.payment.count({ where: { bookingId: booking.id } })).toBe(1)
+  })
+
+  it('refused: a forged link, past the deadline, a cancelled booking, a hotel that stopped taking deposits', async () => {
+    const { property, room } = await hotel({ connected: true, percent: 30, deadlineMinutes: 30 })
+    const { body } = await book(property.id, room.id)
+    const booking = await bookingOf(body.data.bookingCode)
+    const [first] = await deposits(booking.id)
+
+    expect((await payAgain(booking.id, `${booking.id}.AAAAAAAAAAAAAAAAAAAAAA`)).status).toBe(404)
+    await prisma.payment.update({
+      where: { id: first.id },
+      data: { status: 'CANCELLED', metadata: { ...(first.metadata as object), deadline: new Date(Date.now() - 60_000).toISOString() } },
+    })
+    expect((await payAgain(booking.id)).status).toBe(409)
+
+    const other = await book(property.id, room.id, 'b@example.com')
+    const otherBooking = await bookingOf(other.body.data.bookingCode)
+    await prisma.booking.update({ where: { id: otherBooking.id }, data: { status: 'CANCELLED' } })
+    expect((await payAgain(otherBooking.id)).status).toBe(409)
+
+    const third = await book(property.id, room.id, 'c@example.com')
+    await prisma.policy.update({ where: { propertyId: property.id }, data: { onlineDepositPercent: 0 } })
+    expect((await payAgain((await bookingOf(third.body.data.bookingCode)).id)).status).toBe(409)
+    expect(await prisma.payment.count({ where: { status: 'PENDING', bookingId: booking.id } })).toBe(0) // nothing created
+  })
+
+  it('at the deadline, every link of the booking is checked with PayOS: one paid elsewhere confirms it', async () => {
+    const { property, room } = await hotel({ connected: true, percent: 30, deadlineMinutes: 60 })
+    const { body } = await book(property.id, room.id)
+    const booking = await bookingOf(body.data.bookingCode)
+    const [first] = await deposits(booking.id)
+    fake.links.get(Number(first.gatewayOrderCode))!.status = 'CANCELLED'
+    await reconcilePendingPayos()
+    await payAgain(booking.id)
+    const [, second] = await deposits(booking.id)
+    await fake.pay(Number(second.gatewayOrderCode)) // paid, the webhook lost
+    // The abandoned link comes due first.
+    await prisma.payment.update({ where: { id: first.id }, data: { expiresAt: new Date(first.expiresAt!.getTime() - 60_000) } })
+
+    expect(await expireUnpaidDeposits(later(61))).toMatchObject({ paid: 1, cancelled: 0 })
+    expect((await bookingOf(body.data.bookingCode)).status).toBe('CONFIRMED')
+  })
+
+  it("the booking email links to the deposit page when the hotel takes one, and not otherwise", async () => {
+    const message = async (bookingCode: string) => {
+      const booking = await bookingOf(bookingCode)
+      const row = await prisma.emailOutbox.findFirstOrThrow({ where: { kind: 'booking_confirmation', refId: booking.id } })
+      return { booking, mail: JSON.parse(decryptSecret(row.message, secretContext('email_outbox', row.id, 'message'))) }
+    }
+    const withDeposit = await hotel({ connected: true, percent: 30, deadlineMinutes: 60 })
+    const a = await message((await book(withDeposit.property.id, withDeposit.room.id)).body.data.bookingCode)
+    expect(a.mail.html).toContain(`/dat-coc/${depositToken(a.booking.id)}`)
+    expect(a.mail.text).toContain('Đặt cọc 541.000')
+
+    const without = await hotel({ connected: false, percent: 30 })
+    const b = await message((await book(without.property.id, without.room.id, 'n@example.com')).body.data.bookingCode)
+    expect(b.mail.html).not.toContain('/dat-coc/')
+
+    // No secret to sign the link: the booking still goes through, the email without it.
+    const secret = process.env.NEXTAUTH_SECRET
+    delete process.env.NEXTAUTH_SECRET
+    try {
+      const unsigned = await book(withDeposit.property.id, withDeposit.room.id, 'u@example.com')
+      expect(unsigned.status).toBe(200)
+      expect((await message(unsigned.body.data.bookingCode)).mail.html).not.toContain('/dat-coc/')
+    } finally {
+      process.env.NEXTAUTH_SECRET = secret
+    }
+  })
+
+  it('is rate-limited per IP', async () => {
+    const res = () =>
+      payAgainRoute(new NextRequest('http://digistay.test/api/x', { method: 'POST', headers: { 'x-real-ip': '203.0.113.99' } }), {
+        params: Promise.resolve({ token: 'x.y' }),
+      })
+    for (let i = 0; i < 10; i++) expect((await res()).status).toBe(404)
+    expect((await res()).status).toBe(429)
   })
 })
 

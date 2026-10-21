@@ -797,7 +797,8 @@ export function SearchClient({ params }: { params: Promise<{ subdomain: string }
                   </p>
                   {bookingResult.depositUnavailable && (
                     <p className="text-sm text-warn mb-3">
-                      Chưa tạo được link đặt cọc. Đặt phòng của bạn vẫn được giữ; khách sạn sẽ liên hệ để hướng dẫn đặt cọc.
+                      Chưa tạo được link đặt cọc. Đặt phòng của bạn vẫn được giữ: bạn có thể đặt cọc sau qua link trong email
+                      xác nhận, hoặc khách sạn sẽ liên hệ.
                     </p>
                   )}
                   <p className="text-sm text-muted mb-6">

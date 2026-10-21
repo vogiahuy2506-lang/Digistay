@@ -207,6 +207,12 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
     thì xác nhận đơn, không huỷ), huỷ link, rồi huỷ đơn dưới khoá dòng nếu vẫn PENDING và chưa có
     khoản nào PAID, mở lại phòng, email cho khách. Link tạo lỗi thì không tự huỷ (khách được báo
     khách sạn sẽ gọi).
+    Đặt cọc lại: trang `/<subdomain>/dat-coc/<token>` (link trong email xác nhận và nút "Thanh toán
+    lại" ở `/thanh-toan`), token = id đơn + HMAC (`deposit-link.ts`, khoá dẫn xuất từ
+    `NEXTAUTH_SECRET`). **Mở trang không tạo gì** (trình quét email mở link); chỉ nút bấm gọi
+    `POST /api/public/deposits/[token]`: dùng lại link còn hạn, không thì tạo link mới cùng số tiền,
+    hết hạn đúng hạn cọc cũ; quá hạn hay đơn không còn chờ thì từ chối. Một đơn có thể có nhiều link:
+    job hết hạn hỏi PayOS **mọi** link của đơn trước khi huỷ.
   Đối soát định kỳ: timer systemd `digistay-reconcile`, 10 phút một lần, gọi
   `/api/internal/payos-reconcile` (RUNBOOK, "Đối soát PayOS định kỳ").
 - Job định kỳ nằm ở `/api/internal/*`: kiểm `checkCronSecret()` (header `CRON_SECRET`), nginx

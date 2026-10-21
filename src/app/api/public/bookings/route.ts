@@ -102,6 +102,9 @@ export async function POST(request: NextRequest) {
     return tooManyRequests('Email này đã đặt nhiều phòng trong thời gian ngắn. Vui lòng gọi khách sạn.', byEmail.retryAfterSec)
   }
 
+  // The hotel's online deposit, read once: the email links to it, and its link is made below.
+  const depositPolicy: OnlineDeposit | null = await onlineDepositOf(data.propertyId).catch(() => null)
+
   try {
     const { booking, emailIds } = await createBooking({
       propertyId: data.propertyId,
@@ -116,6 +119,7 @@ export async function POST(request: NextRequest) {
       numChildren: data.numChildren,
       services: data.services,
       holdId: data.holdId,
+      deposit: depositPolicy,
       vat: { company: data.vatCompany, taxCode: data.vatTaxCode, address: data.vatAddress, email: data.vatEmail || null },
       createdById: null,
     })
@@ -132,10 +136,8 @@ export async function POST(request: NextRequest) {
 
     // The hotel's deposit, if it takes one. The booking is made: whatever
     // goes wrong here, the guest is told it stands and the hotel will call.
-    let depositPolicy: OnlineDeposit | null = null
     let deposit: Awaited<ReturnType<typeof startGuestDeposit>> = null
     try {
-      depositPolicy = await onlineDepositOf(data.propertyId)
       if (depositPolicy) {
         const returnUrl = `${process.env.NEXTAUTH_URL}/${roomType.property.subdomain}/thanh-toan`
         deposit = await startGuestDeposit(booking, depositPolicy, returnUrl)

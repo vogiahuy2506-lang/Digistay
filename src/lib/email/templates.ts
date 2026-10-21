@@ -368,13 +368,15 @@ export interface BookingConfirmationTemplateProps {
    * The email must not tell the guest the room is booked.
    */
   awaitingConfirmation?: boolean
+  /** The hotel's online deposit: its amount, the page to pay it (dat-coc), the deadline if any. */
+  deposit?: { amount: number; url: string; deadline?: string }
 }
 
 export function bookingConfirmationTemplate(props: BookingConfirmationTemplateProps): { html: string; text: string; subject: string } {
   const {
     guestName, bookingCode, propertyName, propertyAddress, propertyPhone,
     checkIn, checkOut, numAdults, numChildren, totalAmount, currency = 'VND', propertyUrl, notes,
-    checkInTime = '14:00', checkOutTime = '12:00', awaitingConfirmation = false,
+    checkInTime = '14:00', checkOutTime = '12:00', awaitingConfirmation = false, deposit,
   } = props
 
   const nights = Math.max(
@@ -459,6 +461,22 @@ export function bookingConfirmationTemplate(props: BookingConfirmationTemplatePr
     </table>
     ` : ''}
 
+    ${deposit ? `
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0; border: 1px solid ${BRAND.border}; border-radius: 12px;">
+      <tr>
+        <td style="padding: 20px; text-align: center;">
+          <div style="font-size: 15px; color: ${BRAND.text}; font-weight: 600; margin-bottom: 6px;">Đặt cọc ${formatVnd(deposit.amount, currency)} để khách sạn xác nhận</div>
+          <div style="font-size: 13px; color: ${BRAND.textMuted}; margin-bottom: 16px;">
+            Chuyển khoản qua PayOS, tiền vào thẳng tài khoản của ${escapeHtml(propertyName)}.${deposit.deadline ? ` Hạn đặt cọc: ${escapeHtml(deposit.deadline)}; quá hạn, đặt phòng tự huỷ.` : ''} Đã đặt cọc rồi thì bỏ qua.
+          </div>
+          <a href="${escapeHtml(deposit.url)}" style="display: inline-block; background: ${BRAND.text}; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 10px; font-size: 15px; font-weight: 600;">
+            Đặt cọc qua PayOS
+          </a>
+        </td>
+      </tr>
+    </table>
+    ` : ''}
+
     <!-- Total -->
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0; background: linear-gradient(135deg, #f3eee9 0%, ${BRAND.bg} 100%); border-radius: 12px; padding: 20px;">
       <tr>
@@ -487,7 +505,7 @@ export function bookingConfirmationTemplate(props: BookingConfirmationTemplatePr
   return {
     html: baseLayout({ previewText: `Đặt phòng ${bookingCode} tại ${propertyName}`, bodyHtml }),
     text: awaitingConfirmation
-      ? `Đã nhận yêu cầu đặt phòng ${bookingCode}\nKhách sạn: ${propertyName} (sẽ liên hệ để xác nhận)\n${formatDate(checkIn)} - ${formatDate(checkOut)}\nTạm tính: ${formatVnd(totalAmount, currency)}\nTrang khách sạn: ${propertyUrl}`
+      ? `Đã nhận yêu cầu đặt phòng ${bookingCode}\nKhách sạn: ${propertyName} (sẽ liên hệ để xác nhận)\n${formatDate(checkIn)} - ${formatDate(checkOut)}\nTạm tính: ${formatVnd(totalAmount, currency)}${deposit ? `\nĐặt cọc ${formatVnd(deposit.amount, currency)}${deposit.deadline ? ` trước ${deposit.deadline}` : ''}: ${deposit.url}` : ''}\nTrang khách sạn: ${propertyUrl}`
       : `Xác nhận đặt phòng ${bookingCode}\nKhách sạn: ${propertyName}\n${formatDate(checkIn)} - ${formatDate(checkOut)}\nTổng: ${formatVnd(totalAmount, currency)}\nTrang khách sạn: ${propertyUrl}`,
     subject: awaitingConfirmation
       ? `[${bookingCode}] Đã nhận yêu cầu đặt phòng tại ${propertyName}`

@@ -51,6 +51,8 @@ const PUBLIC_HANDLERS: Record<string, string> = {
   'GET /api/invitations/[token]': 'invitation preview; the unguessable token in the URL is the credential',
   'POST /api/public/bookings':
     'guests book on the hotel site: rate-limited per IP and per email, PENDING, never a payment (create-booking.ts)',
+  'POST /api/public/deposits/[token]':
+    'a guest pays their deposit again: the HMAC token is the credential (deposit-link.ts), rate-limited per IP; only a PayOS link, never marks anything paid',
   'POST /api/payments/webhook': 'disabled: always 404; gateways use /api/webhooks/<gateway>/...',
   'POST /api/webhooks/matbao/[propertyId]/[token]':
     'Mắt Bão tax-office status; the per-property secret token in the URL is the credential (unsigned callbacks); per-IP limit',

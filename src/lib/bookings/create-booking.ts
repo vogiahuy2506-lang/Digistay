@@ -16,7 +16,8 @@
 import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { queueBookingConfirmation, queueOwnerNewBooking } from '@/lib/email/outbox'
-import { quoteStay, ratesFrom, type PricedService } from '@/lib/pricing/quote'
+import { depositFor, quoteStay, ratesFrom, type PricedService } from '@/lib/pricing/quote'
+import { depositUrl } from '@/lib/payments/deposit-link'
 import { NO_PRICE_MESSAGE, ROOM_RATE_INCLUDE, propertyRateDefaults } from '@/lib/pricing/rates'
 import { lockRoomType, roomsTaken } from './occupancy'
 
@@ -50,6 +51,8 @@ export interface NewBooking {
   createdById?: string | null
   /** the guest's hold (RoomLock id from /api/bookings/room-lock) */
   holdId?: string | null
+  /** The hotel's online deposit (guest-deposit.ts): the email carries the link to pay it. */
+  deposit?: { percent: number; deadlineMinutes: number } | null
 }
 
 /** The room type, its rates and the chosen services, or a BookingError. */
@@ -103,9 +106,18 @@ const BOOKING_EMAIL_INCLUDE = {
 type BookingForEmails = Prisma.BookingGetPayload<{ include: typeof BOOKING_EMAIL_INCLUDE }>
 
 /** The guest's confirmation and the owner's notice, queued (src/lib/email/outbox.ts). */
-async function queueBookingEmails(tx: Tx, booking: BookingForEmails) {
+async function queueBookingEmails(tx: Tx, booking: BookingForEmails, deposit?: NewBooking['deposit']) {
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
   const prop = booking.property
+  // The link to pay the deposit later; without it the email still goes (never fail a booking over it).
+  let payUrl: string | null = null
+  if (deposit) {
+    try {
+      payUrl = depositUrl(prop.subdomain, booking.id)
+    } catch (error) {
+      console.error('[booking] no deposit link for the email:', error)
+    }
+  }
   // No staff member: the guest booked on the hotel's site, and the hotel has
   // not confirmed yet. The emails must not say the room is booked.
   const fromWebsite = booking.createdById === null
@@ -129,6 +141,22 @@ async function queueBookingEmails(tx: Tx, booking: BookingForEmails) {
         checkInTime: prop.policy?.checkInTime,
         checkOutTime: prop.policy?.checkOutTime,
         awaitingConfirmation: fromWebsite,
+        // Also to pay it later, after leaving PayOS (dat-coc page, deposit-link.ts).
+        ...(deposit && payUrl && {
+          deposit: {
+            amount: depositFor(booking.totalAmount, deposit.percent),
+            url: payUrl,
+            ...(deposit.deadlineMinutes > 0 && {
+              deadline: new Date(Date.now() + deposit.deadlineMinutes * 60_000).toLocaleString('vi-VN', {
+                timeZone: 'Asia/Ho_Chi_Minh',
+                hour: '2-digit',
+                minute: '2-digit',
+                day: '2-digit',
+                month: '2-digit',
+              }),
+            }),
+          },
+        }),
       },
       booking.id,
       tx
@@ -229,7 +257,7 @@ export async function createBooking(input: NewBooking) {
         where: { id: input.holdId, type: 'HOLD', bookingId: null, propertyId: input.propertyId, roomTypeId: roomType.id },
       })
     }
-    const emailIds = await queueBookingEmails(tx, booking)
+    const emailIds = await queueBookingEmails(tx, booking, input.deposit)
     return { booking, emailIds, quote }
   })
 }

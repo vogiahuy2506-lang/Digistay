@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { formatVnd } from '@/lib/bookings/display'
+import { depositToken } from '@/lib/payments/deposit-link'
 import { SiteLink } from '../_components/site-base'
 import { WaitForPayment } from './WaitForPayment'
 
@@ -32,7 +33,7 @@ export default async function PaymentReturnPage({ params, searchParams }: PagePr
   const payment = /^\d{1,20}$/.test(orderCode ?? '')
     ? await prisma.payment.findFirst({
         where: { propertyId: property.id, gatewayOrderCode: orderCode },
-        select: { status: true, amount: true, metadata: true, booking: { select: { bookingCode: true, status: true } } },
+        select: { status: true, amount: true, metadata: true, booking: { select: { id: true, bookingCode: true, status: true } } },
       })
     : null
   const paid = payment?.status === 'PAID'
@@ -41,6 +42,8 @@ export default async function PaymentReturnPage({ params, searchParams }: PagePr
   const cancelled = !paid && (cancel === 'true' || status === 'CANCELLED')
   // Cancelled at the hotel's deposit deadline (guest-deposit.ts).
   const expired = !paid && payment?.booking.status === 'CANCELLED'
+  // Left PayOS without paying a deposit that still holds the room: pay again (dat-coc).
+  const payAgain = cancelled && deposit && payment?.booking.status === 'PENDING'
 
   const title = paid
     ? 'Đã nhận tiền thanh toán'
@@ -67,6 +70,14 @@ export default async function PaymentReturnPage({ params, searchParams }: PagePr
         <h1 className="font-site text-2xl font-semibold text-fg">{title}</h1>
         <p className="text-muted">{body}</p>
         {payment && !paid && !cancelled && !expired && <WaitForPayment />}
+        {payAgain && (
+          <SiteLink
+            path={`/dat-coc/${depositToken(payment.booking.id)}`}
+            className="inline-flex h-11 items-center rounded-ctl border border-line px-6 text-small font-medium text-fg hover:bg-fg/[0.03]"
+          >
+            Thanh toán lại
+          </SiteLink>
+        )}
         {property.phone && <p className="text-small text-muted">Liên hệ khách sạn: {property.phone}</p>}
         <SiteLink
           path="/"
