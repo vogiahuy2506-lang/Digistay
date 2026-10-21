@@ -1,1 +1,227 @@
-{}
+{
+  "profile": {
+    "title": "Tài khoản của tôi",
+    "description": "Quản lý thông tin cá nhân và cài đặt bảo mật",
+    "loadFailed": "Không thể tải thông tin profile",
+    "tabs": {
+      "profile": "Thông tin cá nhân",
+      "security": "Bảo mật"
+    },
+    "avatar": {
+      "title": "Ảnh đại diện",
+      "alt": "Avatar",
+      "hint": "Nhấn vào icon máy ảnh để thay đổi avatar",
+      "formats": "JPG, PNG (tối đa 5MB)",
+      "notImage": "Vui lòng chọn file hình ảnh",
+      "tooBig": "Kích thước file không được vượt quá 5MB",
+      "updated": "Cập nhật avatar thành công!",
+      "uploadFailed": "Lỗi khi upload avatar",
+      "readFailed": "Lỗi khi đọc file",
+      "uploadError": "Đã xảy ra lỗi khi upload avatar"
+    },
+    "role": {
+      "superAdmin": "Super Admin",
+      "admin": "Admin",
+      "user": "Người dùng"
+    },
+    "systemLink": "Trang Hệ thống",
+    "joined": "Tham gia: {date}",
+    "info": {
+      "title": "Thông tin cá nhân",
+      "name": "Tên hiển thị",
+      "namePlaceholder": "Nhập tên của bạn",
+      "nameRequired": "Vui lòng nhập tên hiển thị",
+      "email": "Email",
+      "emailHint": "Vào tab Bảo mật để thay đổi email",
+      "phone": "Số điện thoại",
+      "phonePlaceholder": "VD: 0901234567",
+      "address": "Địa chỉ",
+      "addressPlaceholder": "VD: 123 Nguyễn Trãi, Quận 1, TP.HCM",
+      "dateOfBirth": "Ngày sinh",
+      "bio": "Giới thiệu bản thân",
+      "bioPlaceholder": "Viết vài dòng giới thiệu về bản thân...",
+      "saved": "Cập nhật thông tin thành công!",
+      "saveFailed": "Lỗi khi cập nhật thông tin",
+      "saveError": "Đã xảy ra lỗi khi lưu thông tin"
+    },
+    "account": {
+      "title": "Tài khoản",
+      "confirmSignOut": "Bạn có chắc chắn muốn đăng xuất?"
+    },
+    "email": {
+      "title": "Đổi địa chỉ email",
+      "current": "Hiện tại: <b>{email}</b>",
+      "newEmail": "Email mới",
+      "newEmailPlaceholder": "email-moi@example.com",
+      "password": "Nhập mật khẩu để xác nhận",
+      "passwordPlaceholder": "Mật khẩu hiện tại",
+      "help": "Một email xác nhận sẽ được gửi đến địa chỉ mới. Vui lòng nhấp vào link trong email để hoàn tất.",
+      "send": "Gửi email xác nhận",
+      "newRequired": "Vui lòng nhập email mới",
+      "invalid": "Email không hợp lệ",
+      "passwordRequired": "Vui lòng nhập mật khẩu để xác nhận",
+      "sent": "Đã gửi email xác nhận. Vui lòng kiểm tra hộp thư mới.",
+      "failed": "Lỗi khi đổi email",
+      "error": "Đã xảy ra lỗi khi đổi email",
+      "changed": {
+        "success": "Đổi email thành công! Vui lòng đăng nhập lại.",
+        "expired": "Link xác nhận đã hết hạn. Vui lòng thử lại.",
+        "taken": "Email này đã được sử dụng bởi tài khoản khác.",
+        "unauthorized": "Bạn cần đăng nhập để xác nhận đổi email.",
+        "error": "Đã xảy ra lỗi khi xác nhận đổi email."
+      }
+    },
+    "password": {
+      "title": "Đổi mật khẩu",
+      "intro": "Sử dụng mật khẩu mạnh để bảo vệ tài khoản của bạn",
+      "current": "Mật khẩu hiện tại",
+      "currentPlaceholder": "Nhập mật khẩu hiện tại",
+      "new": "Mật khẩu mới",
+      "newPlaceholder": "Nhập mật khẩu mới (ít nhất 8 ký tự)",
+      "newHint": "Tối thiểu 8 ký tự",
+      "confirm": "Xác nhận mật khẩu mới",
+      "confirmPlaceholder": "Nhập lại mật khẩu mới",
+      "submit": "Cập nhật mật khẩu",
+      "currentRequired": "Vui lòng nhập mật khẩu hiện tại",
+      "newRequired": "Vui lòng nhập mật khẩu mới",
+      "tooShort": "Mật khẩu mới phải có ít nhất 8 ký tự",
+      "mismatch": "Mật khẩu xác nhận không khớp",
+      "changed": "Đổi mật khẩu thành công! Vui lòng đăng nhập lại.",
+      "failed": "Lỗi khi đổi mật khẩu",
+      "error": "Đã xảy ra lỗi khi đổi mật khẩu"
+    },
+    "securityInfo": {
+      "title": "Bảo mật tài khoản",
+      "encrypted": "Mật khẩu được mã hóa và lưu trữ an toàn",
+      "sessions": "Phiên đăng nhập có thời hạn và có thể bị thu hồi",
+      "strong": "Khuyến nghị sử dụng mật khẩu mạnh với ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt"
+    }
+  },
+  "twoFactor": {
+    "title": "Xác thực hai lớp",
+    "on": "Đang bật",
+    "loadFailed": "Không tải được trạng thái xác thực hai lớp",
+    "cancel": "Huỷ",
+    "codeInputPlaceholder": "Mã 6 số trong ứng dụng, hoặc một mã khôi phục",
+    "off": {
+      "intro": "Không bắt buộc. Khi bật, ngoài mật khẩu (hoặc Google) bạn cần nhập thêm mã 6 số từ ứng dụng trên điện thoại. Kẻ gian có được mật khẩu của bạn cũng không đăng nhập được.",
+      "enable": "Bật xác thực hai lớp"
+    },
+    "status": {
+      "enabled": "Đã bật từ {date}. Còn <b>{count} mã khôi phục</b>.",
+      "enabledLow": "Đã bật từ {date}. Còn <b>{count} mã khôi phục</b> — nên tạo bộ mã mới.",
+      "regenerate": "Tạo bộ mã khôi phục mới",
+      "disable": "Tắt xác thực hai lớp"
+    },
+    "setup": {
+      "step1": "Bước 1 — Cài ứng dụng xác thực",
+      "step1Help": "Google Authenticator hoặc Microsoft Authenticator (App Store, Google Play). iPhone có sẵn ứng dụng Mật khẩu cũng dùng được.",
+      "step2": "Bước 2 — Quét mã QR bằng ứng dụng đó",
+      "step2Help": "Trong ứng dụng, chọn thêm tài khoản rồi quét mã. Trên iPhone, quét bằng Camera sẽ mở ứng dụng Mật khẩu — vẫn đúng, cứ làm tiếp.",
+      "qrAlt": "Mã QR xác thực hai lớp",
+      "manualKey": "Đang mở trang này trên điện thoại? Nhập khoá này vào ứng dụng:",
+      "keyCopied": "Đã sao chép khoá.",
+      "step3": "Bước 3 — Nhập mã 6 số ứng dụng hiện ra",
+      "codePlaceholder": "6 số",
+      "enable": "Bật"
+    },
+    "codes": {
+      "saveTitle": "Lưu các mã khôi phục này ở nơi an toàn",
+      "saveHelp": "Mất điện thoại thì dùng một mã thay cho mã 6 số; mỗi mã dùng được một lần. Các mã chỉ hiện <strong>một lần duy nhất</strong>.",
+      "copy": "Sao chép",
+      "download": "Tải xuống",
+      "saved": "Tôi đã lưu các mã khôi phục",
+      "signedOut": "Xác thực hai lớp đã bật. Mọi thiết bị đã được đăng xuất; hãy đăng nhập lại bằng mật khẩu và mã 6 số.",
+      "doneSignIn": "Xong, đăng nhập lại",
+      "done": "Xong",
+      "copied": "Đã sao chép các mã khôi phục.",
+      "fileTitle": "Mã khôi phục DigiStay ({date})",
+      "fileHelp": "Mỗi mã dùng được một lần, khi không có điện thoại để lấy mã.",
+      "fileName": "digistay-ma-khoi-phuc.txt"
+    },
+    "regenerate": {
+      "intro": "Bộ mã mới sẽ thay toàn bộ mã cũ (mã cũ không dùng được nữa).",
+      "submit": "Tạo bộ mã mới"
+    },
+    "disable": {
+      "intro": "Sau khi tắt, đăng nhập chỉ cần mật khẩu (hoặc Google).",
+      "passwordPlaceholder": "Mật khẩu hiện tại",
+      "submit": "Tắt xác thực hai lớp",
+      "done": "Đã tắt xác thực hai lớp."
+    }
+  },
+  "system": {
+    "notFound": "Không tìm thấy trang",
+    "backToWorkspaces": "Về danh sách workspace",
+    "title": "Hệ thống",
+    "checkedAt": "Kiểm lúc {time} · tự làm mới mỗi phút",
+    "loadFailed": "Không tải được tình trạng hệ thống.",
+    "health": {
+      "title": "Tình trạng",
+      "version": "Phiên bản",
+      "schema": "Database (migration)",
+      "schemaOk": "Đủ",
+      "schemaUnknown": "Không rõ",
+      "schemaMissing": "Thiếu {migrations}",
+      "redis": "Redis",
+      "redisOk": "Hoạt động",
+      "redisDown": "Không kết nối",
+      "alertRecipients": "Email cảnh báo gửi tới",
+      "noRecipients": "chưa có ai (đặt ALERT_EMAILS)"
+    },
+    "problems": {
+      "title": "Vấn đề hiện tại",
+      "none": "Không có",
+      "empty": "Không có vấn đề nào theo các luật cảnh báo.",
+      "critical": "Nghiêm trọng",
+      "warning": "Cảnh báo"
+    },
+    "jobs": {
+      "title": "Job định kỳ",
+      "job": "Job",
+      "last": "Lần gần nhất",
+      "result": "Kết quả",
+      "duration": "Thời gian chạy",
+      "lastSuccess": "Thành công gần nhất",
+      "failures24h": "Lỗi 24 giờ",
+      "neverRan": "Chưa chạy lần nào",
+      "names": {
+        "payosReconcile": "Đối soát PayOS",
+        "einvoiceJobs": "Hoá đơn điện tử",
+        "emailOutbox": "Hàng đợi email",
+        "opsAlerts": "Cảnh báo vận hành",
+        "backup": "Backup database"
+      }
+    },
+    "queues": {
+      "outbox": "Email đặt phòng và lời mời",
+      "invoiceEmails": "Email hoá đơn",
+      "empty": "Chưa có email nào.",
+      "status": {
+        "PENDING": "Chờ gửi",
+        "SENDING": "Đang gửi",
+        "SENT": "Đã gửi",
+        "FAILED": "Lỗi",
+        "SKIPPED": "Bỏ qua"
+      }
+    },
+    "runs": {
+      "title": "Lần chạy gần đây",
+      "empty": "Chưa có job nào chạy. Timer digistay-reconcile đã cài chưa?"
+    },
+    "alerts": {
+      "title": "Cảnh báo đã gửi",
+      "empty": "Chưa có cảnh báo nào.",
+      "resolved": "Đã hết",
+      "active": "Đang có",
+      "times": "từ {first} · gửi gần nhất {last}",
+      "timesResolved": "từ {first} · gửi gần nhất {last} · hết lúc {resolved}"
+    }
+  },
+  "error": {
+    "title": "Trang này gặp sự cố",
+    "fallback": "Đã xảy ra lỗi không mong muốn. Vui lòng thử lại hoặc quay về dashboard.",
+    "toWorkspaces": "Về workspaces",
+    "digest": "Mã lỗi: {digest}"
+  }
+}

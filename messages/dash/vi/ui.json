@@ -1,1 +1,10 @@
-{}
+{
+  "loading": {
+    "label": "Đang tải",
+    "page": "Đang tải...",
+    "overlay": "Đang xử lý..."
+  },
+  "toast": {
+    "close": "Đóng thông báo"
+  }
+}

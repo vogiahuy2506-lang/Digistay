@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { AlertCircle, CheckCircle, Info, XCircle, X } from 'lucide-react'
 
@@ -95,6 +96,7 @@ const icons = {
 }
 
 function Toast({ type = 'info', title, message, onClose }: ToastProps & { onClose: () => void }) {
+  const t = useTranslations('dash.ui.toast')
   return (
     <div
       role={type === 'error' ? 'alert' : 'status'}
@@ -112,7 +114,7 @@ function Toast({ type = 'info', title, message, onClose }: ToastProps & { onClos
         <button
           type="button"
           onClick={onClose}
-          aria-label="Đóng thông báo"
+          aria-label={t('close')}
           className="p-1 h-7 w-7 shrink-0 rounded-ctl text-muted hover:text-fg hover:bg-fg/5 flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
         >
           <X className="w-4 h-4" aria-hidden="true" />

@@ -1,8 +1,10 @@
 'use client'
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import fallback from '../../../messages/dash/vi/common.json'
 import { useDialogBehavior, useMediaQuery } from './dialog-behavior'
 
 /**
@@ -24,6 +26,21 @@ interface SidePanelProps {
 }
 
 const SidePanelContext = React.createContext<{ onClose: () => void } | null>(null)
+
+/**
+ * The close button's label in the page's language (dash.common.actions.close).
+ * Vietnamese when there is no translation provider (the dialogs' unit tests
+ * render without one) or no dashboard messages (a hotel's website).
+ */
+function useCloseLabel() {
+  try {
+    const t = useTranslations('dash.common')
+    if (t.has('actions.close')) return t('actions.close')
+  } catch {
+    // No NextIntlClientProvider above this dialog.
+  }
+  return fallback.actions.close
+}
 
 export function SidePanel({ open, onClose, label, children, className }: SidePanelProps) {
   const panelRef = React.useRef<HTMLDivElement>(null)
@@ -64,6 +81,7 @@ export function SidePanelHeader({
   children: React.ReactNode
 }) {
   const context = React.useContext(SidePanelContext)
+  const closeLabel = useCloseLabel()
   return (
     <div className={cn('flex items-start gap-3 px-5 py-4 border-b border-line', className)}>
       <div className="min-w-0 flex-1">{children}</div>
@@ -73,7 +91,7 @@ export function SidePanelHeader({
           <button
             type="button"
             onClick={context.onClose}
-            aria-label="Đóng"
+            aria-label={closeLabel}
             className="w-9 h-9 sm:w-8 sm:h-8 rounded-ctl text-muted hover:text-fg hover:bg-fg/5 flex items-center justify-center transition-colors duration-160 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
           >
             <X className="w-4 h-4" aria-hidden="true" />

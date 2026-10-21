@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { signOut } from 'next-auth/react'
+import { useLocale, useTranslations } from 'next-intl'
 import { Copy, Download, KeyRound, ShieldCheck, Smartphone } from 'lucide-react'
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui'
 
@@ -24,17 +25,19 @@ async function post(path: string, body?: object) {
     body: JSON.stringify(body ?? {}),
   })
   const data = await res.json().catch(() => ({}))
-  if (!res.ok || !data.success) throw new Error(data.error || 'Đã xảy ra lỗi, vui lòng thử lại')
+  // No message from the API: the card shows its own (dash.common.states.error).
+  if (!res.ok || !data.success) throw new Error(data.error || '')
   return data
 }
 
 function CodeInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const t = useTranslations('dash.account.twoFactor')
   return (
     <input
       type="text"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      placeholder="Mã 6 số trong ứng dụng, hoặc một mã khôi phục"
+      placeholder={t('codeInputPlaceholder')}
       autoComplete="one-time-code"
       className={INPUT_CLASS}
     />
@@ -46,6 +49,10 @@ function CodeInput({ value, onChange }: { value: string; onChange: (v: string) =
  * Users turn it on themselves; nothing here makes it required.
  */
 export function TwoFactorCard() {
+  const t = useTranslations('dash.account.twoFactor')
+  const tc = useTranslations('dash.common')
+  const locale = useLocale()
+  const dateLocale = locale === 'en' ? 'en-GB' : 'vi-VN'
   const [status, setStatus] = React.useState<Status | null>(null)
   const [view, setView] = React.useState<View>('status')
   const [setup, setSetup] = React.useState<{ secret: string; qrDataUrl: string } | null>(null)
@@ -64,9 +71,9 @@ export function TwoFactorCard() {
       const data = await res.json()
       if (data.success) setStatus(data.data)
     } catch {
-      setError('Không tải được trạng thái xác thực hai lớp')
+      setError(t('loadFailed'))
     }
-  }, [])
+  }, [t])
 
   React.useEffect(() => {
     loadStatus()
@@ -86,7 +93,7 @@ export function TwoFactorCard() {
     try {
       await action()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Đã xảy ra lỗi, vui lòng thử lại')
+      setError(e instanceof Error && e.message ? e.message : tc('states.error'))
     } finally {
       setBusy(false)
     }
@@ -122,7 +129,7 @@ export function TwoFactorCard() {
     run(async () => {
       await post('/disable', { code, password })
       go('status')
-      setNotice('Đã tắt xác thực hai lớp.')
+      setNotice(t('disable.done'))
       await loadStatus()
     })
 
@@ -139,22 +146,22 @@ export function TwoFactorCard() {
 
   const codesText = () =>
     [
-      `Mã khôi phục DigiStay (${new Date().toLocaleDateString('vi-VN')})`,
-      'Mỗi mã dùng được một lần, khi không có điện thoại để lấy mã.',
+      t('codes.fileTitle', { date: new Date().toLocaleDateString(dateLocale) }),
+      t('codes.fileHelp'),
       '',
       ...recoveryCodes,
     ].join('\n')
 
   const copyCodes = async () => {
     await navigator.clipboard.writeText(codesText())
-    setNotice('Đã sao chép các mã khôi phục.')
+    setNotice(t('codes.copied'))
   }
 
   const downloadCodes = () => {
     const url = URL.createObjectURL(new Blob([codesText()], { type: 'text/plain;charset=utf-8' }))
     const link = document.createElement('a')
     link.href = url
-    link.download = 'digistay-ma-khoi-phuc.txt'
+    link.download = t('codes.fileName')
     link.click()
     URL.revokeObjectURL(url)
   }
@@ -164,10 +171,10 @@ export function TwoFactorCard() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ShieldCheck className="w-5 h-5" />
-          Xác thực hai lớp
+          {t('title')}
           {status?.enabled && (
             <span className="ml-2 text-xs font-semibold text-ok bg-ok-soft px-2 py-0.5 rounded-full">
-              Đang bật
+              {t('on')}
             </span>
           )}
         </CardTitle>
@@ -178,13 +185,10 @@ export function TwoFactorCard() {
 
         {view === 'status' && status && !status.enabled && (
           <>
-            <p className="text-sm text-muted">
-              Không bắt buộc. Khi bật, ngoài mật khẩu (hoặc Google) bạn cần nhập thêm mã 6 số từ ứng dụng trên
-              điện thoại. Kẻ gian có được mật khẩu của bạn cũng không đăng nhập được.
-            </p>
+            <p className="text-sm text-muted">{t('off.intro')}</p>
             <div className="flex justify-end">
               <Button onClick={startSetup} isLoading={busy}>
-                Bật xác thực hai lớp
+                {t('off.enable')}
               </Button>
             </div>
           </>
@@ -193,18 +197,20 @@ export function TwoFactorCard() {
         {view === 'status' && status?.enabled && (
           <>
             <p className="text-sm text-muted">
-              Đã bật từ {status.enabledAt ? new Date(status.enabledAt).toLocaleDateString('vi-VN') : ''}. Còn{' '}
-              <span className={status.recoveryCodesLeft <= 2 ? 'font-semibold text-err' : 'font-semibold'}>
-                {status.recoveryCodesLeft} mã khôi phục
-              </span>
-              {status.recoveryCodesLeft <= 2 && ' — nên tạo bộ mã mới'}.
+              {t.rich(status.recoveryCodesLeft <= 2 ? 'status.enabledLow' : 'status.enabled', {
+                date: status.enabledAt ? new Date(status.enabledAt).toLocaleDateString(dateLocale) : '',
+                count: status.recoveryCodesLeft,
+                b: (chunks) => (
+                  <span className={status.recoveryCodesLeft <= 2 ? 'font-semibold text-err' : 'font-semibold'}>{chunks}</span>
+                ),
+              })}
             </p>
             <div className="flex flex-wrap justify-end gap-2">
               <Button variant="outline" onClick={() => go('regenerate')}>
-                Tạo bộ mã khôi phục mới
+                {t('status.regenerate')}
               </Button>
               <Button variant="danger" onClick={() => go('disable')}>
-                Tắt xác thực hai lớp
+                {t('status.disable')}
               </Button>
             </div>
           </>
@@ -214,22 +220,16 @@ export function TwoFactorCard() {
           <div className="space-y-5">
             <div>
               <p className="text-sm font-semibold text-fg flex items-center gap-2">
-                <Smartphone className="w-4 h-4" /> Bước 1 — Cài ứng dụng xác thực
+                <Smartphone className="w-4 h-4" /> {t('setup.step1')}
               </p>
-              <p className="text-sm text-muted mt-1">
-                Google Authenticator hoặc Microsoft Authenticator (App Store, Google Play). iPhone có sẵn ứng
-                dụng Mật khẩu cũng dùng được.
-              </p>
+              <p className="text-sm text-muted mt-1">{t('setup.step1Help')}</p>
             </div>
             <div>
-              <p className="text-sm font-semibold text-fg">Bước 2 — Quét mã QR bằng ứng dụng đó</p>
-              <p className="text-sm text-muted mt-1">
-                Trong ứng dụng, chọn thêm tài khoản rồi quét mã. Trên iPhone, quét bằng Camera sẽ mở ứng dụng
-                Mật khẩu — vẫn đúng, cứ làm tiếp.
-              </p>
+              <p className="text-sm font-semibold text-fg">{t('setup.step2')}</p>
+              <p className="text-sm text-muted mt-1">{t('setup.step2Help')}</p>
               {/* eslint-disable-next-line @next/next/no-img-element -- data: URL from our API */}
-              <img src={setup.qrDataUrl} alt="Mã QR xác thực hai lớp" className="w-48 h-48 mt-3 border rounded-lg" />
-              <p className="text-sm text-muted mt-3">Đang mở trang này trên điện thoại? Nhập khoá này vào ứng dụng:</p>
+              <img src={setup.qrDataUrl} alt={t('setup.qrAlt')} className="w-48 h-48 mt-3 border rounded-lg" />
+              <p className="text-sm text-muted mt-3">{t('setup.manualKey')}</p>
               <div className="mt-1 flex items-center gap-2">
                 <code className="px-3 py-2 bg-fg/5 rounded-lg text-sm tracking-wider break-all">
                   {setup.secret.match(/.{1,4}/g)?.join(' ')}
@@ -237,30 +237,30 @@ export function TwoFactorCard() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => navigator.clipboard.writeText(setup.secret).then(() => setNotice('Đã sao chép khoá.'))}
+                  onClick={() => navigator.clipboard.writeText(setup.secret).then(() => setNotice(t('setup.keyCopied')))}
                 >
                   <Copy className="w-4 h-4" />
                 </Button>
               </div>
             </div>
             <div>
-              <p className="text-sm font-semibold text-fg">Bước 3 — Nhập mã 6 số ứng dụng hiện ra</p>
+              <p className="text-sm font-semibold text-fg">{t('setup.step3')}</p>
               <input
                 type="text"
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 inputMode="numeric"
                 autoComplete="one-time-code"
-                placeholder="6 số"
+                placeholder={t('setup.codePlaceholder')}
                 className={`${INPUT_CLASS} mt-2 max-w-[12rem] tracking-[0.3em] placeholder:tracking-normal`}
               />
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={() => go('status')}>
-                Huỷ
+                {t('cancel')}
               </Button>
               <Button onClick={enable} isLoading={busy} disabled={code.length !== 6}>
-                Bật
+                {t('setup.enable')}
               </Button>
             </div>
           </div>
@@ -270,12 +270,9 @@ export function TwoFactorCard() {
           <div className="space-y-4">
             <div className="p-3 rounded-xl bg-warn-soft border border-warn/30 text-sm text-warn">
               <p className="font-semibold flex items-center gap-2">
-                <KeyRound className="w-4 h-4" /> Lưu các mã khôi phục này ở nơi an toàn
+                <KeyRound className="w-4 h-4" /> {t('codes.saveTitle')}
               </p>
-              <p className="mt-1">
-                Mất điện thoại thì dùng một mã thay cho mã 6 số; mỗi mã dùng được một lần. Các mã chỉ hiện{' '}
-                <strong>một lần duy nhất</strong>.
-              </p>
+              <p className="mt-1">{t.rich('codes.saveHelp', { strong: (chunks) => <strong>{chunks}</strong> })}</p>
             </div>
             <div className="grid grid-cols-2 gap-2 font-mono text-sm">
               {recoveryCodes.map((c) => (
@@ -286,25 +283,22 @@ export function TwoFactorCard() {
             </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" onClick={copyCodes}>
-                <Copy className="w-4 h-4 mr-2" /> Sao chép
+                <Copy className="w-4 h-4 mr-2" /> {t('codes.copy')}
               </Button>
               <Button variant="outline" size="sm" onClick={downloadCodes}>
-                <Download className="w-4 h-4 mr-2" /> Tải xuống
+                <Download className="w-4 h-4 mr-2" /> {t('codes.download')}
               </Button>
             </div>
             <label className="flex items-center gap-2 text-sm text-fg cursor-pointer">
               <input type="checkbox" checked={codesSaved} onChange={(e) => setCodesSaved(e.target.checked)} />
-              Tôi đã lưu các mã khôi phục
+              {t('codes.saved')}
             </label>
             {signOutAfterCodes && (
-              <p className="text-sm text-muted">
-                Xác thực hai lớp đã bật. Mọi thiết bị đã được đăng xuất; hãy đăng nhập lại bằng mật khẩu và mã 6
-                số.
-              </p>
+              <p className="text-sm text-muted">{t('codes.signedOut')}</p>
             )}
             <div className="flex justify-end">
               <Button onClick={finishCodes} disabled={!codesSaved}>
-                {signOutAfterCodes ? 'Xong, đăng nhập lại' : 'Xong'}
+                {signOutAfterCodes ? t('codes.doneSignIn') : t('codes.done')}
               </Button>
             </div>
           </div>
@@ -312,16 +306,14 @@ export function TwoFactorCard() {
 
         {view === 'regenerate' && (
           <div className="space-y-4">
-            <p className="text-sm text-muted">
-              Bộ mã mới sẽ thay toàn bộ mã cũ (mã cũ không dùng được nữa).
-            </p>
+            <p className="text-sm text-muted">{t('regenerate.intro')}</p>
             <CodeInput value={code} onChange={setCode} />
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={() => go('status')}>
-                Huỷ
+                {t('cancel')}
               </Button>
               <Button onClick={regenerate} isLoading={busy} disabled={!code.trim()}>
-                Tạo bộ mã mới
+                {t('regenerate.submit')}
               </Button>
             </div>
           </div>
@@ -329,13 +321,13 @@ export function TwoFactorCard() {
 
         {view === 'disable' && status && (
           <div className="space-y-4">
-            <p className="text-sm text-muted">Sau khi tắt, đăng nhập chỉ cần mật khẩu (hoặc Google).</p>
+            <p className="text-sm text-muted">{t('disable.intro')}</p>
             {status.requiresPassword && (
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Mật khẩu hiện tại"
+                placeholder={t('disable.passwordPlaceholder')}
                 autoComplete="current-password"
                 className={INPUT_CLASS}
               />
@@ -343,7 +335,7 @@ export function TwoFactorCard() {
             <CodeInput value={code} onChange={setCode} />
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={() => go('status')}>
-                Huỷ
+                {t('cancel')}
               </Button>
               <Button
                 variant="danger"
@@ -351,7 +343,7 @@ export function TwoFactorCard() {
                 isLoading={busy}
                 disabled={!code.trim() || (status.requiresPassword && !password)}
               >
-                Tắt xác thực hai lớp
+                {t('disable.submit')}
               </Button>
             </div>
           </div>
