@@ -242,8 +242,11 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
     lệch, có dấu: `totalAmount` âm là điều chỉnh giảm (NĐ 123 Điều 19: "ghi dấu âm"). Hoá đơn
     gốc vẫn `PUBLISHED`. Mỗi lúc chỉ một bản nháp điều chỉnh; giảm không quá giá trị hiện tại của
     hoá đơn gốc; một hoá đơn hoặc bị thay thế, hoặc được điều chỉnh, không cả hai.
-    - Tài liệu Mắt Bão không nói dấu của số tiền: đang **giả định số âm** (Mắt Bão giả kiểm theo
-      giả định này). Phải phát hành thử một điều chỉnh giảm trên DEMO trước khi dùng Chính thức.
+    - Dấu âm **đã kiểm trên DEMO của Mắt Bão** ngày 21/10/2026: gốc số 11368, giảm 11369
+      (−108.000, PDF ghi "Hóa đơn điều chỉnh giảm cho hóa đơn điện tử số 11368…"), tăng 11370.
+      Ví dụ Postman của Mắt Bão cũng ghi âm toàn bộ (đặt dấu ở số lượng; mình đặt ở đơn giá, DEMO
+      nhận cả hai). Tài khoản DEMO dùng chung: MST `0302712571-999`, ký hiệu `C26TAT`, mẫu số 1
+      (mật khẩu trong file Postman Mắt Bão gửi; không ghi vào repo).
     - Điều chỉnh thông tin (TCHDon 4) không hỗ trợ: sai thông tin người mua thì thay thế.
     - Khi tính tổng đã xuất của một đơn, bản nháp điều chỉnh giảm chưa được trừ cho tới khi
       phát hành (`invoicedTotal`).

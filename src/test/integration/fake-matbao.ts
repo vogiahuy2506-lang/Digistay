@@ -6,9 +6,9 @@
  * real API does. `failNext` injects the failures that matter.
  *
  * Replacements (TCHDon 1) and adjustments (2 increase, 3 decrease) must name
- * an issued invoice of the account. Adjustment amounts are taken as signed
- * (NĐ 123 Điều 19: a decrease is negative) — Mắt Bão's documentation does
- * not say, so this is our assumption, to confirm on Mắt Bão's DEMO.
+ * an issued invoice of the account. Adjustment amounts are signed (NĐ 123
+ * Điều 19: a decrease is negative), as the real DEMO accepted on 21/10/2026
+ * (src/lib/einvoice/adjustment.ts).
  */
 import http from 'http'
 import type { AddressInfo } from 'net'
