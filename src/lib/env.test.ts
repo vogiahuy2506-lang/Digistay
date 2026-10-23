@@ -15,6 +15,9 @@ function setRequiredEnv() {
   env.NEXTAUTH_URL = 'http://localhost:3000'
   env.NEXTAUTH_SECRET = 'a'.repeat(32)
   env.NODE_ENV = 'test'
+  // The machine's own .env may carry a display-name form ("Name <mail>"),
+  // which the schema rejects; the tests below only need it to be valid.
+  env.EMAIL_FROM = 'noreply@digistay.vn'
 }
 
 beforeEach(() => {

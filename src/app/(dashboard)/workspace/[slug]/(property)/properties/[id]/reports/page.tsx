@@ -83,9 +83,7 @@ export default function ReportsPage() {
           <CardContent className="p-12 text-center">
             <TrendingUp className="w-12 h-12 text-muted mx-auto mb-4" />
             <p className="text-muted mb-4">Vui lòng chọn cơ sở để xem báo cáo</p>
-            <Button onClick={() => router.push(routes.properties(params.slug))}>
-              Chọn cơ sở
-            </Button>
+            <Button onClick={() => router.push(routes.workspace(params.slug))}>Chọn cơ sở</Button>
           </CardContent>
         </Card>
       </PageContainer>

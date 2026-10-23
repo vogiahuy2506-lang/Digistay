@@ -2,8 +2,8 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { Header, PageContainer } from '@/components/layout'
-import { Card, CardContent, Button, Modal, ModalFooter, Input, Select, Textarea } from '@/components/ui'
+import { TitleBlock } from '@/components/layout'
+import { Card, CardContent, Button, Modal, ModalFooter, Input, Select, Textarea, Loading } from '@/components/ui'
 import { Building2, ArrowLeft } from 'lucide-react'
 import { useWorkspace } from '@/lib/hooks/use-workspace'
 import { routes } from '@/lib/utils/routes'
@@ -20,7 +20,7 @@ const propertyTypes = [
 
 export default function NewPropertyPage() {
   const router = useRouter()
-  const { workspace } = useWorkspace()
+  const { workspace, loading: wsLoading } = useWorkspace()
   const [isCreating, setIsCreating] = React.useState(false)
   const [error, setError] = React.useState('')
   const [formData, setFormData] = React.useState({
@@ -78,32 +78,29 @@ export default function NewPropertyPage() {
     }
   }
 
+  if (wsLoading) {
+    return <Loading className="py-24" />
+  }
+
   if (!workspace) {
     return (
-      <PageContainer>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-acc"></div>
-        </div>
-      </PageContainer>
+      <div className="rounded-box border border-line bg-panel px-6 py-16 text-center">
+        <Building2 className="w-6 h-6 text-muted mx-auto mb-4" />
+        <p className="text-body text-fg">Vui lòng chọn Workspace</p>
+      </div>
     )
   }
 
   return (
-    <PageContainer>
-      <button
-        onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-sm text-muted hover:text-acc mb-3"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Quay lại
-      </button>
-      <Header
+    <>
+      <TitleBlock
         title="Tạo cơ sở mới"
-        description={`Thêm cơ sở kinh doanh vào workspace ${workspace.name}`}
+        lead={`Thêm cơ sở kinh doanh vào workspace ${workspace.name}`}
       />
 
-      <Card>
-        <CardContent className="p-6">
+      <div className="mt-9 max-w-2xl">
+        <Card>
+          <CardContent className="p-6">
           <form onSubmit={handleCreate} className="space-y-4">
             {error && (
               <div className="p-3 rounded-lg bg-err-soft border border-err/30 text-err text-sm">
@@ -216,8 +213,9 @@ export default function NewPropertyPage() {
               </Button>
             </div>
           </form>
-        </CardContent>
-      </Card>
-    </PageContainer>
+          </CardContent>
+        </Card>
+      </div>
+    </>
   )
 }

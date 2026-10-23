@@ -858,5 +858,111 @@
       "pricing": "Pricing",
       "login": "Sign in to your management pages"
     }
+  },
+  "workspaces": {
+    "title": "Your workspaces",
+    "lead": "Each workspace is a hotel group: properties, bookings, staff and website.",
+    "create": "Create workspace",
+    "search": "Search workspaces",
+    "searchPlaceholder": "Search by name or short name",
+    "filter": {
+      "all": "All",
+      "owned": "Owned",
+      "invited": "Invited"
+    },
+    "open": "Open",
+    "allWorkspaces": "All workspaces",
+    "properties": "{count} properties",
+    "members": "{count} members",
+    "owner": "Owner",
+    "roles": {
+      "ADMIN": "Owner",
+      "MANAGER": "Manager",
+      "RECEPTIONIST": "Front desk",
+      "USER": "Staff"
+    },
+    "empty": {
+      "title": "No workspaces yet",
+      "text": "Create your first workspace, then add properties and invite staff.",
+      "action": "Create your first workspace"
+    },
+    "noMatch": {
+      "title": "No workspace matches",
+      "text": "Try another keyword, or create a new workspace."
+    },
+    "invitations": {
+      "title": "Collaboration invitations",
+      "pending": "{count} pending",
+      "empty": "No invitations are waiting.",
+      "proposedRole": "Proposed role: {role}",
+      "from": "From {sender}",
+      "accept": "Accept",
+      "decline": "Decline"
+    },
+    "account": {
+      "label": "Your account",
+      "profile": "Profile",
+      "dark": "Dark interface",
+      "light": "Light interface",
+      "signOut": "Sign out"
+    },
+    "form": {
+      "createTitle": "Create a workspace",
+      "createLead": "A separate operating environment for your properties or group.",
+      "editTitle": "Edit workspace",
+      "name": "Workspace name",
+      "namePlaceholder": "e.g. An Nam Boutique Hotel",
+      "shortName": "Short name",
+      "shortNameHint": "Website address: {slug}.digistay.vn — lowercase letters, no accents or spaces.",
+      "shortNameEdit": "Change short name",
+      "businessType": "Hospitality model",
+      "businessTypes": {
+        "boutique_hotel": "Boutique hotel",
+        "resort": "Resort & villas",
+        "homestay": "Homestay group"
+      },
+      "logo": "Logo",
+      "logoUpload": "Upload logo",
+      "logoRemove": "Remove logo",
+      "logoHint": "PNG, SVG or JPG, up to 2 MB.",
+      "logoTooLarge": "The logo is over 2 MB. Pick a smaller file and try again.",
+      "logoAlt": "Workspace logo",
+      "description": "Description",
+      "descriptionPlaceholder": "Internal notes about this property",
+      "currency": "Currency",
+      "timezone": "Operating timezone",
+      "cancel": "Cancel",
+      "createSubmit": "Create workspace",
+      "editSubmit": "Save changes",
+      "failed": "The workspace could not be saved. Check the details and try again."
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete workspace",
+      "deleteConfirm": "Delete “{name}”? Every property and member will be lost for good."
+    }
+  },
+  "workspaceHome": {
+    "title": "Your properties",
+    "lead": "Each property is a hotel of its own: rooms, bookings and website.",
+    "customize": "Customise",
+    "customizeLabel": "Customise this property: members and shared details",
+    "members": "Members",
+    "search": "Search properties",
+    "searchPlaceholder": "Search by name, city or address",
+    "active": "Active",
+    "paused": "Paused",
+    "roomTypes": "{count} room types",
+    "open": "Manage",
+    "empty": {
+      "title": "No properties yet",
+      "text": "Add your first property to start taking bookings and building its website.",
+      "action": "Add the first property"
+    },
+    "noMatch": {
+      "title": "No property matches",
+      "text": "Try another keyword, a city name for instance."
+    },
+    "failed": "The property list could not be loaded. Reload the page and try again."
   }
 }

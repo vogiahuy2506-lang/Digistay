@@ -44,6 +44,8 @@ export default async function RootLayout({
             site: messages.site,
             marketing: { contact: messages.marketing.contact },
             auth: messages.auth,
+            workspaces: messages.workspaces,
+            workspaceHome: messages.workspaceHome,
           }}
         >
           <Providers>{children}</Providers>

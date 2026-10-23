@@ -1,14 +1,16 @@
 'use client'
 
 import * as React from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Header, PageContainer } from '@/components/layout'
-import { Card, CardHeader, CardTitle, CardContent, Button, Input, Select, Textarea, Badge } from '@/components/ui'
+import { TitleBlock } from '@/components/layout'
+import { Card, CardHeader, CardTitle, CardContent, Button, Input, Loading, Select, Textarea, Badge } from '@/components/ui'
 import {
   Settings, Building2, Globe, Bell, Shield, Users,
   Mail, Clock, DollarSign, Save, ArrowLeft, Upload
 } from 'lucide-react'
 import { useWorkspace } from '@/lib/hooks/use-workspace'
+import { cn } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
 import Image from 'next/image'
 
@@ -66,7 +68,7 @@ const businessTypes = [
 
 export default function WorkspaceSettingsPage() {
   const router = useRouter()
-  const { workspace } = useWorkspace()
+  const { workspace, loading: wsLoading } = useWorkspace()
   const [settings, setSettings] = React.useState<WorkspaceSettings | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
@@ -207,45 +209,47 @@ export default function WorkspaceSettingsPage() {
     reader.readAsDataURL(file)
   }
 
+  if (wsLoading) {
+    return <Loading className="py-24" />
+  }
+
   if (!workspace) {
     return (
-      <PageContainer>
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Settings className="w-16 h-16 text-muted mx-auto mb-4" />
-            <p className="text-muted mb-4">Vui lòng chọn Workspace</p>
-            <Button onClick={() => router.push(routes.workspaces())}>
-              Chuyển đến Workspace
-            </Button>
-          </CardContent>
-        </Card>
-      </PageContainer>
+      <div className="rounded-box border border-line bg-panel px-6 py-16 text-center">
+        <Settings className="w-6 h-6 text-muted mx-auto mb-4" />
+        <p className="text-body text-fg mb-2">Vui lòng chọn Workspace</p>
+        <p className="text-small text-muted mb-6">
+          Bạn cần chọn một workspace để xem cài đặt.
+        </p>
+        <Button onClick={() => router.push(routes.workspaces())}>
+          Chuyển đến Workspace
+        </Button>
+      </div>
     )
   }
 
   if (isLoading) {
-    return (
-      <PageContainer>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-acc"></div>
-        </div>
-      </PageContainer>
-    )
+    return <Loading className="py-24" />
   }
 
   return (
-    <PageContainer>
-      <button
-        onClick={() => router.push(routes.workspace(workspace.slug))}
-        className="flex items-center gap-1.5 text-sm text-muted hover:text-acc mb-3"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Quay lại workspace
-      </button>
-
-      <Header
-        title="Cài đặt Workspace"
-        description={`Quản lý cấu hình cho ${workspace.name}`}
+    <>
+      <TitleBlock
+        title="Thông tin cơ sở"
+        lead={`Cấu hình chung của ${workspace.name}: tên, logo, tiền tệ và múi giờ vận hành.`}
+        actions={
+          <Link
+            href={routes.members(workspace.slug)}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-ctl border border-ink h-9 sm:h-8 px-3',
+              'text-small font-medium text-fg hover:bg-panel transition-colors duration-160',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-acc'
+            )}
+          >
+            <Users className="w-4 h-4" aria-hidden="true" />
+            Thành viên
+          </Link>
+        }
       />
 
       {/* Success/Error Messages */}
@@ -536,6 +540,6 @@ export default function WorkspaceSettingsPage() {
           </Card>
         </div>
       )}
-    </PageContainer>
+    </>
   )
 }

@@ -15,10 +15,9 @@ const managers: WorkspaceRole[] = ['ADMIN', 'MANAGER']
 /** Main menu: the property's pages when inside one, else the workspace's. */
 export function primaryNav(slug: string, propertyId?: string): NavItem[] {
   if (!propertyId) {
-    return [
-      { name: 'Tổng quan', href: routes.workspace(slug), roles: everyone },
-      { name: 'Cơ sở', href: routes.properties(slug), roles: everyone },
-    ]
+    // The workspace home lists the properties, so there is no second
+    // "Cơ sở" entry to walk to.
+    return [{ name: 'Cơ sở', href: routes.workspace(slug), roles: everyone }]
   }
   const id = propertyId
   return [

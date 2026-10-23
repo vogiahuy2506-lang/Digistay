@@ -1,1 +1,1 @@
-export { Header, PageContainer } from './page-header'
+export { Header, PageContainer, TitleBlock } from './page-header'

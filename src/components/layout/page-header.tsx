@@ -30,3 +30,27 @@ interface PageContainerProps {
 export function PageContainer({ children, className }: PageContainerProps) {
   return <div className={cn('px-4 sm:px-6 lg:px-8 py-5 lg:py-7 max-w-7xl mx-auto', className)}>{children}</div>
 }
+
+interface TitleBlockProps {
+  title: string
+  lead?: string
+  actions?: React.ReactNode
+}
+
+/**
+ * The heading of the workspace level pages: a serif title, a plain lead line
+ * and the actions on the right — the shape /workspaces uses.
+ */
+export function TitleBlock({ title, lead, actions }: TitleBlockProps) {
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
+      <div className="max-w-xl">
+        <h1 className="font-serif text-[30px] leading-[1.15] tracking-[-0.02em] text-fg sm:text-[38px]">
+          {title}
+        </h1>
+        {lead && <p className="mt-2 text-small text-muted sm:text-body">{lead}</p>}
+      </div>
+      {actions && <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">{actions}</div>}
+    </div>
+  )
+}
