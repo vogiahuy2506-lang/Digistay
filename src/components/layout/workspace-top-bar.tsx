@@ -12,6 +12,7 @@ import { routes } from '@/lib/utils/routes'
 import { ChevronDown, LogOut, Moon, Sun } from 'lucide-react'
 import type { WorkspaceRole } from './nav'
 import { LanguageButton } from './language-button'
+import { NotificationBell } from './notification-bell'
 
 interface WorkspaceTopBarProps {
   workspace: { id: string; name: string; slug: string; role: WorkspaceRole }
@@ -38,7 +39,7 @@ export function WorkspaceTopBar({ workspace, workspaces, userName, userEmail, us
   }
 
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-page/90 backdrop-blur">
+    <header className="sticky top-0 z-30 [&:has([data-bell-open])]:z-[45] border-b border-line bg-page/90 backdrop-blur">
       <div className="mx-auto w-full max-w-5xl px-5 sm:px-8">
         <div className="flex h-14 items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
@@ -98,6 +99,7 @@ export function WorkspaceTopBar({ workspace, workspaces, userName, userEmail, us
                 )}
               </button>
             )}
+            <NotificationBell />
             <LanguageButton />
             <AccountMenu name={userName} email={userEmail} image={userImage} onSignOut={signOutEverywhere} />
           </div>

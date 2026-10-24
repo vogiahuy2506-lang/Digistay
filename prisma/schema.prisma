@@ -43,6 +43,7 @@ model User {
   
   // Booking relations
   createdBookings  Booking[]
+  notifications    Notification[]
 
   // Optional two-factor sign-in (src/lib/auth/two-factor.ts)
   twoFactor        UserTwoFactor?
@@ -1243,6 +1244,26 @@ model AlertState {
   updatedAt   DateTime  @updatedAt
 
   @@map("alert_states")
+}
+
+/// The bell in the dashboard (src/lib/notifications.ts): one row per
+/// recipient. The words are rendered in the reader's language from `type`
+/// and `data`; `link` is the page it opens.
+model Notification {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId String?
+  propertyId  String?
+  /// booking_new | deposit_paid
+  type        String
+  data        Json
+  link        String?
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@map("notifications")
 }
 
 /// Emails sent after the request (src/lib/email/outbox.ts): kept until

@@ -33,6 +33,19 @@
     "language": "Language",
     "user": "User"
   },
+  "notifications": {
+    "title": "Notifications",
+    "open": "Notifications",
+    "openUnread": "Notifications, {count} unread",
+    "markAll": "Mark all as read",
+    "empty": "No notifications yet",
+    "bookingNewWebsite": "New booking from the website: {code} · {guest}",
+    "bookingNewStaff": "New booking by staff: {code} · {guest}",
+    "bookingNewDetail": "{hotel} · {dates} · {total}",
+    "depositPaid": "Deposit paid: {code} · {guest}",
+    "depositPaidDetail": "{hotel} · {amount}, the booking is confirmed",
+    "other": "Notification"
+  },
   "roles": {
     "ADMIN": "Owner",
     "MANAGER": "Manager",

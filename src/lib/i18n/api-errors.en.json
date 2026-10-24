@@ -469,6 +469,7 @@
   "Xóa hạng phòng thành công": "Room type deleted",
   "Xóa workspace thành công": "Workspace deleted",
   "Xóa đặt phòng thành công": "Booking deleted",
+  "Yêu cầu không hợp lệ": "Invalid request",
   "checkInTime phải có dạng HH:MM": "checkInTime must be in HH:MM format",
   "checkOutTime phải có dạng HH:MM": "checkOutTime must be in HH:MM format",
   "date không hợp lệ (YYYY-MM-DD)": "Invalid date (YYYY-MM-DD)",

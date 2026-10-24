@@ -14,6 +14,7 @@ import { Avatar, Dropdown, DropdownItem, DropdownDivider } from '@/components/ui
 import { useDialogBehavior } from '@/components/ui/dialog-behavior'
 import { useTheme } from './theme-root'
 import { LanguageButton } from './language-button'
+import { NotificationBell } from './notification-bell'
 import { activeHref, primaryNav, workspaceNav, type NavItem, type WorkspaceRole } from './nav'
 
 interface WorkspaceShellProps {
@@ -48,11 +49,11 @@ export function WorkspaceShell(props: WorkspaceShellProps) {
 
   return (
     <div className="lg:flex min-h-screen">
-      <aside className="hidden lg:flex flex-col w-60 shrink-0 h-screen sticky top-0 border-r border-line bg-page">
+      <aside className="hidden lg:flex flex-col w-60 shrink-0 h-screen sticky top-0 border-r border-line bg-page [&:has([data-bell-open])]:z-[45]">
         <SidebarContent {...props} pathname={pathname} property={property} />
       </aside>
 
-      <header className="lg:hidden sticky top-0 z-30 flex items-center gap-2 h-14 px-2 border-b border-line bg-page/95 backdrop-blur">
+      <header className="lg:hidden sticky top-0 z-30 [&:has([data-bell-open])]:z-[45] flex items-center gap-2 h-14 px-2 border-b border-line bg-page/95 backdrop-blur">
         <button
           type="button"
           onClick={() => setDrawerOpen(true)}
@@ -63,6 +64,9 @@ export function WorkspaceShell(props: WorkspaceShellProps) {
           <Menu className="w-5 h-5" aria-hidden="true" />
         </button>
         <Brand slug={props.workspace.slug} />
+        <div className="ml-auto pr-1">
+          <NotificationBell />
+        </div>
       </header>
 
       {drawerOpen && (
@@ -147,8 +151,12 @@ function SidebarContent({
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      <div className="px-4 pt-5 pb-3 shrink-0">
+      <div className="px-4 pt-5 pb-3 shrink-0 flex items-center justify-between">
         <Brand slug={slug} />
+        {/* On phones the top bar has it; the drawer's close button sits here. */}
+        <div className="hidden lg:block">
+          <NotificationBell align="left" />
+        </div>
       </div>
 
       {/* Context switcher: the hotel being managed, or the workspace. */}

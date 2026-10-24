@@ -33,6 +33,19 @@
     "language": "Ngôn ngữ",
     "user": "Người dùng"
   },
+  "notifications": {
+    "title": "Thông báo",
+    "open": "Thông báo",
+    "openUnread": "Thông báo, {count} chưa đọc",
+    "markAll": "Đánh dấu đã đọc hết",
+    "empty": "Chưa có thông báo nào",
+    "bookingNewWebsite": "Đơn mới từ website: {code} · {guest}",
+    "bookingNewStaff": "Đơn mới do nhân viên tạo: {code} · {guest}",
+    "bookingNewDetail": "{hotel} · {dates} · {total}",
+    "depositPaid": "Khách đã đặt cọc: {code} · {guest}",
+    "depositPaidDetail": "{hotel} · {amount}, đơn đã được xác nhận",
+    "other": "Thông báo"
+  },
   "roles": {
     "ADMIN": "Chủ sở hữu",
     "MANAGER": "Quản lý",

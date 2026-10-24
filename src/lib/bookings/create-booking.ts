@@ -19,6 +19,7 @@ import { prisma } from '@/lib/db'
 import type { Locale } from '@/i18n/locales'
 import { emailLocale } from '@/lib/email/i18n'
 import { queueBookingConfirmation, queueOwnerNewBooking } from '@/lib/email/outbox'
+import { notifyNewBooking } from '@/lib/notifications'
 import { appSiteUrl } from '@/lib/public-site/paths'
 import { depositFor, quoteStay, ratesFrom, type PricedService } from '@/lib/pricing/quote'
 import { depositUrl } from '@/lib/payments/deposit-link'
@@ -259,6 +260,8 @@ export async function createBooking(input: NewBooking) {
       })
     }
     const emailIds = await queueBookingEmails(tx, booking, input.deposit)
+    // The bell in the dashboard, beside the owner's email (src/lib/notifications.ts).
+    await notifyNewBooking(tx, booking)
     return { booking, emailIds, quote }
   })
 }

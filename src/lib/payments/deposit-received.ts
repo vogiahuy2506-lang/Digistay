@@ -1,12 +1,14 @@
 /**
  * "We received your deposit": queued when a guest's deposit from the
  * hotel's site (guest-deposit.ts) is paid, through PayOS or SePay, in the
- * transaction that marks it PAID. Not for a booking already cancelled:
- * staff sort that money out (the payment is flagged).
+ * transaction that marks it PAID, with the hotel's bell
+ * (src/lib/notifications.ts). Not for a booking already cancelled: staff
+ * sort that money out (the payment is flagged).
  */
 import type { Prisma } from '@prisma/client'
 import { emailLocale } from '@/lib/email/i18n'
 import { queueDepositReceived } from '@/lib/email/outbox'
+import { notifyDepositPaid } from '@/lib/notifications'
 
 export async function queueGuestDepositReceived(
   tx: Prisma.TransactionClient,
@@ -15,6 +17,7 @@ export async function queueGuestDepositReceived(
 ): Promise<string[]> {
   const meta = payment.metadata && typeof payment.metadata === 'object' && !Array.isArray(payment.metadata) ? payment.metadata : {}
   if ((meta as { guestDeposit?: unknown }).guestDeposit !== true || closed) return []
+  await notifyDepositPaid(tx, payment)
   const booking = await tx.booking.findUniqueOrThrow({
     where: { id: payment.bookingId },
     select: {
