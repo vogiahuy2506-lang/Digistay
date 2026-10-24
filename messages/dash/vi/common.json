@@ -1,7 +1,7 @@
 {
   "nav": {
     "main": "Menu chính",
-    "menu": "Menu",
+    "drawer": "Menu",
     "openMenu": "Mở menu",
     "closeMenu": "Đóng menu",
     "overview": "Tổng quan",
@@ -11,6 +11,7 @@
     "walkIn": "Walk-in",
     "rooms": "Hạng phòng",
     "services": "Dịch vụ",
+    "menu": "Thực đơn",
     "payments": "Thanh toán",
     "invoices": "Hóa đơn",
     "reports": "Báo cáo",

@@ -173,7 +173,7 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
     nhật ký ghi gợi ý, số hoàn, lý do. App chỉ ghi nhận; tiền trả lại khách theo cách khách đã trả.
 - **Site công khai của khách sạn được cache** theo khách sạn (`src/lib/public-site/site.ts`, tối
   đa 5 phút). Handler nào ghi dữ liệu site hiển thị (khách sạn, ảnh, tiện ích, hạng phòng, giá,
-  dịch vụ, website) phải gọi `invalidatePublicSite(propertyId)`; `public-site-cache.test.ts` chặn.
+  dịch vụ, thực đơn, website) phải gọi `invalidatePublicSite(propertyId)`; `public-site-cache.test.ts` chặn.
   Không bao giờ cache phòng trống theo ngày hay dữ liệu riêng của khách.
 
 - Comment và tên test bằng tiếng Anh, khớp code hiện có. Chuỗi hiển thị cho người dùng và

@@ -264,6 +264,7 @@ model Property {
   einvoice       PropertyEinvoice?
   roomLocks      RoomLock[]
   extraServices   ExtraService[]
+  menuItems       MenuItem[]
   dailyRevenues   DailyRevenue[]
   policy      Policy?
   
@@ -842,6 +843,34 @@ model ExtraService {
 
   @@map("extra_services")
   @@index([propertyId])
+}
+
+/// A dish or drink on the hotel's restaurant menu (dashboard "Thực đơn", the
+/// site's RESTAURANT_MENU block). Groups come from `category`, the hotel's own text.
+model MenuItem {
+  id          String   @id @default(cuid())
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  /// VND, VAT included like every price the hotel shows
+  price       Float
+  /// http(s) URL or a path of our upload route (src/lib/menu/menu.ts isMenuImageUrl)
+  imageUrl    String?
+  /// "Món chính", "Đồ uống"...: free text; items with the same text form a group
+  category    String?
+  /// The hotel's own texts in English: { en: { name?, description?, category? } }. Empty: the Vietnamese shows (src/lib/i18n/content.ts).
+  translations Json?
+  /// Off: kept in the dashboard, hidden on the site
+  isAvailable Boolean  @default(true)
+  sortOrder   Int      @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([propertyId])
+  @@map("menu_items")
 }
 
 // ============================================

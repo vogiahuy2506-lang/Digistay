@@ -13,6 +13,7 @@
 import { revalidateTag, unstable_cache } from 'next/cache'
 import type { Locale } from '@/i18n/locales'
 import { localizeRow } from '@/lib/i18n/content'
+import { localizeMenuItems, sortMenuItems } from '@/lib/menu/menu'
 import { prisma } from '@/lib/db'
 import { ratesFrom } from '@/lib/pricing/quote'
 import { ROOM_RATE_INCLUDE, propertyRateDefaults } from '@/lib/pricing/rates'
@@ -53,6 +54,8 @@ export async function loadSiteProps(propertyId: string) {
         orderBy: { sortOrder: 'asc' },
       },
       extraServices: { where: { isActive: true } },
+      // Hidden dishes stay in the dashboard only.
+      menuItems: { where: { isAvailable: true } },
     },
   })
   if (!property) return null
@@ -123,6 +126,16 @@ export async function loadSiteProps(propertyId: string) {
       perPerson: s.perPerson,
       translations: s.translations,
     })),
+    menuItems: sortMenuItems(property.menuItems).map((m) => ({
+      id: m.id,
+      name: m.name,
+      description: m.description,
+      price: m.price,
+      imageUrl: m.imageUrl,
+      category: m.category,
+      sortOrder: m.sortOrder,
+      translations: m.translations,
+    })),
     blocks: blocks.map((b) => ({
       id: b.id,
       type: b.type,
@@ -165,6 +178,7 @@ export function localizeSiteProps(site: SiteProps, locale: Locale, amenityName: 
       amenities: rt.amenities.map((name, i) => amenityName(rt.amenitySlugs[i], name)),
     })),
     services: site.services.map((s) => localizeRow(s, ['name', 'description'], locale)),
+    menuItems: localizeMenuItems(site.menuItems, locale),
     settings: site.settings && localizeRow(site.settings, ['metaTitle', 'metaDescription'], locale),
   }
 }

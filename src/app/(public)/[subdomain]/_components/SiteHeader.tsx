@@ -3,7 +3,7 @@ import { useTranslations } from 'next-intl'
 import { LanguageSwitch, SiteLink, SiteThemeToggle } from './site-base'
 import { Container, propertyTypeLabel } from './site-ui'
 
-export type SiteSectionId = 'rooms' | 'amenities' | 'gallery' | 'services' | 'map' | 'contact'
+export type SiteSectionId = 'rooms' | 'amenities' | 'gallery' | 'services' | 'menu' | 'map' | 'contact'
 
 export interface SiteSection {
   id: SiteSectionId

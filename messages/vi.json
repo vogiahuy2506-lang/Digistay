@@ -33,6 +33,7 @@
       "amenities": "Tiện ích",
       "gallery": "Hình ảnh",
       "services": "Dịch vụ",
+      "menu": "Thực đơn",
       "map": "Vị trí",
       "contact": "Liên hệ"
     },
@@ -174,7 +175,7 @@
       "menu": {
         "title": "Thực đơn nhà hàng",
         "eyebrow": "Nhà hàng",
-        "empty": "Thực đơn đang được cập nhật. Vui lòng liên hệ trực tiếp để đặt bàn."
+        "other": "Món khác"
       },
       "reviews": {
         "title": "Khách nói gì về chúng tôi",

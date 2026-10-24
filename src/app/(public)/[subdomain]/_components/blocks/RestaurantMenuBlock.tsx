@@ -1,30 +1,69 @@
 import { blockText } from '@/lib/i18n/content'
-import type { PublicBlock } from '../PropertySite'
-import { Eyebrow, Section, SectionTitle } from '../site-ui'
+import { formatVnd } from '@/lib/bookings/display'
+import { groupMenuItems, isMenuImageUrl } from '@/lib/menu/menu'
+import type { PublicBlock, PublicMenuItem } from '../PropertySite'
+import { Section, SectionHeader } from '../site-ui'
 import { useLocale, useTranslations } from 'next-intl'
 
 interface Props {
   block: PublicBlock
+  menuItems: PublicMenuItem[]
 }
 
 /**
- * Restaurant menu block. The schema does not model dishes yet, so this says
- * so and points to the contact section. When a RestaurantMenu model exists,
- * render its items here.
+ * The hotel's restaurant menu (dashboard "Thực đơn", src/lib/menu/menu.ts):
+ * the dishes on sale in the hotel's groups, each with its price and photo.
+ * Config: `menuTitle` (or `title`) and `menuNote` (or `contactNote`), e.g.
+ * how to book a table; in English `config.en.<key>`. No dishes: nothing at
+ * all, never a sample menu.
  */
-export function RestaurantMenuBlock({ block }: Props) {
+export function RestaurantMenuBlock({ block, menuItems }: Props) {
+  const t = useTranslations('site')
   const locale = useLocale()
-  const t = useTranslations('site.blocks.menu')
+  if (menuItems.length === 0) return null
+
   const cfg = block.config || {}
-  const title = blockText(cfg, locale, 'title') ?? t('title')
+  const title = blockText(cfg, locale, 'menuTitle', 'title') ?? t('blocks.menu.title')
+  const note = blockText(cfg, locale, 'menuNote', 'contactNote')
+  const groups = groupMenuItems(menuItems)
+  // Group headings only when the hotel sorted its dishes into groups.
+  const grouped = groups.some((g) => g.category)
+  const Name = grouped ? 'h4' : 'h3'
 
   return (
     <Section id="menu">
-      <div className="max-w-2xl">
-        <Eyebrow>{t('eyebrow')}</Eyebrow>
-        <SectionTitle>{title}</SectionTitle>
-        <p className="mt-6 text-body text-muted">{t('empty')}</p>
-        {blockText(cfg, locale, 'contactNote') && <p className="mt-2 text-small text-muted">{blockText(cfg, locale, 'contactNote')}</p>}
+      <SectionHeader eyebrow={t('blocks.menu.eyebrow')} title={title} aside={note} />
+      <div className="space-y-12">
+        {groups.map((group) => (
+          <div key={group.key}>
+            {grouped && <h3 className="mb-4 text-label uppercase text-muted">{group.category ?? t('blocks.menu.other')}</h3>}
+            <ul className="grid border-t border-line sm:grid-cols-2 sm:gap-x-10">
+              {group.items.map((item) => (
+                <li key={item.id} className="flex items-start gap-4 border-b border-line py-5">
+                  {item.imageUrl && isMenuImageUrl(item.imageUrl) && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      loading="lazy"
+                      decoding="async"
+                      width={96}
+                      height={96}
+                      className="aspect-square w-20 shrink-0 rounded-box bg-fg/[0.06] object-cover sm:w-24"
+                    />
+                  )}
+                  <div className="min-w-0 flex-1 break-words">
+                    <Name className="text-body font-medium text-fg">{item.name}</Name>
+                    {item.description && <p className="mt-1 text-small text-muted">{item.description}</p>}
+                  </div>
+                  <p className="shrink-0 text-right text-body font-semibold tabular-nums text-fg">
+                    {item.price > 0 ? formatVnd(item.price, locale) : t('units.free')}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
     </Section>
   )

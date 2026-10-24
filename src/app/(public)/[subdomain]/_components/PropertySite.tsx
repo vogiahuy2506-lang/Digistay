@@ -83,6 +83,17 @@ export interface PublicService {
   perPerson: boolean
 }
 
+/** A dish on the restaurant menu (only those the hotel has on sale). */
+export interface PublicMenuItem {
+  id: string
+  name: string
+  description: string | null
+  price: number
+  imageUrl: string | null
+  category: string | null
+  sortOrder: number
+}
+
 export interface PublicBlock {
   id: string
   type: string
@@ -108,6 +119,7 @@ interface Props {
   amenities: PublicAmenity[]
   roomTypes: PublicRoomType[]
   services: PublicService[]
+  menuItems: PublicMenuItem[]
   blocks: PublicBlock[]
   settings: PublicSettings | null
 }
@@ -118,6 +130,7 @@ const SECTION_LABELS: Partial<Record<BlockType, SiteSection>> = {
   AMENITIES: { id: 'amenities' },
   GALLERY: { id: 'gallery' },
   SERVICES: { id: 'services' },
+  RESTAURANT_MENU: { id: 'menu' },
   MAP: { id: 'map' },
   CONTACT: { id: 'contact' },
 }
@@ -127,10 +140,11 @@ const SECTION_LABELS: Partial<Record<BlockType, SiteSection>> = {
  * builder (redesign 3a). Colors, fonts and corners come from
  * [subdomain]/layout.tsx; `settings` is kept in the props for callers.
  */
-export function PropertySite({ property, images, amenities, roomTypes, services, blocks }: Props) {
+export function PropertySite({ property, images, amenities, roomTypes, services, menuItems, blocks }: Props) {
   const types = new Set(blocks.map((b) => b.type))
+  // A block that renders nothing (no photos, no dishes) gets no menu entry either.
   const sections: SiteSection[] = (Object.keys(SECTION_LABELS) as BlockType[])
-    .filter((t) => types.has(t) && !(t === 'GALLERY' && images.length === 0))
+    .filter((t) => types.has(t) && !(t === 'GALLERY' && images.length === 0) && !(t === 'RESTAURANT_MENU' && menuItems.length === 0))
     .map((t) => SECTION_LABELS[t]!)
 
   return (
@@ -146,6 +160,7 @@ export function PropertySite({ property, images, amenities, roomTypes, services,
             amenities={amenities}
             roomTypes={roomTypes}
             services={services}
+            menuItems={menuItems}
             sections={sections}
             hasMap={types.has('MAP')}
           />
@@ -162,6 +177,7 @@ function BlockRenderer(props: {
   amenities: PublicAmenity[]
   roomTypes: PublicRoomType[]
   services: PublicService[]
+  menuItems: PublicMenuItem[]
   sections: SiteSection[]
   hasMap: boolean
 }) {
