@@ -17,6 +17,7 @@ const appEnv = {
   CRON_SECRET: E2E.cronSecret,
   PAYOS_BASE_URL: `http://127.0.0.1:${E2E.ports.payos}`,
   MATBAO_BASE_URL: `http://127.0.0.1:${E2E.ports.matbao}`,
+  TAX_LOOKUP_BASE_URL: E2E.control,
   EMAIL_SERVER_HOST: '127.0.0.1',
   EMAIL_SERVER_PORT: String(E2E.ports.smtp),
   EMAIL_SERVER_USER: 'e2e',

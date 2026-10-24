@@ -36,6 +36,8 @@ export const LIMITS = {
   depositStatusIp: { name: 'deposit-status-ip', limit: 600, windowSec: 10 * MIN },
   /** "Pay the deposit again" from one IP: each may create a PayOS link on the hotel's account. */
   depositRetryIp: { name: 'deposit-retry-ip', limit: 10, windowSec: 10 * MIN },
+  /** Tax-code lookups from one IP (invoice forms; each asks VietQR unless cached, src/lib/einvoice/tax-lookup.ts). */
+  taxLookupIp: { name: 'tax-lookup-ip', limit: 60, windowSec: 10 * MIN },
   /** Wrong two-factor codes at sign-in from one IP, across accounts (failures only). */
   twoFactorVerifyIp: { name: '2fa-verify-ip', limit: 20, windowSec: 15 * MIN },
   /** Wrong codes while turning two-factor on, per user (failures only). */

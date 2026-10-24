@@ -272,6 +272,10 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
     (không có thì là khách). Tiền cọc không kích hoạt (luật không tính cọc là thời điểm lập hoá
     đơn). Mỗi đơn một lần; thông tin công ty sai thì để `PENDING` kèm lý do cho nhân viên.
   - `MATBAO_BASE_URL` chỉ dùng cho test (Mắt Bão giả ở `src/test/integration/fake-matbao.ts`).
+  - **Tra cứu mã số thuế** (`tax-lookup.ts`, `GET /api/public/tax-lookup`): form đặt phòng của khách và
+    hộp thoại hoá đơn tự điền tên, địa chỉ công ty từ dữ liệu cơ quan thuế qua API miễn phí của VietQR.
+    Chỉ để điền sẵn: ô vẫn sửa được, tra cứu lỗi không chặn gì. Kết quả giữ trong bộ nhớ (1 ngày),
+    giới hạn theo IP. `TAX_LOOKUP_BASE_URL` chỉ dùng cho test (e2e giả ở `e2e/fakes.ts`).
 - Xác thực hai lớp (`src/lib/auth/two-factor.ts`) là **tuỳ chọn, không bao giờ bắt buộc**. Khi
   đã bật, mật khẩu đúng hoặc Google đúng **không tạo phiên**: chỉ trả "vé" chờ nhập mã, provider
   `two-factor` mới tạo phiên. Thêm cách đăng nhập mới thì phải đi qua bước này. Không có đường

@@ -2,7 +2,8 @@
 
 import * as React from 'react'
 import { useTranslations } from 'next-intl'
-import { Input, Select } from '@/components/ui'
+import { Button, Input, Select } from '@/components/ui'
+import { useTaxLookup } from '@/lib/hooks/use-tax-lookup'
 import { isVatCode, splitGross, type VatCode } from '@/lib/einvoice/vat'
 import { useDashLabels } from '@/lib/i18n/dash'
 import { useVatLabel } from './einvoice-card'
@@ -77,6 +78,13 @@ export function InvoiceFormFields({
   const formatPrice = useDashLabels().money
   const vatLabel = useVatLabel()
   const set = (patch: Partial<InvoiceFormValue>) => onChange({ ...value, ...patch })
+  // A complete tax code fills the name and address in from the tax register.
+  const taxLookup = useTaxLookup(
+    value.taxCode,
+    (company) => set({ taxCode: company.taxCode, companyName: company.name, companyAddress: company.address || value.companyAddress }),
+    value.buyerType === 'company'
+  )
+  const lookup = taxLookup.state
   const amount = Number(value.totalAmount)
   const split = isVatCode(vatCode) && Number.isFinite(amount) && amount > 0 ? splitGross(amount, vatCode) : null
 
@@ -97,8 +105,39 @@ export function InvoiceFormFields({
         <div className="border-t pt-4">
           <h4 className="font-medium text-fg mb-3">{t('companySection')}</h4>
           <div className="grid grid-cols-2 gap-4">
-            <Input label={t('companyName')} required value={value.companyName} onChange={(e) => set({ companyName: e.target.value })} />
-            <Input label={t('taxCode')} required value={value.taxCode} onChange={(e) => set({ taxCode: e.target.value })} placeholder="0123456789" />
+            <div className="col-span-2">
+              <div className="flex items-end gap-2">
+                <Input label={t('taxCode')} required value={value.taxCode} onChange={(e) => set({ taxCode: e.target.value })} placeholder="0123456789" />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={taxLookup.retry}
+                  disabled={!taxLookup.code}
+                  isLoading={lookup.status === 'loading'}
+                  className="h-11 sm:h-10 shrink-0"
+                >
+                  {t('taxLookup')}
+                </Button>
+              </div>
+              {lookup.status !== 'idle' && (
+                <p aria-live="polite" className={lookup.status === 'found' && !lookup.company.active ? 'mt-1.5 text-small text-err' : 'mt-1.5 text-small text-muted'}>
+                  {lookup.status === 'loading'
+                    ? t('taxLookupLoading')
+                    : lookup.status === 'found'
+                      ? !lookup.company.active
+                        ? t('taxLookupInactive', { status: lookup.company.status ?? '' })
+                        : lookup.company.status
+                          ? t('taxLookupFound', { status: lookup.company.status })
+                          : t('taxLookupFoundNoStatus')
+                      : lookup.status === 'missing'
+                        ? t('taxLookupMissing')
+                        : t('taxLookupFailed')}
+                </p>
+              )}
+            </div>
+            <div className="col-span-2">
+              <Input label={t('companyName')} required value={value.companyName} onChange={(e) => set({ companyName: e.target.value })} />
+            </div>
             <div className="col-span-2">
               <Input label={t('companyAddress')} required value={value.companyAddress} onChange={(e) => set({ companyAddress: e.target.value })} />
             </div>

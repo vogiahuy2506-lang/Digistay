@@ -8,6 +8,7 @@
  *                                  delivered to the app; { webhookStatus }
  *   GET  /matbao/calls           → the create-invoice payloads received
  *   GET  /mail                   → the emails received (raw MIME)
+ *   GET  /v2/business/<taxCode>  → the tax register lookup (TAX_LOOKUP_BASE_URL)
  */
 import http from 'http'
 import net from 'net'
@@ -79,6 +80,14 @@ const control = http.createServer(async (req, res) => {
   if (url === '/ready') return json(res, 200, { ok: true })
   if (url === '/matbao/calls') return json(res, 200, matbao.createCalls)
   if (url === '/mail') return json(res, 200, mails)
+  // VietQR's tax register lookup (src/lib/einvoice/tax-lookup.ts): one company, "51" for any other code.
+  const business = url.match(/^\/v2\/business\/([\d-]+)$/)
+  if (business) {
+    const known = business[1] === E2E.taxCompany.taxCode
+    return json(res, 200, known
+      ? { code: '00', data: { id: E2E.taxCompany.taxCode, name: E2E.taxCompany.name, address: E2E.taxCompany.address, status: 'NNT đang hoạt động' } }
+      : { code: '51', desc: 'Tax not found', data: null })
+  }
   const pay = url.match(/^\/payos\/pay\/(\d+)$/)
   if (req.method === 'POST' && pay) {
     try {

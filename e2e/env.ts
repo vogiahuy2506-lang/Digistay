@@ -34,6 +34,12 @@ export const E2E = {
     password: shared('E2E_MATBAO_PASSWORD', hex(8)),
   },
   matbaoSeries: `C${String(new Date().getFullYear()).slice(-2)}TAA`,
+  /** the one company the fake tax register (e2e/fakes.ts) knows */
+  taxCompany: {
+    taxCode: '0315550001',
+    name: 'CÔNG TY TNHH DU LỊCH HOA SEN',
+    address: '12 Lê Lợi, Phường Sài Gòn, TP Hồ Chí Minh',
+  },
   idsFile: 'e2e/.state/ids.json',
   adminState: 'e2e/.state/admin.json',
 }
