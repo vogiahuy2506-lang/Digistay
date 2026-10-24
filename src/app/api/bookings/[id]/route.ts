@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { withRoomTypeNames } from '@/lib/bookings/room-type-names'
+import { RoomError, roomConflictMessage, typedRoomNumberConflict } from '@/lib/bookings/rooms'
+import { lockBooking } from '@/lib/payments/booking-payments'
 import { z } from 'zod'
 
 const updateBookingSchema = z.object({
@@ -139,19 +141,31 @@ export async function PATCH(
       }, { status: 400 })
     }
 
-    const data = validation.data
+    const { roomNumber: typedNumber, ...data } = validation.data
+    const roomNumber = typedNumber?.trim()
 
-    // Update booking
-    const updatedBooking = await prisma.booking.update({
+    // A room number is one room: never two stays in it on the same night (rooms.ts).
+    const updatedBooking = await prisma.$transaction(async (tx) => {
+      if (roomNumber) {
+        await lockBooking(tx, id)
+        const taken = await typedRoomNumberConflict(tx, {
+          propertyId: booking.propertyId,
+          roomNumber,
+          checkIn: booking.checkInDate,
+          checkOut: booking.checkOutDate,
+          exceptBookingId: id,
+        })
+        if (taken) throw new RoomError(roomConflictMessage(roomNumber, taken))
+      }
+      return tx.booking.update({
       where: { id },
       data: {
         ...data,
-        // Update room number in booking item if provided
-        ...(data.roomNumber && {
+        ...(roomNumber && {
           bookingItems: {
             updateMany: {
               where: { bookingId: id },
-              data: { roomNumber: data.roomNumber },
+              data: { roomNumber },
             },
           },
         }),
@@ -166,6 +180,7 @@ export async function PATCH(
           },
         },
       },
+      })
     })
 
     // Log activity
@@ -176,7 +191,7 @@ export async function PATCH(
         action: 'UPDATE',
         entityType: 'BOOKING',
         entityId: id,
-        changes: data,
+        changes: { ...data, ...(roomNumber && { roomNumber }) },
       },
     })
 
@@ -186,6 +201,9 @@ export async function PATCH(
       message: 'Cập nhật đặt phòng thành công',
     })
   } catch (error) {
+    if (error instanceof RoomError) {
+      return NextResponse.json({ success: false, error: error.message }, { status: error.status })
+    }
     console.error('Update booking error:', error)
     return NextResponse.json({ success: false, error: 'Lỗi khi cập nhật đặt phòng' }, { status: 500 })
   }

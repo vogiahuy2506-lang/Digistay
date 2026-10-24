@@ -20,6 +20,7 @@ import type { Locale } from '@/i18n/locales'
 import { emailLocale } from '@/lib/email/i18n'
 import { queueBookingConfirmation, queueOwnerNewBooking } from '@/lib/email/outbox'
 import { notifyNewBooking } from '@/lib/notifications'
+import { roomConflictMessage, typedRoomNumberConflict } from './rooms'
 import { appSiteUrl } from '@/lib/public-site/paths'
 import { depositFor, quoteStay, ratesFrom, type PricedService } from '@/lib/pricing/quote'
 import { depositUrl } from '@/lib/payments/deposit-link'
@@ -210,6 +211,11 @@ export async function createBooking(input: NewBooking) {
       ownHoldId: input.holdId,
     })
     if (taken >= roomType.totalRooms) throw new BookingError('Phòng đã hết trong khoảng ngày này', 409)
+    const roomNumber = input.roomNumber?.trim() || null
+    if (roomNumber) {
+      const inRoom = await typedRoomNumberConflict(tx, { propertyId: input.propertyId, roomNumber, checkIn: input.checkIn, checkOut: input.checkOut })
+      if (inRoom) throw new BookingError(roomConflictMessage(roomNumber, inRoom), 409)
+    }
 
     const booking = await tx.booking.create({
       data: {
@@ -239,7 +245,7 @@ export async function createBooking(input: NewBooking) {
         bookingItems: {
           create: {
             roomTypeId: roomType.id,
-            roomNumber: input.roomNumber ?? null,
+            roomNumber,
             checkInDate: input.checkIn,
             checkOutDate: input.checkOut,
             basePrice: quote.basePrice,

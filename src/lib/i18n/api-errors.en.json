@@ -339,6 +339,7 @@
   "PayOS từ chối kết nối: {0}": "PayOS refused the connection: {0}",
   "Phiên đặt lại mật khẩu không hợp lệ hoặc đã hết hạn. Vui lòng làm lại.": "The password reset session is invalid or has expired. Please start again.",
   "Phát hành hóa đơn thành công": "Invoice issued",
+  "Phòng {0} đã có đơn {1} ({2} – {3})": "Room {0} already has booking {1} ({2} – {3})",
   "Phòng đã hết trong khoảng ngày này": "No rooms left for these dates",
   "Phòng đã hết trong khoảng thời gian này": "No rooms left for these dates",
   "Phòng đã kín trong những đêm gia hạn": "The room is fully booked for the extra nights",
