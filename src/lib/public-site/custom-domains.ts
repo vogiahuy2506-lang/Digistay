@@ -7,7 +7,7 @@
  *   /api/internal/custom-domains for the domains waiting for a certificate
  *   (domainsAwaitingCertificate), issues them with Let's Encrypt over HTTP
  *   (nginx answers the challenge for any host) and reports back
- *   (recordCertificate). nginx's custom-domains.conf picks the certificate by
+ *   (certificateOutcome). nginx's custom-domains.conf picks the certificate by
  *   the name the browser asks for.
  *
  * Node only (Prisma).
@@ -45,21 +45,11 @@ export async function domainsAwaitingCertificate(now = new Date()): Promise<stri
   return rows.map((r) => r.customDomain!).filter(Boolean)
 }
 
-/** The issuing script's outcome for `domain`. Returns the property whose site changed, or null. */
-export async function recordCertificate(domain: string, ok: boolean, now = new Date()): Promise<string | null> {
-  const settings = await prisma.websiteSettings.findFirst({
-    where: { customDomain: domain, domainVerificationStatus: 'verified' },
-    select: { id: true, propertyId: true },
-  })
-  if (!settings) return null
-  await prisma.websiteSettings.update({
-    where: { id: settings.id },
-    data: ok
-      ? { sslEnabled: true, sslProvider: 'letsencrypt', sslVerifiedAt: now, sslCheckedAt: now, sslError: null }
-      : { sslEnabled: false, sslCheckedAt: now, sslError: 'issue_failed' },
-  })
-  return settings.propertyId
-}
+/** What the issuing script's outcome writes (the route does the write and drops the site's cache). */
+export const certificateOutcome = (ok: boolean, now = new Date()) =>
+  ok
+    ? { sslEnabled: true, sslProvider: 'letsencrypt', sslVerifiedAt: now, sslCheckedAt: now, sslError: null }
+    : { sslEnabled: false, sslCheckedAt: now, sslError: 'issue_failed' }
 
 /** The fields that ask for a (new) certificate: on verification, and on "Thử lại". */
 export const certificateRequest = (now = new Date()) => ({

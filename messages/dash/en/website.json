@@ -134,14 +134,10 @@
     "contactForm": "Show the contact form",
     "cover": {
       "label": "Cover photo",
-      "hint": "The first photo of the strip at the top of the page. An uploaded photo is added to the property's photos too.",
+      "hint": "The first photo of the strip at the top of the page, picked from the property's photos (add photos under Overview → Photos).",
       "auto": "Automatic (the property's first photo)",
       "photo": "Property photo",
-      "upload": "Upload a photo",
-      "uploading": "Uploading…",
-      "uploadFailed": "Couldn't upload the photo",
-      "notImage": "Please choose an image file",
-      "tooLarge": "Photos can be 10MB at most"
+      "none": "The property has no photos yet. Add some under Overview → Photos."
     },
     "reviews": {
       "label": "Guest reviews",

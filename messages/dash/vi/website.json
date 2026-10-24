@@ -134,14 +134,10 @@
     "contactForm": "Hiển thị form liên hệ",
     "cover": {
       "label": "Ảnh bìa",
-      "hint": "Ảnh đầu tiên của dải ảnh trên đầu trang. Ảnh tải lên cũng được thêm vào thư viện ảnh của cơ sở.",
+      "hint": "Ảnh đầu tiên của dải ảnh trên đầu trang, chọn trong ảnh của cơ sở (thêm ảnh ở trang Tổng quan → Hình ảnh).",
       "auto": "Tự động (ảnh đầu tiên của cơ sở)",
       "photo": "Ảnh của cơ sở",
-      "upload": "Tải ảnh lên",
-      "uploading": "Đang tải…",
-      "uploadFailed": "Không tải được ảnh lên",
-      "notImage": "Vui lòng chọn một file ảnh",
-      "tooLarge": "Ảnh tối đa 10MB"
+      "none": "Cơ sở chưa có ảnh nào. Thêm ảnh ở trang Tổng quan → Hình ảnh."
     },
     "reviews": {
       "label": "Đánh giá của khách",

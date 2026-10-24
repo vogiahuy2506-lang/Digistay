@@ -40,6 +40,12 @@ const PUBLIC_HANDLERS: Record<string, string> = {
   'POST /api/bookings/room-lock': 'guests hold a room while booking; per-IP limit',
   'DELETE /api/bookings/room-lock': "guests release their own hold by the lock/session id they were given",
   'GET /api/health': 'deploy and uptime checks; returns only status and image version',
+  'GET /api/internal/custom-domains':
+    'certificate queue for docker/certbot/custom-domains.sh: checkCronSecret, and nginx does not route /api/internal/',
+  'POST /api/internal/custom-domains':
+    'certificate outcome from docker/certbot/custom-domains.sh: checkCronSecret, and nginx does not route /api/internal/',
+  'GET /api/public/site-host':
+    "which site a verified custom domain serves, for the middleware; public like visiting the domain itself",
   'POST /api/internal/email-outbox':
     'scheduled job: checkCronSecret (CRON_SECRET header, timing-safe), and nginx does not route /api/internal/',
   'POST /api/internal/einvoice-jobs':

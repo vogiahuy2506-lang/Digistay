@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { normalizeHostname } from '@/lib/custom-domain'
-import { domainsAwaitingCertificate, recordCertificate } from '@/lib/public-site/custom-domains'
+import { prisma } from '@/lib/db'
+import { certificateOutcome, domainsAwaitingCertificate } from '@/lib/public-site/custom-domains'
 import { invalidatePublicSite } from '@/lib/public-site/site'
 import { checkCronSecret } from '@/lib/security/cron-secret'
 
@@ -26,10 +27,14 @@ export async function POST(request: NextRequest) {
   const domain = normalizeHostname(form.get('domain'))
   const ok = form.get('ok') === '1'
   if (!domain) return NextResponse.json({ success: false, error: 'domain' }, { status: 400 })
-  const propertyId = await recordCertificate(domain, ok)
-  if (!propertyId) return NextResponse.json({ success: false, error: 'unknown domain' }, { status: 404 })
+  const settings = await prisma.websiteSettings.findFirst({
+    where: { customDomain: domain, domainVerificationStatus: 'verified' },
+    select: { id: true, propertyId: true },
+  })
+  if (!settings) return NextResponse.json({ success: false, error: 'unknown domain' }, { status: 404 })
+  await prisma.websiteSettings.update({ where: { id: settings.id }, data: certificateOutcome(ok) })
   // The site's canonical address moves to the domain once it has HTTPS.
-  invalidatePublicSite(propertyId)
+  invalidatePublicSite(settings.propertyId)
   console.log(`[custom-domains] ${domain}: ${ok ? 'certificate issued' : 'issuance failed'}`)
   return NextResponse.json({ success: true })
 }

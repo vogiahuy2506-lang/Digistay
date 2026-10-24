@@ -590,7 +590,6 @@ function BlockConfigPanel({
                 />
               </div>
               <CoverPicker
-                propertyId={propertyData?.id ?? ''}
                 photos={propertyData?.images ?? []}
                 value={config.backgroundImage || undefined}
                 onChange={(url) => updateConfig('backgroundImage', url)}
