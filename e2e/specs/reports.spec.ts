@@ -37,11 +37,13 @@ test('a custom day shows its money by method, filters by method, and exports the
     await pay(400_000, 'CREDIT_CARD', '2026-01-15T17:30:00Z') // 00:30 on the 16th: another day
 
     await page.goto(propertyPath('/reports'))
-    // Wait for the client render (the period line comes with the report's data): an
-    // intermittent hydration error (#418, also seen on the hotel site) briefly leaves
-    // the server copy of the page next to the client one.
+    // The period line comes with the report's data: the page is hydrated.
     await expect(page.getByText(/\(giờ Việt Nam\)$/)).toBeVisible()
-    await expect(page.getByLabel('Khoảng thời gian')).toHaveCount(1)
+    // ...hydrated, not drawn again on the client: React's ids start with _R_ when
+    // hydrated, _r_ when made on the client. A context change before the streamed
+    // page was shown (next-auth's session fetch on load) made React drop the
+    // server's HTML on most loads (src/components/providers.tsx).
+    expect(await page.getByLabel('Khoảng thời gian').getAttribute('id')).toMatch(/^_R_/)
     await page.getByLabel('Khoảng thời gian').selectOption('custom')
     await page.getByLabel('Từ ngày').fill('2026-01-15')
     await page.getByLabel('Đến ngày').fill('2026-01-15')

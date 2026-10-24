@@ -200,6 +200,11 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
   19.3 (react#35494, react#35518) vào `node_modules/next` khi `npm ci` (`postinstall`, Dockerfile
   chép script vào bước cài) và trước `npm run build`. Đừng bỏ bước đó. Lên Next mới: React đóng gói
   từ 19.3 thì script tự bỏ qua; code khác dạng thì script báo lỗi và cài đặt hỏng, khi đó xem lại.
+- Không bọc trang bằng provider đổi giá trị ngay sau khi tải (như `SessionProvider` không kèm
+  session): nội dung dashboard được stream, React 19.2 hoãn hiện nó một chút, và context đổi trước
+  lúc đó làm React bỏ HTML của server để vẽ lại trên client (trước đây ở 85% lần tải). `useSession`
+  chỉ dùng dưới `SessionScope` (`src/components/providers.tsx`) với session server đã đọc; spec báo
+  cáo kiểm id `_R_` (hydrate) thay vì `_r_` (vẽ lại).
 - Khoá bên thứ ba lưu trong DB (khoá thanh toán, tài khoản hoá đơn, secret 2FA) **luôn** qua
   `src/lib/security/secret-box.ts`: `encryptSecret(giá trị, secretContext(bảng, id, cột))`.
   Chưa cấu hình thì lưu `null`. Không bao giờ trả giá trị đã giải mã ra trình duyệt: trả
