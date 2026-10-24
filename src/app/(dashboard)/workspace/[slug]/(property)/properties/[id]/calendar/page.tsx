@@ -19,6 +19,7 @@ import { escapeHtml } from '@/lib/bookings/display'
 import { CheckOutDialog } from '@/components/bookings/check-out-dialog'
 import { fetchWindow, staysNight, toCsv } from '@/lib/bookings/calendar'
 import { format, addDays, parseISO } from 'date-fns'
+import { apiError } from '@/lib/i18n/api-errors'
 
 interface RoomType {
   id: string
@@ -260,7 +261,7 @@ export default function CalendarPage() {
         })
         fetchCalendarData()
       } else {
-        toast.error(data.error || t('create.error'))
+        toast.error(apiError(data.error) || t('create.error'))
       }
     } catch (err) {
       console.error('Create booking error:', err)
@@ -279,7 +280,7 @@ export default function CalendarPage() {
         setSelectedBooking(data.data)
         setShowBookingDetailModal(true)
       } else {
-        toast.error(data.error || t('detail.loadError'))
+        toast.error(apiError(data.error) || t('detail.loadError'))
       }
     } catch (err) {
       console.error('Fetch booking error:', err)
@@ -299,7 +300,7 @@ export default function CalendarPage() {
         setShowBookingDetailModal(false)
         fetchCalendarData()
       } else {
-        toast.error(data.error || t('detail.checkInError'))
+        toast.error(apiError(data.error) || t('detail.checkInError'))
       }
     } catch (err) {
       console.error('Check-in error:', err)
@@ -327,7 +328,7 @@ export default function CalendarPage() {
         setShowBookingDetailModal(false)
         fetchCalendarData()
       } else {
-        toast.error(data.error || t('detail.cancelError'))
+        toast.error(apiError(data.error) || t('detail.cancelError'))
       }
     } catch (err) {
       console.error('Cancel booking error:', err)

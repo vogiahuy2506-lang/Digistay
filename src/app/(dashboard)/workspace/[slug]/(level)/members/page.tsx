@@ -11,6 +11,7 @@ import { Avatar } from '@/components/ui'
 import { useWorkspace } from '@/lib/hooks/use-workspace'
 import { routes } from '@/lib/utils/routes'
 import { useDashLabels } from '@/lib/i18n/dash'
+import { apiError } from '@/lib/i18n/api-errors'
 
 interface Member {
   id: string
@@ -110,7 +111,7 @@ export default function MembersPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || tc('states.error'))
+        setError(apiError(data.error) || tc('states.error'))
         return
       }
 

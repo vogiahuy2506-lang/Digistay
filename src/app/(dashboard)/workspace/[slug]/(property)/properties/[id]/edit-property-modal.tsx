@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Textarea } from '@/components/ui'
 import { EnglishCopy } from '@/components/ui/english-copy'
 import { toast } from '@/components/ui/toast'
+import { apiError } from '@/lib/i18n/api-errors'
 
 export interface EditableProperty {
   id: string
@@ -68,7 +69,7 @@ export function EditPropertyModal({
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok || !data.success) {
-        toast.error(data.error || t('detail.editModal.failed'))
+        toast.error(apiError(data.error) || t('detail.editModal.failed'))
         return
       }
       toast.success(t('detail.editModal.saved'))

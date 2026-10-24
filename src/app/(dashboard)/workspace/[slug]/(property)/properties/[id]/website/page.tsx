@@ -37,6 +37,7 @@ import {
   LayoutGrid, Hotel, ImageIcon, MapPin, Phone, MousePointer2, Zap, Sparkles,
   FileText, Clock, Undo2, Redo2, Copy, Wand2, ChevronDown, ChevronUp
 } from 'lucide-react'
+import { apiError } from '@/lib/i18n/api-errors'
 
 interface WebsiteSettings {
   id: string
@@ -1434,7 +1435,7 @@ export default function WebsiteBuilderPage() {
       const failed = [blocksRes, settingsRes].find((r) => r && !r.ok)
       if (failed) {
         const body = await failed.json().catch(() => null)
-        toast.error(body?.error || t('toast.saveFailed'))
+        toast.error(apiError(body?.error) || t('toast.saveFailed'))
         return false
       }
       if (next) setSettings(next)

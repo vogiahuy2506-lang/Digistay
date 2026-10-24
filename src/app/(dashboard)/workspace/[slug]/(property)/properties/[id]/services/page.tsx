@@ -13,6 +13,7 @@ import { useDashLabels } from '@/lib/i18n/dash'
 import {
   Plus, Trash2, Edit, Save, ConciergeBell, X, Search,
 } from 'lucide-react'
+import { apiError } from '@/lib/i18n/api-errors'
 
 interface Amenity {
   id: string
@@ -118,7 +119,7 @@ export default function ServicesPage() {
       })
       const data = await res.json()
       if (!data.success) {
-        toast.error(data.error || t('amenities.saveFailed'))
+        toast.error(apiError(data.error) || t('amenities.saveFailed'))
         return
       }
       toast.success(t('amenities.saved'))
@@ -136,7 +137,7 @@ export default function ServicesPage() {
       const res = await fetch(`/api/extra-services/${id}`, { method: 'DELETE' })
       const data = await res.json()
       if (!data.success) {
-        toast.error(data.error || t('list.deleteFailed'))
+        toast.error(apiError(data.error) || t('list.deleteFailed'))
         return
       }
       toast.success(t('list.deleted'))
@@ -174,7 +175,7 @@ export default function ServicesPage() {
       })
       const data = await res.json()
       if (!data.success) {
-        toast.error(data.error || t('modal.saveFailed'))
+        toast.error(apiError(data.error) || t('modal.saveFailed'))
         return
       }
       toast.success(editingService ? t('modal.updated') : t('modal.added'))

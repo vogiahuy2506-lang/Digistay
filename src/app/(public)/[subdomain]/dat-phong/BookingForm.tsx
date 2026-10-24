@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import { SiteLink, useSiteHref } from '../_components/site-base'
 import { Container } from '../_components/site-ui'
 import { StaySummary, type SummaryLine } from '../_components/booking/StaySummary'
+import { apiError } from '@/lib/i18n/api-errors'
 
 interface Service extends PricedService {
   description: string | null
@@ -181,7 +182,7 @@ export function BookingForm({
         setWait(Number(res.headers.get('Retry-After')) || 60)
       } else if (res.status === 409) setProblem('roomGone')
       else if (res.status === 400 && /ngày/i.test(data.error ?? '')) setProblem('badDates')
-      else setProblem(lang === 'vi' && data.error ? data.error : 'failed')
+      else setProblem(apiError(data.error) ?? 'failed')
       setSending(false)
     } catch {
       setProblem('failed')

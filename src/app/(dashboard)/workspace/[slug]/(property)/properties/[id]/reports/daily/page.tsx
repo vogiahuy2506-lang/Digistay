@@ -11,6 +11,7 @@ import {
   Wallet, DollarSign, CreditCard, Banknote, Calendar,
   Printer, Download, ArrowUpRight, ArrowDownRight
 } from 'lucide-react'
+import { apiError } from '@/lib/i18n/api-errors'
 
 interface DailyTransaction {
   id: string
@@ -87,7 +88,7 @@ export default function DailyReportPage() {
         setTransactions(json.data.transactions ?? [])
         setMethodBreakdown(json.data.methodBreakdown ?? [])
       } else {
-        toast.error(json.error || t('loadError'))
+        toast.error(apiError(json.error) || t('loadError'))
         setSummary(null)
         setTransactions([])
         setMethodBreakdown([])

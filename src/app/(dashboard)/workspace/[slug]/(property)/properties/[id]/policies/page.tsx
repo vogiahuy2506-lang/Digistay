@@ -9,6 +9,7 @@ import { toast } from '@/components/ui/toast'
 import { useTranslations } from 'next-intl'
 import { Save, ShieldCheck, Clock, Baby, Dog, Cigarette, FileText } from 'lucide-react'
 import { DEFAULT_LATE_TIERS, type LateTier } from '@/lib/bookings/late-checkout'
+import { apiError } from '@/lib/i18n/api-errors'
 
 interface Policy {
   id: string
@@ -74,8 +75,8 @@ export default function PoliciesPage() {
         const stored = (data.data as Policy).translations?.en
         setEn({ cancellationPolicy: stored?.cancellationPolicy ?? '', additionalRules: stored?.additionalRules ?? '' })
       } else {
-        toast.error(data.error || t('loadFailed'))
-        setError(data.error || t('loadFailed'))
+        toast.error(apiError(data.error) || t('loadFailed'))
+        setError(apiError(data.error) || t('loadFailed'))
       }
     } catch (err) {
       console.error('Fetch policy error:', err)
@@ -110,7 +111,7 @@ export default function PoliciesPage() {
       })
       const data = await res.json()
       if (!data.success) {
-        toast.error(data.error || t('saveFailed'))
+        toast.error(apiError(data.error) || t('saveFailed'))
         return
       }
       toast.success(t('saved'))

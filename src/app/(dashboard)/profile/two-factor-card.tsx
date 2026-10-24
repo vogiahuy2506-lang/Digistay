@@ -5,6 +5,7 @@ import { signOut } from 'next-auth/react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Copy, Download, KeyRound, ShieldCheck, Smartphone } from 'lucide-react'
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui'
+import { apiError } from '@/lib/i18n/api-errors'
 
 interface Status {
   enabled: boolean
@@ -26,7 +27,7 @@ async function post(path: string, body?: object) {
   })
   const data = await res.json().catch(() => ({}))
   // No message from the API: the card shows its own (dash.common.states.error).
-  if (!res.ok || !data.success) throw new Error(data.error || '')
+  if (!res.ok || !data.success) throw new Error(apiError(data.error) || '')
   return data
 }
 

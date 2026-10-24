@@ -15,6 +15,7 @@ import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { useDashLabels } from '@/lib/i18n/dash'
 import { EditPropertyModal } from './edit-property-modal'
+import { apiError } from '@/lib/i18n/api-errors'
 
 interface Property {
   id: string
@@ -335,7 +336,7 @@ export default function PropertyDetailPage() {
       })
       const data = await response.json().catch(() => ({}))
       if (!response.ok || !data.success) {
-        toast.error(data.error || tc('states.error'))
+        toast.error(apiError(data.error) || tc('states.error'))
         return
       }
       toast.success(tc('states.saved'))
@@ -356,7 +357,7 @@ export default function PropertyDetailPage() {
         body: JSON.stringify({ amenityIds: next.filter((a) => a.isSelected).map((a) => a.id) }),
       })
       const data = await response.json().catch(() => ({}))
-      if (!response.ok || !data.success) throw new Error(data.error || tc('states.error'))
+      if (!response.ok || !data.success) throw new Error(apiError(data.error) || tc('states.error'))
       fetchProperty()
     } catch (err) {
       // Put the switch back: the change was not saved.

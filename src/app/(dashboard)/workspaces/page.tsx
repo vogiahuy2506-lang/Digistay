@@ -30,6 +30,7 @@ import { cn, generateSlug } from '@/lib/utils'
 import { LanguageButton } from '@/components/layout/language-button'
 import { routes } from '@/lib/utils/routes'
 import { ArrowRight, Building2, LogOut, Moon, MoreVertical, Pencil, Plus, Search, Sun, Trash2, Users } from 'lucide-react'
+import { apiError } from '@/lib/i18n/api-errors'
 
 interface Workspace {
   id: string
@@ -202,7 +203,7 @@ export default function WorkspacesPage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        setFormError(data.error || t('form.failed'))
+        setFormError(apiError(data.error) || t('form.failed'))
         return
       }
       closeForm()
@@ -225,7 +226,7 @@ export default function WorkspacesPage() {
     const res = await fetch(`/api/workspaces/${ws.id}`, { method: 'DELETE' })
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
-      toast.error(data.error || t('form.failed'))
+      toast.error(apiError(data.error) || t('form.failed'))
       return
     }
     await fetchWorkspaces()
@@ -239,7 +240,7 @@ export default function WorkspacesPage() {
     })
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
-      toast.error(data.error || t('form.failed'))
+      toast.error(apiError(data.error) || t('form.failed'))
       return
     }
     toast.success(t(accept ? 'invitations.accept' : 'invitations.decline'))

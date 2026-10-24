@@ -8,6 +8,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { inkButton, lineButton } from '@/components/marketing/styles'
 import { cn } from '@/lib/utils'
 import { Notice, authTitle } from '@/app/(auth)/_components/ui'
+import { apiError } from '@/lib/i18n/api-errors'
 
 interface Invitation {
   email: string
@@ -68,7 +69,7 @@ export function InvitationView({ token }: { token: string }) {
       if (res.ok) return setState(what === 'accept' ? 'accepted' : 'declined')
       if (res.status === 400 && /hết hạn/.test(data.error ?? '')) return setState('expired')
       if (res.status === 400) return setState('used')
-      setError(locale === 'vi' && data.error ? data.error : tc('generic'))
+      setError(apiError(data.error) || tc('generic'))
     } catch {
       setError(tc('generic'))
     } finally {

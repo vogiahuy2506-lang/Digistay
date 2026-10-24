@@ -22,6 +22,7 @@ import { canManageBookings, useWorkspaceRole } from '@/components/layout/workspa
 import { CheckOutDialog } from './check-out-dialog'
 import { buildPrintHtml, nightsBetween, remainingAmount } from '@/lib/bookings/display'
 import { useDashLabels } from '@/lib/i18n/dash'
+import { apiError } from '@/lib/i18n/api-errors'
 
 /**
  * A booking's details and actions, shared by the side panel on the bookings
@@ -82,7 +83,7 @@ export function useBooking(bookingId: string | null) {
         const data = await res.json()
         if (signal?.aborted) return
         if (data.success) setBooking(data.data)
-        else setError(data.error || t('detail.loadError'))
+        else setError(apiError(data.error) || t('detail.loadError'))
       } catch (err) {
         if ((err as Error).name !== 'AbortError') setError(t('detail.loadError'))
       } finally {
@@ -295,7 +296,7 @@ function RoomNumber({ booking, onChanged, editable }: { booking: BookingDetailDa
         setEditing(false)
         onChanged()
       } else {
-        toast.error(t('assignFailed'), data.error)
+        toast.error(t('assignFailed'), apiError(data.error))
       }
     } catch {
       toast.error(t('assignFailed'))
@@ -394,9 +395,9 @@ export function BookingActions({
         setDialog(null)
         onChanged()
       } else if (dialog) {
-        setDialogError(data.error || t('actions.failed'))
+        setDialogError(apiError(data.error) || t('actions.failed'))
       } else {
-        toast.error(t('actions.failed'), data.error)
+        toast.error(t('actions.failed'), apiError(data.error))
       }
     } catch {
       toast.error(t('actions.noConnection'))
@@ -573,7 +574,7 @@ export function BookingActions({
             isLoading={busy === 'extend'}
             disabled={!extendDate}
             onClick={() =>
-              run('extend', 'extend', { newCheckOutDate: extendDate, addPayment: true, paymentMethod: 'CASH' }, (d) => d.message || t('extendDialog.done'))
+              run('extend', 'extend', { newCheckOutDate: extendDate, addPayment: true, paymentMethod: 'CASH' }, (d) => apiError(d.message) || t('extendDialog.done'))
             }
           >
             {t('actions.extend')}

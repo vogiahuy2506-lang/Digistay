@@ -36,6 +36,7 @@ import { bookingSources, nightsBetween } from '@/lib/bookings/display'
 import { useDashLabels } from '@/lib/i18n/dash'
 import { cn } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
+import { apiError } from '@/lib/i18n/api-errors'
 
 interface BookingRow {
   id: string
@@ -129,7 +130,7 @@ export default function BookingsPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.success) setList(data)
-        else setError(data.error || t('list.loadError'))
+        else setError(apiError(data.error) || t('list.loadError'))
       })
       .catch((err) => {
         if (err.name !== 'AbortError') setError(t('list.loadError'))

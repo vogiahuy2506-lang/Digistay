@@ -16,6 +16,7 @@ import {
 import { format } from 'date-fns'
 import { enGB, vi } from 'date-fns/locale'
 import { TwoFactorCard } from './two-factor-card'
+import { apiError } from '@/lib/i18n/api-errors'
 
 interface UserProfile {
   id: string
@@ -142,7 +143,7 @@ export default function ProfilePage() {
           // Update session
           await updateSession()
         } else {
-          setError(data.error || t('avatar.uploadFailed'))
+          setError(apiError(data.error) || t('avatar.uploadFailed'))
         }
         setIsUploadingAvatar(false)
       }
@@ -189,7 +190,7 @@ export default function ProfilePage() {
         // Update session
         await updateSession()
       } else {
-        setError(data.error || t('info.saveFailed'))
+        setError(apiError(data.error) || t('info.saveFailed'))
       }
     } catch (err) {
       console.error('Save profile error:', err)
@@ -241,7 +242,7 @@ export default function ProfilePage() {
           setTimeout(() => signOut({ callbackUrl: '/login' }), 1500)
         }
       } else {
-        setError(data.error || t('password.failed'))
+        setError(apiError(data.error) || t('password.failed'))
       }
     } catch (err) {
       console.error('Change password error:', err)
@@ -283,11 +284,11 @@ export default function ProfilePage() {
       const data = await res.json()
 
       if (data.success) {
-        setEmailChangeInfo(data.message)
+        setEmailChangeInfo(apiError(data.message) ?? '')
         setEmailForm({ newEmail: '', password: '' })
         setSuccess(t('email.sent'))
       } else {
-        setError(data.error || t('email.failed'))
+        setError(apiError(data.error) || t('email.failed'))
       }
     } catch (err) {
       console.error('Change email error:', err)

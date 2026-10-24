@@ -13,6 +13,7 @@ import { useDashLabels } from '@/lib/i18n/dash'
 import { EnglishCopy } from '@/components/ui/english-copy'
 import { getIcon } from '@/lib/amenity-icons'
 import { amenityName } from '@/lib/i18n/amenities'
+import { apiError } from '@/lib/i18n/api-errors'
 
 interface RoomType {
   id: string
@@ -206,7 +207,7 @@ export default function RoomTypesPage() {
         fetchMaintenanceLocks()
         alert(t('maintenance.created'))
       } else {
-        alert(data.error || t('maintenance.createFailed'))
+        alert(apiError(data.error) || t('maintenance.createFailed'))
       }
     } catch (err) {
       console.error('Failed to create maintenance lock:', err)
@@ -225,7 +226,7 @@ export default function RoomTypesPage() {
       if (data.success) {
         fetchMaintenanceLocks()
       } else {
-        alert(data.error || t('maintenance.deleteFailed'))
+        alert(apiError(data.error) || t('maintenance.deleteFailed'))
       }
     } catch (err) {
       console.error('Failed to delete maintenance lock:', err)
@@ -266,7 +267,7 @@ export default function RoomTypesPage() {
         resetForm()
         fetchRoomTypes()
       } else {
-        alert(data.error || t('create.failed'))
+        alert(apiError(data.error) || t('create.failed'))
       }
     } catch (err) {
       console.error('Failed to create room type:', err)
@@ -292,7 +293,7 @@ export default function RoomTypesPage() {
         resetForm()
         fetchRoomTypes()
       } else {
-        alert(data.error || t('edit.failed'))
+        alert(apiError(data.error) || t('edit.failed'))
       }
     } catch (err) {
       console.error('Failed to update room type:', err)
@@ -310,7 +311,7 @@ export default function RoomTypesPage() {
       if (data.success) {
         fetchRoomTypes()
       } else {
-        alert(data.error || t('delete.failed'))
+        alert(apiError(data.error) || t('delete.failed'))
       }
     } catch (err) {
       console.error('Failed to delete room type:', err)

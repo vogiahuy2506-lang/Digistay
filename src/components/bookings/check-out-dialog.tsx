@@ -4,6 +4,7 @@ import * as React from 'react'
 import { useTranslations } from 'next-intl'
 import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Textarea } from '@/components/ui'
 import { useDashLabels } from '@/lib/i18n/dash'
+import { apiError } from '@/lib/i18n/api-errors'
 
 interface Preview {
   hoursLate: number
@@ -57,7 +58,7 @@ export function CheckOutDialog({
       .then((d) => {
         if (!alive) return
         if (d.success) setPreview(d.data)
-        else setError(d.error || t('checkOut.previewError'))
+        else setError(apiError(d.error) || t('checkOut.previewError'))
       })
       .catch(() => alive && setError(t('actions.noConnection')))
     return () => {
@@ -96,8 +97,8 @@ export function CheckOutDialog({
         ),
       })
       const data = await res.json()
-      if (data.success) onDone(data.message || t('checkOut.done'))
-      else setError(data.error || t('actions.failed'))
+      if (data.success) onDone(apiError(data.message) || t('checkOut.done'))
+      else setError(apiError(data.error) || t('actions.failed'))
     } catch {
       setError(t('actions.noConnection'))
     } finally {

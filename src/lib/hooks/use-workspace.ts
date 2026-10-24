@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
+import { apiError } from '@/lib/i18n/api-errors'
 
 export interface WorkspaceContext {
   id: string
@@ -51,7 +52,7 @@ export function useWorkspace(): {
             setError('Workspace không tồn tại hoặc bạn không có quyền truy cập')
           }
         } else {
-          setError(data?.error || 'Không thể tải workspace')
+          setError(apiError(data?.error) || apiError('Không thể tải workspace') || 'Không thể tải workspace')
         }
       })
       .catch((e) => {

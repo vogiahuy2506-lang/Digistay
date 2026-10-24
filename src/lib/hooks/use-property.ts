@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
+import { apiError } from '@/lib/i18n/api-errors'
 
 export interface PropertyContext {
   id: string
@@ -55,7 +56,7 @@ export function useProperty(): {
             coverImage: p.coverImage ?? null,
           })
         } else {
-          setError(data?.error || 'Cơ sở không tồn tại')
+          setError(apiError(data?.error) || apiError('Cơ sở không tồn tại') || 'Cơ sở không tồn tại')
         }
       })
       .catch((e) => {

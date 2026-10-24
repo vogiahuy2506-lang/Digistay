@@ -14,6 +14,7 @@ import {
   Building, Plus, Trash2, Edit, QrCode, Copy,
   AlertCircle, Download
 } from 'lucide-react'
+import { apiError } from '@/lib/i18n/api-errors'
 
 interface BankAccount {
   id: string
@@ -77,7 +78,7 @@ export default function BankAccountsPage() {
       if (data.success) {
         setAccounts(data.data)
       } else {
-        toast.error(data.error || t('toast.loadFailed'))
+        toast.error(apiError(data.error) || t('toast.loadFailed'))
         setAccounts([])
       }
     } catch (err) {
@@ -117,7 +118,7 @@ export default function BankAccountsPage() {
       const data = await response.json()
 
       if (!data.success) {
-        toast.error(data.error || t('toast.saveFailed'))
+        toast.error(apiError(data.error) || t('toast.saveFailed'))
         return
       }
 
@@ -141,7 +142,7 @@ export default function BankAccountsPage() {
       })
       const data = await response.json()
       if (!data.success) {
-        toast.error(data.error || t('toast.deleteFailed'))
+        toast.error(apiError(data.error) || t('toast.deleteFailed'))
         return
       }
       toast.success(t('toast.deleted'))

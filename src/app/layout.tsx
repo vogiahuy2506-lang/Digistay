@@ -11,6 +11,7 @@ import { headers } from 'next/headers'
 import { getLocale, getMessages } from 'next-intl/server'
 import { SITE_LOCALE_HEADER } from '@/i18n/locales'
 import Providers from '@/components/providers'
+import { ApiErrorsProvider } from '@/components/i18n/api-errors-provider'
 
 export const metadata: Metadata = {
   title: 'DigiStay - Nền Tảng No-Code Xây Dựng Kênh Bán Phòng Độc Quyền',
@@ -35,6 +36,8 @@ export default async function RootLayout({
   // A hotel's website (the middleware marks it) only needs its own messages; Digistay's
   // pages and the dashboard get theirs too. Guests on phones download the site's alone.
   const hotelSite = (await headers()).has(SITE_LOCALE_HEADER)
+  // The API's messages in English (src/lib/i18n/api-errors.ts), for English pages only.
+  const apiErrors = locale === 'en' ? (await import('@/lib/i18n/api-errors.en.json')).default : undefined
   return (
     <html lang={locale}>
       <head>
@@ -61,7 +64,9 @@ export default async function RootLayout({
                 }
           }
         >
-          <Providers>{children}</Providers>
+          <ApiErrorsProvider dictionary={apiErrors}>
+            <Providers>{children}</Providers>
+          </ApiErrorsProvider>
         </NextIntlClientProvider>
       </body>
     </html>

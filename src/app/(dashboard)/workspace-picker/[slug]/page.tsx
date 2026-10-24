@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 import { Dropdown, DropdownItem, DropdownDivider } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
+import { apiError } from '@/lib/i18n/api-errors'
 
 interface Property {
   id: string
@@ -125,7 +126,7 @@ export default function WorkspaceHomePage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        setCreateError(data.error || t('errors.generic'))
+        setCreateError(apiError(data.error) || t('errors.generic'))
         return
       }
       setIsCreateOpen(false)

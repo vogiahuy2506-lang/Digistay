@@ -20,6 +20,7 @@ import {
   validateInvoiceForm,
   type InvoiceFormValue,
 } from './invoice-form'
+import { apiError } from '@/lib/i18n/api-errors'
 
 interface Invoice {
   id: string
@@ -334,7 +335,7 @@ export default function InvoicesPage() {
           }
         }, 1500)
       } else {
-        setFormError(data.error || t('errors.generic'))
+        setFormError(apiError(data.error) || t('errors.generic'))
       }
     } catch (err) {
       setFormError(t('errors.retry'))
@@ -374,7 +375,7 @@ export default function InvoicesPage() {
           }
         }, 1500)
       } else {
-        setFormError(data.error || t('errors.generic'))
+        setFormError(apiError(data.error) || t('errors.generic'))
       }
     } catch (err) {
       setFormError(t('errors.retry'))
@@ -402,7 +403,7 @@ export default function InvoicesPage() {
         }
         setSelectedInvoice(null)
       } else {
-        alert(data.error || t('errors.generic'))
+        alert(apiError(data.error) || t('errors.generic'))
       }
     } catch (err) {
       alert(t('errors.generic'))
@@ -423,7 +424,7 @@ export default function InvoicesPage() {
       if (data.success) {
         setSelectedInvoice((current) => (current && current.id === invoiceId ? { ...current, ...data.data } : current))
       } else {
-        alert(data.error || t('errors.generic'))
+        alert(apiError(data.error) || t('errors.generic'))
       }
     } catch (err) {
       alert(t('errors.generic'))
@@ -448,7 +449,7 @@ export default function InvoicesPage() {
     const res = await fetch(`/api/invoices/${invoice.id}/replace`, { method: 'POST' })
     const data = await res.json().catch(() => ({}))
     if (!data.success) {
-      alert(data.error || t('errors.generic'))
+      alert(apiError(data.error) || t('errors.generic'))
       return
     }
     setSelectedInvoice(null)
@@ -478,7 +479,7 @@ export default function InvoicesPage() {
       })
       const data = await res.json().catch(() => ({}))
       if (!data.success) {
-        setAdjustError(data.error || t('errors.generic'))
+        setAdjustError(apiError(data.error) || t('errors.generic'))
         return
       }
       setAdjusting(null)
@@ -498,7 +499,7 @@ export default function InvoicesPage() {
     try {
       const res = await fetch(`/api/invoices/${invoice.id}/email`, { method: 'POST' })
       const data = await res.json().catch(() => ({}))
-      if (!data.success) alert(data.error || t('errors.emailFailed'))
+      if (!data.success) alert(apiError(data.error) || t('errors.emailFailed'))
       if (data.data) setSelectedInvoice((current) => (current && current.id === invoice.id ? { ...current, ...data.data } : current))
     } catch (err) {
       alert(t('errors.generic'))
@@ -522,7 +523,7 @@ export default function InvoicesPage() {
           fetchInvoices(selectedProperty)
         }
       } else {
-        alert(data.error || t('errors.generic'))
+        alert(apiError(data.error) || t('errors.generic'))
       }
     } catch (err) {
       alert(t('errors.generic'))

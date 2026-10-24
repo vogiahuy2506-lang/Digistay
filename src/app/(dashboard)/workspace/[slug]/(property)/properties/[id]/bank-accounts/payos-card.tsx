@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { CheckCircle2, Copy, Zap } from 'lucide-react'
 import { Badge, Button, Card, CardContent, Input } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
+import { apiError } from '@/lib/i18n/api-errors'
 
 interface PayosStatus {
   connected: boolean
@@ -51,7 +52,7 @@ export function PayosCard({ propertyId }: { propertyId: string }) {
       })
       const data = await res.json().catch(() => ({}))
       if (!data.success) {
-        setError(data.error || t('connectFailed'))
+        setError(apiError(data.error) || t('connectFailed'))
         return
       }
       setStatus(data.data)
@@ -73,7 +74,7 @@ export function PayosCard({ propertyId }: { propertyId: string }) {
         toast.success(t('disconnectedToast'))
         await load()
       } else {
-        toast.error(data.error || t('disconnectFailed'))
+        toast.error(apiError(data.error) || t('disconnectFailed'))
       }
     } finally {
       setBusy(false)

@@ -9,6 +9,7 @@ import { useWorkspace } from '@/lib/hooks/use-workspace'
 import { cn } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
 import { ArrowRight, Building2, Search, SlidersHorizontal } from 'lucide-react'
+import { apiError } from '@/lib/i18n/api-errors'
 
 interface Property {
   id: string
@@ -50,7 +51,7 @@ export default function WorkspaceDashboardPage() {
         if (data.success) {
           setProperties(data.data ?? [])
         } else {
-          setError(data.error || t('failed'))
+          setError(apiError(data.error) || t('failed'))
         }
       })
       .catch(() => {

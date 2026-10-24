@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { AUTH_ERROR_KEYS } from '@/lib/auth/error-messages'
+import { apiError } from '@/lib/i18n/api-errors'
 import { cn } from '@/lib/utils'
 
 /**
@@ -199,7 +200,8 @@ export const mmss = (sec: number) => `${String(Math.floor(sec / 60)).padStart(2,
 
 /**
  * A server error message (Vietnamese) in the page's language: known ones by
- * AUTH_ERROR_KEYS; an unknown one as is in Vietnamese, the generic text in English.
+ * AUTH_ERROR_KEYS; others through the API dictionary (apiError), else as is in
+ * Vietnamese and the generic text in English.
  */
 export function useAuthError() {
   const t = useTranslations('auth')
@@ -208,7 +210,7 @@ export function useAuthError() {
     (message?: string | null) => {
       const key = message ? AUTH_ERROR_KEYS[message] : undefined
       if (key) return t(key)
-      return locale === 'vi' && message ? message : t('common.generic')
+      return apiError(message) || t('common.generic')
     },
     [t, locale],
   )

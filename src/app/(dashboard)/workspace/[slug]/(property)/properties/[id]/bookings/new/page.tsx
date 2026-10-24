@@ -15,6 +15,7 @@ import { useTranslations } from 'next-intl'
 import { quoteStay, type Rates } from '@/lib/pricing/quote'
 import { routes } from '@/lib/utils/routes'
 import { useDashLabels } from '@/lib/i18n/dash'
+import { apiError } from '@/lib/i18n/api-errors'
 
 interface RoomType {
   id: string
@@ -169,7 +170,7 @@ export default function WalkinBookingPage() {
       if (data.success) {
         setRoomTypes(data.data.filter((rt: RoomType) => rt.isAvailable))
       } else {
-        setError(data.error || t('search.searchError'))
+        setError(apiError(data.error) || t('search.searchError'))
       }
     } catch (err) {
       console.error('Failed to search availability:', err)
@@ -255,7 +256,7 @@ export default function WalkinBookingPage() {
       const data = await res.json()
       
       if (!data.success) {
-        throw new Error(data.error || t('summary.bookingFailed'))
+        throw new Error(apiError(data.error) || t('summary.bookingFailed'))
       }
 
       const booking = data.data

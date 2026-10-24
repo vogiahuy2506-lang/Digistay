@@ -13,6 +13,7 @@ import { vi } from 'date-fns/locale'
 import QRCode from 'qrcode'
 import { useTranslations } from 'next-intl'
 import { useDashLabels } from '@/lib/i18n/dash'
+import { apiError } from '@/lib/i18n/api-errors'
 
 interface Payment {
   id: string
@@ -243,7 +244,7 @@ export default function PaymentsPage() {
       const res = await fetch(`/api/payments/${paymentId}/${action}`, { method: 'POST' })
       const data = await res.json()
       if (!data.success) {
-        alert(data.error || t('errors.generic'))
+        alert(apiError(data.error) || t('errors.generic'))
         return
       }
       if (action === 'sync' && data.data.status === 'PENDING') alert(t('payosNotPaid'))
@@ -331,7 +332,7 @@ export default function PaymentsPage() {
           }
         }, 1500)
       } else {
-        setCreateError(data.error || t('errors.generic'))
+        setCreateError(apiError(data.error) || t('errors.generic'))
       }
     } catch (err) {
       setCreateError(t('errors.retry'))
@@ -368,7 +369,7 @@ export default function PaymentsPage() {
         }
         setSelectedPayment(null)
       } else {
-        alert(data.error || t('errors.generic'))
+        alert(apiError(data.error) || t('errors.generic'))
       }
     } catch (err) {
       alert(t('errors.generic'))

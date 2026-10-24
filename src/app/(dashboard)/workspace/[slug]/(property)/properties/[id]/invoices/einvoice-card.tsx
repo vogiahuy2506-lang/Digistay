@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { CheckCircle2, Copy, FileCheck2 } from 'lucide-react'
 import { Badge, Button, Card, CardContent, Input, Select } from '@/components/ui'
 import { VAT_CODES, VAT_LABELS, type VatCode } from '@/lib/einvoice/vat'
+import { apiError } from '@/lib/i18n/api-errors'
 
 export interface EinvoiceStatus {
   connected: boolean
@@ -97,7 +98,7 @@ export function EinvoiceCard({
       })
       const data = await res.json().catch(() => ({}))
       if (!data.success) {
-        setError(data.error || t('errors.connect'))
+        setError(apiError(data.error) || t('errors.connect'))
         return
       }
       setStatus(data.data)
@@ -128,7 +129,7 @@ export function EinvoiceCard({
     })
     const data = await res.json().catch(() => ({}))
     if (!data.success) {
-      setError(data.error || t('errors.save'))
+      setError(apiError(data.error) || t('errors.save'))
       return
     }
     setStatus(data.data)

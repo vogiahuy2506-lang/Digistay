@@ -8,6 +8,7 @@ import { Building2, ArrowLeft } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useWorkspace } from '@/lib/hooks/use-workspace'
 import { routes } from '@/lib/utils/routes'
+import { apiError } from '@/lib/i18n/api-errors'
 
 const PROPERTY_TYPES = ['HOTEL', 'HOMESTAY', 'RESORT', 'RESTAURANT', 'VILLA', 'MOTEL', 'OTHER'] as const
 
@@ -62,7 +63,7 @@ export default function NewPropertyPage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error || t('form.error'))
+        setError(apiError(data.error) || t('form.error'))
         return
       }
       resetForm()
