@@ -10,12 +10,16 @@
  *   type, so two requests for the last room cannot both succeed. A guest's
  *   own hold is not counted against them, and is released by the booking.
  * - The confirmation and the owner's notice are queued in the same
- *   transaction (src/lib/email/outbox.ts).
+ *   transaction (src/lib/email/outbox.ts). The guest's is in the booking's
+ *   language and links to the site's pages in it; the owner's is Vietnamese.
  * - Never creates a payment: a guest cannot record money (Part 1).
  */
 import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
+import type { Locale } from '@/i18n/locales'
+import { emailLocale } from '@/lib/email/i18n'
 import { queueBookingConfirmation, queueOwnerNewBooking } from '@/lib/email/outbox'
+import { appSiteUrl } from '@/lib/public-site/paths'
 import { depositFor, quoteStay, ratesFrom, type PricedService } from '@/lib/pricing/quote'
 import { depositUrl } from '@/lib/payments/deposit-link'
 import { NO_PRICE_MESSAGE, ROOM_RATE_INCLUDE, propertyRateDefaults } from '@/lib/pricing/rates'
@@ -53,6 +57,8 @@ export interface NewBooking {
   holdId?: string | null
   /** The hotel's online deposit (guest-deposit.ts): the email carries the link to pay it. */
   deposit?: { percent: number; deadlineMinutes: number } | null
+  /** The language of the page the guest booked on: their emails follow it. Staff bookings: 'vi'. */
+  locale?: Locale
 }
 
 /** The room type, its rates and the chosen services, or a BookingError. */
@@ -109,11 +115,12 @@ type BookingForEmails = Prisma.BookingGetPayload<{ include: typeof BOOKING_EMAIL
 async function queueBookingEmails(tx: Tx, booking: BookingForEmails, deposit?: NewBooking['deposit']) {
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
   const prop = booking.property
+  const locale = emailLocale(booking.locale)
   // The link to pay the deposit later; without it the email still goes (never fail a booking over it).
   let payUrl: string | null = null
   if (deposit) {
     try {
-      payUrl = depositUrl(prop.subdomain, booking.id)
+      payUrl = depositUrl(prop.subdomain, booking.id, locale)
     } catch (error) {
       console.error('[booking] no deposit link for the email:', error)
     }
@@ -137,7 +144,7 @@ async function queueBookingEmails(tx: Tx, booking: BookingForEmails, deposit?: N
         numAdults: booking.numAdults,
         numChildren: booking.numChildren,
         totalAmount: booking.totalAmount,
-        propertyUrl: `${site}/${prop.subdomain}`,
+        propertyUrl: appSiteUrl(site, prop.subdomain, locale),
         checkInTime: prop.policy?.checkInTime,
         checkOutTime: prop.policy?.checkOutTime,
         awaitingConfirmation: fromWebsite,
@@ -146,17 +153,10 @@ async function queueBookingEmails(tx: Tx, booking: BookingForEmails, deposit?: N
           deposit: {
             amount: depositFor(booking.totalAmount, deposit.percent),
             url: payUrl,
-            ...(deposit.deadlineMinutes > 0 && {
-              deadline: new Date(Date.now() + deposit.deadlineMinutes * 60_000).toLocaleString('vi-VN', {
-                timeZone: 'Asia/Ho_Chi_Minh',
-                hour: '2-digit',
-                minute: '2-digit',
-                day: '2-digit',
-                month: '2-digit',
-              }),
-            }),
+            ...(deposit.deadlineMinutes > 0 && { deadline: new Date(Date.now() + deposit.deadlineMinutes * 60_000) }),
           },
         }),
+        locale,
       },
       booking.id,
       tx
@@ -229,6 +229,7 @@ export async function createBooking(input: NewBooking) {
         depositAmount: 0,
         source: 'DIRECT',
         createdById: input.createdById ?? null,
+        locale: input.locale ?? 'vi',
         vatCompany: input.vat?.company || null,
         vatTaxCode: input.vat?.taxCode || null,
         vatAddress: input.vat?.address || null,

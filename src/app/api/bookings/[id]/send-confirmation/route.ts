@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { emailLocale } from '@/lib/email/i18n'
+import { appSiteUrl } from '@/lib/public-site/paths'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -57,9 +59,10 @@ export async function POST(request: NextRequest, props: RouteParams) {
       return NextResponse.json({ success: false, error: 'Không có quyền gửi email' }, { status: 403 })
     }
 
-    // Get site URL
+    // Get site URL. A guest's email: in their booking's language, linking to the site's pages in it.
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
-    const propertyUrl = `${siteUrl}/${booking.property.subdomain}`
+    const locale = emailLocale(booking.locale)
+    const propertyUrl = appSiteUrl(siteUrl, booking.property.subdomain, locale)
 
     // Send confirmation email
     const { sendBookingConfirmation } = await import('@/lib/email')
@@ -77,6 +80,7 @@ export async function POST(request: NextRequest, props: RouteParams) {
       numChildren: booking.numChildren,
       totalAmount: booking.totalAmount,
       propertyUrl,
+      locale,
     })
 
     // sent, not success: without SMTP the stub "succeeds" without sending.

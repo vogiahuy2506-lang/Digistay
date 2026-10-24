@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { BookingError, createBooking } from '@/lib/bookings/create-booking'
+import { emailLocale } from '@/lib/email/i18n'
 import { sendAfterResponse } from '@/lib/email/outbox'
 import { depositToken, depositUrl } from '@/lib/payments/deposit-link'
 import { onlineDepositOf, startGuestDeposit, type OnlineDeposit } from '@/lib/payments/guest-deposit'
@@ -31,6 +32,8 @@ const guestBookingSchema = z.object({
   vatTaxCode: z.string().trim().max(20).optional(),
   vatAddress: z.string().trim().max(300).optional(),
   vatEmail: z.string().trim().email('Email nhận hoá đơn không hợp lệ').max(200).optional().or(z.literal('')),
+  /** The page's language: the guest's emails follow it. Anything but 'vi' | 'en' is Vietnamese, never an error. */
+  locale: z.unknown().optional().transform(emailLocale),
 })
 
 /** The signed link token (deposit-link.ts), or null when NEXTAUTH_SECRET is missing. */
@@ -132,6 +135,7 @@ export async function POST(request: NextRequest) {
       deposit: depositPolicy,
       vat: { company: data.vatCompany, taxCode: data.vatTaxCode, address: data.vatAddress, email: data.vatEmail || null },
       createdById: null,
+      locale: data.locale,
     })
     sendAfterResponse(emailIds)
     await prisma.activityLog.create({

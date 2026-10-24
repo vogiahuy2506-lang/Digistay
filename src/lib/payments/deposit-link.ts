@@ -10,6 +10,8 @@
  * nothing about the guest.
  */
 import { createHmac, hkdfSync, timingSafeEqual } from 'crypto'
+import type { Locale } from '@/i18n/locales'
+import { appSiteUrl } from '@/lib/public-site/paths'
 
 const SIGNATURE_BYTES = 16
 
@@ -37,7 +39,7 @@ export function readDepositToken(token: unknown): string | null {
   return given.length === expected.length && timingSafeEqual(given, expected) ? bookingId : null
 }
 
-/** The full link, on the app's host (works whatever domain the hotel's site uses). */
-export function depositUrl(subdomain: string, bookingId: string): string {
-  return `${process.env.NEXTAUTH_URL}/${subdomain}/dat-coc/${depositToken(bookingId)}`
+/** The full link, on the app's host (works whatever domain the hotel's site uses), in the booking's language. */
+export function depositUrl(subdomain: string, bookingId: string, locale: Locale = 'vi'): string {
+  return appSiteUrl(process.env.NEXTAUTH_URL, subdomain, locale, `/dat-coc/${depositToken(bookingId)}`)
 }

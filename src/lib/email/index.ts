@@ -21,6 +21,7 @@ import {
   type OtpEmailTemplateProps,
   type BookingConfirmationTemplateProps,
 } from './templates'
+import type { EmailLocale } from './i18n'
 
 export interface EmailRecipient {
   email: string
@@ -219,7 +220,7 @@ export async function sendOtpEmail(data: OtpEmailData): Promise<SendResult> {
 // ============================================
 //  Welcome (after email verified)
 // ============================================
-export function sendWelcomeEmail(props: { recipientEmail: string; recipientName?: string; loginUrl?: string }): Promise<SendResult> {
+export function sendWelcomeEmail(props: { recipientEmail: string; recipientName?: string; loginUrl?: string; locale?: EmailLocale }): Promise<SendResult> {
   const { html, text, subject } = welcomeEmailTemplate(props)
   return send({ email: props.recipientEmail, name: props.recipientName }, subject, text, html)
 }
@@ -227,7 +228,7 @@ export function sendWelcomeEmail(props: { recipientEmail: string; recipientName?
 // ============================================
 //  Password changed notification
 // ============================================
-export function sendPasswordChangedEmail(props: { recipientEmail: string; recipientName?: string; supportUrl?: string }): Promise<SendResult> {
+export function sendPasswordChangedEmail(props: { recipientEmail: string; recipientName?: string; supportUrl?: string; locale?: EmailLocale }): Promise<SendResult> {
   const { html, text, subject } = passwordChangedTemplate(props)
   return send({ email: props.recipientEmail, name: props.recipientName }, subject, text, html)
 }
@@ -235,7 +236,7 @@ export function sendPasswordChangedEmail(props: { recipientEmail: string; recipi
 // ============================================
 //  Email change verification link
 // ============================================
-export function sendEmailChangeEmail(props: { recipientEmail: string; recipientName?: string; newEmail: string; changeUrl: string; expiresInHours?: number }): Promise<SendResult> {
+export function sendEmailChangeEmail(props: { recipientEmail: string; recipientName?: string; newEmail: string; changeUrl: string; expiresInHours?: number; locale?: EmailLocale }): Promise<SendResult> {
   const { html, text, subject } = emailChangeTemplate(props)
   return send({ email: props.recipientEmail, name: props.recipientName }, subject, text, html)
 }
@@ -254,8 +255,10 @@ export interface InvoiceEmailData {
   propertyName: string
   totalAmount: number
   taxAmount: number
-  /** e.g. "Điều chỉnh giảm cho hoá đơn số 12" */
+  /** e.g. "Điều chỉnh giảm cho hoá đơn số 12" (invoiceAmendsNote) */
   note?: string
+  /** The booking's language (Booking.locale). */
+  locale?: EmailLocale
   pdf: { filename: string; content: Buffer }
 }
 

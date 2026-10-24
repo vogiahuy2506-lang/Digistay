@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { redis } from '@/lib/db/redis'
 import { sendEmailChangeEmail } from '@/lib/email'
+import { requestLocale } from '@/lib/i18n/request-locale'
 import { randomBytes } from 'crypto'
 import { LIMITS } from '@/lib/security/limits'
 import { hit, isBlocked, recordFailure, tooManyRequests } from '@/lib/security/rate-limit'
@@ -129,6 +130,7 @@ export async function POST(request: NextRequest) {
       newEmail: normalizedEmail,
       changeUrl,
       expiresInHours: 24,
+      locale: requestLocale(request),
     })
 
     return NextResponse.json({
