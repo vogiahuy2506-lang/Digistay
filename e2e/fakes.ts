@@ -9,11 +9,16 @@
  *   GET  /matbao/calls           → the create-invoice payloads received
  *   GET  /mail                   → the emails received (raw MIME)
  *   GET  /v2/business/<taxCode>  → the tax register lookup (TAX_LOOKUP_BASE_URL)
+ *
+ * The fake SePay (its own port) charges a card as soon as the checkout form
+ * arrives, sends the IPN to the e2e hotel's URL and sends the browser back.
  */
 import http from 'http'
+import { readFileSync } from 'fs'
 import net from 'net'
 import { FakePayos } from '../src/test/integration/fake-payos'
 import { FakeMatbao } from '../src/test/integration/fake-matbao'
+import { FakeSepay } from '../src/test/integration/fake-sepay'
 import { E2E } from './env'
 
 const payos = new FakePayos()
@@ -30,6 +35,12 @@ matbao.addAccount({
   ...E2E.matbaoAccount,
   templates: [{ khmshDon: '1', khhDon: E2E.matbaoSeries, cLai: 100 }],
 })
+
+const sepay = new FakeSepay()
+sepay.addAccount(E2E.sepayAccount)
+sepay.autoPay = true
+// The hotel's IPN URL holds its id, known once the global setup has run.
+sepay.ipnUrlFor = () => `${E2E.baseURL}/api/webhooks/sepay/${JSON.parse(readFileSync(E2E.idsFile, 'utf8')).prop}`
 
 // SMTP sink: accepts any login (AUTH PLAIN), no STARTTLS.
 const mails: { to: string; raw: string }[] = []
@@ -104,7 +115,8 @@ const control = http.createServer(async (req, res) => {
 ;(async () => {
   await payos.start(E2E.ports.payos)
   await matbao.start(E2E.ports.matbao)
+  await sepay.start(E2E.ports.sepay)
   await new Promise<void>((resolve) => smtp.listen(E2E.ports.smtp, '127.0.0.1', resolve))
   await new Promise<void>((resolve) => control.listen(E2E.ports.control, '127.0.0.1', resolve))
-  console.log(`[e2e fakes] PayOS ${payos.url}, Mắt Bão ${matbao.url}, SMTP :${E2E.ports.smtp}, control :${E2E.ports.control}`)
+  console.log(`[e2e fakes] PayOS ${payos.url}, Mắt Bão ${matbao.url}, SePay ${sepay.url}, SMTP :${E2E.ports.smtp}, control :${E2E.ports.control}`)
 })()

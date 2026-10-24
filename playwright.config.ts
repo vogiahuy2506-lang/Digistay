@@ -18,6 +18,8 @@ const appEnv = {
   PAYOS_BASE_URL: `http://127.0.0.1:${E2E.ports.payos}`,
   MATBAO_BASE_URL: `http://127.0.0.1:${E2E.ports.matbao}`,
   TAX_LOOKUP_BASE_URL: E2E.control,
+  SEPAY_API_BASE_URL: `http://127.0.0.1:${E2E.ports.sepay}`,
+  SEPAY_CHECKOUT_BASE_URL: `http://127.0.0.1:${E2E.ports.sepay}`,
   EMAIL_SERVER_HOST: '127.0.0.1',
   EMAIL_SERVER_PORT: String(E2E.ports.smtp),
   EMAIL_SERVER_USER: 'e2e',

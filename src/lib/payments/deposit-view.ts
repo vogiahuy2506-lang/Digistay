@@ -50,6 +50,8 @@ export interface DepositView {
   } | null
   /** where the transfer goes, read from the QR and the hotel's PayOS connection */
   transfer: { accountNumber: string | null; accountName: string | null; note: string } | null
+  /** the hotel also takes cards, through its SePay account (sepay.ts) */
+  card: boolean
   property: { name: string; phone: string | null; address: string | null; checkInTime: string; checkOutTime: string; cancellationHours: number | null }
 }
 
@@ -100,6 +102,7 @@ export async function loadDepositView(subdomain: string | null, token: string, n
           address: true,
           policy: { select: { checkInTime: true, checkOutTime: true, cancellationHours: true } },
           payos: { select: { accountName: true, accountNumber: true } },
+          sepay: { select: { verifiedAt: true } },
         },
       },
       bookingItems: { take: 1, select: { roomTypeId: true, basePrice: true, extraAdultPrice: true, extraChildPrice: true } },
@@ -180,6 +183,7 @@ export async function loadDepositView(subdomain: string | null, token: string, n
           note: payosDescription(booking.bookingCode),
         }
       : null,
+    card: Boolean(booking.property.sepay?.verifiedAt),
     property: {
       name: booking.property.name,
       phone: booking.property.phone,

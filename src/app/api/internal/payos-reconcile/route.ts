@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { reconcilePendingPayos } from '@/lib/payments/payos-reconcile'
+import { reconcilePendingSepay } from '@/lib/payments/sepay'
 import { expireUnpaidDeposits } from '@/lib/payments/guest-deposit'
 import { checkCronSecret } from '@/lib/security/cron-secret'
 import { recordJobRun } from '@/lib/ops/job-runs'
@@ -14,10 +15,12 @@ export async function POST(request: NextRequest) {
   const refused = checkCronSecret(request)
   if (refused) return refused
 
-  // Then guest deposits past the hotel's deadline (guest-deposit.ts), after
-  // reconcile has applied any payment PayOS knows about.
+  // SePay card payments whose IPN never came (sepay.ts), then guest
+  // deposits past the hotel's deadline (guest-deposit.ts), after reconcile
+  // has applied any payment PayOS or SePay knows about.
   const summary = await recordJobRun('payos-reconcile', async () => ({
     ...(await reconcilePendingPayos()),
+    sepay: await reconcilePendingSepay(),
     deposits: await expireUnpaidDeposits(),
   }))
   console.log(`[payos] reconcile ${JSON.stringify(summary)}`)

@@ -425,6 +425,36 @@
     "disconnectFailed": "Could not disconnect",
     "confirmDisconnect": "Disconnect PayOS? Links already sent to guests will no longer confirm themselves."
   },
+  "sepay": {
+    "title": "Card payments (SePay)",
+    "connected": "Connected",
+    "notConnected": "Not connected",
+    "sandbox": "Sandbox (test)",
+    "intro": "Guests pay their deposit by Visa, Mastercard or JCB through the hotel's SePay gateway. The money goes to the hotel's SePay account; payments confirm themselves.",
+    "merchant": "Merchant ID {hint} · {environment}",
+    "environment": "Environment",
+    "environments": {
+      "sandbox": "Sandbox (testing, no real charges)",
+      "production": "Production (real payments)"
+    },
+    "changeKeys": "Change keys",
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "step1": "Sign up for the <strong>Payment Gateway</strong> at my.sepay.vn and send SePay the documents to turn on card payments (Visa/Mastercard/JCB).",
+    "step2": "In the integration details, copy the Merchant ID and Secret key of the environment you will use.",
+    "step3": "Set the IPN URL below in SePay, with the <strong>SECRET_KEY</strong> auth type.",
+    "step4": "Paste the keys here. They are checked with SePay before they are saved.",
+    "ipnUrl": "IPN URL:",
+    "copyAddress": "Copy the address",
+    "copied": "Copied",
+    "cancel": "Cancel",
+    "save": "Save and connect",
+    "connectFailed": "Could not connect SePay",
+    "connectedToast": "SePay connected",
+    "disconnectedToast": "SePay disconnected",
+    "disconnectFailed": "Could not disconnect",
+    "confirmDisconnect": "Disconnect SePay? Guests will no longer be able to pay by card, and card payments in progress will no longer confirm themselves."
+  },
   "qr": {
     "scanToPay": "Scan the QR code to pay",
     "generating": "Generating the QR code...",

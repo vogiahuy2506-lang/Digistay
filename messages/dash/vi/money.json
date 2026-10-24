@@ -425,6 +425,36 @@
     "disconnectFailed": "Không ngắt kết nối được",
     "confirmDisconnect": "Ngắt kết nối PayOS? Các link đã gửi cho khách sẽ không còn tự xác nhận nữa."
   },
+  "sepay": {
+    "title": "Thanh toán thẻ (SePay)",
+    "connected": "Đã kết nối",
+    "notConnected": "Chưa kết nối",
+    "sandbox": "Sandbox (thử)",
+    "intro": "Khách đặt cọc bằng thẻ Visa, Mastercard, JCB qua cổng SePay của khách sạn. Tiền về tài khoản SePay của khách sạn; thanh toán tự xác nhận.",
+    "merchant": "Merchant ID {hint} · {environment}",
+    "environment": "Môi trường",
+    "environments": {
+      "sandbox": "Sandbox (thử nghiệm, không trừ tiền thật)",
+      "production": "Production (thanh toán thật)"
+    },
+    "changeKeys": "Đổi khoá",
+    "connect": "Kết nối",
+    "disconnect": "Ngắt kết nối",
+    "step1": "Đăng ký <strong>Cổng thanh toán</strong> tại my.sepay.vn và gửi hồ sơ để SePay bật thanh toán thẻ (Visa/Mastercard/JCB).",
+    "step2": "Trong phần thông tin tích hợp, sao chép Merchant ID và Secret key của môi trường muốn dùng.",
+    "step3": "Đặt IPN URL bên dưới vào SePay, chọn kiểu xác thực <strong>SECRET_KEY</strong>.",
+    "step4": "Dán khoá vào đây. Hệ thống kiểm tra với SePay trước khi lưu.",
+    "ipnUrl": "IPN URL:",
+    "copyAddress": "Sao chép địa chỉ",
+    "copied": "Đã sao chép",
+    "cancel": "Huỷ",
+    "save": "Lưu và kết nối",
+    "connectFailed": "Không kết nối được SePay",
+    "connectedToast": "Đã kết nối SePay",
+    "disconnectedToast": "Đã ngắt kết nối SePay",
+    "disconnectFailed": "Không ngắt kết nối được",
+    "confirmDisconnect": "Ngắt kết nối SePay? Khách sẽ không thanh toán bằng thẻ được nữa, và các thanh toán thẻ đang chờ không còn tự xác nhận."
+  },
   "qr": {
     "scanToPay": "Quét mã QR để thanh toán",
     "generating": "Đang tạo mã QR...",

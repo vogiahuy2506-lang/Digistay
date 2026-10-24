@@ -221,6 +221,19 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
     job hết hạn hỏi PayOS **mọi** link của đơn trước khi huỷ.
   Đối soát định kỳ: timer systemd `digistay-reconcile`, 10 phút một lần, gọi
   `/api/internal/payos-reconcile` (RUNBOOK, "Đối soát PayOS định kỳ").
+- **Thẻ qua SePay** (`src/lib/payments/sepay.ts`): mỗi khách sạn gắn tài khoản cổng thanh toán SePay
+  của mình (Merchant ID + Secret key, kiểm với API SePay rồi mới lưu, mã hoá). Khách đặt cọc trên
+  website thấy thêm nút trả bằng thẻ (`startCardDeposit` trong `guest-deposit.ts`): một khoản
+  `CREDIT_CARD` / `SEPAY` cùng số tiền và hạn cọc, trình duyệt POST form có chữ ký sang trang thẻ
+  của SePay. Chữ ký HMAC-SHA256 tính theo **đúng thứ tự trường gửi đi** (như SDK của SePay), nên
+  đừng đổi thứ tự trong `sepayCheckout`. IPN `/api/webhooks/sepay/<propertyId>` chỉ là tín hiệu:
+  luôn đọc lại đơn từ API SePay (chi tiết đơn theo mã `SEPAY-...` của SePay, đối soát tìm theo
+  `order_invoice_number` của mình) và chỉ ghi nhận đơn `CAPTURED`, đúng số tiền, qua cùng kiểu
+  UPDATE có điều kiện như PayOS. Sai `X-Secret-Key` thì 401. Đối soát chạy chung job
+  `payos-reconcile`; job hết hạn cọc hỏi cả SePay trước khi huỷ đơn. Hoàn tiền thẻ: app chỉ ghi
+  nhận, hoàn thật làm trên cổng SePay. Chưa hỗ trợ: khách sạn chỉ có SePay mà không có PayOS
+  (đặt cọc online vẫn cần PayOS). `SEPAY_API_BASE_URL` / `SEPAY_CHECKOUT_BASE_URL` chỉ dùng cho
+  test (SePay giả ở `src/test/integration/fake-sepay.ts`).
 - Job định kỳ nằm ở `/api/internal/*`: kiểm `checkCronSecret()` (header `CRON_SECRET`), nginx
   không mở ra ngoài, và timer `digistay-reconcile` gọi từ bên trong container app qua
   `docker/systemd/scheduled-jobs.sh` (thêm job mới = thêm tên vào vòng lặp trong script đó).
@@ -401,7 +414,7 @@ dùng duyệt rồi mới làm, trên nhánh riêng. Cập nhật trạng thái 
    Thêm: lên Next 15.5.28 + React 19 (hết các lỗ hổng của Next 14) — xong.
 5. Thanh toán PayOS, mỗi khách sạn một bộ khoá; sửa các nhánh tiền mặt đặt `PAID` bất kể số
    tiền và không cập nhật `depositAmount` — xong; có thêm đối soát định kỳ 10 phút, và khách tự
-   đặt cọc khi đặt trên website. Còn: SePay (nếu khách sạn cần).
+   đặt cọc khi đặt trên website. Thêm: khách trả cọc bằng thẻ qua SePay của khách sạn — xong.
 6. Hoá đơn điện tử Mắt Bão, mỗi khách sạn một tài khoản, kèm trạng thái từ cơ quan thuế — xong.
    Thêm: hoá đơn thay thế, hoá đơn điều chỉnh tăng/giảm, tự gửi email hoá đơn (kèm PDF), tự xuất
    hoá đơn khi đơn thanh toán đủ — xong.

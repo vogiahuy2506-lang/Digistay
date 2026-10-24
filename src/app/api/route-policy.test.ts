@@ -60,6 +60,10 @@ const PUBLIC_HANDLERS: Record<string, string> = {
   'POST /api/payments/webhook': 'disabled: always 404; gateways use /api/webhooks/<gateway>/...',
   'POST /api/webhooks/matbao/[propertyId]/[token]':
     'Mắt Bão tax-office status; the per-property secret token in the URL is the credential (unsigned callbacks); per-IP limit',
+  'POST /api/public/deposits/[token]/card':
+    "a guest pays their deposit by card: the HMAC token is the credential (deposit-link.ts), rate-limited per IP; only SePay's signed form, never marks anything paid",
+  'POST /api/webhooks/sepay/[propertyId]':
+    "SePay card IPN; the order is read back from SePay's API with that property's keys (the notification is never trusted), wrong X-Secret-Key refused; per-IP limit",
   'POST /api/webhooks/payos/[propertyId]':
     "PayOS notifications; the HMAC signature, checked with that property's checksum key, is the credential; per-IP limit",
   'GET /api/properties/public': 'public property site (name, address, contact, rooms)',

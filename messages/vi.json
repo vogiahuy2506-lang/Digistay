@@ -335,7 +335,15 @@
         "makeFailed": "Chưa tạo được mã mới. Vui lòng thử lại hoặc gọi khách sạn.",
         "toConfirmation": "Xem xác nhận đặt phòng",
         "cancellation": "Huỷ miễn phí trước giờ nhận phòng {hours} giờ; sau đó khách sạn giữ lại tiền cọc.",
-        "cancelledByHotel": "Đặt phòng này đã được huỷ. Nếu có thắc mắc, hãy gọi khách sạn."
+        "cancelledByHotel": "Đặt phòng này đã được huỷ. Nếu có thắc mắc, hãy gọi khách sạn.",
+        "orCard": "Hoặc trả bằng thẻ",
+        "cardText": "Visa · Mastercard · JCB, qua cổng thanh toán SePay của {hotel}.",
+        "cardButton": "Thanh toán {amount} bằng thẻ",
+        "cardOpening": "Đang mở trang thanh toán thẻ…",
+        "cardFailed": "Chưa mở được trang thanh toán thẻ. Vui lòng thử lại, hoặc chuyển khoản bằng mã QR.",
+        "cardWaiting": "Đang chờ SePay xác nhận thanh toán thẻ. Trang sẽ tự chuyển khi xong.",
+        "cardError": "Thanh toán thẻ chưa thành công. Bạn thử lại, hoặc chuyển khoản bằng mã QR.",
+        "cardCancelled": "Bạn đã huỷ thanh toán thẻ."
       },
       "done": {
         "depositedChip": "Đã cọc · Đã giữ phòng",

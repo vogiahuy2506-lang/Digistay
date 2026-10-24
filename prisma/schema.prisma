@@ -258,6 +258,7 @@ model Property {
   websiteSettings WebsiteSettings?
   bankAccounts   BankAccount[]
   payos          PropertyPayos?
+  sepay          PropertySepay?
   einvoice       PropertyEinvoice?
   roomLocks      RoomLock[]
   extraServices   ExtraService[]
@@ -897,6 +898,7 @@ enum PaymentGateway {
   STRIPE
   MOMO
   ZALOPAY
+  SEPAY
 }
 
 enum PriceType {
@@ -955,6 +957,27 @@ model PropertyPayos {
   updatedAt DateTime @updatedAt
 
   @@map("property_payos")
+}
+
+/// The property's own SePay payment gateway account, for card payments
+/// (src/lib/payments/sepay.ts): guests pay by Visa / Mastercard / JCB into
+/// the hotel's SePay merchant. The secret key is encrypted with secret-box.
+model PropertySepay {
+  propertyId    String    @id
+  property      Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  merchantId    String
+  /// encrypted
+  secretKey     String
+  /// sandbox | production
+  environment   String    @default("sandbox")
+  /// set once SePay accepted the keys; card payments need it
+  verifiedAt    DateTime?
+  connectedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("property_sepay")
 }
 
 /// The property's own Mắt Bão e-invoice account (Part 6): invoices are issued

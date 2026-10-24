@@ -19,8 +19,9 @@ test('connect, pay by link, webhook updates the booking, cancel a link', async (
   // 1. Connect: a wrong key is refused with PayOS's reason, then the right ones.
   await page.goto(propertyPath('/bank-accounts'))
   await expect(page.getByText('Thanh toán online (PayOS)')).toBeVisible()
-  await expect(page.getByText('Chưa kết nối')).toBeVisible()
-  await page.getByRole('button', { name: 'Kết nối', exact: true }).click()
+  // The PayOS card comes first; the SePay card (sepay.spec.ts) is below it.
+  await expect(page.getByText('Chưa kết nối').first()).toBeVisible()
+  await page.getByRole('button', { name: 'Kết nối', exact: true }).first().click()
   await page.getByLabel('Client ID').fill(E2E.payosAccount.clientId)
   await page.getByLabel('API Key').fill('wrong-key')
   await page.getByLabel('Checksum Key').fill(E2E.payosAccount.checksumKey)

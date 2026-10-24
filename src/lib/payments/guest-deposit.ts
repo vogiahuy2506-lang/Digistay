@@ -22,6 +22,9 @@
  *   live link if there is one, otherwise a new one for the same amount that
  *   ends at the same deadline; never after the deadline or once the booking
  *   is no longer waiting.
+ * - By card (startCardDeposit), when the hotel also connected SePay
+ *   (sepay.ts): the same amount and deadline, through SePay's card page. The
+ *   deadline job asks SePay too before it cancels anything.
  */
 import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
@@ -31,6 +34,7 @@ import { depositFor } from '@/lib/pricing/quote'
 import { lockBooking } from './booking-payments'
 import { depositUrl } from './deposit-link'
 import { cancelPayosPayment, createPayosLink, newOrderCode, PayosError, syncPayosPayment } from './payos'
+import { closeSepayPayment, newInvoiceNumber, sepayCheckout, SepayError } from './sepay'
 
 export interface OnlineDeposit {
   percent: number
@@ -212,6 +216,93 @@ export async function payDepositAgain(bookingId: string): Promise<{ checkoutUrl:
   return { checkoutUrl: created.checkoutUrl }
 }
 
+/**
+ * The guest pays their deposit by card instead (the deposit page's card
+ * button): a PENDING SePay payment for the same amount, with the same
+ * deadline, and the signed form that sends the guest to SePay's card page.
+ * Refused as payDepositAgain refuses, and when the hotel has no SePay.
+ */
+export async function startCardDeposit(
+  bookingId: string
+): Promise<{ action: string; fields: [string, string][] } | { paid: true }> {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    select: {
+      id: true,
+      status: true,
+      propertyId: true,
+      bookingCode: true,
+      totalAmount: true,
+      createdAt: true,
+      locale: true,
+      property: { select: { subdomain: true, isActive: true, sepay: { select: { verifiedAt: true } } } },
+      payments: {
+        where: { metadata: { path: ['guestDeposit'], equals: true } },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true, status: true, amount: true, expiresAt: true, metadata: true },
+      },
+    },
+  })
+  if (!booking || !booking.property.isActive) throw new DepositError('Không tìm thấy đặt phòng', 404)
+  if (booking.payments.some((p) => p.status === 'PAID') || booking.status === 'CONFIRMED') return { paid: true }
+  if (booking.status !== 'PENDING') throw new DepositError('Đặt phòng này không còn chờ đặt cọc')
+  if (!booking.property.sepay?.verifiedAt) throw new DepositError('Khách sạn chưa nhận thanh toán bằng thẻ')
+
+  const policy = await onlineDepositOf(booking.propertyId)
+  if (!policy) throw new DepositError('Khách sạn hiện không nhận đặt cọc online; khách sạn sẽ liên hệ với bạn')
+
+  const latest = booking.payments[0]
+  const deadline = latest
+    ? deadlineOf(latest)
+    : policy.deadlineMinutes > 0
+      ? new Date(booking.createdAt.getTime() + policy.deadlineMinutes * 60_000)
+      : null
+  if (deadline && deadline.getTime() <= Date.now() + 60_000) throw new DepositError('Đã quá hạn đặt cọc cho đặt phòng này')
+
+  const meta = (latest?.metadata ?? null) as { percent?: number; deadlineMinutes?: number } | null
+  const amount = latest?.amount ?? depositFor(booking.totalAmount, policy.percent)
+  const deadlineMinutes = meta?.deadlineMinutes ?? policy.deadlineMinutes
+  const payment = await prisma.$transaction(async (tx) => {
+    const created = await tx.payment.create({
+      data: {
+        bookingId: booking.id,
+        propertyId: booking.propertyId,
+        amount,
+        netAmount: amount,
+        method: 'CREDIT_CARD',
+        status: 'PENDING',
+        paymentGateway: 'SEPAY',
+        gatewayOrderCode: newInvoiceNumber(),
+        expiresAt: deadline,
+        metadata: {
+          guestDeposit: true,
+          percent: meta?.percent ?? policy.percent,
+          ...(deadline && { autoCancel: true, deadlineMinutes, deadline: deadline.toISOString() }),
+          ...(latest && { retryOf: latest.id }),
+        },
+      },
+    })
+    await tx.activityLog.create({
+      data: {
+        propertyId: booking.propertyId,
+        action: 'CREATE',
+        entityType: 'PAYMENT',
+        entityId: created.id,
+        metadata: { bookingCode: booking.bookingCode, method: 'SEPAY_CARD', amount, by: 'guest' },
+      },
+    })
+    return created
+  })
+
+  // Back to the deposit page, which shows where it stands; never marks it paid.
+  const back = depositUrl(booking.property.subdomain, booking.id, emailLocale(booking.locale))
+  return sepayCheckout(payment.id, {
+    success: `${back}?card=success`,
+    error: `${back}?card=error`,
+    cancel: `${back}?card=cancel`,
+  })
+}
+
 export interface DepositExpirySummary {
   checked: number
   cancelled: number
@@ -252,20 +343,26 @@ export async function expireUnpaidDeposits(now = new Date()): Promise<DepositExp
     seen.add(payment.bookingId)
     summary.checked++
     try {
-      // PayOS is the truth, for every link of the booking still open here
-      // and the one that came due: paid means confirmed, not cancelled.
+      // PayOS and SePay are the truth, for every payment of the booking
+      // still open here and the one that came due: paid means confirmed,
+      // not cancelled.
       const open = await prisma.payment.findMany({
         where: {
           bookingId: payment.bookingId,
-          paymentGateway: 'PAYOS',
+          paymentGateway: { in: ['PAYOS', 'SEPAY'] },
           OR: [{ id: payment.id }, { status: 'PENDING' }],
         },
-        select: { id: true },
+        select: { id: true, paymentGateway: true },
       })
       let paid = false
       for (const link of open) {
-        let status = await syncPayosPayment(link.id)
-        if (status === 'PENDING') status = await cancelPayosPayment(link.id)
+        let status: string
+        if (link.paymentGateway === 'SEPAY') {
+          status = await closeSepayPayment(link.id)
+        } else {
+          status = await syncPayosPayment(link.id)
+          if (status === 'PENDING') status = await cancelPayosPayment(link.id)
+        }
         if (status === 'PAID') paid = true
       }
       if (paid) {
@@ -278,9 +375,9 @@ export async function expireUnpaidDeposits(now = new Date()): Promise<DepositExp
         sendAfterResponse(emailIds)
       }
     } catch (error) {
-      // PayOS unreachable or disconnected: try again next run; never cancel blind.
+      // PayOS or SePay unreachable or disconnected: try again next run; never cancel blind.
       summary.errors++
-      if (!(error instanceof PayosError)) console.error(`[deposit] expiry of ${payment.id} failed:`, error)
+      if (!(error instanceof PayosError || error instanceof SepayError)) console.error(`[deposit] expiry of ${payment.id} failed:`, error)
     }
   }
   return summary

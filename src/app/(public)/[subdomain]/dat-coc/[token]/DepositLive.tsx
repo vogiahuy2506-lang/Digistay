@@ -25,10 +25,62 @@ function CopyButton({ value }: { value: string }) {
 }
 
 /**
+ * Sends the guest to SePay's card page: the signed form from
+ * POST /api/public/deposits/[token]/card, posted as SePay expects (fields in
+ * the order they were signed).
+ */
+function CardPay({ token, amount, hotel, onPaid }: { token: string; amount: string; hotel: string; onPaid: () => void }) {
+  const t = useTranslations('site.booking.deposit')
+  const [opening, setOpening] = React.useState(false)
+  const [failed, setFailed] = React.useState(false)
+  const pay = async () => {
+    setOpening(true)
+    setFailed(false)
+    try {
+      const res = await fetch(`/api/public/deposits/${encodeURIComponent(token)}/card`, { method: 'POST' })
+      const data = await res.json().catch(() => ({}))
+      if (data.success && data.data?.paid) return onPaid()
+      if (!data.success || !data.data?.action) throw new Error('no form')
+      const form = document.createElement('form')
+      form.method = 'POST'
+      form.action = data.data.action
+      for (const [name, value] of data.data.fields as [string, string][]) {
+        const input = document.createElement('input')
+        input.type = 'hidden'
+        input.name = name
+        input.value = value
+        form.appendChild(input)
+      }
+      document.body.appendChild(form)
+      form.submit()
+    } catch {
+      setFailed(true)
+      setOpening(false)
+    }
+  }
+  return (
+    <div className="mt-5 border border-line bg-panel px-6 py-5 lg:px-8">
+      <p className="text-label uppercase text-muted">{t('orCard')}</p>
+      <p className="mt-2 text-[14px] leading-[1.55] text-fg/80">{t('cardText', { hotel })}</p>
+      <button
+        type="button"
+        onClick={pay}
+        disabled={opening}
+        className="mt-4 flex h-[48px] items-center justify-center border border-ink px-6 text-[14px] font-medium text-fg hover:bg-ink hover:text-on-ink disabled:opacity-60"
+      >
+        {opening ? t('cardOpening') : t('cardButton', { amount })}
+      </button>
+      {failed && <p className="mt-3 text-[14px] font-medium text-err">⚠ {t('cardFailed')}</p>}
+    </div>
+  )
+}
+
+/**
  * The live part of the deposit page (Claude Design "Digistay Dat Coc
  * PayOS"): countdown, the QR and transfer details, and a poll of
  * GET /api/public/deposits/[token] that moves on once PayOS reports the
  * money. "Tạo mã mới" asks POST for a new PayOS link, then re-reads the page.
+ * When the hotel takes cards (SePay), the guest can pay by card instead.
  */
 export function DepositLive({
   token,
@@ -41,6 +93,8 @@ export function DepositLive({
   transfer,
   hotel,
   hadDeposit,
+  card,
+  cardReturn,
 }: {
   token: string
   state: DepositState
@@ -53,6 +107,10 @@ export function DepositLive({
   hotel: { name: string; phone: string | null }
   /** false: a booking without an online deposit (cancelled by the hotel) */
   hadDeposit: boolean
+  /** the hotel takes cards through SePay */
+  card: boolean
+  /** back from SePay's card page */
+  cardReturn: 'success' | 'error' | 'cancel' | null
 }) {
   const t = useTranslations('site.booking.deposit')
   const locale = useLocale()
@@ -129,6 +187,15 @@ export function DepositLive({
     </a>
   )
 
+  const cardNote =
+    cardReturn === 'success' ? t('cardWaiting') : cardReturn === 'error' ? t('cardError') : cardReturn === 'cancel' ? t('cardCancelled') : null
+  const cardBanner = cardNote && (
+    <p role="status" className={cn('mb-5 border px-5 py-3 text-[14px] leading-[1.55]', cardReturn === 'error' ? 'border-err/25 bg-err-soft text-fg' : 'border-line bg-plain-soft/70 text-fg')}>
+      {cardNote}
+    </p>
+  )
+  const cardPay = card && <CardPay token={token} amount={formatVnd(amount, lang)} hotel={hotel.name} onPaid={done} />
+
   if (state === 'pending') {
     const rows = [
       transfer?.accountNumber && { label: t('account'), value: transfer.accountNumber, copy: transfer.accountNumber },
@@ -138,6 +205,7 @@ export function DepositLive({
     ].filter(Boolean) as { label: string; value: string; copy?: string }[]
     return (
       <div>
+        {cardBanner}
         <div className="border border-line bg-panel">
           <div className="flex flex-col gap-4 border-b-2 border-acc px-6 py-6 sm:flex-row sm:items-end sm:justify-between lg:px-8">
             <div>
@@ -194,6 +262,7 @@ export function DepositLive({
             </a>
           )}
         </div>
+        {cardPay}
       </div>
     )
   }
@@ -208,15 +277,21 @@ export function DepositLive({
   const primary = 'flex h-[48px] items-center justify-center bg-ink px-6 text-[14px] font-medium text-on-ink disabled:bg-muted'
 
   if (state === 'expired')
-    return panel(
-      'warn',
-      deadline ? t('expiredText', { time: at(deadline) }) : t('expiredTextNoDeadline'),
-      <>
-        <button type="button" onClick={makeNew} disabled={making} className={primary}>
-          {making ? t('making') : t('newCode')}
-        </button>
-        {call}
-      </>,
+    return (
+      <div>
+        {cardBanner}
+        {panel(
+          'warn',
+          deadline ? t('expiredText', { time: at(deadline) }) : t('expiredTextNoDeadline'),
+          <>
+            <button type="button" onClick={makeNew} disabled={making} className={primary}>
+              {making ? t('making') : t('newCode')}
+            </button>
+            {call}
+          </>,
+        )}
+        {cardPay}
+      </div>
     )
   if (state === 'error')
     return panel(

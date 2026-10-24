@@ -26,9 +26,9 @@ import { PayOS, type Webhook } from '@payos/node'
 import type { Prisma, PropertyPayos } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { decryptSecret, encryptSecret, secretContext } from '@/lib/security/secret-box'
-import { emailLocale } from '@/lib/email/i18n'
-import { queueDepositReceived, sendAfterResponse } from '@/lib/email/outbox'
+import { sendAfterResponse } from '@/lib/email/outbox'
 import { lockBooking, syncBookingPayments } from './booking-payments'
+import { queueGuestDepositReceived } from './deposit-received'
 
 /** How long a guest can pay a link: staff often send it by Zalo. */
 export const PAYOS_LINK_TTL_SEC = 24 * 60 * 60
@@ -308,45 +308,8 @@ export async function applyPayosPaid(input: {
     })
 
     // A guest's deposit from the hotel's site (guest-deposit.ts): tell them
-    // the booking is confirmed. Not for a booking already cancelled: staff
-    // sort that money out (it is flagged above).
-    const emailIds: string[] = []
-    if (asObject(payment.metadata).guestDeposit === true && !closed) {
-      const booking = await tx.booking.findUniqueOrThrow({
-        where: { id: payment.bookingId },
-        select: {
-          guestEmail: true,
-          guestName: true,
-          bookingCode: true,
-          checkInDate: true,
-          checkOutDate: true,
-          totalAmount: true,
-          depositAmount: true,
-          locale: true,
-          property: { select: { name: true, phone: true } },
-        },
-      })
-      if (booking.guestEmail) {
-        emailIds.push(
-          await queueDepositReceived(
-            {
-              guestEmail: booking.guestEmail,
-              guestName: booking.guestName,
-              bookingCode: booking.bookingCode,
-              propertyName: booking.property.name,
-              propertyPhone: booking.property.phone,
-              checkIn: booking.checkInDate,
-              checkOut: booking.checkOutDate,
-              deposit: payment.amount,
-              remaining: Math.max(0, booking.totalAmount - booking.depositAmount),
-              locale: emailLocale(booking.locale),
-            },
-            payment.bookingId,
-            tx
-          )
-        )
-      }
-    }
+    // the booking is confirmed.
+    const emailIds = await queueGuestDepositReceived(tx, payment, closed)
     return { outcome: 'paid' as const, emailIds }
   })
   sendAfterResponse(result.emailIds)

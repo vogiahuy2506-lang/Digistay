@@ -522,6 +522,19 @@ Log của app có dòng `[payos] reconcile {...}` và `[einvoice] jobs {...}` sa
 nghĩa là webhook của khách sạn đó đang lỡ: kiểm tra URL webhook trong PayOS (bấm "Đổi khoá" ở
 trang Tài khoản ngân hàng để đăng ký lại).
 
+### Thanh toán thẻ qua SePay
+
+Job `payos-reconcile` cũng hỏi SePay về các khoản thẻ đang chờ trong 3 ngày gần nhất (IPN có thể
+lỡ), và job hết hạn cọc hỏi SePay trước khi huỷ đơn. Không cần cài thêm gì trên VPS.
+
+Khách sạn tự làm, trên my.sepay.vn: đăng ký Cổng thanh toán, gửi hồ sơ để SePay bật thẻ
+(Visa/Mastercard/JCB), lấy Merchant ID + Secret key, đặt IPN URL (hiện ở thẻ "Thanh toán thẻ
+(SePay)", trang Tài khoản ngân hàng) với kiểu xác thực `SECRET_KEY`. Nên thử bằng môi trường
+Sandbox trước, rồi đổi sang Production (khoá Production khác khoá Sandbox).
+
+Log có `[sepay] reconcile found payment ... paid without an IPN`: IPN của khách sạn đó đang lỡ,
+kiểm tra IPN URL và kiểu xác thực trong SePay.
+
 ### Hoá đơn tự động và email
 
 - **Email hoá đơn**: hoá đơn vừa phát hành được gửi cho người mua, đính kèm PDF lấy từ Mắt Bão
