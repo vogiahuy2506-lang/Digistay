@@ -250,5 +250,33 @@
     "dragging": "Đang kéo thả... Di chuyển khối đến vị trí mong muốn",
     "emptyHint": "Thêm các khối từ panel bên trái hoặc chọn template để bắt đầu",
     "allHidden": "Tất cả các khối đang bị ẩn"
+  },
+  "domain": {
+    "title": "Tên miền riêng",
+    "intro": "Dùng tên miền của khách sạn (ví dụ www.khachsan.vn) cho website. Nhập tên miền rồi bấm Kiểm tra: hệ thống sẽ hiện các bản ghi DNS cần thêm tại nơi bạn quản lý tên miền.",
+    "label": "Tên miền",
+    "check": "Kiểm tra & kết nối",
+    "checkFailed": "Chưa kiểm tra được tên miền, vui lòng thử lại",
+    "recordsTitle": "Thêm các bản ghi này tại nơi quản lý tên miền, rồi bấm Kiểm tra lại",
+    "stepPoint": "Trỏ tên miền về Digistay",
+    "stepOwn": "Xác minh bạn là chủ tên miền",
+    "type": "Loại",
+    "name": "Tên",
+    "value": "Giá trị",
+    "copy": "Sao chép",
+    "copied": "Đã sao chép",
+    "noAddress": "Chưa lấy được địa chỉ IP của Digistay, vui lòng thử lại sau ít phút.",
+    "wait": "Bản ghi DNS mới có thể mất từ vài phút tới vài giờ mới có hiệu lực.",
+    "attached": "Đã gắn tên miền. Chứng chỉ HTTPS sẽ được cấp trong khoảng một phút.",
+    "dnsOk": "Tên miền đã trỏ đúng và được xác minh",
+    "httpsOk": "Đã bật HTTPS (ổ khoá xanh)",
+    "open": "Mở website",
+    "httpsPending": "Đang cấp chứng chỉ HTTPS, thường dưới một phút…",
+    "httpsFailed": "Chưa cấp được chứng chỉ HTTPS. Kiểm tra bản ghi A vẫn trỏ đúng; hệ thống tự thử lại sau một giờ.",
+    "retry": "Thử lại ngay",
+    "retryFailed": "Không gửi được yêu cầu, vui lòng thử lại",
+    "remove": "Gỡ tên miền",
+    "removeConfirm": "Gỡ tên miền {domain} khỏi website? Khách mở tên miền này sẽ không thấy website nữa.",
+    "removed": "Đã gỡ tên miền"
   }
 }

@@ -35,3 +35,38 @@ describe('Cloudflare real IP', () => {
     expect(template).toMatch(/proxy_set_header X-Real-IP\s+\$remote_addr;/)
   })
 })
+
+describe("hotels' own domains (custom-domains.conf)", () => {
+  const site = conf('custom-domains.conf')
+  const headers = conf('security-headers-site.inc')
+
+  it('is the default HTTPS server and picks the certificate by SNI, from plain hostnames only', () => {
+    expect(site).toMatch(/listen 443 ssl default_server;/)
+    expect(site).toMatch(/ssl_certificate\s+\/etc\/letsencrypt\/live\/\$digistay_site_cert\/fullchain\.pem;/)
+    expect(site).toMatch(/ssl_certificate_key\s+\/etc\/letsencrypt\/live\/\$digistay_site_cert\/privkey\.pem;/)
+    // The map refuses ".." and anything but [a-z0-9.-]: no path outside live/.
+    const [, pattern] = site.match(/"~(\^[^"]+)"\s+\$ssl_server_name;/) ?? []
+    const re = new RegExp(pattern)
+    for (const ok of ['www.khachsan.vn', 'khach-san.com.vn']) expect(re.test(ok)).toBe(true)
+    for (const bad of ['../../etc/x', 'a..b.vn', 'x/y.vn', 'WWW.X.VN', 'localhost', '']) expect(re.test(bad)).toBe(false)
+    expect(site).toMatch(/default\s+"none";/)
+  })
+
+  it('never routes the internal endpoints and passes the real client IP', () => {
+    expect(site).toMatch(/location \/api\/internal\/ \{\s*return 404;/)
+    expect(site).toMatch(/proxy_set_header X-Real-IP\s+\$remote_addr;/)
+    expect(site).toContain('include /etc/nginx/conf.d/security-headers-site.inc;')
+  })
+
+  it("sends HSTS without includeSubDomains: the hotel's other subdomains are not ours", () => {
+    const directives = headers.split('\n').filter((l) => !l.trim().startsWith('#')).join('\n')
+    expect(directives).toMatch(/Strict-Transport-Security "max-age=\d+"/)
+    expect(directives).not.toMatch(/includeSubDomains/)
+  })
+
+  it('keeps port 80 the default for every host, so Let\'s Encrypt reaches the challenge', () => {
+    const http = conf('app.conf')
+    expect(http).toMatch(/listen 80 default_server;/)
+    expect(http).toMatch(/location \^~ \/\.well-known\/acme-challenge\//)
+  })
+})

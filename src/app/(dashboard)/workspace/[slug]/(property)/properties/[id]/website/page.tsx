@@ -9,6 +9,7 @@ import { toast } from '@/components/ui/toast'
 import { EnglishCopy } from '@/components/ui/english-copy'
 import { CoverPicker } from './cover-picker'
 import { ReviewsEditor, type ReviewEntry } from './reviews-editor'
+import { CustomDomainCard, type DomainSettings } from './custom-domain-card'
 import { useProperty } from '@/lib/hooks/use-property'
 import { Card, CardContent, CardHeader, CardTitle, Button, Input, Badge, Tabs, TabsList, TabsTrigger, TabsContent, Alert, AlertDescription } from '@/components/ui'
 import {
@@ -63,6 +64,8 @@ interface WebsiteSettings {
   sslProvider?: string
   domainVerificationStatus?: string
   domainVerifiedAt?: string
+  sslRequestedAt?: string | null
+  sslError?: string | null
   propertyName?: string
   propertyDescription?: string
   propertyImages?: string[]
@@ -1494,6 +1497,12 @@ export default function WebsiteBuilderPage() {
    * pressed, which matters now that an unpublished site is hidden from
    * guests (src/lib/public-site/visibility.ts).
    */
+  // The custom domain card's news (verified, certificate issued) into the settings a later save sends back.
+  const mergeDomain = React.useCallback(
+    (patch: DomainSettings) => setSettings((s) => (s ? ({ ...s, ...patch } as WebsiteSettings) : s)),
+    []
+  )
+
   const handleSave = async (next: WebsiteSettings | null = settings, successMessage: string = t('toast.saved')) => {
     setIsSaving(true)
     try {
@@ -2000,6 +2009,15 @@ export default function WebsiteBuilderPage() {
                   )}
                 </CardContent>
               </Card>
+
+              {settings && (
+                <CustomDomainCard
+                  propertyId={propertyId}
+                  settings={settings as DomainSettings}
+                  onChange={mergeDomain}
+                  onRemove={() => handleSave({ ...settings, customDomain: '' }, t('domain.removed'))}
+                />
+              )}
 
               <Card className="mt-4">
                 <CardHeader>

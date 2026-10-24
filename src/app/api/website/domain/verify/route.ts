@@ -12,6 +12,7 @@ import {
   ownershipRecord,
   resolver,
 } from '@/lib/custom-domain'
+import { certificateRequest } from '@/lib/public-site/custom-domains'
 
 const bodySchema = z.object({
   propertyId: z.string().min(1),
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
         id: true,
         subdomain: true,
         workspaceId: true,
-        websiteSettings: { select: { customDomain: true, domainVerificationStatus: true } },
+        websiteSettings: { select: { customDomain: true, domainVerificationStatus: true, sslEnabled: true } },
       },
     })
     if (!property) {
@@ -98,6 +99,8 @@ export async function POST(request: NextRequest) {
       domainVerifiedAt: new Date(),
       // A certificate belongs to the old hostname.
       ...(domainChanged && { sslEnabled: false, sslVerifiedAt: null, sslCertificateId: null, sslProvider: null }),
+      // Queue the HTTPS certificate (docker/certbot/custom-domains.sh, within a minute).
+      ...((domainChanged || !current?.sslEnabled) && certificateRequest()),
     }
     let settings
     try {
@@ -148,9 +151,9 @@ async function expectedRecords(host: string, target: string, txt: { name: string
 }
 
 const MESSAGES: Record<string, string> = {
-  not_found: 'Chưa thấy bản ghi DNS nào cho tên miền này. Thêm bản ghi CNAME (hoặc A với tên miền gốc) theo hướng dẫn.',
+  not_found: 'Chưa thấy bản ghi DNS nào cho tên miền này. Thêm bản ghi A và TXT theo hướng dẫn bên dưới.',
   wrong_target:
-    'Tên miền chưa trỏ đúng về website này. CNAME phải trỏ tới đúng địa chỉ bên dưới; bản ghi A phải là địa chỉ IP của Digistay.',
+    'Tên miền chưa trỏ đúng về website này: bản ghi A phải là địa chỉ IP bên dưới (xoá các bản ghi A, AAAA hoặc CNAME khác của tên này).',
   txt_missing: 'Tên miền đã trỏ đúng, nhưng chưa thấy bản ghi TXT xác minh chủ sở hữu. Thêm bản ghi TXT bên dưới.',
   txt_wrong: 'Tên miền đã trỏ đúng, nhưng bản ghi TXT xác minh chủ sở hữu có giá trị chưa đúng. Sửa theo giá trị bên dưới.',
   transient: 'Không kiểm tra được DNS lúc này. Vui lòng thử lại sau ít phút.',

@@ -1,0 +1,12 @@
+# HTTPS certificates for hotels' own domains — see docker/certbot/custom-domains.sh.
+# Install: docs/RUNBOOK.md, "Tên miền riêng".
+[Unit]
+Description=Digistay custom-domain certificates (Let's Encrypt for verified hotel domains)
+Wants=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+# Optional: CERTBOT_EMAIL for Let's Encrypt's expiry notices (the account made by init-cert.sh is reused).
+EnvironmentFile=-/etc/digistay/custom-domains.env
+ExecStart=/usr/bin/bash /opt/digistay/docker/certbot/custom-domains.sh

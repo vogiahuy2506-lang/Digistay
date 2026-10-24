@@ -2,15 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { certificateRequest } from '@/lib/public-site/custom-domains'
+import { sslState } from '@/lib/public-site/ssl-state'
 
 const memberOf = (userId: string) => ({
   workspace: { OR: [{ ownerId: userId }, { members: { some: { userId } } }] },
 })
 
 /**
- * POST /api/website/ssl/provision
- * Yêu cầu cấp phát SSL certificate cho domain
- * Trong production, đây sẽ tích hợp với Let's Encrypt hoặc Cloudflare
+ * POST /api/website/ssl/provision — ask (again) for the HTTPS certificate of
+ * the site's verified domain. The certificate itself comes from Let's Encrypt
+ * through docker/certbot/custom-domains.sh on the VPS, within a minute
+ * (src/lib/public-site/custom-domains.ts); this only puts the domain in its
+ * queue, e.g. after a failed attempt ("Thử lại"). It used to mark the site as
+ * having HTTPS without issuing anything.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -67,74 +72,30 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Check if SSL already enabled and not expired
-    if (settings.sslEnabled && settings.sslVerifiedAt) {
-      const expiryDate = new Date(settings.sslVerifiedAt)
-      expiryDate.setMonth(expiryDate.getMonth() + 3) // Assume 3-month cert
-      
-      if (new Date() < expiryDate) {
-        return NextResponse.json({
-          success: true,
-          data: {
-            sslEnabled: true,
-            sslVerifiedAt: settings.sslVerifiedAt,
-            expiresAt: expiryDate.toISOString(),
-            message: 'SSL certificate vẫn còn hiệu lực',
-          },
-          message: 'SSL đã được kích hoạt',
-        })
-      }
+    if (settings.sslEnabled) {
+      return NextResponse.json({ success: true, data: { state: sslState(settings) } })
     }
 
-    // Simulate SSL provisioning (in production, integrate with Let's Encrypt/Cloudflare)
-    // This would typically:
-    // 1. Create ACME challenge for domain verification
-    // 2. Issue certificate via Let's Encrypt
-    // 3. Configure nginx/caddy to use the certificate
-    // 4. Set up auto-renewal cron job
-
-    const provisioningResult = await simulateSSLProvisioning(settings.customDomain)
-
-    // Update settings
-    const updatedSettings = await prisma.websiteSettings.update({
+    const updated = await prisma.websiteSettings.update({
       where: { propertyId: property.id },
-      data: {
-        sslEnabled: true,
-        sslVerifiedAt: new Date(),
-        sslProvider: provisioningResult.provider,
-        sslCertificateId: provisioningResult.certificateId,
-      },
+      data: certificateRequest(),
     })
 
-    // Log activity
     await prisma.activityLog.create({
       data: {
         userId: session.user.id,
         propertyId: property.id,
-        action: 'SSL_PROVISION',
+        action: 'SSL_REQUEST',
         entityType: 'WEBSITE_SETTINGS',
-        entityId: updatedSettings.id,
-        changes: { 
-          domain: settings.customDomain,
-          provider: provisioningResult.provider,
-        },
+        entityId: updated.id,
+        changes: { domain: settings.customDomain },
       },
     })
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        sslEnabled: true,
-        sslVerifiedAt: updatedSettings.sslVerifiedAt,
-        domain: settings.customDomain,
-        provider: provisioningResult.provider,
-        message: `SSL certificate đã được cấp phát thành công cho ${settings.customDomain}`,
-      },
-      message: 'SSL đã được kích hoạt thành công! Website của bạn giờ đây an toàn với HTTPS.',
-    })
+    return NextResponse.json({ success: true, data: { state: sslState(updated) } })
   } catch (error) {
-    console.error('SSL provisioning error:', error)
-    return NextResponse.json({ success: false, error: 'Lỗi khi cấp phát SSL' }, { status: 500 })
+    console.error('SSL request error:', error)
+    return NextResponse.json({ success: false, error: 'Lỗi khi yêu cầu chứng chỉ SSL' }, { status: 500 })
   }
 }
 
@@ -172,11 +133,15 @@ export async function GET(request: NextRequest) {
       customDomain: settings.customDomain,
       domainVerificationStatus: settings.domainVerificationStatus,
       sslProvider: settings.sslProvider,
+      state: sslState(settings),
+      sslRequestedAt: settings.sslRequestedAt,
+      sslCheckedAt: settings.sslCheckedAt,
+      sslError: settings.sslError,
     }
     
     if (settings.sslVerifiedAt) {
       const expiryDate = new Date(settings.sslVerifiedAt)
-      expiryDate.setMonth(expiryDate.getMonth() + 3)
+      expiryDate.setMonth(expiryDate.getMonth() + 3) // Let's Encrypt: 90 days, renewed daily by docker/certbot/renew.sh
       status['daysUntilExpiry'] = Math.ceil((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
       status['expiresAt'] = expiryDate.toISOString()
     }
@@ -246,18 +211,5 @@ export async function DELETE(request: NextRequest) {
   } catch (error) {
     console.error('SSL delete error:', error)
     return NextResponse.json({ success: false, error: 'Lỗi khi gỡ SSL' }, { status: 500 })
-  }
-}
-
-// Simulate SSL provisioning (replace with real implementation in production)
-async function simulateSSLProvisioning(domain: string) {
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 500))
-
-  return {
-    provider: 'digistay-auto-ssl',
-    certificateId: `cert_${Date.now()}_${domain.replace(/\./g, '_')}`,
-    provisionedAt: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(), // 90 days
   }
 }

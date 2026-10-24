@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { isAllowedSubdomain, rootDomain, subdomainOf } from '@/lib/subdomains'
+import { isCustomDomainCandidate, siteForHost } from '@/lib/public-site/custom-host'
 import { SITE_BASE_HEADER, SITE_PATH_HEADER } from '@/lib/public-site/paths'
 import { DEFAULT_LOCALE, SITE_LOCALE_HEADER, isLocale, type Locale } from '@/i18n/locales'
 
@@ -13,17 +14,32 @@ import { DEFAULT_LOCALE, SITE_LOCALE_HEADER, isLocale, type Locale } from '@/i18
  * (src/i18n/locales.ts). Every other hotel-site request gets "vi", so the
  * site never follows the dashboard's language cookie.
  *
+ * A hotel's own domain (www.khachsan.vn), once verified, serves its site the
+ * same way as its subdomain (src/lib/public-site/custom-host.ts).
+ *
  * This file used to live at the repository root, where Next does not load
  * it with the src/ layout, so it never ran. Its other job, sending "/" to
  * /login or the first workspace, is dropped: "/" is the marketing page.
  */
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
-  const sub = subdomainOf(request.headers.get('host') ?? '', rootDomain())
+  const host = request.headers.get('host') ?? ''
+  const root = rootDomain()
+  const sub = subdomainOf(host, root)
 
   if (sub) {
     const { locale, rest } = splitLocale(path)
     return toSite(request, `/${sub}${rest === '/' ? '' : rest}`, locale, '', rest)
+  }
+
+  // A hotel's own domain: its site, with no prefix (like its subdomain).
+  const hostname = host.split(':')[0].toLowerCase()
+  if (isCustomDomainCandidate(hostname, root)) {
+    const site = await siteForHost(hostname)
+    if (site) {
+      const { locale, rest } = splitLocale(path)
+      return toSite(request, `/${site}${rest === '/' ? '' : rest}`, locale, '', rest)
+    }
   }
 
   // digistay.vn/<hotel>/... is the same site as <hotel>.digistay.vn/...

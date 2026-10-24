@@ -150,6 +150,9 @@ export async function PUT(request: NextRequest) {
           sslVerifiedAt: null,
           sslCertificateId: null,
           sslProvider: null,
+          sslRequestedAt: null,
+          sslCheckedAt: null,
+          sslError: null,
         }
       : {}
 

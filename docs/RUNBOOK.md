@@ -730,9 +730,38 @@ Chỉ CNAME/A là chưa đủ: khách sạn cũ rời đi mà quên xoá DNS th�
 ai cũng gắn được. Đổi `NEXTAUTH_SECRET` làm đổi mọi mã: tên miền đã gắn không bị ảnh hưởng, chỉ lần
 gắn mới phải thêm TXT mới. Kiểm thất bại (kể cả DNS lỗi tạm thời) không ghi gì vào DB.
 
-**Hiện chưa phục vụ:** app chưa trả site theo tên miền riêng (middleware chỉ xử lý
-`*.digistay.vn`), và `/api/website/ssl/provision` vẫn là bản mô phỏng. Phần này chỉ bảo đảm không
-ai gắn được tên miền của người khác trước khi tính năng đó có.
+**Phục vụ và HTTPS (tự động):**
+- Khách sạn nhập tên miền ở **Website khách sạn → Cài đặt → Tên miền riêng**, thêm các bản ghi
+  được hướng dẫn rồi bấm Kiểm tra. Giao diện chỉ hướng dẫn bản ghi **A** (về IP của `digistay.vn`) +
+  TXT: CNAME tới `<subdomain>.digistay.vn` chỉ chạy khi `*.digistay.vn` đã có DNS (mục
+  "Subdomain cho site khách sạn" ở trên).
+- Xác minh xong, app phục vụ site trên tên miền đó: `src/middleware.ts` hỏi
+  `/api/public/site-host` tên miền thuộc site nào (nhớ 60 giây), như với subdomain.
+- Chứng chỉ: xác minh xong là vào hàng đợi (`sslRequestedAt`). Timer `digistay-custom-domains` chạy
+  `docker/certbot/custom-domains.sh` mỗi phút: hỏi app danh sách (`/api/internal/custom-domains`, có
+  `CRON_SECRET`, nginx không mở đường này ra ngoài), xin chứng chỉ Let's Encrypt qua HTTP (cổng 80
+  là server mặc định cho mọi tên miền và trả thư mục challenge), rồi báo kết quả về app. nginx
+  (`docker/nginx/conf.d/custom-domains.conf`, server mặc định của cổng 443) chọn chứng chỉ theo tên
+  trình duyệt hỏi, từ `live/<tên miền>/`. Thất bại thì một giờ sau tự thử lại, hoặc khách sạn bấm
+  "Thử lại ngay". `renew.sh` hằng ngày gia hạn cả các chứng chỉ này.
+- Header HSTS của tên miền riêng **không** có `includeSubDomains` và chỉ một ngày
+  (`security-headers-site.inc`): các subdomain khác của khách sạn không phải của Digistay.
+
+### Cài đặt một lần (sau khi deploy bản có `custom-domains.sh`)
+
+```bash
+cd /opt/digistay
+sudo docker compose exec -T nginx nginx -t
+sudo cp docker/systemd/digistay-custom-domains.{service,timer} /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now digistay-custom-domains.timer
+systemctl list-timers digistay-custom-domains.timer
+```
+
+Email nhận thông báo hết hạn của Let's Encrypt (tuỳ chọn; không có thì dùng lại tài khoản certbot đã
+tạo lúc cấp chứng chỉ đầu tiên): `echo 'CERTBOT_EMAIL=<email>' | sudo tee /etc/digistay/custom-domains.env`.
+Xem log: `journalctl -u digistay-custom-domains -n 50`. Thử với máy chủ staging của Let's Encrypt:
+`sudo CERTBOT_STAGING=1 bash docker/certbot/custom-domains.sh`.
 
 **Trước khi deploy migration `20261021050000_custom_domain_unique`**, đo trên production:
 ```bash

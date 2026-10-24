@@ -607,6 +607,11 @@ model WebsiteSettings {
   sslVerifiedAt   DateTime?
   sslProvider     String?  // letsencrypt, cloudflare, digistay-auto-ssl
   sslCertificateId String?
+  /// Asked for a certificate (domain verified, or "Thử lại"); docker/certbot/custom-domains.sh picks it up.
+  sslRequestedAt  DateTime?
+  /// The last issuance attempt, and why it failed (null: issued or not tried yet).
+  sslCheckedAt    DateTime?
+  sslError        String?
   
   // Published status
   isPublished     Boolean @default(false)

@@ -250,5 +250,33 @@
     "dragging": "Dragging... Drop the block where you want it",
     "emptyHint": "Add blocks from the panel on the left or pick a template to get started",
     "allHidden": "All blocks are hidden"
+  },
+  "domain": {
+    "title": "Custom domain",
+    "intro": "Use the hotel's own domain (e.g. www.khachsan.vn) for the website. Type it and press Check: you'll see the DNS records to add where you manage the domain.",
+    "label": "Domain",
+    "check": "Check & connect",
+    "checkFailed": "Couldn't check the domain, please try again",
+    "recordsTitle": "Add these records where your domain's DNS is managed, then press Check again",
+    "stepPoint": "Point the domain to Digistay",
+    "stepOwn": "Prove you own the domain",
+    "type": "Type",
+    "name": "Name",
+    "value": "Value",
+    "copy": "Copy",
+    "copied": "Copied",
+    "noAddress": "Couldn't get Digistay's IP address, please try again in a few minutes.",
+    "wait": "New DNS records can take from a few minutes to a few hours to work.",
+    "attached": "Domain connected. Its HTTPS certificate comes in about a minute.",
+    "dnsOk": "The domain points here and is verified",
+    "httpsOk": "HTTPS is on (padlock)",
+    "open": "Open the website",
+    "httpsPending": "Getting the HTTPS certificate, usually under a minute…",
+    "httpsFailed": "Couldn't get the HTTPS certificate yet. Check the A record still points here; it's tried again in an hour.",
+    "retry": "Try now",
+    "retryFailed": "Couldn't send the request, please try again",
+    "remove": "Remove the domain",
+    "removeConfirm": "Remove {domain} from the website? Visitors opening it won't see the website anymore.",
+    "removed": "Domain removed"
   }
 }
