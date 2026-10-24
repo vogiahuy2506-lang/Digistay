@@ -705,7 +705,7 @@ export default function CalendarPage() {
               </div>
               <div>
                 <div className="flex items-center gap-1.5 leading-none">
-                  <span className="font-bold text-sm tracking-tight text-fg">DigiStay Hotel OS</span>
+                  <span className="font-bold text-sm tracking-tight text-fg">Digistay Hotel OS</span>
                 </div>
                 <div className="flex items-center gap-1 text-[11px] text-muted mt-0.5">
                   <Building2 className="w-3 h-3 text-[10px] text-muted" />

@@ -223,7 +223,7 @@ describe('invoice email', () => {
 describe('account emails', () => {
   it('sign-in code', () => {
     const viMail = noKeys(otpEmailTemplate({ recipientEmail: 'a@x.vn', otp: '482913', purpose: 'register' }))
-    expect(viMail.subject).toBe('[DigiStay] Xác thực tài khoản - Mã xác thực OTP')
+    expect(viMail.subject).toBe('[Digistay] Xác thực tài khoản - Mã xác thực OTP')
     expect(viMail.text).toContain('Có hiệu lực trong 5 phút.')
 
     const mail = noKeys(otpEmailTemplate({ recipientEmail: 'a@x.vn', otp: '482913', purpose: 'forgot_password', recipientName: NAME, locale: 'en' }))
@@ -255,7 +255,7 @@ describe('account emails', () => {
     expect(welcome.html).toContain('Welcome to <strong style="color: #a93119;">Digistay</strong>, <strong>Hoa &lt;b&gt;&amp;&lt;/b&gt;</strong>.')
     expect(welcome.html).toContain('<li>Start managing bookings &amp; guests</li>')
     expect(welcome.text).toBe('Welcome to Digistay! Your account is verified.\n\nSign in: https://digistay.test/login')
-    expect(welcomeEmailTemplate({}).subject).toBe('Chào mừng bạn đến với DigiStay! 🎉')
+    expect(welcomeEmailTemplate({}).subject).toBe('Chào mừng bạn đến với Digistay! 🎉')
 
     const changedAt = new Date('2026-12-23T08:30:05Z')
     const password = noKeys(passwordChangedTemplate({ changedAt, supportUrl: 'https://digistay.test/lien-he', locale: 'en' }))

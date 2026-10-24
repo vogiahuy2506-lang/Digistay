@@ -1141,11 +1141,10 @@
       "invited": "<b>{inviter}</b> has invited you to join the <accent>{workspace}</accent> workspace on Digistay.",
       "roleLabel": "Your role",
       "roles": {
-        "OWNER": "Owner",
         "ADMIN": "Admin",
         "MANAGER": "Manager",
-        "STAFF": "Staff",
-        "VIEWER": "Viewer"
+        "RECEPTIONIST": "Front desk",
+        "USER": "Staff"
       },
       "accept": "Accept the invitation →",
       "expires": "⏱️ Expires on {time}",

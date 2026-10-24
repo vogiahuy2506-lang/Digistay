@@ -165,6 +165,7 @@ export async function payDepositAgain(bookingId: string): Promise<{ checkoutUrl:
       bookingCode: true,
       totalAmount: true,
       createdAt: true,
+      locale: true,
       property: { select: { subdomain: true, isActive: true } },
       payments: {
         where: { paymentGateway: 'PAYOS', metadata: { path: ['guestDeposit'], equals: true } },
@@ -205,7 +206,7 @@ export async function payDepositAgain(bookingId: string): Promise<{ checkoutUrl:
       deadlineMinutes: (latest?.metadata as { deadlineMinutes?: number } | null)?.deadlineMinutes ?? policy.deadlineMinutes,
       retryOf: latest?.id,
     },
-    depositUrl(booking.property.subdomain, booking.id)
+    depositUrl(booking.property.subdomain, booking.id, emailLocale(booking.locale))
   )
   if (!created) throw new DepositError('PayOS chưa tạo được link thanh toán, vui lòng thử lại sau ít phút', 502)
   return { checkoutUrl: created.checkoutUrl }

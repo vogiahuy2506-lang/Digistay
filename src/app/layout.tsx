@@ -8,22 +8,28 @@ import '@/styles/fonts.css'
 import './globals.css'
 import { NextIntlClientProvider } from 'next-intl'
 import { headers } from 'next/headers'
-import { getLocale, getMessages } from 'next-intl/server'
+import { getLocale, getMessages, getTranslations } from 'next-intl/server'
 import { SITE_LOCALE_HEADER } from '@/i18n/locales'
 import Providers from '@/components/providers'
 import { ApiErrorsProvider } from '@/components/i18n/api-errors-provider'
 
-export const metadata: Metadata = {
-  title: 'DigiStay - Nền Tảng No-Code Xây Dựng Kênh Bán Phòng Độc Quyền',
-  description: 'DigiStay là nền tảng SaaS No-Code toàn diện: Tự tạo website boutique hotel chỉ trong 15 phút, tích hợp Booking Engine trực tiếp, đồng bộ phòng tức thì và cổng VietQR Napas247.',
-  keywords: ['booking engine', 'hotel website', 'boutique hotel', 'homestay management', 'VietQR', 'Napas247', 'No-Code'],
-  icons: {
-    icon: [
-      { url: '/icon.png', type: 'image/png' },
-      { url: '/favicon.ico', sizes: 'any' },
-    ],
-    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
-  },
+/**
+ * The default title and description, for pages without their own (the
+ * dashboard's), in the visitor's language: Digistay's own home texts.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('marketing.meta')
+  return {
+    title: t('homeTitle'),
+    description: t('homeDescription'),
+    icons: {
+      icon: [
+        { url: '/icon.png', type: 'image/png' },
+        { url: '/favicon.ico', sizes: 'any' },
+      ],
+      apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
+    },
+  }
 }
 
 export default async function RootLayout({

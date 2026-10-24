@@ -284,8 +284,9 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
   Trang mới hoặc trang đang chuyển: chỉ dùng các tên này, không `bg-white` / `text-gray-*` /
   `[#hex]`, không cần `dark:` — biến CSS tự đổi theo theme. Tên kiểu Material cũ (`primary`,
   `surface`…) chờ xoá khi mọi trang đã chuyển.
-- Theme tối chỉ bật theo vùng bằng `data-theme="dark"` (trang quản lý), không theo cài đặt hệ
-  điều hành: trang chưa chuyển vẫn dùng màu viết cứng, tự đổi theo OS sẽ vỡ nửa chừng.
+- Theme tối chỉ bật theo vùng bằng `data-theme="dark"` (trang quản lý, trang của Digistay, website
+  khách sạn), theo cookie `ds-theme` do người xem chọn, không theo cài đặt hệ điều hành: trang chưa
+  chuyển vẫn dùng màu viết cứng, tự đổi theo OS sẽ vỡ nửa chừng.
 - `text-acc` là màu nhấn theo ngữ cảnh: màu Digistay trong trang quản lý, màu khách sạn trên
   website khách sạn. `text-brand` chỉ cho logo và "Vận hành bởi Digistay". Màu lỗi (`err`)
   phải khác rõ màu nhấn; `tokens.test.ts` kiểm tương phản và khoảng cách màu.
@@ -303,16 +304,18 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
   mọi trang quản lý của workspace và khách sạn, hồ sơ và `/admin/system` (Thanh toán, Hóa đơn và
   `/admin/system` chuyển sau cùng, trên bản đã có PayOS / Mắt Bão).
   Trang quản lý mới phải dùng màu vai trò rồi thêm vào đó. Phần xem trước website
-  khách sạn (trình dựng website) giữ `data-theme="light"`: website khách sạn chỉ có theme sáng.
+  khách sạn (trình dựng website) giữ `data-theme="light"`.
 - Phiếu in / HTML tự ghép (`document.write`, email): mọi giá trị từ khách phải qua `escapeHtml`
   (`src/lib/bookings/display.ts`) — tên khách đến từ form đặt phòng công khai.
 - Thứ tự làm: (1) token màu + font — xong (`feat/ui-tokens`); (2) thành phần dùng chung — xong
   (`feat/ui-components`); (3) khung + danh sách đặt phòng + panel — xong (`feat/ui-dashboard-bookings`);
   (4) các trang quản lý còn lại — xong (4a `feat/ui-workspace-pages`, 4b `feat/ui-operations-pages`,
   4c `feat/ui-config-pages`); (5) website khách sạn — xong (`feat/ui-hotel-site`).
-- Website khách sạn: `src/app/(public)/[subdomain]/layout.tsx` đặt khung cho mọi trang (theme sáng,
-  `data-surface="site"`, màu nhấn của khách sạn qua `hotelAccentVariables` — tự làm đậm tới 4.5:1,
-  font qua `fontStack`, tiêu đề trang). Link nội bộ luôn qua `SiteLink` / `useSiteHref` (có hay không
+- Website khách sạn: `src/app/(public)/[subdomain]/layout.tsx` đặt khung cho mọi trang (theme sáng /
+  tối theo cookie `ds-theme`, nút đổi `SiteThemeToggle` ở đầu trang — trong menu trên điện thoại;
+  `data-surface="site"`; màu nhấn của khách sạn qua `hotelAccentVariables` cho cả hai theme — làm đậm
+  trên nền sáng, làm sáng trên nền tối tới 4.5:1, `tailwind.config.ts` đổi `--site-acc*` thành
+  `--ds-acc`; font qua `fontStack`, tiêu đề trang). Mã QR giữ nền trắng ở cả hai theme. Link nội bộ luôn qua `SiteLink` / `useSiteHref` (có hay không
   tiền tố `/<subdomain>` tùy host). Nội dung khối đọc khóa của trình dựng trước (`heroTitle`,
   `roomsTitle`…) qua `cfgText`. Không hiển thị nội dung bịa (đánh giá mẫu, chính sách mẫu). Bản thiết kế: file Claude Design "Digistay hotel booking platform".
   Website chỉ công khai khi đã xuất bản: trang nào của website (trừ trang trả về PayOS) cũng qua
@@ -333,7 +336,9 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
   middleware lần hai như request nội bộ). Link trong website khách sạn luôn qua `SiteLink` /
   `useSiteHref` để giữ `/en`; nút đổi ngôn ngữ là `LanguageSwitch`.
 - Chữ cho client component gửi ở **một** `NextIntlClientProvider` duy nhất trong layout gốc
-  (`common` + `site`); khu vực mới thì thêm nhóm của nó vào đó. Không lồng provider thứ hai trong
+  (website khách sạn: `common` + `site`; các trang khác: `common`, `marketing.contact`, `auth`, `dash`,
+  `workspaces`, `workspaceHome`); khu vực mới thì thêm nhóm của nó vào đó. Nhóm `email` chỉ dùng ở
+  server, không đưa vào đây. Không lồng provider thứ hai trong
   layout con: bản build production khi đó thỉnh thoảng lỗi hydrate (React #418) ở website khách sạn.
 - Trang của chính Digistay (`src/app/(marketing)`: trang chủ, bảng giá, liên hệ, điều khoản, bảo
   mật) theo Claude Design "Digistay Gioi Thieu" / "Bang Gia" / "Lien He": đầu và chân trang ở
@@ -346,10 +351,25 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
   trang dịch bằng `AUTH_ERROR_KEYS` (`src/lib/auth/error-messages.ts`); thêm câu lỗi mới ở route thì
   thêm vào đó, `error-messages.test.ts` quét các route và báo câu nào thiếu. Sau đăng nhập về
   `?callbackUrl=` nếu là đường dẫn trong site (`src/lib/auth/after-login.ts`).
-- Tiến độ: (1) khung + giao diện website khách sạn — xong; (2) trang chủ / bảng giá / liên hệ — xong;
-  (3) đăng nhập / đăng ký / quên mật khẩu / lời mời / 404 — xong; còn: form tìm/đặt phòng và trang
-  thanh toán của website, ô tiếng Anh cho nội dung khách sạn nhập, email gửi khách theo ngôn ngữ,
-  trang quản lý, thông báo lỗi từ các API khác.
+- Trang quản lý: chữ ở `messages/dash/{vi,en}/<khu>.json` (nhóm `dash.<khu>`, gộp trong
+  `src/i18n/request.ts`); nhãn dùng chung (vai trò, trạng thái, nguồn, tiền, ngày) qua
+  `useDashLabels()` (`src/lib/i18n/dash.ts`). Nút VI | EN: `LanguageButton` (thanh bên, thanh trên của
+  workspace, /workspaces), ghi cookie `NEXT_LOCALE`.
+- Nội dung khách sạn tự nhập có bản tiếng Anh: cột `translations` `{ en: {...} }` (Property, RoomType,
+  ExtraService, Policy, WebsiteSettings) và `config.en` của khối website; đọc qua `localized` /
+  `localizeRow` / `blockText` (`src/lib/i18n/content.ts`), lưu qua `translationsInput` /
+  `mergeTranslations` (`src/lib/i18n/translations-input.ts`); form dùng `EnglishCopy`. Ô tiếng Anh
+  để trống thì hiện bản tiếng Việt. Tên tiện ích theo slug (`site.amenityNames`).
+- Thông báo từ API: route vẫn trả câu tiếng Việt; trang tiếng Anh dịch qua từ điển
+  `src/lib/i18n/api-errors.en.json` (câu tiếng Việt → tiếng Anh, `{0}`… cho giá trị) bằng
+  `apiError(data.error) || t('…')`. Thêm câu mới ở API thì thêm bản tiếng Anh vào từ điển:
+  `api-errors.test.ts` quét route và báo câu thiếu.
+- Email: gửi khách theo ngôn ngữ của đặt phòng (`Booking.locale`, form đặt phòng gửi kèm), email tài
+  khoản và lời mời theo cookie của trang gửi (`src/lib/i18n/request-locale.ts`); chữ ở nhóm `email`
+  của `messages/*.json` (`src/lib/email/i18n.ts`). Email cho chủ khách sạn, liên hệ và cảnh báo vận
+  hành vẫn tiếng Việt.
+- Tiến độ: website khách sạn, trang của Digistay, đăng nhập…, trang quản lý, nội dung khách sạn nhập,
+  thông báo API, email — xong.
 
 ## Kế hoạch gia cố
 

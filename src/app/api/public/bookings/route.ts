@@ -153,8 +153,8 @@ export async function POST(request: NextRequest) {
     let deposit: Awaited<ReturnType<typeof startGuestDeposit>> = null
     try {
       if (depositPolicy) {
-        // Back from PayOS's own page: the deposit page, which moves on once the webhook marks it paid.
-        const returnUrl = depositUrl(roomType.property.subdomain, booking.id)
+        // Back from PayOS's own page: the deposit page (in the guest's language), which moves on once the webhook marks it paid.
+        const returnUrl = depositUrl(roomType.property.subdomain, booking.id, data.locale)
         deposit = await startGuestDeposit(booking, depositPolicy, returnUrl)
       }
     } catch (error) {

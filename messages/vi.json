@@ -1007,10 +1007,10 @@
   },
   "email": {
     "layout": {
-      "brand": "DigiStay",
+      "brand": "Digistay",
       "tagline": "Hotel OS — Hệ điều hành quản lý khách sạn",
-      "automated": "Email này được gửi tự động từ DigiStay. Vui lòng không trả lời trực tiếp.",
-      "rights": "© {year} DigiStay. Mọi quyền được bảo lưu."
+      "automated": "Email này được gửi tự động từ Digistay. Vui lòng không trả lời trực tiếp.",
+      "rights": "© {year} Digistay. Mọi quyền được bảo lưu."
     },
     "common": {
       "hello": "Xin chào",
@@ -1028,28 +1028,28 @@
         "verify_account": "Xác thực tài khoản"
       },
       "descriptions": {
-        "register": "Cảm ơn bạn đã đăng ký tài khoản DigiStay. Vui lòng nhập mã bên dưới để hoàn tất đăng ký.",
+        "register": "Cảm ơn bạn đã đăng ký tài khoản Digistay. Vui lòng nhập mã bên dưới để hoàn tất đăng ký.",
         "forgot_password": "Chúng tôi nhận được yêu cầu đặt lại mật khẩu. Vui lòng nhập mã bên dưới để tiếp tục.",
         "login": "Đăng nhập nhanh không cần mật khẩu bằng mã OTP dưới đây.",
         "change_email": "Bạn vừa yêu cầu thay đổi địa chỉ email. Nhập mã dưới đây để xác nhận.",
         "verify_account": "Vui lòng xác thực tài khoản của bạn bằng mã OTP dưới đây."
       },
-      "subject": "[DigiStay] {title} - Mã xác thực OTP",
+      "subject": "[Digistay] {title} - Mã xác thực OTP",
       "preview": "Mã OTP: {otp}",
       "codeLabel": "Mã xác thực của bạn",
       "validFor": "⏱️ Có hiệu lực trong <b>{minutes} phút</b>",
-      "security": "<b>🛡️ Bảo mật:</b> Không chia sẻ mã này với bất kỳ ai. DigiStay sẽ không bao giờ hỏi mã OTP qua điện thoại.",
+      "security": "<b>🛡️ Bảo mật:</b> Không chia sẻ mã này với bất kỳ ai. Digistay sẽ không bao giờ hỏi mã OTP qua điện thoại.",
       "ignore": "Nếu bạn không yêu cầu mã này, vui lòng bỏ qua email — tài khoản của bạn vẫn an toàn.",
       "textCode": "Mã OTP: {otp}",
       "textValid": "Có hiệu lực trong {minutes} phút.",
       "textIgnore": "Nếu bạn không yêu cầu mã này, vui lòng bỏ qua email."
     },
     "welcome": {
-      "subject": "Chào mừng bạn đến với DigiStay! 🎉",
+      "subject": "Chào mừng bạn đến với Digistay! 🎉",
       "preview": "Tài khoản của bạn đã được kích hoạt",
       "title": "🎉 Tài khoản đã sẵn sàng!",
-      "welcomeName": "Chào mừng <b>{name}</b> đến với <accent>DigiStay</accent>.",
-      "welcome": "Chào mừng bạn đến với <accent>DigiStay</accent>.",
+      "welcomeName": "Chào mừng <b>{name}</b> đến với <accent>Digistay</accent>.",
+      "welcome": "Chào mừng bạn đến với <accent>Digistay</accent>.",
       "verified": "Email của bạn đã được xác thực thành công. Bạn có thể bắt đầu sử dụng ngay bây giờ.",
       "nextSteps": "Bước tiếp theo:",
       "steps": {
@@ -1059,27 +1059,27 @@
         "bookings": "Bắt đầu quản lý bookings & khách hàng"
       },
       "signIn": "Đăng nhập ngay →",
-      "text": "Chào mừng đến với DigiStay! Tài khoản đã được xác thực.",
+      "text": "Chào mừng đến với Digistay! Tài khoản đã được xác thực.",
       "textSignIn": "Đăng nhập: {url}"
     },
     "passwordChanged": {
-      "subject": "[DigiStay] Mật khẩu vừa được thay đổi",
+      "subject": "[Digistay] Mật khẩu vừa được thay đổi",
       "preview": "Mật khẩu của bạn vừa được thay đổi",
       "title": "🔒 Mật khẩu đã được thay đổi",
-      "changed": "Chúng tôi xác nhận rằng mật khẩu tài khoản <b>DigiStay</b> của bạn vừa được thay đổi vào <b>{time}</b>.",
+      "changed": "Chúng tôi xác nhận rằng mật khẩu tài khoản <b>Digistay</b> của bạn vừa được thay đổi vào <b>{time}</b>.",
       "doneTitle": "✅ Đổi mật khẩu thành công",
       "doneText": "Nếu đây là bạn, bạn không cần làm gì thêm.",
       "notYouTitle": "⚠️ Không phải bạn?",
       "notYou": "Nếu bạn không thực hiện thay đổi này, hãy liên hệ ngay với chúng tôi để bảo vệ tài khoản.",
       "notYouSupport": "Nếu bạn không thực hiện thay đổi này, hãy liên hệ ngay với chúng tôi qua <link>trang hỗ trợ</link> để bảo vệ tài khoản.",
-      "text": "Mật khẩu DigiStay của bạn vừa được thay đổi lúc {time}.",
+      "text": "Mật khẩu Digistay của bạn vừa được thay đổi lúc {time}.",
       "textNotYou": "Nếu không phải bạn, hãy liên hệ hỗ trợ ngay."
     },
     "emailChange": {
-      "subject": "[DigiStay] Xác nhận thay đổi địa chỉ email",
+      "subject": "[Digistay] Xác nhận thay đổi địa chỉ email",
       "preview": "Xác nhận thay đổi địa chỉ email",
       "title": "📧 Xác nhận thay đổi email",
-      "request": "Chúng tôi nhận được yêu cầu thay đổi email tài khoản <b>DigiStay</b> sang địa chỉ <accent>{email}</accent>.",
+      "request": "Chúng tôi nhận được yêu cầu thay đổi email tài khoản <b>Digistay</b> sang địa chỉ <accent>{email}</accent>.",
       "pressButton": "Nhấn nút bên dưới để xác nhận thay đổi:",
       "button": "Xác nhận thay đổi",
       "validFor": "⏱️ Link có hiệu lực trong <b>{hours} giờ</b>",
@@ -1138,14 +1138,13 @@
       "subject": "{inviter} mời bạn vào {workspace}",
       "preview": "{inviter} mời bạn vào {workspace}",
       "title": "💌 Lời mời tham gia",
-      "invited": "<b>{inviter}</b> đã mời bạn tham gia workspace <accent>{workspace}</accent> trên DigiStay.",
+      "invited": "<b>{inviter}</b> đã mời bạn tham gia workspace <accent>{workspace}</accent> trên Digistay.",
       "roleLabel": "Vai trò của bạn",
       "roles": {
-        "OWNER": "Chủ sở hữu",
         "ADMIN": "Quản trị viên",
         "MANAGER": "Quản lý",
-        "STAFF": "Nhân viên",
-        "VIEWER": "Người xem"
+        "RECEPTIONIST": "Lễ tân",
+        "USER": "Nhân viên"
       },
       "accept": "Chấp nhận lời mời →",
       "expires": "⏱️ Hết hạn lúc {time}",

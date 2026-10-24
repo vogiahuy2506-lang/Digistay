@@ -1,5 +1,5 @@
 /**
- * Shared email template system for DigiStay.
+ * Shared email template system for Digistay.
  * Returns HTML + plain text for use with any transport (SMTP, Resend, etc.)
  *
  * Guest and account emails come in Vietnamese or English (`locale`, 'vi'
@@ -27,7 +27,7 @@ export interface BaseEmailProps {
 }
 
 export const BRAND = {
-  name: 'DigiStay',
+  name: 'Digistay',
   tagline: 'Hotel OS — Hệ điều hành quản lý khách sạn',
   logoUrl: 'https://digistay.vn/logo.png',
   primary: '#a93119',
@@ -608,8 +608,8 @@ export interface WorkspaceInviteTemplateProps {
   locale?: EmailLocale
 }
 
-// Labels for these; any other role is shown as it is.
-const ROLE_LABELS = ['OWNER', 'ADMIN', 'MANAGER', 'STAFF', 'VIEWER'] as const
+// Labels for the roles an invitation can give (WorkspaceRole in prisma/schema.prisma); any other is shown as it is.
+const ROLE_LABELS = ['ADMIN', 'MANAGER', 'RECEPTIONIST', 'USER'] as const
 const hasRoleLabel = (role: string): role is (typeof ROLE_LABELS)[number] => (ROLE_LABELS as readonly string[]).includes(role)
 
 export function workspaceInviteTemplate(props: WorkspaceInviteTemplateProps): { html: string; text: string; subject: string } {
