@@ -11,7 +11,7 @@ interface Props {
   roomTypes: PublicRoomType[]
 }
 
-/** Room types (redesign 3a): photo, name + price per night, one line of facts. */
+/** Room types (redesign 3a): photo, name + price per night, one line of facts, the first amenities, details and "Đặt ngay". */
 export function RoomsBlock({ block, roomTypes, property }: Props) {
   const t = useTranslations('site')
   const locale = useLocale()
@@ -21,6 +21,7 @@ export function RoomsBlock({ block, roomTypes, property }: Props) {
   const showCTA = cfg.showCTA !== false
   const limit = Number(cfg.roomsLimit) > 0 ? Number(cfg.roomsLimit) : undefined
   const rooms = roomTypes.slice(0, limit)
+  const AMENITIES_SHOWN = 3
 
   return (
     <Section id="rooms">
@@ -53,11 +54,32 @@ export function RoomsBlock({ block, roomTypes, property }: Props) {
                   )}
                 </div>
                 <p className="mt-1 text-small text-muted">{roomMeta(room, t)}</p>
+                {room.amenities.length > 0 && (
+                  <ul className="mt-3 flex flex-wrap gap-1.5" aria-label={t('room.amenities')}>
+                    {room.amenities.slice(0, AMENITIES_SHOWN).map((name) => (
+                      <li key={name} className="rounded-ctl bg-fg/5 px-2 py-0.5 text-xs text-fg">
+                        {name}
+                      </li>
+                    ))}
+                    {room.amenities.length > AMENITIES_SHOWN && (
+                      <li className="px-1 py-0.5 text-xs text-muted">
+                        {t('room.moreAmenities', { count: room.amenities.length - AMENITIES_SHOWN })}
+                      </li>
+                    )}
+                  </ul>
+                )}
                 {showCTA && (
                   <div className="mt-auto pt-4">
-                    <div className="border-t border-line pt-4">
+                    <div className="flex items-center justify-between gap-3 border-t border-line pt-4">
                       <SiteLink path={`/rooms/${room.id}`} className="text-small font-medium text-acc hover:underline">
                         {t('room.details')}
+                      </SiteLink>
+                      {/* The room page's booking box: dates, guests, then the booking form. */}
+                      <SiteLink
+                        path={`/rooms/${room.id}#dat-phong`}
+                        className="inline-flex h-10 shrink-0 items-center rounded-ctl bg-ink px-4 text-small font-medium text-on-ink transition-colors hover:bg-ink/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
+                      >
+                        {t('room.bookNow')}
                       </SiteLink>
                     </div>
                   </div>

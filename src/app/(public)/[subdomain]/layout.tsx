@@ -6,7 +6,7 @@ import { prisma } from '@/lib/db'
 import { publicTheme } from '@/components/marketing/PublicFrame'
 import { localized, localizeRow } from '@/lib/i18n/content'
 import { SITE_BASE_HEADER, SITE_PATH_HEADER, siteBasePath, siteHref } from '@/lib/public-site/paths'
-import { hotelAccentVariables } from '@/lib/public-site/accent'
+import { hotelAccentVariables, hotelButtonVariables, hotelHeadingVariables } from '@/lib/public-site/accent'
 import { fontStack } from '@/lib/public-site/font-stack'
 import { loadVisibleSite } from '@/lib/public-site/visibility'
 import { SiteBaseProvider } from './_components/site-base'
@@ -21,7 +21,7 @@ const loadSiteFrame = cache((subdomain: string) =>
       description: true,
       translations: true,
       websiteSettings: {
-        select: { primaryColor: true, fontFamily: true, headingFont: true, metaTitle: true, metaDescription: true, translations: true },
+        select: { primaryColor: true, buttonColor: true, headingColor: true, fontFamily: true, headingFont: true, metaTitle: true, metaDescription: true, translations: true },
       },
     },
   })
@@ -79,6 +79,8 @@ export default async function HotelSiteLayout({
 
   const style = {
     ...hotelAccentVariables(settings?.primaryColor),
+    ...hotelButtonVariables(settings?.buttonColor),
+    ...hotelHeadingVariables(settings?.headingColor),
     '--site-body': fontStack(settings?.fontFamily, 'body'),
     '--site-heading': fontStack(settings?.headingFont, 'heading'),
     // Older blocks and the search page still read these (raw hotel colors).
@@ -92,6 +94,7 @@ export default async function HotelSiteLayout({
       data-public-theme
       data-theme={theme}
       data-surface="site"
+      data-site-heading={settings?.headingColor ? '' : undefined}
       className={`${siteFontVariables} min-h-screen bg-page text-fg font-site-body antialiased dark:[color-scheme:dark]`}
       style={style}
     >

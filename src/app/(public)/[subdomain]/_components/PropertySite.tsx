@@ -211,7 +211,7 @@ function CtaBlock({ block }: { block: PublicBlock }) {
 
   return (
     // Dark band on the light page; in the dark theme a raised band, not a bright one.
-    <section className="bg-ink py-16 sm:py-20 text-on-ink dark:bg-raised dark:text-fg">
+    <section data-band className="bg-ink py-16 sm:py-20 text-on-ink dark:bg-raised dark:text-fg">
       <Container className="max-w-3xl text-center">
         <h2 className="font-site text-[32px] leading-[40px] sm:text-h2">{title}</h2>
         {subtitle && <p className="mt-4 text-lead text-on-ink/80 dark:text-muted">{subtitle}</p>}

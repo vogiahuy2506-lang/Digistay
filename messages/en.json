@@ -80,7 +80,9 @@
       "maxAdults": "Max adults",
       "maxChildren": "Max children",
       "amenities": "In the room",
-      "policies": "Policies"
+      "policies": "Policies",
+      "bookNow": "Book now",
+      "moreAmenities": "{count, plural, one {+# more amenity} other {+# more amenities}}"
     },
     "policy": {
       "checkInOut": "Check-in / check-out",

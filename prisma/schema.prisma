@@ -579,6 +579,10 @@ model WebsiteSettings {
   primaryColor     String  @default("#3B82F6")
   secondaryColor   String  @default("#10B981")
   accentColor      String  @default("#F59E0B")
+  /// Buttons, outlines and the CTA band on the site (#rrggbb); null: Digistay's ink.
+  buttonColor      String?
+  /// Page and section titles on the site (#rrggbb); null: the text color.
+  headingColor     String?
   fontFamily       String  @default("Inter")
   headingFont      String  @default("Playfair Display")
   

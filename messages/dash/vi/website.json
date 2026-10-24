@@ -131,7 +131,35 @@
       "list": "List (Danh sách)"
     },
     "columnCount": "{count} cột",
-    "contactForm": "Hiển thị form liên hệ"
+    "contactForm": "Hiển thị form liên hệ",
+    "cover": {
+      "label": "Ảnh bìa",
+      "hint": "Ảnh đầu tiên của dải ảnh trên đầu trang. Ảnh tải lên cũng được thêm vào thư viện ảnh của cơ sở.",
+      "auto": "Tự động (ảnh đầu tiên của cơ sở)",
+      "photo": "Ảnh của cơ sở",
+      "upload": "Tải ảnh lên",
+      "uploading": "Đang tải…",
+      "uploadFailed": "Không tải được ảnh lên",
+      "notImage": "Vui lòng chọn một file ảnh",
+      "tooLarge": "Ảnh tối đa 10MB"
+    },
+    "reviews": {
+      "label": "Đánh giá của khách",
+      "hint": "Chỉ nhập đánh giá thật của khách (chép từ Google, Booking.com, sổ góp ý…). Chưa có đánh giá nào thì khối này không hiện trên website.",
+      "empty": "Chưa có đánh giá nào.",
+      "number": "Đánh giá {n}",
+      "name": "Tên khách",
+      "namePlaceholder": "VD: Chị Lan, Hà Nội",
+      "source": "Nguồn (không bắt buộc)",
+      "sourcePlaceholder": "VD: Google",
+      "rating": "Số sao",
+      "stars": "{count} sao",
+      "text": "Nội dung",
+      "textPlaceholder": "Khách viết gì về khách sạn",
+      "add": "Thêm đánh giá",
+      "moveUp": "Đưa lên",
+      "moveDown": "Đưa xuống"
+    }
   },
   "preview": {
     "propertyName": "Khách sạn của bạn",
@@ -154,9 +182,7 @@
     "galleryTitle": "Thư viện hình ảnh",
     "reviewsTitle": "Đánh giá từ khách hàng",
     "reviews": {
-      "first": "Dịch vụ tuyệt vời, phòng sạch sẽ!",
-      "second": "Vị trí thuận tiện, nhân viên friendly.",
-      "third": "Sẽ quay lại lần sau!"
+      "none": "Chưa có đánh giá nào: khối này đang ẩn trên website. Bấm cấu hình để nhập đánh giá thật của khách."
     },
     "mapTitle": "Vị trí của chúng tôi",
     "mapNoLocation": "Chưa cài đặt vị trí",
@@ -182,9 +208,7 @@
   },
   "style": {
     "colors": "Màu sắc",
-    "primary": "Màu chính",
-    "secondary": "Màu phụ",
-    "accent": "Màu nhấn",
+    "primary": "Màu nhấn",
     "fonts": "Phông chữ",
     "bodyFont": "Phông chữ chính",
     "headingFont": "Phông chữ tiêu đề",
@@ -197,7 +221,14 @@
       "traditional": "Truyền thống",
       "youthful": "Trẻ trung",
       "dynamic": "Năng động"
-    }
+    },
+    "primaryHint": "Link, giá, sao đánh giá và các điểm nhấn.",
+    "button": "Màu nút bấm",
+    "buttonHint": "Nút “Đặt phòng”, “Tìm phòng”…, viền nút phụ và dải kêu gọi đặt phòng.",
+    "heading": "Màu tiêu đề",
+    "headingHint": "Tiêu đề trang và tiêu đề các mục.",
+    "useDefault": "Mặc định",
+    "contrastNote": "Màu quá nhạt hoặc quá đậm so với nền được website tự chỉnh nhẹ để chữ luôn đọc được, ở cả giao diện sáng và tối."
   },
   "settings": {
     "seo": "SEO & Meta",

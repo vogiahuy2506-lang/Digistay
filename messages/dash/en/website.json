@@ -131,7 +131,35 @@
       "list": "List"
     },
     "columnCount": "{count, plural, one {# column} other {# columns}}",
-    "contactForm": "Show the contact form"
+    "contactForm": "Show the contact form",
+    "cover": {
+      "label": "Cover photo",
+      "hint": "The first photo of the strip at the top of the page. An uploaded photo is added to the property's photos too.",
+      "auto": "Automatic (the property's first photo)",
+      "photo": "Property photo",
+      "upload": "Upload a photo",
+      "uploading": "Uploading…",
+      "uploadFailed": "Couldn't upload the photo",
+      "notImage": "Please choose an image file",
+      "tooLarge": "Photos can be 10MB at most"
+    },
+    "reviews": {
+      "label": "Guest reviews",
+      "hint": "Only add real reviews from your guests (copied from Google, Booking.com, your guest book…). With no reviews the block doesn't show on the website.",
+      "empty": "No reviews yet.",
+      "number": "Review {n}",
+      "name": "Guest name",
+      "namePlaceholder": "e.g. Lan, Hanoi",
+      "source": "Source (optional)",
+      "sourcePlaceholder": "e.g. Google",
+      "rating": "Rating",
+      "stars": "{count, plural, one {# star} other {# stars}}",
+      "text": "Review",
+      "textPlaceholder": "What the guest wrote about the hotel",
+      "add": "Add a review",
+      "moveUp": "Move up",
+      "moveDown": "Move down"
+    }
   },
   "preview": {
     "propertyName": "Your hotel",
@@ -154,9 +182,7 @@
     "galleryTitle": "Photo gallery",
     "reviewsTitle": "What our guests say",
     "reviews": {
-      "first": "Great service, spotless room!",
-      "second": "Convenient location, friendly staff.",
-      "third": "Will definitely come back!"
+      "none": "No reviews yet: this block is hidden on the website. Open its settings to add your guests' real reviews."
     },
     "mapTitle": "Our location",
     "mapNoLocation": "No location set yet",
@@ -182,9 +208,7 @@
   },
   "style": {
     "colors": "Colors",
-    "primary": "Primary color",
-    "secondary": "Secondary color",
-    "accent": "Accent color",
+    "primary": "Accent color",
     "fonts": "Fonts",
     "bodyFont": "Body font",
     "headingFont": "Heading font",
@@ -197,7 +221,14 @@
       "traditional": "Traditional",
       "youthful": "Youthful",
       "dynamic": "Dynamic"
-    }
+    },
+    "primaryHint": "Links, prices, review stars and highlights.",
+    "button": "Button color",
+    "buttonHint": "“Book now”, “Search”… buttons, outlined buttons and the booking banner.",
+    "heading": "Heading color",
+    "headingHint": "Page and section titles.",
+    "useDefault": "Default",
+    "contrastNote": "A color too light or too dark for the background is adjusted a little so text always reads, in the light and dark themes."
   },
   "settings": {
     "seo": "SEO & Meta",

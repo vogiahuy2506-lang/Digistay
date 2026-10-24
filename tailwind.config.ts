@@ -1,6 +1,6 @@
 import type { Config } from 'tailwindcss'
 import plugin from 'tailwindcss/plugin'
-import { cssVar, radii, roles, themeVariables, typeScale } from './src/styles/tokens'
+import { cssVar, hexToChannels, radii, roles, themes, themeVariables, typeScale } from './src/styles/tokens'
 
 // Role colors from src/styles/tokens.ts: `bg-panel`, `text-muted`, `border-line`,
 // `bg-ok-soft text-ok`, ... Values live in CSS variables, so they follow the
@@ -17,13 +17,25 @@ const themeBase = plugin(({ addBase }) => {
     '[data-surface="site"]': { '--ds-r-ctl': radii.site.ctl, '--ds-r-box': radii.site.box },
     // A hotel's website: its own accent in each theme (src/lib/public-site/accent.ts sets
     // --site-acc* on the root). Two attributes, so these win over the theme rules above.
+    // Its button color as the ink (buttons, outlines, the CTA band), when it picked one.
     '[data-surface="site"][data-theme]': {
       '--ds-acc': 'var(--site-acc, var(--ds-brand))',
       '--ds-acc-soft': 'var(--site-acc-soft, var(--ds-brand-soft))',
+      '--ds-ink': `var(--site-ink, ${hexToChannels(themes.light.ink)})`,
+      '--ds-on-ink': `var(--site-on-ink, ${hexToChannels(themes.light['on-ink'])})`,
     },
     '[data-surface="site"][data-theme="dark"]': {
       '--ds-acc': 'var(--site-acc-dark, var(--ds-brand))',
       '--ds-acc-soft': 'var(--site-acc-soft-dark, var(--ds-brand-soft))',
+      '--ds-ink': `var(--site-ink-dark, ${hexToChannels(themes.dark.ink)})`,
+      '--ds-on-ink': `var(--site-on-ink-dark, ${hexToChannels(themes.dark['on-ink'])})`,
+    },
+    // Its heading color on page and section titles (font-site), not inside a band.
+    '[data-surface="site"][data-site-heading] :is(h1, h2).font-site:not([data-band] *)': {
+      color: 'rgb(var(--site-heading-color))',
+    },
+    '[data-surface="site"][data-site-heading][data-theme="dark"] :is(h1, h2).font-site:not([data-band] *)': {
+      color: 'rgb(var(--site-heading-color-dark))',
     },
   })
 })

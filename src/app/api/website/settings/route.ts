@@ -14,6 +14,11 @@ const putSchema = z.object({
   settings: z.record(z.any()),
 })
 
+/** A #rrggbb color, or null (empty, missing or anything else: the default). */
+function hexColorOrNull(value: unknown): string | null {
+  return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value.trim()) ? value.trim().toUpperCase() : null
+}
+
 /** The SEO texts in English (settings.translations). */
 const seoTranslations = translationsInput(['metaTitle', 'metaDescription'], 500)
 
@@ -154,6 +159,8 @@ export async function PUT(request: NextRequest) {
       update: {
         primaryColor: settings.primaryColor,
         secondaryColor: settings.secondaryColor,
+        ...(settings.buttonColor !== undefined && { buttonColor: hexColorOrNull(settings.buttonColor) }),
+        ...(settings.headingColor !== undefined && { headingColor: hexColorOrNull(settings.headingColor) }),
         accentColor: settings.accentColor,
         fontFamily: settings.fontFamily,
         headingFont: settings.headingFont,
@@ -169,6 +176,8 @@ export async function PUT(request: NextRequest) {
         propertyId,
         primaryColor: settings.primaryColor || '#3B82F6',
         secondaryColor: settings.secondaryColor || '#10B981',
+        buttonColor: hexColorOrNull(settings.buttonColor),
+        headingColor: hexColorOrNull(settings.headingColor),
         accentColor: settings.accentColor || '#F59E0B',
         fontFamily: settings.fontFamily || 'Inter',
         headingFont: settings.headingFont || 'Playfair Display',

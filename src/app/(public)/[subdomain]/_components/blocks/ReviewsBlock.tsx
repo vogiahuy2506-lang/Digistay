@@ -12,6 +12,7 @@ interface Review {
   name: string
   text: string
   rating: number
+  source: string
 }
 
 function reviewsFrom(config: Record<string, unknown>): Review[] {
@@ -22,6 +23,7 @@ function reviewsFrom(config: Record<string, unknown>): Review[] {
       const rating = Math.round(Number(item.rating))
       return {
         name: typeof item.name === 'string' ? item.name.trim() : '',
+        source: typeof item.source === 'string' ? item.source.trim() : '',
         text: typeof item.text === 'string' ? item.text.trim() : '',
         rating: Number.isFinite(rating) ? Math.min(5, Math.max(1, rating)) : 5,
       }
@@ -54,7 +56,10 @@ export function ReviewsBlock({ block }: Props) {
               ))}
             </p>
             <blockquote className="mt-4 text-body text-fg">“{review.text}”</blockquote>
-            <p className="mt-4 text-small text-muted">{review.name}</p>
+            <p className="mt-4 text-small text-muted">
+              {review.name}
+              {review.source && <span> · {review.source}</span>}
+            </p>
           </li>
         ))}
       </ul>

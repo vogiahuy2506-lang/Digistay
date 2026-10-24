@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { contrastRatio, themes } from '@/styles/tokens'
-import { hotelAccent, hotelAccentDark, hotelAccentVariables } from './accent'
+import { hotelAccent, hotelAccentDark, hotelAccentVariables, hotelButtonVariables, hotelHeadingVariables } from './accent'
 
 const PAGE = themes.light.page
 
@@ -50,5 +50,30 @@ describe('hotel accent', () => {
     }
     // A color that already reads on dark stays as it is.
     expect(hotelAccentDark('#EE8B6F').acc).toBe('#EE8B6F')
+  })
+
+  it('makes the button color stand out from the page in both themes, with a readable label', () => {
+    const channels = (v: string) => `#${v.split(' ').map((n) => Number(n).toString(16).padStart(2, '0')).join('')}`
+    for (const color of ['#0E7C66', '#FFD700', '#FFFFFF', '#111111', '#E11D48']) {
+      const vars = hotelButtonVariables(color)
+      const light = channels(vars['--site-ink'])
+      const dark = channels(vars['--site-ink-dark'])
+      expect(contrastRatio(light, PAGE)).toBeGreaterThanOrEqual(3)
+      expect(contrastRatio(dark, themes.dark.page)).toBeGreaterThanOrEqual(3)
+      expect(contrastRatio(channels(vars['--site-on-ink']), light)).toBeGreaterThanOrEqual(4.5)
+      expect(contrastRatio(channels(vars['--site-on-ink-dark']), dark)).toBeGreaterThanOrEqual(4.5)
+    }
+    expect(hotelButtonVariables(null)).toEqual({})
+    expect(hotelButtonVariables('teal')).toEqual({})
+  })
+
+  it('keeps headings readable as text in both themes', () => {
+    const channels = (v: string) => `#${v.split(' ').map((n) => Number(n).toString(16).padStart(2, '0')).join('')}`
+    for (const color of ['#C9A227', '#0B3D91', '#FFFFFF', '#000000']) {
+      const vars = hotelHeadingVariables(color)
+      expect(contrastRatio(channels(vars['--site-heading-color']), PAGE)).toBeGreaterThanOrEqual(4.5)
+      expect(contrastRatio(channels(vars['--site-heading-color-dark']), themes.dark.page)).toBeGreaterThanOrEqual(4.5)
+    }
+    expect(hotelHeadingVariables(undefined)).toEqual({})
   })
 })

@@ -102,3 +102,59 @@ export function hotelAccentVariables(primaryColor: string | null | undefined): R
     '--site-acc-soft-dark': hexToChannels(dark.accSoft),
   }
 }
+
+/** Raises (lighter) or lowers (darker) `hex` until it has `ratio` against `surface`. */
+function untilContrast(hex: string, surface: string, ratio: number, toward: 'black' | 'white'): string {
+  let [r, g, b] = rgb(hex)
+  for (let i = 0; i < 60 && contrastRatio(toHex(r, g, b), surface) < ratio; i++) {
+    if (toward === 'black') {
+      r *= 0.94
+      g *= 0.94
+      b *= 0.94
+    } else {
+      r += (255 - r) * 0.08
+      g += (255 - g) * 0.08
+      b += (255 - b) * 0.08
+    }
+  }
+  return toHex(r, g, b)
+}
+
+/** White or the ink's near-black, whichever reads better on `background`. */
+function textOn(background: string): string {
+  const dark = themes.light.ink
+  return contrastRatio('#FFFFFF', background) >= contrastRatio(dark, background) ? '#FFFFFF' : dark
+}
+
+/**
+ * The hotel's button color (WebsiteSettings.buttonColor) for the site's ink
+ * (`bg-ink` buttons, `border-ink` outlines, the CTA band): it must stand out
+ * from the page (3:1, as for any control) in each theme, and its label is
+ * white or near-black, whichever reads. None: Digistay's ink.
+ */
+export function hotelButtonVariables(buttonColor: string | null | undefined): Record<string, string> {
+  const color = parseHex(buttonColor)
+  if (!color) return {}
+  const light = untilContrast(color, PAGE, 3, 'black')
+  const dark = untilContrast(color, themes.dark.page, 3, 'white')
+  return {
+    '--site-ink': hexToChannels(light),
+    '--site-on-ink': hexToChannels(textOn(light)),
+    '--site-ink-dark': hexToChannels(dark),
+    '--site-on-ink-dark': hexToChannels(textOn(dark)),
+  }
+}
+
+/**
+ * The hotel's heading color (WebsiteSettings.headingColor) for the page and
+ * section titles: readable as text in each theme (4.5:1, darkened on the light
+ * page, lightened on the dark one). None: the text color.
+ */
+export function hotelHeadingVariables(headingColor: string | null | undefined): Record<string, string> {
+  const color = parseHex(headingColor)
+  if (!color) return {}
+  return {
+    '--site-heading-color': hexToChannels(darkenUntilReadable(color)),
+    '--site-heading-color-dark': hexToChannels(lightenUntilReadable(color)),
+  }
+}

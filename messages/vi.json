@@ -80,7 +80,9 @@
       "maxAdults": "Tối đa người lớn",
       "maxChildren": "Tối đa trẻ em",
       "amenities": "Tiện ích trong phòng",
-      "policies": "Chính sách"
+      "policies": "Chính sách",
+      "bookNow": "Đặt ngay",
+      "moreAmenities": "+{count} tiện ích"
     },
     "policy": {
       "checkInOut": "Nhận / trả phòng",

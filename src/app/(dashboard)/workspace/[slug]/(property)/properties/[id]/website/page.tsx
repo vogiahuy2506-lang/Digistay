@@ -7,6 +7,8 @@ import { useDashLabels } from '@/lib/i18n/dash'
 import { PageContainer } from '@/components/layout'
 import { toast } from '@/components/ui/toast'
 import { EnglishCopy } from '@/components/ui/english-copy'
+import { CoverPicker } from './cover-picker'
+import { ReviewsEditor, type ReviewEntry } from './reviews-editor'
 import { useProperty } from '@/lib/hooks/use-property'
 import { Card, CardContent, CardHeader, CardTitle, Button, Input, Badge, Tabs, TabsList, TabsTrigger, TabsContent, Alert, AlertDescription } from '@/components/ui'
 import {
@@ -44,6 +46,10 @@ interface WebsiteSettings {
   primaryColor: string
   secondaryColor: string
   accentColor: string
+  /** #rrggbb, null: Digistay's ink (src/lib/public-site/accent.ts hotelButtonVariables). */
+  buttonColor?: string | null
+  /** #rrggbb, null: the text color. */
+  headingColor?: string | null
   fontFamily: string
   headingFont: string
   layout: string
@@ -68,6 +74,8 @@ interface BlockConfig {
   heroTitle?: string
   heroSubtitle?: string
   heroImage?: string
+  /** The cover photo HeroBlock puts first (CoverPicker); none: the property's own first photo. */
+  backgroundImage?: string
   heroCtaText?: string
   heroCtaLink?: string
   
@@ -93,6 +101,8 @@ interface BlockConfig {
   // Reviews
   reviewsTitle?: string
   reviewsLimit?: number
+  /** The hotel's real guest reviews (ReviewsEditor); the block shows nothing without them. */
+  reviews?: ReviewEntry[]
   
   // Map
   mapAddress?: string
@@ -164,7 +174,8 @@ const blockTypes: BlockType[] = [
     color: 'text-info', 
     bgGradient: 'from-blue-500 to-blue-600',
     defaultConfig: {
-      heroTitle: 'Chào mừng đến với',
+      // No title: the site shows the hotel's name (the old default, a bare "Chào mừng đến với", showed nothing after it).
+      heroTitle: '',
       heroSubtitle: 'Trải nghiệm lưu trú tuyệt vời',
       heroCtaText: 'Đặt phòng ngay',
       heroCtaLink: '#rooms'
@@ -575,6 +586,12 @@ function BlockConfigPanel({
                   placeholder={t('placeholders.heroSubtitle')}
                 />
               </div>
+              <CoverPicker
+                propertyId={propertyData?.id ?? ''}
+                photos={propertyData?.images ?? []}
+                value={config.backgroundImage || undefined}
+                onChange={(url) => updateConfig('backgroundImage', url)}
+              />
               <div>
                 <label className="text-sm font-medium text-fg block mb-1">{t('fields.ctaButton')}</label>
                 <Input 
@@ -727,6 +744,7 @@ function BlockConfigPanel({
                   max={10}
                 />
               </div>
+              <ReviewsEditor value={config.reviews ?? []} onChange={(reviews) => updateConfig('reviews', reviews)} />
             </>
           )}
 
@@ -894,6 +912,55 @@ function BlockConfigPanel({
         <div className="p-4 border-t bg-fg/[0.03]">
           <Button onClick={onClose} className="w-full">{tc('actions.close')}</Button>
         </div>
+      </div>
+    </div>
+  )
+}
+
+/** A color the hotel may leave to the default (null): a swatch, the hex, and "Mặc định". */
+function OptionalColor({
+  label,
+  hint,
+  value,
+  fallback,
+  onChange,
+  defaultLabel,
+}: {
+  label: string
+  hint: string
+  value: string | null
+  fallback: string
+  onChange: (value: string | null) => void
+  defaultLabel: string
+}) {
+  const [text, setText] = React.useState(value ?? '')
+  React.useEffect(() => setText(value ?? ''), [value])
+  return (
+    <div>
+      <label className="text-sm font-medium text-fg">{label}</label>
+      <p className="text-xs text-muted">{hint}</p>
+      <div className="flex items-center gap-2 mt-1">
+        <input
+          type="color"
+          aria-label={label}
+          value={value ?? fallback}
+          onChange={(e) => onChange(e.target.value.toUpperCase())}
+          className="w-10 h-10 rounded border cursor-pointer"
+        />
+        <Input
+          value={text}
+          placeholder={defaultLabel}
+          onChange={(e) => {
+            setText(e.target.value)
+            const v = e.target.value.trim()
+            if (v === '') onChange(null)
+            else if (/^#[0-9a-f]{6}$/i.test(v)) onChange(v.toUpperCase())
+          }}
+          className="flex-1"
+        />
+        <Button type="button" variant="ghost" size="sm" onClick={() => onChange(null)} disabled={value === null}>
+          {defaultLabel}
+        </Button>
       </div>
     </div>
   )
@@ -1103,6 +1170,10 @@ function PreviewBlock({
       case 'HERO':
         return (
           <div className="relative h-64 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl overflow-hidden">
+            {(config.backgroundImage || propertyData?.images?.[0]?.url) && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={config.backgroundImage || propertyData.images[0].url} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
               <h2 className="text-2xl font-bold mb-2">{config.heroTitle || propertyName}</h2>
@@ -1196,12 +1267,18 @@ function PreviewBlock({
         )
       
       case 'REVIEWS':
-        // Sample reviewers: names, the same in every language.
-        const reviews = [
-          { name: 'Nguyễn Văn A', rating: 5, comment: t('reviews.first') },
-          { name: 'Trần Thị B', rating: 4, comment: t('reviews.second') },
-          { name: 'Lê Văn C', rating: 5, comment: t('reviews.third') },
-        ]
+        // The hotel's own reviews, as the site shows them; none: the site hides the block.
+        const reviews = (config.reviews ?? [])
+          .filter((r) => r.name?.trim() && r.text?.trim())
+          .map((r) => ({ name: r.source ? `${r.name} · ${r.source}` : r.name, rating: r.rating, comment: r.text }))
+        if (reviews.length === 0) {
+          return (
+            <div className="p-4 bg-panel rounded-xl border border-dashed border-line text-center">
+              <Star className="w-5 h-5 text-muted mx-auto mb-2" />
+              <p className="text-sm text-muted">{t('reviews.none')}</p>
+            </div>
+          )
+        }
         return (
           <div className="p-4 bg-panel rounded-xl border border-line">
             <h3 className="text-lg font-semibold text-fg mb-4 flex items-center gap-2">
@@ -1806,6 +1883,7 @@ export default function WebsiteBuilderPage() {
                 <CardContent className="space-y-4">
                   <div>
                     <label className="text-sm font-medium text-fg">{t('style.primary')}</label>
+                    <p className="text-xs text-muted">{t('style.primaryHint')}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <input
                         type="color"
@@ -1820,38 +1898,23 @@ export default function WebsiteBuilderPage() {
                       />
                     </div>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-fg">{t('style.secondary')}</label>
-                    <div className="flex items-center gap-2 mt-1">
-                      <input
-                        type="color"
-                        value={settings?.secondaryColor || '#10B981'}
-                        onChange={(e) => setSettings({ ...settings!, secondaryColor: e.target.value })}
-                        className="w-10 h-10 rounded border cursor-pointer"
-                      />
-                      <Input
-                        value={settings?.secondaryColor || '#10B981'}
-                        onChange={(e) => setSettings({ ...settings!, secondaryColor: e.target.value })}
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-fg">{t('style.accent')}</label>
-                    <div className="flex items-center gap-2 mt-1">
-                      <input
-                        type="color"
-                        value={settings?.accentColor || '#F59E0B'}
-                        onChange={(e) => setSettings({ ...settings!, accentColor: e.target.value })}
-                        className="w-10 h-10 rounded border cursor-pointer"
-                      />
-                      <Input
-                        value={settings?.accentColor || '#F59E0B'}
-                        onChange={(e) => setSettings({ ...settings!, accentColor: e.target.value })}
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
+                  <OptionalColor
+                    label={t('style.button')}
+                    hint={t('style.buttonHint')}
+                    value={settings?.buttonColor ?? null}
+                    fallback="#1C1B19"
+                    onChange={(buttonColor) => setSettings({ ...settings!, buttonColor })}
+                    defaultLabel={t('style.useDefault')}
+                  />
+                  <OptionalColor
+                    label={t('style.heading')}
+                    hint={t('style.headingHint')}
+                    value={settings?.headingColor ?? null}
+                    fallback="#1B1C1A"
+                    onChange={(headingColor) => setSettings({ ...settings!, headingColor })}
+                    defaultLabel={t('style.useDefault')}
+                  />
+                  <p className="text-xs text-muted">{t('style.contrastNote')}</p>
                 </CardContent>
               </Card>
 

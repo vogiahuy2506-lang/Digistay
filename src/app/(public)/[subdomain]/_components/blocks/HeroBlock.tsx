@@ -26,7 +26,9 @@ export function HeroBlock({ block, property, images, hasMap }: Props) {
   const locale = useLocale()
   const t = useTranslations('site')
   const cfg = block.config || {}
-  const title = blockText(cfg, locale, 'heroTitle', 'title') ?? property.name
+  // The builder's old default title stopped at "Chào mừng đến với" (to …): the hotel's name instead.
+  const typed = blockText(cfg, locale, 'heroTitle', 'title')
+  const title = typed && typed !== 'Chào mừng đến với' ? typed : property.name
   const subtitle =
     blockText(cfg, locale, 'heroSubtitle', 'subtitle') ?? property.description ?? t('blocks.hero.welcome', { name: property.name })
   const showSearchBar = cfg.showSearchBar !== false
