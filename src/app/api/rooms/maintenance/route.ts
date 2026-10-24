@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
+import { lockRoomType, roomsTaken } from '@/lib/bookings/occupancy'
+import { roomConflictMessage, roomTakenBy } from '@/lib/bookings/rooms'
 
 const maintenanceSchema = z.object({
   propertyId: z.string(),
   roomTypeId: z.string(),
+  /** one room of the type (src/lib/bookings/rooms.ts); none: any room */
+  roomId: z.string().optional(),
   startDate: z.string(),
   endDate: z.string(),
   reason: z.string().optional(),
@@ -66,6 +70,7 @@ export async function GET(request: NextRequest) {
             name: true,
           },
         },
+        room: { select: { id: true, number: true } },
       },
       orderBy: { lockStart: 'asc' },
     })
@@ -101,9 +106,12 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    const { propertyId, roomTypeId, startDate, endDate, reason, notes } = validation.data
+    const { propertyId, roomTypeId, roomId, startDate, endDate, reason, notes } = validation.data
     const lockStart = new Date(startDate)
     const lockEnd = new Date(endDate)
+    if (Number.isNaN(lockStart.getTime()) || Number.isNaN(lockEnd.getTime()) || lockEnd <= lockStart) {
+      return NextResponse.json({ success: false, error: 'Ngày không hợp lệ' }, { status: 400 })
+    }
 
     // Check access
     const property = await prisma.property.findFirst({
@@ -131,29 +139,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy hạng phòng' }, { status: 404 })
     }
 
-    // Check for overlapping locks
-    const existingLock = await prisma.roomLock.findFirst({
-      where: {
-        propertyId,
-        roomTypeId,
-        type: 'MAINTENANCE',
-        lockStart: { lt: lockEnd },
-        lockEnd: { gt: lockStart },
-      },
-    })
-
-    if (existingLock) {
-      return NextResponse.json({
-        success: false,
-        error: 'Đã có lịch bảo trì trùng với khoảng thời gian này',
-      }, { status: 400 })
+    const room = roomId
+      ? await prisma.room.findFirst({ where: { id: roomId, roomTypeId, propertyId }, select: { id: true, number: true, propertyId: true } })
+      : null
+    if (roomId && !room) {
+      return NextResponse.json({ success: false, error: 'Không tìm thấy phòng' }, { status: 404 })
     }
 
-    // Create maintenance lock (no expiration for maintenance)
-    const lock = await prisma.roomLock.create({
+    // Under the room type's lock, like a booking: the closed room comes out
+    // of what is left to sell, so it must not oversell a night.
+    const outcome = await prisma.$transaction(async (tx) => {
+      await lockRoomType(tx, roomTypeId)
+      // Overlapping maintenance of the same room (or, without a room, of the type as a whole).
+      const existingLock = await tx.roomLock.findFirst({
+        where: { propertyId, roomTypeId, roomId: room?.id ?? null, type: 'MAINTENANCE', lockStart: { lt: lockEnd }, lockEnd: { gt: lockStart } },
+      })
+      if (existingLock) return { error: 'Đã có lịch bảo trì trùng với khoảng thời gian này', status: 400 }
+      if (room) {
+        const taken = await roomTakenBy(tx, room, { checkIn: lockStart, checkOut: lockEnd })
+        if (taken) return { error: roomConflictMessage(room.number, taken), status: 409 }
+      }
+      const capacity = await tx.roomType.findUniqueOrThrow({ where: { id: roomTypeId }, select: { totalRooms: true, name: true } })
+      const used = await roomsTaken(tx, roomTypeId, { propertyId, checkIn: lockStart, checkOut: lockEnd })
+      if (used >= capacity.totalRooms) {
+        return { error: `Hạng ${capacity.name} đã kín trong những ngày này: không còn phòng trống để bảo trì`, status: 409 }
+      }
+      // Create maintenance lock (no expiration for maintenance)
+      return { lock: await tx.roomLock.create({
       data: {
         propertyId,
         roomTypeId,
+        roomId: room?.id ?? null,
         lockStart,
         lockEnd,
         type: 'MAINTENANCE',
@@ -168,8 +184,14 @@ export async function POST(request: NextRequest) {
             name: true,
           },
         },
+        room: { select: { id: true, number: true } },
       },
+    }) }
     })
+    if ('error' in outcome) {
+      return NextResponse.json({ success: false, error: outcome.error }, { status: outcome.status })
+    }
+    const lock = outcome.lock
 
     // Log activity
     await prisma.activityLog.create({
@@ -181,6 +203,7 @@ export async function POST(request: NextRequest) {
         entityId: lock.id,
         metadata: {
           roomTypeId,
+          roomNumber: room?.number ?? null,
           startDate,
           endDate,
           reason,

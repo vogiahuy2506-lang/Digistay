@@ -18,6 +18,9 @@ import { useProperty } from '@/lib/hooks/use-property'
 import { escapeHtml } from '@/lib/bookings/display'
 import { CheckOutDialog } from '@/components/bookings/check-out-dialog'
 import { CancelDialog } from '@/components/bookings/cancel-dialog'
+import { RoomTimeline } from '@/components/bookings/room-timeline'
+import { BookingActions, BookingDetailContent, useBooking } from '@/components/bookings/booking-detail'
+import { SidePanel, SidePanelBody, SidePanelFooter, SidePanelHeader, BookingStatusBadge, Loading } from '@/components/ui'
 import { fetchWindow, staysNight, toCsv } from '@/lib/bookings/calendar'
 import { format, addDays, parseISO } from 'date-fns'
 import { apiError } from '@/lib/i18n/api-errors'
@@ -128,6 +131,31 @@ export default function CalendarPage() {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000)
     return () => clearInterval(timer)
   }, [])
+
+  // Month grid or room timeline (room-timeline.tsx); remembered in this browser.
+  const [view, setView] = React.useState<'month' | 'rooms'>('month')
+  React.useEffect(() => {
+    try {
+      if (localStorage.getItem('ds-calendar-view') === 'rooms') setView('rooms')
+    } catch {}
+  }, [])
+  const chooseView = (next: 'month' | 'rooms') => {
+    setView(next)
+    try {
+      localStorage.setItem('ds-calendar-view', next)
+    } catch {}
+  }
+  const [timelineKey, setTimelineKey] = React.useState(0)
+  // A booking opened from the timeline: the shared booking panel.
+  const [panelId, setPanelId] = React.useState<string | null>(null)
+  const panel = useBooking(panelId)
+  const refreshAfterPanel = () => {
+    panel.reload()
+    setTimelineKey((k) => k + 1)
+    fetchCalendarData()
+  }
+  // The room picked on the timeline for a walk-in (shown in the form).
+  const [presetRoom, setPresetRoom] = React.useState<{ id: string; number: string } | null>(null)
 
   // Create booking form state
   const [newBooking, setNewBooking] = React.useState({
@@ -243,12 +271,15 @@ export default function CalendarPage() {
           numAdults: newBooking.numAdults,
           numChildren: newBooking.numChildren,
           roomTypeId: newBooking.roomTypeId,
+          ...(presetRoom && { roomId: presetRoom.id }),
         }),
       })
       const data = await response.json()
       if (data.success) {
         toast.success(t('create.success'))
         setShowCreateBookingModal(false)
+        setPresetRoom(null)
+        setTimelineKey((k) => k + 1)
         setNewBooking({
           guestName: '',
           guestEmail: '',
@@ -724,6 +755,21 @@ export default function CalendarPage() {
         <div className="px-6 py-2 bg-panel border-t border-line flex flex-wrap items-center justify-between gap-3">
           {/* Left side of Toolbar: month navigator */}
           <div className="flex flex-wrap items-center gap-2.5">
+            {/* Month grid or room timeline */}
+            <div role="tablist" aria-label={t('timeline.views')} className="flex items-center bg-fg/5 rounded-lg p-0.5">
+              {(['month', 'rooms'] as const).map((v) => (
+                <button
+                  key={v}
+                  role="tab"
+                  aria-selected={view === v}
+                  onClick={() => chooseView(v)}
+                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${view === v ? 'bg-panel text-fg shadow-xs' : 'text-muted hover:text-fg'}`}
+                >
+                  {v === 'month' ? t('timeline.viewMonth') : t('timeline.viewRooms')}
+                </button>
+              ))}
+            </div>
+            {view === 'month' && (<>
             {/* Month Navigation */}
             <div className="flex items-center bg-panel border border-line rounded-lg shadow-xs p-0.5">
               <button 
@@ -752,6 +798,7 @@ export default function CalendarPage() {
             >
               {t('toolbar.today')}
             </button>
+            </>)}
           </div>
 
           {/* Right side of Toolbar: CTA Buttons */}
@@ -871,7 +918,22 @@ export default function CalendarPage() {
           </div>
         </section>
 
+        {view === 'rooms' && propertyId && (
+          <RoomTimeline
+            propertyId={propertyId}
+            refreshKey={timelineKey}
+            onOpenBooking={(id) => setPanelId(id)}
+            onCreate={({ roomTypeId, room, date }) => {
+              setPresetRoom(room ?? null)
+              const day = parseISO(date)
+              setNewBooking((prev) => ({ ...prev, roomTypeId, checkInDate: date, checkOutDate: format(addDays(day, 1), 'yyyy-MM-dd') }))
+              setShowCreateBookingModal(true)
+            }}
+          />
+        )}
+
         {/* Balanced 2-Column CRM Workspace */}
+        {view === 'month' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
           {/* LEFT: Interactive CRM Room Calendar Grid */}
           <section className="lg:col-span-8 xl:col-span-8 2xl:col-span-9 bg-panel rounded-xl border border-line shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)] flex flex-col overflow-hidden">
@@ -1102,6 +1164,7 @@ export default function CalendarPage() {
 
           </aside>
         </div>
+        )}
       </main>
 
       {/* Create booking: the shared Modal (it was a hand-made overlay with no
@@ -1274,7 +1337,10 @@ export default function CalendarPage() {
                         <select
                           className="block w-full rounded-lg border-line py-2.5 px-3 text-xs font-medium text-fg focus:ring-2 focus:ring-err/30 focus:border-err/30"
                           value={newBooking.roomTypeId}
-                          onChange={(e) => setNewBooking(prev => ({ ...prev, roomTypeId: e.target.value }))}
+                          onChange={(e) => {
+                            setPresetRoom(null)
+                            setNewBooking(prev => ({ ...prev, roomTypeId: e.target.value }))
+                          }}
                           required
                         >
                           <option value="">{t('create.chooseRoomType')}</option>
@@ -1282,6 +1348,14 @@ export default function CalendarPage() {
                             <option key={rt.id} value={rt.id}>{t('create.roomTypeOption', { name: rt.name, count: rt.totalRooms })}</option>
                           ))}
                         </select>
+                        {presetRoom && (
+                          <p className="text-xs text-fg">
+                            {t('timeline.presetRoom', { room: presetRoom.number })}{' '}
+                            <button type="button" onClick={() => setPresetRoom(null)} className="text-acc hover:underline">
+                              {t('timeline.presetClear')}
+                            </button>
+                          </p>
+                        )}
               </div>
       </div>
 
@@ -1727,6 +1801,38 @@ export default function CalendarPage() {
           }}
         />
       )}
+      {/* A booking opened from the room timeline: the shared panel (bookings list). */}
+      <SidePanel open={!!panelId} onClose={() => setPanelId(null)} label={panel.booking?.bookingCode ?? ''}>
+        <SidePanelHeader>
+          {panel.booking ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono font-semibold text-fg">{panel.booking.bookingCode}</span>
+              <BookingStatusBadge status={panel.booking.status} />
+            </div>
+          ) : (
+            <span className="text-small text-muted">{tc('states.loading')}</span>
+          )}
+        </SidePanelHeader>
+        <SidePanelBody>
+          {panel.error ? (
+            <p className="text-small text-err">{panel.error}</p>
+          ) : panel.booking ? (
+            <BookingDetailContent booking={panel.booking} onChanged={refreshAfterPanel} />
+          ) : (
+            <Loading className="py-16" />
+          )}
+        </SidePanelBody>
+        {panel.booking && (
+          <SidePanelFooter>
+            <BookingActions
+              booking={panel.booking}
+              onChanged={refreshAfterPanel}
+              openPageHref={routes.propertyBooking(params.slug, propertyId, panel.booking.id)}
+            />
+          </SidePanelFooter>
+        )}
+      </SidePanel>
+
       {cancelBooking && (
         <CancelDialog
           bookingId={cancelBooking.id}

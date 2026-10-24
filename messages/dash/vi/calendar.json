@@ -155,5 +155,35 @@
       "exportedAt": "Xuất lúc: {time}",
       "generatedAt": "Xuất báo cáo lúc: {time}"
     }
+  },
+  "timeline": {
+    "views": "Kiểu xem lịch",
+    "viewMonth": "Lịch tháng",
+    "viewRooms": "Sơ đồ phòng",
+    "loading": "Đang tải sơ đồ phòng…",
+    "loadError": "Không tải được sơ đồ phòng",
+    "noTypes": "Chưa có hạng phòng nào.",
+    "previous": "Tuần trước",
+    "next": "Tuần sau",
+    "today": "Hôm nay",
+    "range": "Số ngày hiển thị",
+    "days": "{count} ngày",
+    "room": "Phòng",
+    "floor": "T{floor}",
+    "left": "Còn {count} phòng",
+    "full": "Kín",
+    "unplaced": "Chưa xếp phòng",
+    "noRooms": "Chưa có danh sách phòng",
+    "maintenance": "Bảo trì",
+    "maintenanceAny": "Bảo trì (cả hạng)",
+    "bookNight": "Tạo đơn đêm {date} {room}",
+    "confirmMove": "Chuyển đơn {code} sang phòng {room}?",
+    "confirmUnassign": "Bỏ xếp phòng cho đơn {code}?",
+    "moved": "Đã chuyển {code} sang phòng {room}",
+    "unassigned": "Đã bỏ xếp phòng cho {code}",
+    "moveFailed": "Chưa chuyển được phòng",
+    "hint": "Bấm vào ô trống để tạo đơn cho đêm đó; bấm vào đơn để xem; kéo đơn sang phòng khác để đổi phòng. Số trên mỗi hạng là số phòng còn trống đêm đó. Thêm danh sách phòng ở Hạng phòng → Danh sách phòng.",
+    "presetRoom": "Phòng {room}.",
+    "presetClear": "Chọn phòng sau"
   }
 }

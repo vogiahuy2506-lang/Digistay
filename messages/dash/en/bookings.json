@@ -83,7 +83,16 @@
       "assign": "Assign room",
       "placeholder": "e.g. 203",
       "label": "Room number",
-      "save": "Save room number"
+      "save": "Save room number",
+      "change": "Change room",
+      "loading": "Loading the rooms…",
+      "choose": "Choose a room",
+      "unassign": "Take out of the room",
+      "otherType": "Other type: {type}",
+      "statusOccupied": "booking {code}",
+      "statusMaintenance": "under maintenance",
+      "statusInactive": "out of use",
+      "movedType": "Moved to a room of another type (price unchanged)"
     }
   },
   "actions": {

@@ -145,6 +145,14 @@ export async function PUT(request: NextRequest, props: RouteParams) {
 
     const data = validation.data
 
+    // Listed rooms decide the count (src/lib/bookings/rooms.ts): add or stop rooms instead.
+    if (data.totalRooms !== undefined && data.totalRooms !== roomType.totalRooms && (await prisma.room.count({ where: { roomTypeId: roomType.id } })) > 0) {
+      return NextResponse.json(
+        { success: false, error: 'Số phòng của hạng này tính theo danh sách phòng: thêm hoặc ngừng phòng trong tab Danh sách phòng' },
+        { status: 400 }
+      )
+    }
+
     // Cast bedType to BedType enum
     const bedTypeValue = data.bedType as BedType | undefined
 

@@ -5,8 +5,9 @@ import { useRouter, useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, Button, Badge, Modal, ModalBody, ModalFooter, Input, Select, Textarea, Dropdown, DropdownItem, DropdownDivider } from '@/components/ui'
 import {
-  Plus, Bed, Edit, Image, BedDouble, Wrench, X, AlertCircle,
+  Plus, Bed, Edit, Image, BedDouble, Wrench, X, AlertCircle, DoorOpen,
 } from 'lucide-react'
+import { RoomList, type RoomTypeRooms } from './room-list'
 import { format, addDays } from 'date-fns'
 import { useTranslations } from 'next-intl'
 import { useDashLabels } from '@/lib/i18n/dash'
@@ -47,6 +48,8 @@ interface MaintenanceLock {
     id: string
     name: string
   }
+  /** one room of the type; null: any room */
+  room: { id: string; number: string } | null
 }
 
 interface Property {
@@ -79,11 +82,24 @@ export default function RoomTypesPage() {
   const [isSaving, setIsSaving] = React.useState(false)
 
   // Maintenance state
-  const [activeTab, setActiveTab] = React.useState<'rooms' | 'maintenance'>('rooms')
+  const [activeTab, setActiveTab] = React.useState<'rooms' | 'list' | 'maintenance'>('rooms')
+  // The hotel's numbered rooms per type (room-list.tsx): a listed type's count follows them.
+  const [listed, setListed] = React.useState<RoomTypeRooms[]>([])
+  const loadListed = React.useCallback(async () => {
+    if (!selectedProperty) return
+    const res = await fetch(`/api/properties/${selectedProperty}/rooms`, { cache: 'no-store' }).catch(() => null)
+    const data = res?.ok ? await res.json().catch(() => null) : null
+    if (data?.success) setListed(data.data)
+  }, [selectedProperty])
+  React.useEffect(() => {
+    loadListed()
+  }, [loadListed])
+  const roomsOf = (roomTypeId: string) => listed.find((type) => type.id === roomTypeId)?.rooms ?? []
   const [maintenanceLocks, setMaintenanceLocks] = React.useState<MaintenanceLock[]>([])
   const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = React.useState(false)
   const [maintenanceForm, setMaintenanceForm] = React.useState({
     roomTypeId: '',
+    roomId: '',
     startDate: format(new Date(), 'yyyy-MM-dd'),
     endDate: format(addDays(new Date(), 1), 'yyyy-MM-dd'),
     reason: '',
@@ -192,6 +208,7 @@ export default function RoomTypesPage() {
         body: JSON.stringify({
           propertyId: selectedProperty,
           ...maintenanceForm,
+          roomId: maintenanceForm.roomId || undefined,
         }),
       })
       const data = await res.json()
@@ -199,6 +216,7 @@ export default function RoomTypesPage() {
         setIsMaintenanceModalOpen(false)
         setMaintenanceForm({
           roomTypeId: '',
+          roomId: '',
           startDate: format(new Date(), 'yyyy-MM-dd'),
           endDate: format(addDays(new Date(), 1), 'yyyy-MM-dd'),
           reason: '',
@@ -394,6 +412,17 @@ export default function RoomTypesPage() {
             {t('tabs.rooms')}
           </button>
           <button
+            onClick={() => setActiveTab('list')}
+            className={`px-4 py-2 rounded-lg font-medium transition ${
+              activeTab === 'list'
+                ? 'bg-ink text-on-ink'
+                : 'bg-fg/5 text-muted hover:bg-fg/10'
+            }`}
+          >
+            <DoorOpen className="w-4 h-4 inline mr-2" />
+            {t('tabs.list')}
+          </button>
+          <button
             onClick={() => {
               setActiveTab('maintenance')
               if (selectedProperty) fetchMaintenanceLocks()
@@ -408,6 +437,17 @@ export default function RoomTypesPage() {
             {t('tabs.maintenance')}
           </button>
         </div>
+
+        {/* Room list Tab */}
+        {activeTab === 'list' && selectedProperty && (
+          <RoomList
+            propertyId={selectedProperty}
+            onChanged={() => {
+              loadListed()
+              fetchRoomTypes()
+            }}
+          />
+        )}
 
         {/* Maintenance Tab */}
         {activeTab === 'maintenance' && (
@@ -449,7 +489,10 @@ export default function RoomTypesPage() {
                             <Wrench className="w-6 h-6 text-warn" />
                           </div>
                           <div>
-                            <p className="font-semibold">{lock.roomType.name}</p>
+                            <p className="font-semibold">
+                              {lock.roomType.name}
+                              {lock.room && <span className="ml-2 text-muted font-normal">{t('maintenance.room', { number: lock.room.number })}</span>}
+                            </p>
                             <p className="text-sm text-muted">
                               {format(new Date(lock.lockStart), 'dd/MM/yyyy')} - {format(new Date(lock.lockEnd), 'dd/MM/yyyy')}
                             </p>
@@ -826,6 +869,8 @@ export default function RoomTypesPage() {
               value={formData.totalRooms}
               onChange={(e) => setFormData({ ...formData, totalRooms: e.target.value })}
               min="1"
+              disabled={!!selectedRoomType && roomsOf(selectedRoomType.id).length > 0}
+              hint={selectedRoomType && roomsOf(selectedRoomType.id).length > 0 ? t('form.totalRoomsListed') : undefined}
             />
             <Input
               label={t('form.baseOccupancy')}
@@ -875,13 +920,25 @@ export default function RoomTypesPage() {
           <Select
             label={t('maintenance.form.roomType')}
             value={maintenanceForm.roomTypeId}
-            onChange={(e) => setMaintenanceForm({ ...maintenanceForm, roomTypeId: e.target.value })}
+            onChange={(e) => setMaintenanceForm({ ...maintenanceForm, roomTypeId: e.target.value, roomId: '' })}
           >
             <option value="">{t('maintenance.form.chooseRoomType')}</option>
             {roomTypes.map((rt) => (
               <option key={rt.id} value={rt.id}>{rt.name}</option>
             ))}
           </Select>
+          {maintenanceForm.roomTypeId && roomsOf(maintenanceForm.roomTypeId).length > 0 && (
+            <Select
+              label={t('maintenance.form.room')}
+              value={maintenanceForm.roomId}
+              onChange={(e) => setMaintenanceForm({ ...maintenanceForm, roomId: e.target.value })}
+            >
+              <option value="">{t('maintenance.form.anyRoom')}</option>
+              {roomsOf(maintenanceForm.roomTypeId).filter((r) => r.isActive).map((r) => (
+                <option key={r.id} value={r.id}>{r.number}</option>
+              ))}
+            </Select>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <Input
               label={t('maintenance.form.startDate')}

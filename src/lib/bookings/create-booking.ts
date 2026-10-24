@@ -20,7 +20,7 @@ import type { Locale } from '@/i18n/locales'
 import { emailLocale } from '@/lib/email/i18n'
 import { queueBookingConfirmation, queueOwnerNewBooking } from '@/lib/email/outbox'
 import { notifyNewBooking } from '@/lib/notifications'
-import { roomConflictMessage, typedRoomNumberConflict } from './rooms'
+import { RoomError, assignRoomTx, normalizeRoomNumber, roomConflictMessage, typedRoomNumberConflict } from './rooms'
 import { appSiteUrl } from '@/lib/public-site/paths'
 import { depositFor, quoteStay, ratesFrom, type PricedService } from '@/lib/pricing/quote'
 import { depositUrl } from '@/lib/payments/deposit-link'
@@ -51,6 +51,8 @@ export interface NewBooking {
   numAdults: number
   numChildren: number
   roomNumber?: string | null
+  /** one of the hotel's listed rooms, of this room type (rooms.ts) */
+  roomId?: string | null
   vat?: { company?: string | null; taxCode?: string | null; address?: string | null; email?: string | null }
   services?: { serviceId: string; quantity: number }[]
   /** the staff member; null for a guest */
@@ -211,10 +213,27 @@ export async function createBooking(input: NewBooking) {
       ownHoldId: input.holdId,
     })
     if (taken >= roomType.totalRooms) throw new BookingError('Phòng đã hết trong khoảng ngày này', 409)
-    const roomNumber = input.roomNumber?.trim() || null
-    if (roomNumber) {
-      const inRoom = await typedRoomNumberConflict(tx, { propertyId: input.propertyId, roomNumber, checkIn: input.checkIn, checkOut: input.checkOut })
-      if (inRoom) throw new BookingError(roomConflictMessage(roomNumber, inRoom), 409)
+    // A room chosen at the desk: one of the hotel's listed rooms (put in after
+    // the booking exists, with every room check), or a number typed for a type
+    // without listed rooms (rooms.ts).
+    const typedNumber = input.roomNumber?.trim() ? normalizeRoomNumber(input.roomNumber) : null
+    let roomId = input.roomId ?? null
+    let roomNumber: string | null = null
+    if (!roomId && typedNumber) {
+      const listed = await tx.room.findFirst({ where: { propertyId: input.propertyId, number: typedNumber }, select: { id: true } })
+      if (listed) roomId = listed.id
+      else if ((await tx.room.count({ where: { roomTypeId: roomType.id } })) > 0) {
+        throw new BookingError(`Không có phòng ${typedNumber} trong danh sách phòng của khách sạn`, 400)
+      } else {
+        const inRoom = await typedRoomNumberConflict(tx, { propertyId: input.propertyId, roomNumber: typedNumber, checkIn: input.checkIn, checkOut: input.checkOut })
+        if (inRoom) throw new BookingError(roomConflictMessage(typedNumber, inRoom), 409)
+        roomNumber = typedNumber
+      }
+    }
+    if (roomId) {
+      const room = await tx.room.findFirst({ where: { id: roomId, propertyId: input.propertyId }, select: { roomTypeId: true } })
+      if (!room) throw new BookingError('Không tìm thấy phòng', 404)
+      if (room.roomTypeId !== roomType.id) throw new BookingError('Phòng đã chọn không thuộc hạng phòng này', 400)
     }
 
     const booking = await tx.booking.create({
@@ -257,6 +276,14 @@ export async function createBooking(input: NewBooking) {
       },
       include: { bookingItems: true, ...BOOKING_EMAIL_INCLUDE },
     })
+    if (roomId) {
+      try {
+        await assignRoomTx(tx, { bookingId: booking.id, roomId })
+      } catch (error) {
+        if (error instanceof RoomError) throw new BookingError(error.message, error.status)
+        throw error
+      }
+    }
     // The guest's hold has done its job.
     if (input.holdId) {
       // Scoped: the id comes from the browser, and must not release another

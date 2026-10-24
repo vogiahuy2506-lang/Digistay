@@ -251,6 +251,8 @@ export default function WalkinBookingPage() {
           numAdults: parseInt(numAdults),
           numChildren: parseInt(numChildren),
           roomNumber: selectedRoom?.number,
+          // A listed room (rooms.ts) rather than a numbered slot.
+          ...(selectedRoom && !selectedRoom.id.startsWith('slot-') && { roomId: selectedRoom.id }),
         }),
       })
       const data = await res.json()

@@ -146,6 +146,15 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
     (site, trang tìm phòng, ước tính của nhân viên) cũng gọi đúng hàm này; đừng tự tính lại.
   - Phòng trống: `src/lib/bookings/occupancy.ts` (`roomsTaken`): đếm theo hạng phòng, khoá gắn với
     đơn không đếm lại, khoá bảo trì/chặn luôn tính, khoá giữ phòng của chính khách không chặn họ.
+  - Phòng thật (`src/lib/bookings/rooms.ts`, bảng `rooms`): khách sạn liệt kê số phòng của từng hạng
+    (Hạng phòng → Danh sách phòng). Vẫn đếm phòng trống **theo hạng**: hạng đã có danh sách thì
+    `RoomType.totalRooms` = số phòng đang dùng, do route quản lý phòng ghi (kèm `invalidatePublicSite`);
+    hạng chưa có danh sách chạy như cũ. Không bớt phòng dưới số đã bán của một đêm sắp tới (`peakTaken`).
+    Xếp / đổi phòng chỉ qua `assignRoomTx` (`POST /api/bookings/[id]/room`): khoá đơn rồi khoá dòng
+    phòng, chặn trùng đêm với đơn khác, chặn phòng bảo trì / ngừng dùng; sang hạng khác chỉ khi hạng đó
+    còn phòng mọi đêm, giá giữ nguyên. Số phòng là một phòng của cả khách sạn (không phân biệt hoa
+    thường): số gõ tay cũng bị chặn trùng (khoá advisory theo số). Bảo trì có thể khoá một phòng
+    (`RoomLock.roomId`). Sơ đồ phòng × ngày: `room-timeline.tsx` trong trang Lịch phòng.
   - Tạo đơn: chỉ qua `src/lib/bookings/create-booking.ts` (nhân viên `POST /api/bookings`, khách
     `POST /api/public/bookings`), dưới khoá dòng hạng phòng. `subtotal` = tiền phòng,
     `extraCharges` = phụ thu + dịch vụ, `totalAmount` = tổng.

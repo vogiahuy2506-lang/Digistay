@@ -33,6 +33,7 @@ const createBookingSchema = z.object({
   numChildren: z.number().int().min(0).default(0),
   roomTypeId: z.string(),
   roomNumber: z.string().optional(),
+  roomId: z.string().optional(),
   extraServices: z.array(z.object({
     serviceId: z.string(),
     quantity: z.number().int().min(1).default(1),
@@ -257,6 +258,7 @@ export async function POST(request: NextRequest) {
       numAdults: data.numAdults,
       numChildren: data.numChildren,
       roomNumber: data.roomNumber,
+      roomId: data.roomId,
       vat: { company: data.vatCompany, taxCode: data.vatTaxCode, address: data.vatAddress, email: data.vatEmail },
       services: data.extraServices,
       createdById: session.user.id,

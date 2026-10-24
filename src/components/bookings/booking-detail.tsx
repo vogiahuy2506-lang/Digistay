@@ -273,6 +273,21 @@ export function BookingDetailContent({ booking, onChanged }: { booking: BookingD
   )
 }
 
+interface RoomChoice {
+  id: string
+  number: string
+  roomTypeId: string
+  roomTypeName: string
+  status: 'AVAILABLE' | 'OCCUPIED' | 'MAINTENANCE' | 'INACTIVE'
+  bookingCode: string | null
+}
+
+/**
+ * The stay's room. Once the hotel lists its rooms (src/lib/bookings/rooms.ts)
+ * a choice of them, free ones first and other types too (moving the stay
+ * there when that type has a room free), through POST /api/bookings/[id]/room;
+ * otherwise a typed number, checked against every other stay.
+ */
 function RoomNumber({ booking, onChanged, editable }: { booking: BookingDetailData; onChanged: () => void; editable: boolean }) {
   const t = useTranslations('dash.bookings.detail.roomNumber')
   const tc = useTranslations('dash.common')
@@ -280,20 +295,50 @@ function RoomNumber({ booking, onChanged, editable }: { booking: BookingDetailDa
   const [editing, setEditing] = React.useState(false)
   const [value, setValue] = React.useState(current)
   const [saving, setSaving] = React.useState(false)
+  // null: not loaded; [] with listed false: the hotel lists no rooms (typed number).
+  const [choices, setChoices] = React.useState<{ listed: boolean; rooms: RoomChoice[] } | null>(null)
 
   React.useEffect(() => setValue(current), [current])
+
+  const open = async () => {
+    setEditing(true)
+    setChoices(null)
+    const item = booking.bookingItems[0]
+    if (!item) return setChoices({ listed: false, rooms: [] })
+    const query = new URLSearchParams({
+      propertyId: booking.property.id,
+      roomTypeId: item.roomTypeId,
+      checkIn: booking.checkInDate,
+      checkOut: booking.checkOutDate,
+      all: '1',
+      allTypes: '1',
+      excludeBookingId: booking.id,
+    })
+    const res = await fetch(`/api/rooms/available?${query}`).catch(() => null)
+    const data = res?.ok ? await res.json().catch(() => null) : null
+    const rooms: RoomChoice[] = data?.success && data.meta?.listed ? data.data : []
+    setChoices({ listed: rooms.length > 0, rooms })
+    const mine = rooms.find((r) => r.number === current)
+    setValue(mine ? mine.id : rooms.length ? '' : current)
+  }
 
   const save = async () => {
     setSaving(true)
     try {
-      const res = await fetch(`/api/bookings/${booking.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomNumber: value.trim() }),
-      })
+      const res = choices?.listed
+        ? await fetch(`/api/bookings/${booking.id}/room`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ roomId: value === '__none' ? null : value }),
+          })
+        : await fetch(`/api/bookings/${booking.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ roomNumber: value.trim() }),
+          })
       const data = await res.json()
       if (data.success) {
-        toast.success(t('assigned'))
+        toast.success(data.data?.roomTypeChanged ? t('movedType') : t('assigned'))
         setEditing(false)
         onChanged()
       } else {
@@ -311,23 +356,59 @@ function RoomNumber({ booking, onChanged, editable }: { booking: BookingDetailDa
       <span className="inline-flex items-center gap-2">
         {current || <span className="text-muted">{t('unassigned')}</span>}
         {editable && (
-          <button type="button" onClick={() => setEditing(true)} className="text-small text-acc hover:underline focus:outline-none focus-visible:underline">
-            {current ? tc('actions.edit') : t('assign')}
+          <button type="button" onClick={open} className="text-small text-acc hover:underline focus:outline-none focus-visible:underline">
+            {current ? t('change') : t('assign')}
           </button>
         )}
       </span>
     )
   }
 
+  if (!choices) return <span className="text-small text-muted">{t('loading')}</span>
+
+  const typeId = booking.bookingItems[0]?.roomTypeId
+  const reason = (r: RoomChoice) =>
+    r.status === 'OCCUPIED' ? t('statusOccupied', { code: r.bookingCode ?? '' }) : r.status === 'MAINTENANCE' ? t('statusMaintenance') : t('statusInactive')
+  const groups = choices.listed
+    ? [...new Set(choices.rooms.map((r) => r.roomTypeId))]
+        .sort((a, b) => (a === typeId ? -1 : b === typeId ? 1 : 0))
+        .map((id) => ({ id, name: choices.rooms.find((r) => r.roomTypeId === id)!.roomTypeName, rooms: choices.rooms.filter((r) => r.roomTypeId === id) }))
+    : []
+
   return (
     <form
-      className="flex items-center gap-2"
+      className="flex flex-wrap items-center gap-2"
       onSubmit={(e) => {
         e.preventDefault()
         if (value.trim()) save()
       }}
     >
-      <Input value={value} onChange={(e) => setValue(e.target.value)} placeholder={t('placeholder')} aria-label={t('label')} className="h-9 sm:h-8 w-28" autoFocus />
+      {choices.listed ? (
+        <select
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          aria-label={t('label')}
+          className="h-9 sm:h-8 max-w-[260px] rounded-ctl border border-line bg-raised px-2 text-small text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
+          autoFocus
+        >
+          <option value="" disabled>
+            {t('choose')}
+          </option>
+          {current && <option value="__none">{t('unassign')}</option>}
+          {groups.map((group) => (
+            <optgroup key={group.id} label={group.id === typeId ? group.name : t('otherType', { type: group.name })}>
+              {group.rooms.map((r) => (
+                <option key={r.id} value={r.id} disabled={r.status !== 'AVAILABLE' && r.number !== current}>
+                  {r.number}
+                  {r.status !== 'AVAILABLE' && r.number !== current ? ` · ${reason(r)}` : ''}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+      ) : (
+        <Input value={value} onChange={(e) => setValue(e.target.value)} placeholder={t('placeholder')} aria-label={t('label')} className="h-9 sm:h-8 w-28" autoFocus />
+      )}
       <Button type="submit" size="sm" isLoading={saving} disabled={!value.trim()} aria-label={t('save')}>
         <Check className="w-3.5 h-3.5" aria-hidden="true" />
       </Button>

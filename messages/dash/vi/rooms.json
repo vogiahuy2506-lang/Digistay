@@ -7,7 +7,8 @@
     },
     "tabs": {
       "rooms": "Hạng Phòng",
-      "maintenance": "Bảo Trì"
+      "maintenance": "Bảo Trì",
+      "list": "Danh sách phòng"
     },
     "bedType": {
       "SINGLE": "Giường đơn",
@@ -49,7 +50,8 @@
       "baseOccupancy": "Số khách tối thiểu",
       "maxOccupancy": "Số khách tối đa",
       "weekdayPrice": "Giá ngày thường (VND)",
-      "weekendPrice": "Giá cuối tuần (VND)"
+      "weekendPrice": "Giá cuối tuần (VND)",
+      "totalRoomsListed": "Tính theo danh sách phòng (tab Danh sách phòng)"
     },
     "create": {
       "submit": "Tạo Hạng Phòng",
@@ -86,8 +88,35 @@
         "notes": "Ghi chú thêm",
         "notesPlaceholder": "Thông tin chi tiết...",
         "warning": "Phòng sẽ bị khóa không cho đặt trong khoảng thời gian bảo trì",
-        "submit": "Tạo Lịch Bảo Trì"
-      }
+        "submit": "Tạo Lịch Bảo Trì",
+        "room": "Phòng",
+        "anyRoom": "Một phòng bất kỳ của hạng"
+      },
+      "room": "Phòng {number}"
+    },
+    "roomList": {
+      "intro": "Liệt kê các phòng thật của khách sạn để xếp khách vào từng phòng và xem sơ đồ phòng. Khi một hạng đã có danh sách, số phòng của hạng bằng số phòng đang dùng.",
+      "noTypes": "Chưa có hạng phòng nào. Tạo hạng phòng trước.",
+      "countListed": "{active} phòng đang dùng / {total} phòng",
+      "countOnly": "Chưa liệt kê phòng · đang tính {count} phòng",
+      "firstHint": "Hạng này đang tính {count} phòng. Thêm đủ các phòng thật (ví dụ 101-110); từ đó số phòng tính theo danh sách.",
+      "addLabel": "Thêm phòng cho {type}",
+      "addPlaceholder": "VD: 101-110, 201, 202",
+      "add": "Thêm",
+      "added": "Đã thêm {count} phòng",
+      "addFailed": "Chưa thêm được phòng",
+      "number": "Số phòng",
+      "floor": "Tầng",
+      "floorShort": "Tầng {floor}",
+      "stopped": "Ngừng dùng",
+      "stop": "Ngừng",
+      "resume": "Dùng lại",
+      "editRoom": "Sửa phòng {number}",
+      "deleteRoom": "Xoá phòng {number}",
+      "confirmDelete": "Xoá phòng {number}? Các đơn đã trả phòng vẫn giữ số phòng.",
+      "deleted": "Đã xoá phòng {number}",
+      "deleteFailed": "Chưa xoá được phòng",
+      "saveFailed": "Chưa lưu được phòng"
     }
   },
   "services": {

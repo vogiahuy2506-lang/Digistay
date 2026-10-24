@@ -249,6 +249,7 @@ model Property {
   
   // Relations
   roomTypes   RoomType[]
+  rooms       Room[]
   amenities   PropertyAmenity[]
   images      PropertyImage[]
   pricing     PricingConfig[]
@@ -291,6 +292,7 @@ model RoomType {
   propertyId  String
   property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   roomLocks   RoomLock[]
+  rooms       Room[]
 
   name        String
   slug        String
@@ -720,8 +722,11 @@ model BookingItem {
   
   roomTypeId     String
   
-  // Room number (assigned later)
+  // Room number (assigned later); roomId once the hotel lists its rooms
+  // (src/lib/bookings/rooms.ts), the number then copied from the room
   roomNumber     String?
+  roomId         String?
+  room           Room?    @relation(fields: [roomId], references: [id], onDelete: SetNull)
   
   // Dates
   checkInDate    DateTime
@@ -742,6 +747,29 @@ model BookingItem {
   @@index([bookingId])
 }
 
+/// One numbered room of the hotel (task 25 / 27, src/lib/bookings/rooms.ts).
+/// Once a room type has rooms, its totalRooms is the number of active ones.
+model Room {
+  id          String   @id @default(cuid())
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  roomTypeId  String
+  roomType    RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  /// "101", "A12": unique in the hotel
+  number      String
+  floor       Int?
+  isActive    Boolean  @default(true)
+  bookingItems BookingItem[]
+  roomLocks   RoomLock[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([propertyId, number])
+  @@index([roomTypeId])
+  @@map("rooms")
+}
+
 model RoomLock {
   id              String   @id @default(cuid())
   bookingId       String?
@@ -752,6 +780,9 @@ model RoomLock {
 
   roomTypeId      String
   roomType        RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  /// one room under maintenance (rooms.ts); null: any room of the type
+  roomId          String?
+  room            Room?    @relation(fields: [roomId], references: [id], onDelete: Cascade)
   
   // Lock period
   lockStart       DateTime

@@ -8,6 +8,12 @@ import { z } from 'zod'
  * Get list of available rooms for a room type within a date range.
  * Used by the walk-in booking flow in the dashboard, so members only: it
  * lists booked room numbers. The public site uses /api/bookings/availability.
+ *
+ * Once the hotel lists its rooms (src/lib/bookings/rooms.ts) these are its
+ * real rooms: the free ones, or with all=1 every room and why it is not
+ * free (OCCUPIED by which booking, MAINTENANCE, INACTIVE), with allTypes=1
+ * every type's (moving a stay to another type), and excludeBookingId for
+ * the stay being moved. Otherwise numbered slots, as before.
  */
 const querySchema = z.object({
   propertyId: z.string(),
@@ -15,6 +21,8 @@ const querySchema = z.object({
   checkIn: z.string(),
   checkOut: z.string(),
 })
+
+const DAY = 24 * 60 * 60 * 1000
 
 export async function GET(request: NextRequest) {
   try {
@@ -67,6 +75,61 @@ export async function GET(request: NextRequest) {
     }
     const checkInDate = new Date(checkIn)
     const checkOutDate = new Date(checkOut)
+    if (Number.isNaN(checkInDate.getTime()) || Number.isNaN(checkOutDate.getTime()) || checkOutDate <= checkInDate) {
+      return NextResponse.json({ success: false, error: 'Ngày không hợp lệ' }, { status: 400 })
+    }
+
+    const all = searchParams.get('all') === '1'
+    const allTypes = searchParams.get('allTypes') === '1'
+    const excludeBookingId = searchParams.get('excludeBookingId') || undefined
+    const listed = await prisma.room.findMany({
+      where: allTypes ? { propertyId } : { roomTypeId },
+      orderBy: { number: 'asc' },
+      select: { id: true, number: true, floor: true, isActive: true, roomTypeId: true, roomType: { select: { name: true } } },
+    })
+    if (listed.length > 0 && checkOutDate.getTime() - checkInDate.getTime() <= 366 * DAY) {
+      const ids = listed.map((r) => r.id)
+      const [stays, locks] = await Promise.all([
+        prisma.bookingItem.findMany({
+          where: {
+            OR: [{ roomId: { in: ids } }, { roomId: null, roomNumber: { in: listed.map((r) => r.number), mode: 'insensitive' } }],
+            booking: {
+              propertyId,
+              status: { in: ['PENDING', 'CONFIRMED', 'CHECKED_IN'] },
+              checkInDate: { lt: checkOutDate },
+              checkOutDate: { gt: checkInDate },
+              ...(excludeBookingId && { id: { not: excludeBookingId } }),
+            },
+          },
+          select: { roomId: true, roomNumber: true, booking: { select: { bookingCode: true } } },
+        }),
+        prisma.roomLock.findMany({
+          where: { roomId: { in: ids }, type: { in: ['MAINTENANCE', 'BLOCKED'] }, lockStart: { lt: checkOutDate }, lockEnd: { gt: checkInDate } },
+          select: { roomId: true },
+        }),
+      ])
+      const occupiedBy = new Map<string, string>()
+      for (const stay of stays) {
+        const room = stay.roomId ? listed.find((r) => r.id === stay.roomId) : listed.find((r) => r.number.toLowerCase() === stay.roomNumber?.toLowerCase())
+        if (room) occupiedBy.set(room.id, stay.booking.bookingCode)
+      }
+      const closed = new Set(locks.map((l) => l.roomId))
+      const rooms = listed.map((r) => ({
+        id: r.id,
+        number: r.number,
+        floor: r.floor,
+        roomTypeId: r.roomTypeId,
+        roomTypeName: r.roomType.name,
+        status: !r.isActive ? 'INACTIVE' : occupiedBy.has(r.id) ? 'OCCUPIED' : closed.has(r.id) ? 'MAINTENANCE' : 'AVAILABLE',
+        bookingCode: occupiedBy.get(r.id) ?? null,
+      }))
+      const shown = all ? rooms : rooms.filter((r) => r.status === 'AVAILABLE')
+      return NextResponse.json({
+        success: true,
+        data: shown,
+        meta: { roomTypeId, roomTypeName: roomType.name, listed: true, availableRooms: rooms.filter((r) => r.status === 'AVAILABLE').length, checkIn, checkOut },
+      })
+    }
 
     // Get all bookings that overlap with the requested dates
     // and involve this room type
@@ -144,6 +207,7 @@ export async function GET(request: NextRequest) {
       meta: {
         roomTypeId,
         roomTypeName: roomType.name,
+        listed: false,
         totalRooms: roomType.totalRooms,
         availableRooms: availableRooms.length,
         bookedRooms: totalBooked,

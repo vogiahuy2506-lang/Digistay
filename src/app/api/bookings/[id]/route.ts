@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { withRoomTypeNames } from '@/lib/bookings/room-type-names'
-import { RoomError, roomConflictMessage, typedRoomNumberConflict } from '@/lib/bookings/rooms'
+import { RoomError, assignRoomTx, normalizeRoomNumber, roomConflictMessage, typedRoomNumberConflict } from '@/lib/bookings/rooms'
 import { lockBooking } from '@/lib/payments/booking-payments'
 import { z } from 'zod'
 
@@ -142,30 +142,42 @@ export async function PATCH(
     }
 
     const { roomNumber: typedNumber, ...data } = validation.data
-    const roomNumber = typedNumber?.trim()
+    const roomNumber = typedNumber?.trim() ? normalizeRoomNumber(typedNumber) : undefined
 
     // A room number is one room: never two stays in it on the same night (rooms.ts).
+    let typed = false
     const updatedBooking = await prisma.$transaction(async (tx) => {
       if (roomNumber) {
-        await lockBooking(tx, id)
-        const taken = await typedRoomNumberConflict(tx, {
-          propertyId: booking.propertyId,
-          roomNumber,
-          checkIn: booking.checkInDate,
-          checkOut: booking.checkOutDate,
-          exceptBookingId: id,
-        })
-        if (taken) throw new RoomError(roomConflictMessage(roomNumber, taken))
+        const listed = await tx.room.findFirst({ where: { propertyId: booking.propertyId, number: roomNumber }, select: { id: true } })
+        if (listed) {
+          // One of the hotel's listed rooms: assigned like any room (checks, type move).
+          await assignRoomTx(tx, { bookingId: id, roomId: listed.id })
+        } else {
+          await lockBooking(tx, id)
+          const item = await tx.bookingItem.findFirst({ where: { bookingId: id }, select: { roomTypeId: true } })
+          if (item && (await tx.room.count({ where: { roomTypeId: item.roomTypeId } })) > 0) {
+            throw new RoomError(`Không có phòng ${roomNumber} trong danh sách phòng của khách sạn`, 400)
+          }
+          const taken = await typedRoomNumberConflict(tx, {
+            propertyId: booking.propertyId,
+            roomNumber,
+            checkIn: booking.checkInDate,
+            checkOut: booking.checkOutDate,
+            exceptBookingId: id,
+          })
+          if (taken) throw new RoomError(roomConflictMessage(roomNumber, taken))
+          typed = true
+        }
       }
       return tx.booking.update({
       where: { id },
       data: {
         ...data,
-        ...(roomNumber && {
+        ...(typed && {
           bookingItems: {
             updateMany: {
               where: { bookingId: id },
-              data: { roomNumber },
+              data: { roomNumber, roomId: null },
             },
           },
         }),

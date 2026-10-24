@@ -83,7 +83,16 @@
       "assign": "Gán phòng",
       "placeholder": "VD: 203",
       "label": "Số phòng",
-      "save": "Lưu số phòng"
+      "save": "Lưu số phòng",
+      "change": "Đổi phòng",
+      "loading": "Đang tải danh sách phòng…",
+      "choose": "Chọn phòng",
+      "unassign": "Bỏ xếp phòng",
+      "otherType": "Hạng khác: {type}",
+      "statusOccupied": "có đơn {code}",
+      "statusMaintenance": "đang bảo trì",
+      "statusInactive": "ngừng dùng",
+      "movedType": "Đã chuyển sang phòng của hạng khác (giá giữ nguyên)"
     }
   },
   "actions": {

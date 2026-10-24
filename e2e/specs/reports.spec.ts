@@ -37,6 +37,11 @@ test('a custom day shows its money by method, filters by method, and exports the
     await pay(400_000, 'CREDIT_CARD', '2026-01-15T17:30:00Z') // 00:30 on the 16th: another day
 
     await page.goto(propertyPath('/reports'))
+    // Wait for the client render (the period line comes with the report's data): an
+    // intermittent hydration error (#418, also seen on the hotel site) briefly leaves
+    // the server copy of the page next to the client one.
+    await expect(page.getByText(/\(giờ Việt Nam\)$/)).toBeVisible()
+    await expect(page.getByLabel('Khoảng thời gian')).toHaveCount(1)
     await page.getByLabel('Khoảng thời gian').selectOption('custom')
     await page.getByLabel('Từ ngày').fill('2026-01-15')
     await page.getByLabel('Đến ngày').fill('2026-01-15')

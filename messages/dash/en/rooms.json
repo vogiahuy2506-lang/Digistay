@@ -7,7 +7,8 @@
     },
     "tabs": {
       "rooms": "Room types",
-      "maintenance": "Maintenance"
+      "maintenance": "Maintenance",
+      "list": "Room list"
     },
     "bedType": {
       "SINGLE": "Single bed",
@@ -49,7 +50,8 @@
       "baseOccupancy": "Minimum guests",
       "maxOccupancy": "Maximum guests",
       "weekdayPrice": "Weekday price (VND)",
-      "weekendPrice": "Weekend price (VND)"
+      "weekendPrice": "Weekend price (VND)",
+      "totalRoomsListed": "Counted from the room list (Room list tab)"
     },
     "create": {
       "submit": "Create room type",
@@ -86,8 +88,35 @@
         "notes": "Extra notes",
         "notesPlaceholder": "Details...",
         "warning": "The room cannot be booked during the maintenance",
-        "submit": "Schedule maintenance"
-      }
+        "submit": "Schedule maintenance",
+        "room": "Room",
+        "anyRoom": "Any room of the type"
+      },
+      "room": "Room {number}"
+    },
+    "roomList": {
+      "intro": "List the hotel's real rooms to put guests in a room and see the room timeline. Once a type has rooms, its count is the rooms in use.",
+      "noTypes": "No room types yet. Create a room type first.",
+      "countListed": "{active} rooms in use / {total} rooms",
+      "countOnly": "No rooms listed · counting {count} rooms",
+      "firstHint": "This type counts {count} rooms. Add all its real rooms (e.g. 101-110); from then on its count follows the list.",
+      "addLabel": "Add rooms to {type}",
+      "addPlaceholder": "e.g. 101-110, 201, 202",
+      "add": "Add",
+      "added": "{count, plural, one {# room added} other {# rooms added}}",
+      "addFailed": "Could not add the rooms",
+      "number": "Room number",
+      "floor": "Floor",
+      "floorShort": "Floor {floor}",
+      "stopped": "Out of use",
+      "stop": "Stop",
+      "resume": "Resume",
+      "editRoom": "Edit room {number}",
+      "deleteRoom": "Delete room {number}",
+      "confirmDelete": "Delete room {number}? Checked-out bookings keep its number.",
+      "deleted": "Room {number} deleted",
+      "deleteFailed": "Could not delete the room",
+      "saveFailed": "Could not save the room"
     }
   },
   "services": {

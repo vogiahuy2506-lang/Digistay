@@ -155,5 +155,35 @@
       "exportedAt": "Exported at: {time}",
       "generatedAt": "Report exported at: {time}"
     }
+  },
+  "timeline": {
+    "views": "Calendar view",
+    "viewMonth": "Month",
+    "viewRooms": "Room timeline",
+    "loading": "Loading the room timeline…",
+    "loadError": "Could not load the room timeline",
+    "noTypes": "No room types yet.",
+    "previous": "Previous week",
+    "next": "Next week",
+    "today": "Today",
+    "range": "Days shown",
+    "days": "{count} days",
+    "room": "Room",
+    "floor": "F{floor}",
+    "left": "{count, plural, one {# room left} other {# rooms left}}",
+    "full": "Full",
+    "unplaced": "Not in a room",
+    "noRooms": "No rooms listed",
+    "maintenance": "Maintenance",
+    "maintenanceAny": "Maintenance (any room)",
+    "bookNight": "Book the night of {date} {room}",
+    "confirmMove": "Move booking {code} to room {room}?",
+    "confirmUnassign": "Take booking {code} out of its room?",
+    "moved": "Moved {code} to room {room}",
+    "unassigned": "Took {code} out of its room",
+    "moveFailed": "Could not move the booking",
+    "hint": "Click an empty night to book it; click a booking to open it; drag a booking to another room to move the guest. The number on each type is the rooms left that night. List rooms in Room types → Room list.",
+    "presetRoom": "Room {room}.",
+    "presetClear": "Choose the room later"
   }
 }
