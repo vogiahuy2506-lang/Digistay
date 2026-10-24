@@ -1,13 +1,18 @@
 import type { Metadata } from 'next'
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { MarketingHeader } from '@/components/marketing/MarketingHeader'
 import { frame, softText } from '@/components/marketing/styles'
 import { cn } from '@/lib/utils'
 import { ContactForm } from './ContactForm'
+import { appOrigin } from '@/lib/public-site/site-host'
+import { digistayPageMetadata } from '@/lib/seo/page-metadata'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('marketing.meta')
-  return { title: t('contactTitle'), description: t('contactDescription') }
+  const locale = (await getLocale()) === 'en' ? 'en' : 'vi'
+  const title = t('contactTitle')
+  const description = t('contactDescription')
+  return { title, description, ...digistayPageMetadata({ origin: appOrigin(), locale, path: '/contact', title, description }) }
 }
 
 /**

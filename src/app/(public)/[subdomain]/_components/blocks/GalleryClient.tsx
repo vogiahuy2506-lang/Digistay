@@ -29,6 +29,7 @@ export function GalleryClient({ images, title }: Props) {
         <img
           src={images[current].url}
           alt={images[current].alt ?? `Ảnh ${current + 1} / ${images.length}`}
+          loading="lazy"
           className="h-[300px] w-full object-cover sm:h-[520px]"
         />
         {images.length > 1 && (
@@ -61,6 +62,7 @@ export function GalleryClient({ images, title }: Props) {
               <img
                 src={img.thumbnail ?? img.url}
                 alt={img.alt ? t('viewWithAlt', { n: i + 1, alt: img.alt }) : t('view', { n: i + 1 })}
+                loading="lazy"
                 className="h-full w-full object-cover"
               />
             </button>

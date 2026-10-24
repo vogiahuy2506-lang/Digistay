@@ -8,10 +8,15 @@ import { formatVnd } from '@/lib/bookings/display'
 import { ADDON_IDS, ADDON_PRICES, COMPARE, PLANS, type Cell, type Plan } from '@/lib/marketing/plans'
 import { cn } from '@/lib/utils'
 import { ComparePicker, CompareCell, type CompareGroupView } from './ComparePicker'
+import { appOrigin } from '@/lib/public-site/site-host'
+import { digistayPageMetadata } from '@/lib/seo/page-metadata'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('marketing.meta')
-  return { title: t('pricingTitle'), description: t('pricingDescription') }
+  const locale = (await getLocale()) === 'en' ? 'en' : 'vi'
+  const title = t('pricingTitle')
+  const description = t('pricingDescription')
+  return { title, description, ...digistayPageMetadata({ origin: appOrigin(), locale, path: '/pricing', title, description }) }
 }
 
 const FAQ = ['q1', 'q2', 'q3', 'q4', 'q5'] as const

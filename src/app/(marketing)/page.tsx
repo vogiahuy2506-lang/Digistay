@@ -9,10 +9,15 @@ import { frame, inkButton, lineButton, sectionTitle, softText } from '@/componen
 import { formatVnd } from '@/lib/bookings/display'
 import { PLANS } from '@/lib/marketing/plans'
 import { cn } from '@/lib/utils'
+import { appOrigin } from '@/lib/public-site/site-host'
+import { digistayPageMetadata } from '@/lib/seo/page-metadata'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('marketing.meta')
-  return { title: t('homeTitle'), description: t('homeDescription') }
+  const locale = (await getLocale()) === 'en' ? 'en' : 'vi'
+  const title = t('homeTitle')
+  const description = t('homeDescription')
+  return { title, description, ...digistayPageMetadata({ origin: appOrigin(), locale, path: '/', title, description }) }
 }
 
 /** Fictional hotels for the "Khách sạn đang dùng Digistay" strip until real ones agree to be listed (sample content). */

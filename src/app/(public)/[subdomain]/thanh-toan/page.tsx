@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { formatVnd } from '@/lib/bookings/display'
@@ -11,6 +12,8 @@ interface PageProps {
 }
 
 export const dynamic = 'force-dynamic'
+// A guest's payment status, not a page to find in a search engine.
+export const metadata: Metadata = { robots: { index: false, follow: false } }
 
 /**
  * Where PayOS sends the guest back after paying or cancelling (Part 5),
