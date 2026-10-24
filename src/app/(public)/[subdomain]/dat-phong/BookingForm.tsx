@@ -68,6 +68,20 @@ export function BookingForm({
   // Booked, but no link to the next pages (no signing secret on the server): the code here.
   const [bookedCode, setBookedCode] = React.useState<string | null>(null)
   const holdId = React.useRef<string | null>(null)
+  const formRef = React.useRef<HTMLFormElement>(null)
+
+  // Text typed before the page's script loaded is in the fields but not in
+  // the state, and the next render would wipe it (seen on slow phones and in
+  // e2e): keep it.
+  React.useEffect(() => {
+    const typed = (id: string) => formRef.current?.querySelector<HTMLInputElement | HTMLTextAreaElement>(`#${id}`)?.value ?? ''
+    setGuest((g) => ({
+      name: g.name || typed('bk-name'),
+      phone: g.phone || typed('bk-phone'),
+      email: g.email || typed('bk-email'),
+      note: g.note || typed('bk-note'),
+    }))
+  }, [])
 
   // Hold the room while the guest fills the form in.
   React.useEffect(() => {
@@ -271,7 +285,7 @@ export function BookingForm({
           <div className="border-t border-line">{summary}</div>
         </details>
 
-        <form onSubmit={submit} noValidate className="flex min-w-0 flex-col gap-8 lg:gap-10">
+        <form ref={formRef} onSubmit={submit} noValidate className="flex min-w-0 flex-col gap-8 lg:gap-10">
           {problemText && (
             <p role="alert" className="border border-err/25 bg-err-soft px-4 py-3 text-[14px] leading-[1.55] text-fg">
               ⚠ {problemText}

@@ -54,7 +54,8 @@ test('connect, issue + email, adjust down, auto-issue on full payment', async ({
   expect(invoiceMail.raw).toMatch(/text\/html/)
   expect(invoiceMail.raw).toMatch(/application\/pdf/)
   expect(invoiceMail.raw).toMatch(/filename="?hoa-don-1\.pdf/)
-  await page.getByRole('button', { name: 'Đóng' }).click()
+  // The dialog has a close button in its header too; this is the footer's.
+  await page.getByRole('dialog').getByRole('button', { name: 'Đóng' }).last().click()
   await page.reload()
   await page.waitForLoadState('networkidle')
   await page.locator('tbody tr').first().getByRole('button').nth(1).click()
@@ -72,7 +73,8 @@ test('connect, issue + email, adjust down, auto-issue on full payment', async ({
   const adjustment = (await control.matbaoCalls()).at(-1)!
   expect(adjustment).toMatchObject({ TCHDon: 3, TgTTTBSo: -1_080_000, SHDCLQuan: '1' })
   expect(adjustment.GChu).toContain('Lý do: Giảm giá cho khách đoàn')
-  await page.getByRole('button', { name: 'Đóng' }).click()
+  // The dialog has a close button in its header too; this is the footer's.
+  await page.getByRole('dialog').getByRole('button', { name: 'Đóng' }).last().click()
   await page.reload()
   await page.waitForLoadState('networkidle')
   await expect(page.getByText('Điều chỉnh giảm HĐ số 1')).toBeVisible()

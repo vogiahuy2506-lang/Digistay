@@ -48,7 +48,8 @@ test('connect, pay by link, webhook updates the booking, cancel a link', async (
   const list = await (await page.request.get(`/api/payments?propertyId=${ids().prop}`)).json()
   const link = list.data.find((p: { paymentGateway: string; status: string }) => p.paymentGateway === 'PAYOS' && p.status === 'PENDING')
   expect(await control.pay(link.gatewayOrderCode)).toEqual({ webhookStatus: 200 })
-  await page.getByRole('button', { name: 'Đóng' }).click()
+  // The dialog has a close button in its header too; this is the footer's.
+  await page.getByRole('dialog').getByRole('button', { name: 'Đóng' }).last().click()
   await page.goto(propertyPath('/payments'))
   await expect(page.getByText('Đã thanh toán').first()).toBeVisible()
   const after = (await (await page.request.get(`/api/bookings/${booking}`)).json()).data
