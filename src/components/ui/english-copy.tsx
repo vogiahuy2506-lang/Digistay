@@ -19,7 +19,7 @@ export function EnglishCopy({ filled, children }: { filled: boolean; children: R
       onToggle={(e) => setOpen(e.currentTarget.open)}
       className="group rounded-box border border-line bg-fg/[0.02]"
     >
-      <summary className="flex items-center gap-2 px-3 py-2.5 cursor-pointer select-none list-none text-sm font-medium text-fg rounded-box focus:outline-none focus-visible:ring-2 focus-visible:ring-acc [&::-webkit-details-marker]:hidden">
+      <summary className="flex items-center gap-2 min-h-11 px-3 py-2.5 cursor-pointer select-none list-none text-sm font-medium text-fg rounded-box focus:outline-none focus-visible:ring-2 focus-visible:ring-acc [&::-webkit-details-marker]:hidden">
         <ChevronRight className="w-4 h-4 text-muted transition-transform duration-160 group-open:rotate-90" aria-hidden="true" />
         <span>{t('title')}</span>
         <span className="text-xs font-normal text-muted">({t('optional')})</span>

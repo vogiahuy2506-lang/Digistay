@@ -961,13 +961,24 @@
       "cancel": "Huỷ",
       "createSubmit": "Tạo workspace",
       "editSubmit": "Lưu thay đổi",
-      "failed": "Không lưu được workspace. Kiểm tra lại thông tin rồi thử lại."
+      "failed": "Không lưu được workspace. Kiểm tra lại thông tin rồi thử lại.",
+      "currencies": {
+        "VND": "VND (₫) — Đồng Việt Nam",
+        "USD": "USD ($) — Đô la Mỹ",
+        "EUR": "EUR (€) — Euro"
+      },
+      "timezones": {
+        "gmt7": "GMT+07:00 — Hà Nội, TP. Hồ Chí Minh",
+        "gmt8": "GMT+08:00 — Singapore, Bali",
+        "gmt9": "GMT+09:00 — Tokyo, Seoul"
+      }
     },
     "actions": {
       "edit": "Chỉnh sửa",
       "delete": "Xoá workspace",
       "deleteConfirm": "Xoá workspace “{name}”? Toàn bộ cơ sở và thành viên sẽ mất vĩnh viễn."
-    }
+    },
+    "current": "Đang chọn"
   },
   "workspaceHome": {
     "title": "Cơ sở của bạn",

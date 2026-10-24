@@ -873,7 +873,7 @@ function BlockConfigPanel({
                       onChange={(e) => updateEnglish(key, e.target.value)}
                       placeholder={config[key] ?? ''}
                       rows={4}
-                      className="w-full px-3 py-2 border border-line rounded-ctl bg-raised text-fg text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acc"
+                      className="w-full px-3 py-2 border border-line rounded-ctl bg-raised text-fg text-base sm:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acc"
                     />
                   ) : (
                     <Input
@@ -1928,7 +1928,7 @@ export default function WebsiteBuilderPage() {
                           value={settings.translations?.en?.metaDescription ?? ''}
                           onChange={(e) => setSettings({ ...settings, translations: { en: { ...settings.translations?.en, metaDescription: e.target.value } } })}
                           placeholder={settings.metaDescription ?? ''}
-                          className="w-full mt-1 px-3 py-2 border border-line rounded-ctl bg-raised text-fg text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acc"
+                          className="w-full mt-1 px-3 py-2 border border-line rounded-ctl bg-raised text-fg text-base sm:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acc"
                           rows={3}
                         />
                       </div>

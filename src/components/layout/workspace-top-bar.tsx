@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
 import { ChevronDown, LogOut, Moon, Sun } from 'lucide-react'
 import type { WorkspaceRole } from './nav'
+import { LanguageButton } from './language-button'
 
 interface WorkspaceTopBarProps {
   workspace: { id: string; name: string; slug: string; role: WorkspaceRole }
@@ -71,7 +72,7 @@ export function WorkspaceTopBar({ workspace, workspaces, userName, userEmail, us
               {workspaces.map((ws) => (
                 <DropdownItem key={ws.id} onClick={() => router.push(routes.workspace(ws.slug))}>
                   <span className="flex-1 truncate">{ws.name}</span>
-                  {ws.slug === workspace.slug && <span className="text-acc" aria-label="Đang chọn">✓</span>}
+                  {ws.slug === workspace.slug && <span className="text-acc" aria-label={t('current')}>✓</span>}
                 </DropdownItem>
               ))}
               <DropdownDivider />
@@ -97,6 +98,7 @@ export function WorkspaceTopBar({ workspace, workspaces, userName, userEmail, us
                 )}
               </button>
             )}
+            <LanguageButton />
             <AccountMenu name={userName} email={userEmail} image={userImage} onSignOut={signOutEverywhere} />
           </div>
         </div>

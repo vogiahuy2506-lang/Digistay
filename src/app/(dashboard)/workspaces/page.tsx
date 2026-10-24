@@ -27,6 +27,7 @@ import {
 } from '@/components/ui'
 import { useTheme } from '@/components/layout/theme-root'
 import { cn, generateSlug } from '@/lib/utils'
+import { LanguageButton } from '@/components/layout/language-button'
 import { routes } from '@/lib/utils/routes'
 import { ArrowRight, Building2, LogOut, Moon, MoreVertical, Pencil, Plus, Search, Sun, Trash2, Users } from 'lucide-react'
 
@@ -63,17 +64,13 @@ type BusinessType = 'boutique_hotel' | 'resort' | 'homestay'
 
 const businessTypes: BusinessType[] = ['boutique_hotel', 'resort', 'homestay']
 
-const currencies = [
-  { value: 'VND', label: 'VND (₫) — Đồng Việt Nam' },
-  { value: 'USD', label: 'USD ($) — US Dollar' },
-  { value: 'EUR', label: 'EUR (€) — Euro' },
-]
-
+// Labels: messages workspaces.form.currencies.* and .timezones.*
+const currencies = ['VND', 'USD', 'EUR'] as const
 const timezones = [
-  { value: 'GMT+07:00', label: 'GMT+07:00 — Hà Nội, TP. Hồ Chí Minh' },
-  { value: 'GMT+08:00', label: 'GMT+08:00 — Singapore, Bali' },
-  { value: 'GMT+09:00', label: 'GMT+09:00 — Tokyo, Seoul' },
-]
+  { value: 'GMT+07:00', key: 'gmt7' },
+  { value: 'GMT+08:00', key: 'gmt8' },
+  { value: 'GMT+09:00', key: 'gmt9' },
+] as const
 
 const emptyForm = {
   name: '',
@@ -284,6 +281,7 @@ export default function WorkspacesPage() {
                   )}
                 </button>
               )}
+              <LanguageButton />
               <AccountMenu
                 name={user?.name ?? null}
                 email={user?.email ?? null}
@@ -756,13 +754,13 @@ function WorkspaceFormModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
               label={t('form.currency')}
-              options={currencies}
+              options={currencies.map((value) => ({ value, label: t(`form.currencies.${value}`) }))}
               value={form.currency}
               onChange={(e) => onFormChange({ ...form, currency: e.target.value })}
             />
             <Select
               label={t('form.timezone')}
-              options={timezones}
+              options={timezones.map(({ value, key }) => ({ value, label: t(`form.timezones.${key}`) }))}
               value={form.timezone}
               onChange={(e) => onFormChange({ ...form, timezone: e.target.value })}
             />

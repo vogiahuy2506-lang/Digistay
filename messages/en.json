@@ -961,13 +961,24 @@
       "cancel": "Cancel",
       "createSubmit": "Create workspace",
       "editSubmit": "Save changes",
-      "failed": "The workspace could not be saved. Check the details and try again."
+      "failed": "The workspace could not be saved. Check the details and try again.",
+      "currencies": {
+        "VND": "VND (₫) — Vietnamese dong",
+        "USD": "USD ($) — US dollar",
+        "EUR": "EUR (€) — Euro"
+      },
+      "timezones": {
+        "gmt7": "GMT+07:00 — Hanoi, Ho Chi Minh City",
+        "gmt8": "GMT+08:00 — Singapore, Bali",
+        "gmt9": "GMT+09:00 — Tokyo, Seoul"
+      }
     },
     "actions": {
       "edit": "Edit",
       "delete": "Delete workspace",
       "deleteConfirm": "Delete “{name}”? Every property and member will be lost for good."
-    }
+    },
+    "current": "Current"
   },
   "workspaceHome": {
     "title": "Your properties",

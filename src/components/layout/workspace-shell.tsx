@@ -4,9 +4,8 @@ import Link from 'next/link'
 import * as React from 'react'
 import { usePathname, useRouter, useParams } from 'next/navigation'
 import { signOut } from 'next-auth/react'
-import { useLocale, useTranslations } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { ChevronDown, LogOut, Menu, Moon, Sun, X } from 'lucide-react'
-import { LOCALE_COOKIE, type Locale } from '@/i18n/locales'
 import { useDashLabels } from '@/lib/i18n/dash'
 import { cn } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
@@ -14,6 +13,7 @@ import { useProperty, type PropertyContext } from '@/lib/hooks/use-property'
 import { Avatar, Dropdown, DropdownItem, DropdownDivider } from '@/components/ui'
 import { useDialogBehavior } from '@/components/ui/dialog-behavior'
 import { useTheme } from './theme-root'
+import { LanguageButton } from './language-button'
 import { activeHref, primaryNav, workspaceNav, type NavItem, type WorkspaceRole } from './nav'
 
 interface WorkspaceShellProps {
@@ -209,8 +209,6 @@ function SidebarContent({
 function UserBlock({ name, email, image, role }: { name?: string; email?: string; image?: string; role: WorkspaceRole }) {
   const t = useTranslations('dash.common.shell')
   const labels = useDashLabels()
-  const locale = useLocale() as Locale
-  const router = useRouter()
   const theme = useTheme()
   const dark = theme?.preference === 'dark'
   const iconButton =
@@ -238,20 +236,7 @@ function UserBlock({ name, email, image, role }: { name?: string; email?: string
           {dark ? <Sun className="w-4 h-4" aria-hidden="true" /> : <Moon className="w-4 h-4" aria-hidden="true" />}
         </button>
       )}
-      {/* VI | EN for the dashboard: the visitor's language cookie (src/i18n/request.ts). */}
-      <button
-        type="button"
-        onClick={() => {
-          const next: Locale = locale === 'en' ? 'vi' : 'en'
-          document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=31536000; samesite=lax`
-          router.refresh()
-        }}
-        aria-label={t('language')}
-        title={t('language')}
-        className={cn(iconButton, 'text-[12px] font-semibold uppercase')}
-      >
-        {locale === 'en' ? 'vi' : 'en'}
-      </button>
+      <LanguageButton />
       {/* signOut() sends NextAuth's CSRF token; the old bare form POST had none,
           so NextAuth ignored it and the session survived. */}
       <button
