@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { queueWorkspaceInvite, sendAfterResponse } from '@/lib/email/outbox'
+import { requestLocale } from '@/lib/i18n/request-locale'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { inviteMemberSchema } from '@/lib/validations'
@@ -210,6 +211,8 @@ export async function POST(
           role: invitation.role,
           inviteUrl,
           expiresAt: invitation.expiresAt,
+          // The inviter's language: the page they sent it from.
+          locale: requestLocale(request),
         },
         invitation.id
       )

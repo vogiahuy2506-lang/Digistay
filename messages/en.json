@@ -1004,5 +1004,173 @@
       "text": "Try another keyword, a city name for instance."
     },
     "failed": "The property list could not be loaded. Reload the page and try again."
+  },
+  "email": {
+    "layout": {
+      "brand": "Digistay",
+      "tagline": "Hotel OS — the operating system for hotels",
+      "automated": "This email was sent automatically by Digistay. Please don't reply to it.",
+      "rights": "© {year} Digistay. All rights reserved."
+    },
+    "common": {
+      "hello": "Hello",
+      "helloName": "Hello <b>{name}</b>",
+      "helloText": "Hello {name},",
+      "copyLink": "Or copy this link:",
+      "contactHotel": "Hotel phone: {phone}"
+    },
+    "otp": {
+      "titles": {
+        "register": "Verify your account",
+        "forgot_password": "Reset your password",
+        "login": "Sign in with a one-time code",
+        "change_email": "Confirm your new email",
+        "verify_account": "Verify your account"
+      },
+      "descriptions": {
+        "register": "Thanks for signing up for Digistay. Enter the code below to finish creating your account.",
+        "forgot_password": "We received a request to reset your password. Enter the code below to continue.",
+        "login": "Sign in without a password using the code below.",
+        "change_email": "You asked to change your email address. Enter the code below to confirm.",
+        "verify_account": "Please verify your account with the code below."
+      },
+      "subject": "[Digistay] {title} - your verification code",
+      "preview": "Your code: {otp}",
+      "codeLabel": "Your verification code",
+      "validFor": "⏱️ Valid for <b>{minutes, plural, one {# minute} other {# minutes}}</b>",
+      "security": "<b>🛡️ Security:</b> Never share this code with anyone. Digistay will never ask for it by phone.",
+      "ignore": "If you didn't ask for this code, just ignore this email — your account is still safe.",
+      "textCode": "Your code: {otp}",
+      "textValid": "Valid for {minutes, plural, one {# minute} other {# minutes}}.",
+      "textIgnore": "If you didn't ask for this code, please ignore this email."
+    },
+    "welcome": {
+      "subject": "Welcome to Digistay! 🎉",
+      "preview": "Your account is ready",
+      "title": "🎉 Your account is ready!",
+      "welcomeName": "Welcome to <accent>Digistay</accent>, <b>{name}</b>.",
+      "welcome": "Welcome to <accent>Digistay</accent>.",
+      "verified": "Your email is verified. You can start using Digistay right away.",
+      "nextSteps": "Next steps:",
+      "steps": {
+        "workspace": "Create your first workspace",
+        "members": "Add your team and choose their roles",
+        "property": "Set up your hotel",
+        "bookings": "Start managing bookings & guests"
+      },
+      "signIn": "Sign in now →",
+      "text": "Welcome to Digistay! Your account is verified.",
+      "textSignIn": "Sign in: {url}"
+    },
+    "passwordChanged": {
+      "subject": "[Digistay] Your password was changed",
+      "preview": "Your password was just changed",
+      "title": "🔒 Your password was changed",
+      "changed": "This is to confirm that the password of your <b>Digistay</b> account was changed on <b>{time}</b>.",
+      "doneTitle": "✅ Password changed",
+      "doneText": "If this was you, there's nothing else to do.",
+      "notYouTitle": "⚠️ Wasn't you?",
+      "notYou": "If you didn't make this change, contact us right away to protect your account.",
+      "notYouSupport": "If you didn't make this change, contact us right away through our <link>support page</link> to protect your account.",
+      "text": "Your Digistay password was changed on {time}.",
+      "textNotYou": "If this wasn't you, contact support right away."
+    },
+    "emailChange": {
+      "subject": "[Digistay] Confirm your new email address",
+      "preview": "Confirm your new email address",
+      "title": "📧 Confirm your new email",
+      "request": "We received a request to change the email of your <b>Digistay</b> account to <accent>{email}</accent>.",
+      "pressButton": "Press the button below to confirm the change:",
+      "button": "Confirm the change",
+      "validFor": "⏱️ The link is valid for <b>{hours, plural, one {# hour} other {# hours}}</b>",
+      "ignore": "If you didn't ask for this change, just ignore this email — your current email stays as it is.",
+      "textRequest": "Request to change your email to {email}.",
+      "textConfirm": "Confirm: {url}",
+      "textValid": "The link is valid for {hours, plural, one {# hour} other {# hours}}."
+    },
+    "booking": {
+      "subjectConfirmed": "[{code}] ✅ Your booking at {hotel} is confirmed",
+      "subjectAwaiting": "[{code}] Booking request received at {hotel}",
+      "preview": "Booking {code} at {hotel}",
+      "titleConfirmed": "✅ Booking confirmed",
+      "titleAwaiting": "Booking request received",
+      "leadConfirmed": "Thank you for your booking. Here are the details:",
+      "leadAwaiting": "Thank you for your booking. {hotel} will contact you to confirm it; your room is only guaranteed once the hotel has confirmed. Here is your request:",
+      "code": "Booking code",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "checkInFrom": "from {time}",
+      "checkOutBy": "by {time}",
+      "adults": "{count, plural, one {# adult} other {# adults}}",
+      "children": "{count, plural, one {# child} other {# children}}",
+      "nights": "{count, plural, one {# night} other {# nights}}",
+      "note": "<b>📝 Note:</b> {note}",
+      "depositTitle": "Pay a {amount} deposit to confirm your booking",
+      "depositHow": "Bank transfer through PayOS, straight to {hotel}'s account.",
+      "depositDeadline": "Deadline: {deadline}; after that, the booking is cancelled automatically.",
+      "depositIgnore": "Already paid? Then you can ignore this.",
+      "depositButton": "Pay the deposit via PayOS",
+      "totalConfirmed": "Total",
+      "totalAwaiting": "Estimated total",
+      "hotelButton": "Visit the hotel's website →",
+      "textConfirmed": "Booking {code} confirmed",
+      "textAwaiting": "Booking request {code} received",
+      "textHotel": "Hotel: {hotel}",
+      "textHotelAwaiting": "Hotel: {hotel} (will contact you to confirm)",
+      "textTotal": "Total: {amount}",
+      "textEstimate": "Estimated total: {amount}",
+      "textDeposit": "Pay the {amount} deposit: {url}",
+      "textDepositBy": "Pay the {amount} deposit by {deadline}: {url}",
+      "textHotelPage": "Hotel website: {url}"
+    },
+    "depositReceived": {
+      "subject": "Deposit received - booking #{code} is confirmed",
+      "received": "{hotel} has received your {amount} deposit for booking {code}. Your booking is confirmed.",
+      "dates": "Check-in: {checkIn} · Check-out: {checkOut}",
+      "remaining": "To pay at check-in: {amount}"
+    },
+    "depositExpired": {
+      "subject": "Booking #{code} was cancelled: the deposit didn't arrive",
+      "cancelled": "{hotel} didn't receive the deposit for booking {code} in time, so the booking has been cancelled and the room released to other guests.",
+      "alreadyPaid": "If you did make the transfer, please contact the hotel to have your booking restored or your money refunded."
+    },
+    "invite": {
+      "subject": "{inviter} invited you to {workspace} on Digistay",
+      "preview": "{inviter} invited you to {workspace}",
+      "title": "💌 You're invited",
+      "invited": "<b>{inviter}</b> has invited you to join the <accent>{workspace}</accent> workspace on Digistay.",
+      "roleLabel": "Your role",
+      "roles": {
+        "OWNER": "Owner",
+        "ADMIN": "Admin",
+        "MANAGER": "Manager",
+        "STAFF": "Staff",
+        "VIEWER": "Viewer"
+      },
+      "accept": "Accept the invitation →",
+      "expires": "⏱️ Expires on {time}",
+      "text": "{inviter} invited you to join {workspace} as {role}.",
+      "textAccept": "Accept: {url}",
+      "textExpires": "Expires: {time}"
+    },
+    "invoice": {
+      "subject": "E-invoice no. {number} - {hotel}",
+      "preview": "Invoice no. {number} - {amount}",
+      "title": "🧾 Your e-invoice",
+      "issued": "{hotel} has issued an e-invoice for your booking. The PDF is attached to this email.",
+      "number": "Invoice number",
+      "numberValue": "{number} (series {series})",
+      "lookupCode": "Lookup code",
+      "bookingCode": "Booking code",
+      "hotel": "Hotel",
+      "note": "Note",
+      "tax": "VAT",
+      "total": "Total",
+      "lookup": "The invoice was issued through Mắt Bão; you can look it up on Mắt Bão's invoice portal with the lookup code above.",
+      "textIssued": "{hotel} has issued an e-invoice for your booking (PDF attached).",
+      "adjustsDown": "Adjustment (decrease) to invoice no. {number}",
+      "adjustsUp": "Adjustment (increase) to invoice no. {number}",
+      "replaces": "Replaces invoice no. {number}"
+    }
   }
 }

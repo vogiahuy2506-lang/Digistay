@@ -348,4 +348,51 @@ describe('the public booking route', () => {
     expect(ownerMail.html).not.toContain('<a href="https://x.example">')
     expect(ownerMail.html).toContain('&lt;a href=')
   })
+
+  it("keeps the page's language: an English booking is confirmed in English, linking to the English pages; the owner's stays Vietnamese", async () => {
+    vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://digistay.test')
+    try {
+      const { owner, property } = await createTenant()
+      await publishSite(property.id)
+      const room = await createRoomType(property.id, { totalRooms: 10 })
+      const book = async (n: number, locale?: unknown) => {
+        const res = await call(guestBooking(json({ propertyId: property.id, roomTypeId: room.id, ...guest(n), ...WEEKDAYS, numAdults: 2, locale }, freshIp())))
+        expect(res.status).toBe(200)
+        return prisma.booking.findFirstOrThrow({ where: { bookingCode: res.body.data.bookingCode } })
+      }
+      const mail = async (bookingId: string, kind: string) => {
+        const row = await prisma.emailOutbox.findFirstOrThrow({ where: { refId: bookingId, kind } })
+        return JSON.parse(decryptSecret(row.message, secretContext('email_outbox', row.id, 'message'))) as { subject: string; html: string; text: string }
+      }
+
+      const english = await book(1, 'en')
+      expect(english.locale).toBe('en')
+      const guestMail = await mail(english.id, 'booking_confirmation')
+      expect(guestMail.subject).toBe(`[${english.bookingCode}] Booking request received at ${property.name}`)
+      expect(guestMail.html).toContain('<html lang="en">')
+      expect(guestMail.html).toContain(`href="https://digistay.test/${property.subdomain}/en"`)
+      expect(guestMail.text).toContain('Mon, 7 Dec 2026 - Wed, 9 Dec 2026')
+      expect(guestMail.text).toContain(`Hotel website: https://digistay.test/${property.subdomain}/en`)
+      expect(guestMail.html).not.toContain('Xin chào')
+      // The hotel's owner reads Vietnamese, whatever the guest's language.
+      expect((await mail(english.id, 'owner_new_booking')).subject).toContain('Yêu cầu đặt phòng mới từ website')
+
+      // No language, or one the site does not have: Vietnamese, as before.
+      for (const [n, locale] of [[2, undefined], [3, 'fr'], [4, { en: true }]] as const) {
+        const booking = await book(n, locale)
+        expect(booking.locale).toBe('vi')
+        const viMail = await mail(booking.id, 'booking_confirmation')
+        expect(viMail.subject).toContain('Đã nhận yêu cầu đặt phòng')
+        expect(viMail.html).toContain(`href="https://digistay.test/${property.subdomain}"`)
+      }
+
+      // Staff bookings stay Vietnamese.
+      signInAs(owner)
+      const staff = await call(staffBooking(json({ propertyId: property.id, roomTypeId: room.id, ...guest(5), ...WEEKDAYS, numAdults: 2, locale: 'en' })))
+      expect(staff.status).toBe(200)
+      expect((await prisma.booking.findUniqueOrThrow({ where: { id: staff.body.data.id } })).locale).toBe('vi')
+    } finally {
+      vi.unstubAllEnvs()
+    }
+  })
 })

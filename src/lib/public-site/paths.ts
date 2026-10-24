@@ -7,6 +7,8 @@
  * adds the "/<subdomain>" itself. Links must carry the prefix in the first
  * case and must not in the second, or they point to /<subdomain>/<subdomain>/...
  */
+import type { Locale } from '@/i18n/locales'
+
 /**
  * Set by src/middleware.ts on every hotel-site request: the site's base path
  * as the visitor's URL has it ('' on the hotel's own host, '/<hotel>' on the
@@ -65,4 +67,18 @@ export function siteHref(base: string, path: string): string {
   // A section of the home page: "/may-bien#rooms", not "/may-bien/#rooms".
   if (path.startsWith('/#')) return `${base}${base ? path.slice(1) : path}`
   return `${base}${path.startsWith('/') ? path : `/${path}`}`
+}
+
+/** The site's base path in a language: the English pages are under /en (src/middleware.ts). */
+export function localeBase(base: string, locale: Locale): string {
+  return locale === 'en' ? `${base}/en` : base
+}
+
+/**
+ * An absolute link to a hotel's page on the app's own host, for emails:
+ * <appUrl>/<hotel>/dat-coc/x, or <appUrl>/<hotel>/en/dat-coc/x in English.
+ * It works whatever domain the hotel's site uses.
+ */
+export function appSiteUrl(appUrl: string | undefined, subdomain: string, locale: Locale, path = '/'): string {
+  return `${appUrl}${siteHref(localeBase(`/${subdomain}`, locale), path)}`
 }

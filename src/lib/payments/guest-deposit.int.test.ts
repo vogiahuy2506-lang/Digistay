@@ -59,7 +59,7 @@ const postWebhook = (propertyId: string, body: object) =>
   )
 
 let ip = 0
-async function book(propertyId: string, roomTypeId: string, email = 'khach@example.com') {
+async function book(propertyId: string, roomTypeId: string, email = 'khach@example.com', extra: object = {}) {
   const res = await guestBooking(
     new NextRequest('http://digistay.test/api/public/bookings', {
       method: 'POST',
@@ -74,6 +74,7 @@ async function book(propertyId: string, roomTypeId: string, email = 'khach@examp
         checkInDate: '2026-12-07',
         checkOutDate: '2026-12-09',
         numAdults: 2,
+        ...extra,
       }),
     })
   )
@@ -388,6 +389,29 @@ describe('paying the deposit again', () => {
     } finally {
       process.env.NEXTAUTH_SECRET = secret
     }
+  })
+
+  it("an English guest's emails are in English and link to the English deposit page", async () => {
+    const mail = async (kind: string, bookingId: string) => {
+      const row = await prisma.emailOutbox.findFirstOrThrow({ where: { kind, refId: bookingId } })
+      return JSON.parse(decryptSecret(row.message, secretContext('email_outbox', row.id, 'message'))) as { subject: string; text: string; html: string }
+    }
+    const { property, room } = await hotel({ connected: true, percent: 30, deadlineMinutes: 60, totalRooms: 2 })
+
+    const paid = await bookingOf((await book(property.id, room.id, 'paid@example.com', { locale: 'en' })).body.data.bookingCode)
+    const confirmation = await mail('booking_confirmation', paid.id)
+    expect(confirmation.html).toContain(`http://digistay.test/${property.subdomain}/en/dat-coc/${depositToken(paid.id)}`)
+    expect(confirmation.text).toMatch(/Pay the 541,000 ₫ deposit by \d+ \w{3}, \d\d:\d\d GMT\+7: /)
+    const payment = await depositOf(paid.bookingCode)
+    expect((await postWebhook(property.id, await fake.pay(Number(payment.gatewayOrderCode)))).status).toBe(200)
+    const received = await mail('deposit_received', paid.id)
+    expect(received.subject).toBe(`Deposit received - booking #${paid.bookingCode} is confirmed`)
+    expect(received.text).toContain('Check-in: 7 Dec 2026 · Check-out: 9 Dec 2026')
+    expect(received.text).toContain('To pay at check-in: 1,262,000 ₫')
+
+    const unpaid = await bookingOf((await book(property.id, room.id, 'late@example.com', { locale: 'en' })).body.data.bookingCode)
+    expect(await expireUnpaidDeposits(later(61))).toMatchObject({ cancelled: 1 })
+    expect((await mail('deposit_expired', unpaid.id)).subject).toBe(`Booking #${unpaid.bookingCode} was cancelled: the deposit didn't arrive`)
   })
 
   it('is rate-limited per IP', async () => {

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { consumeResetToken } from '@/lib/auth/otp'
 import { unlockAccount } from '@/lib/auth/credentials'
 import { revokeSessions } from '@/lib/auth/session-revocation'
+import { requestLocale } from '@/lib/i18n/request-locale'
 import { PASSWORD_MIN_LENGTH, PASSWORD_TOO_SHORT } from '@/lib/validations'
 
 /**
@@ -57,6 +58,7 @@ export async function POST(request: NextRequest) {
     sendPasswordChangedEmail({
       recipientEmail: user.email,
       recipientName: user.name || undefined,
+      locale: requestLocale(request),
     }).catch((err) => console.error('Password changed email failed:', err))
 
     return NextResponse.json({

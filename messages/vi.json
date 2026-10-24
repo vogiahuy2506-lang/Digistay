@@ -1004,5 +1004,173 @@
       "text": "Thử từ khoá khác, ví dụ chỉ tên thành phố."
     },
     "failed": "Không tải được danh sách cơ sở. Tải lại trang rồi thử lại."
+  },
+  "email": {
+    "layout": {
+      "brand": "DigiStay",
+      "tagline": "Hotel OS — Hệ điều hành quản lý khách sạn",
+      "automated": "Email này được gửi tự động từ DigiStay. Vui lòng không trả lời trực tiếp.",
+      "rights": "© {year} DigiStay. Mọi quyền được bảo lưu."
+    },
+    "common": {
+      "hello": "Xin chào",
+      "helloName": "Xin chào <b>{name}</b>",
+      "helloText": "Xin chào {name},",
+      "copyLink": "Hoặc copy link:",
+      "contactHotel": "Liên hệ khách sạn: {phone}"
+    },
+    "otp": {
+      "titles": {
+        "register": "Xác thực tài khoản",
+        "forgot_password": "Đặt lại mật khẩu",
+        "login": "Đăng nhập bằng mã OTP",
+        "change_email": "Xác nhận thay đổi email",
+        "verify_account": "Xác thực tài khoản"
+      },
+      "descriptions": {
+        "register": "Cảm ơn bạn đã đăng ký tài khoản DigiStay. Vui lòng nhập mã bên dưới để hoàn tất đăng ký.",
+        "forgot_password": "Chúng tôi nhận được yêu cầu đặt lại mật khẩu. Vui lòng nhập mã bên dưới để tiếp tục.",
+        "login": "Đăng nhập nhanh không cần mật khẩu bằng mã OTP dưới đây.",
+        "change_email": "Bạn vừa yêu cầu thay đổi địa chỉ email. Nhập mã dưới đây để xác nhận.",
+        "verify_account": "Vui lòng xác thực tài khoản của bạn bằng mã OTP dưới đây."
+      },
+      "subject": "[DigiStay] {title} - Mã xác thực OTP",
+      "preview": "Mã OTP: {otp}",
+      "codeLabel": "Mã xác thực của bạn",
+      "validFor": "⏱️ Có hiệu lực trong <b>{minutes} phút</b>",
+      "security": "<b>🛡️ Bảo mật:</b> Không chia sẻ mã này với bất kỳ ai. DigiStay sẽ không bao giờ hỏi mã OTP qua điện thoại.",
+      "ignore": "Nếu bạn không yêu cầu mã này, vui lòng bỏ qua email — tài khoản của bạn vẫn an toàn.",
+      "textCode": "Mã OTP: {otp}",
+      "textValid": "Có hiệu lực trong {minutes} phút.",
+      "textIgnore": "Nếu bạn không yêu cầu mã này, vui lòng bỏ qua email."
+    },
+    "welcome": {
+      "subject": "Chào mừng bạn đến với DigiStay! 🎉",
+      "preview": "Tài khoản của bạn đã được kích hoạt",
+      "title": "🎉 Tài khoản đã sẵn sàng!",
+      "welcomeName": "Chào mừng <b>{name}</b> đến với <accent>DigiStay</accent>.",
+      "welcome": "Chào mừng bạn đến với <accent>DigiStay</accent>.",
+      "verified": "Email của bạn đã được xác thực thành công. Bạn có thể bắt đầu sử dụng ngay bây giờ.",
+      "nextSteps": "Bước tiếp theo:",
+      "steps": {
+        "workspace": "Tạo workspace đầu tiên của bạn",
+        "members": "Thêm thành viên và phân quyền",
+        "property": "Cấu hình thuộc tính khách sạn",
+        "bookings": "Bắt đầu quản lý bookings & khách hàng"
+      },
+      "signIn": "Đăng nhập ngay →",
+      "text": "Chào mừng đến với DigiStay! Tài khoản đã được xác thực.",
+      "textSignIn": "Đăng nhập: {url}"
+    },
+    "passwordChanged": {
+      "subject": "[DigiStay] Mật khẩu vừa được thay đổi",
+      "preview": "Mật khẩu của bạn vừa được thay đổi",
+      "title": "🔒 Mật khẩu đã được thay đổi",
+      "changed": "Chúng tôi xác nhận rằng mật khẩu tài khoản <b>DigiStay</b> của bạn vừa được thay đổi vào <b>{time}</b>.",
+      "doneTitle": "✅ Đổi mật khẩu thành công",
+      "doneText": "Nếu đây là bạn, bạn không cần làm gì thêm.",
+      "notYouTitle": "⚠️ Không phải bạn?",
+      "notYou": "Nếu bạn không thực hiện thay đổi này, hãy liên hệ ngay với chúng tôi để bảo vệ tài khoản.",
+      "notYouSupport": "Nếu bạn không thực hiện thay đổi này, hãy liên hệ ngay với chúng tôi qua <link>trang hỗ trợ</link> để bảo vệ tài khoản.",
+      "text": "Mật khẩu DigiStay của bạn vừa được thay đổi lúc {time}.",
+      "textNotYou": "Nếu không phải bạn, hãy liên hệ hỗ trợ ngay."
+    },
+    "emailChange": {
+      "subject": "[DigiStay] Xác nhận thay đổi địa chỉ email",
+      "preview": "Xác nhận thay đổi địa chỉ email",
+      "title": "📧 Xác nhận thay đổi email",
+      "request": "Chúng tôi nhận được yêu cầu thay đổi email tài khoản <b>DigiStay</b> sang địa chỉ <accent>{email}</accent>.",
+      "pressButton": "Nhấn nút bên dưới để xác nhận thay đổi:",
+      "button": "Xác nhận thay đổi",
+      "validFor": "⏱️ Link có hiệu lực trong <b>{hours} giờ</b>",
+      "ignore": "Nếu bạn không yêu cầu thay đổi, hãy bỏ qua email — email hiện tại sẽ được giữ nguyên.",
+      "textRequest": "Yêu cầu thay đổi email sang {email}.",
+      "textConfirm": "Xác nhận: {url}",
+      "textValid": "Link có hiệu lực {hours} giờ."
+    },
+    "booking": {
+      "subjectConfirmed": "[{code}] ✅ Xác nhận đặt phòng tại {hotel}",
+      "subjectAwaiting": "[{code}] Đã nhận yêu cầu đặt phòng tại {hotel}",
+      "preview": "Đặt phòng {code} tại {hotel}",
+      "titleConfirmed": "✅ Đặt phòng thành công",
+      "titleAwaiting": "Đã nhận yêu cầu đặt phòng",
+      "leadConfirmed": "Cảm ơn bạn đã đặt phòng. Dưới đây là thông tin chi tiết:",
+      "leadAwaiting": "Cảm ơn bạn đã đặt phòng. {hotel} sẽ liên hệ với bạn để xác nhận; phòng chỉ được giữ chắc chắn khi khách sạn xác nhận. Dưới đây là thông tin yêu cầu của bạn:",
+      "code": "Mã đặt phòng",
+      "checkIn": "Nhận phòng",
+      "checkOut": "Trả phòng",
+      "checkInFrom": "từ {time}",
+      "checkOutBy": "trước {time}",
+      "adults": "{count} người lớn",
+      "children": "{count} trẻ em",
+      "nights": "{count} đêm",
+      "note": "<b>📝 Ghi chú:</b> {note}",
+      "depositTitle": "Đặt cọc {amount} để khách sạn xác nhận",
+      "depositHow": "Chuyển khoản qua PayOS, tiền vào thẳng tài khoản của {hotel}.",
+      "depositDeadline": "Hạn đặt cọc: {deadline}; quá hạn, đặt phòng tự huỷ.",
+      "depositIgnore": "Đã đặt cọc rồi thì bỏ qua.",
+      "depositButton": "Đặt cọc qua PayOS",
+      "totalConfirmed": "Tổng thanh toán",
+      "totalAwaiting": "Tạm tính",
+      "hotelButton": "Xem trang khách sạn →",
+      "textConfirmed": "Xác nhận đặt phòng {code}",
+      "textAwaiting": "Đã nhận yêu cầu đặt phòng {code}",
+      "textHotel": "Khách sạn: {hotel}",
+      "textHotelAwaiting": "Khách sạn: {hotel} (sẽ liên hệ để xác nhận)",
+      "textTotal": "Tổng: {amount}",
+      "textEstimate": "Tạm tính: {amount}",
+      "textDeposit": "Đặt cọc {amount}: {url}",
+      "textDepositBy": "Đặt cọc {amount} trước {deadline}: {url}",
+      "textHotelPage": "Trang khách sạn: {url}"
+    },
+    "depositReceived": {
+      "subject": "Đã nhận tiền cọc - đặt phòng #{code} đã được xác nhận",
+      "received": "{hotel} đã nhận {amount} tiền cọc cho đặt phòng {code}. Đặt phòng của bạn đã được xác nhận.",
+      "dates": "Nhận phòng: {checkIn} · Trả phòng: {checkOut}",
+      "remaining": "Còn lại khi nhận phòng: {amount}"
+    },
+    "depositExpired": {
+      "subject": "Đặt phòng #{code} đã được huỷ vì chưa nhận được tiền cọc",
+      "cancelled": "{hotel} chưa nhận được tiền cọc cho đặt phòng {code} trong thời hạn, nên đặt phòng đã được huỷ và phòng được mở lại cho khách khác.",
+      "alreadyPaid": "Nếu bạn đã chuyển khoản, vui lòng liên hệ khách sạn để được xác nhận lại hoặc hoàn tiền."
+    },
+    "invite": {
+      "subject": "{inviter} mời bạn vào {workspace}",
+      "preview": "{inviter} mời bạn vào {workspace}",
+      "title": "💌 Lời mời tham gia",
+      "invited": "<b>{inviter}</b> đã mời bạn tham gia workspace <accent>{workspace}</accent> trên DigiStay.",
+      "roleLabel": "Vai trò của bạn",
+      "roles": {
+        "OWNER": "Chủ sở hữu",
+        "ADMIN": "Quản trị viên",
+        "MANAGER": "Quản lý",
+        "STAFF": "Nhân viên",
+        "VIEWER": "Người xem"
+      },
+      "accept": "Chấp nhận lời mời →",
+      "expires": "⏱️ Hết hạn lúc {time}",
+      "text": "{inviter} mời bạn tham gia {workspace} với vai trò {role}.",
+      "textAccept": "Chấp nhận: {url}",
+      "textExpires": "Hết hạn: {time}"
+    },
+    "invoice": {
+      "subject": "Hóa đơn điện tử số {number} - {hotel}",
+      "preview": "Hóa đơn số {number} - {amount}",
+      "title": "🧾 Hóa đơn điện tử",
+      "issued": "{hotel} đã phát hành hóa đơn điện tử cho đơn đặt phòng của bạn. Bản PDF được đính kèm email này.",
+      "number": "Số hóa đơn",
+      "numberValue": "{number} (ký hiệu {series})",
+      "lookupCode": "Mã tra cứu",
+      "bookingCode": "Mã đặt phòng",
+      "hotel": "Khách sạn",
+      "note": "Ghi chú",
+      "tax": "Thuế GTGT",
+      "total": "Tổng cộng",
+      "lookup": "Hóa đơn được phát hành qua Mắt Bão; có thể tra cứu trên cổng hóa đơn của Mắt Bão bằng mã tra cứu ở trên.",
+      "textIssued": "{hotel} đã phát hành hóa đơn điện tử cho đơn đặt phòng của bạn (PDF đính kèm).",
+      "adjustsDown": "Điều chỉnh giảm cho hoá đơn số {number}",
+      "adjustsUp": "Điều chỉnh tăng cho hoá đơn số {number}",
+      "replaces": "Thay thế cho hoá đơn số {number}"
+    }
   }
 }

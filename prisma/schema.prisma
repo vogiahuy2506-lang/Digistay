@@ -670,6 +670,10 @@ model Booking {
   // Staff who created (for walk-in)
   createdById     String?
   createdBy       User?    @relation(fields: [createdById], references: [id])
+
+  /// The guest's language, 'vi' | 'en': the page they booked on (staff bookings: 'vi').
+  /// Their emails follow it (src/lib/email/i18n.ts).
+  locale          String   @default("vi")
   
   // Relations
   bookingItems    BookingItem[]

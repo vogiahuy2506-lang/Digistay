@@ -1,11 +1,29 @@
 /**
  * Shared email template system for DigiStay.
  * Returns HTML + plain text for use with any transport (SMTP, Resend, etc.)
+ *
+ * Guest and account emails come in Vietnamese or English (`locale`, 'vi'
+ * when left out); their texts are in messages/<locale>.json under `email`
+ * (./i18n.ts). The ops alert stays Vietnamese: it goes to the Digistay team.
+ *
+ * In the HTML part, a message without tags is escaped as a whole (its
+ * values with it); a message with tags (<b>…</b>) goes through t.markup with
+ * its values escaped one by one, so its own text must hold no & < >.
  */
+import {
+  EMAIL_TIME_ZONE,
+  emailTranslator,
+  englishDate,
+  englishDateTime,
+  englishMoney,
+  type EmailLocale,
+} from './i18n'
 
 export interface BaseEmailProps {
   recipientName?: string
   previewText?: string // Short text shown in inbox preview
+  /** The reader's language; Vietnamese when left out. */
+  locale?: EmailLocale
 }
 
 export const BRAND = {
@@ -34,7 +52,18 @@ function escapeHtml(input: string): string {
     .replace(/'/g, '&#39;')
 }
 
-function formatVnd(amount: number, currency = 'VND'): string {
+/** Values for t.markup in the HTML part: text escaped, numbers as they are. */
+function escaped<T extends Record<string, string | number>>(values: T): T {
+  return Object.fromEntries(
+    Object.entries(values).map(([key, value]) => [key, typeof value === 'string' ? escapeHtml(value) : value])
+  ) as T
+}
+
+/** The HTML for a message's <b>…</b> (or any other) tag. */
+const strong = (style?: string) => (chunks: string) => `<strong${style ? ` style="${style}"` : ''}>${chunks}</strong>`
+
+function formatVnd(amount: number, currency = 'VND', locale: EmailLocale = 'vi'): string {
+  if (locale === 'en') return englishMoney(amount, currency)
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
     currency,
@@ -42,14 +71,21 @@ function formatVnd(amount: number, currency = 'VND'): string {
   }).format(amount)
 }
 
-function formatDate(date: string | Date): string {
+function formatDate(date: string | Date, locale: EmailLocale = 'vi'): string {
   const d = typeof date === 'string' ? new Date(date) : date
+  if (locale === 'en') return englishDate(d, { weekday: true })
   return d.toLocaleDateString('vi-VN', {
     weekday: 'short',
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
+    timeZone: EMAIL_TIME_ZONE,
   })
+}
+
+/** A moment (a password change, an invitation's expiry), Vietnam time. */
+function formatDateTime(date: Date, locale: EmailLocale): string {
+  return locale === 'en' ? englishDateTime(date) : date.toLocaleString('vi-VN', { timeZone: EMAIL_TIME_ZONE })
 }
 
 /**
@@ -58,16 +94,19 @@ function formatDate(date: string | Date): string {
 function baseLayout(props: {
   previewText?: string
   bodyHtml: string
+  locale?: EmailLocale
 }): string {
-  const { previewText, bodyHtml } = props
+  const { previewText, bodyHtml, locale = 'vi' } = props
+  const t = emailTranslator(locale, 'email.layout')
+  const brand = escapeHtml(t('brand'))
   return `<!DOCTYPE html>
-<html lang="vi">
+<html lang="${locale}">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="light only" />
   ${previewText ? `<meta name="x-apple-notification-preview" content="${escapeHtml(previewText)}" />` : ''}
-  <title>${BRAND.name}</title>
+  <title>${brand}</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: ${BRAND.bg}; font-family: ${BRAND.fontFamily}; color: ${BRAND.text}; -webkit-font-smoothing: antialiased;">
   ${previewText ? `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:${BRAND.bg};">${escapeHtml(previewText)}</div>` : ''}
@@ -81,10 +120,10 @@ function baseLayout(props: {
           <tr>
             <td style="background: linear-gradient(135deg, ${BRAND.primary} 0%, ${BRAND.primaryLight} 100%); padding: 32px 32px 28px; text-align: center;">
               <div style="display: inline-block; background: rgba(255,255,255,0.18); border-radius: 12px; padding: 10px 14px; margin-bottom: 12px;">
-                <span style="color: #ffffff; font-size: 20px; font-weight: 700; letter-spacing: 0.5px;">🏨 ${BRAND.name}</span>
+                <span style="color: #ffffff; font-size: 20px; font-weight: 700; letter-spacing: 0.5px;">🏨 ${brand}</span>
               </div>
               <div style="color: rgba(255,255,255,0.85); font-size: 13px; font-weight: 400;">
-                ${BRAND.tagline}
+                ${escapeHtml(t('tagline'))}
               </div>
             </td>
           </tr>
@@ -100,10 +139,10 @@ function baseLayout(props: {
           <tr>
             <td style="background-color: ${BRAND.bg}; padding: 24px 32px; border-top: 1px solid ${BRAND.border}; text-align: center;">
               <p style="margin: 0 0 8px; color: ${BRAND.textMuted}; font-size: 12px;">
-                Email này được gửi tự động từ ${BRAND.name}. Vui lòng không trả lời trực tiếp.
+                ${escapeHtml(t('automated'))}
               </p>
               <p style="margin: 0; color: ${BRAND.textMuted}; font-size: 12px;">
-                © ${new Date().getFullYear()} ${BRAND.name}. Mọi quyền được bảo lưu.
+                ${escapeHtml(t('rights', { year: String(new Date().getFullYear()) }))}
               </p>
             </td>
           </tr>
@@ -125,32 +164,20 @@ export interface OtpEmailTemplateProps extends BaseEmailProps {
   expiresInMinutes?: number
 }
 
-const OTP_PURPOSE_TITLE: Record<OtpEmailTemplateProps['purpose'], string> = {
-  register: 'Xác thực tài khoản',
-  forgot_password: 'Đặt lại mật khẩu',
-  login: 'Đăng nhập bằng mã OTP',
-  change_email: 'Xác nhận thay đổi email',
-  verify_account: 'Xác thực tài khoản',
-}
-
-const OTP_PURPOSE_DESC: Record<OtpEmailTemplateProps['purpose'], string> = {
-  register: 'Cảm ơn bạn đã đăng ký tài khoản DigiStay. Vui lòng nhập mã bên dưới để hoàn tất đăng ký.',
-  forgot_password: 'Chúng tôi nhận được yêu cầu đặt lại mật khẩu. Vui lòng nhập mã bên dưới để tiếp tục.',
-  login: 'Đăng nhập nhanh không cần mật khẩu bằng mã OTP dưới đây.',
-  change_email: 'Bạn vừa yêu cầu thay đổi địa chỉ email. Nhập mã dưới đây để xác nhận.',
-  verify_account: 'Vui lòng xác thực tài khoản của bạn bằng mã OTP dưới đây.',
-}
-
 export function otpEmailTemplate(props: OtpEmailTemplateProps): { html: string; text: string; subject: string } {
-  const { otp, purpose, recipientName, expiresInMinutes = 5, previewText } = props
-  const title = OTP_PURPOSE_TITLE[purpose]
-  const desc = OTP_PURPOSE_DESC[purpose]
-  const greeting = recipientName ? `Xin chào <strong style="color: ${BRAND.text};">${escapeHtml(recipientName)}</strong>` : 'Xin chào'
+  const { otp, purpose, recipientName, expiresInMinutes = 5, previewText, locale = 'vi' } = props
+  const t = emailTranslator(locale, 'email.otp')
+  const common = emailTranslator(locale, 'email.common')
+  const title = t(`titles.${purpose}`)
+  const desc = t(`descriptions.${purpose}`)
+  const greeting = recipientName
+    ? common.markup('helloName', { ...escaped({ name: recipientName }), b: strong(`color: ${BRAND.text};`) })
+    : escapeHtml(common('hello'))
 
   const bodyHtml = `
-    <h1 style="margin: 0 0 8px; font-size: 22px; font-weight: 700; color: ${BRAND.text};">${title}</h1>
+    <h1 style="margin: 0 0 8px; font-size: 22px; font-weight: 700; color: ${BRAND.text};">${escapeHtml(title)}</h1>
     <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: ${BRAND.textMuted};">
-      ${greeting},<br/>${desc}
+      ${greeting},<br/>${escapeHtml(desc)}
     </p>
 
     <!-- OTP code -->
@@ -158,13 +185,13 @@ export function otpEmailTemplate(props: OtpEmailTemplateProps): { html: string; 
       <tr>
         <td align="center" style="background: linear-gradient(135deg, ${BRAND.bg} 0%, #f3eee9 100%); border: 1px dashed ${BRAND.primary}; border-radius: 16px; padding: 28px 24px;">
           <div style="font-size: 12px; font-weight: 600; color: ${BRAND.primary}; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px;">
-            Mã xác thực của bạn
+            ${escapeHtml(t('codeLabel'))}
           </div>
           <div style="font-size: 40px; font-weight: 800; color: ${BRAND.primary}; letter-spacing: 8px; font-family: 'Courier New', monospace; line-height: 1;">
-            ${otp}
+            ${escapeHtml(otp)}
           </div>
           <div style="font-size: 13px; color: ${BRAND.textMuted}; margin-top: 12px;">
-            ⏱️ Có hiệu lực trong <strong style="color: ${BRAND.text};">${expiresInMinutes} phút</strong>
+            ${t.markup('validFor', { minutes: expiresInMinutes, b: strong(`color: ${BRAND.text};`) })}
           </div>
         </td>
       </tr>
@@ -174,28 +201,28 @@ export function otpEmailTemplate(props: OtpEmailTemplateProps): { html: string; 
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0 0; background-color: #fff8e1; border-left: 3px solid #f59e0b; border-radius: 8px;">
       <tr>
         <td style="padding: 12px 16px; font-size: 13px; color: #78350f; line-height: 1.5;">
-          <strong>🛡️ Bảo mật:</strong> Không chia sẻ mã này với bất kỳ ai. DigiStay sẽ không bao giờ hỏi mã OTP qua điện thoại.
+          ${t.markup('security', { b: strong() })}
         </td>
       </tr>
     </table>
 
     <p style="margin: 24px 0 0; font-size: 13px; color: ${BRAND.textMuted}; line-height: 1.5;">
-      Nếu bạn không yêu cầu mã này, vui lòng bỏ qua email — tài khoản của bạn vẫn an toàn.
+      ${escapeHtml(t('ignore'))}
     </p>
   `
 
   const text =
     `${title}\n\n` +
-    `${recipientName ? `Xin chào ${recipientName},\n` : ''}${desc}\n\n` +
-    `Mã OTP: ${otp}\n` +
-    `Có hiệu lực trong ${expiresInMinutes} phút.\n\n` +
-    `Nếu bạn không yêu cầu mã này, vui lòng bỏ qua email.\n\n` +
-    `-- ${BRAND.name}`
+    `${recipientName ? `${common('helloText', { name: recipientName })}\n` : ''}${desc}\n\n` +
+    `${t('textCode', { otp })}\n` +
+    `${t('textValid', { minutes: expiresInMinutes })}\n\n` +
+    `${t('textIgnore')}\n\n` +
+    `-- ${emailTranslator(locale, 'email.layout')('brand')}`
 
   return {
-    html: baseLayout({ previewText: previewText || `Mã OTP: ${otp}`, bodyHtml }),
+    html: baseLayout({ previewText: previewText || t('preview', { otp }), bodyHtml, locale }),
     text,
-    subject: `[${BRAND.name}] ${title} - Mã xác thực OTP`,
+    subject: t('subject', { title }),
   }
 }
 
@@ -203,25 +230,29 @@ export function otpEmailTemplate(props: OtpEmailTemplateProps): { html: string; 
 // 2. Welcome / Account verified
 // ============================================
 export function welcomeEmailTemplate(props: BaseEmailProps & { loginUrl?: string }): { html: string; text: string; subject: string } {
-  const { recipientName, loginUrl, previewText } = props
-  const greeting = recipientName ? `Chào mừng <strong>${escapeHtml(recipientName)}</strong>` : 'Chào mừng bạn'
+  const { recipientName, loginUrl, previewText, locale = 'vi' } = props
+  const t = emailTranslator(locale, 'email.welcome')
+  const tags = { b: strong(), accent: strong(`color: ${BRAND.primary};`) }
+  const welcome = recipientName
+    ? t.markup('welcomeName', { ...escaped({ name: recipientName }), ...tags })
+    : t.markup('welcome', tags)
 
   const bodyHtml = `
-    <h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: ${BRAND.text};">🎉 Tài khoản đã sẵn sàng!</h1>
+    <h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: ${BRAND.text};">${escapeHtml(t('title'))}</h1>
     <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: ${BRAND.textMuted};">
-      ${greeting} đến với <strong style="color: ${BRAND.primary};">${BRAND.name}</strong>.<br/>
-      Email của bạn đã được xác thực thành công. Bạn có thể bắt đầu sử dụng ngay bây giờ.
+      ${welcome}<br/>
+      ${escapeHtml(t('verified'))}
     </p>
 
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0;">
       <tr>
         <td style="background-color: ${BRAND.bg}; border-radius: 12px; padding: 20px;">
-          <p style="margin: 0 0 12px; font-size: 14px; font-weight: 600; color: ${BRAND.text};">Bước tiếp theo:</p>
+          <p style="margin: 0 0 12px; font-size: 14px; font-weight: 600; color: ${BRAND.text};">${escapeHtml(t('nextSteps'))}</p>
           <ul style="margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.8; color: ${BRAND.textMuted};">
-            <li>Tạo workspace đầu tiên của bạn</li>
-            <li>Thêm thành viên và phân quyền</li>
-            <li>Cấu hình thuộc tính khách sạn</li>
-            <li>Bắt đầu quản lý bookings &amp; khách hàng</li>
+            <li>${escapeHtml(t('steps.workspace'))}</li>
+            <li>${escapeHtml(t('steps.members'))}</li>
+            <li>${escapeHtml(t('steps.property'))}</li>
+            <li>${escapeHtml(t('steps.bookings'))}</li>
           </ul>
         </td>
       </tr>
@@ -232,7 +263,7 @@ export function welcomeEmailTemplate(props: BaseEmailProps & { loginUrl?: string
       <tr>
         <td align="center">
           <a href="${escapeHtml(loginUrl)}" style="display: inline-block; background: linear-gradient(135deg, ${BRAND.primary} 0%, ${BRAND.primaryLight} 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-size: 15px; font-weight: 600; box-shadow: 0 4px 12px rgba(169, 49, 25, 0.25);">
-            Đăng nhập ngay →
+            ${escapeHtml(t('signIn'))}
           </a>
         </td>
       </tr>
@@ -241,9 +272,9 @@ export function welcomeEmailTemplate(props: BaseEmailProps & { loginUrl?: string
   `
 
   return {
-    html: baseLayout({ previewText: previewText || 'Tài khoản của bạn đã được kích hoạt', bodyHtml }),
-    text: `Chào mừng đến với ${BRAND.name}! Tài khoản đã được xác thực.\n\n${loginUrl ? `Đăng nhập: ${loginUrl}` : ''}`,
-    subject: `Chào mừng bạn đến với ${BRAND.name}! 🎉`,
+    html: baseLayout({ previewText: previewText || t('preview'), bodyHtml, locale }),
+    text: `${t('text')}\n\n${loginUrl ? t('textSignIn', { url: loginUrl }) : ''}`,
+    subject: t('subject'),
   }
 }
 
@@ -251,23 +282,32 @@ export function welcomeEmailTemplate(props: BaseEmailProps & { loginUrl?: string
 // 3. Password changed notification
 // ============================================
 export function passwordChangedTemplate(props: BaseEmailProps & { changedAt?: Date; supportUrl?: string }): { html: string; text: string; subject: string } {
-  const { recipientName, changedAt = new Date(), supportUrl, previewText } = props
-  const greeting = recipientName ? `Xin chào <strong>${escapeHtml(recipientName)}</strong>` : 'Xin chào'
-  const time = changedAt.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })
+  const { recipientName, changedAt = new Date(), supportUrl, previewText, locale = 'vi' } = props
+  const t = emailTranslator(locale, 'email.passwordChanged')
+  const common = emailTranslator(locale, 'email.common')
+  const greeting = recipientName
+    ? common.markup('helloName', { ...escaped({ name: recipientName }), b: strong() })
+    : escapeHtml(common('hello'))
+  const time = formatDateTime(changedAt, locale)
+  const notYou = supportUrl
+    ? t.markup('notYouSupport', {
+        link: (chunks) => `<a href="${escapeHtml(supportUrl)}" style="color: ${BRAND.primary}; font-weight: 600;">${chunks}</a>`,
+      })
+    : escapeHtml(t('notYou'))
 
   const bodyHtml = `
-    <h1 style="margin: 0 0 8px; font-size: 22px; font-weight: 700; color: ${BRAND.text};">🔒 Mật khẩu đã được thay đổi</h1>
+    <h1 style="margin: 0 0 8px; font-size: 22px; font-weight: 700; color: ${BRAND.text};">${escapeHtml(t('title'))}</h1>
     <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: ${BRAND.textMuted};">
       ${greeting},<br/>
-      Chúng tôi xác nhận rằng mật khẩu tài khoản <strong>${BRAND.name}</strong> của bạn vừa được thay đổi vào <strong>${time}</strong>.
+      ${t.markup('changed', { ...escaped({ time }), b: strong() })}
     </p>
 
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0;">
       <tr>
         <td style="background-color: #f0fdf4; border-left: 3px solid ${BRAND.success}; border-radius: 8px; padding: 16px;">
           <p style="margin: 0; font-size: 14px; color: #14532d; line-height: 1.5;">
-            <strong>✅ Đổi mật khẩu thành công</strong><br/>
-            Nếu đây là bạn, bạn không cần làm gì thêm.
+            <strong>${escapeHtml(t('doneTitle'))}</strong><br/>
+            ${escapeHtml(t('doneText'))}
           </p>
         </td>
       </tr>
@@ -276,17 +316,17 @@ export function passwordChangedTemplate(props: BaseEmailProps & { changedAt?: Da
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0 0; background-color: #fef2f2; border-left: 3px solid ${BRAND.error}; border-radius: 8px;">
       <tr>
         <td style="padding: 16px; font-size: 14px; color: #7f1d1d; line-height: 1.5;">
-          <strong>⚠️ Không phải bạn?</strong><br/>
-          Nếu bạn không thực hiện thay đổi này, hãy liên hệ ngay với chúng tôi${supportUrl ? ` qua <a href="${escapeHtml(supportUrl)}" style="color: ${BRAND.primary}; font-weight: 600;">trang hỗ trợ</a>` : ''} để bảo vệ tài khoản.
+          <strong>${escapeHtml(t('notYouTitle'))}</strong><br/>
+          ${notYou}
         </td>
       </tr>
     </table>
   `
 
   return {
-    html: baseLayout({ previewText: previewText || 'Mật khẩu của bạn vừa được thay đổi', bodyHtml }),
-    text: `Mật khẩu ${BRAND.name} của bạn vừa được thay đổi lúc ${time}.\n\nNếu không phải bạn, hãy liên hệ hỗ trợ ngay.`,
-    subject: `[${BRAND.name}] Mật khẩu vừa được thay đổi`,
+    html: baseLayout({ previewText: previewText || t('preview'), bodyHtml, locale }),
+    text: `${t('text', { time })}\n\n${t('textNotYou')}`,
+    subject: t('subject'),
   }
 }
 
@@ -294,49 +334,53 @@ export function passwordChangedTemplate(props: BaseEmailProps & { changedAt?: Da
 // 4. Email change verification
 // ============================================
 export function emailChangeTemplate(props: BaseEmailProps & { newEmail: string; changeUrl: string; expiresInHours?: number }): { html: string; text: string; subject: string } {
-  const { recipientName, newEmail, changeUrl, expiresInHours = 24, previewText } = props
-  const greeting = recipientName ? `Xin chào <strong>${escapeHtml(recipientName)}</strong>` : 'Xin chào'
+  const { recipientName, newEmail, changeUrl, expiresInHours = 24, previewText, locale = 'vi' } = props
+  const t = emailTranslator(locale, 'email.emailChange')
+  const common = emailTranslator(locale, 'email.common')
+  const greeting = recipientName
+    ? common.markup('helloName', { ...escaped({ name: recipientName }), b: strong() })
+    : escapeHtml(common('hello'))
 
   const bodyHtml = `
-    <h1 style="margin: 0 0 8px; font-size: 22px; font-weight: 700; color: ${BRAND.text};">📧 Xác nhận thay đổi email</h1>
+    <h1 style="margin: 0 0 8px; font-size: 22px; font-weight: 700; color: ${BRAND.text};">${escapeHtml(t('title'))}</h1>
     <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: ${BRAND.textMuted};">
       ${greeting},<br/>
-      Chúng tôi nhận được yêu cầu thay đổi email tài khoản <strong>${BRAND.name}</strong> sang địa chỉ <strong style="color: ${BRAND.primary};">${escapeHtml(newEmail)}</strong>.
+      ${t.markup('request', { ...escaped({ email: newEmail }), b: strong(), accent: strong(`color: ${BRAND.primary};`) })}
     </p>
 
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0;">
       <tr>
         <td align="center" style="background: linear-gradient(135deg, ${BRAND.bg} 0%, #f3eee9 100%); border-radius: 16px; padding: 28px 24px;">
           <p style="margin: 0 0 16px; font-size: 14px; color: ${BRAND.textMuted};">
-            Nhấn nút bên dưới để xác nhận thay đổi:
+            ${escapeHtml(t('pressButton'))}
           </p>
           <a href="${escapeHtml(changeUrl)}" style="display: inline-block; background: linear-gradient(135deg, ${BRAND.primary} 0%, ${BRAND.primaryLight} 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-size: 15px; font-weight: 600; box-shadow: 0 4px 12px rgba(169, 49, 25, 0.25);">
-            Xác nhận thay đổi
+            ${escapeHtml(t('button'))}
           </a>
           <p style="margin: 16px 0 0; font-size: 12px; color: ${BRAND.textMuted};">
-            ⏱️ Link có hiệu lực trong <strong>${expiresInHours} giờ</strong>
+            ${t.markup('validFor', { hours: expiresInHours, b: strong() })}
           </p>
         </td>
       </tr>
     </table>
 
     <p style="margin: 16px 0 0; font-size: 12px; color: ${BRAND.textMuted}; line-height: 1.5; word-break: break-all;">
-      Hoặc copy link: <a href="${escapeHtml(changeUrl)}" style="color: ${BRAND.primary};">${escapeHtml(changeUrl)}</a>
+      ${escapeHtml(common('copyLink'))} <a href="${escapeHtml(changeUrl)}" style="color: ${BRAND.primary};">${escapeHtml(changeUrl)}</a>
     </p>
 
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 16px 0 0; background-color: #fff8e1; border-left: 3px solid #f59e0b; border-radius: 8px;">
       <tr>
         <td style="padding: 12px 16px; font-size: 13px; color: #78350f; line-height: 1.5;">
-          Nếu bạn không yêu cầu thay đổi, hãy bỏ qua email — email hiện tại sẽ được giữ nguyên.
+          ${escapeHtml(t('ignore'))}
         </td>
       </tr>
     </table>
   `
 
   return {
-    html: baseLayout({ previewText: previewText || 'Xác nhận thay đổi địa chỉ email', bodyHtml }),
-    text: `Yêu cầu thay đổi email sang ${newEmail}.\nXác nhận: ${changeUrl}\nLink có hiệu lực ${expiresInHours} giờ.`,
-    subject: `[${BRAND.name}] Xác nhận thay đổi địa chỉ email`,
+    html: baseLayout({ previewText: previewText || t('preview'), bodyHtml, locale }),
+    text: [t('textRequest', { email: newEmail }), t('textConfirm', { url: changeUrl }), t('textValid', { hours: expiresInHours })].join('\n'),
+    subject: t('subject'),
   }
 }
 
@@ -369,15 +413,33 @@ export interface BookingConfirmationTemplateProps {
    */
   awaitingConfirmation?: boolean
   /** The hotel's online deposit: its amount, the page to pay it (dat-coc), the deadline if any. */
-  deposit?: { amount: number; url: string; deadline?: string }
+  deposit?: { amount: number; url: string; deadline?: Date }
+  /** The booking's language (Booking.locale); the links must already point to its pages. */
+  locale?: EmailLocale
+}
+
+/** A deposit deadline: 16:45 20/12, or 20 Dec, 16:45 GMT+7. */
+function formatDeadline(date: Date, locale: EmailLocale): string {
+  if (locale === 'en') return englishDateTime(date, { year: false })
+  return date.toLocaleString('vi-VN', {
+    timeZone: EMAIL_TIME_ZONE,
+    hour: '2-digit',
+    minute: '2-digit',
+    day: '2-digit',
+    month: '2-digit',
+  })
 }
 
 export function bookingConfirmationTemplate(props: BookingConfirmationTemplateProps): { html: string; text: string; subject: string } {
   const {
     guestName, bookingCode, propertyName, propertyAddress, propertyPhone,
     checkIn, checkOut, numAdults, numChildren, totalAmount, currency = 'VND', propertyUrl, notes,
-    checkInTime = '14:00', checkOutTime = '12:00', awaitingConfirmation = false, deposit,
+    checkInTime = '14:00', checkOutTime = '12:00', awaitingConfirmation = false, deposit, locale = 'vi',
   } = props
+  const t = emailTranslator(locale, 'email.booking')
+  const common = emailTranslator(locale, 'email.common')
+  const money = (amount: number) => formatVnd(amount, currency, locale)
+  const deadline = deposit?.deadline ? formatDeadline(deposit.deadline, locale) : null
 
   const nights = Math.max(
     1,
@@ -385,12 +447,10 @@ export function bookingConfirmationTemplate(props: BookingConfirmationTemplatePr
   )
 
   const bodyHtml = `
-    <h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: ${BRAND.text};">${awaitingConfirmation ? 'Đã nhận yêu cầu đặt phòng' : '✅ Đặt phòng thành công'}</h1>
+    <h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: ${BRAND.text};">${escapeHtml(t(awaitingConfirmation ? 'titleAwaiting' : 'titleConfirmed'))}</h1>
     <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: ${BRAND.textMuted};">
-      Xin chào <strong style="color: ${BRAND.text};">${escapeHtml(guestName)}</strong>,<br/>
-      ${awaitingConfirmation
-        ? `Cảm ơn bạn đã đặt phòng. ${escapeHtml(propertyName)} sẽ liên hệ với bạn để xác nhận; phòng chỉ được giữ chắc chắn khi khách sạn xác nhận. Dưới đây là thông tin yêu cầu của bạn:`
-        : 'Cảm ơn bạn đã đặt phòng. Dưới đây là thông tin chi tiết:'}
+      ${common.markup('helloName', { ...escaped({ name: guestName }), b: strong(`color: ${BRAND.text};`) })},<br/>
+      ${escapeHtml(awaitingConfirmation ? t('leadAwaiting', { hotel: propertyName }) : t('leadConfirmed'))}
     </p>
 
     <!-- Booking code banner -->
@@ -398,7 +458,7 @@ export function bookingConfirmationTemplate(props: BookingConfirmationTemplatePr
       <tr>
         <td align="center" style="background: linear-gradient(135deg, ${BRAND.primary} 0%, ${BRAND.primaryLight} 100%); border-radius: 12px; padding: 16px;">
           <div style="font-size: 12px; color: rgba(255,255,255,0.85); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; margin-bottom: 4px;">
-            Mã đặt phòng
+            ${escapeHtml(t('code'))}
           </div>
           <div style="font-size: 28px; color: #ffffff; font-weight: 800; letter-spacing: 2px; font-family: 'Courier New', monospace;">
             ${escapeHtml(bookingCode)}
@@ -425,14 +485,14 @@ export function bookingConfirmationTemplate(props: BookingConfirmationTemplatePr
           <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
             <tr>
               <td width="50%" style="padding: 8px 0;">
-                <div style="font-size: 11px; color: ${BRAND.textMuted}; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-bottom: 4px;">Nhận phòng</div>
-                <div style="font-size: 15px; color: ${BRAND.text}; font-weight: 600;">${formatDate(checkIn)}</div>
-                <div style="font-size: 12px; color: ${BRAND.textMuted};">từ ${escapeHtml(checkInTime)}</div>
+                <div style="font-size: 11px; color: ${BRAND.textMuted}; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-bottom: 4px;">${escapeHtml(t('checkIn'))}</div>
+                <div style="font-size: 15px; color: ${BRAND.text}; font-weight: 600;">${escapeHtml(formatDate(checkIn, locale))}</div>
+                <div style="font-size: 12px; color: ${BRAND.textMuted};">${escapeHtml(t('checkInFrom', { time: checkInTime }))}</div>
               </td>
               <td width="50%" style="padding: 8px 0;">
-                <div style="font-size: 11px; color: ${BRAND.textMuted}; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-bottom: 4px;">Trả phòng</div>
-                <div style="font-size: 15px; color: ${BRAND.text}; font-weight: 600;">${formatDate(checkOut)}</div>
-                <div style="font-size: 12px; color: ${BRAND.textMuted};">trước ${escapeHtml(checkOutTime)}</div>
+                <div style="font-size: 11px; color: ${BRAND.textMuted}; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-bottom: 4px;">${escapeHtml(t('checkOut'))}</div>
+                <div style="font-size: 15px; color: ${BRAND.text}; font-weight: 600;">${escapeHtml(formatDate(checkOut, locale))}</div>
+                <div style="font-size: 12px; color: ${BRAND.textMuted};">${escapeHtml(t('checkOutBy', { time: checkOutTime }))}</div>
               </td>
             </tr>
           </table>
@@ -440,10 +500,10 @@ export function bookingConfirmationTemplate(props: BookingConfirmationTemplatePr
           <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
             <tr>
               <td style="padding: 4px 0; font-size: 13px; color: ${BRAND.textMuted};">
-                👥 ${numAdults} người lớn${numChildren > 0 ? `, ${numChildren} trẻ em` : ''}
+                👥 ${escapeHtml(t('adults', { count: numAdults }))}${numChildren > 0 ? `, ${escapeHtml(t('children', { count: numChildren }))}` : ''}
               </td>
               <td align="right" style="padding: 4px 0; font-size: 13px; color: ${BRAND.textMuted};">
-                🌙 ${nights} đêm
+                🌙 ${escapeHtml(t('nights', { count: nights }))}
               </td>
             </tr>
           </table>
@@ -455,7 +515,7 @@ export function bookingConfirmationTemplate(props: BookingConfirmationTemplatePr
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 16px 0;">
       <tr>
         <td style="background-color: ${BRAND.bg}; border-radius: 8px; padding: 12px 16px; font-size: 13px; color: ${BRAND.text};">
-          <strong>📝 Ghi chú:</strong> ${escapeHtml(notes)}
+          ${t.markup('note', { ...escaped({ note: notes }), b: strong() })}
         </td>
       </tr>
     </table>
@@ -465,12 +525,12 @@ export function bookingConfirmationTemplate(props: BookingConfirmationTemplatePr
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0; border: 1px solid ${BRAND.border}; border-radius: 12px;">
       <tr>
         <td style="padding: 20px; text-align: center;">
-          <div style="font-size: 15px; color: ${BRAND.text}; font-weight: 600; margin-bottom: 6px;">Đặt cọc ${formatVnd(deposit.amount, currency)} để khách sạn xác nhận</div>
+          <div style="font-size: 15px; color: ${BRAND.text}; font-weight: 600; margin-bottom: 6px;">${escapeHtml(t('depositTitle', { amount: money(deposit.amount) }))}</div>
           <div style="font-size: 13px; color: ${BRAND.textMuted}; margin-bottom: 16px;">
-            Chuyển khoản qua PayOS, tiền vào thẳng tài khoản của ${escapeHtml(propertyName)}.${deposit.deadline ? ` Hạn đặt cọc: ${escapeHtml(deposit.deadline)}; quá hạn, đặt phòng tự huỷ.` : ''} Đã đặt cọc rồi thì bỏ qua.
+            ${escapeHtml(t('depositHow', { hotel: propertyName }))}${deadline ? ` ${escapeHtml(t('depositDeadline', { deadline }))}` : ''} ${escapeHtml(t('depositIgnore'))}
           </div>
           <a href="${escapeHtml(deposit.url)}" style="display: inline-block; background: ${BRAND.text}; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 10px; font-size: 15px; font-weight: 600;">
-            Đặt cọc qua PayOS
+            ${escapeHtml(t('depositButton'))}
           </a>
         </td>
       </tr>
@@ -482,10 +542,10 @@ export function bookingConfirmationTemplate(props: BookingConfirmationTemplatePr
       <tr>
         <td>
           <div style="font-size: 12px; color: ${BRAND.textMuted}; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; margin-bottom: 4px;">
-            ${awaitingConfirmation ? 'Tạm tính' : 'Tổng thanh toán'}
+            ${escapeHtml(t(awaitingConfirmation ? 'totalAwaiting' : 'totalConfirmed'))}
           </div>
           <div style="font-size: 28px; color: ${BRAND.primary}; font-weight: 800;">
-            ${formatVnd(totalAmount, currency)}
+            ${escapeHtml(money(totalAmount))}
           </div>
         </td>
       </tr>
@@ -495,21 +555,39 @@ export function bookingConfirmationTemplate(props: BookingConfirmationTemplatePr
       <tr>
         <td align="center">
           <a href="${escapeHtml(propertyUrl)}" style="display: inline-block; background: linear-gradient(135deg, ${BRAND.primary} 0%, ${BRAND.primaryLight} 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-size: 15px; font-weight: 600; box-shadow: 0 4px 12px rgba(169, 49, 25, 0.25);">
-            Xem trang khách sạn →
+            ${escapeHtml(t('hotelButton'))}
           </a>
         </td>
       </tr>
     </table>
   `
 
+  const dates = `${formatDate(checkIn, locale)} - ${formatDate(checkOut, locale)}`
+  const depositLine = deposit
+    ? deadline
+      ? t('textDepositBy', { amount: money(deposit.amount), deadline, url: deposit.url })
+      : t('textDeposit', { amount: money(deposit.amount), url: deposit.url })
+    : null
   return {
-    html: baseLayout({ previewText: `Đặt phòng ${bookingCode} tại ${propertyName}`, bodyHtml }),
-    text: awaitingConfirmation
-      ? `Đã nhận yêu cầu đặt phòng ${bookingCode}\nKhách sạn: ${propertyName} (sẽ liên hệ để xác nhận)\n${formatDate(checkIn)} - ${formatDate(checkOut)}\nTạm tính: ${formatVnd(totalAmount, currency)}${deposit ? `\nĐặt cọc ${formatVnd(deposit.amount, currency)}${deposit.deadline ? ` trước ${deposit.deadline}` : ''}: ${deposit.url}` : ''}\nTrang khách sạn: ${propertyUrl}`
-      : `Xác nhận đặt phòng ${bookingCode}\nKhách sạn: ${propertyName}\n${formatDate(checkIn)} - ${formatDate(checkOut)}\nTổng: ${formatVnd(totalAmount, currency)}\nTrang khách sạn: ${propertyUrl}`,
-    subject: awaitingConfirmation
-      ? `[${bookingCode}] Đã nhận yêu cầu đặt phòng tại ${propertyName}`
-      : `[${bookingCode}] ✅ Xác nhận đặt phòng tại ${propertyName}`,
+    html: baseLayout({ previewText: t('preview', { code: bookingCode, hotel: propertyName }), bodyHtml, locale }),
+    text: (awaitingConfirmation
+      ? [
+          t('textAwaiting', { code: bookingCode }),
+          t('textHotelAwaiting', { hotel: propertyName }),
+          dates,
+          t('textEstimate', { amount: money(totalAmount) }),
+          ...(depositLine ? [depositLine] : []),
+          t('textHotelPage', { url: propertyUrl }),
+        ]
+      : [
+          t('textConfirmed', { code: bookingCode }),
+          t('textHotel', { hotel: propertyName }),
+          dates,
+          t('textTotal', { amount: money(totalAmount) }),
+          t('textHotelPage', { url: propertyUrl }),
+        ]
+    ).join('\n'),
+    subject: t(awaitingConfirmation ? 'subjectAwaiting' : 'subjectConfirmed', { code: bookingCode, hotel: propertyName }),
   }
 }
 
@@ -526,27 +604,33 @@ export interface WorkspaceInviteTemplateProps {
   expiresAt: Date
   personalMessage?: string
   previewText?: string
+  /** The inviter's language (the page they sent it from). */
+  locale?: EmailLocale
 }
 
-const ROLE_LABEL: Record<string, string> = {
-  OWNER: 'Chủ sở hữu',
-  ADMIN: 'Quản trị viên',
-  MANAGER: 'Quản lý',
-  STAFF: 'Nhân viên',
-  VIEWER: 'Người xem',
-}
+// Labels for these; any other role is shown as it is.
+const ROLE_LABELS = ['OWNER', 'ADMIN', 'MANAGER', 'STAFF', 'VIEWER'] as const
+const hasRoleLabel = (role: string): role is (typeof ROLE_LABELS)[number] => (ROLE_LABELS as readonly string[]).includes(role)
 
 export function workspaceInviteTemplate(props: WorkspaceInviteTemplateProps): { html: string; text: string; subject: string } {
-  const { recipientName, inviterName, workspaceName, role, inviteUrl, expiresAt, personalMessage, previewText } = props
-  const roleLabel = ROLE_LABEL[role] || role
-  const greeting = recipientName ? `Xin chào <strong>${escapeHtml(recipientName)}</strong>` : 'Xin chào'
-  const expiryStr = expiresAt.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })
+  const { recipientName, inviterName, workspaceName, role, inviteUrl, expiresAt, personalMessage, previewText, locale = 'vi' } = props
+  const t = emailTranslator(locale, 'email.invite')
+  const common = emailTranslator(locale, 'email.common')
+  const roleLabel = hasRoleLabel(role) ? t(`roles.${role}`) : role
+  const greeting = recipientName
+    ? common.markup('helloName', { ...escaped({ name: recipientName }), b: strong() })
+    : escapeHtml(common('hello'))
+  const expiryStr = formatDateTime(expiresAt, locale)
 
   const bodyHtml = `
-    <h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: ${BRAND.text};">💌 Lời mời tham gia</h1>
+    <h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: ${BRAND.text};">${escapeHtml(t('title'))}</h1>
     <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: ${BRAND.textMuted};">
       ${greeting},<br/>
-      <strong style="color: ${BRAND.text};">${escapeHtml(inviterName)}</strong> đã mời bạn tham gia workspace <strong style="color: ${BRAND.primary};">${escapeHtml(workspaceName)}</strong> trên ${BRAND.name}.
+      ${t.markup('invited', {
+        ...escaped({ inviter: inviterName, workspace: workspaceName }),
+        b: strong(`color: ${BRAND.text};`),
+        accent: strong(`color: ${BRAND.primary};`),
+      })}
     </p>
 
     ${personalMessage ? `
@@ -564,7 +648,7 @@ export function workspaceInviteTemplate(props: WorkspaceInviteTemplateProps): { 
       <tr>
         <td align="center" style="background-color: ${BRAND.surface}; border: 1px solid ${BRAND.border}; border-radius: 12px; padding: 20px;">
           <div style="font-size: 12px; color: ${BRAND.textMuted}; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-bottom: 8px;">
-            Vai trò của bạn
+            ${escapeHtml(t('roleLabel'))}
           </div>
           <div style="display: inline-block; background-color: ${BRAND.primary}; color: #ffffff; font-size: 14px; font-weight: 700; padding: 6px 16px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px;">
             ${escapeHtml(roleLabel)}
@@ -577,30 +661,43 @@ export function workspaceInviteTemplate(props: WorkspaceInviteTemplateProps): { 
       <tr>
         <td align="center">
           <a href="${escapeHtml(inviteUrl)}" style="display: inline-block; background: linear-gradient(135deg, ${BRAND.primary} 0%, ${BRAND.primaryLight} 100%); color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 10px; font-size: 15px; font-weight: 600; box-shadow: 0 4px 12px rgba(169, 49, 25, 0.25);">
-            Chấp nhận lời mời →
+            ${escapeHtml(t('accept'))}
           </a>
           <p style="margin: 12px 0 0; font-size: 12px; color: ${BRAND.textMuted};">
-            ⏱️ Hết hạn lúc ${expiryStr}
+            ${escapeHtml(t('expires', { time: expiryStr }))}
           </p>
         </td>
       </tr>
     </table>
 
     <p style="margin: 16px 0 0; font-size: 12px; color: ${BRAND.textMuted}; line-height: 1.5; word-break: break-all;">
-      Hoặc copy link: <a href="${escapeHtml(inviteUrl)}" style="color: ${BRAND.primary};">${escapeHtml(inviteUrl)}</a>
+      ${escapeHtml(common('copyLink'))} <a href="${escapeHtml(inviteUrl)}" style="color: ${BRAND.primary};">${escapeHtml(inviteUrl)}</a>
     </p>
   `
 
   return {
-    html: baseLayout({ previewText: previewText || `${inviterName} mời bạn vào ${workspaceName}`, bodyHtml }),
-    text: `${inviterName} mời bạn tham gia ${workspaceName} với vai trò ${roleLabel}.\nChấp nhận: ${inviteUrl}\nHết hạn: ${expiryStr}`,
-    subject: `${inviterName} mời bạn vào ${workspaceName}`,
+    html: baseLayout({ previewText: previewText || t('preview', { inviter: inviterName, workspace: workspaceName }), bodyHtml, locale }),
+    text: [
+      t('text', { inviter: inviterName, workspace: workspaceName, role: roleLabel }),
+      t('textAccept', { url: inviteUrl }),
+      t('textExpires', { time: expiryStr }),
+    ].join('\n'),
+    subject: t('subject', { inviter: inviterName, workspace: workspaceName }),
   }
 }
 
 // ============================================
 // 7. Invoice email (improved)
 // ============================================
+/** What an adjustment or replacement invoice's email says about the invoice it amends (delivery.ts). */
+export function invoiceAmendsNote(
+  locale: EmailLocale,
+  amends: { kind: 'adjustsDown' | 'adjustsUp' | 'replaces'; einvoiceNumber: string | null }
+): string {
+  // String(): a missing number reads as it always has ("null"); an amended invoice is a published one.
+  return emailTranslator(locale, 'email.invoice')(amends.kind, { number: String(amends.einvoiceNumber) })
+}
+
 export function invoiceEmailTemplate(props: {
   customerName: string
   einvoiceNumber: string
@@ -612,38 +709,44 @@ export function invoiceEmailTemplate(props: {
   taxAmount: number
   note?: string
   currency?: string
+  /** The booking's language (Booking.locale). */
+  locale?: EmailLocale
 }): { html: string; text: string; subject: string } {
-  const { customerName, einvoiceNumber, series, lookupCode, bookingCode, propertyName, totalAmount, taxAmount, note, currency = 'VND' } = props
+  const { customerName, einvoiceNumber, series, lookupCode, bookingCode, propertyName, totalAmount, taxAmount, note, currency = 'VND', locale = 'vi' } = props
+  const t = emailTranslator(locale, 'email.invoice')
+  const common = emailTranslator(locale, 'email.common')
+  const money = (amount: number) => formatVnd(amount, currency, locale)
+  const numberValue = t('numberValue', { number: einvoiceNumber, series })
   const row = (label: string, value: string) => `
             <tr>
-              <td style="padding: 6px 0; font-size: 13px; color: ${BRAND.textMuted};">${label}</td>
+              <td style="padding: 6px 0; font-size: 13px; color: ${BRAND.textMuted};">${escapeHtml(label)}</td>
               <td align="right" style="padding: 6px 0; font-size: 14px; color: ${BRAND.text}; font-weight: 600;">${escapeHtml(value)}</td>
             </tr>`
 
   const bodyHtml = `
-    <h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: ${BRAND.text};">🧾 Hóa đơn điện tử</h1>
+    <h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: ${BRAND.text};">${escapeHtml(t('title'))}</h1>
     <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: ${BRAND.textMuted};">
-      Xin chào <strong style="color: ${BRAND.text};">${escapeHtml(customerName)}</strong>,<br/>
-      ${escapeHtml(propertyName)} đã phát hành hóa đơn điện tử cho đơn đặt phòng của bạn. Bản PDF được đính kèm email này.
+      ${common.markup('helloName', { ...escaped({ name: customerName }), b: strong(`color: ${BRAND.text};`) })},<br/>
+      ${escapeHtml(t('issued', { hotel: propertyName }))}
     </p>
 
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0; border: 1px solid ${BRAND.border}; border-radius: 12px; overflow: hidden;">
       <tr>
         <td style="padding: 20px; background-color: ${BRAND.surface};">
           <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-            ${row('Số hóa đơn', `${einvoiceNumber} (ký hiệu ${series})`)}
-            ${row('Mã tra cứu', lookupCode)}
-            ${row('Mã đặt phòng', bookingCode)}
-            ${row('Khách sạn', propertyName)}
-            ${note ? row('Ghi chú', note) : ''}
+            ${row(t('number'), numberValue)}
+            ${row(t('lookupCode'), lookupCode)}
+            ${row(t('bookingCode'), bookingCode)}
+            ${row(t('hotel'), propertyName)}
+            ${note ? row(t('note'), note) : ''}
             <tr><td colspan="2" style="padding: 8px 0;"><div style="border-top: 1px solid ${BRAND.border};"></div></td></tr>
             <tr>
-              <td style="padding: 6px 0; font-size: 13px; color: ${BRAND.textMuted};">Thuế GTGT</td>
-              <td align="right" style="padding: 6px 0; font-size: 14px; color: ${BRAND.text};">${formatVnd(taxAmount, currency)}</td>
+              <td style="padding: 6px 0; font-size: 13px; color: ${BRAND.textMuted};">${escapeHtml(t('tax'))}</td>
+              <td align="right" style="padding: 6px 0; font-size: 14px; color: ${BRAND.text};">${escapeHtml(money(taxAmount))}</td>
             </tr>
             <tr>
-              <td style="padding: 6px 0; font-size: 14px; color: ${BRAND.text}; font-weight: 700;">Tổng cộng</td>
-              <td align="right" style="padding: 6px 0; font-size: 20px; color: ${BRAND.primary}; font-weight: 800;">${formatVnd(totalAmount, currency)}</td>
+              <td style="padding: 6px 0; font-size: 14px; color: ${BRAND.text}; font-weight: 700;">${escapeHtml(t('total'))}</td>
+              <td align="right" style="padding: 6px 0; font-size: 20px; color: ${BRAND.primary}; font-weight: 800;">${escapeHtml(money(totalAmount))}</td>
             </tr>
           </table>
         </td>
@@ -651,24 +754,84 @@ export function invoiceEmailTemplate(props: {
     </table>
 
     <p style="margin: 0; font-size: 13px; line-height: 1.6; color: ${BRAND.textMuted};">
-      Hóa đơn được phát hành qua Mắt Bão; có thể tra cứu trên cổng hóa đơn của Mắt Bão bằng mã tra cứu ở trên.
+      ${escapeHtml(t('lookup'))}
     </p>
   `
 
   return {
-    html: baseLayout({ previewText: `Hóa đơn số ${einvoiceNumber} - ${formatVnd(totalAmount, currency)}`, bodyHtml }),
+    html: baseLayout({ previewText: t('preview', { number: einvoiceNumber, amount: money(totalAmount) }), bodyHtml, locale }),
     text: [
-      `Xin chào ${customerName},`,
-      `${propertyName} đã phát hành hóa đơn điện tử cho đơn đặt phòng của bạn (PDF đính kèm).`,
-      `Số hóa đơn: ${einvoiceNumber} (ký hiệu ${series})`,
-      `Mã tra cứu: ${lookupCode}`,
-      `Mã đặt phòng: ${bookingCode}`,
-      ...(note ? [`Ghi chú: ${note}`] : []),
-      `Thuế GTGT: ${formatVnd(taxAmount, currency)}`,
-      `Tổng cộng: ${formatVnd(totalAmount, currency)}`,
+      common('helloText', { name: customerName }),
+      t('textIssued', { hotel: propertyName }),
+      `${t('number')}: ${numberValue}`,
+      `${t('lookupCode')}: ${lookupCode}`,
+      `${t('bookingCode')}: ${bookingCode}`,
+      ...(note ? [`${t('note')}: ${note}`] : []),
+      `${t('tax')}: ${money(taxAmount)}`,
+      `${t('total')}: ${money(totalAmount)}`,
     ].join('\n'),
-    subject: `Hóa đơn điện tử số ${einvoiceNumber} - ${propertyName}`,
+    subject: t('subject', { number: einvoiceNumber, hotel: propertyName }),
   }
+}
+
+// ============================================
+// 8. Guest deposits (outbox.ts): received, or the booking cancelled at its deadline
+// ============================================
+export interface DepositReceivedTemplateProps {
+  guestName: string
+  bookingCode: string
+  propertyName: string
+  propertyPhone?: string | null
+  checkIn: Date
+  checkOut: Date
+  deposit: number
+  /** still to pay at the hotel */
+  remaining: number
+  /** The booking's language (Booking.locale). */
+  locale?: EmailLocale
+}
+
+// Plain text; the HTML part is that text, escaped (the guest's name comes from a public form).
+const textAsHtml = (text: string) => escapeHtml(text).replace(/\n/g, '<br/>')
+
+export function depositReceivedTemplate(props: DepositReceivedTemplateProps): { html: string; text: string; subject: string } {
+  const { guestName, bookingCode, propertyName, propertyPhone, checkIn, checkOut, deposit, remaining, locale = 'vi' } = props
+  const t = emailTranslator(locale, 'email.depositReceived')
+  const common = emailTranslator(locale, 'email.common')
+  const day = (d: Date) => (locale === 'en' ? englishDate(d) : d.toLocaleDateString('vi-VN', { timeZone: EMAIL_TIME_ZONE }))
+  const vnd = (n: number) => (locale === 'en' ? englishMoney(n) : `${Math.round(n).toLocaleString('vi-VN')} ₫`)
+  const text = [
+    common('helloText', { name: guestName }),
+    '',
+    t('received', { hotel: propertyName, amount: vnd(deposit), code: bookingCode }),
+    t('dates', { checkIn: day(checkIn), checkOut: day(checkOut) }),
+    ...(remaining > 0 ? [t('remaining', { amount: vnd(remaining) })] : []),
+    ...(propertyPhone ? [common('contactHotel', { phone: propertyPhone })] : []),
+  ].join('\n')
+  return { subject: t('subject', { code: bookingCode }), text, html: textAsHtml(text) }
+}
+
+export interface DepositExpiredTemplateProps {
+  guestName: string
+  bookingCode: string
+  propertyName: string
+  propertyPhone?: string | null
+  /** The booking's language (Booking.locale). */
+  locale?: EmailLocale
+}
+
+export function depositExpiredTemplate(props: DepositExpiredTemplateProps): { html: string; text: string; subject: string } {
+  const { guestName, bookingCode, propertyName, propertyPhone, locale = 'vi' } = props
+  const t = emailTranslator(locale, 'email.depositExpired')
+  const common = emailTranslator(locale, 'email.common')
+  const text = [
+    common('helloText', { name: guestName }),
+    '',
+    t('cancelled', { hotel: propertyName, code: bookingCode }),
+    t('alreadyPaid'),
+    ...(propertyPhone ? [common('contactHotel', { phone: propertyPhone })] : []),
+  ].join('\n')
+  return { subject: t('subject', { code: bookingCode }), text, html: textAsHtml(text) }
 }
 
 // ============================================

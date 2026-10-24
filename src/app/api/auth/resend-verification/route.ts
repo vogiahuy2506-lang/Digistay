@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { sendOtpEmail } from '@/lib/email'
 import { issueOtp, normalizeEmail, OtpCooldownError } from '@/lib/auth/otp'
+import { requestLocale } from '@/lib/i18n/request-locale'
 import { getClientIp } from '@/lib/security/client-ip'
 import { LIMITS } from '@/lib/security/limits'
 import { hit, tooManyRequests } from '@/lib/security/rate-limit'
@@ -67,6 +68,7 @@ export async function POST(request: NextRequest) {
       recipientName: user.name || undefined,
       otp,
       purpose: 'register',
+      locale: requestLocale(request),
     })
 
     const isDev = process.env.NODE_ENV === 'development'

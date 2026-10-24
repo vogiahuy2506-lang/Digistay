@@ -25,6 +25,7 @@
  */
 import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
+import { emailLocale } from '@/lib/email/i18n'
 import { queueDepositExpired, sendAfterResponse } from '@/lib/email/outbox'
 import { depositFor } from '@/lib/pricing/quote'
 import { lockBooking } from './booking-payments'
@@ -296,6 +297,7 @@ async function cancelUnpaidBooking(bookingId: string, metadata: Prisma.JsonValue
         bookingCode: true,
         guestName: true,
         guestEmail: true,
+        locale: true,
         property: { select: { name: true, phone: true } },
         payments: { where: { status: 'PAID' }, select: { id: true } },
       },
@@ -324,6 +326,7 @@ async function cancelUnpaidBooking(bookingId: string, metadata: Prisma.JsonValue
           bookingCode: booking.bookingCode,
           propertyName: booking.property.name,
           propertyPhone: booking.property.phone,
+          locale: emailLocale(booking.locale),
         },
         bookingId,
         tx

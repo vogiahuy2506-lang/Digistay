@@ -145,6 +145,17 @@ describe('invoice emails', () => {
     expect(mail).toHaveBeenCalledTimes(1)
   })
 
+  it('is in the language of the booking it is for', async () => {
+    const { property } = await connectedTenant()
+    const vi_ = await publishedInvoice(property.id)
+    const en = await publishedInvoice(property.id)
+    await prisma.booking.update({ where: { id: en.bookingId }, data: { locale: 'en' } })
+    await runEinvoiceJobs()
+    const localeOf = (id: string) => mail.mock.calls.find(([sent]) => sent.einvoiceNumber === id)?.[0].locale
+    expect(localeOf(vi_.einvoiceNumber)).toBe('vi')
+    expect(localeOf(en.einvoiceNumber)).toBe('en')
+  })
+
   it('a failure is tried again with backoff, and given up after the last attempt', async () => {
     const { property } = await connectedTenant()
     const invoice = await publishedInvoice(property.id)

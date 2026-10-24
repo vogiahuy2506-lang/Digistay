@@ -5,6 +5,7 @@ import { registerSchema } from '@/lib/validations'
 import { generateSlug } from '@/lib/utils'
 import { sendOtpEmail } from '@/lib/email'
 import { consumeOtp, issueOtp, normalizeEmail, OtpCooldownError } from '@/lib/auth/otp'
+import { requestLocale } from '@/lib/i18n/request-locale'
 import { getClientIp } from '@/lib/security/client-ip'
 import { LIMITS } from '@/lib/security/limits'
 import { hit, isBlocked, recordFailure, tooManyRequests } from '@/lib/security/rate-limit'
@@ -62,6 +63,7 @@ export async function POST(request: NextRequest) {
         recipientEmail: email,
         recipientName: undefined,
         loginUrl: `${baseUrl}/login`,
+        locale: requestLocale(request),
       }).catch((err) => console.error('Welcome email failed:', err))
 
       return NextResponse.json({
@@ -162,6 +164,7 @@ export async function POST(request: NextRequest) {
         recipientName: name,
         otp,
         purpose: 'register',
+        locale: requestLocale(request),
       })
     }
 

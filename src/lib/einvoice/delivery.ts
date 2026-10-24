@@ -14,6 +14,8 @@ import { after } from 'next/server'
 import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { sendInvoiceEmail } from '@/lib/email'
+import { emailLocale } from '@/lib/email/i18n'
+import { invoiceAmendsNote } from '@/lib/email/templates'
 import { EinvoiceError, getInvoicePdf } from './matbao'
 
 export const EMAIL_MAX_ATTEMPTS = 5
@@ -64,7 +66,7 @@ export async function sendInvoiceEmailFor(
   const invoice = await prisma.invoice.findUniqueOrThrow({
     where: { id: invoiceId },
     include: {
-      booking: { select: { bookingCode: true, property: { select: { name: true } } } },
+      booking: { select: { bookingCode: true, locale: true, property: { select: { name: true } } } },
       adjustsInvoice: { select: { einvoiceNumber: true } },
       replacesInvoice: { select: { einvoiceNumber: true } },
     },
@@ -81,10 +83,15 @@ export async function sendInvoiceEmailFor(
   const attempts = invoice.emailAttempts + 1
   try {
     const { pdf, filename } = await getInvoicePdf(invoiceId)
+    // In the language of the booking the invoice is for (the guest's).
+    const locale = emailLocale(invoice.booking.locale)
     const note = invoice.adjustsInvoice
-      ? `${invoice.totalAmount < 0 ? 'Điều chỉnh giảm' : 'Điều chỉnh tăng'} cho hoá đơn số ${invoice.adjustsInvoice.einvoiceNumber}`
+      ? invoiceAmendsNote(locale, {
+          kind: invoice.totalAmount < 0 ? 'adjustsDown' : 'adjustsUp',
+          einvoiceNumber: invoice.adjustsInvoice.einvoiceNumber,
+        })
       : invoice.replacesInvoice
-        ? `Thay thế cho hoá đơn số ${invoice.replacesInvoice.einvoiceNumber}`
+        ? invoiceAmendsNote(locale, { kind: 'replaces', einvoiceNumber: invoice.replacesInvoice.einvoiceNumber })
         : undefined
     const result = await sendInvoiceEmail({
       to,
@@ -97,6 +104,7 @@ export async function sendInvoiceEmailFor(
       totalAmount: invoice.totalAmount,
       taxAmount: invoice.taxAmount,
       note,
+      locale,
       pdf: { filename, content: pdf },
     })
     if (!result.sent) {

@@ -26,6 +26,7 @@ import { PayOS, type Webhook } from '@payos/node'
 import type { Prisma, PropertyPayos } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { decryptSecret, encryptSecret, secretContext } from '@/lib/security/secret-box'
+import { emailLocale } from '@/lib/email/i18n'
 import { queueDepositReceived, sendAfterResponse } from '@/lib/email/outbox'
 import { lockBooking, syncBookingPayments } from './booking-payments'
 
@@ -321,6 +322,7 @@ export async function applyPayosPaid(input: {
           checkOutDate: true,
           totalAmount: true,
           depositAmount: true,
+          locale: true,
           property: { select: { name: true, phone: true } },
         },
       })
@@ -337,6 +339,7 @@ export async function applyPayosPaid(input: {
               checkOut: booking.checkOutDate,
               deposit: payment.amount,
               remaining: Math.max(0, booking.totalAmount - booking.depositAmount),
+              locale: emailLocale(booking.locale),
             },
             payment.bookingId,
             tx

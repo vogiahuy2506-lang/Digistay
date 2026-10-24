@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { redis } from '@/lib/db/redis'
 import { sendOtpEmail } from '@/lib/email'
 import { issueOtp, normalizeEmail, OtpCooldownError, OTP_PURPOSES, type OtpPurpose } from '@/lib/auth/otp'
+import { requestLocale } from '@/lib/i18n/request-locale'
 import { getClientIp } from '@/lib/security/client-ip'
 import { LIMITS } from '@/lib/security/limits'
 import { hit, tooManyRequests } from '@/lib/security/rate-limit'
@@ -133,6 +134,7 @@ export async function POST(request: NextRequest) {
       recipientName: existingUser?.name || undefined,
       otp,
       purpose: purpose as OtpPurpose,
+      locale: requestLocale(request),
     })
 
     if (!result.success) {

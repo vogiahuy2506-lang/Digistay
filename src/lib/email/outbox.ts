@@ -12,6 +12,10 @@
  *
  * Emails the person is waiting for (sign-in codes) stay direct: they need
  * to know at once if it failed.
+ *
+ * A message is rendered once, when queued, in its reader's language: a
+ * guest's in their booking's (`locale` in the data), an invitation in the
+ * inviter's. The owner's notice and the contact form stay Vietnamese.
  */
 import { randomUUID } from 'crypto'
 import { after } from 'next/server'
@@ -22,8 +26,12 @@ import { escapeHtml } from '@/lib/utils/escape-html'
 import { sendRendered, type EmailRecipient } from './index'
 import {
   bookingConfirmationTemplate,
+  depositExpiredTemplate,
+  depositReceivedTemplate,
   workspaceInviteTemplate,
   type BookingConfirmationTemplateProps,
+  type DepositExpiredTemplateProps,
+  type DepositReceivedTemplateProps,
   type WorkspaceInviteTemplateProps,
 } from './templates'
 
@@ -84,6 +92,7 @@ export interface OwnerNewBookingData {
   fromWebsite?: boolean
 }
 
+/** To the hotel's owner, in Vietnamese whatever the guest's language. */
 export function queueOwnerNewBooking(data: OwnerNewBookingData, bookingId: string, db?: Db) {
   const subject = data.fromWebsite
     ? `Yêu cầu đặt phòng mới từ website #${data.bookingCode} - ${data.propertyName}`
@@ -100,54 +109,16 @@ export function queueOwnerNewBooking(data: OwnerNewBookingData, bookingId: strin
   return queueEmail('owner_new_booking', { to: { email: data.ownerEmail, name: data.ownerName }, subject, text, html }, bookingId, db)
 }
 
-export interface DepositReceivedData {
-  guestEmail: string
-  guestName: string
-  bookingCode: string
-  propertyName: string
-  propertyPhone?: string | null
-  checkIn: Date
-  checkOut: Date
-  deposit: number
-  /** still to pay at the hotel */
-  remaining: number
-}
+export type DepositReceivedData = DepositReceivedTemplateProps & { guestEmail: string }
 
 /** To the guest once PayOS reports their deposit (src/lib/payments/payos.ts): the booking is confirmed. */
 export function queueDepositReceived(data: DepositReceivedData, bookingId: string, db?: Db) {
-  const day = (d: Date) => d.toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })
-  const vnd = (n: number) => `${Math.round(n).toLocaleString('vi-VN')} ₫`
-  const subject = `Đã nhận tiền cọc - đặt phòng #${data.bookingCode} đã được xác nhận`
-  const text = [
-    `Xin chào ${data.guestName},`,
-    '',
-    `${data.propertyName} đã nhận ${vnd(data.deposit)} tiền cọc cho đặt phòng ${data.bookingCode}. Đặt phòng của bạn đã được xác nhận.`,
-    `Nhận phòng: ${day(data.checkIn)} · Trả phòng: ${day(data.checkOut)}`,
-    ...(data.remaining > 0 ? [`Còn lại khi nhận phòng: ${vnd(data.remaining)}`] : []),
-    ...(data.propertyPhone ? [`Liên hệ khách sạn: ${data.propertyPhone}`] : []),
-  ].join('\n')
-  // The guest's name comes from a public form: escape it for the HTML part.
-  const html = escapeHtml(text).replace(/\n/g, '<br/>')
-  return queueEmail('deposit_received', { to: { email: data.guestEmail, name: data.guestName }, subject, text, html }, bookingId, db)
+  return queueEmail('deposit_received', { to: { email: data.guestEmail, name: data.guestName }, ...depositReceivedTemplate(data) }, bookingId, db)
 }
 
 /** To the guest when their unpaid booking is cancelled at the hotel's deposit deadline (guest-deposit.ts). */
-export function queueDepositExpired(
-  data: { guestEmail: string; guestName: string; bookingCode: string; propertyName: string; propertyPhone?: string | null },
-  bookingId: string,
-  db?: Db
-) {
-  const subject = `Đặt phòng #${data.bookingCode} đã được huỷ vì chưa nhận được tiền cọc`
-  const text = [
-    `Xin chào ${data.guestName},`,
-    '',
-    `${data.propertyName} chưa nhận được tiền cọc cho đặt phòng ${data.bookingCode} trong thời hạn, nên đặt phòng đã được huỷ và phòng được mở lại cho khách khác.`,
-    'Nếu bạn đã chuyển khoản, vui lòng liên hệ khách sạn để được xác nhận lại hoặc hoàn tiền.',
-    ...(data.propertyPhone ? [`Liên hệ khách sạn: ${data.propertyPhone}`] : []),
-  ].join('\n')
-  // The guest's name comes from a public form: escape it for the HTML part.
-  const html = escapeHtml(text).replace(/\n/g, '<br/>')
-  return queueEmail('deposit_expired', { to: { email: data.guestEmail, name: data.guestName }, subject, text, html }, bookingId, db)
+export function queueDepositExpired(data: DepositExpiredTemplateProps & { guestEmail: string }, bookingId: string, db?: Db) {
+  return queueEmail('deposit_expired', { to: { email: data.guestEmail, name: data.guestName }, ...depositExpiredTemplate(data) }, bookingId, db)
 }
 
 export function queueWorkspaceInvite(data: WorkspaceInviteTemplateProps, invitationId: string, db?: Db) {

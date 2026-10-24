@@ -160,6 +160,8 @@ export function BookingForm({
             vatAddress: vat.address.trim() || undefined,
             vatEmail: vat.email.trim(),
           }),
+          // The guest's emails come in the page's language.
+          locale: lang,
         }),
       })
       const data = await res.json().catch(() => ({}))

@@ -108,6 +108,22 @@ describe('invitation emails', () => {
     await sendDueEmails()
     expect(sent).toHaveBeenCalledTimes(1)
     expect(sent.mock.calls[0][1].html).toContain(`${SITE}/invitations/${invitation.token}`)
+    expect(sent.mock.calls[0][1].subject).toContain('mời bạn vào')
+  })
+
+  it("are in the inviter's language (the page they sent it from)", async () => {
+    const { owner, workspace } = await createTenant()
+    signInAs(owner)
+    const english = new NextRequest('http://digistay.test/api/x', {
+      method: 'POST',
+      body: JSON.stringify({ email: 'nv@example.com', role: 'MANAGER' }),
+      headers: { cookie: 'NEXT_LOCALE=en' },
+    })
+    expect((await invite(english, { params: Promise.resolve({ id: workspace.id }) })).status).toBe(200)
+    await sendDueEmails()
+    const message = sent.mock.calls[0][1]
+    expect(message.subject).toBe(`Test User invited you to ${workspace.name} on Digistay`)
+    expect(message.text).toContain(`invited you to join ${workspace.name} as Manager.`)
   })
 })
 

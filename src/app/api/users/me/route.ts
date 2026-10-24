@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth'
 import { PASSWORD_MIN_LENGTH, PASSWORD_TOO_SHORT, updateProfileSchema } from '@/lib/validations'
 import { sendPasswordChangedEmail } from '@/lib/email'
 import { revokeSessions } from '@/lib/auth/session-revocation'
+import { requestLocale } from '@/lib/i18n/request-locale'
 import { LIMITS } from '@/lib/security/limits'
 import { clearLimit, isBlocked, recordFailure, tooManyRequests } from '@/lib/security/rate-limit'
 
@@ -189,6 +190,7 @@ export async function PUT(request: NextRequest) {
       sendPasswordChangedEmail({
         recipientEmail: user.email,
         recipientName: user.name || undefined,
+        locale: requestLocale(request),
       }).catch((err) => console.error('Failed to send password changed email:', err))
     }
 
