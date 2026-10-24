@@ -205,7 +205,7 @@
       "redirecting": "Redirecting...",
       "booking": "Booking",
       "chooseBooking": "Choose a booking",
-      "notConnected": "The hotel has not connected Mắt Bão e-invoices yet (card at the top of the page), so invoices cannot be created.",
+      "notConnected": "The hotel has not connected Mắt Bão e-invoices yet (card at the top of the page), so invoices cannot be created here. Keep issuing invoices in the invoicing software you already use; bookings and revenue are still recorded as usual.",
       "submit": "Create invoice"
     },
     "editModal": {
@@ -321,7 +321,7 @@
     "connectedLine": "Tax ID {taxCode} · Template {template} · Series {series} · VAT {vat} ·",
     "remaining": "{count, plural, one {# number left} other {# numbers left}}",
     "remainingUnknown": "? numbers left",
-    "intro": "Issue VAT invoices under the hotel's tax ID, through the hotel's Mắt Bão account.",
+    "intro": "Issue VAT invoices under the hotel's tax ID, through the hotel's Mắt Bão account. Until it is connected, keep issuing invoices in the invoicing software you already use; bookings and revenue are still recorded as usual.",
     "connect": "Connect",
     "disconnect": "Disconnect",
     "autoIssue": "Issue the invoice automatically once a booking is fully paid",
@@ -363,8 +363,8 @@
     "description": "Manage bank accounts to receive payments",
     "noProperty": "Property not found.",
     "add": "Add account",
-    "infoTitle": "VietQR integration",
-    "infoText": "Guests can scan the QR code to pay quickly. Works with every bank in Vietnam.",
+    "infoTitle": "Getting paid by bank transfer",
+    "infoText": "Send your account number or QR code (Download QR button) to the guest by Zalo or email. These transfers are not confirmed automatically: when the money arrives, go to Payments, open (or create) the booking's payment and press Mark as paid; the revenue then counts in your reports. To have payments confirmed automatically, connect PayOS or SePay below.",
     "empty": "No bank accounts yet",
     "bankCode": "Bank code: {code}",
     "active": "Active",

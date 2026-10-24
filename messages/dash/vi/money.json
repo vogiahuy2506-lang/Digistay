@@ -205,7 +205,7 @@
       "redirecting": "Đang chuyển hướng...",
       "booking": "Đơn đặt phòng",
       "chooseBooking": "Chọn đơn đặt phòng",
-      "notConnected": "Khách sạn chưa kết nối hoá đơn điện tử Mắt Bão (thẻ phía trên trang), nên chưa tạo được hoá đơn.",
+      "notConnected": "Khách sạn chưa kết nối hoá đơn điện tử Mắt Bão (thẻ phía trên trang), nên chưa tạo được hoá đơn ở đây. Bạn vẫn xuất hoá đơn trên phần mềm hoá đơn đang dùng; đặt phòng và doanh thu vẫn ghi nhận bình thường.",
       "submit": "Tạo hóa đơn"
     },
     "editModal": {
@@ -321,7 +321,7 @@
     "connectedLine": "MST {taxCode} · Mẫu {template} · Ký hiệu {series} · Thuế suất {vat} ·",
     "remaining": "còn {count} số",
     "remainingUnknown": "còn ? số",
-    "intro": "Phát hành hoá đơn GTGT dưới mã số thuế của khách sạn, qua tài khoản Mắt Bão của khách sạn.",
+    "intro": "Phát hành hoá đơn GTGT dưới mã số thuế của khách sạn, qua tài khoản Mắt Bão của khách sạn. Chưa kết nối thì bạn vẫn xuất hoá đơn trên phần mềm hoá đơn đang dùng; đặt phòng và doanh thu vẫn ghi nhận bình thường.",
     "connect": "Kết nối",
     "disconnect": "Ngắt kết nối",
     "autoIssue": "Tự xuất hoá đơn khi đơn đã thanh toán đủ",
@@ -363,8 +363,8 @@
     "description": "Quản lý tài khoản ngân hàng để nhận thanh toán",
     "noProperty": "Không xác định được cơ sở.",
     "add": "Thêm tài khoản",
-    "infoTitle": "Tích hợp VietQR",
-    "infoText": "Khách hàng có thể quét mã QR để thanh toán nhanh chóng. Hỗ trợ tất cả ngân hàng tại Việt Nam.",
+    "infoTitle": "Nhận tiền qua chuyển khoản",
+    "infoText": "Gửi số tài khoản hoặc mã QR (nút Tải QR) cho khách qua Zalo, email. Chuyển khoản kiểu này không tự xác nhận: khi tiền về, vào Thanh toán, mở (hoặc tạo) khoản thanh toán của đơn đó rồi bấm Xác nhận đã thanh toán; doanh thu tự được tính vào báo cáo. Muốn tiền tự được xác nhận, kết nối PayOS hoặc SePay bên dưới.",
     "empty": "Chưa có tài khoản ngân hàng nào",
     "bankCode": "Mã ngân hàng: {code}",
     "active": "Đang hoạt động",
