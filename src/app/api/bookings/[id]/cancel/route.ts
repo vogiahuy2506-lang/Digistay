@@ -2,89 +2,155 @@ import { NextRequest, NextResponse } from 'next/server'
 import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { suggestRefund } from '@/lib/bookings/cancel-refund'
 import { lockBooking } from '@/lib/payments/booking-payments'
 import { z } from 'zod'
 
+/**
+ * Cancel a booking and give money back. The refund is a suggestion from
+ * the hotel's policy (src/lib/bookings/cancel-refund.ts): GET shows it,
+ * POST takes the staff's decision. Refunding the suggestion is the default;
+ * another amount or nothing needs a reason when it differs, and all of it
+ * is logged (suggested, refunded, decision, reason, who).
+ *
+ * The app records the refund; the money itself goes back the way it came
+ * (a transfer from the hotel's account, cash at the desk).
+ */
 const cancelSchema = z.object({
-  reason: z.string().optional(),
-  refundAmount: z.number().min(0).optional(), // Partial refund amount
-  fullRefund: z.boolean().default(false),
+  reason: z.string().trim().max(500).optional(),
+  refund: z
+    .object({
+      decision: z.enum(['suggested', 'custom', 'none']),
+      amount: z.number().int('Số tiền là số nguyên (đồng)').min(0).max(10_000_000_000).optional(),
+      reason: z.string().trim().max(300).optional(),
+    })
+    .superRefine((v, ctx) => {
+      if (v.decision === 'custom' && v.amount === undefined) {
+        ctx.addIssue({ code: 'custom', message: 'Nhập số tiền hoàn' })
+      }
+    })
+    .optional(),
 })
 
-interface RouteParams {
-  params: Promise<{ id: string }>
-}
+type Session = { user: { id: string } }
 
-/**
- * POST /api/bookings/[id]/cancel
- * Cancel a booking. Handles refund logic if payment was made.
- */
-export async function POST(request: NextRequest, props: RouteParams) {
-  const params = await props.params
-  try {
-    const session = await auth()
-    const { id } = params
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
-    }
-
-    const body = await request.json().catch(() => ({}))
-    const validation = cancelSchema.safeParse(body)
-    if (!validation.success) {
-      return NextResponse.json({
-        success: false,
-        error: validation.error.errors[0].message,
-      }, { status: 400 })
-    }
-    const { reason, refundAmount, fullRefund } = validation.data
-
-    const booking = await prisma.booking.findUnique({
-      where: { id },
-      include: {
-        property: {
-          select: {
-            id: true,
-            workspace: {
-              select: {
-                ownerId: true,
-                members: {
-                  where: { userId: session.user.id },
-                  select: { role: true },
-                },
+/** The booking if the caller may cancel it; otherwise the error response. */
+async function bookingForStaff(id: string, session: Session) {
+  const booking = await prisma.booking.findUnique({
+    where: { id },
+    include: {
+      property: {
+        select: {
+          workspace: {
+            select: {
+              ownerId: true,
+              members: {
+                where: { userId: session.user.id },
+                select: { role: true },
               },
             },
           },
         },
       },
-    })
+    },
+  })
 
-    if (!booking) {
-      return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
+  // Outside the workspace: 404, so booking ids cannot be probed.
+  const workspace = booking?.property.workspace
+  const isOwner = workspace?.ownerId === session.user.id
+  if (!booking || !workspace || (!isOwner && workspace.members.length === 0)) {
+    return { error: NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 }) }
+  }
+
+  // Staff only: guests used to be let in and could choose their own refund.
+  const isStaff = workspace.members.some((m) => ['ADMIN', 'MANAGER', 'RECEPTIONIST'].includes(m.role))
+  if (!isOwner && !isStaff) {
+    return { error: NextResponse.json({ success: false, error: 'Không có quyền hủy đơn' }, { status: 403 }) }
+  }
+  return { booking }
+}
+
+const policyOf = (propertyId: string) =>
+  prisma.policy.findUnique({
+    where: { propertyId },
+    select: { cancellationHours: true, lateCancelRefundPercent: true, cancellationPolicy: true },
+  })
+
+/** GET: what was paid and the refund the hotel's policy suggests if cancelled now. */
+export async function GET(_request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const { id } = await props.params
+  try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
+    }
+    const found = await bookingForStaff(id, session)
+    if (found.error) return found.error
+    const { booking } = found
+
+    const [policy, paid] = await Promise.all([
+      policyOf(booking.propertyId),
+      prisma.payment.findMany({
+        where: { bookingId: id, status: 'PAID' },
+        select: { amount: true, method: true, paidAt: true },
+        orderBy: { paidAt: 'desc' },
+      }),
+    ])
+    const suggestion = suggestRefund({
+      now: new Date(),
+      checkInDate: booking.checkInDate,
+      status: booking.status,
+      totalPaid: paid.reduce((sum, p) => sum + p.amount, 0),
+      cancellationHours: policy?.cancellationHours,
+      lateCancelRefundPercent: policy?.lateCancelRefundPercent,
+    })
+    return NextResponse.json({
+      success: true,
+      data: {
+        status: booking.status,
+        cancellable: ['PENDING', 'CONFIRMED', 'CHECKED_IN'].includes(booking.status),
+        ...suggestion,
+        payments: paid,
+        policyText: policy?.cancellationPolicy ?? null,
+      },
+    })
+  } catch (error) {
+    console.error('Cancel preview error:', error)
+    return NextResponse.json({ success: false, error: 'Lỗi khi tính tiền hoàn' }, { status: 500 })
+  }
+}
+
+/** POST: cancel, refunding what the staff decided (the suggestion by default). */
+export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const { id } = await props.params
+  try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
     }
 
-    // Staff only: the refund amount comes from the request. Guests used to
-    // be let in and could choose their own refund; no guest page calls this.
-    const workspace = booking.property.workspace
-    const isOwner = workspace.ownerId === session.user.id
-    const isStaff = workspace.members.some(m =>
-      ['ADMIN', 'MANAGER', 'RECEPTIONIST'].includes(m.role)
-    )
-
-    if (!isOwner && !isStaff) {
-      return NextResponse.json({ success: false, error: 'Không có quyền hủy đơn' }, { status: 403 })
+    const body = await request.json().catch(() => ({}))
+    const validation = cancelSchema.safeParse(body ?? {})
+    if (!validation.success) {
+      return NextResponse.json({ success: false, error: validation.error.errors[0].message }, { status: 400 })
     }
+    const { reason } = validation.data
+    const decision = validation.data.refund ?? { decision: 'suggested' as const }
 
-    const policy = await prisma.policy.findUnique({
-      where: { propertyId: booking.propertyId },
-    })
+    const found = await bookingForStaff(id, session)
+    if (found.error) return found.error
+    const { booking } = found
+
+    const policy = await policyOf(booking.propertyId)
 
     // Under the booking lock, like every other path that moves money: two
     // cancels at once refund once, and the second one gets 400.
     const result = await prisma.$transaction(async (tx) => {
       await lockBooking(tx, id)
       const current = await tx.booking.findUniqueOrThrow({ where: { id }, select: { status: true } })
-      if (['CANCELLED', 'CHECKED_OUT'].includes(current.status)) return null
+      if (['CANCELLED', 'CHECKED_OUT', 'NO_SHOW'].includes(current.status)) {
+        return { error: 'Đơn đặt phòng không thể hủy ở trạng thái hiện tại' }
+      }
 
       const payments = await tx.payment.findMany({
         where: { bookingId: id, status: 'PAID' },
@@ -92,25 +158,23 @@ export async function POST(request: NextRequest, props: RouteParams) {
       })
       const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0)
 
-      // How much to give back
-      let toRefund = 0
-      if (totalPaid > 0) {
-        const hoursUntilCheckIn = Math.floor(
-          (new Date(booking.checkInDate).getTime() - Date.now()) / (1000 * 60 * 60)
-        )
-        const freeCancellationHours = policy?.cancellationHours ?? 24
-
-        if (hoursUntilCheckIn >= freeCancellationHours) {
-          // Free cancellation available
-          toRefund = fullRefund ? totalPaid : (refundAmount ?? totalPaid)
-        } else if (current.status === 'CHECKED_IN') {
-          // Already checked in - refund is at discretion
-          toRefund = fullRefund ? totalPaid : (refundAmount ?? 0)
-        } else {
-          // Within penalty window - partial/no refund
-          toRefund = refundAmount ?? 0
-        }
-        toRefund = Math.min(toRefund, totalPaid)
+      // Computed again here, never taken from the browser.
+      const suggestion = suggestRefund({
+        now: new Date(),
+        checkInDate: booking.checkInDate,
+        status: current.status,
+        totalPaid,
+        cancellationHours: policy?.cancellationHours,
+        lateCancelRefundPercent: policy?.lateCancelRefundPercent,
+      })
+      const toRefund =
+        decision.decision === 'suggested' ? suggestion.suggested : decision.decision === 'none' ? 0 : (decision.amount ?? 0)
+      if (toRefund > totalPaid) {
+        return { error: `Số tiền hoàn không được vượt quá số đã thanh toán (${totalPaid.toLocaleString('vi-VN')} ₫)` }
+      }
+      const refundReason = decision.decision === 'suggested' ? '' : (decision.reason ?? '')
+      if (toRefund !== suggestion.suggested && refundReason.length < 3) {
+        return { error: 'Ghi lý do khi hoàn khác số gợi ý theo chính sách' }
       }
 
       // Newest payments first. A partly refunded payment is PROCESSING, which
@@ -129,7 +193,7 @@ export async function POST(request: NextRequest, props: RouteParams) {
           data: {
             status: part >= payment.amount ? 'REFUNDED' : 'PROCESSING',
             // Merged: the gateway's own fields (PayOS order, flags) stay.
-            metadata: { ...metadata, refundReason: reason ?? null, refundedAt, refundedAmount: part },
+            metadata: { ...metadata, refundReason: refundReason || reason || null, refundedAt, refundedAmount: part },
           },
         })
         refunded += part
@@ -152,49 +216,47 @@ export async function POST(request: NextRequest, props: RouteParams) {
         },
       })
 
-      // Remove room locks
-      await tx.roomLock.deleteMany({
-        where: { bookingId: id },
+      await tx.roomLock.deleteMany({ where: { bookingId: id } })
+
+      // Same transaction: a cancellation is never left without its record.
+      await tx.activityLog.create({
+        data: {
+          userId: session.user.id,
+          propertyId: booking.propertyId,
+          action: 'CANCEL',
+          entityType: 'BOOKING',
+          entityId: id,
+          changes: {
+            status: 'CANCELLED',
+            reason: reason ?? null,
+            totalPaid,
+            refundAmount: refunded,
+            suggestedRefund: suggestion.suggested,
+            refundRule: suggestion.rule,
+            refundPercent: suggestion.percent,
+            refundDecision: decision.decision,
+            ...(refundReason && { refundReason }),
+          },
+          metadata: {
+            bookingCode: booking.bookingCode,
+            cancelledBy: session.user.id,
+          },
+        },
       })
 
       return { updatedBooking, totalPaid, refunded }
     })
 
-    if (!result) {
-      return NextResponse.json({
-        success: false,
-        error: 'Đơn đặt phòng không thể hủy ở trạng thái hiện tại',
-      }, { status: 400 })
+    if ('error' in result) {
+      return NextResponse.json({ success: false, error: result.error }, { status: 400 })
     }
     const { updatedBooking, totalPaid, refunded } = result
-
-    // Log activity
-    await prisma.activityLog.create({
-      data: {
-        userId: session.user.id,
-        propertyId: booking.propertyId,
-        action: 'CANCEL',
-        entityType: 'BOOKING',
-        entityId: id,
-        changes: {
-          status: 'CANCELLED',
-          reason,
-          refundAmount: refunded,
-        },
-        metadata: {
-          bookingCode: booking.bookingCode,
-          cancelledBy: session.user.id,
-        },
-      },
-    })
 
     return NextResponse.json({
       success: true,
       data: updatedBooking,
       message: 'Hủy đặt phòng thành công',
-      refundInfo: totalPaid > 0
-        ? { totalPaid, refundAmount: refunded }
-        : null,
+      refundInfo: totalPaid > 0 ? { totalPaid, refundAmount: refunded } : null,
     })
   } catch (error) {
     console.error('Cancel booking error:', error)

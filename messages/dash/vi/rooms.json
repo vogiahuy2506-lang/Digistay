@@ -201,6 +201,9 @@
       "freeHours": "Hủy miễn phí trước (giờ)",
       "freeHoursPlaceholder": "VD: 24 (hủy trước 24 giờ được miễn phí)",
       "freeHoursHint": "Để trống nếu không có chính sách hủy miễn phí",
+      "refundLate": "Hủy trong vòng {hours} giờ trước nhận phòng: hoàn (% số đã trả)",
+      "refundNoFree": "Khách hủy trước ngày nhận phòng: hoàn (% số đã trả)",
+      "refundHint": "Gợi ý cho nhân viên khi hủy đơn; 0 = không hoàn. Nhân viên vẫn chọn được số khác, kèm lý do.",
       "details": "Mô tả chi tiết",
       "detailsPlaceholder": "Mô tả chi tiết về chính sách hủy phòng, phí hủy, hoàn tiền...",
       "detailsHint": "Khách thấy chính sách này trước khi đặt phòng trên website."

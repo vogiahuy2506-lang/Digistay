@@ -20,6 +20,7 @@ import {
 } from '@/components/ui'
 import { canManageBookings, useWorkspaceRole } from '@/components/layout/workspace-context'
 import { CheckOutDialog } from './check-out-dialog'
+import { CancelDialog } from './cancel-dialog'
 import { buildPrintHtml, nightsBetween, remainingAmount } from '@/lib/bookings/display'
 import { useDashLabels } from '@/lib/i18n/dash'
 import { apiError } from '@/lib/i18n/api-errors'
@@ -374,7 +375,6 @@ export function BookingActions({
   const labels = useDashLabels()
   const [busy, setBusy] = React.useState<ActionKey | null>(null)
   const [dialog, setDialog] = React.useState<'cancel' | 'extend' | 'noshow' | 'checkout' | null>(null)
-  const [cancelReason, setCancelReason] = React.useState('')
   const [extendDate, setExtendDate] = React.useState('')
   const [dialogError, setDialogError] = React.useState('')
 
@@ -493,7 +493,7 @@ export function BookingActions({
         {/* Dropdown clones each direct child, so no fragments here. */}
         {canManage && canCancel && <DropdownDivider />}
         {canManage && canCancel && (
-          <DropdownItem danger onClick={() => { setCancelReason(''); setDialogError(''); setDialog('cancel') }}>
+          <DropdownItem danger onClick={() => setDialog('cancel')}>
             {t('actions.cancelBooking')}
           </DropdownItem>
         )}
@@ -511,44 +511,18 @@ export function BookingActions({
         }}
       />
 
-      <Modal isOpen={dialog === 'cancel'} onClose={() => setDialog(null)} size="sm">
-        <ModalHeader onClose={() => setDialog(null)}>
-          <span className="font-semibold">{t('cancelDialog.title', { code: booking.bookingCode })}</span>
-        </ModalHeader>
-        <ModalBody>
-          <p className="text-small text-muted">{t('cancelDialog.irreversible')}</p>
-          {booking.depositAmount > 0 && (
-            <p className="text-small text-fg rounded-ctl bg-info-soft px-3 py-2">
-              {t('cancelDialog.deposit', { amount: labels.money(booking.depositAmount) })}
-            </p>
-          )}
-          <Textarea
-            label={t('cancelDialog.reason')}
-            value={cancelReason}
-            onChange={(e) => setCancelReason(e.target.value)}
-            rows={3}
-          />
-          {dialogError && <p className="text-small text-err">{dialogError}</p>}
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => setDialog(null)}>
-            {tc('actions.no')}
-          </Button>
-          <Button
-            variant="danger"
-            isLoading={busy === 'cancel'}
-            onClick={() =>
-              run('cancel', 'cancel', { reason: cancelReason }, (d) =>
-                d.refundInfo?.refundAmount
-                  ? t('cancelDialog.cancelledRefund', { amount: labels.money(d.refundInfo.refundAmount) })
-                  : t('cancelDialog.cancelled')
-              )
-            }
-          >
-            {t('actions.cancelBooking')}
-          </Button>
-        </ModalFooter>
-      </Modal>
+      {/* The refund is decided in the dialog (cancel-dialog.tsx). */}
+      <CancelDialog
+        bookingId={booking.id}
+        bookingCode={booking.bookingCode}
+        isOpen={dialog === 'cancel'}
+        onClose={() => setDialog(null)}
+        onDone={(message) => {
+          toast.success(message)
+          setDialog(null)
+          onChanged()
+        }}
+      />
 
       <Modal isOpen={dialog === 'extend'} onClose={() => setDialog(null)} size="sm">
         <ModalHeader onClose={() => setDialog(null)}>

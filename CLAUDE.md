@@ -156,6 +156,12 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
     ý**: lễ tân áp dụng, thu số khác hoặc miễn trong hộp thoại trả phòng (`check-out-dialog.tsx`);
     hai cách sau bắt buộc lý do, nhật ký ghi số gợi ý, số thu, lý do, người làm. Server luôn tự tính
     lại lúc trả phòng, không lấy số của trình duyệt.
+  - Hoàn tiền khi hủy đơn: `src/lib/bookings/cancel-refund.ts`. Trước hạn hủy miễn phí
+    (`Policy.cancellationHours`; **để trống = không có hủy miễn phí**, đúng như trang Chính sách và
+    website nói) hoàn toàn bộ; sau hạn, trước khi nhận phòng hoàn `Policy.lateCancelRefundPercent`%;
+    đã nhận phòng: không gợi ý. Cũng là **gợi ý** như phí trả muộn: hộp thoại hủy
+    (`cancel-dialog.tsx`) cho hoàn đúng gợi ý, số khác hoặc không hoàn; khác gợi ý thì bắt buộc lý do,
+    nhật ký ghi gợi ý, số hoàn, lý do. App chỉ ghi nhận; tiền trả lại khách theo cách khách đã trả.
 - **Site công khai của khách sạn được cache** theo khách sạn (`src/lib/public-site/site.ts`, tối
   đa 5 phút). Handler nào ghi dữ liệu site hiển thị (khách sạn, ảnh, tiện ích, hạng phòng, giá,
   dịch vụ, website) phải gọi `invalidatePublicSite(propertyId)`; `public-site-cache.test.ts` chặn.

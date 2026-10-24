@@ -51,7 +51,11 @@ async function hotel() {
   return { ...tenant, staff, guest }
 }
 
-/** A confirmed booking of `guestEmail`, checking in 10 days from now (free cancellation). */
+/** The hotel cancels for free up to `hours` before check-in (no policy: no free cancellation). */
+const freeCancellation = (propertyId: string, hours = 24) =>
+  prisma.policy.create({ data: { propertyId, cancellationHours: hours } })
+
+/** A confirmed booking of `guestEmail`, checking in 10 days from now. */
 async function upcomingBooking(propertyId: string, guestEmail: string, totalAmount = 1_000_000) {
   const booking = await createBooking(propertyId, { guestEmail, totalAmount, status: 'CONFIRMED' })
   return prisma.booking.update({
@@ -126,20 +130,22 @@ describe('POST /api/bookings/[id]/cancel', () => {
     const payment = await paidPayment(booking, 1_000_000)
     signInAs(guest)
 
-    const res = await cancel(booking.id, { refundAmount: 999_999_999 })
+    const res = await cancel(booking.id, { refund: { decision: 'custom', amount: 999_999_999, reason: 'Tự chọn' } })
 
-    expect(res.status).toBe(403)
+    // Not a member of the hotel's workspace: 404, so booking ids cannot be probed.
+    expect(res.status).toBe(404)
     expect((await prisma.booking.findUniqueOrThrow({ where: { id: booking.id } })).status).toBe('CONFIRMED')
     expect((await prisma.payment.findUniqueOrThrow({ where: { id: payment.id } })).status).toBe('PAID')
   })
 
   it('a full refund marks the booking REFUNDED and reports the amount refunded', async () => {
     const { property, staff, guest } = await hotel()
+    await freeCancellation(property.id)
     const booking = await upcomingBooking(property.id, guest.email)
     const payment = await paidPayment(booking, 1_000_000)
     signInAs(staff.RECEPTIONIST)
 
-    const res = await cancel(booking.id, { fullRefund: true, reason: 'Khách đổi lịch' })
+    const res = await cancel(booking.id, { reason: 'Khách đổi lịch' })
 
     expect(res.status).toBe(200)
     expect((await res.json()).refundInfo).toEqual({ totalPaid: 1_000_000, refundAmount: 1_000_000 })
@@ -150,11 +156,12 @@ describe('POST /api/bookings/[id]/cancel', () => {
 
   it("a partial refund reports what was refunded and keeps the gateway's own metadata", async () => {
     const { property, staff, guest } = await hotel()
+    await freeCancellation(property.id)
     const booking = await upcomingBooking(property.id, guest.email)
     const payment = await paidPayment(booking, 1_000_000, { payos: { orderCode: 4242 } })
     signInAs(staff.MANAGER)
 
-    const res = await cancel(booking.id, { refundAmount: 300_000 })
+    const res = await cancel(booking.id, { refund: { decision: 'custom', amount: 300_000, reason: 'Giữ phí đổi lịch' } })
 
     expect(res.status).toBe(200)
     expect((await res.json()).refundInfo).toEqual({ totalPaid: 1_000_000, refundAmount: 300_000 })
@@ -178,12 +185,13 @@ describe('POST /api/bookings/[id]/cancel', () => {
 
   it('two cancels at once refund once', async () => {
     const { property, staff, guest } = await hotel()
+    await freeCancellation(property.id)
     const booking = await upcomingBooking(property.id, guest.email)
     await paidPayment(booking, 600_000)
     await paidPayment(booking, 400_000)
     signInAs(staff.RECEPTIONIST)
 
-    const statuses = (await Promise.all([cancel(booking.id, { fullRefund: true }), cancel(booking.id, { fullRefund: true })]))
+    const statuses = (await Promise.all([cancel(booking.id), cancel(booking.id)]))
       .map((res) => res.status)
       .sort()
 

@@ -18,6 +18,7 @@ interface Policy {
   checkOutTime: string
   cancellationHours: number | null
   cancellationPolicy: string | null
+  lateCancelRefundPercent: number
   childrenAllowed: boolean
   minChildAge: number
   petsAllowed: boolean
@@ -98,6 +99,7 @@ export default function PoliciesPage() {
           checkOutTime: policy.checkOutTime,
           cancellationHours: policy.cancellationHours,
           cancellationPolicy: policy.cancellationPolicy,
+          lateCancelRefundPercent: policy.lateCancelRefundPercent,
           childrenAllowed: policy.childrenAllowed,
           minChildAge: policy.minChildAge,
           petsAllowed: policy.petsAllowed,
@@ -299,6 +301,20 @@ export default function PoliciesPage() {
                 <p className="text-xs text-muted mt-1">
                   {t('cancellation.freeHoursHint')}
                 </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-fg mb-1" htmlFor="late-cancel-refund">
+                  {policy.cancellationHours == null ? t('cancellation.refundNoFree') : t('cancellation.refundLate', { hours: policy.cancellationHours })}
+                </label>
+                <Input
+                  id="late-cancel-refund"
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={policy.lateCancelRefundPercent ?? 0}
+                  onChange={(e) => update('lateCancelRefundPercent', Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
+                />
+                <p className="text-xs text-muted mt-1">{t('cancellation.refundHint')}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-fg mb-1">

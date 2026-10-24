@@ -17,6 +17,7 @@ const policySchema = z.object({
     .optional(),
   cancellationHours: z.coerce.number().int().min(0).max(720).nullable().optional(),
   cancellationPolicy: z.string().max(2000).nullable().optional(),
+  lateCancelRefundPercent: z.coerce.number().int('Phần trăm hoàn là số nguyên').min(0).max(100, 'Phần trăm hoàn tối đa 100%').optional(),
   childrenAllowed: z.boolean().optional(),
   minChildAge: z.coerce.number().int().min(0).max(18).optional(),
   petsAllowed: z.boolean().optional(),

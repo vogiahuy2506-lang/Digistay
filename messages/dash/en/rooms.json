@@ -201,6 +201,9 @@
       "freeHours": "Free cancellation up to (hours before)",
       "freeHoursPlaceholder": "e.g. 24 (free if cancelled 24 hours ahead)",
       "freeHoursHint": "Leave empty if there is no free cancellation",
+      "refundLate": "Cancelled within {hours} hours of check-in: refund (% of what was paid)",
+      "refundNoFree": "Cancelled before check-in: refund (% of what was paid)",
+      "refundHint": "Suggested to staff when cancelling; 0 = no refund. Staff can still refund another amount, with a reason.",
       "details": "Details",
       "detailsPlaceholder": "Describe the cancellation policy, fees, refunds...",
       "detailsHint": "Guests see this policy before booking on the website."

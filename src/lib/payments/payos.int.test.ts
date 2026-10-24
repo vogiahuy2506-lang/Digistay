@@ -266,7 +266,7 @@ describe('webhook', () => {
     const cancelled = await cancelBookingRoute(
       new NextRequest(`http://digistay.test/api/bookings/${booking.id}/cancel`, {
         method: 'POST',
-        body: JSON.stringify({ refundAmount: 500_000 }),
+        body: JSON.stringify({ refund: { decision: 'custom', amount: 500_000, reason: 'Giữ phí đổi lịch' } }),
       }),
       { params: Promise.resolve({ id: booking.id }) }
     )

@@ -17,6 +17,7 @@ import { useDashLabels } from '@/lib/i18n/dash'
 import { useProperty } from '@/lib/hooks/use-property'
 import { escapeHtml } from '@/lib/bookings/display'
 import { CheckOutDialog } from '@/components/bookings/check-out-dialog'
+import { CancelDialog } from '@/components/bookings/cancel-dialog'
 import { fetchWindow, staysNight, toCsv } from '@/lib/bookings/calendar'
 import { format, addDays, parseISO } from 'date-fns'
 import { apiError } from '@/lib/i18n/api-errors'
@@ -315,29 +316,9 @@ export default function CalendarPage() {
   const [checkOutBooking, setCheckOutBooking] = React.useState<{ id: string; code: string } | null>(null)
   const handleCheckOut = (bookingId: string, bookingCode: string) => setCheckOutBooking({ id: bookingId, code: bookingCode })
 
-  // Handle cancel booking
-  const handleCancelBooking = async (bookingId: string) => {
-    if (!confirm(t('detail.cancelConfirm'))) return
-    setIsActionLoading(true)
-    setActionLoadingType('cancel')
-    try {
-      const response = await fetch(`/api/bookings/${bookingId}/cancel`, { method: 'POST' })
-      const data = await response.json()
-      if (data.success) {
-        toast.success(t('detail.cancelSuccess'))
-        setShowBookingDetailModal(false)
-        fetchCalendarData()
-      } else {
-        toast.error(apiError(data.error) || t('detail.cancelError'))
-      }
-    } catch (err) {
-      console.error('Cancel booking error:', err)
-      toast.error(t('detail.cancelError'))
-    } finally {
-      setIsActionLoading(false)
-      setActionLoadingType('')
-    }
-  }
+  // Cancelling goes through the dialog that settles the refund (cancel-dialog.tsx).
+  const [cancelBooking, setCancelBooking] = React.useState<{ id: string; code: string } | null>(null)
+
 
   // Handle export report
   const handleExportReport = async () => {
@@ -1593,16 +1574,12 @@ export default function CalendarPage() {
 
               {(selectedBooking.status === 'PENDING' || selectedBooking.status === 'CONFIRMED') && (
                 <Button
-                  onClick={() => handleCancelBooking(selectedBooking.id)}
+                  onClick={() => setCancelBooking({ id: selectedBooking.id, code: selectedBooking.bookingCode })}
                   disabled={isActionLoading}
                   variant="outline"
                   className="text-err hover:bg-err-soft"
                 >
-                  {isActionLoading && actionLoadingType === 'cancel' ? (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  ) : (
-                    <XCircle className="w-4 h-4 mr-2" />
-                  )}
+                  <XCircle className="w-4 h-4 mr-2" />
                   {t('detail.cancelBooking')}
                 </Button>
               )}
@@ -1745,6 +1722,20 @@ export default function CalendarPage() {
           onDone={(message) => {
             toast.success(message)
             setCheckOutBooking(null)
+            setShowBookingDetailModal(false)
+            fetchCalendarData()
+          }}
+        />
+      )}
+      {cancelBooking && (
+        <CancelDialog
+          bookingId={cancelBooking.id}
+          bookingCode={cancelBooking.code}
+          isOpen
+          onClose={() => setCancelBooking(null)}
+          onDone={(message) => {
+            toast.success(message)
+            setCancelBooking(null)
             setShowBookingDetailModal(false)
             fetchCalendarData()
           }}
