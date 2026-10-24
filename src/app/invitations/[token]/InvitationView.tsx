@@ -196,7 +196,9 @@ export function InvitationView({ token }: { token: string }) {
           </div>
         )}
         {state === 'accepted' && (
-          <Link href="/workspaces" className={button(true)}>{t('openWorkspaces')}</Link>
+          <div className="flex flex-col gap-2.5 sm:flex-row">
+            <Link href="/workspaces" className={button(true)}>{t('openWorkspaces')}</Link>
+          </div>
         )}
         {state === 'used' && (
           <div className="flex flex-col gap-2.5 sm:flex-row">
@@ -211,7 +213,10 @@ export function InvitationView({ token }: { token: string }) {
           </div>
         )}
         {state === 'invalid' && (
-          <Link href="/" className={button(false)}>{tc('home')}</Link>
+          // A lone button still sits in a row: `flex-1` in the column above would squash it.
+          <div className="flex flex-col gap-2.5 sm:flex-row">
+            <Link href="/" className={button(false)}>{tc('home')}</Link>
+          </div>
         )}
       </div>
     </div>

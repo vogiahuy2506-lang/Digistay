@@ -32,11 +32,16 @@ export function localizeRow<T extends { translations?: unknown }>(row: T, fields
 }
 
 /**
- * The website builder's default block texts (BLOCK_TYPES in
- * properties/[id]/website/page.tsx). A block still showing one of them
- * shows the site's own English default instead of this Vietnamese.
+ * The default block texts: the website builder's (BLOCK_TYPES in
+ * properties/[id]/website/page.tsx) and the default layout's
+ * (defaultBlocksForProperty in src/lib/public-site/site.ts). A block still
+ * showing one of them shows the site's own English default instead.
  */
 export const BUILDER_DEFAULTS = new Set([
+  'Tiện ích khách sạn',
+  'Hình ảnh',
+  'Vị trí',
+  'Liên hệ đặt phòng',
   'Chào mừng đến với',
   'Trải nghiệm lưu trú tuyệt vời',
   'Đặt phòng ngay',
