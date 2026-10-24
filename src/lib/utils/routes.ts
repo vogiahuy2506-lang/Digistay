@@ -43,6 +43,7 @@ export const routes = {
   propertyBankAccounts: (slug: string, id: string) =>
     `/workspace/${slug}/properties/${id}/bank-accounts`,
   propertyServices: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/services`,
+  propertyMenu: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/menu`,
   propertyPolicies: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/policies`,
 
   // Workspace-scoped

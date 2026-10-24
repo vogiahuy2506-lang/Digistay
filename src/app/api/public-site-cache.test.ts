@@ -23,6 +23,7 @@ const SITE_MODELS = [
   'roomTypePricing',
   'pricingConfig',
   'extraService',
+  'menuItem',
   'websiteBlock',
   'websiteSettings',
 ]

@@ -19,7 +19,7 @@ describe('dashboard theme', () => {
     for (const ready of ['', '/bookings', '/bookings/b1', '/bookings/new', '/calendar', '/reports', '/reports/daily']) {
       expect(isDarkReady(`${P}${ready}`)).toBe(true)
     }
-    for (const ready of ['/rooms', '/services', '/policies', '/bank-accounts', '/website', '/payments', '/invoices', '/payments/', '/invoices/']) {
+    for (const ready of ['/rooms', '/services', '/menu', '/policies', '/bank-accounts', '/website', '/payments', '/invoices', '/payments/', '/invoices/']) {
       expect(isDarkReady(`${P}${ready}`)).toBe(true)
     }
     // Only the pages themselves, not made-up paths below them.

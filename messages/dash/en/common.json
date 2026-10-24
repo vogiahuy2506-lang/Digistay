@@ -1,7 +1,7 @@
 {
   "nav": {
     "main": "Main menu",
-    "menu": "Menu",
+    "drawer": "Menu",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "overview": "Overview",
@@ -11,6 +11,7 @@
     "walkIn": "Walk-in",
     "rooms": "Room types",
     "services": "Services",
+    "menu": "Menu",
     "payments": "Payments",
     "invoices": "Invoices",
     "reports": "Reports",

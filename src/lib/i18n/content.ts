@@ -54,6 +54,7 @@ export const BUILDER_DEFAULTS = new Set([
   'Liên hệ với chúng tôi',
   'Sẵn sàng trải nghiệm?',
   'Đặt phòng ngay hôm nay để nhận ưu đãi đặc biệt',
+  'Thực đơn nhà hàng',
 ])
 
 function text(cfg: Fields | undefined, keys: string[]): string | undefined {

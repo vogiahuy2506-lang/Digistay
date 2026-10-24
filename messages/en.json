@@ -33,6 +33,7 @@
       "amenities": "Amenities",
       "gallery": "Gallery",
       "services": "Services",
+      "menu": "Menu",
       "map": "Location",
       "contact": "Contact"
     },
@@ -176,7 +177,7 @@
       "menu": {
         "title": "Restaurant menu",
         "eyebrow": "Restaurant",
-        "empty": "The menu is being updated. Please contact us directly to book a table."
+        "other": "Other"
       },
       "reviews": {
         "title": "What our guests say",

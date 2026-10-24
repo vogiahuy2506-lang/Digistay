@@ -11,6 +11,7 @@ export type NavKey =
   | 'walkIn'
   | 'rooms'
   | 'services'
+  | 'menu'
   | 'payments'
   | 'invoices'
   | 'reports'
@@ -46,6 +47,7 @@ export function primaryNav(slug: string, propertyId?: string): NavItem[] {
     { key: 'walkIn', href: routes.propertyBookingNew(slug, id), roles: staff },
     { key: 'rooms', href: routes.propertyRooms(slug, id), roles: staff },
     { key: 'services', href: routes.propertyServices(slug, id), roles: managers },
+    { key: 'menu', href: routes.propertyMenu(slug, id), roles: managers },
     { key: 'payments', href: routes.propertyPayments(slug, id), roles: staff },
     { key: 'invoices', href: routes.propertyInvoices(slug, id), roles: managers },
     { key: 'reports', href: routes.propertyReports(slug, id), roles: managers },

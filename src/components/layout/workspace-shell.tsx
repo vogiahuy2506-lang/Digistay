@@ -76,7 +76,7 @@ export function WorkspaceShell(props: WorkspaceShellProps) {
             ref={drawerRef}
             role="dialog"
             aria-modal="true"
-            aria-label={t('menu')}
+            aria-label={t('drawer')}
             tabIndex={-1}
             className="absolute inset-y-0 left-0 w-72 max-w-[85vw] flex flex-col bg-page border-r border-line animate-drawer-in motion-reduce:animate-none focus:outline-none"
           >
