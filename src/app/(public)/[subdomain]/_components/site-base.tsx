@@ -4,6 +4,8 @@ import * as React from 'react'
 import { useTranslations } from 'next-intl'
 import { siteHref } from '@/lib/public-site/paths'
 import type { Locale } from '@/i18n/locales'
+import type { ThemePreference } from '@/lib/theme'
+import { ThemeToggle } from '@/components/marketing/ThemeToggle'
 
 /**
  * The site's base path in each language (src/lib/public-site/paths.ts; the
@@ -14,12 +16,14 @@ interface SiteBase {
   bases: Record<Locale, string>
   /** The current page in the other language (worked out by the layout). */
   switchHref: string
+  /** The visitor's light / dark choice when the page was rendered. */
+  theme: ThemePreference
 }
 
 const SiteBaseContext = React.createContext<SiteBase | null>(null)
 
-export function SiteBaseProvider({ locale, bases, switchHref, children }: SiteBase & { children: React.ReactNode }) {
-  const value = React.useMemo(() => ({ locale, bases, switchHref }), [locale, bases, switchHref])
+export function SiteBaseProvider({ locale, bases, switchHref, theme, children }: SiteBase & { children: React.ReactNode }) {
+  const value = React.useMemo(() => ({ locale, bases, switchHref, theme }), [locale, bases, switchHref, theme])
   return <SiteBaseContext.Provider value={value}>{children}</SiteBaseContext.Provider>
 }
 
@@ -55,4 +59,11 @@ export function LanguageSwitch({ className }: { className?: string }) {
       {t('switchShort')}
     </a>
   )
+}
+
+/** Light / dark for the visitor (the same cookie as Digistay's pages and the dashboard). */
+export function SiteThemeToggle({ className, withLabel }: { className?: string; withLabel?: boolean }) {
+  const { theme } = useSiteBase()
+  const t = useTranslations('site.nav')
+  return <ThemeToggle initial={theme} toDark={t('toDark')} toLight={t('toLight')} className={className} withLabel={withLabel} />
 }

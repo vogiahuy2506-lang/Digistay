@@ -1,6 +1,6 @@
 import { Menu, Phone } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { LanguageSwitch, SiteLink } from './site-base'
+import { LanguageSwitch, SiteLink, SiteThemeToggle } from './site-base'
 import { Container, propertyTypeLabel } from './site-ui'
 
 export type SiteSectionId = 'rooms' | 'amenities' | 'gallery' | 'services' | 'map' | 'contact'
@@ -51,7 +51,13 @@ export function SiteHeader({ property, sections, onHome = true }: Props) {
         )}
 
         <div className="ml-auto flex items-center gap-3 sm:gap-5 shrink-0">
-          <LanguageSwitch className="inline-flex h-11 min-w-11 items-center justify-center rounded-ctl px-2 text-small font-medium text-fg hover:bg-fg/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc" />
+          <div className="flex items-center">
+            {/* Below lg, where the section menu is, the toggle sits in that menu: the hotel's name needs the room. */}
+            <SiteThemeToggle
+              className={`${sections.length > 0 ? 'hidden lg:flex' : ''} h-11 w-11 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc`}
+            />
+            <LanguageSwitch className="inline-flex h-11 min-w-11 items-center justify-center rounded-ctl px-2 text-small font-medium text-fg hover:bg-fg/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc" />
+          </div>
           {property.phone && (
             <a href={`tel:${property.phone.replace(/[^\d+]/g, '')}`} className={`hidden md:inline-flex items-center gap-2 ${linkClass}`}>
               <Phone className="h-4 w-4" aria-hidden="true" />
@@ -87,6 +93,9 @@ export function SiteHeader({ property, sections, onHome = true }: Props) {
                     </SiteLink>
                   )
                 )}
+                <div className="mt-2 border-t border-line pt-2">
+                  <SiteThemeToggle withLabel className="px-4 py-3 text-body focus:outline-none focus-visible:bg-fg/5" />
+                </div>
               </nav>
             </details>
           )}

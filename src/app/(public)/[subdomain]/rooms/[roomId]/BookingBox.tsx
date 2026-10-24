@@ -102,7 +102,7 @@ export function BookingBox({ rates, baseOccupancy, maxAdults, maxChildren, check
                 setCheckOut(new Date(Date.parse(`${e.target.value}T00:00:00Z`) + 86400000).toISOString().slice(0, 10))
               }
             }}
-            className="mt-1 w-full bg-transparent text-small text-fg focus:outline-none [color-scheme:light]"
+            className="mt-1 w-full bg-transparent text-small text-fg focus:outline-none [color-scheme:light] dark:[color-scheme:dark]"
           />
         </label>
         <label className={cell}>
@@ -112,7 +112,7 @@ export function BookingBox({ rates, baseOccupancy, maxAdults, maxChildren, check
             value={checkOut}
             min={checkIn}
             onChange={(e) => setCheckOut(e.target.value)}
-            className="mt-1 w-full bg-transparent text-small text-fg focus:outline-none [color-scheme:light]"
+            className="mt-1 w-full bg-transparent text-small text-fg focus:outline-none [color-scheme:light] dark:[color-scheme:dark]"
           />
         </label>
         {stepper(t('stay.adults'), adults, 1, Math.max(1, maxAdults), setAdults)}

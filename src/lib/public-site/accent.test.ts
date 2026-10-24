@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { contrastRatio, themes } from '@/styles/tokens'
-import { hotelAccent, hotelAccentVariables } from './accent'
+import { hotelAccent, hotelAccentDark, hotelAccentVariables } from './accent'
 
 const PAGE = themes.light.page
 
@@ -34,8 +34,21 @@ describe('hotel accent', () => {
     expect(contrastRatio(accSoft, PAGE)).toBeLessThan(1.3)
   })
 
-  it('emits RGB channels for the CSS variables', () => {
-    expect(hotelAccentVariables('#4F6B4A')['--ds-acc']).toBe('79 107 74')
-    expect(hotelAccentVariables('#4F6B4A')['--ds-acc-soft']).toMatch(/^\d+ \d+ \d+$/)
+  it('emits RGB channels for the CSS variables, for both themes', () => {
+    const vars = hotelAccentVariables('#4F6B4A')
+    expect(vars['--site-acc']).toBe('79 107 74')
+    for (const key of ['--site-acc-soft', '--site-acc-dark', '--site-acc-soft-dark']) expect(vars[key]).toMatch(/^\d+ \d+ \d+$/)
+  })
+
+  it('lightens the accent until it reads on the dark page, panels and menus', () => {
+    for (const color of ['#4F6B4A', '#233A5E', '#A93119', '#000000', '#3B82F6', '#FFFF00']) {
+      const { acc, accSoft } = hotelAccentDark(color)
+      for (const surface of [themes.dark.page, themes.dark.panel, themes.dark.raised]) {
+        expect(contrastRatio(acc, surface)).toBeGreaterThanOrEqual(4.5)
+      }
+      expect(contrastRatio(acc, accSoft)).toBeGreaterThanOrEqual(4.5)
+    }
+    // A color that already reads on dark stays as it is.
+    expect(hotelAccentDark('#EE8B6F').acc).toBe('#EE8B6F')
   })
 })

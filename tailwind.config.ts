@@ -15,6 +15,16 @@ const themeBase = plugin(({ addBase }) => {
     '[data-theme="dark"]': themeVariables('dark'),
     ':root, [data-surface="admin"]': { '--ds-r-ctl': radii.admin.ctl, '--ds-r-box': radii.admin.box },
     '[data-surface="site"]': { '--ds-r-ctl': radii.site.ctl, '--ds-r-box': radii.site.box },
+    // A hotel's website: its own accent in each theme (src/lib/public-site/accent.ts sets
+    // --site-acc* on the root). Two attributes, so these win over the theme rules above.
+    '[data-surface="site"][data-theme]': {
+      '--ds-acc': 'var(--site-acc, var(--ds-brand))',
+      '--ds-acc-soft': 'var(--site-acc-soft, var(--ds-brand-soft))',
+    },
+    '[data-surface="site"][data-theme="dark"]': {
+      '--ds-acc': 'var(--site-acc-dark, var(--ds-brand))',
+      '--ds-acc-soft': 'var(--site-acc-soft-dark, var(--ds-brand-soft))',
+    },
   })
 })
 

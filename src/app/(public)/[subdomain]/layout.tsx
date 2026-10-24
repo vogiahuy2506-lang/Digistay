@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { prisma } from '@/lib/db'
+import { publicTheme } from '@/components/marketing/PublicFrame'
 import { localized, localizeRow } from '@/lib/i18n/content'
 import { SITE_BASE_HEADER, SITE_PATH_HEADER, siteBasePath, siteHref } from '@/lib/public-site/paths'
 import { hotelAccentVariables } from '@/lib/public-site/accent'
@@ -44,8 +45,10 @@ export async function generateMetadata({ params }: { params: Promise<{ subdomain
 
 /**
  * Every page of a hotel's site. Works out once whether links need the
- * "/<subdomain>" prefix, and sets the site's look: light only, near-square
- * corners (data-surface="site"), the hotel's accent and fonts.
+ * "/<subdomain>" prefix, and sets the site's look: the visitor's light / dark
+ * choice (the ds-theme cookie, as on Digistay's pages; SiteHeader's toggle
+ * flips data-theme here), near-square corners (data-surface="site"), the
+ * hotel's accent for both themes and its fonts.
  */
 export default async function HotelSiteLayout({
   children,
@@ -60,6 +63,7 @@ export default async function HotelSiteLayout({
   const settings = (await loadSiteFrame(subdomain))?.websiteSettings
   const preview = (await loadVisibleSite(subdomain))?.preview ?? false
   const locale = await getLocale()
+  const theme = await publicTheme()
   const t = await getTranslations('site')
   // Links keep the language: /<hotel>/en/... (or /en/... on the hotel's own host).
   // From the middleware; the Host header is the fallback (src/lib/public-site/paths.ts).
@@ -85,13 +89,14 @@ export default async function HotelSiteLayout({
 
   return (
     <div
-      data-theme="light"
+      data-public-theme
+      data-theme={theme}
       data-surface="site"
-      className={`${siteFontVariables} min-h-screen bg-page text-fg font-site-body antialiased`}
+      className={`${siteFontVariables} min-h-screen bg-page text-fg font-site-body antialiased dark:[color-scheme:dark]`}
       style={style}
     >
       {preview && <p className="bg-ink px-4 py-2 text-center text-small text-on-ink">{t('preview')}</p>}
-      <SiteBaseProvider locale={locale} bases={bases} switchHref={switchHref}>
+      <SiteBaseProvider locale={locale} bases={bases} switchHref={switchHref} theme={theme}>
         {children}
       </SiteBaseProvider>
     </div>

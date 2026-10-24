@@ -206,13 +206,15 @@ function CtaBlock({ block }: { block: PublicBlock }) {
   const label = blockText(cfg, locale, 'ctaButtonText', 'buttonText') ?? t('button')
   const link = cfgText(cfg, 'ctaButtonLink') ?? '#booking'
   const buttonClass =
-    'mt-8 inline-flex h-12 items-center rounded-ctl bg-page px-6 text-body font-medium text-fg hover:bg-page/90 transition-colors'
+    'mt-8 inline-flex h-12 items-center rounded-ctl bg-page px-6 text-body font-medium text-fg hover:bg-page/90 transition-colors ' +
+    'dark:bg-ink dark:text-on-ink dark:hover:bg-ink/90'
 
   return (
-    <section className="bg-ink py-16 sm:py-20 text-on-ink">
+    // Dark band on the light page; in the dark theme a raised band, not a bright one.
+    <section className="bg-ink py-16 sm:py-20 text-on-ink dark:bg-raised dark:text-fg">
       <Container className="max-w-3xl text-center">
         <h2 className="font-site text-[32px] leading-[40px] sm:text-h2">{title}</h2>
-        {subtitle && <p className="mt-4 text-lead text-on-ink/80">{subtitle}</p>}
+        {subtitle && <p className="mt-4 text-lead text-on-ink/80 dark:text-muted">{subtitle}</p>}
         {link.startsWith('/') ? (
           <SiteLink path={link} className={buttonClass}>
             {label}

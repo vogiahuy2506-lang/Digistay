@@ -24,7 +24,9 @@
       "book": "Đặt phòng",
       "home": "Trang chủ",
       "rooms": "Phòng",
-      "breadcrumb": "Đường dẫn"
+      "breadcrumb": "Đường dẫn",
+      "toDark": "Chuyển sang giao diện tối",
+      "toLight": "Chuyển sang giao diện sáng"
     },
     "sections": {
       "rooms": "Phòng",

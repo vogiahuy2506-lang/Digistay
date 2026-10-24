@@ -24,7 +24,9 @@
       "book": "Book now",
       "home": "Home",
       "rooms": "Rooms",
-      "breadcrumb": "Breadcrumb"
+      "breadcrumb": "Breadcrumb",
+      "toDark": "Switch to the dark theme",
+      "toLight": "Switch to the light theme"
     },
     "sections": {
       "rooms": "Rooms",

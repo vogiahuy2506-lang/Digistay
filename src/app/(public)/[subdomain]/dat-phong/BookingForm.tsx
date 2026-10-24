@@ -440,7 +440,7 @@ export function BookingForm({
 
           {tried && errorCount > 0 && <p role="alert" className="bg-err-soft px-4 py-3 text-[14px] font-medium text-err">⚠ {tf('summary', { count: errorCount })}</p>}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-            <button type="submit" disabled={blocked} className="h-14 bg-ink px-9 text-[15px] font-medium text-on-ink transition-colors hover:bg-black disabled:bg-muted">
+            <button type="submit" disabled={blocked} className="h-14 bg-ink px-9 text-[15px] font-medium text-on-ink transition-colors hover:bg-ink/90 disabled:bg-muted">
               {sending
                 ? tf('sending')
                 : wait > 0

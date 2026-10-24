@@ -81,7 +81,7 @@ export function SearchBar() {
         value={value}
         min={min}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1 w-full bg-transparent text-body text-fg focus:outline-none [color-scheme:light]"
+        className="mt-1 w-full bg-transparent text-body text-fg focus:outline-none [color-scheme:light] dark:[color-scheme:dark]"
       />
     </label>
   )

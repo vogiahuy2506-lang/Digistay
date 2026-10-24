@@ -176,7 +176,7 @@ export function SearchResults({
           <button
             type="submit"
             disabled={!validDates || loading}
-            className="h-14 bg-ink px-10 text-[15px] font-medium text-on-ink transition-colors hover:bg-black disabled:opacity-70 lg:h-auto lg:min-w-[200px]"
+            className="h-14 bg-ink px-10 text-[15px] font-medium text-on-ink transition-colors hover:bg-ink/90 disabled:opacity-70 lg:h-auto lg:min-w-[200px]"
           >
             {loading ? t('booking.search.searching') : t('booking.search.update')}
           </button>
@@ -355,7 +355,7 @@ export function SearchResults({
                         </p>
                         <SiteLink
                           path={`/dat-phong?room=${r.id}&${queryString(query)}`}
-                          className="flex h-[50px] items-center justify-center bg-ink text-[15px] font-medium text-on-ink transition-colors hover:bg-black"
+                          className="flex h-[50px] items-center justify-center bg-ink text-[15px] font-medium text-on-ink transition-colors hover:bg-ink/90"
                         >
                           {t('booking.search.book')}
                         </SiteLink>

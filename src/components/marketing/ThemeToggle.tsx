@@ -11,7 +11,20 @@ import { cn } from '@/lib/utils'
  * data-theme on PublicFrame's root, and the cookie keeps it for the next
  * page and the server's first paint.
  */
-export function ThemeToggle({ initial, toDark, toLight, className }: { initial: ThemePreference; toDark: string; toLight: string; className?: string }) {
+export function ThemeToggle({
+  initial,
+  toDark,
+  toLight,
+  className,
+  withLabel = false,
+}: {
+  initial: ThemePreference
+  toDark: string
+  toLight: string
+  className?: string
+  /** The action written next to the icon (a menu row) instead of an icon button. */
+  withLabel?: boolean
+}) {
   const [theme, setTheme] = React.useState(initial)
   const dark = theme === 'dark'
   const toggle = () => {
@@ -25,11 +38,17 @@ export function ThemeToggle({ initial, toDark, toLight, className }: { initial: 
       type="button"
       onClick={toggle}
       aria-pressed={dark}
-      aria-label={dark ? toLight : toDark}
-      title={dark ? toLight : toDark}
-      className={cn('flex h-10 w-10 items-center justify-center rounded-ctl text-fg transition-colors duration-160 hover:bg-fg/5', className)}
+      aria-label={withLabel ? undefined : dark ? toLight : toDark}
+      title={withLabel ? undefined : dark ? toLight : toDark}
+      className={cn(
+        withLabel
+          ? 'flex w-full items-center gap-3 text-left text-fg transition-colors duration-160 hover:bg-fg/5'
+          : 'flex h-10 w-10 items-center justify-center rounded-ctl text-fg transition-colors duration-160 hover:bg-fg/5',
+        className
+      )}
     >
       {dark ? <Sun className="h-[18px] w-[18px]" aria-hidden /> : <Moon className="h-[18px] w-[18px]" aria-hidden />}
+      {withLabel && <span>{dark ? toLight : toDark}</span>}
     </button>
   )
 }
