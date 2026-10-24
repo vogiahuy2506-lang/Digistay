@@ -62,7 +62,7 @@ export function WorkspaceTopBar({ workspace, workspaces, userName, userEmail, us
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
                   onClick={() => setMenuOpen((open) => !open)}
-                  className="inline-flex items-center gap-1.5 rounded-ctl h-9 px-1.5 max-w-[220px] text-small text-fg hover:bg-fg/5 transition-colors duration-160 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
+                  className="inline-flex items-center gap-1.5 rounded-ctl h-9 px-1.5 max-w-[40vw] sm:max-w-[220px] text-small text-fg hover:bg-fg/5 transition-colors duration-160 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
                 >
                   <span className="truncate">{workspace.name}</span>
                   <ChevronDown className="w-3.5 h-3.5 text-muted shrink-0" aria-hidden="true" />
@@ -130,11 +130,13 @@ function AccountMenu({
           type="button"
           aria-haspopup="menu"
           aria-expanded={open}
+          aria-label={t('account.label')}
           onClick={() => setOpen((v) => !v)}
           className="flex items-center gap-2 rounded-ctl h-9 px-1.5 max-w-[220px] hover:bg-fg/5 transition-colors duration-160 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
         >
           <Avatar src={image} name={name || email || 'User'} size="sm" />
-          <span className="truncate text-small text-fg">{name || email}</span>
+          {/* On phones only the avatar: the bar has no room for the name. */}
+          <span className="hidden sm:block truncate text-small text-fg">{name || email}</span>
         </button>
       }
     >
