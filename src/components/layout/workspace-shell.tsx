@@ -14,7 +14,6 @@ import { useProperty, type PropertyContext } from '@/lib/hooks/use-property'
 import { Avatar, Dropdown, DropdownItem, DropdownDivider } from '@/components/ui'
 import { useDialogBehavior } from '@/components/ui/dialog-behavior'
 import { useTheme } from './theme-root'
-import { WorkspaceRoleContext } from './workspace-context'
 import { activeHref, primaryNav, workspaceNav, type NavItem, type WorkspaceRole } from './nav'
 
 interface WorkspaceShellProps {
@@ -90,9 +89,7 @@ export function WorkspaceShell(props: WorkspaceShellProps) {
         </div>
       )}
 
-      <main className="flex-1 min-w-0">
-        <WorkspaceRoleContext.Provider value={props.workspace.role}>{props.children}</WorkspaceRoleContext.Provider>
-      </main>
+      <main className="flex-1 min-w-0">{props.children}</main>
     </div>
   )
 }
@@ -181,7 +178,7 @@ function SidebarContent({
           }
         >
           {/* Dropdown clones each direct child, so no fragments here. */}
-          {propertyId && <DropdownItem onClick={() => router.push(routes.properties(slug))}>{t('switchProperty')}</DropdownItem>}
+          {propertyId && <DropdownItem onClick={() => router.push(routes.workspace(slug))}>{t('switchProperty')}</DropdownItem>}
           {propertyId && <DropdownDivider />}
           {workspaces.map((ws) => (
             <DropdownItem key={ws.id} onClick={() => router.push(routes.workspace(ws.slug))}>

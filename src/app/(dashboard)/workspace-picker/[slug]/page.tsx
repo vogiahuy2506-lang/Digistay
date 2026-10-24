@@ -473,7 +473,7 @@ export default function WorkspaceHomePage() {
       </main>
 
       {/* Create Property Modal */}
-      <Modal
+      <Modal showHeader
         isOpen={isCreateOpen}
         onClose={() => {
           setIsCreateOpen(false)

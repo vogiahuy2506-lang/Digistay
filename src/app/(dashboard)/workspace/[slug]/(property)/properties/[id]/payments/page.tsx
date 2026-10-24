@@ -691,7 +691,7 @@ export default function PaymentsPage() {
       </PageContainer>
 
       {/* Create Payment Modal */}
-      <Modal
+      <Modal showHeader
         isOpen={isCreating}
         onClose={() => setIsCreating(false)}
         title={t('createModal.title')}
@@ -764,7 +764,7 @@ export default function PaymentsPage() {
       </Modal>
 
       {/* View Payment Modal */}
-      <Modal
+      <Modal showHeader
         isOpen={!!selectedPayment}
         onClose={() => setSelectedPayment(null)}
         title={t('detail.title')}

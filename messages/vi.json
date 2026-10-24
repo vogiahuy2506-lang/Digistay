@@ -885,5 +885,111 @@
       "pricing": "Bảng giá",
       "login": "Đăng nhập trang quản lý"
     }
+  },
+  "workspaces": {
+    "title": "Workspace của bạn",
+    "lead": "Mỗi workspace là một chuỗi khách sạn: cơ sở, đặt phòng, nhân sự và website.",
+    "create": "Tạo workspace",
+    "search": "Tìm workspace",
+    "searchPlaceholder": "Tìm theo tên hoặc tên rút gọn",
+    "filter": {
+      "all": "Tất cả",
+      "owned": "Sở hữu",
+      "invited": "Được mời"
+    },
+    "open": "Mở",
+    "allWorkspaces": "Tất cả workspace",
+    "properties": "{count} cơ sở",
+    "members": "{count} thành viên",
+    "owner": "Chủ sở hữu",
+    "roles": {
+      "ADMIN": "Chủ",
+      "MANAGER": "Quản lý",
+      "RECEPTIONIST": "Lễ tân",
+      "USER": "Nhân viên"
+    },
+    "empty": {
+      "title": "Chưa có workspace nào",
+      "text": "Tạo workspace đầu tiên, rồi thêm cơ sở và mời nhân viên vào.",
+      "action": "Tạo workspace đầu tiên"
+    },
+    "noMatch": {
+      "title": "Không có workspace nào khớp",
+      "text": "Thử từ khoá khác, hoặc tạo một workspace mới."
+    },
+    "invitations": {
+      "title": "Lời mời cộng tác",
+      "pending": "{count} lời mời chờ xử lý",
+      "empty": "Không có lời mời nào đang chờ.",
+      "proposedRole": "Vai trò đề xuất: {role}",
+      "from": "Từ {sender}",
+      "accept": "Chấp nhận",
+      "decline": "Từ chối"
+    },
+    "account": {
+      "label": "Tài khoản của bạn",
+      "profile": "Hồ sơ",
+      "dark": "Giao diện tối",
+      "light": "Giao diện sáng",
+      "signOut": "Đăng xuất"
+    },
+    "form": {
+      "createTitle": "Tạo workspace mới",
+      "createLead": "Một môi trường vận hành riêng cho cơ sở hoặc chuỗi của bạn.",
+      "editTitle": "Chỉnh sửa workspace",
+      "name": "Tên workspace",
+      "namePlaceholder": "VD: An Nam Boutique Hotel",
+      "shortName": "Tên rút gọn",
+      "shortNameHint": "Địa chỉ website: {slug}.digistay.vn — dùng chữ thường, không dấu, không khoảng trắng.",
+      "shortNameEdit": "Đổi tên rút gọn",
+      "businessType": "Mô hình lưu trú",
+      "businessTypes": {
+        "boutique_hotel": "Boutique hotel",
+        "resort": "Resort & biệt thự",
+        "homestay": "Chuỗi homestay"
+      },
+      "logo": "Logo",
+      "logoUpload": "Tải logo lên",
+      "logoRemove": "Xoá logo",
+      "logoHint": "PNG, SVG hoặc JPG, tối đa 2 MB.",
+      "logoTooLarge": "Logo vượt quá 2 MB. Chọn tệp nhỏ hơn rồi thử lại.",
+      "logoAlt": "Logo workspace",
+      "description": "Mô tả",
+      "descriptionPlaceholder": "Ghi chú nội bộ về cơ sở này",
+      "currency": "Tiền tệ",
+      "timezone": "Múi giờ vận hành",
+      "cancel": "Huỷ",
+      "createSubmit": "Tạo workspace",
+      "editSubmit": "Lưu thay đổi",
+      "failed": "Không lưu được workspace. Kiểm tra lại thông tin rồi thử lại."
+    },
+    "actions": {
+      "edit": "Chỉnh sửa",
+      "delete": "Xoá workspace",
+      "deleteConfirm": "Xoá workspace “{name}”? Toàn bộ cơ sở và thành viên sẽ mất vĩnh viễn."
+    }
+  },
+  "workspaceHome": {
+    "title": "Cơ sở của bạn",
+    "lead": "Mỗi cơ sở là một khách sạn riêng: phòng, đặt phòng và website.",
+    "customize": "Tuỳ chỉnh",
+    "customizeLabel": "Tuỳ chỉnh cơ sở này: thành viên và thông tin chung",
+    "members": "Thành viên",
+    "search": "Tìm cơ sở",
+    "searchPlaceholder": "Tìm theo tên, thành phố hoặc địa chỉ",
+    "active": "Hoạt động",
+    "paused": "Tạm dừng",
+    "roomTypes": "{count} hạng phòng",
+    "open": "Quản lý",
+    "empty": {
+      "title": "Chưa có cơ sở nào",
+      "text": "Thêm cơ sở đầu tiên để bắt đầu đặt phòng và dựng website.",
+      "action": "Thêm cơ sở đầu tiên"
+    },
+    "noMatch": {
+      "title": "Không có cơ sở nào khớp",
+      "text": "Thử từ khoá khác, ví dụ chỉ tên thành phố."
+    },
+    "failed": "Không tải được danh sách cơ sở. Tải lại trang rồi thử lại."
   }
 }

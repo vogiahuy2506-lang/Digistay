@@ -670,7 +670,7 @@ export default function RoomTypesPage() {
       </PageContainer>
 
       {/* Create Modal */}
-      <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title={t('header.add')}>
+      <Modal showHeader isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title={t('header.add')}>
         <ModalBody className="space-y-4">
           <Input
             label={t('form.name')}
@@ -772,7 +772,7 @@ export default function RoomTypesPage() {
       </Modal>
 
       {/* Edit Modal */}
-      <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title={t('edit.title')}>
+      <Modal showHeader isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title={t('edit.title')}>
         <ModalBody className="space-y-4">
           <Input
             label={t('form.name')}
@@ -869,7 +869,7 @@ export default function RoomTypesPage() {
       </Modal>
 
       {/* Maintenance Modal */}
-      <Modal isOpen={isMaintenanceModalOpen} onClose={() => setIsMaintenanceModalOpen(false)} title={t('maintenance.add')}>
+      <Modal showHeader isOpen={isMaintenanceModalOpen} onClose={() => setIsMaintenanceModalOpen(false)} title={t('maintenance.add')}>
         <ModalBody className="space-y-4">
           <Select
             label={t('maintenance.form.roomType')}

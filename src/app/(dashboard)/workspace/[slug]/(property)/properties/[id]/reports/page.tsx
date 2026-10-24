@@ -92,7 +92,7 @@ export default function ReportsPage() {
           <CardContent className="p-12 text-center">
             <TrendingUp className="w-12 h-12 text-muted mx-auto mb-4" />
             <p className="text-muted mb-4">{t('selectProperty')}</p>
-            <Button onClick={() => router.push(routes.properties(params.slug))}>
+            <Button onClick={() => router.push(routes.workspace(params.slug))}>
               {t('chooseProperty')}
             </Button>
           </CardContent>

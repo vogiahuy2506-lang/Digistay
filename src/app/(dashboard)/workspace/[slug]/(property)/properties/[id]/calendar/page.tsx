@@ -1129,7 +1129,6 @@ export default function CalendarPage() {
         isOpen={showCreateBookingModal}
         onClose={() => setShowCreateBookingModal(false)}
         title={t('create.title')}
-        showHeader={false}
         size="full"
       >
             {/* Modal Header */}
@@ -1459,7 +1458,7 @@ export default function CalendarPage() {
       </Modal>
 
       {/* Booking Detail Modal */}
-      <Modal
+      <Modal showHeader
         isOpen={showBookingDetailModal}
         onClose={() => setShowBookingDetailModal(false)}
         title={t('detail.title', { code: selectedBooking?.bookingCode || '' })}
@@ -1612,7 +1611,7 @@ export default function CalendarPage() {
       </Modal>
 
       {/* Export Report Modal */}
-      <Modal
+      <Modal showHeader
         isOpen={showExportModal}
         onClose={() => setShowExportModal(false)}
         title={t('toolbar.exportTitle')}

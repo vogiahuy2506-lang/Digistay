@@ -4,7 +4,8 @@
   },
   "noWorkspace": {
     "title": "Vui lòng chọn Workspace",
-    "goTo": "Chuyển đến Workspace"
+    "goTo": "Chuyển đến Workspace",
+    "hint": "Bạn cần chọn một workspace để xem cài đặt."
   },
   "logo": {
     "upload": "Tải logo lên",
@@ -155,12 +156,13 @@
       "role": "Vai trò",
       "roleHint": "Quản trị viên có thể quản lý cơ sở và mời thành viên khác",
       "send": "Gửi lời mời"
-    }
+    },
+    "pending": "Lời mời đang chờ"
   },
   "settings": {
     "back": "Quay lại workspace",
-    "title": "Cài đặt Workspace",
-    "description": "Quản lý cấu hình cho {name}",
+    "title": "Thông tin cơ sở",
+    "description": "Cấu hình chung của {name}: tên, logo, tiền tệ và múi giờ vận hành.",
     "saved": "Lưu cài đặt thành công!",
     "saveFailed": "Lỗi khi lưu",
     "logoUploaded": "Logo đã được tải lên!",

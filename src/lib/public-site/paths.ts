@@ -20,10 +20,18 @@ export const SITE_BASE_HEADER = 'x-site-base'
 /** Also set by the middleware: the page's path within the site and its query (/rooms/x?checkIn=…), for the language switch. */
 export const SITE_PATH_HEADER = 'x-site-path'
 
+/**
+ * The site's base path for a hotel.
+ *
+ * `appUrl` is the app's own URL, used to tell the app's host from a hotel's
+ * custom domain. Left out, it comes from the environment; given as `undefined`,
+ * `null` or as something that is not a URL, the app's host is unknown and the
+ * prefix is used — the safe answer, since the app's host always needs it.
+ */
 export function siteBasePath(
   subdomain: string,
   host: string | null | undefined,
-  appUrl: string | undefined = process.env.NEXTAUTH_URL
+  ...appUrlArg: (string | null | undefined)[]
 ): string {
   const prefixed = `/${encodeURIComponent(subdomain)}`
   const hostname = (host ?? '').trim().toLowerCase().replace(/:\d+$/, '')
@@ -35,9 +43,12 @@ export function siteBasePath(
   // localhost and IP addresses are always the app itself.
   if (hostname === 'localhost' || /^[\d.]+$/.test(hostname) || hostname.startsWith('[')) return prefixed
 
+  // Only read the environment when the caller gave no app URL: passing
+  // `undefined` explicitly means "there is no app host".
+  const app = appUrlArg.length ? appUrlArg[0] : process.env.NEXTAUTH_URL
   let appHost = ''
   try {
-    appHost = appUrl ? new URL(appUrl).hostname.toLowerCase() : ''
+    appHost = app ? new URL(app).hostname.toLowerCase() : ''
   } catch {
     appHost = ''
   }

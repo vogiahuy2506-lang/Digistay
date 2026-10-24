@@ -22,7 +22,8 @@ describe('dashboard menu', () => {
   })
 
   it('shows the workspace menu outside a property', () => {
-    expect(primaryNav('demo').map((i) => i.key)).toEqual(['overview', 'properties'])
+    // The workspace home lists the properties, so "Cơ sở" is that one page.
+    expect(primaryNav('demo').map((i) => i.key)).toEqual(['properties'])
   })
 
   it('hides bank accounts and settings from everyone but the owner', () => {
@@ -32,5 +33,11 @@ describe('dashboard menu', () => {
     expect(forRole('MANAGER')).not.toContain('settings')
     expect(forRole('ADMIN')).toEqual(expect.arrayContaining(['bankAccounts', 'settings']))
     expect(forRole('USER')).toEqual(['overview', 'bookings'])
+  })
+
+  it('lights up "Cơ sở" on the workspace home', () => {
+    const outside = [...primaryNav('demo'), ...workspaceNav('demo')]
+    expect(activeHref('/workspace/demo', outside)).toBe('/workspace/demo')
+    expect(activeHref('/workspace/demo/settings', outside)).toBe('/workspace/demo/settings')
   })
 })

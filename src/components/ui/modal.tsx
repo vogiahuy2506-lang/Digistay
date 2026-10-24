@@ -10,10 +10,10 @@ import { useDialogBehavior } from './dialog-behavior'
 interface ModalProps {
   isOpen: boolean
   onClose: () => void
-  /** The dialog's name, shown in a header with `description` and a close button. */
+  /** The dialog's name for screen readers; shown too with `showHeader`. */
   title?: string
   description?: string
-  /** false: the dialog draws its own header; `title` still names it for screen readers. */
+  /** Show `title` and `description` in a header with a close button (else the dialog draws its own ModalHeader). */
   showHeader?: boolean
   children: React.ReactNode
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full'
@@ -47,7 +47,7 @@ function useCloseLabel() {
 // ModalHeader registers its id so the dialog is named by its header text.
 const ModalLabelContext = React.createContext<string | undefined>(undefined)
 
-export function Modal({ isOpen, onClose, title, description, showHeader = true, children, size = 'md' }: ModalProps) {
+export function Modal({ isOpen, onClose, title, description, showHeader = false, children, size = 'md' }: ModalProps) {
   const dialogRef = React.useRef<HTMLDivElement>(null)
   const labelId = React.useId()
   useDialogBehavior(dialogRef, isOpen, { onEscape: onClose, modal: true })

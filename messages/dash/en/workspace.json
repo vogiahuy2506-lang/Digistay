@@ -4,7 +4,8 @@
   },
   "noWorkspace": {
     "title": "Please choose a workspace",
-    "goTo": "Go to workspaces"
+    "goTo": "Go to workspaces",
+    "hint": "Choose a workspace to see its settings."
   },
   "logo": {
     "upload": "Upload logo",
@@ -155,12 +156,13 @@
       "role": "Role",
       "roleHint": "Admins can manage properties and invite other members",
       "send": "Send invitation"
-    }
+    },
+    "pending": "Pending invitations"
   },
   "settings": {
     "back": "Back to workspace",
-    "title": "Workspace settings",
-    "description": "Manage the settings of {name}",
+    "title": "Business details",
+    "description": "General settings of {name}: name, logo, currency and time zone.",
     "saved": "Settings saved!",
     "saveFailed": "Could not save",
     "logoUploaded": "Logo uploaded!",

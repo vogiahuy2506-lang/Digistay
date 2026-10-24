@@ -1,15 +1,17 @@
 'use client'
 
 import * as React from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { Header, PageContainer } from '@/components/layout'
-import { Card, CardHeader, CardTitle, CardContent, Button, Input, Select, Textarea, Badge } from '@/components/ui'
+import { TitleBlock } from '@/components/layout'
+import { Card, CardHeader, CardTitle, CardContent, Button, Input, Loading, Select, Textarea, Badge } from '@/components/ui'
 import {
   Settings, Building2, Globe, Bell, Shield, Users,
   Mail, Clock, DollarSign, Save, ArrowLeft, Upload
 } from 'lucide-react'
 import { useWorkspace } from '@/lib/hooks/use-workspace'
+import { cn } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
 import Image from 'next/image'
 
@@ -60,7 +62,7 @@ export default function WorkspaceSettingsPage() {
   const router = useRouter()
   const currencies = CURRENCIES.map((value) => ({ value, label: t(`currencies.${value}`) }))
   const businessTypes = BUSINESS_TYPES.map((value) => ({ value, label: t(`settings.general.businessTypes.${value}`) }))
-  const { workspace } = useWorkspace()
+  const { workspace, loading: wsLoading } = useWorkspace()
   const [settings, setSettings] = React.useState<WorkspaceSettings | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
@@ -201,45 +203,45 @@ export default function WorkspaceSettingsPage() {
     reader.readAsDataURL(file)
   }
 
+  if (wsLoading) {
+    return <Loading className="py-24" />
+  }
+
   if (!workspace) {
     return (
-      <PageContainer>
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Settings className="w-16 h-16 text-muted mx-auto mb-4" />
-            <p className="text-muted mb-4">{t('noWorkspace.title')}</p>
-            <Button onClick={() => router.push(routes.workspaces())}>
-              {t('noWorkspace.goTo')}
-            </Button>
-          </CardContent>
-        </Card>
-      </PageContainer>
+      <div className="rounded-box border border-line bg-panel px-6 py-16 text-center">
+        <Settings className="w-6 h-6 text-muted mx-auto mb-4" />
+        <p className="text-body text-fg mb-2">{t('noWorkspace.title')}</p>
+        <p className="text-small text-muted mb-6">{t('noWorkspace.hint')}</p>
+        <Button onClick={() => router.push(routes.workspaces())}>
+          {t('noWorkspace.goTo')}
+        </Button>
+      </div>
     )
   }
 
   if (isLoading) {
-    return (
-      <PageContainer>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-acc"></div>
-        </div>
-      </PageContainer>
-    )
+    return <Loading className="py-24" />
   }
 
   return (
-    <PageContainer>
-      <button
-        onClick={() => router.push(routes.workspace(workspace.slug))}
-        className="flex items-center gap-1.5 text-sm text-muted hover:text-acc mb-3"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        {t('settings.back')}
-      </button>
-
-      <Header
+    <>
+      <TitleBlock
         title={t('settings.title')}
-        description={t('settings.description', { name: workspace.name })}
+        lead={t('settings.description', { name: workspace.name })}
+        actions={
+          <Link
+            href={routes.members(workspace.slug)}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-ctl border border-ink h-9 sm:h-8 px-3',
+              'text-small font-medium text-fg hover:bg-panel transition-colors duration-160',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-acc'
+            )}
+          >
+            <Users className="w-4 h-4" aria-hidden="true" />
+            {tc('nav.members')}
+          </Link>
+        }
       />
 
       {/* Success/Error Messages */}
@@ -530,6 +532,6 @@ export default function WorkspaceSettingsPage() {
           </Card>
         </div>
       )}
-    </PageContainer>
+    </>
   )
 }

@@ -1,0 +1,869 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-22T14:48:36Z",
+  "title": "Design System: Digistay — Trang công khai",
+  "extensions": {
+    "colorMeta": {
+      "page": {
+        "role": "neutral",
+        "displayName": "Giấy",
+        "canonical": "oklch(98.3% 0.0045 78.3)",
+        "tonalRamp": [
+          "oklch(15% 0.0045 78.3)",
+          "oklch(25% 0.0045 78.3)",
+          "oklch(35% 0.0045 78.3)",
+          "oklch(45% 0.0045 78.3)",
+          "oklch(55% 0.0045 78.3)",
+          "oklch(65% 0.0045 78.3)",
+          "oklch(80% 0.0045 78.3)",
+          "oklch(95% 0.0045 78.3)"
+        ]
+      },
+      "panel": {
+        "role": "neutral",
+        "displayName": "Tấm",
+        "canonical": "oklch(100.0% 0.0000 89.9)",
+        "tonalRamp": [
+          "oklch(15% 0.0000 89.9)",
+          "oklch(25% 0.0000 89.9)",
+          "oklch(35% 0.0000 89.9)",
+          "oklch(45% 0.0000 89.9)",
+          "oklch(55% 0.0000 89.9)",
+          "oklch(65% 0.0000 89.9)",
+          "oklch(80% 0.0000 89.9)",
+          "oklch(95% 0.0000 89.9)"
+        ]
+      },
+      "fg": {
+        "role": "neutral",
+        "displayName": "Mực chữ",
+        "canonical": "oklch(22.5% 0.0041 128.7)",
+        "tonalRamp": [
+          "oklch(15% 0.0041 128.7)",
+          "oklch(25% 0.0041 128.7)",
+          "oklch(35% 0.0041 128.7)",
+          "oklch(45% 0.0041 128.7)",
+          "oklch(55% 0.0041 128.7)",
+          "oklch(65% 0.0041 128.7)",
+          "oklch(80% 0.0041 128.7)",
+          "oklch(95% 0.0041 128.7)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Chữ phụ",
+        "canonical": "oklch(51.5% 0.0119 81.8)",
+        "tonalRamp": [
+          "oklch(15% 0.0119 81.8)",
+          "oklch(25% 0.0119 81.8)",
+          "oklch(35% 0.0119 81.8)",
+          "oklch(45% 0.0119 81.8)",
+          "oklch(55% 0.0119 81.8)",
+          "oklch(65% 0.0119 81.8)",
+          "oklch(80% 0.0119 81.8)",
+          "oklch(95% 0.0119 81.8)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Đường kẻ",
+        "canonical": "oklch(91.4% 0.0121 79.8)",
+        "tonalRamp": [
+          "oklch(15% 0.0121 79.8)",
+          "oklch(25% 0.0121 79.8)",
+          "oklch(35% 0.0121 79.8)",
+          "oklch(45% 0.0121 79.8)",
+          "oklch(55% 0.0121 79.8)",
+          "oklch(65% 0.0121 79.8)",
+          "oklch(80% 0.0121 79.8)",
+          "oklch(95% 0.0121 79.8)"
+        ]
+      },
+      "ink": {
+        "role": "primary",
+        "displayName": "Mực nút",
+        "canonical": "oklch(22.2% 0.0041 84.6)",
+        "tonalRamp": [
+          "oklch(15% 0.0041 84.6)",
+          "oklch(25% 0.0041 84.6)",
+          "oklch(35% 0.0041 84.6)",
+          "oklch(45% 0.0041 84.6)",
+          "oklch(55% 0.0041 84.6)",
+          "oklch(65% 0.0041 84.6)",
+          "oklch(80% 0.0041 84.6)",
+          "oklch(95% 0.0041 84.6)"
+        ]
+      },
+      "on-ink": {
+        "role": "primary",
+        "displayName": "Chữ trên nút",
+        "canonical": "oklch(98.3% 0.0045 78.3)",
+        "tonalRamp": [
+          "oklch(15% 0.0045 78.3)",
+          "oklch(25% 0.0045 78.3)",
+          "oklch(35% 0.0045 78.3)",
+          "oklch(45% 0.0045 78.3)",
+          "oklch(55% 0.0045 78.3)",
+          "oklch(65% 0.0045 78.3)",
+          "oklch(80% 0.0045 78.3)",
+          "oklch(95% 0.0045 78.3)"
+        ]
+      },
+      "brand": {
+        "role": "primary",
+        "displayName": "Đất nung",
+        "canonical": "oklch(49.3% 0.1603 33.1)",
+        "tonalRamp": [
+          "oklch(15% 0.0955 33.1)",
+          "oklch(25% 0.1593 33.1)",
+          "oklch(35% 0.1603 33.1)",
+          "oklch(45% 0.1603 33.1)",
+          "oklch(55% 0.1603 33.1)",
+          "oklch(65% 0.1603 33.1)",
+          "oklch(80% 0.1266 33.1)",
+          "oklch(95% 0.0200 33.1)"
+        ]
+      },
+      "acc": {
+        "role": "secondary",
+        "displayName": "Nhấn theo ngữ cảnh",
+        "canonical": "oklch(49.3% 0.1603 33.1)",
+        "tonalRamp": [
+          "oklch(15% 0.0955 33.1)",
+          "oklch(25% 0.1593 33.1)",
+          "oklch(35% 0.1603 33.1)",
+          "oklch(45% 0.1603 33.1)",
+          "oklch(55% 0.1603 33.1)",
+          "oklch(65% 0.1603 33.1)",
+          "oklch(80% 0.1266 33.1)",
+          "oklch(95% 0.0200 33.1)"
+        ]
+      },
+      "plain": {
+        "role": "tertiary",
+        "displayName": "Xám trạng thái",
+        "canonical": "oklch(46.2% 0.0109 78.2)",
+        "tonalRamp": [
+          "oklch(15% 0.0109 78.2)",
+          "oklch(25% 0.0109 78.2)",
+          "oklch(35% 0.0109 78.2)",
+          "oklch(45% 0.0109 78.2)",
+          "oklch(55% 0.0109 78.2)",
+          "oklch(65% 0.0109 78.2)",
+          "oklch(80% 0.0109 78.2)",
+          "oklch(95% 0.0109 78.2)"
+        ]
+      },
+      "plain-soft": {
+        "role": "neutral",
+        "displayName": "Dải mềm",
+        "canonical": "oklch(94.2% 0.0091 78.3)",
+        "tonalRamp": [
+          "oklch(15% 0.0091 78.3)",
+          "oklch(25% 0.0091 78.3)",
+          "oklch(35% 0.0091 78.3)",
+          "oklch(45% 0.0091 78.3)",
+          "oklch(55% 0.0091 78.3)",
+          "oklch(65% 0.0091 78.3)",
+          "oklch(80% 0.0091 78.3)",
+          "oklch(95% 0.0091 78.3)"
+        ]
+      },
+      "ok": {
+        "role": "tertiary",
+        "displayName": "Xanh lá",
+        "canonical": "oklch(47.5% 0.0904 154.7)",
+        "tonalRamp": [
+          "oklch(15% 0.0904 154.7)",
+          "oklch(25% 0.0904 154.7)",
+          "oklch(35% 0.0904 154.7)",
+          "oklch(45% 0.0904 154.7)",
+          "oklch(55% 0.0904 154.7)",
+          "oklch(65% 0.0904 154.7)",
+          "oklch(80% 0.0904 154.7)",
+          "oklch(95% 0.0200 154.7)"
+        ]
+      },
+      "ok-soft": {
+        "role": "tertiary",
+        "displayName": "Nền xanh lá",
+        "canonical": "oklch(94.5% 0.0190 157.9)",
+        "tonalRamp": [
+          "oklch(15% 0.0190 157.9)",
+          "oklch(25% 0.0190 157.9)",
+          "oklch(35% 0.0190 157.9)",
+          "oklch(45% 0.0190 157.9)",
+          "oklch(55% 0.0190 157.9)",
+          "oklch(65% 0.0190 157.9)",
+          "oklch(80% 0.0190 157.9)",
+          "oklch(95% 0.0190 157.9)"
+        ]
+      },
+      "warn": {
+        "role": "tertiary",
+        "displayName": "Hổ phách",
+        "canonical": "oklch(50.0% 0.1085 69.6)",
+        "tonalRamp": [
+          "oklch(15% 0.0955 69.6)",
+          "oklch(25% 0.1085 69.6)",
+          "oklch(35% 0.1085 69.6)",
+          "oklch(45% 0.1085 69.6)",
+          "oklch(55% 0.1085 69.6)",
+          "oklch(65% 0.1085 69.6)",
+          "oklch(80% 0.1085 69.6)",
+          "oklch(95% 0.0200 69.6)"
+        ]
+      },
+      "warn-soft": {
+        "role": "tertiary",
+        "displayName": "Nền hổ phách",
+        "canonical": "oklch(95.7% 0.0361 87.8)",
+        "tonalRamp": [
+          "oklch(15% 0.0361 87.8)",
+          "oklch(25% 0.0361 87.8)",
+          "oklch(35% 0.0361 87.8)",
+          "oklch(45% 0.0361 87.8)",
+          "oklch(55% 0.0361 87.8)",
+          "oklch(65% 0.0361 87.8)",
+          "oklch(80% 0.0361 87.8)",
+          "oklch(95% 0.0200 87.8)"
+        ]
+      },
+      "err": {
+        "role": "tertiary",
+        "displayName": "Hồng đỏ",
+        "canonical": "oklch(49.2% 0.1883 6.7)",
+        "tonalRamp": [
+          "oklch(15% 0.0955 6.7)",
+          "oklch(25% 0.1593 6.7)",
+          "oklch(35% 0.1883 6.7)",
+          "oklch(45% 0.1883 6.7)",
+          "oklch(55% 0.1883 6.7)",
+          "oklch(65% 0.1883 6.7)",
+          "oklch(80% 0.1266 6.7)",
+          "oklch(95% 0.0200 6.7)"
+        ]
+      },
+      "err-soft": {
+        "role": "tertiary",
+        "displayName": "Nền hồng đỏ",
+        "canonical": "oklch(94.7% 0.0251 352.5)",
+        "tonalRamp": [
+          "oklch(15% 0.0251 352.5)",
+          "oklch(25% 0.0251 352.5)",
+          "oklch(35% 0.0251 352.5)",
+          "oklch(45% 0.0251 352.5)",
+          "oklch(55% 0.0251 352.5)",
+          "oklch(65% 0.0251 352.5)",
+          "oklch(80% 0.0251 352.5)",
+          "oklch(95% 0.0200 352.5)"
+        ]
+      },
+      "info": {
+        "role": "tertiary",
+        "displayName": "Xanh dương",
+        "canonical": "oklch(43.4% 0.1203 261.0)",
+        "tonalRamp": [
+          "oklch(15% 0.0955 261.0)",
+          "oklch(25% 0.1203 261.0)",
+          "oklch(35% 0.1203 261.0)",
+          "oklch(45% 0.1203 261.0)",
+          "oklch(55% 0.1203 261.0)",
+          "oklch(65% 0.1203 261.0)",
+          "oklch(80% 0.1203 261.0)",
+          "oklch(95% 0.0200 261.0)"
+        ]
+      },
+      "info-soft": {
+        "role": "tertiary",
+        "displayName": "Nền xanh dương",
+        "canonical": "oklch(94.4% 0.0166 259.4)",
+        "tonalRamp": [
+          "oklch(15% 0.0166 259.4)",
+          "oklch(25% 0.0166 259.4)",
+          "oklch(35% 0.0166 259.4)",
+          "oklch(45% 0.0166 259.4)",
+          "oklch(55% 0.0166 259.4)",
+          "oklch(65% 0.0166 259.4)",
+          "oklch(80% 0.0166 259.4)",
+          "oklch(95% 0.0166 259.4)"
+        ]
+      },
+      "page-dark": {
+        "role": "neutral",
+        "displayName": "Giấy (tối)",
+        "canonical": "oklch(21.4% 0.0042 84.6)",
+        "tonalRamp": [
+          "oklch(15% 0.0042 84.6)",
+          "oklch(25% 0.0042 84.6)",
+          "oklch(35% 0.0042 84.6)",
+          "oklch(45% 0.0042 84.6)",
+          "oklch(55% 0.0042 84.6)",
+          "oklch(65% 0.0042 84.6)",
+          "oklch(80% 0.0042 84.6)",
+          "oklch(95% 0.0042 84.6)"
+        ]
+      },
+      "panel-dark": {
+        "role": "neutral",
+        "displayName": "Tấm (tối)",
+        "canonical": "oklch(24.5% 0.0064 78.2)",
+        "tonalRamp": [
+          "oklch(15% 0.0064 78.2)",
+          "oklch(25% 0.0064 78.2)",
+          "oklch(35% 0.0064 78.2)",
+          "oklch(45% 0.0064 78.2)",
+          "oklch(55% 0.0064 78.2)",
+          "oklch(65% 0.0064 78.2)",
+          "oklch(80% 0.0064 78.2)",
+          "oklch(95% 0.0064 78.2)"
+        ]
+      },
+      "fg-dark": {
+        "role": "neutral",
+        "displayName": "Mực chữ (tối)",
+        "canonical": "oklch(95.1% 0.0091 78.3)",
+        "tonalRamp": [
+          "oklch(15% 0.0091 78.3)",
+          "oklch(25% 0.0091 78.3)",
+          "oklch(35% 0.0091 78.3)",
+          "oklch(45% 0.0091 78.3)",
+          "oklch(55% 0.0091 78.3)",
+          "oklch(65% 0.0091 78.3)",
+          "oklch(80% 0.0091 78.3)",
+          "oklch(95% 0.0091 78.3)"
+        ]
+      },
+      "muted-dark": {
+        "role": "neutral",
+        "displayName": "Chữ phụ (tối)",
+        "canonical": "oklch(72.8% 0.0176 79.3)",
+        "tonalRamp": [
+          "oklch(15% 0.0176 79.3)",
+          "oklch(25% 0.0176 79.3)",
+          "oklch(35% 0.0176 79.3)",
+          "oklch(45% 0.0176 79.3)",
+          "oklch(55% 0.0176 79.3)",
+          "oklch(65% 0.0176 79.3)",
+          "oklch(80% 0.0176 79.3)",
+          "oklch(95% 0.0176 79.3)"
+        ]
+      },
+      "line-dark": {
+        "role": "neutral",
+        "displayName": "Đường kẻ (tối)",
+        "canonical": "oklch(33.5% 0.0103 73.6)",
+        "tonalRamp": [
+          "oklch(15% 0.0103 73.6)",
+          "oklch(25% 0.0103 73.6)",
+          "oklch(35% 0.0103 73.6)",
+          "oklch(45% 0.0103 73.6)",
+          "oklch(55% 0.0103 73.6)",
+          "oklch(65% 0.0103 73.6)",
+          "oklch(80% 0.0103 73.6)",
+          "oklch(95% 0.0103 73.6)"
+        ]
+      },
+      "ink-dark": {
+        "role": "primary",
+        "displayName": "Mực nút (tối)",
+        "canonical": "oklch(95.1% 0.0091 78.3)",
+        "tonalRamp": [
+          "oklch(15% 0.0091 78.3)",
+          "oklch(25% 0.0091 78.3)",
+          "oklch(35% 0.0091 78.3)",
+          "oklch(45% 0.0091 78.3)",
+          "oklch(55% 0.0091 78.3)",
+          "oklch(65% 0.0091 78.3)",
+          "oklch(80% 0.0091 78.3)",
+          "oklch(95% 0.0091 78.3)"
+        ]
+      },
+      "on-ink-dark": {
+        "role": "primary",
+        "displayName": "Chữ trên nút (tối)",
+        "canonical": "oklch(22.2% 0.0041 84.6)",
+        "tonalRamp": [
+          "oklch(15% 0.0041 84.6)",
+          "oklch(25% 0.0041 84.6)",
+          "oklch(35% 0.0041 84.6)",
+          "oklch(45% 0.0041 84.6)",
+          "oklch(55% 0.0041 84.6)",
+          "oklch(65% 0.0041 84.6)",
+          "oklch(80% 0.0041 84.6)",
+          "oklch(95% 0.0041 84.6)"
+        ]
+      },
+      "brand-dark": {
+        "role": "primary",
+        "displayName": "Đất nung (tối)",
+        "canonical": "oklch(73.6% 0.1277 36.6)",
+        "tonalRamp": [
+          "oklch(15% 0.0955 36.6)",
+          "oklch(25% 0.1277 36.6)",
+          "oklch(35% 0.1277 36.6)",
+          "oklch(45% 0.1277 36.6)",
+          "oklch(55% 0.1277 36.6)",
+          "oklch(65% 0.1277 36.6)",
+          "oklch(80% 0.1266 36.6)",
+          "oklch(95% 0.0200 36.6)"
+        ]
+      },
+      "acc-dark": {
+        "role": "secondary",
+        "displayName": "Nhấn (tối)",
+        "canonical": "oklch(73.6% 0.1277 36.6)",
+        "tonalRamp": [
+          "oklch(15% 0.0955 36.6)",
+          "oklch(25% 0.1277 36.6)",
+          "oklch(35% 0.1277 36.6)",
+          "oklch(45% 0.1277 36.6)",
+          "oklch(55% 0.1277 36.6)",
+          "oklch(65% 0.1277 36.6)",
+          "oklch(80% 0.1266 36.6)",
+          "oklch(95% 0.0200 36.6)"
+        ]
+      },
+      "plain-dark": {
+        "role": "tertiary",
+        "displayName": "Xám trạng thái (tối)",
+        "canonical": "oklch(81.7% 0.0171 79.3)",
+        "tonalRamp": [
+          "oklch(15% 0.0171 79.3)",
+          "oklch(25% 0.0171 79.3)",
+          "oklch(35% 0.0171 79.3)",
+          "oklch(45% 0.0171 79.3)",
+          "oklch(55% 0.0171 79.3)",
+          "oklch(65% 0.0171 79.3)",
+          "oklch(80% 0.0171 79.3)",
+          "oklch(95% 0.0171 79.3)"
+        ]
+      },
+      "plain-soft-dark": {
+        "role": "neutral",
+        "displayName": "Dải mềm (tối)",
+        "canonical": "oklch(31.1% 0.0097 80.7)",
+        "tonalRamp": [
+          "oklch(15% 0.0097 80.7)",
+          "oklch(25% 0.0097 80.7)",
+          "oklch(35% 0.0097 80.7)",
+          "oklch(45% 0.0097 80.7)",
+          "oklch(55% 0.0097 80.7)",
+          "oklch(65% 0.0097 80.7)",
+          "oklch(80% 0.0097 80.7)",
+          "oklch(95% 0.0097 80.7)"
+        ]
+      },
+      "ok-dark": {
+        "role": "tertiary",
+        "displayName": "Xanh lá (tối)",
+        "canonical": "oklch(79.5% 0.1072 156.7)",
+        "tonalRamp": [
+          "oklch(15% 0.0955 156.7)",
+          "oklch(25% 0.1072 156.7)",
+          "oklch(35% 0.1072 156.7)",
+          "oklch(45% 0.1072 156.7)",
+          "oklch(55% 0.1072 156.7)",
+          "oklch(65% 0.1072 156.7)",
+          "oklch(80% 0.1072 156.7)",
+          "oklch(95% 0.0200 156.7)"
+        ]
+      },
+      "ok-soft-dark": {
+        "role": "tertiary",
+        "displayName": "Nền xanh lá (tối)",
+        "canonical": "oklch(29.3% 0.0309 160.7)",
+        "tonalRamp": [
+          "oklch(15% 0.0309 160.7)",
+          "oklch(25% 0.0309 160.7)",
+          "oklch(35% 0.0309 160.7)",
+          "oklch(45% 0.0309 160.7)",
+          "oklch(55% 0.0309 160.7)",
+          "oklch(65% 0.0309 160.7)",
+          "oklch(80% 0.0309 160.7)",
+          "oklch(95% 0.0200 160.7)"
+        ]
+      },
+      "warn-dark": {
+        "role": "tertiary",
+        "displayName": "Hổ phách (tối)",
+        "canonical": "oklch(82.4% 0.1200 83.0)",
+        "tonalRamp": [
+          "oklch(15% 0.0955 83.0)",
+          "oklch(25% 0.1200 83.0)",
+          "oklch(35% 0.1200 83.0)",
+          "oklch(45% 0.1200 83.0)",
+          "oklch(55% 0.1200 83.0)",
+          "oklch(65% 0.1200 83.0)",
+          "oklch(80% 0.1200 83.0)",
+          "oklch(95% 0.0200 83.0)"
+        ]
+      },
+      "warn-soft-dark": {
+        "role": "tertiary",
+        "displayName": "Nền hổ phách (tối)",
+        "canonical": "oklch(29.2% 0.0363 81.5)",
+        "tonalRamp": [
+          "oklch(15% 0.0363 81.5)",
+          "oklch(25% 0.0363 81.5)",
+          "oklch(35% 0.0363 81.5)",
+          "oklch(45% 0.0363 81.5)",
+          "oklch(55% 0.0363 81.5)",
+          "oklch(65% 0.0363 81.5)",
+          "oklch(80% 0.0363 81.5)",
+          "oklch(95% 0.0200 81.5)"
+        ]
+      },
+      "err-dark": {
+        "role": "tertiary",
+        "displayName": "Hồng đỏ (tối)",
+        "canonical": "oklch(76.0% 0.1345 358.5)",
+        "tonalRamp": [
+          "oklch(15% 0.0955 358.5)",
+          "oklch(25% 0.1345 358.5)",
+          "oklch(35% 0.1345 358.5)",
+          "oklch(45% 0.1345 358.5)",
+          "oklch(55% 0.1345 358.5)",
+          "oklch(65% 0.1345 358.5)",
+          "oklch(80% 0.1266 358.5)",
+          "oklch(95% 0.0200 358.5)"
+        ]
+      },
+      "err-soft-dark": {
+        "role": "tertiary",
+        "displayName": "Nền hồng đỏ (tối)",
+        "canonical": "oklch(27.5% 0.0485 354.5)",
+        "tonalRamp": [
+          "oklch(15% 0.0485 354.5)",
+          "oklch(25% 0.0485 354.5)",
+          "oklch(35% 0.0485 354.5)",
+          "oklch(45% 0.0485 354.5)",
+          "oklch(55% 0.0485 354.5)",
+          "oklch(65% 0.0485 354.5)",
+          "oklch(80% 0.0485 354.5)",
+          "oklch(95% 0.0200 354.5)"
+        ]
+      },
+      "info-dark": {
+        "role": "tertiary",
+        "displayName": "Xanh dương (tối)",
+        "canonical": "oklch(79.5% 0.0874 261.4)",
+        "tonalRamp": [
+          "oklch(15% 0.0874 261.4)",
+          "oklch(25% 0.0874 261.4)",
+          "oklch(35% 0.0874 261.4)",
+          "oklch(45% 0.0874 261.4)",
+          "oklch(55% 0.0874 261.4)",
+          "oklch(65% 0.0874 261.4)",
+          "oklch(80% 0.0874 261.4)",
+          "oklch(95% 0.0200 261.4)"
+        ]
+      },
+      "info-soft-dark": {
+        "role": "tertiary",
+        "displayName": "Nền xanh dương (tối)",
+        "canonical": "oklch(28.4% 0.0423 261.2)",
+        "tonalRamp": [
+          "oklch(15% 0.0423 261.2)",
+          "oklch(25% 0.0423 261.2)",
+          "oklch(35% 0.0423 261.2)",
+          "oklch(45% 0.0423 261.2)",
+          "oklch(55% 0.0423 261.2)",
+          "oklch(65% 0.0423 261.2)",
+          "oklch(80% 0.0423 261.2)",
+          "oklch(95% 0.0200 261.2)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Tiêu đề hero trang chủ và tiêu đề trang bảng giá (72 px từ lg)."
+      },
+      "h1": {
+        "displayName": "H1",
+        "purpose": "Tiêu đề trang liên hệ, điều khoản, bảo mật, 404; trang tài khoản 44 px."
+      },
+      "h2": {
+        "displayName": "H2",
+        "purpose": "Tên tính năng (28 px trên điện thoại, 36 px màn rộng)."
+      },
+      "h3": {
+        "displayName": "H3",
+        "purpose": "Tên bước trong khối \"Ba bước\"."
+      },
+      "lead": {
+        "displayName": "Lead",
+        "purpose": "Đoạn mở đầu dưới tiêu đề, tối đa 720 px."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Thân bài, nút, ô nhập (15 px)."
+      },
+      "small": {
+        "displayName": "Small",
+        "purpose": "Nhãn ô nhập, gợi ý, chú thích ảnh, chân bảng (12.5–14.5 px)."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Mắt trên hero, tên cột thông tin, tiêu đề nhóm bảng: 11 px HOA giãn chữ."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Số thứ tự tính năng và bước, địa chỉ trong thanh trình duyệt."
+      }
+    },
+    "shadows": [
+      {
+        "name": "shot-hero",
+        "value": "0 40px 80px -48px rgb(28 27 25 / 0.45)",
+        "purpose": "Khung trình duyệt lớn ở trang chủ — ngoại lệ duy nhất cho bóng đổ."
+      },
+      {
+        "name": "shot-secondary",
+        "value": "0 40px 80px -40px rgb(28 27 25 / 0.5)",
+        "purpose": "Khung ảnh nhỏ hơn đè lên khung lớn."
+      },
+      {
+        "name": "shot-feature",
+        "value": "0 32px 64px -44px rgb(28 27 25 / 0.4)",
+        "purpose": "Khung ảnh trong từng khối tính năng."
+      },
+      {
+        "name": "shot-mobile",
+        "value": "0 24px 48px -32px rgb(28 27 25 / 0.45)",
+        "purpose": "Cặp ảnh trên điện thoại."
+      },
+      {
+        "name": "menu-raised",
+        "value": "var(--ds-shadow-raised) — 0 28px 48px -32px rgb(28 27 25 / 0.35) ở theme sáng, none ở theme tối",
+        "purpose": "Bảng menu di động đang mở dưới đầu điều hướng."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-ds",
+        "value": "cubic-bezier(0.2, 0.7, 0.2, 1)",
+        "purpose": "Đường cong duy nhất của hệ thống."
+      },
+      {
+        "name": "duration-control",
+        "value": "160ms",
+        "purpose": "Mọi chuyển trạng thái màu, viền, nền."
+      },
+      {
+        "name": "hover-lift",
+        "value": "translateY(-1px) 160ms",
+        "purpose": "Nút chính nhấc 1 px khi rê; tắt khi prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "xl",
+        "value": "1280px"
+      },
+      {
+        "name": "2xl",
+        "value": "1536px"
+      }
+    ],
+    "spacing": {
+      "frame-max": "1440px",
+      "frame-gutter": "20px / 32px (sm) / 80px (lg)",
+      "section-mobile": "96px",
+      "section-lg": "112–144px",
+      "column-gap": "72–96px"
+    },
+    "radii": {
+      "ctl": "var(--ds-r-ctl, 6px)",
+      "box": "var(--ds-r-box, 10px)",
+      "sm": "4px",
+      "logo-square": "3px",
+      "full": "9999px"
+    }
+  },
+  "components": [
+    {
+      "name": "Nút chính (mực)",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Hành động chính của trang: nền mực, chữ giấy, cao 52 px.",
+      "html": "<button class=\"ds-btn-primary\">Đăng ký</button>",
+      "css": ".ds-btn-primary {\n  font-family: var(--font-inter), Inter, system-ui, sans-serif; font-size: 15px; font-weight: 500;\n  color: var(--ds-on-ink); background: var(--ds-ink);\n  border: 1px solid transparent; border-radius: var(--ds-r-ctl, 6px);\n  height: 52px; padding: 0 28px; cursor: pointer;\n  transition: background-color 160ms cubic-bezier(0.2, 0.7, 0.2, 1), transform 160ms cubic-bezier(0.2, 0.7, 0.2, 1);\n}\n.ds-btn-primary:hover {\n  background: color-mix(in srgb, var(--ds-ink) 90%, transparent); transform: translateY(-1px);\n}\n.ds-btn-primary:focus-visible { outline: 2px solid var(--ds-acc); outline-offset: 2px; }\n@media (prefers-reduced-motion: reduce) {\n  .ds-btn-primary { transition: none; }\n  .ds-btn-primary:hover { transform: none; }\n}"
+    },
+    {
+      "name": "Nút phụ (viền mực)",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Hành động thứ hai: viền mực đậm hơn viền thường, hover nền tấm.",
+      "html": "<button class=\"ds-btn-secondary\">Xem bảng giá</button>",
+      "css": ".ds-btn-secondary {\n  font-family: var(--font-inter), Inter, system-ui, sans-serif; font-size: 15px; font-weight: 500;\n  color: var(--ds-fg); background: transparent;\n  border: 1px solid var(--ds-ink); border-radius: var(--ds-r-ctl, 6px);\n  height: 52px; padding: 0 26px; cursor: pointer;\n  transition: background-color 160ms cubic-bezier(0.2, 0.7, 0.2, 1);\n}\n.ds-btn-secondary:hover { background: var(--ds-panel); }\n.ds-btn-secondary:focus-visible { outline: 2px solid var(--ds-acc); outline-offset: 2px; }"
+    },
+    {
+      "name": "Liên kết điều hướng có gạch chân",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Liên kết trang trong đầu điều hướng: gạch dưới 1 px; trang đang xem đậm và gạch đậm.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-link ds-nav-link-active\" href=\"#\">Bảng giá</a><a class=\"ds-nav-link\" href=\"#\">Liên hệ</a></nav>",
+      "css": ".ds-nav { display: flex; gap: 32px; font-family: var(--font-inter), Inter, system-ui, sans-serif; font-size: 14px; }\n.ds-nav-link {\n  color: var(--ds-fg); text-decoration: none; padding: 6px 0 0;\n  border-bottom: 1px solid transparent; transition: border-color 160ms cubic-bezier(0.2, 0.7, 0.2, 1);\n}\n.ds-nav-link:hover { border-bottom-color: var(--ds-line); }\n.ds-nav-link-active { font-weight: 500; border-bottom-color: var(--ds-fg); }"
+    },
+    {
+      "name": "Ô nhập có nhãn",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Ô nhập 46 px: focus đổi viền sang mực kèm vòng 3 px mực 10 phần trăm.",
+      "html": "<label class=\"ds-field\">\n  <span class=\"ds-field-label\">Email</span>\n  <input class=\"ds-input\" type=\"email\" placeholder=\"ban@khachsan.vn\">\n  <span class=\"ds-field-error\">⚠ Email không đúng</span>\n</label>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 8px; font-family: var(--font-inter), Inter, system-ui, sans-serif; }\n.ds-field-label { font-size: 14px; font-weight: 500; color: var(--ds-fg); }\n.ds-input {\n  height: 46px; width: 100%; padding: 0 14px;\n  font-family: var(--font-inter), Inter, system-ui, sans-serif; font-size: 15px; color: var(--ds-fg);\n  background: var(--ds-panel); border: 1px solid var(--ds-line);\n  border-radius: var(--ds-r-ctl, 6px);\n  transition: border-color 160ms cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 160ms cubic-bezier(0.2, 0.7, 0.2, 1);\n}\n.ds-input::placeholder { color: color-mix(in srgb, var(--ds-muted) 80%, transparent); }\n.ds-input:hover { border-color: var(--ds-muted); }\n.ds-input:focus { outline: none; border-color: var(--ds-ink); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ds-ink) 10%, transparent); }\n.ds-field-error { font-size: 13px; color: var(--ds-err); }"
+    },
+    {
+      "name": "Thông báo lỗi",
+      "kind": "custom",
+      "refersTo": "notice-err",
+      "description": "Khối thông báo trên biểu mẫu: nền hồng rất nhạt, viền nhạt, luôn có ⚠ và câu tiếng Việt.",
+      "html": "<div class=\"ds-notice\" role=\"alert\"><b>⚠ Không gửi được.</b> Bạn thử lại sau ít phút.</div>",
+      "css": ".ds-notice {\n  font-family: var(--font-inter), Inter, system-ui, sans-serif; font-size: 14px; line-height: 1.55; color: var(--ds-fg);\n  background: var(--ds-err-soft); border: 1px solid color-mix(in srgb, var(--ds-err) 25%, transparent);\n  border-radius: var(--ds-r-ctl, 6px); padding: 12px 16px;\n}\n.ds-notice b { color: var(--ds-err); }"
+    },
+    {
+      "name": "Thẻ gói",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Thẻ gói phẳng: nền tấm, viền đường kẻ, không bóng; tên gói là nhãn HOA.",
+      "html": "<div class=\"ds-plan\">\n  <p class=\"ds-plan-name\">Growth</p>\n  <p class=\"ds-plan-price\">1.990.000 ₫<span class=\"ds-plan-per\">/tháng</span></p>\n  <p class=\"ds-plan-vat\">Chưa gồm VAT</p>\n</div>",
+      "css": ".ds-plan {\n  background: var(--ds-panel); border: 1px solid var(--ds-line);\n  border-radius: var(--ds-r-box, 10px);\n  padding: 32px; font-family: var(--font-inter), Inter, system-ui, sans-serif;\n}\n.ds-plan-name {\n  margin: 0; font-size: 11px; font-weight: 500; letter-spacing: 0.16em;\n  text-transform: uppercase; color: var(--ds-muted);\n}\n.ds-plan-price {\n  margin: 24px 0 0; font-size: 34px; font-weight: 600; line-height: 1;\n  letter-spacing: -0.015em; font-variant-numeric: tabular-nums; color: var(--ds-fg);\n}\n.ds-plan-per { margin-left: 8px; font-size: 14px; font-weight: 400; color: var(--ds-muted); }\n.ds-plan-vat { margin: 8px 0 0; font-size: 13px; color: var(--ds-muted); }"
+    },
+    {
+      "name": "Chip chọn",
+      "kind": "chip",
+      "refersTo": "chip-selected",
+      "description": "Chip chọn chủ đề liên hệ hoặc gói trên điện thoại; ô đang chọn có chấm tròn mực.",
+      "html": "<div class=\"ds-chips\">\n  <span class=\"ds-chip ds-chip-on\"><span class=\"ds-dot\"></span>Hỏi về gói dịch vụ</span>\n  <span class=\"ds-chip\">Hỗ trợ kỹ thuật</span>\n</div>",
+      "css": ".ds-chips { display: flex; gap: 8px; font-family: var(--font-inter), Inter, system-ui, sans-serif; }\n.ds-chip {\n  display: inline-flex; align-items: center; gap: 10px;\n  height: 44px; padding: 0 16px; font-size: 15px; color: var(--ds-fg);\n  background: var(--ds-panel); border: 1px solid var(--ds-line);\n  border-radius: var(--ds-r-ctl, 6px); transition: border-color 160ms cubic-bezier(0.2, 0.7, 0.2, 1);\n}\n.ds-chip:hover { border-color: var(--ds-muted); }\n.ds-chip-on {\n  background: color-mix(in srgb, var(--ds-plain-soft) 60%, transparent); border-color: var(--ds-ink); box-shadow: 0 0 0 1px var(--ds-ink);\n}\n.ds-dot {\n  width: 16px; height: 16px; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--ds-ink) 70%, transparent);\n  display: inline-flex; align-items: center; justify-content: center;\n}\n.ds-chip-on .ds-dot::after {\n  content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--ds-ink);\n}\n.ds-chip:focus-within { outline: 2px solid var(--ds-acc); outline-offset: 2px; }"
+    },
+    {
+      "name": "Khung trình duyệt",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "Dấu vân tay của nhóm trang: ảnh chụp thật trong khung có thanh địa chỉ, luôn kèm bóng.",
+      "html": "<figure class=\"ds-shot\">\n  <div class=\"ds-shot-bar\"><span></span><span></span><span></span><code>digistay.vn/workspace/…/bookings</code></div>\n  <div class=\"ds-shot-body\"></div>\n</figure>",
+      "css": ".ds-shot {\n  margin: 0; overflow: hidden; background: var(--ds-panel);\n  border: 1px solid var(--ds-line); border-radius: var(--ds-r-box, 10px);\n  box-shadow: 0 40px 80px -48px rgb(28 27 25 / 0.45);\n}\n.ds-shot-bar {\n  display: flex; align-items: center; gap: 12px; height: 36px; padding: 0 14px;\n  background: color-mix(in srgb, var(--ds-plain-soft) 60%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--ds-line) 70%, transparent);\n}\n.ds-shot-bar span { width: 8px; height: 8px; border-radius: 50%; background: var(--ds-line); }\n.ds-shot-bar code {\n  font-family: var(--font-jetbrains-mono), ui-monospace, Menlo, monospace; font-size: 11.5px; color: var(--ds-muted);\n  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;\n}\n.ds-shot-body { aspect-ratio: 1040 / 640; background: var(--ds-page); }"
+    },
+    {
+      "name": "Câu hỏi thường gặp",
+      "kind": "custom",
+      "description": "&lt;details&gt; không cần mã: dấu + đổi thành − khi mở, kẻ ngang giữa các câu.",
+      "html": "<details class=\"ds-faq\" open>\n  <summary>Digistay có giữ tiền cọc không?</summary>\n  <p class=\"ds-faq-a\">Không. Tiền cọc vào thẳng tài khoản ngân hàng của khách sạn đã kết nối PayOS.</p>\n</details>",
+      "css": ".ds-faq { font-family: var(--font-inter), Inter, system-ui, sans-serif; border-bottom: 1px solid var(--ds-line); }\n.ds-faq summary {\n  display: flex; align-items: center; justify-content: space-between; gap: 24px;\n  padding: 22px 0; font-size: 17px; font-weight: 500; color: var(--ds-fg); cursor: pointer;\n}\n.ds-faq summary::-webkit-details-marker { display: none; }\n.ds-faq summary::after {\n  content: '+'; flex: none; width: 28px; height: 28px;\n  display: inline-flex; align-items: center; justify-content: center;\n  font-size: 16px; font-weight: 400;\n  border: 1px solid var(--ds-line); border-radius: var(--ds-r-ctl, 6px);\n}\n.ds-faq[open] summary::after { content: '\\2212'; }\n.ds-faq-a {\n  margin: 0 0 24px; padding-right: 64px;\n  font-size: 15px; line-height: 1.7; color: color-mix(in srgb, var(--ds-fg) 80%, transparent);\n}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Quầy lễ tán dưới tấm bảng tên khách sạn",
+    "overview": "Các trang này là mặt tiền của một quầy lễ tân: giấy ấm, mực gần đen, tiêu đề có chân, và duy nhất một dấu đất nung — chính là dấu của Digistay. Chúng kể một câu chuyện ngắn: đây là phần mềm thật của một khách sạn Việt Nam, và mọi lời hứa trên trang đều chỉ mô tả những gì đang chạy hôm nay. Vì vậo hình ảnh là ảnh chụp giao diện thật đặt trong khung trình duyệt có thanh địa chỉ, không phải minh hoạ vẽ tay; và những gì chưa có bằng chứng thì để trống có dấu hiệu, không khoác bằng con số ảo.\n\nKhông gian thoáng và đọc theo một nhịp dọc: khối rộng 1440 px, tiêu đề căn trái (trang chủ căn giữa ở lg), khoảng cách giữa các mục lớn (96 px trên điện thoại, 128–144 px trên màn rộng). Đường kẻ 1 px và nền panel trên nền page đẩy các khối ra, không dùng bóng đổ — ngoại lệ duy nhất là ảnh chụp, vì ảnh phải bay.\n\nHệ thống này từ chối: giao diện SaaS tím-gradient, thẻ bóng đổ dày, nút bo tròn \"dày\", hiệu ứng trang trí, và bất kỳ bằng chứng giả nào — logo khách hàng, lời chứng thực, số liệu — như PRODUCT.md đã nêu.",
+    "keyCharacteristics": [
+      "Tiêu đề có chân (Playfair, weight 500), thân bài và biểu mẫu không chân (Inter).",
+      "Chỉ một dấu nhấn màu: đất nung brand, và nó xuất hiện ở dấu thương hiệu, số thứ tự tính năng và vòng focus.",
+      "Nút chính là mực (ink), không phải màu thương hiệu.",
+      "Bằng chứng là ảnh chụp thật trong BrowserFrame; giá và giới hạn là số thật, kể cả khi là nội dung mẫu thì được ghi rõ trong mã.",
+      "Theme tối chỉ do cookie ds-theme bật, không theo hệ điều hành; các trang này chỉ dùng màu theo vai trò nên hai theme đều đúng."
+    ],
+    "rules": [
+      {
+        "name": "Quy tắc Mực chính",
+        "body": "Nút chính là ink. Đất nung brand không bao giờ thành nền nút hay nền một mảng lớn; sự hiếm có của nó là điểm.",
+        "section": "colors"
+      },
+      {
+        "name": "Quy tắc Không chỉ màu",
+        "body": "Trạng thái luôn có chữ đi kèm: thông báo lỗi mở đầu bằng ⚠ và câu tiếng Việt; chip trạng thái lời mời có chữ \"Chờ xử lý\", \"Đã chấp nhận\"...; ô nhập lỗi đổi cả viền lẫn nền.",
+        "section": "colors"
+      },
+      {
+        "name": "Quy tắc Trung thực nội dung mẫu",
+        "body": "Nội dung chưa xác nhận được hiện trong khung viền đứt (border-dashed) — ví dụ dải tên khách sạn đang dùng Digistay ở trang chủ. Không bao giờ biến nội dung mẫu thành con số trông như thật.",
+        "section": "colors"
+      },
+      {
+        "name": "Quy tắc Số tiền",
+        "body": "Mọi số tiền, số phòng, số nhân viên dùng tabular-nums và font-semibold (600) để cột thẳng hàng giữa ba thẻ gói.",
+        "section": "typography"
+      },
+      {
+        "name": "Quy tắc 16 px trên điện thoại",
+        "body": "Ô nhập giữ 15–16 px; không bao giờ xuống 13 px trên điện thoại để iOS không tự phóng to khi focus.",
+        "section": "typography"
+      },
+      {
+        "name": "Quy tắc Nhãn HOA",
+        "body": "Chỉ nhãn 11 px mới HOA và giãn chữ. Tiêu đề không HOA; nút không HOA.",
+        "section": "typography"
+      },
+      {
+        "name": "Quy tắc Phân nhóm",
+        "body": "Kẻ ngang trước, khoảng trắng sau: danh sách tính năng, các bước, chân thẻ đều mở đầu bằng border-t border-line rồi mỗi dòng border-b border-line/70. Không lồng thẻ trong thẻ.",
+        "section": "layout"
+      },
+      {
+        "name": "Quy tắc Phẳng trừ ảnh",
+        "body": "Bóng đổ chỉ xuất hiện khi thứ đó thực sự bay khỏi trang — ảnh chụp và menu đang mở. Không bóng cho thẻ và bảng ở bất kỳ trang nào của nhóm này.",
+        "section": "elevation"
+      },
+      {
+        "name": "Quy tắc Chuyển động",
+        "body": "Một đường cong duy nhất cubic-bezier(0.2, 0.7, 0.2, 1), 160 ms cho mọi chuyển trạng thái màu và viền. Nút chính nhấc 1 px và tắt khi motion-reduce. Không hiệu ứng vào, cuộn hay nổi.",
+        "section": "elevation"
+      },
+      {
+        "name": "Quy tắc Bán kính theo bề mặt",
+        "body": "Các trang này không đặt data-surface, nên nhận giá trị mặc định 6 px / 10 px. Nếu một trang sau này chuyển sang bề mặt khác, bán kính đổi theo biến --ds-r-ctl / --ds-r-box chứ không sửa class.",
+        "section": "shapes"
+      },
+      {
+        "name": "Quy tắc Viền",
+        "body": "Viền luôn mảnh 1 px và màu line. Dày hơn chỉ ở hai chỗ: gạch dưới tiêu đề điều hướng đang chọn, và mảng bg-plain-soft của dải CTA (không viền).",
+        "section": "shapes"
+      },
+      {
+        "name": "Quy tắc ảnh thật",
+        "body": "Chỉ dùng ảnh chụp thật của sản phẩm đang chạy (public/marketing/*.jpg), chụp rộng 1440 px; không minh hoạ vẽ, không khung giả có số liệu bịa.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "Do dùng màu theo vai trò (bg-panel, text-muted, border-line, bg-plain-soft, bg-ok-soft text-ok) cho mọi thành phần mới trong nhóm trang này.",
+      "Do để nút chính là ink và nút phụ là viền ink; trang này không có nút \"màu thương hiệu\".",
+      "Do đặt tiêu đề bằng font-serif 500 và thân bài bằng phông không chân.",
+      "Do giữ nhịp thưa: 96 px giữa các mục trên điện thoại, 128–144 px từ lg.",
+      "Do dùng frame (max-w-[1440px], lề 20/32/80 px) cho mọi khối ngang.",
+      "Do dùng tabular-nums + font-semibold cho mọi số tiền và số giới hạn.",
+      "Do gắn lỗi bằng aria-invalid + aria-describedby, và luôn có chữ đi cùng màu.",
+      "Do dùng ảnh chụp thật trong BrowserFrame, có thanh địa chỉ và bóng.",
+      "Do dùng ease-ds 160 ms và thêm motion-reduce: khi thêm chuyển động.",
+      "Do đánh dấu nội dung mẫu bằng viền đứt hoặc lời trong mã, không khoác bằng con số trông như thật.",
+      "Do kiểm tương phản chữ ≥ 4,5:1 ở cả hai theme và thêm cặp mới vào src/styles/tokens.test.ts."
+    ],
+    "donts": [
+      "Don't dùng hex cứng, text-gray-* hay tên Material cũ (primary, surface, on-surface, terracotta, sand) trong trang mới.",
+      "Don't để brand thành nền nút hay nền một mảng lớn; dấu đất nung phải hiếm.",
+      "Don't đặt bóng đổ lên thẻ, bảng, dải CTA hay ô nhập; chỉ ảnh chụp và menu đang mở mới có bóng.",
+      "Don't dùng rounded-lg/xl/2xl cứng; dùng rounded-ctl và rounded-box.",
+      "Don't viết tiêu đề bằng phông không chân, hoặc viết nhãn HOA trên tiêu đề và nút.",
+      "Don't dùng chữ gradient, hiệu ứng trang trí trong globals.css (float, morph-*, glow-pulse, text-shimmer) hay chuyển động vào / cuộn.",
+      "Don't bịt trạng thái bằng màu: mọi chip, thông báo và ô nhập lỗi đều phải có chữ.",
+      "Don't thêm logo khách hàng, lời chứng thực, số liệu dùng thử hay \"đã tin dùng\" khi chưa có bằng chứng thật.",
+      "Don't đổi theme theo cài đặt hệ điều hành; chỉ cookie ds-theme quyết định.",
+      "Don't lồng thẻ trong thẻ, hay dùng viền đậm một bên làm điểm nhấn.",
+      "Don't viết chữ hiển thị cứng trong component; thêm khoá vào cả messages/vi.json và messages/en.json rồi dùng useTranslations / getTranslations."
+    ]
+  }
+}

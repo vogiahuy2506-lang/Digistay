@@ -804,7 +804,7 @@ export default function InvoicesPage() {
       </PageContainer>
 
       {/* Create Invoice Modal */}
-      <Modal
+      <Modal showHeader
         isOpen={isCreating}
         onClose={() => setIsCreating(false)}
         title={t('createModal.title')}
@@ -863,7 +863,7 @@ export default function InvoicesPage() {
       </Modal>
 
       {/* Edit Invoice Modal */}
-      <Modal
+      <Modal showHeader
         isOpen={isEditing}
         onClose={() => setIsEditing(false)}
         title={t('editModal.title')}
@@ -906,7 +906,7 @@ export default function InvoicesPage() {
       </Modal>
 
       {/* View Invoice Modal */}
-      <Modal
+      <Modal showHeader
         isOpen={!!selectedInvoice}
         onClose={() => setSelectedInvoice(null)}
         title={t('detail.title')}
@@ -1212,7 +1212,7 @@ export default function InvoicesPage() {
       </Modal>
 
       {/* Adjustment Modal */}
-      <Modal
+      <Modal showHeader
         isOpen={!!adjusting}
         onClose={() => setAdjusting(null)}
         title={t('adjust.title')}

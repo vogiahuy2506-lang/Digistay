@@ -49,7 +49,7 @@ export const createWorkspaceSchema = z.object({
   name: z.string().min(2, 'Tên workspace phải có ít nhất 2 ký tự').max(100, 'Tên workspace không được quá 100 ký tự'),
   description: z.string().max(500, 'Mô tả không được quá 500 ký tự').optional(),
   domain: z.string().url('Domain không hợp lệ').optional().or(z.literal('')),
-  slug: z.string().min(2, 'Slug phải có ít nhất 2 ký tự').max(100, 'Slug không được quá 100 ký tự').regex(/^[a-z0-9-]+$/, 'Slug chỉ chứa chữ thường, số và dấu gạch ngang').optional(),
+  slug: z.string().min(2, 'Tên rút gọn phải có ít nhất 2 ký tự').max(100, 'Tên rút gọn không được quá 100 ký tự').regex(/^[a-z0-9-]+$/, 'Tên rút gọn chỉ chứa chữ thường, số và dấu gạch ngang').optional(),
   businessType: z.enum(['boutique_hotel', 'resort', 'homestay']).optional(),
   currency: z.string().max(10).optional(),
   timezone: z.string().max(50).optional(),

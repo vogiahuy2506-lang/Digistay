@@ -3,8 +3,8 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
-import { Header, PageContainer } from '@/components/layout'
-import { Card, CardContent, Button, Badge, Modal, ModalBody, ModalFooter, Input, Select } from '@/components/ui'
+import { Header, PageContainer, TitleBlock } from '@/components/layout'
+import { Card, CardContent, Button, Badge, Modal, ModalBody, ModalFooter, Input, Loading, Select } from '@/components/ui'
 import { Plus, Users, Mail, MoreVertical, Shield, User, Trash2, UserPlus } from 'lucide-react'
 import { Dropdown, DropdownItem, DropdownDivider } from '@/components/ui'
 import { Avatar } from '@/components/ui'
@@ -43,12 +43,12 @@ interface Invitation {
 }
 
 export default function MembersPage() {
+  const router = useRouter()
   const t = useTranslations('dash.workspace')
   const tc = useTranslations('dash.common')
   const labels = useDashLabels()
   const locale = useLocale()
-  const router = useRouter()
-  const { workspace } = useWorkspace()
+  const { workspace, loading: wsLoading } = useWorkspace()
   const workspaceId = workspace?.id
 
   const [members, setMembers] = React.useState<Member[]>([])
@@ -58,7 +58,7 @@ export default function MembersPage() {
   const [isInviting, setIsInviting] = React.useState(false)
   const [inviteForm, setInviteForm] = React.useState({
     email: '',
-    role: 'STAFF',
+    role: 'USER',
   })
   const [error, setError] = React.useState('')
 
@@ -110,12 +110,12 @@ export default function MembersPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || t('errors.generic'))
+        setError(data.error || tc('states.error'))
         return
       }
 
       setShowInviteModal(false)
-      setInviteForm({ email: '', role: 'STAFF' })
+      setInviteForm({ email: '', role: 'USER' })
       fetchData()
     } catch (err) {
       setError(tc('states.error'))
@@ -150,7 +150,7 @@ export default function MembersPage() {
     }
   }
 
-  // The invitation date, as formatDate (src/lib/utils) wrote it, in the page's language.
+  // The invitation date in the page's language, Vietnam time.
   const invitedOn = new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'vi-VN', {
     timeZone: 'Asia/Ho_Chi_Minh',
     year: 'numeric',
@@ -189,32 +189,30 @@ export default function MembersPage() {
     }
   }
 
+  if (wsLoading) {
+    return <Loading className="py-24" />
+  }
+
   if (!workspaceId) {
     return (
-      <PageContainer>
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Users className="w-16 h-16 text-muted mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-fg mb-2">
-              {t('noWorkspace.title')}
-            </h3>
-            <p className="text-muted mb-6">
-              {t('members.noWorkspaceText')}
-            </p>
-            <Button onClick={() => router.push(routes.workspaces())}>
-              {t('noWorkspace.goTo')}
-            </Button>
-          </CardContent>
-        </Card>
-      </PageContainer>
+      <div className="rounded-box border border-line bg-panel px-6 py-16 text-center">
+        <Users className="w-6 h-6 text-muted mx-auto mb-4" />
+        <p className="text-body text-fg mb-2">{t('noWorkspace.title')}</p>
+        <p className="text-small text-muted mb-6">
+          {t('members.noWorkspaceText')}
+        </p>
+        <Button onClick={() => router.push(routes.workspaces())}>
+          {t('noWorkspace.goTo')}
+        </Button>
+      </div>
     )
   }
 
   return (
-    <PageContainer>
-      <Header
+    <>
+      <TitleBlock
         title={tc('nav.members')}
-        description={t('members.description')}
+        lead={t('members.description')}
         actions={
           <Button onClick={() => setShowInviteModal(true)}>
             <UserPlus className="w-4 h-4 mr-2" />
@@ -228,79 +226,81 @@ export default function MembersPage() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-acc"></div>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="mt-9 space-y-10">
           {/* Members List */}
-          <Card>
-            <CardContent className="p-0">
-              <div className="px-6 py-4 border-b border-line">
-                <h2 className="font-semibold text-fg">
-                  {t('members.listTitle', { count: members.length })}
-                </h2>
-              </div>
-              
+          <section>
+            <div className="flex items-baseline justify-between gap-3 border-b border-line pb-3">
+              <h2 className="text-body font-semibold text-fg">{tc('nav.members')}</h2>
+              <span className="text-small text-muted tabular-nums">{members.length}</span>
+            </div>
+            <ul className="border-b border-line">
               {members.length === 0 ? (
-                <div className="p-12 text-center">
-                  <Users className="w-12 h-12 text-muted mx-auto mb-4" />
-                  <p className="text-muted mb-4">{t('members.empty')}</p>
-                  <Button onClick={() => setShowInviteModal(true)}>
-                    <UserPlus className="w-4 h-4 mr-2" />
+                <li className="py-10 text-center">
+                  <Users className="w-5 h-5 text-muted mx-auto mb-3" />
+                  <p className="text-body text-fg">{t('members.empty')}</p>
+                  <Button size="sm" className="mt-4" onClick={() => setShowInviteModal(true)}>
+                    <UserPlus className="w-4 h-4 mr-1.5" />
                     {t('members.inviteFirst')}
                   </Button>
-                </div>
+                </li>
               ) : (
-                <div className="divide-y divide-line">
-                  {members.map((member) => (
-                    <div key={member.id} className="p-4 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Avatar 
-                          src={member.user.image} 
-                          name={member.user.name || member.user.email} 
-                          size="md" 
+                members.map((member) => (
+                  <li key={member.id} className="border-t border-line first:border-t-0">
+                    <div className="flex items-center gap-3 py-3.5">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <Avatar
+                          src={member.user.image}
+                          name={member.user.name || member.user.email}
+                          size="sm"
                         />
-                        <div>
-                          <p className="font-medium text-fg">
+                        <div className="min-w-0">
+                          <p className="text-body font-medium text-fg truncate">
                             {member.user.name || t('members.noName')}
                           </p>
-                          <p className="text-sm text-muted">{member.user.email}</p>
+                          <p className="text-small text-muted truncate">{member.user.email}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 shrink-0">
                         {getRoleBadge(member.role, member.isOwner)}
-                        
+
                         {!member.isOwner && (
                           <Dropdown
                             trigger={
-                              <button aria-label={tc('actions.more')} className="p-1 rounded hover:bg-fg/5">
-                                <MoreVertical className="w-5 h-5 text-muted" />
+                              <button
+                                type="button"
+                                aria-label={tc('actions.more')}
+                                className="w-8 h-8 rounded-ctl flex items-center justify-center text-muted hover:text-fg hover:bg-fg/5 transition-colors duration-160 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
+                              >
+                                <MoreVertical className="w-4 h-4" aria-hidden="true" />
                               </button>
                             }
                           >
-                            <DropdownItem 
+                            <DropdownItem
                               icon={<Shield className="w-4 h-4" />}
                               onClick={() => handleUpdateRole(member.id, 'ADMIN')}
                             >
                               {t('members.makeAdmin')}
                             </DropdownItem>
-                            <DropdownItem 
+                            <DropdownItem
                               icon={<Shield className="w-4 h-4" />}
                               onClick={() => handleUpdateRole(member.id, 'MANAGER')}
                             >
                               {t('members.makeManager')}
                             </DropdownItem>
-                            <DropdownItem 
+                            <DropdownItem
                               icon={<User className="w-4 h-4" />}
                               onClick={() => handleUpdateRole(member.id, 'RECEPTIONIST')}
                             >
                               {t('members.makeReceptionist')}
                             </DropdownItem>
-                            <DropdownItem 
+                            <DropdownItem
                               icon={<User className="w-4 h-4" />}
                               onClick={() => handleUpdateRole(member.id, 'USER')}
                             >
                               {t('members.makeUser')}
                             </DropdownItem>
                             <DropdownDivider />
-                            <DropdownItem 
+                            <DropdownItem
                               icon={<Trash2 className="w-4 h-4" />}
                               danger
                               onClick={() => handleRemoveMember(member.id)}
@@ -311,32 +311,33 @@ export default function MembersPage() {
                         )}
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </li>
+                ))
               )}
-            </CardContent>
-          </Card>
+            </ul>
+          </section>
 
           {/* Pending Invitations */}
           {invitations.filter(i => i.status === 'PENDING').length > 0 && (
-            <Card>
-              <CardContent className="p-0">
-                <div className="px-6 py-4 border-b border-line">
-                  <h2 className="font-semibold text-fg">
-                    {t('members.pendingTitle', { count: invitations.filter(i => i.status === 'PENDING').length })}
-                  </h2>
-                </div>
-                
-                <div className="divide-y divide-line">
-                  {invitations.filter(i => i.status === 'PENDING').map((invitation) => (
-                    <div key={invitation.id} className="p-4 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-fg/5 flex items-center justify-center">
-                          <Mail className="w-5 h-5 text-muted" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-fg">{invitation.email}</p>
-                          <p className="text-sm text-muted">
+            <section>
+              <div className="flex items-baseline justify-between gap-3 border-b border-line pb-3">
+                <h2 className="text-body font-semibold text-fg">{t('members.pending')}</h2>
+                <span className="text-small text-muted tabular-nums">
+                  {invitations.filter(i => i.status === 'PENDING').length}
+                </span>
+              </div>
+
+              <ul className="border-b border-line">
+                {invitations.filter(i => i.status === 'PENDING').map((invitation) => (
+                  <li key={invitation.id} className="border-t border-line first:border-t-0">
+                    <div className="flex items-center gap-3 py-3.5">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-plain-soft text-muted">
+                          <Mail className="w-4 h-4" aria-hidden="true" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-body font-medium text-fg truncate">{invitation.email}</p>
+                          <p className="text-small text-muted truncate">
                             {t('members.invitedBy', {
                               name: invitation.sender.name || invitation.sender.email,
                               date: invitedOn.format(new Date(invitation.createdAt)),
@@ -344,27 +345,27 @@ export default function MembersPage() {
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 shrink-0">
                         {getRoleBadge(invitation.role)}
                         {getInvitationStatusBadge(invitation.status)}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  </li>
+                ))}
+              </ul>
+            </section>
           )}
         </div>
       )}
 
       {/* Invite Modal */}
-      <Modal
+      <Modal showHeader
         isOpen={showInviteModal}
         onClose={() => setShowInviteModal(false)}
         title={t('members.invite')}
         description={t('members.modal.description')}
       >
-        <form className="flex flex-col min-h-0" onSubmit={handleInvite}>
+        <form onSubmit={handleInvite} className="flex flex-col min-h-0">
           <ModalBody>
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-err-soft border border-err/30 text-err text-sm">
@@ -395,8 +396,8 @@ export default function MembersPage() {
               hint={t('members.modal.roleHint')}
             />
           </div>
-
           </ModalBody>
+
           <ModalFooter>
             <Button
               type="button"
@@ -412,6 +413,6 @@ export default function MembersPage() {
           </ModalFooter>
         </form>
       </Modal>
-    </PageContainer>
+    </>
   )
 }

@@ -17,7 +17,11 @@ export const metadata: Metadata = {
   description: 'DigiStay là nền tảng SaaS No-Code toàn diện: Tự tạo website boutique hotel chỉ trong 15 phút, tích hợp Booking Engine trực tiếp, đồng bộ phòng tức thì và cổng VietQR Napas247.',
   keywords: ['booking engine', 'hotel website', 'boutique hotel', 'homestay management', 'VietQR', 'Napas247', 'No-Code'],
   icons: {
-    icon: '/favicon.ico',
+    icon: [
+      { url: '/icon.png', type: 'image/png' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
   },
 }
 
@@ -52,6 +56,8 @@ export default async function RootLayout({
                   marketing: { contact: messages.marketing.contact },
                   auth: messages.auth,
                   dash: messages.dash,
+                  workspaces: messages.workspaces,
+                  workspaceHome: messages.workspaceHome,
                 }
           }
         >

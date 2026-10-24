@@ -381,7 +381,7 @@ export default function PropertyDetailPage() {
         <Card>
           <CardContent className="p-12 text-center">
             <p className="text-muted">{t('notFound')}</p>
-            <Button onClick={() => router.push(routes.properties(slug))} className="mt-4">
+            <Button onClick={() => router.push(routes.workspace(slug))} className="mt-4">
               {tc('actions.back')}
             </Button>
           </CardContent>
@@ -394,7 +394,7 @@ export default function PropertyDetailPage() {
     <PageContainer>
       {/* Back button and header */}
       <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" onClick={() => router.push(routes.properties(slug))}>
+        <Button variant="ghost" onClick={() => router.push(routes.workspace(slug))}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           {tc('actions.back')}
         </Button>
