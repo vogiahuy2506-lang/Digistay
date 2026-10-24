@@ -354,6 +354,16 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
   `loadVisibleSite`, API công khai qua `siteVisibility` (`src/lib/public-site/visibility.ts`);
   chưa xuất bản thì 404 với khách, thành viên đã đăng nhập thấy bản xem trước. Đặt phòng công
   khai chỉ nhận website đã xuất bản. Test tích hợp đặt phòng của khách: gọi `publishSite()` trước.
+- Trình dựng website: ảnh bìa chọn trong ảnh của cơ sở (`config.backgroundImage`; `/api/upload` chưa
+  có nơi lưu thật — `src/lib/cloudinary` trả lại `data:` URL, đừng lưu URL đó vào nội dung website);
+  đánh giá là đánh giá thật khách sạn tự nhập (`config.reviews`); màu nút (`buttonColor` → `--ds-ink`
+  của website) và màu tiêu đề (`headingColor`, tiêu đề `font-site`) tự chỉnh cho đọc được ở hai theme
+  (`hotelButtonVariables` / `hotelHeadingVariables`, `src/lib/public-site/accent.ts`); khối Dịch vụ và
+  Thực đơn lấy dữ liệu từ trang Dịch vụ / Thực đơn, không có gì thì không hiện.
+- Tên miền riêng: xác minh ở `/api/website/domain/verify` (A + TXT); middleware phục vụ site trên tên
+  miền đó qua `/api/public/site-host` (`src/lib/public-site/custom-host.ts`); chứng chỉ HTTPS do
+  `docker/certbot/custom-domains.sh` trên VPS cấp mỗi phút (`/api/internal/custom-domains`), nginx
+  `custom-domains.conf` chọn theo SNI. RUNBOOK "Tên miền riêng của khách sạn".
 
 ## Song ngữ (tiếng Việt / tiếng Anh)
 
