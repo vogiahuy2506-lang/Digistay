@@ -71,16 +71,17 @@ function formatVnd(amount: number, currency = 'VND', locale: EmailLocale = 'vi')
   }).format(amount)
 }
 
+// Vietnamese short weekdays, Sunday first, written out: Intl's 'vi-VN' weekday
+// differs between ICU versions (local Node "Th 4", CI's Node something else).
+const VI_WEEKDAYS = ['CN', 'Th 2', 'Th 3', 'Th 4', 'Th 5', 'Th 6', 'Th 7']
+
 function formatDate(date: string | Date, locale: EmailLocale = 'vi'): string {
   const d = typeof date === 'string' ? new Date(date) : date
   if (locale === 'en') return englishDate(d, { weekday: true })
-  return d.toLocaleDateString('vi-VN', {
-    weekday: 'short',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    timeZone: EMAIL_TIME_ZONE,
-  })
+  // "Th 4, 23/12/2026", Vietnam time (UTC+7, no daylight saving).
+  const vn = new Date(d.getTime() + 7 * 3_600_000)
+  const two = (n: number) => String(n).padStart(2, '0')
+  return `${VI_WEEKDAYS[vn.getUTCDay()]}, ${two(vn.getUTCDate())}/${two(vn.getUTCMonth() + 1)}/${vn.getUTCFullYear()}`
 }
 
 /** A moment (a password change, an invitation's expiry), Vietnam time. */
