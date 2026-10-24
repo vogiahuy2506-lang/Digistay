@@ -192,8 +192,7 @@
       "services": {
         "title": "Dịch vụ thêm",
         "eyebrow": "Dịch vụ",
-        "aside": "Chọn thêm khi đặt phòng.",
-        "empty": "Danh sách dịch vụ đang được cập nhật."
+        "aside": "Chọn thêm khi đặt phòng."
       }
     },
     "preview": "Bản xem trước: website chưa xuất bản, chỉ thành viên của khách sạn đang đăng nhập mới xem được.",

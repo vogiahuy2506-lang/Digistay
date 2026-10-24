@@ -192,8 +192,7 @@
       "services": {
         "title": "Extra services",
         "eyebrow": "Services",
-        "aside": "Add them when you book.",
-        "empty": "The list of services is being updated."
+        "aside": "Add them when you book."
       }
     },
     "preview": "Preview: this site is not published; only the hotel's signed-in members can see it.",

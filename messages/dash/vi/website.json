@@ -57,6 +57,14 @@
     "CTA": {
       "name": "Call to Action",
       "description": "Nút kêu gọi hành động"
+    },
+    "SERVICES": {
+      "name": "Dịch vụ",
+      "description": "Các dịch vụ thêm của khách sạn (trang Dịch vụ)"
+    },
+    "RESTAURANT_MENU": {
+      "name": "Thực đơn",
+      "description": "Món ăn, đồ uống kèm giá và ảnh (trang Thực đơn)"
     }
   },
   "templates": {
@@ -124,7 +132,10 @@
       "ctaLink": "VD: #rooms",
       "about": "Giới thiệu về cơ sở của bạn...",
       "mapAddress": "VD: 123 Đường ABC, Quận 1, TP.HCM",
-      "address": "123 Đường ABC..."
+      "address": "123 Đường ABC...",
+      "servicesTitle": "Dịch vụ",
+      "menuTitle": "Thực đơn nhà hàng",
+      "menuNote": "VD: Đặt bàn qua lễ tân hoặc số 0912…"
     },
     "display": {
       "grid": "Grid (Lưới)",
@@ -155,7 +166,9 @@
       "add": "Thêm đánh giá",
       "moveUp": "Đưa lên",
       "moveDown": "Đưa xuống"
-    }
+    },
+    "servicesHint": "Khối này hiện các dịch vụ đang bật ở trang Dịch vụ. Thêm hoặc sửa dịch vụ ở đó.",
+    "menuHint": "Khối này hiện các món đang bán ở trang Thực đơn, theo nhóm. Chưa có món nào thì khối không hiện trên website."
   },
   "preview": {
     "propertyName": "Khách sạn của bạn",
@@ -191,7 +204,11 @@
       "send": "Gửi liên hệ"
     },
     "ctaTitle": "Sẵn sàng trải nghiệm?",
-    "ctaSubtitle": "Đặt phòng ngay hôm nay!"
+    "ctaSubtitle": "Đặt phòng ngay hôm nay!",
+    "servicesTitle": "Dịch vụ",
+    "servicesFrom": "Các dịch vụ đang bật ở trang Dịch vụ.",
+    "menuTitle": "Thực đơn nhà hàng",
+    "menuFrom": "Các món đang bán ở trang Thực đơn, theo nhóm."
   },
   "blocks": {
     "arrange": "Sắp xếp khối",

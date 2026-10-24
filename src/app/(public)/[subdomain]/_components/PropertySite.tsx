@@ -144,7 +144,13 @@ export function PropertySite({ property, images, amenities, roomTypes, services,
   const types = new Set(blocks.map((b) => b.type))
   // A block that renders nothing (no photos, no dishes) gets no menu entry either.
   const sections: SiteSection[] = (Object.keys(SECTION_LABELS) as BlockType[])
-    .filter((t) => types.has(t) && !(t === 'GALLERY' && images.length === 0) && !(t === 'RESTAURANT_MENU' && menuItems.length === 0))
+    .filter(
+      (t) =>
+        types.has(t) &&
+        !(t === 'GALLERY' && images.length === 0) &&
+        !(t === 'RESTAURANT_MENU' && menuItems.length === 0) &&
+        !(t === 'SERVICES' && services.length === 0)
+    )
     .map((t) => SECTION_LABELS[t]!)
 
   return (

@@ -38,7 +38,7 @@ import {
   Plus, Trash2, GripVertical, Settings, Layout, Search, ArrowRight,
   Check, X, ChevronRight, Shield, AlertCircle, Loader2, ExternalLink, RefreshCw, Star,
   LayoutGrid, Hotel, ImageIcon, MapPin, Phone, MousePointer2, Zap, Sparkles,
-  FileText, Clock, Undo2, Redo2, Copy, Wand2, ChevronDown, ChevronUp
+  FileText, Clock, Undo2, Redo2, Copy, Wand2, ChevronDown, ChevronUp, ConciergeBell, UtensilsCrossed
 } from 'lucide-react'
 import { apiError } from '@/lib/i18n/api-errors'
 
@@ -127,6 +127,11 @@ interface BlockConfig {
   ctaButtonLink?: string
   ctaBackground?: string
 
+  // Services (the services page's list) and the restaurant menu (the menu page's dishes)
+  servicesTitle?: string
+  menuTitle?: string
+  menuNote?: string
+
   /** The same texts in English, for the site's /en pages (blockText in src/lib/i18n/content.ts). */
   en?: Partial<Record<BlockTextKey, string>>
 }
@@ -134,6 +139,7 @@ interface BlockConfig {
 type BlockTextKey =
   | 'heroTitle' | 'heroSubtitle' | 'heroCtaText' | 'roomsTitle' | 'amenitiesTitle' | 'aboutTitle' | 'aboutContent'
   | 'galleryTitle' | 'reviewsTitle' | 'contactTitle' | 'ctaTitle' | 'ctaSubtitle' | 'ctaButtonText'
+  | 'servicesTitle' | 'menuTitle' | 'menuNote'
 
 /** Each block type's texts that have an English version, with their field label (dash.website.config.fields). */
 const BLOCK_TEXTS: Record<string, { key: BlockTextKey; label: 'heroTitle' | 'subtitle' | 'ctaButton' | 'title' | 'content' | 'description' | 'buttonText'; long?: boolean }[]> = {
@@ -145,6 +151,8 @@ const BLOCK_TEXTS: Record<string, { key: BlockTextKey; label: 'heroTitle' | 'sub
   REVIEWS: [{ key: 'reviewsTitle', label: 'title' }],
   CONTACT: [{ key: 'contactTitle', label: 'title' }],
   CTA: [{ key: 'ctaTitle', label: 'title' }, { key: 'ctaSubtitle', label: 'description' }, { key: 'ctaButtonText', label: 'buttonText' }],
+  SERVICES: [{ key: 'servicesTitle', label: 'title' }],
+  RESTAURANT_MENU: [{ key: 'menuTitle', label: 'title' }, { key: 'menuNote', label: 'description' }],
 }
 
 interface Block {
@@ -156,7 +164,7 @@ interface Block {
   config: BlockConfig
 }
 
-type BlockTypeKey = 'HERO' | 'ROOMS' | 'AMENITIES' | 'ABOUT' | 'GALLERY' | 'REVIEWS' | 'MAP' | 'CONTACT' | 'CTA'
+type BlockTypeKey = 'HERO' | 'ROOMS' | 'AMENITIES' | 'ABOUT' | 'GALLERY' | 'REVIEWS' | 'MAP' | 'CONTACT' | 'CTA' | 'SERVICES' | 'RESTAURANT_MENU'
 
 interface BlockType {
   type: BlockTypeKey
@@ -275,6 +283,24 @@ const blockTypes: BlockType[] = [
       ctaButtonText: 'Đặt phòng ngay',
       ctaButtonLink: '#contact'
     }
+  },
+  {
+    // The services from the services page (ExtraService); no title: the site's own, in its language.
+    type: 'SERVICES',
+    name: 'Dịch vụ',
+    icon: ConciergeBell,
+    color: 'text-info',
+    bgGradient: 'from-teal-500 to-teal-600',
+    defaultConfig: {}
+  },
+  {
+    // The dishes from the menu page (MenuItem); shows nothing until there is one.
+    type: 'RESTAURANT_MENU',
+    name: 'Thực đơn',
+    icon: UtensilsCrossed,
+    color: 'text-warn',
+    bgGradient: 'from-orange-500 to-orange-600',
+    defaultConfig: {}
   },
 ]
 
@@ -846,6 +872,44 @@ function BlockConfigPanel({
             </>
           )}
 
+          {/* Services Config */}
+          {block.type === 'SERVICES' && (
+            <>
+              <p className="rounded-box bg-fg/[0.03] p-3 text-sm text-muted">{t('servicesHint')}</p>
+              <div>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.title')}</label>
+                <Input
+                  value={config.servicesTitle || ''}
+                  onChange={(e) => updateConfig('servicesTitle', e.target.value)}
+                  placeholder={t('placeholders.servicesTitle')}
+                />
+              </div>
+            </>
+          )}
+
+          {/* Restaurant Menu Config */}
+          {block.type === 'RESTAURANT_MENU' && (
+            <>
+              <p className="rounded-box bg-fg/[0.03] p-3 text-sm text-muted">{t('menuHint')}</p>
+              <div>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.title')}</label>
+                <Input
+                  value={config.menuTitle || ''}
+                  onChange={(e) => updateConfig('menuTitle', e.target.value)}
+                  placeholder={t('placeholders.menuTitle')}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-fg block mb-1">{t('fields.description')}</label>
+                <Input
+                  value={config.menuNote || ''}
+                  onChange={(e) => updateConfig('menuNote', e.target.value)}
+                  placeholder={t('placeholders.menuNote')}
+                />
+              </div>
+            </>
+          )}
+
           {/* CTA Config */}
           {block.type === 'CTA' && (
             <>
@@ -1359,6 +1423,21 @@ function PreviewBlock({
           </div>
         )
       
+      case 'SERVICES':
+      case 'RESTAURANT_MENU': {
+        const menu = block.type === 'RESTAURANT_MENU'
+        const Icon = menu ? UtensilsCrossed : ConciergeBell
+        return (
+          <div className="p-4 bg-panel rounded-xl border border-line">
+            <h3 className="text-lg font-semibold text-fg mb-2 flex items-center gap-2">
+              <Icon className="w-5 h-5 text-acc" />
+              {(menu ? config.menuTitle : config.servicesTitle) || t(menu ? 'menuTitle' : 'servicesTitle')}
+            </h3>
+            <p className="text-sm text-muted">{t(menu ? 'menuFrom' : 'servicesFrom')}</p>
+          </div>
+        )
+      }
+
       case 'CTA':
         return (
           <div className="p-6 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl text-white text-center">

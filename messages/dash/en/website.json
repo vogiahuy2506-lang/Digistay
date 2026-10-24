@@ -57,6 +57,14 @@
     "CTA": {
       "name": "Call to action",
       "description": "A call-to-action button"
+    },
+    "SERVICES": {
+      "name": "Services",
+      "description": "The hotel's extra services (Services page)"
+    },
+    "RESTAURANT_MENU": {
+      "name": "Menu",
+      "description": "Dishes and drinks with prices and photos (Menu page)"
     }
   },
   "templates": {
@@ -124,7 +132,10 @@
       "ctaLink": "e.g. #rooms",
       "about": "Tell guests about your property...",
       "mapAddress": "e.g. 123 ABC Street, District 1, Ho Chi Minh City",
-      "address": "123 ABC Street..."
+      "address": "123 ABC Street...",
+      "servicesTitle": "Services",
+      "menuTitle": "Restaurant menu",
+      "menuNote": "e.g. Book a table at the front desk or call 0912…"
     },
     "display": {
       "grid": "Grid",
@@ -155,7 +166,9 @@
       "add": "Add a review",
       "moveUp": "Move up",
       "moveDown": "Move down"
-    }
+    },
+    "servicesHint": "This block shows the services that are on in the Services page. Add or edit them there.",
+    "menuHint": "This block shows the dishes on sale in the Menu page, by group. With no dishes it doesn't show on the website."
   },
   "preview": {
     "propertyName": "Your hotel",
@@ -191,7 +204,11 @@
       "send": "Send"
     },
     "ctaTitle": "Ready for your stay?",
-    "ctaSubtitle": "Book your room today!"
+    "ctaSubtitle": "Book your room today!",
+    "servicesTitle": "Services",
+    "servicesFrom": "The services that are on in the Services page.",
+    "menuTitle": "Restaurant menu",
+    "menuFrom": "The dishes on sale in the Menu page, by group."
   },
   "blocks": {
     "arrange": "Arrange blocks",
