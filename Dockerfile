@@ -9,6 +9,8 @@ WORKDIR /app
 # Copy prisma schema first so the postinstall hook (prisma generate)
 # can find it. The actual client binary is regenerated in the builder stage.
 COPY prisma ./prisma
+# postinstall also patches the React that next bundles (see the script).
+COPY scripts/patch-react-replay.mjs ./scripts/
 # Copy lockfiles first for maximum cache reuse.
 COPY package.json package-lock.json* ./
 RUN npm ci

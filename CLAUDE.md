@@ -194,6 +194,12 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
 - Header bảo mật nằm ở nginx: `docker/nginx/conf.d/security-headers.inc`, include ở server
   và ở mọi `location` có `add_header` riêng. Sửa `app-secure.conf.template`, không sửa file
   sinh ra — `docker/deploy.sh` sinh lại và reload nginx mỗi lần deploy.
+- React mà Next 15.5 đóng gói (canary 19.2) hydrate sai khi chunk JS của một component đến đúng lúc
+  React đang tạm dừng: lỗi #418 chập chờn (React bỏ HTML của server, vẽ lại trên client, có lúc thấy
+  trang hai bản) và `useId` lệch với server. `scripts/patch-react-replay.mjs` vá bản sửa của React
+  19.3 (react#35494, react#35518) vào `node_modules/next` khi `npm ci` (`postinstall`, Dockerfile
+  chép script vào bước cài) và trước `npm run build`. Đừng bỏ bước đó. Lên Next mới: React đóng gói
+  từ 19.3 thì script tự bỏ qua; code khác dạng thì script báo lỗi và cài đặt hỏng, khi đó xem lại.
 - Khoá bên thứ ba lưu trong DB (khoá thanh toán, tài khoản hoá đơn, secret 2FA) **luôn** qua
   `src/lib/security/secret-box.ts`: `encryptSecret(giá trị, secretContext(bảng, id, cột))`.
   Chưa cấu hình thì lưu `null`. Không bao giờ trả giá trị đã giải mã ra trình duyệt: trả
