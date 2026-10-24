@@ -1,8 +1,9 @@
 /**
  * The invoice and payment lists page, filter and search in the database
  * (so a search covers every page), cap the page size, refuse bad
- * parameters with 400, and count their cards over the whole property;
- * the revenue report bounds its range. Against real Postgres.
+ * parameters with 400, and count their cards over the whole property
+ * (the revenue report's range: reports/revenue/revenue.int.test.ts).
+ * Against real Postgres.
  */
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest'
 import { NextRequest } from 'next/server'
@@ -14,7 +15,6 @@ import { prisma } from '@/lib/db'
 import { createBooking, createPendingPayment, createTenant, resetDatabase } from '@/test/integration/fixtures'
 import { GET as listInvoices } from './invoices/route'
 import { GET as listPayments } from './payments/route'
-import { GET as revenue } from './reports/revenue/route'
 
 const signInAs = (user: { id: string; email: string }) =>
   vi.mocked(auth).mockResolvedValue({ user: { id: user.id, email: user.email } } as never)
@@ -126,19 +126,5 @@ describe('GET /api/payments', () => {
     expect((await get(listPayments, `/api/payments?status=PAID`)).body.pagination.total).toBe(1)
     expect((await get(listPayments, `/api/payments?method=BITCOIN`)).status).toBe(400)
     expect((await get(listPayments, `/api/payments?status=paid`)).status).toBe(400)
-  })
-})
-
-describe('GET /api/reports/revenue', () => {
-  it('refuses unreadable dates, a reversed range and more than a year', async () => {
-    const { owner, property } = await createTenant()
-    signInAs(owner)
-    const r = (q: string) => get(revenue, `/api/reports/revenue?propertyId=${property.id}&${q}`)
-    expect((await r('startDate=2026-01-01&endDate=2026-03-31')).status).toBe(200)
-    expect((await r('startDate=garbage')).status).toBe(400)
-    expect((await r('startDate=2026-05-01&endDate=2026-04-01')).status).toBe(400)
-    const tooLong = await r('startDate=2020-01-01&endDate=2026-01-01')
-    expect(tooLong.status).toBe(400)
-    expect(tooLong.body.error).toContain('366')
   })
 })
