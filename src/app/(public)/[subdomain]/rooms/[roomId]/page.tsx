@@ -1,18 +1,26 @@
+import { cache } from 'react'
+import type { Metadata } from 'next'
 import { ratesFrom } from '@/lib/pricing/quote'
 import { ROOM_RATE_INCLUDE, propertyRateDefaults } from '@/lib/pricing/rates'
 import { notFound } from 'next/navigation'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { prisma } from '@/lib/db'
-import { isLocale } from '@/i18n/locales'
+import { isLocale, type Locale } from '@/i18n/locales'
 import { amenityName } from '@/lib/i18n/amenities'
 import { localizeRow } from '@/lib/i18n/content'
+import { JsonLd } from '@/components/seo/JsonLd'
 import { SiteHeader, type SiteSection } from '../../_components/SiteHeader'
 import { SiteLink } from '../../_components/site-base'
 import { Container, bedLabel, roomMeta } from '../../_components/site-ui'
 import { getIcon } from '@/lib/amenity-icons'
 import { formatVnd } from '@/lib/bookings/display'
 import { BookingBox } from './BookingBox'
+import { loadSiteFrame } from '@/lib/public-site/site-frame'
+import { canonicalSiteOrigin } from '@/lib/public-site/site-host'
 import { loadVisibleSite } from '@/lib/public-site/visibility'
+import { hotelRoomJsonLd } from '@/lib/seo/hotel-schema'
+import { hotelPageMetadata } from '@/lib/seo/page-metadata'
+import { roomPath, sitePageUrl } from '@/lib/seo/urls'
 
 interface PageProps {
   params: Promise<{ subdomain: string; roomId: string }>
@@ -30,24 +38,17 @@ const SECTIONS: Record<string, SiteSection> = {
 
 const day = (v: string | undefined) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined)
 
-/** A room type's page (redesign 2c). */
-export default async function RoomDetailPage({ params, searchParams }: PageProps) {
-  const { subdomain, roomId } = await params
-  const query = await searchParams
-  const t = await getTranslations('site')
-  const locale = await getLocale()
-
-  const site = await loadVisibleSite(subdomain)
-  if (!site) notFound()
-
+/** The hotel and the room type (active only), once per request for the metadata and the page. */
+const loadRoomPage = cache(async (propertyId: string, roomId: string) => {
   const property = await prisma.property.findUnique({
-    where: { id: site.propertyId },
+    where: { id: propertyId },
     select: {
       id: true,
       name: true,
       type: true,
       city: true,
       phone: true,
+      coverImage: true,
       policy: true,
       websiteBlocks: { where: { isEnabled: true }, select: { type: true } },
       roomTypes: {
@@ -61,16 +62,74 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
       },
     },
   })
+  return property && property.roomTypes.length > 0 ? property : null
+})
 
-  if (!property || property.roomTypes.length === 0) {
-    notFound()
+const pageLocale = async (): Promise<Locale> => {
+  const locale = await getLocale()
+  return isLocale(locale) ? locale : 'vi'
+}
+
+/** "<room> · <hotel>", its description (or its size, bed and guests), its first photo, canonical URL. */
+export async function generateMetadata({ params }: Pick<PageProps, 'params'>): Promise<Metadata> {
+  const { subdomain, roomId } = await params
+  const site = await loadVisibleSite(subdomain)
+  if (!site) return {}
+  const [property, frame] = await Promise.all([loadRoomPage(site.propertyId, roomId), loadSiteFrame(subdomain)])
+  if (!property) return {}
+  const lang = await pageLocale()
+  const t = await getTranslations('site')
+  const room = localizeRow(property.roomTypes[0], ['name', 'description'], lang)
+  const about = room.description?.replace(/\s+/g, ' ').trim()
+  const description = about ? (about.length > 200 ? `${about.slice(0, 197).trimEnd()}…` : about) : roomMeta(room, t)
+  return {
+    title: room.name,
+    description,
+    ...hotelPageMetadata({
+      origin: canonicalSiteOrigin(subdomain, frame?.websiteSettings),
+      locale: lang,
+      path: roomPath(room.id),
+      siteName: property.name,
+      title: `${room.name} · ${property.name}`,
+      description,
+      images: [...room.images.map((i) => i.url), property.coverImage],
+    }),
   }
+}
+
+/** A room type's page (redesign 2c). */
+export default async function RoomDetailPage({ params, searchParams }: PageProps) {
+  const { subdomain, roomId } = await params
+  const query = await searchParams
+  const t = await getTranslations('site')
+  const locale = await getLocale()
+
+  const site = await loadVisibleSite(subdomain)
+  if (!site) notFound()
+
+  const [property, frame] = await Promise.all([loadRoomPage(site.propertyId, roomId), loadSiteFrame(subdomain)])
+  if (!property) notFound()
 
   // The hotel's English texts when the visitor reads English (src/lib/i18n/content.ts).
   const lang = isLocale(locale) ? locale : 'vi'
   const room = localizeRow(property.roomTypes[0], ['name', 'description'], lang)
   // The rates a booking is charged (src/lib/pricing/quote.ts); null: no price yet.
   const rates = ratesFrom(room.pricing[0], await propertyRateDefaults(prisma, property.id))
+  const origin = canonicalSiteOrigin(subdomain, frame?.websiteSettings)
+  const structured = hotelRoomJsonLd({
+    url: sitePageUrl(origin, lang, roomPath(room.id)),
+    locale: lang,
+    hotel: { id: `${origin}/#hotel`, type: property.type, name: property.name, url: sitePageUrl(origin, lang, '/') },
+    name: room.name,
+    description: room.description,
+    images: room.images.map((i) => i.url),
+    area: room.area,
+    bed: bedLabel(room.bedType, t),
+    maxAdults: room.maxAdults,
+    maxChildren: room.maxChildren,
+    amenities: room.amenities.map(({ amenity }) => amenityName(amenity.slug, amenity.name, lang)),
+    rates,
+  })
   const blockTypes = new Set(property.websiteBlocks.map((b) => b.type))
   const sections = Object.entries(SECTIONS)
     .filter(([type]) => blockTypes.size === 0 || blockTypes.has(type as never))
@@ -119,6 +178,7 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
 
   return (
     <>
+      <JsonLd data={structured} />
       <SiteHeader property={property} sections={sections} onHome={false} />
 
       <main className="pb-28 lg:pb-24">

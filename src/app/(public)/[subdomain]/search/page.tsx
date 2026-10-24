@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { BookingFooter, BookingHeader, BookingSteps, loadBookingFrame } from '../_components/booking/frame'
@@ -9,6 +10,8 @@ interface PageProps {
 }
 
 export const dynamic = 'force-dynamic'
+// A step of booking, not a page to find in a search engine.
+export const metadata: Metadata = { robots: { index: false, follow: false } }
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/
 const vnDay = (offset: number) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(Date.now() + offset * 86_400_000))

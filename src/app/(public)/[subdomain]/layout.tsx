@@ -1,45 +1,35 @@
-import { cache } from 'react'
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { getLocale, getTranslations } from 'next-intl/server'
-import { prisma } from '@/lib/db'
 import { publicTheme } from '@/components/marketing/PublicFrame'
-import { localized, localizeRow } from '@/lib/i18n/content'
 import { SITE_BASE_HEADER, SITE_PATH_HEADER, siteBasePath, siteHref } from '@/lib/public-site/paths'
 import { hotelAccentVariables, hotelButtonVariables, hotelHeadingVariables } from '@/lib/public-site/accent'
 import { fontStack } from '@/lib/public-site/font-stack'
+import { loadSiteFrame, siteSeoTexts } from '@/lib/public-site/site-frame'
 import { loadVisibleSite } from '@/lib/public-site/visibility'
+import { OG_LOCALES } from '@/lib/seo/page-metadata'
 import { SiteBaseProvider } from './_components/site-base'
 import { siteFontVariables } from './fonts'
-
-/** What the frame of every hotel page needs; shared by the layout and its metadata. */
-const loadSiteFrame = cache((subdomain: string) =>
-  prisma.property.findFirst({
-    where: { subdomain, isActive: true },
-    select: {
-      name: true,
-      description: true,
-      translations: true,
-      websiteSettings: {
-        select: { primaryColor: true, buttonColor: true, headingColor: true, fontFamily: true, headingFont: true, metaTitle: true, metaDescription: true, translations: true },
-      },
-    },
-  })
-)
 
 export async function generateMetadata({ params }: { params: Promise<{ subdomain: string }> }): Promise<Metadata> {
   const { subdomain } = await params
   // An unpublished site is a 404: its title must not give the hotel away.
-  if (!(await loadVisibleSite(subdomain))) return {}
+  const visible = await loadVisibleSite(subdomain)
+  if (!visible) return {}
   const site = await loadSiteFrame(subdomain)
   if (!site) return {}
   // Hotel pages used to carry Digistay's own title ("DigiStay - Nền Tảng No-Code...").
-  // In English: the hotel's English SEO texts and description when it wrote them (src/lib/i18n/content.ts).
   const lang = (await getLocale()) === 'en' ? 'en' : 'vi'
-  const seo = site.websiteSettings && localizeRow(site.websiteSettings, ['metaTitle', 'metaDescription'], lang)
+  const { title, description } = siteSeoTexts(site, lang)
   return {
-    title: seo?.metaTitle || site.name,
-    description: seo?.metaDescription || localized(site, 'description', lang) || undefined,
+    // The home page keeps the hotel's own title; other pages read "<page> · <hotel>".
+    title: { default: title, template: `%s · ${site.name}` },
+    description,
+    // For pages without their own (the booking steps): the hotel's, never Digistay's.
+    // The home and room pages set theirs with the canonical URL (src/lib/seo/page-metadata.ts).
+    openGraph: { type: 'website', siteName: site.name, title, description, locale: OG_LOCALES[lang] },
+    // A preview is for the hotel's own staff (visibility.ts) and never indexed.
+    ...(visible.preview ? { robots: { index: false, follow: false } } : {}),
   }
 }
 

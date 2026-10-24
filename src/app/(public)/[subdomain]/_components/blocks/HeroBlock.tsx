@@ -72,6 +72,17 @@ export function HeroBlock({ block, property, images, hasMap }: Props) {
   )
 }
 
+/**
+ * A 1×1 transparent GIF. A <source> with it, for the screens where an image
+ * is hidden, keeps the browser from downloading the photo there: a hidden
+ * <img> that is not lazy is still fetched, and on a phone the wide strip's
+ * photos competed with the one photo a guest sees first.
+ */
+const NOTHING = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+/** Below Tailwind's `lg`, where the wide strip is hidden; and from it, where the phone strip is. */
+const BELOW_LG = '(max-width: 1023.98px)'
+const FROM_LG = '(min-width: 1024px)'
+
 function PhotoStrip({ photos }: { photos: Photo[] }) {
   const t = useTranslations('site.blocks.hero')
   const center = (photos.length - 1) / 2
@@ -82,30 +93,38 @@ function PhotoStrip({ photos }: { photos: Photo[] }) {
         {photos.map((photo, i) => {
           const d = i - center
           return (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={photo.url}
-              src={photo.url}
-              alt={photo.alt}
-              loading={Math.abs(d) <= 1 ? 'eager' : 'lazy'}
-              className="h-[420px] w-[300px] shrink-0 object-cover motion-reduce:transform-none"
-              style={{ transform: `rotateY(${-d * 13}deg) translateZ(${Math.abs(d) * 48}px)` }}
-            />
+            // `contents`: the <img> stays the flex item.
+            <picture key={photo.url} className="contents">
+              <source media={BELOW_LG} srcSet={NOTHING} />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={photo.url}
+                alt={photo.alt}
+                loading={Math.abs(d) <= 1 ? 'eager' : 'lazy'}
+                fetchPriority={Math.abs(d) < 1 ? 'high' : undefined}
+                className="h-[420px] w-[300px] shrink-0 object-cover motion-reduce:transform-none"
+                style={{ transform: `rotateY(${-d * 13}deg) translateZ(${Math.abs(d) * 48}px)` }}
+              />
+            </picture>
           )
         })}
       </div>
-      {/* Phones and tablets: a flat strip to swipe. */}
+      {/* Phones and tablets: a flat strip to swipe. The first photo is the
+          largest thing on a phone's first screen: fetched first, not lazily. */}
       <div className="lg:hidden">
         <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 sm:px-8 pb-2 [scrollbar-width:none]">
-          {photos.map((photo) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={photo.url}
-              src={photo.url}
-              alt={photo.alt}
-              loading="lazy"
-              className="aspect-[4/5] w-[78%] sm:w-[46%] shrink-0 snap-center object-cover"
-            />
+          {photos.map((photo, i) => (
+            <picture key={photo.url} className="contents">
+              {i === 0 && <source media={FROM_LG} srcSet={NOTHING} />}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={photo.url}
+                alt={photo.alt}
+                loading={i === 0 ? 'eager' : 'lazy'}
+                fetchPriority={i === 0 ? 'high' : undefined}
+                className="aspect-[4/5] w-[78%] sm:w-[46%] shrink-0 snap-center object-cover"
+              />
+            </picture>
           ))}
         </div>
         {photos.length > 1 && <p className="mt-2 px-4 sm:px-8 text-xs text-muted">{t('swipe', { count: photos.length })}</p>}
