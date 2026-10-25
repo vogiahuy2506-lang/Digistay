@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { ACTIVE_BOOKING_STATUSES } from '@/lib/bookings/occupancy'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
 
@@ -89,18 +90,16 @@ export async function GET(request: NextRequest) {
     })
     if (listed.length > 0 && checkOutDate.getTime() - checkInDate.getTime() <= 366 * DAY) {
       const ids = listed.map((r) => r.id)
-      const [stays, locks] = await Promise.all([
+      const inRooms = { OR: [{ roomId: { in: ids } }, { roomId: null, roomNumber: { in: listed.map((r) => r.number), mode: 'insensitive' as const } }] }
+      const active = { propertyId, status: { in: [...ACTIVE_BOOKING_STATUSES] }, ...(excludeBookingId && { id: { not: excludeBookingId } }) }
+      const [whole, parts, locks] = await Promise.all([
         prisma.bookingItem.findMany({
-          where: {
-            OR: [{ roomId: { in: ids } }, { roomId: null, roomNumber: { in: listed.map((r) => r.number), mode: 'insensitive' } }],
-            booking: {
-              propertyId,
-              status: { in: ['PENDING', 'CONFIRMED', 'CHECKED_IN'] },
-              checkInDate: { lt: checkOutDate },
-              checkOutDate: { gt: checkInDate },
-              ...(excludeBookingId && { id: { not: excludeBookingId } }),
-            },
-          },
+          where: { ...inRooms, booking: { ...active, checkInDate: { lt: checkOutDate }, checkOutDate: { gt: checkInDate }, roomSegments: { none: {} } } },
+          select: { roomId: true, roomNumber: true, booking: { select: { bookingCode: true } } },
+        }),
+        // A split stay holds each room on its nights in it only (rooms.ts).
+        prisma.bookingRoomSegment.findMany({
+          where: { ...inRooms, fromDate: { lt: checkOutDate }, toDate: { gt: checkInDate }, booking: active },
           select: { roomId: true, roomNumber: true, booking: { select: { bookingCode: true } } },
         }),
         prisma.roomLock.findMany({
@@ -109,7 +108,7 @@ export async function GET(request: NextRequest) {
         }),
       ])
       const occupiedBy = new Map<string, string>()
-      for (const stay of stays) {
+      for (const stay of [...whole, ...parts]) {
         const room = stay.roomId ? listed.find((r) => r.id === stay.roomId) : listed.find((r) => r.number.toLowerCase() === stay.roomNumber?.toLowerCase())
         if (room) occupiedBy.set(room.id, stay.booking.bookingCode)
       }

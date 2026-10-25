@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { dayParam } from '@/lib/api/list-params'
+import { roomPlan } from '@/lib/bookings/room-plan'
+import { ROOM_SEGMENT_SELECT } from '@/lib/bookings/room-type-names'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,6 +15,10 @@ const MAX_DAYS = 62
  * timeline (task 25): every room type with its rooms, the stays touching
  * those Vietnam days (cancelled and no-shows left out) with the room they
  * are in, and maintenance / blocks. Front desk and up.
+ *
+ * A stay split between rooms (src/lib/bookings/rooms.ts) comes once per part
+ * in the window: `from` / `to` are the part's nights, `checkIn` / `checkOut`
+ * the stay's, `split` marks it.
  */
 export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params
@@ -66,6 +72,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
             checkOutDate: true,
             numAdults: true,
             numChildren: true,
+            roomSegments: { select: ROOM_SEGMENT_SELECT },
           },
         },
       },
@@ -83,19 +90,27 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
         from: from.toISOString(),
         days,
         roomTypes,
-        stays: items.map((item) => ({
-          bookingId: item.booking.id,
-          bookingCode: item.booking.bookingCode,
-          guestName: item.booking.guestName,
-          status: item.booking.status,
-          paymentStatus: item.booking.paymentStatus,
-          checkIn: item.booking.checkInDate,
-          checkOut: item.booking.checkOutDate,
-          guests: item.booking.numAdults + item.booking.numChildren,
-          roomTypeId: item.roomTypeId,
-          roomId: item.roomId,
-          roomNumber: item.roomNumber,
-        })),
+        stays: items.flatMap((item) => {
+          const plan = roomPlan({ ...item.booking, bookingItems: [item] })
+          return plan
+            .filter((span) => span.from < to && span.to > from)
+            .map((span) => ({
+              bookingId: item.booking.id,
+              bookingCode: item.booking.bookingCode,
+              guestName: item.booking.guestName,
+              status: item.booking.status,
+              paymentStatus: item.booking.paymentStatus,
+              checkIn: item.booking.checkInDate,
+              checkOut: item.booking.checkOutDate,
+              from: span.from,
+              to: span.to,
+              split: plan.length > 1,
+              guests: item.booking.numAdults + item.booking.numChildren,
+              roomTypeId: span.roomTypeId,
+              roomId: span.roomId,
+              roomNumber: span.roomNumber,
+            }))
+        }),
         locks: locks.map((lock) => ({
           id: lock.id,
           roomTypeId: lock.roomTypeId,

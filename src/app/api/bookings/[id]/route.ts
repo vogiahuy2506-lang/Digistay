@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { withRoomTypeNames } from '@/lib/bookings/room-type-names'
+import { ROOM_SEGMENT_SELECT, withRoomTypeNames } from '@/lib/bookings/room-type-names'
 import { RoomError, assignRoomTx, normalizeRoomNumber, roomConflictMessage, typedRoomNumberConflict } from '@/lib/bookings/rooms'
 import { lockBooking } from '@/lib/payments/booking-payments'
 import { z } from 'zod'
@@ -32,6 +32,7 @@ export async function GET(
       where: { id },
       include: {
         bookingItems: true,
+        roomSegments: { orderBy: { fromDate: 'asc' }, select: ROOM_SEGMENT_SELECT },
         property: {
           include: {
             workspace: {
@@ -180,6 +181,8 @@ export async function PATCH(
               data: { roomNumber, roomId: null },
             },
           },
+          // A typed number is the whole stay's room: a split ends.
+          roomSegments: { deleteMany: {} },
         }),
       },
       include: {

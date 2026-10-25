@@ -694,6 +694,7 @@ model Booking {
   
   // Relations
   bookingItems    BookingItem[]
+  roomSegments    BookingRoomSegment[]
   roomLocks       RoomLock[]
   payments        Payment[]
   invoices        Invoice[]
@@ -759,6 +760,33 @@ model BookingItem {
 
 /// One numbered room of the hotel (task 25 / 27, src/lib/bookings/rooms.ts).
 /// Once a room type has rooms, its totalRooms is the number of active ones.
+/// A stay split between rooms (src/lib/bookings/rooms.ts): the guest sleeps in
+/// this room from `fromDate` to `toDate`. A stay in one room has none (its
+/// BookingItem holds the room). A split stay's segments cover its nights end
+/// to end, neighbours in different rooms, and its BookingItem keeps the first
+/// night's room and type, so readers that show one room still read one.
+model BookingRoomSegment {
+  id          String   @id @default(cuid())
+  bookingId   String
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  /// null once the room is deleted (past stays only); the number stays
+  roomId      String?
+  room        Room?    @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  roomNumber  String
+  /// the room's type on these nights: inventory counts it there (occupancy.ts)
+  roomTypeId  String
+  /// night boundaries, at the booking's check-in time of day
+  fromDate    DateTime
+  toDate      DateTime
+
+  createdAt   DateTime @default(now())
+
+  @@index([bookingId])
+  @@index([roomId])
+  @@index([roomTypeId])
+  @@map("booking_room_segments")
+}
+
 model Room {
   id          String   @id @default(cuid())
   propertyId  String
@@ -770,6 +798,7 @@ model Room {
   floor       Int?
   isActive    Boolean  @default(true)
   bookingItems BookingItem[]
+  roomSegments BookingRoomSegment[]
   roomLocks   RoomLock[]
 
   createdAt   DateTime @default(now())

@@ -20,12 +20,18 @@ function roomOf(id: string) {
 
 const NOT_FOUND = () => NextResponse.json({ success: false, error: 'Không tìm thấy phòng' }, { status: 404 })
 
-/** A stay in this room that has not ended: it must move first. */
-function currentStay(tx: Tx, roomId: string) {
-  return tx.bookingItem.findFirst({
-    where: { roomId, booking: { status: { in: [...ACTIVE_BOOKING_STATUSES] }, checkOutDate: { gt: new Date() } } },
-    select: { booking: { select: { bookingCode: true } } },
-  })
+/** A stay in this room that has not ended (a split stay: its part in it): it must move first. */
+async function currentStay(tx: Tx, roomId: string) {
+  const now = new Date()
+  const active = { status: { in: [...ACTIVE_BOOKING_STATUSES] } }
+  const [whole, part] = await Promise.all([
+    tx.bookingItem.findFirst({
+      where: { roomId, booking: { ...active, checkOutDate: { gt: now }, roomSegments: { none: {} } } },
+      select: { booking: { select: { bookingCode: true } } },
+    }),
+    tx.bookingRoomSegment.findFirst({ where: { roomId, toDate: { gt: now }, booking: active }, select: { booking: { select: { bookingCode: true } } } }),
+  ])
+  return whole ?? part
 }
 
 /** After a room stops counting: the type's inventory, which must still hold every night sold. */
@@ -73,7 +79,10 @@ export async function PATCH(request: NextRequest, props: Props) {
         data: { ...(number && { number }), ...(parsed.data.floor !== undefined && { floor: parsed.data.floor }), ...(parsed.data.isActive !== undefined && { isActive: parsed.data.isActive }) },
       })
       // Stays keep the room's number as text too (slips, emails).
-      if (number && number !== room.number) await tx.bookingItem.updateMany({ where: { roomId: room.id }, data: { roomNumber: number } })
+      if (number && number !== room.number) {
+        await tx.bookingItem.updateMany({ where: { roomId: room.id }, data: { roomNumber: number } })
+        await tx.bookingRoomSegment.updateMany({ where: { roomId: room.id }, data: { roomNumber: number } })
+      }
       const active = await checkInventory(tx, room.roomTypeId)
       if (active !== null) await tx.roomType.update({ where: { id: room.roomTypeId }, data: { totalRooms: active } })
       await tx.activityLog.create({

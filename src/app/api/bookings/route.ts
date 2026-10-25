@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { BookingSource, BookingStatus, PaymentStatus } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { withRoomTypeNames } from '@/lib/bookings/room-type-names'
+import { ROOM_SEGMENT_SELECT, withRoomTypeNames } from '@/lib/bookings/room-type-names'
 import { z } from 'zod'
 import { sendAfterResponse } from '@/lib/email/outbox'
 import { BookingError, createBooking } from '@/lib/bookings/create-booking'
@@ -145,6 +145,7 @@ export async function GET(request: NextRequest) {
         where,
         include: {
           bookingItems: true,
+          roomSegments: { orderBy: { fromDate: 'asc' }, select: ROOM_SEGMENT_SELECT },
           property: {
             select: {
               id: true,
