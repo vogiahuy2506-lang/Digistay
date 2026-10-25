@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import Image from 'next/image'
 import Link from 'next/link'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { BrowserFrame } from '@/components/marketing/BrowserFrame'
@@ -51,7 +50,7 @@ export default async function HomePage() {
     <>
       <MarketingHeader />
       <main>
-        {/* Hero: the headline over a resort video (its first frame until it plays) filling the first screen */}
+        {/* Hero: the headline over a resort video (its first frame until it plays) filling the first screen; the features follow */}
         <section className="relative isolate overflow-hidden bg-[#1c1b19]">
           {/* eslint-disable-next-line @next/next/no-img-element -- srcSet of pre-cut widths (image optimization is off) */}
           <img
@@ -85,53 +84,6 @@ export default async function HomePage() {
               <Link href="/pricing" className={cn(lineButton, 'h-[52px] border-white/80 px-[26px] text-[15px] text-white hover:bg-white/10')}>
                 {t('seePricing')}
               </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* The app and a hotel website, in their own band under the hero */}
-        <section className={cn(frame, 'pt-14 lg:pt-24')}>
-          <div data-reveal="rise" className="relative mx-auto aspect-[350/420] max-w-[560px] lg:hidden">
-            <BrowserFrame
-              url="digistay.vn"
-              src="/marketing/admin-bookings.jpg"
-              darkSrc="/marketing/admin-bookings-dark.jpg"
-              alt={t('altAdmin')}
-              width={1440}
-              height={1040}
-              aspect="330/238"
-              className="absolute left-0 top-0 w-[94.3%] shadow-[0_24px_48px_-32px_rgba(28,27,25,.45)]"
-            />
-            <div className="absolute right-0 top-[28.6%] w-[48.6%] overflow-hidden rounded-[14px] border border-line bg-panel shadow-[0_24px_48px_-24px_rgba(28,27,25,.5)]">
-              <div className="aspect-[170/290] overflow-hidden">
-                <Image src="/marketing/site-home-mobile.jpg" alt={t('altSite')} width={390} height={666} className="block h-auto w-full" />
-              </div>
-            </div>
-          </div>
-
-          <div className="relative hidden lg:block">
-            <div data-reveal="rise" className="w-[81.25%]">
-              <BrowserFrame
-                url="digistay.vn/workspace/…/bookings"
-                src="/marketing/admin-bookings.jpg"
-                darkSrc="/marketing/admin-bookings-dark.jpg"
-                alt={t('altAdmin')}
-                width={1440}
-                height={1040}
-                aspect="1040/640"
-                className="shadow-[0_40px_80px_-48px_rgba(28,27,25,.45)]"
-              />
-            </div>
-            <div data-reveal="rise" style={revealDelay(220)} className="absolute right-0 top-[120px] w-[31.25%]">
-              <BrowserFrame
-                url="khach-san-demo.digistay.vn"
-                src="/marketing/site-home.jpg"
-                alt={t('altSite')}
-                width={1440}
-                height={2016}
-                aspect="400/560"
-                className="shadow-[0_40px_80px_-40px_rgba(28,27,25,.5)]"
-              />
             </div>
           </div>
         </section>
