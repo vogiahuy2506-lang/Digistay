@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
-import { MarketingHeader } from '@/components/marketing/MarketingHeader'
-import { AuthColumn } from '../_components/AuthColumn'
+import { AuthShell } from '../_components/AuthShell'
 import { RegisterForm } from './RegisterForm'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -11,11 +10,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function RegisterPage() {
   return (
-    <>
-      <MarketingHeader active="register" />
-      <AuthColumn width={480}>
-        <RegisterForm />
-      </AuthColumn>
-    </>
+    <AuthShell width={480}>
+      <RegisterForm />
+    </AuthShell>
   )
 }

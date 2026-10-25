@@ -257,7 +257,7 @@ export function RegisterForm() {
         <Field id="reg-name" label={t('register.name')} error={shown.name}>
           <input id="reg-name" value={form.name} onChange={set('name')} disabled={busy} autoComplete="name" className={inputClass(!!shown.name)} {...describedBy('reg-name', shown.name)} />
         </Field>
-        <Field id="reg-username" label={t('register.username')} error={shown.username} hint={t('register.usernameHint')}>
+        <Field id="reg-username" label={t('register.username')} error={shown.username}>
           <input
             id="reg-username"
             value={form.username}
@@ -266,11 +266,12 @@ export function RegisterForm() {
             autoComplete="username"
             autoCapitalize="none"
             spellCheck={false}
+            placeholder={t('register.usernamePlaceholder')}
             className={inputClass(!!shown.username)}
-            {...describedBy('reg-username', shown.username, true)}
+            {...describedBy('reg-username', shown.username)}
           />
         </Field>
-        <Field id="reg-email" label={t('common.email')} error={shown.email} hint={t('register.emailHint')}>
+        <Field id="reg-email" label={t('common.email')} error={shown.email}>
           <input
             id="reg-email"
             type="email"
@@ -280,7 +281,7 @@ export function RegisterForm() {
             disabled={busy}
             autoComplete="email"
             className={inputClass(!!shown.email)}
-            {...describedBy('reg-email', shown.email, true)}
+            {...describedBy('reg-email', shown.email)}
           />
         </Field>
         <Field id="reg-phone" label={t('register.phone')} extra={t('register.optional')} error={shown.phone}>

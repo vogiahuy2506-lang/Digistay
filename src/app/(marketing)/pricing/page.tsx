@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { Faq } from '@/components/marketing/Faq'
 import { MarketingHeader } from '@/components/marketing/MarketingHeader'
-import { frame, inkButton, lineButton, sectionTitle, softText } from '@/components/marketing/styles'
+import { frame, inkButton, lineButton, revealDelay, sectionTitle, softText } from '@/components/marketing/styles'
 import { formatVnd } from '@/lib/bookings/display'
 import { ADDON_IDS, ADDON_PRICES, COMPARE, PLANS, type Cell, type Plan } from '@/lib/marketing/plans'
 import { cn } from '@/lib/utils'
@@ -55,8 +55,8 @@ export default async function PricingPage() {
 
         {/* Plans */}
         <section className={cn(frame, 'mt-8 grid gap-4 lg:mt-14 lg:grid-cols-3 lg:gap-5')}>
-          {PLANS.map((p) => (
-            <div key={p.id} className="flex flex-col rounded-box border border-line bg-panel p-6 lg:p-8">
+          {PLANS.map((p, i) => (
+            <div key={p.id} data-reveal style={revealDelay(i * 100)} className="flex flex-col rounded-box border border-line bg-panel p-6 lg:p-8">
               <h2 className="text-label font-medium uppercase text-muted">{tp(`${p.id}.name`)}</h2>
               <p className="mt-2 text-[14px] text-muted">
                 {t('fit')} <span className="text-fg">{tp(`${p.id}.fit`)}</span>
@@ -85,8 +85,10 @@ export default async function PricingPage() {
 
         {/* Add-ons */}
         <section className={cn(frame, 'pt-24 lg:pt-28')}>
-          <h2 className={sectionTitle}>{t('addons.title')}</h2>
-          <ul className="mt-6 border-t border-line lg:mt-10 lg:rounded-box lg:border lg:bg-panel">
+          <h2 data-reveal className={sectionTitle}>
+            {t('addons.title')}
+          </h2>
+          <ul data-reveal className="mt-6 border-t border-line lg:mt-10 lg:rounded-box lg:border lg:bg-panel">
             {ADDON_IDS.map((a) => (
               <li
                 key={a}
@@ -111,11 +113,13 @@ export default async function PricingPage() {
 
         {/* Comparison */}
         <section className={cn(frame, 'pt-24 lg:pt-28')}>
-          <h2 className={sectionTitle}>{t('compare.title')}</h2>
-          <div className="mt-6 lg:hidden">
+          <h2 data-reveal className={sectionTitle}>
+            {t('compare.title')}
+          </h2>
+          <div data-reveal className="mt-6 lg:hidden">
             <ComparePicker plans={planNames} groups={groups} label={t('compare.choosePlan')} yes={t('compare.yes')} no={t('compare.no')} />
           </div>
-          <div className="mt-10 hidden overflow-hidden rounded-box border border-line bg-panel lg:block">
+          <div data-reveal className="mt-10 hidden overflow-hidden rounded-box border border-line bg-panel lg:block">
             <table className="w-full border-collapse text-[14.5px]">
               <thead>
                 <tr className="border-b border-ink">
@@ -156,12 +160,14 @@ export default async function PricingPage() {
 
         {/* Billing questions */}
         <section className={cn(frame, 'grid gap-8 pt-24 lg:grid-cols-[420px_minmax(0,1fr)] lg:items-start lg:gap-24 lg:pt-28')}>
-          <h2 className={sectionTitle}>{t('faq.title')}</h2>
-          <Faq items={FAQ.map((q) => ({ q: t(`faq.${q}.q`), a: t(`faq.${q}.a`) }))} />
+          <h2 data-reveal className={sectionTitle}>
+            {t('faq.title')}
+          </h2>
+          <Faq reveal items={FAQ.map((q) => ({ q: t(`faq.${q}.q`), a: t(`faq.${q}.a`) }))} />
         </section>
 
         <section className={cn(frame, 'pt-24 lg:pt-28')}>
-          <div className="grid gap-6 rounded-box bg-plain-soft px-6 py-9 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-12 lg:px-14 lg:py-14">
+          <div data-reveal="rise" className="grid gap-6 rounded-box bg-plain-soft px-6 py-9 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-12 lg:px-14 lg:py-14">
             <div>
               <h2 className="font-serif text-[28px] font-medium leading-[1.2] tracking-[-0.015em] lg:text-[36px]">{t('cta.title')}</h2>
               <p className={cn('mt-3 text-[15.5px] leading-[1.7]', softText)}>{t('cta.lead')}</p>

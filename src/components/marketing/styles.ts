@@ -29,3 +29,6 @@ export const sectionTitle =
 
 /** Body copy one step softer than headings (#4A4741 in the design). */
 export const softText = 'text-fg/80'
+
+/** `style` for a `data-reveal` element (Reveal.tsx) that should start a little after its neighbours. */
+export const revealDelay = (ms: number) => ({ '--reveal-delay': `${ms}ms` }) as React.CSSProperties
