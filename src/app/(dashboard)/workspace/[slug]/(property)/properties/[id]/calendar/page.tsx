@@ -1143,10 +1143,12 @@ export default function CalendarPage() {
                 ) : (
                   todayCheckIns.slice(0, 3).map((b) => (
                     <div key={`in-${b.id}`} className="p-2.5 rounded-lg border border-line bg-page/60 hover:bg-panel hover:border-acc/40 transition-all">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-fg text-xs">{b.guestName}</span>
+                      {/* The badge drops under the name when the card is narrow (the aside at lg): it is nowrap,
+                          and next to a long name or booking code it ran past the page edge at 1024px. */}
+                      <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+                        <div className="min-w-0 flex-[1_1_8rem]">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="font-bold text-fg text-xs break-words">{b.guestName}</span>
                             <span className="text-[9px] bg-ok-soft text-ok border border-ok/30 px-1 rounded font-bold">{t('checkIn')}</span>
                           </div>
                           <p className="text-[11px] text-muted mt-0.5">
@@ -1162,10 +1164,10 @@ export default function CalendarPage() {
                 {/* Check-outs */}
                 {todayCheckOuts.length > 0 && todayCheckOuts.slice(0, 2).map((b) => (
                   <div key={`out-${b.id}`} className="p-2.5 rounded-lg border border-line bg-page/60 hover:bg-panel hover:border-acc/40 transition-all">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-fg text-xs">{b.guestName}</span>
+                    <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+                      <div className="min-w-0 flex-[1_1_8rem]">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="font-bold text-fg text-xs break-words">{b.guestName}</span>
                           <span className="text-[9px] bg-warn-soft text-warn border border-warn/30 px-1 rounded font-bold">{t('checkOut')}</span>
                         </div>
                         <p className="text-[11px] text-muted mt-0.5">
