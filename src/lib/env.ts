@@ -59,7 +59,7 @@ const schema = z.object({
   // Public — available in both server and client bundles
   NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
 
-  // Image storage (optional, not yet wired)
+  // Image storage: photo uploads (src/lib/cloudinary); without it uploads answer 503
   CLOUDINARY_CLOUD_NAME: z.string().optional(),
   CLOUDINARY_API_KEY: z.string().optional(),
   CLOUDINARY_API_SECRET: z.string().optional(),

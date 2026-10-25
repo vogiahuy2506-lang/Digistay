@@ -17,6 +17,7 @@ import { format } from 'date-fns'
 import { enGB, vi } from 'date-fns/locale'
 import { TwoFactorCard } from './two-factor-card'
 import { apiError } from '@/lib/i18n/api-errors'
+import { prepareImage, UploadClientError } from '@/lib/media/upload-client'
 
 interface UserProfile {
   id: string
@@ -106,55 +107,33 @@ export default function ProfilePage() {
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    e.target.value = ''
     if (!file) return
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setError(t('avatar.notImage'))
-      return
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError(t('avatar.tooBig'))
-      return
-    }
 
     setIsUploadingAvatar(true)
     setError('')
-
     try {
-      // Convert to base64
-      const reader = new FileReader()
-      reader.onload = async (ev) => {
-        const base64 = ev.target?.result as string
-        
-        const res = await fetch('/api/users/me/avatar', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ base64 }),
-        })
-        
-        const data = await res.json()
-        
-        if (data.success) {
-          setProfile(prev => prev ? { ...prev, image: data.data.image } : null)
-          setSuccess(t('avatar.updated'))
-          // Update session
-          await updateSession()
-        } else {
-          setError(apiError(data.error) || t('avatar.uploadFailed'))
-        }
-        setIsUploadingAvatar(false)
+      // Shrunk to 512 px in the browser, then stored by the server (Cloudinary).
+      const base64 = await prepareImage(file, 512)
+      const res = await fetch('/api/users/me/avatar', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64 }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (data.success) {
+        setProfile((prev) => (prev ? { ...prev, image: data.data.image } : null))
+        setSuccess(t('avatar.updated'))
+        await updateSession()
+      } else {
+        setError(apiError(data.error) || t('avatar.uploadFailed'))
       }
-      reader.onerror = () => {
-        setError(t('avatar.readFailed'))
-        setIsUploadingAvatar(false)
-      }
-      reader.readAsDataURL(file)
     } catch (err) {
-      console.error('Avatar upload error:', err)
-      setError(t('avatar.uploadError'))
+      if (err instanceof UploadClientError && err.problem === 'notImage') setError(t('avatar.notImage'))
+      else if (err instanceof UploadClientError && err.problem === 'tooLarge') setError(t('avatar.tooBig'))
+      else if (err instanceof UploadClientError && err.problem === 'unreadable') setError(t('avatar.readFailed'))
+      else setError(t('avatar.uploadError'))
+    } finally {
       setIsUploadingAvatar(false)
     }
   }
@@ -422,7 +401,7 @@ export default function ProfilePage() {
                   )}
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
                     className="hidden"
                     onChange={handleAvatarUpload}
                     disabled={isUploadingAvatar}

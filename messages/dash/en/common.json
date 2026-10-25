@@ -146,5 +146,15 @@
     "title": "English version",
     "optional": "optional",
     "hint": "Guests reading the site in English see these texts. A field left empty shows the Vietnamese text."
+  },
+  "upload": {
+    "button": "Upload photo",
+    "buttonMany": "Upload from device",
+    "uploading": "Uploading…",
+    "uploadingMany": "Uploading {done}/{total}…",
+    "notImage": "This file isn't a photo (JPG, PNG, WebP, GIF, AVIF).",
+    "tooLarge": "The photo is too large (10 MB max).",
+    "unreadable": "This photo can't be read. Try a JPG or PNG.",
+    "failed": "The photo couldn't be uploaded, please try again."
   }
 }

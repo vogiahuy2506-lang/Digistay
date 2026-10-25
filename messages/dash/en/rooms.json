@@ -117,6 +117,16 @@
       "deleted": "Room {number} deleted",
       "deleteFailed": "Could not delete the room",
       "saveFailed": "Could not save the room"
+    },
+    "photos": {
+      "title": "Room type photos",
+      "none": "No photos yet. The website uses the hotel's own photos.",
+      "main": "Main photo",
+      "makeMain": "Make main photo",
+      "delete": "Delete photo",
+      "deleteConfirm": "Remove this photo from the room type?",
+      "failed": "The photo change wasn't saved, please try again",
+      "hint": "The main photo shows on the website's room card; the others on the room's page. Photos are saved at once, no need to press Save."
     }
   },
   "services": {

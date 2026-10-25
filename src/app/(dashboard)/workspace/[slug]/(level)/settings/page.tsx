@@ -14,6 +14,8 @@ import { useWorkspace } from '@/lib/hooks/use-workspace'
 import { cn } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
 import Image from 'next/image'
+import { uploadPhoto } from '@/lib/media/upload-client'
+import { useUploadProblemText } from '@/components/ui/photo-upload'
 
 interface WorkspaceSettings {
   id: string
@@ -58,6 +60,7 @@ const BUSINESS_TYPES = ['HOTEL', 'RESORT', 'HOMESTAY', 'BOUTIQUE', 'VILLA', 'MOT
 
 export default function WorkspaceSettingsPage() {
   const t = useTranslations('dash.workspace')
+  const uploadProblem = useUploadProblemText()
   const tc = useTranslations('dash.common')
   const router = useRouter()
   const currencies = CURRENCIES.map((value) => ({ value, label: t(`currencies.${value}`) }))
@@ -163,44 +166,17 @@ export default function WorkspaceSettingsPage() {
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file) return
-
-    // Validate file
-    if (file.size > 2 * 1024 * 1024) {
-      setError(t('logo.tooLarge'))
-      return
+    e.target.value = ''
+    if (!file || !workspace?.id) return
+    setError('')
+    try {
+      // Stored (Cloudinary); never kept as a data: URL in the workspace row.
+      const url = await uploadPhoto(file, { workspaceId: workspace.id }, 512)
+      setFormData((prev) => ({ ...prev, logo: url }))
+      setSuccess(t('settings.logoUploaded'))
+    } catch (err) {
+      setError(uploadProblem(err))
     }
-
-    // Read and convert to base64
-    const reader = new FileReader()
-    reader.onload = async (ev) => {
-      const base64 = ev.target?.result as string
-      
-      try {
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            base64,
-            folder: 'digistay/logos',
-            isThumbnail: true,
-          }),
-        })
-
-        const data = await res.json()
-        if (data.success) {
-          setFormData(prev => ({ ...prev, logo: data.data.url }))
-          setSuccess(t('settings.logoUploaded'))
-        } else {
-          // Fallback: use base64 directly
-          setFormData(prev => ({ ...prev, logo: base64 }))
-        }
-      } catch {
-        // Fallback: use base64 directly
-        setFormData(prev => ({ ...prev, logo: base64 }))
-      }
-    }
-    reader.readAsDataURL(file)
   }
 
   if (wsLoading) {
@@ -325,7 +301,7 @@ export default function WorkspaceSettingsPage() {
                     <input
                       type="file"
                       id="logo-upload"
-                      accept="image/png,image/svg+xml,image/jpeg"
+                      accept="image/png,image/jpeg,image/webp"
                       className="hidden"
                       onChange={handleLogoUpload}
                     />

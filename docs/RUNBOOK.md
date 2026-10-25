@@ -672,6 +672,49 @@ Nếu VPS đã có cron gia hạn riêng (ngoài repo) thì bỏ cron đó, đ�
 
 ---
 
+## Lưu ảnh (Cloudinary)
+
+Ảnh tải lên trong dashboard (ảnh cơ sở, ảnh loại phòng, ảnh bìa website, ảnh món, logo, ảnh đại
+diện) lưu ở Cloudinary, **dùng chung tài khoản với UKNOW**, trong thư mục riêng `digistay/`
+(`digistay/<workspace>/<property>`, `digistay/<workspace>`, `digistay/users/<user>` — server chọn,
+không phải trình duyệt). Chưa có 3 biến `CLOUDINARY_*` trong `.env.production` (hoặc còn giá trị mẫu
+`CHANGE_ME` / `PASTE_…`) thì nút tải ảnh báo "Chưa cấu hình nơi lưu ảnh"; dán link ảnh vẫn dùng được.
+
+- Trình duyệt thu nhỏ ảnh còn tối đa 2400px trước khi gửi (`src/lib/media/upload-client.ts`). Server
+  nhận JPG, PNG, WebP, GIF, AVIF (không SVG), tối đa 10 MB, kiểm cả byte đầu file, rồi ký request
+  bằng API secret (`src/lib/cloudinary`). Chủ, admin và quản lý mới tải được; 120 ảnh/giờ mỗi người.
+- Website xin Cloudinary đúng cỡ đang hiện (`f_auto,q_auto,c_limit,w_…`, `src/lib/media/image-url.ts`),
+  5 cỡ cố định mỗi ảnh cho đỡ tốn lượt biến đổi. Ảnh thêm bằng link giữ nguyên.
+- Xoá ảnh trong Digistay **không** xoá file trên Cloudinary (link đó có thể vẫn là ảnh bìa hay ảnh món).
+- Dung lượng, băng thông và lượt biến đổi tính chung với UKNOW: xem Cloudinary Console → Usage.
+
+**Cài trên VPS (một lần).** Khối lệnh hỏi lần lượt 3 giá trị (lấy ở Cloudinary Console của tài khoản
+UKNOW → Settings → API Keys, hoặc trong file `.env` của UKNOW), ghi vào `.env.production` (giữ bản sao
+`.env.production.bak-…`), khởi động lại app và in `set`/`MISSING` cho từng biến (không in giá trị):
+
+```bash
+{
+cd /opt/digistay
+read -r -p "CLOUDINARY_CLOUD_NAME: " CN
+read -r -p "CLOUDINARY_API_KEY: " CK
+read -r -s -p "CLOUDINARY_API_SECRET: " CS; echo
+sudo cp -p .env.production ".env.production.bak-$(date +%Y%m%d%H%M%S)"
+( umask 077
+  sudo grep -vE '^CLOUDINARY_(CLOUD_NAME|API_KEY|API_SECRET)=' .env.production > /tmp/digistay-env.new
+  printf 'CLOUDINARY_CLOUD_NAME=%s\nCLOUDINARY_API_KEY=%s\nCLOUDINARY_API_SECRET=%s\n' "$CN" "$CK" "$CS" >> /tmp/digistay-env.new
+  sudo sh -c 'cat /tmp/digistay-env.new > /opt/digistay/.env.production'
+  rm -f /tmp/digistay-env.new )
+unset CN CK CS
+sudo docker compose up -d --no-deps --no-build --force-recreate app
+sleep 25
+sudo docker compose exec -T app node -e "for (const k of ['CLOUDINARY_CLOUD_NAME','CLOUDINARY_API_KEY','CLOUDINARY_API_SECRET']) console.log(k, process.env[k] && !/^(CHANGE_ME|PASTE_)/.test(process.env[k]) ? 'set' : 'MISSING')"
+curl -fsS https://digistay.vn/api/health; echo
+}
+```
+
+`cat … >` ghi đè nội dung mà giữ nguyên chủ sở hữu và quyền của file. Chỉ `.env.production` cần
+các biến này (`env_file:` của service `app`; `docker-compose.yml` không đọc chúng).
+
 ## Subdomain cho site khách sạn
 
 Site công khai của khách sạn luôn có ở `digistay.vn/<subdomain>`. Phần dưới đây bật thêm địa

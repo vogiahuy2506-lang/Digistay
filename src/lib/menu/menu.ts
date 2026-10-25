@@ -112,10 +112,9 @@ const UPLOAD_PATH = /^\/api\/upload\/[A-Za-z0-9._~/-]+$/
  * A dish photo the site may show: an http(s) URL, or a file of our own
  * upload route (`/api/upload/...`; the middleware leaves /api alone, so the
  * path works on the hotel's subdomain too). Never data:, javascript: or a
- * protocol-relative `//host` URL. Not data: in particular: /api/upload hands
- * the image back as a data: URL while no storage is set up
- * (src/lib/cloudinary), and that would put whole photos into the cached
- * site and its HTML.
+ * protocol-relative `//host` URL. Not data: in particular: that would put
+ * whole photos into the database, the cached site and its HTML (uploads are
+ * stored at Cloudinary and come back as https URLs, src/lib/cloudinary).
  */
 export function isMenuImageUrl(value: string): boolean {
   if (!value || value.length > 2048) return false

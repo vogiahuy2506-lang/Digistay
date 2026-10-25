@@ -146,5 +146,15 @@
     "title": "Bản tiếng Anh",
     "optional": "không bắt buộc",
     "hint": "Khách xem trang bằng tiếng Anh sẽ thấy các nội dung này. Ô nào để trống thì hiện bản tiếng Việt."
+  },
+  "upload": {
+    "button": "Tải ảnh lên",
+    "buttonMany": "Tải ảnh từ máy",
+    "uploading": "Đang tải lên…",
+    "uploadingMany": "Đang tải {done}/{total}…",
+    "notImage": "File này không phải ảnh (JPG, PNG, WebP, GIF, AVIF).",
+    "tooLarge": "Ảnh quá lớn (tối đa 10 MB).",
+    "unreadable": "Không đọc được ảnh này. Hãy thử ảnh JPG hoặc PNG.",
+    "failed": "Không tải được ảnh lên, vui lòng thử lại."
   }
 }

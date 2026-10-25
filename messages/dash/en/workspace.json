@@ -8,8 +8,7 @@
     "hint": "Choose a workspace to see its settings."
   },
   "logo": {
-    "upload": "Upload logo",
-    "tooLarge": "The file must be 2MB or smaller"
+    "upload": "Upload logo"
   },
   "defaultCurrency": "Default currency",
   "currencies": {
@@ -99,7 +98,7 @@
       "removeLogo": "Remove logo",
       "uploaded": "Uploaded ✓",
       "monogram": "or use a generated monogram",
-      "logoHint": "PNG, SVG or JPG (512x512px recommended, 2MB max)",
+      "logoHint": "PNG, JPG or WebP (512×512 px recommended)",
       "description": "Short description & operating notes",
       "descriptionPlaceholder": "Your hotel's positioning, service style or notes for the team...",
       "timezone": "Operating time zone",
@@ -174,7 +173,7 @@
     "general": {
       "basicInfo": "Basic information",
       "logo": "Workspace logo",
-      "logoHint": "PNG, SVG, JPG (2MB max)",
+      "logoHint": "PNG, JPG or WebP",
       "name": "Workspace name",
       "namePlaceholder": "e.g. ABC Hotel",
       "description": "Description",

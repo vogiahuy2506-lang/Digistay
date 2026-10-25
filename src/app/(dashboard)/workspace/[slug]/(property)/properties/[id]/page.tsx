@@ -16,6 +16,8 @@ import { useTranslations } from 'next-intl'
 import { useDashLabels } from '@/lib/i18n/dash'
 import { EditPropertyModal } from './edit-property-modal'
 import { apiError } from '@/lib/i18n/api-errors'
+import { PhotoUploadButton } from '@/components/ui/photo-upload'
+import { resizedImage } from '@/lib/media/image-url'
 
 interface Property {
   id: string
@@ -169,12 +171,30 @@ export default function PropertyDetailPage() {
         setShowImageModal(false)
         setImageForm({ url: '', alt: '', category: '', isPrimary: false })
         fetchProperty()
+      } else {
+        const data = await response.json().catch(() => ({}))
+        toast.error(apiError(data.error) || t('images.saveFailed'))
       }
     } catch (err) {
       console.error('Failed to upload image:', err)
+      toast.error(t('images.saveFailed'))
     } finally {
       setIsUploading(false)
     }
+  }
+
+  // A photo stored by the upload button becomes one of the property's photos (the first one its main photo).
+  const addUploadedImage = async (url: string) => {
+    const response = await fetch(`/api/properties/${propertyId}/images`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, isPrimary: !property?.images.length }),
+    })
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}))
+      toast.error(apiError(data.error) || t('images.saveFailed'))
+    }
+    await fetchProperty()
   }
 
   const handleDeleteImage = async (imageId: string) => {
@@ -451,21 +471,20 @@ export default function PropertyDetailPage() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>{t('overview.images')}</CardTitle>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setShowImageModal(true)}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    {t('images.add')}
-                  </Button>
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <PhotoUploadButton target={{ propertyId }} multiple onUploaded={addUploadedImage} />
+                    <Button variant="ghost" size="sm" onClick={() => setShowImageModal(true)}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      {t('images.addByLink')}
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   {property.images.length > 0 ? (
                     <div className="grid grid-cols-3 gap-4">
                       {property.images.map((img) => (
                         <div key={img.id} className="relative aspect-video rounded-lg overflow-hidden group">
-                          <Image src={img.url} alt={img.alt || property.name} fill className="object-cover" />
+                          <Image src={resizedImage(img.url, 480)} alt={img.alt || property.name} fill className="object-cover" />
                           {img.isPrimary && (
                             <div className="absolute top-2 left-2 px-2 py-1 bg-ink text-on-ink text-xs rounded">
                               {t('overview.primaryImage')}
@@ -473,7 +492,7 @@ export default function PropertyDetailPage() {
                           )}
                           <button aria-label={tc('actions.delete')}
                             onClick={() => handleDeleteImage(img.id)}
-                            className="absolute top-2 right-2 p-1 bg-err text-on-err rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute top-2 right-2 p-1 bg-err text-on-err rounded transition-opacity sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -483,10 +502,13 @@ export default function PropertyDetailPage() {
                   ) : (
                     <div className="text-center py-8 text-muted">
                       <p>{t('overview.noImages')}</p>
-                      <Button variant="outline" className="mt-2" onClick={() => setShowImageModal(true)}>
-                        <Plus className="w-4 h-4 mr-2" />
-                        {t('images.addTitle')}
-                      </Button>
+                      <div className="mt-3 flex flex-wrap justify-center gap-2">
+                        <PhotoUploadButton target={{ propertyId }} multiple variant="primary" onUploaded={addUploadedImage} />
+                        <Button variant="outline" size="sm" onClick={() => setShowImageModal(true)}>
+                          <Plus className="w-4 h-4 mr-2" />
+                          {t('images.addByLink')}
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </CardContent>

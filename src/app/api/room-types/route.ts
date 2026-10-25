@@ -40,7 +40,8 @@ export async function GET(request: NextRequest) {
     const roomTypes = await prisma.roomType.findMany({
       where: { propertyId },
       include: {
-        images: { where: { isPrimary: true } },
+        // Every photo, the main one first: the room types page counts them and edits them (room-type-photos.tsx).
+        images: { orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }, { createdAt: 'asc' }] },
         amenities: { include: { amenity: true } },
         pricing: {
           include: { pricing: true },

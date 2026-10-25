@@ -48,7 +48,7 @@
     "previewAlt": "Photo of the dish",
     "photoInvalid": "The photo link must start with http:// or https://",
     "photoNotImage": "Choose an image file",
-    "photoTooLarge": "A photo is at most 5 MB",
+    "photoTooLarge": "A photo is at most 10 MB",
     "photoNoStorage": "No photo storage is set up yet, so photos cannot be uploaded. Paste a link to the photo below instead.",
     "photoUploadFailed": "Could not upload the photo",
     "available": "On sale",

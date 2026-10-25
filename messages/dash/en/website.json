@@ -145,10 +145,11 @@
     "contactForm": "Show the contact form",
     "cover": {
       "label": "Cover photo",
-      "hint": "The first photo of the strip at the top of the page, picked from the property's photos (add photos under Overview → Photos).",
+      "hint": "The first photo of the strip at the top of the page: pick one of the property's photos, or upload a new one (landscape looks best).",
       "auto": "Automatic (the property's first photo)",
       "photo": "Property photo",
-      "none": "The property has no photos yet. Add some under Overview → Photos."
+      "none": "The property has no photos yet. Add some under Overview → Photos.",
+      "current": "Current cover photo"
     },
     "reviews": {
       "label": "Guest reviews",

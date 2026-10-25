@@ -48,7 +48,7 @@
     "previewAlt": "Ảnh của món",
     "photoInvalid": "Liên kết ảnh phải bắt đầu bằng http:// hoặc https://",
     "photoNotImage": "Hãy chọn một file ảnh",
-    "photoTooLarge": "Ảnh tối đa 5 MB",
+    "photoTooLarge": "Ảnh tối đa 10 MB",
     "photoNoStorage": "Chưa cấu hình nơi lưu ảnh nên chưa tải ảnh lên được. Hãy dán liên kết ảnh vào ô bên dưới.",
     "photoUploadFailed": "Không tải được ảnh lên",
     "available": "Đang bán",

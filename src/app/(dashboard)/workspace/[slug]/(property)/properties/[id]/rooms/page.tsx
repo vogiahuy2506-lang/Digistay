@@ -8,6 +8,8 @@ import {
   Plus, Bed, Edit, Image, BedDouble, Wrench, X, AlertCircle, DoorOpen,
 } from 'lucide-react'
 import { RoomList, type RoomTypeRooms } from './room-list'
+import { RoomTypePhotos } from './room-type-photos'
+import { resizedImage } from '@/lib/media/image-url'
 import { format, addDays } from 'date-fns'
 import { useTranslations } from 'next-intl'
 import { useDashLabels } from '@/lib/i18n/dash'
@@ -595,7 +597,7 @@ export default function RoomTypesPage() {
                 <div className="relative h-44 overflow-hidden bg-acc-soft/60">
                   {roomType.images[0] ? (
                     <img
-                      src={roomType.images[0].url}
+                      src={resizedImage(roomType.images[0].url, 800)}
                       alt={roomType.name}
                       className="w-full h-full object-cover"
                     />
@@ -818,6 +820,18 @@ export default function RoomTypesPage() {
       {/* Edit Modal */}
       <Modal showHeader isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title={t('edit.title')}>
         <ModalBody className="space-y-4">
+          {selectedRoomType && selectedProperty && (
+            <RoomTypePhotos
+              propertyId={selectedProperty}
+              roomTypeId={selectedRoomType.id}
+              photos={selectedRoomType.images}
+              onChange={(images) => {
+                // Saved already: show it in the dialog and on the card behind it.
+                setSelectedRoomType((current) => (current ? { ...current, images } : current))
+                setRoomTypes((list) => list.map((rt) => (rt.id === selectedRoomType.id ? { ...rt, images } : rt)))
+              }}
+            />
+          )}
           <Input
             label={t('form.name')}
             value={formData.name}

@@ -102,7 +102,7 @@
       "add": "Thêm ảnh",
       "addTitle": "Thêm hình ảnh",
       "url": "URL hình ảnh",
-      "urlHint": "Nhập URL hình ảnh từ dịch vụ lưu trữ (Cloudinary, AWS S3, imgbb,...)",
+      "urlHint": "Dán link của một ảnh đã có trên mạng (bắt đầu bằng https://). Ảnh trong máy thì dùng nút Tải ảnh từ máy.",
       "urlRequired": "Vui lòng nhập URL hình ảnh",
       "preview": "Xem trước:",
       "previewAlt": "Xem trước",
@@ -121,7 +121,9 @@
       },
       "primary": "Đặt làm ảnh chính",
       "uploading": "Đang tải lên...",
-      "deleteConfirm": "Bạn có chắc chắn muốn xóa hình ảnh này?"
+      "deleteConfirm": "Bạn có chắc chắn muốn xóa hình ảnh này?",
+      "addByLink": "Thêm bằng link",
+      "saveFailed": "Chưa lưu được ảnh, vui lòng thử lại"
     },
     "rooms": {
       "title": "Hạng phòng",

@@ -970,8 +970,7 @@
       "logo": "Logo",
       "logoUpload": "Tải logo lên",
       "logoRemove": "Xoá logo",
-      "logoHint": "PNG, SVG hoặc JPG, tối đa 2 MB.",
-      "logoTooLarge": "Logo vượt quá 2 MB. Chọn tệp nhỏ hơn rồi thử lại.",
+      "logoHint": "PNG, JPG hoặc WebP. Ảnh vuông khoảng 512×512 px là đẹp nhất.",
       "logoAlt": "Logo workspace",
       "description": "Mô tả",
       "descriptionPlaceholder": "Ghi chú nội bộ về cơ sở này",
@@ -990,7 +989,8 @@
         "gmt7": "GMT+07:00 — Hà Nội, TP. Hồ Chí Minh",
         "gmt8": "GMT+08:00 — Singapore, Bali",
         "gmt9": "GMT+09:00 — Tokyo, Seoul"
-      }
+      },
+      "logoUploading": "Đang tải lên…"
     },
     "actions": {
       "edit": "Chỉnh sửa",

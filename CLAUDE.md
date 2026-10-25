@@ -365,8 +365,13 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
   `loadVisibleSite`, API công khai qua `siteVisibility` (`src/lib/public-site/visibility.ts`);
   chưa xuất bản thì 404 với khách, thành viên đã đăng nhập thấy bản xem trước. Đặt phòng công
   khai chỉ nhận website đã xuất bản. Test tích hợp đặt phòng của khách: gọi `publishSite()` trước.
-- Trình dựng website: ảnh bìa chọn trong ảnh của cơ sở (`config.backgroundImage`; `/api/upload` chưa
-  có nơi lưu thật — `src/lib/cloudinary` trả lại `data:` URL, đừng lưu URL đó vào nội dung website);
+- Ảnh: `POST /api/upload` lưu ở Cloudinary (tài khoản chung với UKNOW, thư mục `digistay/`, server chọn
+  thư mục; `src/lib/cloudinary`), trả URL để API của từng thứ lưu (ảnh cơ sở, ảnh loại phòng
+  `/api/properties/[id]/room-types/[roomTypeId]/images`, món, logo). Trình duyệt thu nhỏ trước
+  (`src/lib/media/upload-client.ts`, nút `PhotoUploadButton`); website hiện ảnh qua
+  `responsiveImage`/`resizedImage` (`src/lib/media/image-url.ts`). Không bao giờ lưu `data:` URL.
+  RUNBOOK "Lưu ảnh (Cloudinary)".
+- Trình dựng website: ảnh bìa chọn trong ảnh của cơ sở hoặc tải lên (`config.backgroundImage`);
   đánh giá là đánh giá thật khách sạn tự nhập (`config.reviews`); màu nút (`buttonColor` → `--ds-ink`
   của website) và màu tiêu đề (`headingColor`, tiêu đề `font-site`) tự chỉnh cho đọc được ở hai theme
   (`hotelButtonVariables` / `hotelHeadingVariables`, `src/lib/public-site/accent.ts`); khối Dịch vụ và

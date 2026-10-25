@@ -31,6 +31,8 @@ import { LanguageButton } from '@/components/layout/language-button'
 import { routes } from '@/lib/utils/routes'
 import { ArrowRight, Building2, LogOut, Moon, MoreVertical, Pencil, Plus, Search, Sun, Trash2, Users } from 'lucide-react'
 import { apiError } from '@/lib/i18n/api-errors'
+import { uploadPhoto } from '@/lib/media/upload-client'
+import { useUploadProblemText } from '@/components/ui/photo-upload'
 
 interface Workspace {
   id: string
@@ -578,7 +580,7 @@ interface WorkspaceFormModalProps {
   form: typeof emptyForm
   error: string
   saving: boolean
-  onFormChange: (form: typeof emptyForm) => void
+  onFormChange: React.Dispatch<React.SetStateAction<typeof emptyForm>>
   onClose: () => void
   onSubmit: (event: React.FormEvent) => void
 }
@@ -597,6 +599,8 @@ function WorkspaceFormModal({
   const slugInput = React.useRef<HTMLInputElement>(null)
   // Upload problems belong to the file field, not the submit error slot.
   const [uploadError, setUploadError] = React.useState('')
+  const [logoUploading, setLogoUploading] = React.useState(false)
+  const uploadProblem = useUploadProblemText()
 
   return (
     <Modal isOpen={open} onClose={onClose} size="lg" title={editing ? t('form.editTitle') : t('form.createTitle')}>
@@ -710,25 +714,30 @@ function WorkspaceFormModal({
                 htmlFor="workspace-logo"
                 className="inline-flex items-center rounded-ctl border border-ink px-3 h-9 sm:h-8 text-small font-medium text-fg cursor-pointer hover:bg-panel transition-colors duration-160"
               >
-                {t('form.logoUpload')}
+                {logoUploading ? t('form.logoUploading') : t('form.logoUpload')}
               </label>
               <input
                 id="workspace-logo"
                 type="file"
-                accept="image/png,image/svg+xml,image/jpeg"
+                accept="image/png,image/jpeg,image/webp"
                 className="sr-only"
-                onChange={(e) => {
+                disabled={logoUploading}
+                onChange={async (e) => {
                   const file = e.target.files?.[0]
                   // Reset so picking the same file twice still fires.
                   e.target.value = ''
                   if (!file) return
-                  if (file.size > 2 * 1024 * 1024) {
-                    setUploadError(t('form.logoTooLarge'))
-                    return
+                  setUploadError('')
+                  setLogoUploading(true)
+                  try {
+                    // Stored (Cloudinary), not kept as a data: URL in the workspace row.
+                    const url = await uploadPhoto(file, editing ? { workspaceId: editing.id } : {}, 512)
+                    onFormChange((current) => ({ ...current, logo: url }))
+                  } catch (error) {
+                    setUploadError(uploadProblem(error))
+                  } finally {
+                    setLogoUploading(false)
                   }
-                  const reader = new FileReader()
-                  reader.onload = () => onFormChange({ ...form, logo: reader.result as string })
-                  reader.readAsDataURL(file)
                 }}
               />
               {form.logo && (

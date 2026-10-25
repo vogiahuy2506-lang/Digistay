@@ -970,8 +970,7 @@
       "logo": "Logo",
       "logoUpload": "Upload logo",
       "logoRemove": "Remove logo",
-      "logoHint": "PNG, SVG or JPG, up to 2 MB.",
-      "logoTooLarge": "The logo is over 2 MB. Pick a smaller file and try again.",
+      "logoHint": "PNG, JPG or WebP. A square image around 512×512 px looks best.",
       "logoAlt": "Workspace logo",
       "description": "Description",
       "descriptionPlaceholder": "Internal notes about this property",
@@ -990,7 +989,8 @@
         "gmt7": "GMT+07:00 — Hanoi, Ho Chi Minh City",
         "gmt8": "GMT+08:00 — Singapore, Bali",
         "gmt9": "GMT+09:00 — Tokyo, Seoul"
-      }
+      },
+      "logoUploading": "Uploading…"
     },
     "actions": {
       "edit": "Edit",

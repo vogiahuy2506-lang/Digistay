@@ -12,6 +12,8 @@ import { toast } from '@/components/ui/toast'
 import { apiError } from '@/lib/i18n/api-errors'
 import { useDashLabels } from '@/lib/i18n/dash'
 import { groupMenuItems, isMenuImageUrl, moveMenuGroup, moveMenuItem, type MenuGroup } from '@/lib/menu/menu'
+import { resizedImage } from '@/lib/media/image-url'
+import { UploadClientError, uploadPhoto } from '@/lib/media/upload-client'
 
 interface MenuItem {
   id: string
@@ -44,8 +46,6 @@ const EMPTY_FORM: Form = {
   isAvailable: true,
   en: { name: '', description: '', category: '' },
 }
-
-const MAX_PHOTO_BYTES = 5 * 1024 * 1024
 
 const iconButton =
   'w-9 h-9 sm:w-8 sm:h-8 shrink-0 rounded-ctl flex items-center justify-center text-muted transition-colors duration-160 ' +
@@ -254,7 +254,7 @@ function MenuGroupCard({
           <li key={item.id} className="flex flex-wrap items-start gap-3 px-4 py-3">
             {item.imageUrl && isMenuImageUrl(item.imageUrl) ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={item.imageUrl} alt="" loading="lazy" className="h-12 w-12 shrink-0 rounded-ctl bg-fg/5 object-cover" />
+              <img src={resizedImage(item.imageUrl, 480)} alt="" loading="lazy" className="h-12 w-12 shrink-0 rounded-ctl bg-fg/5 object-cover" />
             ) : (
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-ctl bg-fg/5 text-muted" title={t('list.noPhoto')}>
                 <UtensilsCrossed className="w-4 h-4" aria-hidden="true" />
@@ -370,28 +370,19 @@ function MenuItemDialog({
   const upload = async (file: File) => {
     setPhotoError(null)
     if (!file.type.startsWith('image/')) return setPhotoError(t('form.photoNotImage'))
-    if (file.size > MAX_PHOTO_BYTES) return setPhotoError(t('form.photoTooLarge'))
     setUploading(true)
     try {
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => resolve(String(reader.result))
-        reader.onerror = () => reject(reader.error)
-        reader.readAsDataURL(file)
-      })
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ base64, folder: 'digistay/menu' }),
-      })
-      const data = await res.json().catch(() => ({}))
-      const url: unknown = data?.data?.url
-      if (!data.success) setPhotoError(apiError(data.error) || t('form.photoUploadFailed'))
-      // With no storage set up the route hands the image back as a data: URL; it is not stored (menu.ts).
-      else if (typeof url !== 'string' || !isMenuImageUrl(url)) setPhotoError(t('form.photoNoStorage'))
-      else set({ imageUrl: url })
-    } catch {
-      setPhotoError(t('form.photoUploadFailed'))
+      const url = await uploadPhoto(file, { propertyId })
+      if (isMenuImageUrl(url)) set({ imageUrl: url })
+      else setPhotoError(t('form.photoUploadFailed'))
+    } catch (error) {
+      if (!(error instanceof UploadClientError)) setPhotoError(t('form.photoUploadFailed'))
+      // No storage set up (503): a link pasted below still works.
+      else if (error.status === 503) setPhotoError(t('form.photoNoStorage'))
+      else if (error.problem === 'server') setPhotoError(error.message)
+      else if (error.problem === 'notImage') setPhotoError(t('form.photoNotImage'))
+      else if (error.problem === 'tooLarge') setPhotoError(t('form.photoTooLarge'))
+      else setPhotoError(t('form.photoUploadFailed'))
     } finally {
       setUploading(false)
     }
@@ -486,7 +477,7 @@ function MenuItemDialog({
             <div className="flex h-24 w-32 shrink-0 items-center justify-center overflow-hidden rounded-box border border-line bg-fg/5 text-muted">
               {showPhoto ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={photo} alt={t('form.previewAlt')} className="h-full w-full object-cover" />
+                <img src={resizedImage(photo, 480)} alt={t('form.previewAlt')} className="h-full w-full object-cover" />
               ) : (
                 <ImageIcon className="w-6 h-6" aria-hidden="true" />
               )}
@@ -495,7 +486,7 @@ function MenuItemDialog({
               <input
                 ref={fileRef}
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif"
                 className="sr-only"
                 tabIndex={-1}
                 aria-hidden="true"

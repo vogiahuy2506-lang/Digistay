@@ -8,8 +8,7 @@
     "hint": "Bạn cần chọn một workspace để xem cài đặt."
   },
   "logo": {
-    "upload": "Tải logo lên",
-    "tooLarge": "Kích thước file không được vượt quá 2MB"
+    "upload": "Tải logo lên"
   },
   "defaultCurrency": "Tiền tệ mặc định",
   "currencies": {
@@ -99,7 +98,7 @@
       "removeLogo": "Xóa logo",
       "uploaded": "Đã tải lên ✓",
       "monogram": "hoặc tự sinh monogram",
-      "logoHint": "Hỗ trợ PNG, SVG, JPG (Khuyến nghị 512x512px, tối đa 2MB)",
+      "logoHint": "PNG, JPG hoặc WebP (khuyến nghị 512×512 px)",
       "description": "Mô tả ngắn gọn & Ghi chú vận hành",
       "descriptionPlaceholder": "Mô tả định vị khách sạn, phong cách dịch vụ hoặc ghi chú cho nội bộ...",
       "timezone": "Múi giờ vận hành",
@@ -174,7 +173,7 @@
     "general": {
       "basicInfo": "Thông tin cơ bản",
       "logo": "Logo Workspace",
-      "logoHint": "PNG, SVG, JPG (tối đa 2MB)",
+      "logoHint": "PNG, JPG hoặc WebP",
       "name": "Tên Workspace",
       "namePlaceholder": "VD: Khách sạn ABC",
       "description": "Mô tả",

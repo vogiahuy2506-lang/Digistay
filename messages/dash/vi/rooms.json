@@ -117,6 +117,16 @@
       "deleted": "Đã xoá phòng {number}",
       "deleteFailed": "Chưa xoá được phòng",
       "saveFailed": "Chưa lưu được phòng"
+    },
+    "photos": {
+      "title": "Ảnh của loại phòng",
+      "none": "Chưa có ảnh. Website sẽ dùng ảnh chung của khách sạn.",
+      "main": "Ảnh chính",
+      "makeMain": "Đặt làm ảnh chính",
+      "delete": "Xoá ảnh",
+      "deleteConfirm": "Xoá ảnh này khỏi loại phòng?",
+      "failed": "Chưa lưu được thay đổi ảnh, vui lòng thử lại",
+      "hint": "Ảnh chính hiện trên thẻ phòng ở website; các ảnh còn lại hiện ở trang của phòng. Ảnh được lưu ngay, không cần bấm Lưu."
     }
   },
   "services": {

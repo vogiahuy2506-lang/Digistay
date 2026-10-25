@@ -545,12 +545,14 @@ function BlockConfigPanel({
   block,
   onUpdate,
   onClose,
-  propertyData
+  propertyData,
+  onPhotoAdded,
 }: {
   block: Block
   onUpdate: (config: BlockConfig) => void
   onClose: () => void
   propertyData: any
+  onPhotoAdded: (photo: { id: string; url: string; alt?: string | null }) => void
 }) {
   const t = useTranslations('dash.website.config')
   const tc = useTranslations('dash.common')
@@ -616,9 +618,11 @@ function BlockConfigPanel({
                 />
               </div>
               <CoverPicker
+                propertyId={propertyData?.id ?? ''}
                 photos={propertyData?.images ?? []}
                 value={config.backgroundImage || undefined}
                 onChange={(url) => updateConfig('backgroundImage', url)}
+                onPhotoAdded={onPhotoAdded}
               />
               <div>
                 <label className="text-sm font-medium text-fg block mb-1">{t('fields.ctaButton')}</label>
@@ -2216,6 +2220,7 @@ export default function WebsiteBuilderPage() {
           onUpdate={(config) => updateBlockConfig(selectedBlock.id, config)}
           onClose={() => setSelectedBlockId(null)}
           propertyData={propertyData}
+          onPhotoAdded={(photo) => setPropertyData((p: any) => (p ? { ...p, images: [...(p.images ?? []), photo] } : p))}
         />
       )}
 

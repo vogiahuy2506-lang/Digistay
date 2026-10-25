@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { RESERVED_SUBDOMAINS } from '@/lib/subdomains'
+import { isStoredImageUrl } from '@/lib/media/image-url'
 
 /** Minimum length for NEW passwords; existing ones keep working. */
 export const PASSWORD_MIN_LENGTH = 8
@@ -182,8 +183,8 @@ export const updatePolicySchema = createPolicySchema.partial()
 
 // Image Validations
 export const uploadImageSchema = z.object({
-  url: z.string().url('URL hình ảnh không hợp lệ'),
-  thumbnail: z.string().url('URL thumbnail không hợp lệ').optional(),
+  url: z.string().url('URL hình ảnh không hợp lệ').refine(isStoredImageUrl, 'Link ảnh phải bắt đầu bằng https://'),
+  thumbnail: z.string().url('URL thumbnail không hợp lệ').refine(isStoredImageUrl, 'Link ảnh phải bắt đầu bằng https://').optional(),
   alt: z.string().max(200).optional(),
   category: z.string().max(50).optional(),
   isPrimary: z.boolean().default(false),
