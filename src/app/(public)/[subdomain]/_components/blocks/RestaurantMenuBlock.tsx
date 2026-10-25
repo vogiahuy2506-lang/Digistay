@@ -1,6 +1,7 @@
 import { blockText } from '@/lib/i18n/content'
 import { formatVnd } from '@/lib/bookings/display'
 import { groupMenuItems, isMenuImageUrl } from '@/lib/menu/menu'
+import { resizedImage } from '@/lib/media/image-url'
 import type { PublicBlock, PublicMenuItem } from '../PropertySite'
 import { Section, SectionHeader } from '../site-ui'
 import { useLocale, useTranslations } from 'next-intl'
@@ -43,7 +44,7 @@ export function RestaurantMenuBlock({ block, menuItems }: Props) {
                   {item.imageUrl && isMenuImageUrl(item.imageUrl) && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={item.imageUrl}
+                      src={resizedImage(item.imageUrl, 480)}
                       alt={item.name}
                       loading="lazy"
                       decoding="async"

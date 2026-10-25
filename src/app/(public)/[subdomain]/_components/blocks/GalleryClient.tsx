@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { PublicImage } from '../PropertySite'
 import { Section, SectionHeader } from '../site-ui'
 import { useTranslations } from 'next-intl'
+import { resizedImage, responsiveImage } from '@/lib/media/image-url'
 
 interface Props {
   images: PublicImage[]
@@ -27,7 +28,7 @@ export function GalleryClient({ images, title }: Props) {
       <div className="relative bg-fg/[0.06]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={images[current].url}
+          {...responsiveImage(images[current].url, '(min-width: 1280px) 1200px, 100vw')}
           alt={images[current].alt ?? t('photo', { n: current + 1, total: images.length })}
           loading="lazy"
           className="h-[300px] w-full object-cover sm:h-[520px]"
@@ -60,7 +61,7 @@ export function GalleryClient({ images, title }: Props) {
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={img.thumbnail ?? img.url}
+                src={resizedImage(img.thumbnail ?? img.url, 480)}
                 alt={img.alt ? t('viewWithAlt', { n: i + 1, alt: img.alt }) : t('view', { n: i + 1 })}
                 loading="lazy"
                 className="h-full w-full object-cover"

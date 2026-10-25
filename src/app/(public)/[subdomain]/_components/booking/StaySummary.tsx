@@ -1,6 +1,7 @@
 import { useLocale, useTranslations } from 'next-intl'
 import { formatVnd } from '@/lib/bookings/display'
 import { cn } from '@/lib/utils'
+import { resizedImage } from '@/lib/media/image-url'
 
 const WEEKDAYS = {
   vi: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
@@ -74,7 +75,7 @@ export function StaySummary({
         <div className="aspect-[440/200] bg-plain-soft">
           {room.image && (
             // eslint-disable-next-line @next/next/no-img-element -- hotel photos from its own storage, any size
-            <img src={room.image} alt={t('booking.common.photoOf', { name: room.name })} className="h-full w-full object-cover" />
+            <img src={resizedImage(room.image, 800)} alt={t('booking.common.photoOf', { name: room.name })} className="h-full w-full object-cover" />
           )}
         </div>
       )}
@@ -85,7 +86,7 @@ export function StaySummary({
               <div className="h-[88px] w-[88px] flex-none bg-plain-soft">
                 {room.image && (
                   // eslint-disable-next-line @next/next/no-img-element -- see above
-                  <img src={room.image} alt="" className="h-full w-full object-cover" />
+                  <img src={resizedImage(room.image, 480)} alt="" className="h-full w-full object-cover" />
                 )}
               </div>
             )}

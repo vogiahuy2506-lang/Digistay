@@ -1,5 +1,6 @@
 import { blockText } from '@/lib/i18n/content'
 import { formatVnd } from '@/lib/bookings/display'
+import { responsiveImage } from '@/lib/media/image-url'
 import type { PublicBlock, PublicProperty, PublicRoomType } from '../PropertySite'
 import { SiteLink } from '../site-base'
 import { PhotoPlaceholder, Section, SectionHeader, roomMeta } from '../site-ui'
@@ -39,7 +40,7 @@ export function RoomsBlock({ block, roomTypes, property }: Props) {
             <li key={room.id} className="flex flex-col border border-line bg-panel rounded-box overflow-hidden">
               {room.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={room.image} alt={room.name} loading="lazy" className="aspect-[4/3] w-full object-cover" />
+                <img {...responsiveImage(room.image, '(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw', { fallback: 800 })} alt={room.name} loading="lazy" className="aspect-[4/3] w-full object-cover" />
               ) : (
                 <PhotoPlaceholder label={t('room.noPhoto')} className="aspect-[4/3] w-full" />
               )}

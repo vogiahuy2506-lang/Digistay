@@ -1,5 +1,6 @@
 import { blockText } from '@/lib/i18n/content'
 import { getIcon } from '@/lib/amenity-icons'
+import { responsiveImage } from '@/lib/media/image-url'
 import type { PublicAmenity, PublicBlock, PublicImage } from '../PropertySite'
 import { Eyebrow, Section, SectionTitle } from '../site-ui'
 import { useLocale, useTranslations } from 'next-intl'
@@ -43,7 +44,7 @@ export function AmenitiesBlock({ block, amenities, images }: Props) {
         </div>
         {photo && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={photo.url} alt={photo.alt ?? title} loading="lazy" className="h-full min-h-[320px] w-full object-cover" />
+          <img {...responsiveImage(photo.url, '(min-width: 1024px) 50vw, 100vw')} alt={photo.alt ?? title} loading="lazy" className="h-full min-h-[320px] w-full object-cover" />
         )}
       </div>
     </Section>

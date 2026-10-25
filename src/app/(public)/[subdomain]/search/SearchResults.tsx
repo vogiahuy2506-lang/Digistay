@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { formatVnd } from '@/lib/bookings/display'
 import { nightsOf } from '@/lib/pricing/quote'
 import { cn } from '@/lib/utils'
+import { responsiveImage } from '@/lib/media/image-url'
 import { SiteLink, useSiteHref } from '../_components/site-base'
 import { Container, bedLabel } from '../_components/site-ui'
 import { stayDate } from '../_components/booking/StaySummary'
@@ -294,7 +295,7 @@ export function SearchResults({
                 <div className="relative aspect-[16/10] bg-plain-soft lg:aspect-auto lg:min-h-[260px]">
                   {r.image && (
                     // eslint-disable-next-line @next/next/no-img-element -- hotel photos from its own storage, any size
-                    <img src={r.image} alt={t('booking.common.photoOf', { name: r.name })} className={cn('absolute inset-0 h-full w-full object-cover', sold && 'opacity-50')} />
+                    <img {...responsiveImage(r.image, '(min-width: 1024px) 400px, 100vw', { fallback: 800 })} alt={t('booking.common.photoOf', { name: r.name })} className={cn('absolute inset-0 h-full w-full object-cover', sold && 'opacity-50')} />
                   )}
                   {sold && <span className="absolute left-3 top-3 bg-ink px-2.5 py-1 text-[12px] font-medium text-on-ink">{t('booking.search.soldBadge')}</span>}
                 </div>

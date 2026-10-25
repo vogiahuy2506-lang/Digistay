@@ -14,6 +14,7 @@ import { SiteLink } from '../../_components/site-base'
 import { Container, bedLabel, roomMeta } from '../../_components/site-ui'
 import { getIcon } from '@/lib/amenity-icons'
 import { formatVnd } from '@/lib/bookings/display'
+import { responsiveImage } from '@/lib/media/image-url'
 import { BookingBox } from './BookingBox'
 import { loadSiteFrame } from '@/lib/public-site/site-frame'
 import { canonicalSiteOrigin } from '@/lib/public-site/site-host'
@@ -206,7 +207,7 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   key={img.id}
-                  src={img.url}
+                  {...responsiveImage(img.url, i === 0 ? '(min-width: 1024px) 50vw, 100vw' : '25vw', { fallback: i === 0 ? 1200 : 800 })}
                   alt={img.alt || t('room.photoAlt', { name: room.name, n: i + 1 })}
                   loading={i === 0 ? 'eager' : 'lazy'}
                   className={

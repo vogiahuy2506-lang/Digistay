@@ -1,4 +1,5 @@
 import { blockText } from '@/lib/i18n/content'
+import { responsiveImage } from '@/lib/media/image-url'
 import { SearchBar } from '../SearchBar'
 import type { PublicBlock, PublicImage, PublicProperty } from '../PropertySite'
 import { Container, Eyebrow, propertyTypeLabel, cfgText } from '../site-ui'
@@ -98,7 +99,7 @@ function PhotoStrip({ photos }: { photos: Photo[] }) {
               <source media={BELOW_LG} srcSet={NOTHING} />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={photo.url}
+                {...responsiveImage(photo.url, '300px', { fallback: 800 })}
                 alt={photo.alt}
                 loading={Math.abs(d) <= 1 ? 'eager' : 'lazy'}
                 fetchPriority={Math.abs(d) < 1 ? 'high' : undefined}
@@ -118,7 +119,7 @@ function PhotoStrip({ photos }: { photos: Photo[] }) {
               {i === 0 && <source media={FROM_LG} srcSet={NOTHING} />}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={photo.url}
+                {...responsiveImage(photo.url, '(min-width: 640px) 46vw, 78vw', { fallback: 800 })}
                 alt={photo.alt}
                 loading={i === 0 ? 'eager' : 'lazy'}
                 fetchPriority={i === 0 ? 'high' : undefined}
