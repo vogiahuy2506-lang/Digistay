@@ -260,7 +260,6 @@ model Property {
   websiteSettings WebsiteSettings?
   bankAccounts   BankAccount[]
   payos          PropertyPayos?
-  sepay          PropertySepay? // unused since SePay was removed; goes with PropertySepay
   einvoice       PropertyEinvoice?
   roomLocks      RoomLock[]
   extraServices   ExtraService[]
@@ -1058,28 +1057,6 @@ model PropertyPayos {
   updatedAt DateTime @updatedAt
 
   @@map("property_payos")
-}
-
-/// Was each hotel's SePay connection (card payments, 2026-10-24/25). No code
-/// reads it since SePay was removed; the table is dropped one release later
-/// (CLAUDE.md: a migration must work with the previous release's code, and
-/// the release before this one still reads it).
-model PropertySepay {
-  propertyId    String    @id
-  property      Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  merchantId    String
-  /// encrypted
-  secretKey     String
-  /// sandbox | production
-  environment   String    @default("sandbox")
-  /// set once SePay accepted the keys; card payments need it
-  verifiedAt    DateTime?
-  connectedById String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("property_sepay")
 }
 
 /// The property's own Mắt Bão e-invoice account (Part 6): invoices are issued
