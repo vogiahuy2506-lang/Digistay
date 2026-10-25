@@ -185,7 +185,7 @@ export function RegisterForm() {
   }
 
   const stepBar = (n: 1 | 2) => (
-    <div className="mb-8">
+    <div className="mb-6">
       <div className="flex items-baseline justify-between gap-4 text-[13px]">
         <span className="font-semibold text-fg">{n === 1 ? t('register.step1') : t('register.step2')}</span>
         {n === 1 && <span className="text-muted">{t('register.next1')}</span>}
@@ -250,71 +250,74 @@ export function RegisterForm() {
       <p className="mt-3 text-[15px] text-fg/80">
         {t.rich('register.haveAccount', { link: (c) => <Link href="/login" className={cn(textLink, 'underline')}>{c}</Link> })}
       </p>
-      <div className="mt-7 flex flex-col gap-5">
+      <div className="mt-6 flex flex-col gap-5">
         {count > 0 && <Notice tone="err">⚠ {t('common.summary', { count })}</Notice>}
         {error && <Notice tone="err">⚠ {error}</Notice>}
 
-        <Field id="reg-name" label={t('register.name')} error={shown.name}>
-          <input id="reg-name" value={form.name} onChange={set('name')} disabled={busy} autoComplete="name" className={inputClass(!!shown.name)} {...describedBy('reg-name', shown.name)} />
-        </Field>
-        <Field id="reg-username" label={t('register.username')} error={shown.username}>
-          <input
-            id="reg-username"
-            value={form.username}
-            onChange={set('username')}
-            disabled={busy}
-            autoComplete="username"
-            autoCapitalize="none"
-            spellCheck={false}
-            placeholder={t('register.usernamePlaceholder')}
-            className={inputClass(!!shown.username)}
-            {...describedBy('reg-username', shown.username)}
-          />
-        </Field>
-        <Field id="reg-email" label={t('common.email')} error={shown.email}>
-          <input
-            id="reg-email"
-            type="email"
-            inputMode="email"
-            value={form.email}
-            onChange={set('email')}
-            disabled={busy}
-            autoComplete="email"
-            className={inputClass(!!shown.email)}
-            {...describedBy('reg-email', shown.email)}
-          />
-        </Field>
-        <Field id="reg-phone" label={t('register.phone')} extra={t('register.optional')} error={shown.phone}>
-          <input id="reg-phone" type="tel" inputMode="tel" value={form.phone} onChange={set('phone')} disabled={busy} autoComplete="tel" className={inputClass(!!shown.phone)} {...describedBy('reg-phone', shown.phone)} />
-        </Field>
-        <Field id="reg-password" label={t('register.password')} error={shown.password} hint={t('register.passwordHint')}>
-          <PasswordInput
-            id="reg-password"
-            value={form.password}
-            onChange={set('password')}
-            disabled={busy}
-            autoComplete="new-password"
-            bad={!!shown.password}
-            {...describedBy('reg-password', shown.password, true)}
-          />
-          <StrengthMeter password={form.password} />
-        </Field>
-        <Field
-          id="reg-confirm"
-          label={t('register.confirm')}
-          error={shown.confirm}
-          hint={form.confirm && form.confirm === form.password ? <span className="text-ok">{t('common.match')}</span> : undefined}
-        >
-          <PasswordInput
+        {/* Two fields a row from sm, so the whole step fits one laptop screen */}
+        <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2 sm:items-start">
+          <Field id="reg-name" label={t('register.name')} error={shown.name}>
+            <input id="reg-name" value={form.name} onChange={set('name')} disabled={busy} autoComplete="name" className={inputClass(!!shown.name)} {...describedBy('reg-name', shown.name)} />
+          </Field>
+          <Field id="reg-username" label={t('register.username')} error={shown.username}>
+            <input
+              id="reg-username"
+              value={form.username}
+              onChange={set('username')}
+              disabled={busy}
+              autoComplete="username"
+              autoCapitalize="none"
+              spellCheck={false}
+              placeholder={t('register.usernamePlaceholder')}
+              className={inputClass(!!shown.username)}
+              {...describedBy('reg-username', shown.username)}
+            />
+          </Field>
+          <Field id="reg-email" label={t('common.email')} error={shown.email}>
+            <input
+              id="reg-email"
+              type="email"
+              inputMode="email"
+              value={form.email}
+              onChange={set('email')}
+              disabled={busy}
+              autoComplete="email"
+              className={inputClass(!!shown.email)}
+              {...describedBy('reg-email', shown.email)}
+            />
+          </Field>
+          <Field id="reg-phone" label={t('register.phone')} extra={t('register.optional')} error={shown.phone}>
+            <input id="reg-phone" type="tel" inputMode="tel" value={form.phone} onChange={set('phone')} disabled={busy} autoComplete="tel" className={inputClass(!!shown.phone)} {...describedBy('reg-phone', shown.phone)} />
+          </Field>
+          <Field id="reg-password" label={t('register.password')} error={shown.password} hint={t('register.passwordHint')}>
+            <PasswordInput
+              id="reg-password"
+              value={form.password}
+              onChange={set('password')}
+              disabled={busy}
+              autoComplete="new-password"
+              bad={!!shown.password}
+              {...describedBy('reg-password', shown.password, true)}
+            />
+            <StrengthMeter password={form.password} />
+          </Field>
+          <Field
             id="reg-confirm"
-            value={form.confirm}
-            onChange={set('confirm')}
-            disabled={busy}
-            autoComplete="new-password"
-            bad={!!shown.confirm}
-            {...describedBy('reg-confirm', shown.confirm)}
-          />
-        </Field>
+            label={t('register.confirm')}
+            error={shown.confirm}
+            hint={form.confirm && form.confirm === form.password ? <span className="text-ok">{t('common.match')}</span> : undefined}
+          >
+            <PasswordInput
+              id="reg-confirm"
+              value={form.confirm}
+              onChange={set('confirm')}
+              disabled={busy}
+              autoComplete="new-password"
+              bad={!!shown.confirm}
+              {...describedBy('reg-confirm', shown.confirm)}
+            />
+          </Field>
+        </div>
         <div className="flex flex-col gap-2">
           <label className="flex cursor-pointer items-start gap-3 text-[14.5px] leading-[1.55] text-fg">
             <input

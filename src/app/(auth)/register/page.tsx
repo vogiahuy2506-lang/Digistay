@@ -10,7 +10,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function RegisterPage() {
   return (
-    <AuthShell width={480}>
+    <AuthShell width={600}>
       <RegisterForm />
     </AuthShell>
   )

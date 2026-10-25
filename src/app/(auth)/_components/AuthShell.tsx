@@ -14,10 +14,10 @@ const PHOTO_WIDTHS = [768, 1280, 1920] as const
 /**
  * Sign-in, sign-up and password reset fill the screen in two halves from
  * lg: a resort photo with the logo and Digistay's line on the left (it
- * stays put while a long form scrolls), the form on the right under the
+ * stays put if a form is taller than the screen), the form on the right under the
  * theme and language switches. Below lg only the form side shows.
  */
-export async function AuthShell({ width = 440, children }: { width?: 440 | 480; children: React.ReactNode }) {
+export async function AuthShell({ width = 440, children }: { width?: 440 | 600; children: React.ReactNode }) {
   const t = await getTranslations('marketing')
   const ta = await getTranslations('auth.common')
   const current = await getLocale()
@@ -53,7 +53,7 @@ export async function AuthShell({ width = 440, children }: { width?: 440 | 480; 
       </aside>
 
       <div className="flex min-h-screen flex-col">
-        <header className="flex items-center justify-between gap-4 px-5 py-3 sm:px-8 lg:px-12 lg:py-6">
+        <header className="flex items-center justify-between gap-4 px-5 py-3 sm:px-8 lg:px-12 lg:py-5">
           <Link href="/" className="rounded-ctl lg:hidden">
             <Logo size="sm" />
           </Link>
@@ -65,8 +65,8 @@ export async function AuthShell({ width = 440, children }: { width?: 440 | 480; 
             <LocaleToggle locale={locale} label={t('nav.language')} />
           </div>
         </header>
-        <main className="flex flex-1 justify-center px-5 pb-12 pt-6 sm:px-8 lg:items-center lg:px-12 lg:py-10">
-          <div className={cn('w-full', width === 480 ? 'max-w-[480px]' : 'max-w-[440px]')}>{children}</div>
+        <main className="flex flex-1 justify-center px-5 pb-12 pt-6 sm:px-8 lg:items-center lg:px-12 lg:py-6">
+          <div className={cn('w-full', width === 600 ? 'max-w-[600px]' : 'max-w-[440px]')}>{children}</div>
         </main>
         <footer className="flex flex-wrap justify-center gap-x-5 gap-y-1 px-5 pb-6 text-[13px] text-muted">
           <Link href="/terms" className="hover:text-fg">
