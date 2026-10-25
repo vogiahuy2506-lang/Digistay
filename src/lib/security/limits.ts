@@ -44,8 +44,6 @@ export const LIMITS = {
   twoFactorSetupUser: { name: '2fa-setup-user', limit: 10, windowSec: 15 * MIN },
   /** PayOS webhooks from one IP (generous: PayOS sends from few addresses). */
   payosWebhookIp: { name: 'payos-webhook-ip', limit: 600, windowSec: 10 * MIN },
-  /** SePay IPNs from one IP (each may ask SePay's API about an order). */
-  sepayWebhookIp: { name: 'sepay-webhook-ip', limit: 300, windowSec: 10 * MIN },
   /** Mắt Bão tax-office status callbacks from one IP. */
   einvoiceWebhookIp: { name: 'einvoice-webhook-ip', limit: 600, windowSec: 10 * MIN },
 } satisfies Record<string, Limit>

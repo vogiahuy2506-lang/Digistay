@@ -337,15 +337,7 @@
         "makeFailed": "A new code couldn't be made. Please try again or call the hotel.",
         "toConfirmation": "See your booking confirmation",
         "cancellation": "Free cancellation up to {hours, plural, one {# hour} other {# hours}} before check-in; after that the hotel keeps the deposit.",
-        "cancelledByHotel": "This booking was cancelled. If you have questions, please call the hotel.",
-        "orCard": "Or pay by card",
-        "cardText": "Visa · Mastercard · JCB, through {hotel}'s SePay payment gateway.",
-        "cardButton": "Pay {amount} by card",
-        "cardOpening": "Opening the card payment page…",
-        "cardFailed": "The card payment page could not be opened. Please try again, or pay by bank transfer with the QR code.",
-        "cardWaiting": "Waiting for SePay to confirm the card payment. This page moves on by itself.",
-        "cardError": "The card payment did not go through. Try again, or pay by bank transfer with the QR code.",
-        "cardCancelled": "You cancelled the card payment."
+        "cancelledByHotel": "This booking was cancelled. If you have questions, please call the hotel."
       },
       "done": {
         "depositedChip": "Deposit paid · Room held",

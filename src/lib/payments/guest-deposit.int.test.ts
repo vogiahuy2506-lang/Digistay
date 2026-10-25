@@ -279,6 +279,28 @@ describe("the hotel's deposit deadline", () => {
       expect((await prisma.booking.findUniqueOrThrow({ where: { bookingCode: body.data.bookingCode } })).status).not.toBe('CANCELLED')
     }
   })
+
+  it('a card payment still pending from the SePay days: left for the hotel, never cancelled blind; a closed one does not hold the booking', async () => {
+    const { property, room } = await hotel({ connected: true, percent: 30, deadlineMinutes: 60 })
+    const card = (bookingId: string, status: 'PENDING' | 'CANCELLED', n: number) =>
+      prisma.payment.create({
+        data: {
+          bookingId, propertyId: property.id, amount: 541_000, netAmount: 541_000, method: 'CREDIT_CARD', status,
+          paymentGateway: 'SEPAY', gatewayOrderCode: `SP100000000000000${n}`, expiresAt: later(60),
+          metadata: { guestDeposit: true, percent: 30, autoCancel: true, deadlineMinutes: 60 },
+        },
+      })
+    const pending = await depositOf((await book(property.id, room.id, 'a@example.com')).body.data.bookingCode)
+    await card(pending.bookingId, 'PENDING', 1)
+    const closed = await depositOf((await book(property.id, room.id, 'b@example.com')).body.data.bookingCode)
+    await card(closed.bookingId, 'CANCELLED', 2)
+
+    // Only the booking whose card payment SePay had closed is cancelled.
+    expect(await expireUnpaidDeposits(later(61))).toEqual({ checked: 1, cancelled: 1, paid: 0, errors: 0 })
+    expect((await prisma.booking.findUniqueOrThrow({ where: { id: pending.bookingId } })).status).toBe('PENDING')
+    expect(await prisma.payment.findFirstOrThrow({ where: { bookingId: pending.bookingId, paymentGateway: 'SEPAY' } })).toMatchObject({ status: 'PENDING' })
+    expect((await prisma.booking.findUniqueOrThrow({ where: { id: closed.bookingId } })).status).toBe('CANCELLED')
+  })
 })
 
 describe('paying the deposit again', () => {
