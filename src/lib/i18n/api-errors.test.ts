@@ -10,7 +10,7 @@ const VIETNAMESE = /[àáảãạăắằẳẵặâấầẩẫậèéẻẽẹ
 /** The lib modules whose messages reach the browser in `error` / `message` (besides src/app/api). */
 const LIB = [
   'validations/index.ts', 'einvoice/matbao.ts', 'einvoice/invoices.ts', 'einvoice/adjustment.ts', 'einvoice/replacement.ts',
-  'einvoice/delivery.ts', 'einvoice/matbao-client.ts', 'einvoice/vat.ts', 'einvoice/jobs.ts', 'payments/payos.ts', 'payments/sepay.ts', 'bookings/rooms.ts',
+  'einvoice/delivery.ts', 'einvoice/matbao-client.ts', 'einvoice/vat.ts', 'einvoice/jobs.ts', 'payments/payos.ts', 'bookings/rooms.ts',
   'payments/guest-deposit.ts', 'bookings/create-booking.ts', 'auth/rbac.ts', 'auth/index.ts', 'marketing/contact.ts',
   'hooks/use-workspace.ts', 'hooks/use-property.ts', 'pricing/rates.ts', 'security/secret-box.ts', 'bookings/late-checkout.ts',
   'cloudinary/index.ts', 'media/upload-input.ts',

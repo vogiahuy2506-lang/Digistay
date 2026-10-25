@@ -9,7 +9,7 @@ import { randomBytes } from 'crypto'
 const shared = (name: string, make: () => string) => (process.env[name] ??= make())
 const hex = (bytes: number) => () => randomBytes(bytes).toString('hex')
 
-const ports = { app: 3998, payos: 4901, matbao: 4902, sepay: 4903, smtp: 2526, control: 4910 }
+const ports = { app: 3998, payos: 4901, matbao: 4902, smtp: 2526, control: 4910 }
 
 export const E2E = {
   ports,
@@ -27,10 +27,6 @@ export const E2E = {
     clientId: 'e2e-client-0001',
     apiKey: shared('E2E_PAYOS_API_KEY', hex(16)),
     checksumKey: shared('E2E_PAYOS_CHECKSUM_KEY', hex(16)),
-  },
-  sepayAccount: {
-    merchantId: 'SP-E2E-MERCHANT',
-    secretKey: shared('E2E_SEPAY_SECRET_KEY', hex(16)),
   },
   matbaoAccount: {
     taxCode: '0312345678',

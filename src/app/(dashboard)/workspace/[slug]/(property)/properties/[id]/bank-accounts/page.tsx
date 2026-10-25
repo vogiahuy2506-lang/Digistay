@@ -10,7 +10,6 @@ import { VietQR, downloadQR } from '@/components/ui/viet-qr'
 import { buildVietQr } from '@/lib/vietqr'
 import { toast } from '@/components/ui/toast'
 import { PayosCard } from './payos-card'
-import { SepayCard } from './sepay-card'
 import {
   Building, Plus, Trash2, Edit, QrCode, Copy,
   AlertCircle, Download
@@ -246,7 +245,6 @@ export default function BankAccountsPage() {
       </Card>
 
       <PayosCard propertyId={propertyId} />
-      <SepayCard propertyId={propertyId} />
 
       {/* Accounts List */}
       {isLoading ? (

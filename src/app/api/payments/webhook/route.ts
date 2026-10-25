@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server'
  * unauthenticated PUT that marked any payment PAID by id. No real payment
  * gateway calls this route, so disabling it loses no functionality.
  *
- * A verified webhook comes back in Part 5 (PayOS/SePay, one key set per
+ * A verified webhook comes back in Part 5 (PayOS, one key set per
  * property, signature checked before anything else). Until then, staff
  * confirm bank transfers via POST /api/payments/[id]/confirm.
  */

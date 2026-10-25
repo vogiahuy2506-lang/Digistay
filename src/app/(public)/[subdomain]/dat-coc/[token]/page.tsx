@@ -2,11 +2,8 @@ import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import QRCode from 'qrcode'
 import { getLocale, getTranslations } from 'next-intl/server'
-import { prisma } from '@/lib/db'
 import { localized } from '@/lib/i18n/content'
-import { readDepositToken } from '@/lib/payments/deposit-link'
 import { loadDepositView } from '@/lib/payments/deposit-view'
-import { syncSepayPayment } from '@/lib/payments/sepay'
 import { BookingFooter, BookingHeader, BookingSteps, loadBookingFrame, sitePath } from '../../_components/booking/frame'
 import { StaySummary } from '../../_components/booking/StaySummary'
 import { bookedLines } from '../../_components/booking/booked-lines'
@@ -15,24 +12,6 @@ import { DepositLive } from './DepositLive'
 
 interface PageProps {
   params: Promise<{ subdomain: string; token: string }>
-  searchParams: Promise<{ card?: string }>
-}
-
-type CardReturn = 'success' | 'error' | 'cancel'
-
-/**
- * Back from SePay saying it went through: ask SePay now rather than wait
- * for the IPN (it decides, as always: the query string marks nothing paid).
- */
-async function checkCardPayment(token: string) {
-  const bookingId = readDepositToken(token)
-  if (!bookingId) return
-  const payment = await prisma.payment.findFirst({
-    where: { bookingId, paymentGateway: 'SEPAY', status: 'PENDING' },
-    orderBy: { createdAt: 'desc' },
-    select: { id: true },
-  })
-  if (payment) await syncSepayPayment(payment.id).catch(() => null)
 }
 
 export const dynamic = 'force-dynamic'
@@ -46,11 +25,8 @@ export const metadata: Metadata = { robots: { index: false, follow: false } }
  * link in the booking email (src/lib/payments/deposit-link.ts). Showing it
  * changes nothing (mail scanners open links).
  */
-export default async function DepositPage({ params, searchParams }: PageProps) {
+export default async function DepositPage({ params }: PageProps) {
   const { subdomain, token } = await params
-  const card = (await searchParams).card
-  const cardReturn: CardReturn | null = card === 'success' || card === 'error' || card === 'cancel' ? card : null
-  if (cardReturn === 'success') await checkCardPayment(token)
   const [frame, view] = await Promise.all([loadBookingFrame(subdomain, { guestLink: true }), loadDepositView(subdomain, token)])
   if (!frame || !view) notFound()
   // Paid, or nothing to pay online: straight to the confirmation.
@@ -91,8 +67,6 @@ export default async function DepositPage({ params, searchParams }: PageProps) {
                 transfer={view.transfer}
                 hadDeposit={!!view.payment}
                 hotel={{ name: view.property.name, phone: view.property.phone }}
-                card={view.card}
-                cardReturn={cardReturn}
               />
             </div>
           </div>

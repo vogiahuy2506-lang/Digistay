@@ -260,7 +260,7 @@ model Property {
   websiteSettings WebsiteSettings?
   bankAccounts   BankAccount[]
   payos          PropertyPayos?
-  sepay          PropertySepay?
+  sepay          PropertySepay? // unused since SePay was removed; goes with PropertySepay
   einvoice       PropertyEinvoice?
   roomLocks      RoomLock[]
   extraServices   ExtraService[]
@@ -968,6 +968,8 @@ enum PaymentGateway {
   STRIPE
   MOMO
   ZALOPAY
+  // Historical: card payments through SePay (2026-10-24/25). Never written
+  // any more; kept because old payment rows may carry it.
   SEPAY
 }
 
@@ -1029,9 +1031,10 @@ model PropertyPayos {
   @@map("property_payos")
 }
 
-/// The property's own SePay payment gateway account, for card payments
-/// (src/lib/payments/sepay.ts): guests pay by Visa / Mastercard / JCB into
-/// the hotel's SePay merchant. The secret key is encrypted with secret-box.
+/// Was each hotel's SePay connection (card payments, 2026-10-24/25). No code
+/// reads it since SePay was removed; the table is dropped one release later
+/// (CLAUDE.md: a migration must work with the previous release's code, and
+/// the release before this one still reads it).
 model PropertySepay {
   propertyId    String    @id
   property      Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)

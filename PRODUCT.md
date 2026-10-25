@@ -53,8 +53,9 @@ Ràng buộc:
 - Đăng nhập hai lớp là tuỳ chọn, không bao giờ bắt buộc.
 - Website khách sạn dùng màu và phông do chính khách sạn chọn, nên giao diện của Digistay không được giả định một màu hay một phông cố định ở đó.
 - Webhook thanh toán và các thao tác chạm tiền chịu ràng buộc bảo mật riêng (xem `CLAUDE.md`).
+- Thanh toán online chỉ qua PayOS của chính khách sạn: khách trả bằng chuyển khoản / VietQR, không có thanh toán thẻ (quyết định ngày 25/10/2026).
 
-Chưa quyết định: nhà cung cấp thanh toán thứ hai (SePay), thanh toán trực tuyến ngoài khoản cọc.
+Chưa quyết định: thanh toán trực tuyến ngoài khoản cọc.
 
 ## Brand Commitments
 

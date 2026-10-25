@@ -7,7 +7,7 @@
  * - booking_new: a guest booked on the hotel's site → the owner, admins,
  *   managers and receptionists; staff made one → the owner and admins, not
  *   whoever made it.
- * - deposit_paid: a guest's online deposit came in (PayOS or SePay) → the
+ * - deposit_paid: a guest's online deposit came in (PayOS) → the
  *   owner, admins, managers and receptionists.
  *
  * Stored as a type and data, so each reader sees it in their own language.

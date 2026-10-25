@@ -1,7 +1,7 @@
 /**
  * "We received your deposit": queued when a guest's deposit from the
- * hotel's site (guest-deposit.ts) is paid, through PayOS or SePay, in the
- * transaction that marks it PAID, with the hotel's bell
+ * hotel's site (guest-deposit.ts) is paid through PayOS, in the
+ * transaction that marks it PAID (payos.ts), with the hotel's bell
  * (src/lib/notifications.ts). Not for a booking already cancelled: staff
  * sort that money out (the payment is flagged).
  */
