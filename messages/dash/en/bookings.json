@@ -92,7 +92,18 @@
       "statusOccupied": "booking {code}",
       "statusMaintenance": "under maintenance",
       "statusInactive": "out of use",
-      "movedType": "Moved to a room of another type (price unchanged)"
+      "movedType": "Moved to a room of another type (price unchanged)",
+      "plan": "Room by night",
+      "tonight": "tonight",
+      "changeWhole": "Change for the whole stay",
+      "moveFrom": "Change room from a date…",
+      "moveFromTitle": "Room change during the stay",
+      "moveFromHint": "From the night picked until check-out the guest is in the new room; earlier nights keep the current one. The price stays the same.",
+      "fromNight": "From the night of",
+      "toRoom": "To room",
+      "noFreeRoom": "No room is free for these nights",
+      "submitMove": "Confirm room change",
+      "movedFrom": "Moved to room {room} from {date}"
     }
   },
   "actions": {

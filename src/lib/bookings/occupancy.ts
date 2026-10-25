@@ -13,7 +13,8 @@
  *   booking (their hold used to make their own booking fail).
  *
  * Dates overlap when one starts before the other ends: a check-out day is
- * free for the next check-in.
+ * free for the next check-in. A stay split between rooms (rooms.ts) takes
+ * each type on its nights in it only: by its segments, not its item.
  */
 import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
@@ -46,34 +47,40 @@ function lockWhere({ propertyId, checkIn, checkOut, now = new Date(), ownHoldId 
   }
 }
 
-function itemWhere({ propertyId, checkIn, checkOut }: Span): Prisma.BookingItemWhereInput {
+const activeBooking = ({ propertyId }: Span): Prisma.BookingWhereInput => ({ propertyId, status: { in: [...ACTIVE_BOOKING_STATUSES] } })
+
+/** Stays in one room: their item's type, every night. */
+function itemWhere(span: Span): Prisma.BookingItemWhereInput {
   return {
-    booking: {
-      propertyId,
-      status: { in: [...ACTIVE_BOOKING_STATUSES] },
-      checkInDate: { lt: checkOut },
-      checkOutDate: { gt: checkIn },
-    },
+    booking: { ...activeBooking(span), checkInDate: { lt: span.checkOut }, checkOutDate: { gt: span.checkIn }, roomSegments: { none: {} } },
   }
+}
+
+/** Split stays: the segments on the span's nights, each booking once per type. */
+function segmentWhere(span: Span): Prisma.BookingRoomSegmentWhereInput {
+  return { fromDate: { lt: span.checkOut }, toDate: { gt: span.checkIn }, booking: activeBooking(span) }
 }
 
 /** Rooms of one type taken over the span. */
 export async function roomsTaken(db: Db, roomTypeId: string, span: Span) {
-  const [booked, locked] = await Promise.all([
+  const [booked, split, locked] = await Promise.all([
     db.bookingItem.count({ where: { roomTypeId, ...itemWhere(span) } }),
+    db.bookingRoomSegment.findMany({ where: { roomTypeId, ...segmentWhere(span) }, distinct: ['bookingId'], select: { bookingId: true } }),
     db.roomLock.count({ where: { roomTypeId, ...lockWhere(span) } }),
   ])
-  return booked + locked
+  return booked + split.length + locked
 }
 
 /** Rooms taken over the span, per room type of the property. */
 export async function roomsTakenByType(db: Db, span: Span) {
-  const [booked, locked] = await Promise.all([
+  const [booked, split, locked] = await Promise.all([
     db.bookingItem.groupBy({ by: ['roomTypeId'], where: itemWhere(span), _count: { _all: true } }),
+    db.bookingRoomSegment.findMany({ where: segmentWhere(span), distinct: ['bookingId', 'roomTypeId'], select: { roomTypeId: true } }),
     db.roomLock.groupBy({ by: ['roomTypeId'], where: lockWhere(span), _count: { _all: true } }),
   ])
   const taken = new Map<string, number>()
   for (const row of [...booked, ...locked]) taken.set(row.roomTypeId, (taken.get(row.roomTypeId) ?? 0) + row._count._all)
+  for (const row of split) taken.set(row.roomTypeId, (taken.get(row.roomTypeId) ?? 0) + 1)
   return taken
 }
 

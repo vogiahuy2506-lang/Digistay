@@ -1,13 +1,14 @@
 /**
  * The hotel's numbered rooms and the room timeline (tasks 25 / 27,
  * src/lib/bookings/rooms.ts): list rooms, book an empty night of a room
- * from the timeline, drag the stay to another room, open it in the panel.
- * Uses Suite (5 rooms in the seed) and lists 5, so its count stays 5 for
- * the specs after this one.
+ * from the timeline, drag the stay to another room, open it in the panel;
+ * then a stay that changes rooms part way, from the panel and by dragging
+ * its part. Uses Suite (5 rooms in the seed) and lists 5, so its count
+ * stays 5 for the specs after this one; the second test uses those rooms.
  */
 import { test, expect } from '@playwright/test'
 import { PrismaClient } from '@prisma/client'
-import { failOnPageErrors, propertyPath } from '../helpers'
+import { failOnPageErrors, ids, propertyPath } from '../helpers'
 
 /** dd/mm and yyyy-mm-dd of a Vietnam day `offset` days from today. */
 function day(offset: number) {
@@ -55,6 +56,65 @@ test('list rooms, book a room from the timeline, drag the guest to another room'
     // 4. A click opens the booking in the panel.
     await page.getByRole('button', { name: /Khách Sơ Đồ/ }).click()
     await expect(page.getByRole('dialog')).toContainText((await item()).booking.bookingCode)
+  } finally {
+    await prisma.$disconnect()
+  }
+  noErrors()
+})
+
+test('change rooms part way through a stay: from the booking panel, then by dragging the part', async ({ page }) => {
+  const noErrors = failOnPageErrors(page)
+  page.on('dialog', (d) => d.accept())
+  const prisma = new PrismaClient()
+  try {
+    // Three nights in 501 (listed by the test above), arriving in 8 days.
+    const room = (number: string) => prisma.room.findFirstOrThrow({ where: { propertyId: ids().prop, number } })
+    const r501 = await room('501')
+    const vnMidnight = (offset: number) => new Date(`${day(offset).iso}T00:00:00+07:00`)
+    const booking = await prisma.booking.create({
+      data: {
+        bookingCode: 'DSE2ESPLIT',
+        propertyId: ids().prop,
+        guestName: 'Khách Đổi Phòng',
+        guestEmail: 'doiphong@example.com',
+        guestPhone: '0912345612',
+        checkInDate: vnMidnight(8),
+        checkOutDate: vnMidnight(11),
+        subtotal: 3_000_000,
+        totalAmount: 3_000_000,
+        status: 'CONFIRMED',
+        bookingItems: {
+          create: { roomTypeId: r501.roomTypeId, roomId: r501.id, roomNumber: '501', checkInDate: vnMidnight(8), checkOutDate: vnMidnight(11), basePrice: 1_000_000, totalPrice: 3_000_000 },
+        },
+      },
+    })
+    const plan = async () =>
+      (await prisma.bookingRoomSegment.findMany({ where: { bookingId: booking.id }, orderBy: { fromDate: 'asc' } })).map((s) => s.roomNumber)
+
+    // 1. The panel: from the night of day 9, room 503.
+    await page.goto(propertyPath('/calendar'))
+    await page.getByRole('tab', { name: 'Sơ đồ phòng' }).click()
+    await page.getByRole('button', { name: /Khách Đổi Phòng/ }).click()
+    const panel = page.getByRole('dialog')
+    await panel.getByRole('button', { name: 'Đổi phòng từ ngày…' }).click()
+    await panel.getByLabel('Từ đêm').selectOption(day(9).iso)
+    await expect(panel.getByLabel('Sang phòng').locator('option', { hasText: '503' })).toHaveCount(1)
+    await panel.getByLabel('Sang phòng').selectOption({ label: '503' })
+    await panel.getByRole('form', { name: 'Đổi phòng giữa chừng' }).getByRole('button', { name: 'Xác nhận đổi phòng' }).click()
+    await expect(page.getByText(`Đã đổi sang phòng 503 từ ${day(9).label}`)).toBeVisible()
+    expect(await plan()).toEqual(['501', '503'])
+    const nights = panel.getByRole('list', { name: 'Phòng theo từng đêm' }).getByRole('listitem')
+    await expect(nights).toHaveCount(2)
+    await expect(nights.filter({ hasText: '503' })).toContainText(`${day(9).label} → ${day(11).label}`)
+    await page.keyboard.press('Escape')
+
+    // 2. The timeline draws a bar per room; dragging the second moves only its nights.
+    const bars = page.getByRole('button', { name: /Khách Đổi Phòng/ })
+    await expect(bars).toHaveCount(2)
+    await bars.nth(1).dragTo(page.getByRole('button', { name: `Tạo đơn đêm ${day(10).label} 505` }))
+    await expect(page.getByText(`sang phòng 505 từ ${day(9).label}`).first()).toBeVisible()
+    expect(await plan()).toEqual(['501', '505'])
+    expect((await prisma.bookingItem.findFirstOrThrow({ where: { bookingId: booking.id } })).roomNumber).toBe('501')
   } finally {
     await prisma.$disconnect()
   }

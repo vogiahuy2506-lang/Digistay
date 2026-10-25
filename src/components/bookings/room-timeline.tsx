@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { useTranslations } from 'next-intl'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowRightLeft, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from '@/components/ui/toast'
 import { apiError } from '@/lib/i18n/api-errors'
@@ -31,6 +31,10 @@ interface Stay {
   paymentStatus: string
   checkIn: string
   checkOut: string
+  /** the nights of this bar: the stay, or its part in this room when it changes rooms */
+  from: string
+  to: string
+  split: boolean
   guests: number
   roomTypeId: string
   roomId: string | null
@@ -75,14 +79,29 @@ function columns(from: string, days: number, start: string, end: string) {
 
 /** Stays packed into lanes that never overlap (for the "not in a room yet" rows). */
 function lanes(stays: Stay[]) {
-  const sorted = [...stays].sort((x, y) => Date.parse(x.checkIn) - Date.parse(y.checkIn))
+  const sorted = [...stays].sort((x, y) => Date.parse(x.from) - Date.parse(y.from))
   const out: Stay[][] = []
   for (const stay of sorted) {
-    const lane = out.find((l) => Date.parse(l[l.length - 1].checkOut) <= Date.parse(stay.checkIn))
+    const lane = out.find((l) => Date.parse(l[l.length - 1].to) <= Date.parse(stay.from))
     if (lane) lane.push(stay)
     else out.push([stay])
   }
   return out
+}
+
+/**
+ * The nights a drag moves (POST /api/bookings/[id]/room): a whole stay as
+ * before; but a guest in house, or one part of a stay that changes rooms,
+ * moves from tonight at the earliest — nights already slept stay where they
+ * were (rooms.ts). null: nothing left to move.
+ */
+function nightsMoved(stay: Stay, today: string): { fromDate?: string; toDate?: string } | null {
+  if (!stay.split && stay.status !== 'CHECKED_IN') return {}
+  const from = vnDay(stay.from) < today ? today : vnDay(stay.from)
+  const to = vnDay(stay.to)
+  if (from >= to) return null
+  if (from === vnDay(stay.checkIn) && to === vnDay(stay.checkOut)) return {}
+  return { fromDate: from, ...(to !== vnDay(stay.checkOut) && { toDate: to }) }
 }
 
 const STATUS_STYLE: Record<string, string> = {
@@ -97,7 +116,9 @@ const STATUS_STYLE: Record<string, string> = {
  * bar in its room; stays not in a room yet sit under their type. Click an
  * empty night to book it (walk-in), a bar to open the booking; drag a bar to
  * another room to move the guest (POST /api/bookings/[id]/room checks the
- * room is free, src/lib/bookings/rooms.ts). Maintenance shows hatched.
+ * room is free, src/lib/bookings/rooms.ts). A stay that changes rooms part
+ * way draws one bar per room, each dragged on its own (nightsMoved).
+ * Maintenance shows hatched.
  */
 export function RoomTimeline({
   propertyId,
@@ -140,17 +161,36 @@ export function RoomTimeline({
   const move = async (stay: Stay, room: { id: string; number: string } | null) => {
     setDragging(null)
     setDropRow(null)
-    if (room?.id === stay.roomId || (!room && !stay.roomId)) return
-    const ok = confirm(room ? t('confirmMove', { code: stay.bookingCode, room: room.number }) : t('confirmUnassign', { code: stay.bookingCode }))
+    const nights = nightsMoved(stay, today)
+    if (!nights || room?.id === stay.roomId || (!room && !stay.roomId)) return
+    const label = (day: string) => labels.dayMonth(`${day}T00:00:00+07:00`)
+    const what = { code: stay.bookingCode, room: room?.number ?? '' }
+    const ok = confirm(
+      !room
+        ? t('confirmUnassign', { code: stay.bookingCode })
+        : nights.toDate
+          ? t('confirmMoveNights', { ...what, from: label(nights.fromDate!), to: label(nights.toDate) })
+          : nights.fromDate
+            ? t('confirmMoveFrom', { ...what, date: label(nights.fromDate) })
+            : t('confirmMove', what)
+    )
     if (!ok) return
     const res = await fetch(`/api/bookings/${stay.bookingId}/room`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ roomId: room?.id ?? null }),
+      body: JSON.stringify({ roomId: room?.id ?? null, ...nights }),
     }).catch(() => null)
     const body = res ? await res.json().catch(() => null) : null
     if (body?.success) {
-      toast.success(room ? t('moved', { code: stay.bookingCode, room: room.number }) : t('unassigned', { code: stay.bookingCode }))
+      toast.success(
+        !room
+          ? t('unassigned', { code: stay.bookingCode })
+          : nights.toDate
+            ? t('movedNights', { ...what, from: label(nights.fromDate!), to: label(nights.toDate) })
+            : nights.fromDate
+              ? t('movedFrom', { ...what, date: label(nights.fromDate) })
+              : t('moved', what)
+      )
       load()
     } else {
       toast.error(t('moveFailed'), apiError(body?.error))
@@ -158,12 +198,13 @@ export function RoomTimeline({
   }
 
   const bar = (stay: Stay) => {
-    const col = columns(from, days, stay.checkIn, stay.checkOut)
+    const col = columns(from, days, stay.from, stay.to)
     if (!col) return null
-    const movable = stay.status !== 'CHECKED_OUT'
+    const movable = stay.status !== 'CHECKED_OUT' && nightsMoved(stay, today) !== null
+    const part = stay.split ? ` · ${t('part', { room: stay.roomNumber ?? '', from: labels.dayMonth(stay.from), to: labels.dayMonth(stay.to) })}` : ''
     return (
       <button
-        key={stay.bookingId}
+        key={`${stay.bookingId}:${stay.from}`}
         type="button"
         draggable={movable}
         onDragStart={(e) => {
@@ -179,7 +220,7 @@ export function RoomTimeline({
           e.stopPropagation()
           onOpenBooking(stay.bookingId)
         }}
-        title={`${stay.bookingCode} · ${stay.guestName} · ${labels.dayMonth(stay.checkIn)} → ${labels.dayMonth(stay.checkOut)} · ${labels.bookingStatus(stay.status)}`}
+        title={`${stay.bookingCode} · ${stay.guestName} · ${labels.dayMonth(stay.checkIn)} → ${labels.dayMonth(stay.checkOut)}${part} · ${labels.bookingStatus(stay.status)}`}
         className={cn(
           'absolute top-1 bottom-1 z-[1] flex items-center gap-1 overflow-hidden rounded-[6px] border px-1.5 text-left text-[11px] leading-tight focus:outline-none focus-visible:ring-2 focus-visible:ring-acc',
           STATUS_STYLE[stay.status] ?? STATUS_STYLE.CONFIRMED,
@@ -187,6 +228,7 @@ export function RoomTimeline({
         )}
         style={{ left: col.start * COL + 2, width: col.span * COL - 4 }}
       >
+        {stay.split && <ArrowRightLeft className="h-3 w-3 shrink-0 text-muted" aria-hidden="true" />}
         <span className="truncate font-medium">{stay.guestName}</span>
         {col.span > 1 && <span className="shrink-0 font-mono text-[10px] text-muted">{stay.bookingCode.slice(-4)}</span>}
       </button>
@@ -214,8 +256,11 @@ export function RoomTimeline({
 
   /** One row: the label, the night cells (click to book), and what lies on it. */
   const row = (key: string, label: React.ReactNode, content: React.ReactNode, opts: { roomTypeId: string; room?: TimelineRoom; inactive?: boolean; dropTo?: { id: string; number: string } | null }) => {
-    // A room of any type; "not in a room" only for the stay's own type.
-    const droppable = !!dragging && opts.dropTo !== undefined && (opts.dropTo !== null || dragging.roomTypeId === opts.roomTypeId)
+    // A room of any type; "not in a room" only for the stay's own type, and a whole stay.
+    const droppable =
+      !!dragging &&
+      opts.dropTo !== undefined &&
+      (opts.dropTo !== null || (dragging.roomTypeId === opts.roomTypeId && !nightsMoved(dragging, today)?.fromDate))
     return (
       <div key={key} className="flex border-b border-line last:border-b-0">
         <div className="sticky left-0 z-[2] flex shrink-0 items-center gap-1.5 border-r border-line bg-panel px-3 text-xs" style={{ width: LABEL, height: ROW }}>
@@ -336,7 +381,7 @@ export function RoomTimeline({
               const left = dayList.map((day) => {
                 const night = (start: string, end: string) => vnDay(start) <= day && day < vnDay(end)
                 const taken =
-                  stays.filter((s) => s.status !== 'CHECKED_OUT' && night(s.checkIn, s.checkOut)).length +
+                  stays.filter((s) => s.status !== 'CHECKED_OUT' && night(s.from, s.to)).length +
                   data.locks.filter((l) => l.roomTypeId === type.id && night(l.start, l.end)).length
                 return type.totalRooms - taken
               })

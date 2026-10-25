@@ -15,6 +15,7 @@ import {
   ModalFooter,
   ModalHeader,
   PaymentStatusBadge,
+  Select,
   Textarea,
   toast,
 } from '@/components/ui'
@@ -22,6 +23,7 @@ import { canManageBookings, useWorkspaceRole } from '@/components/layout/workspa
 import { CheckOutDialog } from './check-out-dialog'
 import { CancelDialog } from './cancel-dialog'
 import { buildPrintHtml, nightsBetween, remainingAmount } from '@/lib/bookings/display'
+import { addDays as addDay, nightStart, roomPlan, spanOnNight, vnDay } from '@/lib/bookings/room-plan'
 import { useDashLabels } from '@/lib/i18n/dash'
 import { apiError } from '@/lib/i18n/api-errors'
 
@@ -56,7 +58,9 @@ export interface BookingDetailData {
   vatEmail: string | null
   source: string
   createdAt: string
-  bookingItems: { id: string; roomTypeId: string; roomTypeName: string | null; roomNumber: string | null }[]
+  bookingItems: { id: string; roomTypeId: string; roomTypeName: string | null; roomNumber: string | null; roomId?: string | null }[]
+  /** A stay split between rooms, in night order (src/lib/bookings/room-plan.ts); none for one room. */
+  roomSegments?: { roomId: string | null; roomNumber: string; roomTypeId: string; roomTypeName: string | null; fromDate: string; toDate: string }[]
   property: {
     id: string
     name: string
@@ -104,10 +108,18 @@ export function useBooking(bookingId: string | null) {
   return { booking, loading, error, reload: () => load() }
 }
 
+/** dd/mm of a Vietnam day. */
+const dayMonth = (value: string) => vnDay(value).slice(5).split('-').reverse().join('/')
+
 /** The room line on the printed slip, which stays in Vietnamese (buildPrintHtml). */
-export function roomLabel(booking: Pick<BookingDetailData, 'bookingItems'>): string {
+export function roomLabel(booking: Pick<BookingDetailData, 'bookingItems' | 'roomSegments'>): string {
   const item = booking.bookingItems[0]
   if (!item) return 'Chưa có phòng'
+  // A split stay: every room with its nights.
+  const parts = booking.roomSegments ?? []
+  if (parts.length > 1) {
+    return parts.map((p) => `${p.roomTypeName ?? 'Hạng phòng đã xoá'} · ${p.roomNumber} (${dayMonth(p.fromDate)} – ${dayMonth(p.toDate)})`).join(', ')
+  }
   const name = item.roomTypeName ?? 'Hạng phòng đã xoá'
   const more = booking.bookingItems.length > 1 ? ` (+${booking.bookingItems.length - 1} phòng)` : ''
   return `${name}${item.roomNumber ? ` · ${item.roomNumber}` : ''}${more}`
@@ -152,6 +164,13 @@ export function BookingDetailContent({ booking, onChanged }: { booking: BookingD
   const remaining = remainingAmount(booking)
   const checkInTime = booking.property.policy?.checkInTime || '14:00'
   const checkOutTime = booking.property.policy?.checkOutTime || '12:00'
+  const editable = canManageBookings(role)
+  const parts = booking.roomSegments ?? []
+  const typeNames = parts.length > 1 ? [...new Set(parts.map((p) => p.roomTypeName ?? tb('room.deletedType')))].join(' → ') : null
+  // "From the night of D": nights strictly inside the stay, from tonight on (Vietnam), in a listed room.
+  const [movingFrom, setMovingFrom] = React.useState(false)
+  const moveDays = movableNights(booking)
+  const canMoveFrom = editable && moveDays.length > 0 && (parts.length > 1 || !!booking.bookingItems[0]?.roomId)
 
   const copyPhone = async () => {
     try {
@@ -203,10 +222,10 @@ export function BookingDetailContent({ booking, onChanged }: { booking: BookingD
           <Field label={t('stay.roomType')}>
             {booking.bookingItems.length === 0
               ? tb('room.none')
-              : booking.bookingItems[0].roomTypeName ?? tb('room.deletedType')}
+              : typeNames ?? booking.bookingItems[0].roomTypeName ?? tb('room.deletedType')}
           </Field>
           <Field label={t('stay.roomNumber')}>
-            <RoomNumber booking={booking} onChanged={onChanged} editable={canManageBookings(role)} />
+            <RoomNumber booking={booking} onChanged={onChanged} editable={editable} onMoveFrom={canMoveFrom && !movingFrom ? () => setMovingFrom(true) : undefined} />
           </Field>
           <Field label={t('stay.checkIn')}>
             {labels.longDate(booking.checkInDate)} · {checkInTime}
@@ -222,6 +241,17 @@ export function BookingDetailContent({ booking, onChanged }: { booking: BookingD
           </Field>
           <Field label={t('stay.nights')}>{labels.nights(nights)}</Field>
         </dl>
+        {movingFrom && (
+          <MoveFrom
+            booking={booking}
+            days={moveDays}
+            onClose={() => setMovingFrom(false)}
+            onDone={() => {
+              setMovingFrom(false)
+              onChanged()
+            }}
+          />
+        )}
       </Section>
 
       <Section title={t('money.title')}>
@@ -288,9 +318,21 @@ interface RoomChoice {
  * there when that type has a room free), through POST /api/bookings/[id]/room;
  * otherwise a typed number, checked against every other stay.
  */
-function RoomNumber({ booking, onChanged, editable }: { booking: BookingDetailData; onChanged: () => void; editable: boolean }) {
+function RoomNumber({
+  booking,
+  onChanged,
+  editable,
+  onMoveFrom,
+}: {
+  booking: BookingDetailData
+  onChanged: () => void
+  editable: boolean
+  /** opens "Đổi phòng từ ngày…" (MoveFrom), when the stay has a night left to move */
+  onMoveFrom?: () => void
+}) {
   const t = useTranslations('dash.bookings.detail.roomNumber')
   const tc = useTranslations('dash.common')
+  const labels = useDashLabels()
   const current = booking.bookingItems[0]?.roomNumber ?? ''
   const [editing, setEditing] = React.useState(false)
   const [value, setValue] = React.useState(current)
@@ -352,13 +394,38 @@ function RoomNumber({ booking, onChanged, editable }: { booking: BookingDetailDa
   }
 
   if (!editing) {
+    const parts = booking.roomSegments ?? []
+    const tonight = spanOnNight(roomPlan(booking), vnDay(new Date()))
+    const link = 'text-small text-acc hover:underline focus:outline-none focus-visible:underline'
     return (
-      <span className="inline-flex items-center gap-2">
-        {current || <span className="text-muted">{t('unassigned')}</span>}
+      <span className="flex flex-col items-start gap-1">
+        {parts.length > 1 ? (
+          // A split stay: each room with its nights, tonight's marked.
+          <ul className="space-y-0.5" aria-label={t('plan')}>
+            {parts.map((p) => (
+              <li key={p.fromDate} className="flex flex-wrap items-baseline gap-x-2">
+                <span className="font-medium tabular-nums">{p.roomNumber}</span>
+                <span className="text-small text-muted tabular-nums">
+                  {labels.dayMonth(p.fromDate)} → {labels.dayMonth(p.toDate)}
+                </span>
+                {tonight && tonight.from.getTime() === new Date(p.fromDate).getTime() && <span className="text-xs font-medium text-ok">{t('tonight')}</span>}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <span>{current || <span className="text-muted">{t('unassigned')}</span>}</span>
+        )}
         {editable && (
-          <button type="button" onClick={open} className="text-small text-acc hover:underline focus:outline-none focus-visible:underline">
-            {current ? t('change') : t('assign')}
-          </button>
+          <span className="flex flex-wrap gap-x-3 gap-y-1">
+            <button type="button" onClick={open} className={link}>
+              {current ? (parts.length > 1 ? t('changeWhole') : t('change')) : t('assign')}
+            </button>
+            {onMoveFrom && (
+              <button type="button" onClick={onMoveFrom} className={link}>
+                {t('moveFrom')}
+              </button>
+            )}
+          </span>
         )}
       </span>
     )
@@ -415,6 +482,139 @@ function RoomNumber({ booking, onChanged, editable }: { booking: BookingDetailDa
       <Button type="button" size="sm" variant="ghost" onClick={() => { setValue(current); setEditing(false) }}>
         {tc('actions.cancel')}
       </Button>
+    </form>
+  )
+}
+
+/**
+ * The nights a stay can still change rooms from (rooms.ts): strictly inside
+ * it (after the check-in day, before the check-out day) and not before
+ * today in Vietnam; an active stay only.
+ */
+function movableNights(booking: Pick<BookingDetailData, 'status' | 'checkInDate' | 'checkOutDate'>): string[] {
+  if (!['PENDING', 'CONFIRMED', 'CHECKED_IN'].includes(booking.status)) return []
+  const today = vnDay(new Date())
+  const last = vnDay(booking.checkOutDate)
+  const days: string[] = []
+  for (let d = addDay(vnDay(booking.checkInDate), 1); d < last; d = addDay(d, 1)) if (d >= today) days.push(d)
+  return days
+}
+
+/**
+ * "Đổi phòng từ ngày…": from the night picked to check-out the guest is in
+ * another room (POST /api/bookings/[id]/room { roomId, fromDate }); the
+ * nights before keep theirs, the price stays as booked. The rooms offered
+ * are the hotel's, free on those nights (other types too).
+ */
+function MoveFrom({ booking, days, onClose, onDone }: { booking: BookingDetailData; days: string[]; onClose: () => void; onDone: () => void }) {
+  const t = useTranslations('dash.bookings.detail.roomNumber')
+  const tc = useTranslations('dash.common')
+  const labels = useDashLabels()
+  const [date, setDate] = React.useState(days[0])
+  const [rooms, setRooms] = React.useState<RoomChoice[] | null>(null)
+  const [roomId, setRoomId] = React.useState('')
+  const [saving, setSaving] = React.useState(false)
+  const plan = roomPlan(booking)
+  const typeId = spanOnNight(plan, date)?.roomTypeId ?? booking.bookingItems[0]?.roomTypeId
+  const from = nightStart(booking.checkInDate, date).toISOString()
+
+  React.useEffect(() => {
+    const controller = new AbortController()
+    setRooms(null)
+    setRoomId('')
+    const query = new URLSearchParams({
+      propertyId: booking.property.id,
+      roomTypeId: booking.bookingItems[0]?.roomTypeId ?? '',
+      checkIn: from,
+      checkOut: booking.checkOutDate,
+      all: '1',
+      allTypes: '1',
+      excludeBookingId: booking.id,
+    })
+    fetch(`/api/rooms/available?${query}`, { signal: controller.signal })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!controller.signal.aborted) setRooms(data?.success && data.meta?.listed ? data.data : [])
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setRooms([])
+      })
+    return () => controller.abort()
+  }, [booking.id, booking.property.id, booking.bookingItems, booking.checkOutDate, from])
+
+  const save = async () => {
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/bookings/${booking.id}/room`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId, fromDate: date }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success(t('movedFrom', { room: data.data.to, date: labels.dayMonth(from) }), data.data.roomTypeChanged ? t('movedType') : undefined)
+        onDone()
+      } else {
+        toast.error(t('assignFailed'), apiError(data.error))
+      }
+    } catch {
+      toast.error(t('assignFailed'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const here = spanOnNight(plan, date)?.roomId
+  const free = (rooms ?? []).filter((r) => r.status === 'AVAILABLE' && r.id !== here)
+  const groups = [...new Set(free.map((r) => r.roomTypeId))]
+    .sort((a, b) => (a === typeId ? -1 : b === typeId ? 1 : 0))
+    .map((id) => ({ id, name: free.find((r) => r.roomTypeId === id)!.roomTypeName, rooms: free.filter((r) => r.roomTypeId === id) }))
+
+  return (
+    <form
+      className="mt-3 space-y-3 rounded-box border border-line bg-raised p-3"
+      aria-label={t('moveFromTitle')}
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (roomId) save()
+      }}
+    >
+      <div>
+        <p className="text-small font-medium text-fg">{t('moveFromTitle')}</p>
+        <p className="text-xs text-muted">{t('moveFromHint')}</p>
+      </div>
+      <Select label={t('fromNight')} value={date} onChange={(e) => setDate(e.target.value)}>
+        {days.map((d) => (
+          <option key={d} value={d}>
+            {labels.longDate(nightStart(booking.checkInDate, d))}
+          </option>
+        ))}
+      </Select>
+      {rooms === null ? (
+        <p className="text-small text-muted">{t('loading')}</p>
+      ) : free.length === 0 ? (
+        <p className="text-small text-muted">{t('noFreeRoom')}</p>
+      ) : (
+        <Select label={t('toRoom')} value={roomId} onChange={(e) => setRoomId(e.target.value)} placeholder={t('choose')}>
+          {groups.map((group) => (
+            <optgroup key={group.id} label={group.id === typeId ? group.name : t('otherType', { type: group.name })}>
+              {group.rooms.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.number}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </Select>
+      )}
+      <div className="flex flex-wrap justify-end gap-2">
+        <Button type="button" size="sm" variant="ghost" onClick={onClose}>
+          {tc('actions.cancel')}
+        </Button>
+        <Button type="submit" size="sm" isLoading={saving} disabled={!roomId}>
+          {t('submitMove')}
+        </Button>
+      </div>
     </form>
   )
 }

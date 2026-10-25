@@ -22,6 +22,7 @@ import { RoomTimeline } from '@/components/bookings/room-timeline'
 import { BookingActions, BookingDetailContent, useBooking } from '@/components/bookings/booking-detail'
 import { SidePanel, SidePanelBody, SidePanelFooter, SidePanelHeader, BookingStatusBadge, Loading } from '@/components/ui'
 import { fetchWindow, staysNight, toCsv } from '@/lib/bookings/calendar'
+import { currentSpan, planNumbers, roomPlan, spanOnNight } from '@/lib/bookings/room-plan'
 import { format, addDays, parseISO } from 'date-fns'
 import { apiError } from '@/lib/i18n/api-errors'
 
@@ -52,10 +53,13 @@ interface Booking {
   bookingItems: Array<{
     id: string
     roomTypeId: string
+    roomId?: string | null
     roomNumber: string | null
     basePrice: number
     totalPrice: number
   }>
+  /** a stay that changes rooms part way, in night order (room-plan.ts) */
+  roomSegments?: Array<{ roomId: string | null; roomNumber: string; roomTypeId: string; fromDate: string; toDate: string }>
   property?: {
     id: string
     name: string
@@ -65,6 +69,17 @@ interface Booking {
   invoices?: any[]
   createdAt?: string
 }
+
+/**
+ * The room a stay is in on a local day: that night's for a stay that
+ * changes rooms, the last one on its check-out day.
+ */
+function roomOn(b: Booking, day: Date): string | null {
+  return currentSpan(roomPlan(b), format(day, 'yyyy-MM-dd'))?.roomNumber ?? null
+}
+
+/** Every room of a stay, in night order ("101 → 205"). */
+const roomsOf = (b: Booking) => (b.roomSegments?.length ? planNumbers(roomPlan(b)) : b.bookingItems.map((i) => i.roomNumber).filter(Boolean).join(', '))
 
 function startOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate())
@@ -245,7 +260,9 @@ export default function CalendarPage() {
     const result = new Map<string, number>()
     for (const b of bookings) {
       if (b.status === 'CANCELLED' || b.status === 'NO_SHOW' || !staysNight(b, day)) continue
-      for (const item of b.bookingItems) {
+      // A stay that changes rooms counts in the type of that night's room.
+      const part = b.roomSegments?.length ? spanOnNight(roomPlan(b), format(day, 'yyyy-MM-dd')) : null
+      for (const item of part ? [part] : b.bookingItems) {
         result.set(item.roomTypeId, (result.get(item.roomTypeId) ?? 0) + 1)
       }
     }
@@ -394,7 +411,7 @@ export default function CalendarPage() {
           checkIn: b.checkInDate,
           checkOut: b.checkOutDate,
           status: b.status,
-          rooms: b.bookingItems.map(i => i.roomNumber || t('unassigned')).join(', '),
+          rooms: roomsOf(b) || t('unassigned'),
         })),
       }
 
@@ -1012,9 +1029,9 @@ export default function CalendarPage() {
                                   <i className="fa-solid fa-circle text-[5px] text-info" />
                                   {b.guestName}
                                 </span>
-                                {b.bookingItems[0]?.roomNumber && (
+                                {roomOn(b, day.date) && (
                                   <span className="text-[9px] bg-info-soft px-1 rounded shrink-0">
-                                    {t('grid.room', { number: b.bookingItems[0].roomNumber })}
+                                    {t('grid.room', { number: roomOn(b, day.date)! })}
                                   </span>
                                 )}
                         </div>
@@ -1126,14 +1143,16 @@ export default function CalendarPage() {
                 ) : (
                   todayCheckIns.slice(0, 3).map((b) => (
                     <div key={`in-${b.id}`} className="p-2.5 rounded-lg border border-line bg-page/60 hover:bg-panel hover:border-acc/40 transition-all">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-fg text-xs">{b.guestName}</span>
+                      {/* The badge drops under the name when the card is narrow (the aside at lg): it is nowrap,
+                          and next to a long name or booking code it ran past the page edge at 1024px. */}
+                      <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+                        <div className="min-w-0 flex-[1_1_8rem]">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="font-bold text-fg text-xs break-words">{b.guestName}</span>
                             <span className="text-[9px] bg-ok-soft text-ok border border-ok/30 px-1 rounded font-bold">{t('checkIn')}</span>
                           </div>
                           <p className="text-[11px] text-muted mt-0.5">
-                            {t('today.roomLine', { room: b.bookingItems[0]?.roomNumber || '---', code: b.bookingCode })}
+                            {t('today.roomLine', { room: roomOn(b, today) || '---', code: b.bookingCode })}
                           </p>
                         </div>
                         <PaymentStatusBadge status={b.paymentStatus} className="shrink-0" />
@@ -1145,14 +1164,14 @@ export default function CalendarPage() {
                 {/* Check-outs */}
                 {todayCheckOuts.length > 0 && todayCheckOuts.slice(0, 2).map((b) => (
                   <div key={`out-${b.id}`} className="p-2.5 rounded-lg border border-line bg-page/60 hover:bg-panel hover:border-acc/40 transition-all">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-fg text-xs">{b.guestName}</span>
+                    <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+                      <div className="min-w-0 flex-[1_1_8rem]">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="font-bold text-fg text-xs break-words">{b.guestName}</span>
                           <span className="text-[9px] bg-warn-soft text-warn border border-warn/30 px-1 rounded font-bold">{t('checkOut')}</span>
                         </div>
                         <p className="text-[11px] text-muted mt-0.5">
-                          {t('today.roomLine', { room: b.bookingItems[0]?.roomNumber || '---', code: b.bookingCode })}
+                          {t('today.roomLine', { room: roomOn(b, today) || '---', code: b.bookingCode })}
                         </p>
                       </div>
                       <PaymentStatusBadge status={b.paymentStatus} className="shrink-0" />
@@ -1564,7 +1583,7 @@ export default function CalendarPage() {
               <div className="flex justify-between">
                 <span className="text-sm text-muted">{t('detail.room')}</span>
                 <span className="text-sm font-medium">
-                  {selectedBooking.bookingItems[0]?.roomNumber || t('unassigned')}
+                  {roomsOf(selectedBooking) || t('unassigned')}
                 </span>
               </div>
               <div className="flex justify-between">

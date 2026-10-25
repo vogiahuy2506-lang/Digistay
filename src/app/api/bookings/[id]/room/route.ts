@@ -4,13 +4,16 @@ import { prisma } from '@/lib/db'
 import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { RoomError, assignRoomTx } from '@/lib/bookings/rooms'
 
-const schema = z.object({ roomId: z.string().min(1).nullable() })
+const day = z.string().max(10)
+const schema = z.object({ roomId: z.string().min(1).nullable(), fromDate: day.optional(), toDate: day.optional() })
 
 /**
- * POST /api/bookings/[id]/room { roomId | null } — puts the stay in one of
- * the hotel's rooms, moves it to another (another type too, when that type
- * has a room free every night), or takes it out (src/lib/bookings/rooms.ts).
- * Front desk and up; logged.
+ * POST /api/bookings/[id]/room { roomId | null, fromDate?, toDate? } — puts
+ * the stay in one of the hotel's rooms, moves it to another (another type
+ * too, when that type has a room free every night), or takes it out
+ * (src/lib/bookings/rooms.ts). With fromDate (yyyy-mm-dd, Vietnam), only the
+ * nights from then (to toDate, default check-out) move: a mid-stay room
+ * change. Front desk and up; logged.
  */
 export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params
@@ -24,7 +27,8 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
 
   try {
     const moved = await prisma.$transaction(async (tx) => {
-      const result = await assignRoomTx(tx, { bookingId: id, roomId: parsed.data.roomId })
+      const { roomId, fromDate, toDate } = parsed.data
+      const result = await assignRoomTx(tx, { bookingId: id, roomId, fromDate, toDate })
       await tx.activityLog.create({
         data: {
           userId: access.userId,
@@ -32,7 +36,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
           action: 'ROOM_ASSIGNED',
           entityType: 'BOOKING',
           entityId: id,
-          changes: { from: result.from, to: result.to, roomTypeChanged: result.roomTypeChanged },
+          changes: { from: result.from, to: result.to, roomTypeChanged: result.roomTypeChanged, ...(fromDate && { fromDate }), ...(toDate && { toDate }) },
           metadata: { bookingCode: booking.bookingCode },
         },
       })

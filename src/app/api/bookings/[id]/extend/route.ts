@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { BookingError } from '@/lib/bookings/create-booking'
 import { NO_PRICE_MESSAGE, ROOM_RATE_INCLUDE, propertyRateDefaults } from '@/lib/pricing/rates'
-import { lockRoomType, roomsTaken } from '@/lib/bookings/occupancy'
+import { RoomError, extendRoomTx } from '@/lib/bookings/rooms'
 import { quoteStay, ratesFrom } from '@/lib/pricing/quote'
 import { auth } from '@/lib/auth'
 import { lockBooking, syncBookingPayments } from '@/lib/payments/booking-payments'
@@ -136,14 +136,10 @@ export async function POST(request: NextRequest, props: RouteParams) {
     // New total, the optional payment and the payment status change together.
     const updatedBooking = await prisma.$transaction(async (tx) => {
       await lockBooking(tx, id)
-      // The extra nights must be free: extensions used to oversell.
-      await lockRoomType(tx, roomType.id)
-      const taken = await roomsTaken(tx, roomType.id, {
-        propertyId: booking.propertyId,
-        checkIn: currentCheckOut,
-        checkOut: newCheckOut,
-      })
-      if (taken >= roomType.totalRooms) throw new BookingError('Phòng đã kín trong những đêm gia hạn', 409)
+      // The extra nights must be free, in the type and the room the guest
+      // sleeps in last (a split stay's last part grows): extensions used to
+      // oversell, and to give the guest's room to two stays.
+      await extendRoomTx(tx, { bookingId: id, newCheckOut })
       const fresh = await tx.booking.findUniqueOrThrow({
         where: { id },
         select: { subtotal: true, totalAmount: true, extraCharges: true },
@@ -229,7 +225,7 @@ export async function POST(request: NextRequest, props: RouteParams) {
       newTotal: updatedBooking.totalAmount,
     })
   } catch (error) {
-    if (error instanceof BookingError) {
+    if (error instanceof BookingError || error instanceof RoomError) {
       return NextResponse.json({ success: false, error: error.message }, { status: error.status })
     }
     console.error('Extend booking error:', error)
