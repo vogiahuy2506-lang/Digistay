@@ -1,11 +1,17 @@
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
-/** The red square and "Digistay": Digistay's own logo (brand color, never on hotel sites). */
+/**
+ * Digistay's own logo: the red "D" seal and the serif word (brand, never on
+ * hotel sites). public/marketing/logo.png is the light-theme file cut tight
+ * from public/logo_full_digistay.png; logo-dark.png has light lettering.
+ */
 export function Logo({ size = 'md' }: { size?: 'sm' | 'md' }) {
+  const height = size === 'md' ? 'h-[30px]' : 'h-[26px]'
   return (
-    <span className={cn('flex items-center font-semibold text-brand', size === 'md' ? 'gap-2.5 text-[18px]' : 'gap-2 text-[17px]')}>
-      <span aria-hidden className={cn('rounded-[3px] bg-brand', size === 'md' ? 'h-4 w-4' : 'h-3.5 w-3.5')} />
-      Digistay
+    <span className="flex items-center">
+      <Image src="/marketing/logo.png" alt="Digistay" width={405} height={96} className={cn(height, 'w-auto dark:hidden')} />
+      <Image src="/marketing/logo-dark.png" alt="Digistay" width={405} height={96} className={cn(height, 'hidden w-auto dark:block')} />
     </span>
   )
 }
