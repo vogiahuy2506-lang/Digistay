@@ -37,6 +37,7 @@ import { useDashLabels } from '@/lib/i18n/dash'
 import { cn } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
 import { apiError } from '@/lib/i18n/api-errors'
+import { planNumbers, roomPlan } from '@/lib/bookings/room-plan'
 
 interface BookingRow {
   id: string
@@ -50,7 +51,9 @@ interface BookingRow {
   depositAmount: number
   paymentStatus: string
   source: string
-  bookingItems: { roomTypeName: string | null; roomNumber: string | null }[]
+  bookingItems: { roomTypeId: string; roomTypeName: string | null; roomNumber: string | null }[]
+  /** a stay that changes rooms part way (room-plan.ts) */
+  roomSegments?: { roomId: string | null; roomNumber: string; roomTypeId: string; fromDate: string; toDate: string }[]
 }
 
 interface ListResponse {
@@ -79,7 +82,9 @@ type Labels = ReturnType<typeof useDashLabels>
 function roomText(row: BookingRow, t: T) {
   const item = row.bookingItems[0]
   if (!item) return t('room.none')
-  return `${item.roomTypeName ?? t('room.deletedType')}${item.roomNumber ? ` · ${item.roomNumber}` : ''}`
+  // A stay that changes rooms: its rooms in night order ("101 → 205").
+  const number = row.roomSegments?.length ? planNumbers(roomPlan(row)) : item.roomNumber
+  return `${item.roomTypeName ?? t('room.deletedType')}${number ? ` · ${number}` : ''}`
 }
 
 function datesText(row: BookingRow, labels: Labels) {

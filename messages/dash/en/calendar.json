@@ -182,8 +182,13 @@
     "moved": "Moved {code} to room {room}",
     "unassigned": "Took {code} out of its room",
     "moveFailed": "Could not move the booking",
-    "hint": "Click an empty night to book it; click a booking to open it; drag a booking to another room to move the guest. The number on each type is the rooms left that night. List rooms in Room types → Room list.",
+    "hint": "Click an empty night to book it; click a booking to open it; drag a booking to another room to move the guest (a guest in house moves from tonight; nights already past stay as they were). A stay that changes rooms has one bar per room. The number on each type is the rooms left that night. List rooms in Room types → Room list.",
     "presetRoom": "Room {room}.",
-    "presetClear": "Choose the room later"
+    "presetClear": "Choose the room later",
+    "confirmMoveFrom": "Move booking {code} to room {room} from the night of {date}? Earlier nights keep their room.",
+    "confirmMoveNights": "Move booking {code} to room {room} from {from} to {to}?",
+    "movedFrom": "Moved {code} to room {room} from {date}",
+    "part": "room {room} {from} → {to}",
+    "movedNights": "Moved {code} to room {room} from {from} to {to}"
   }
 }

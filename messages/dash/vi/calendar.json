@@ -182,8 +182,13 @@
     "moved": "Đã chuyển {code} sang phòng {room}",
     "unassigned": "Đã bỏ xếp phòng cho {code}",
     "moveFailed": "Chưa chuyển được phòng",
-    "hint": "Bấm vào ô trống để tạo đơn cho đêm đó; bấm vào đơn để xem; kéo đơn sang phòng khác để đổi phòng. Số trên mỗi hạng là số phòng còn trống đêm đó. Thêm danh sách phòng ở Hạng phòng → Danh sách phòng.",
+    "hint": "Bấm vào ô trống để tạo đơn cho đêm đó; bấm vào đơn để xem; kéo đơn sang phòng khác để đổi phòng (khách đang ở thì đổi từ đêm nay, đêm đã qua giữ nguyên). Đơn đổi phòng giữa chừng có một thanh cho mỗi phòng. Số trên mỗi hạng là số phòng còn trống đêm đó. Thêm danh sách phòng ở Hạng phòng → Danh sách phòng.",
     "presetRoom": "Phòng {room}.",
-    "presetClear": "Chọn phòng sau"
+    "presetClear": "Chọn phòng sau",
+    "confirmMoveFrom": "Chuyển đơn {code} sang phòng {room} từ đêm {date}? Các đêm trước giữ phòng cũ.",
+    "confirmMoveNights": "Chuyển đơn {code} sang phòng {room} từ {from} đến {to}?",
+    "movedFrom": "Đã chuyển {code} sang phòng {room} từ {date}",
+    "part": "phòng {room} {from} → {to}",
+    "movedNights": "Đã chuyển {code} sang phòng {room} từ {from} đến {to}"
   }
 }

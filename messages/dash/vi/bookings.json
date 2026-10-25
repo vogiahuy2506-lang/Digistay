@@ -92,7 +92,18 @@
       "statusOccupied": "có đơn {code}",
       "statusMaintenance": "đang bảo trì",
       "statusInactive": "ngừng dùng",
-      "movedType": "Đã chuyển sang phòng của hạng khác (giá giữ nguyên)"
+      "movedType": "Đã chuyển sang phòng của hạng khác (giá giữ nguyên)",
+      "plan": "Phòng theo từng đêm",
+      "tonight": "đêm nay",
+      "changeWhole": "Đổi phòng cả kỳ",
+      "moveFrom": "Đổi phòng từ ngày…",
+      "moveFromTitle": "Đổi phòng giữa chừng",
+      "moveFromHint": "Từ đêm chọn tới ngày trả phòng, khách ở phòng mới; các đêm trước giữ phòng cũ. Giá giữ nguyên.",
+      "fromNight": "Từ đêm",
+      "toRoom": "Sang phòng",
+      "noFreeRoom": "Không còn phòng nào trống cho những đêm này",
+      "submitMove": "Xác nhận đổi phòng",
+      "movedFrom": "Đã đổi sang phòng {room} từ {date}"
     }
   },
   "actions": {
