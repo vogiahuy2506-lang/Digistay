@@ -29,12 +29,15 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 const HERO_WIDTHS = [768, 1280, 1920, 2560] as const
 
-/** The screenshots in public/marketing are the real app (demo data), 1440 px wide. */
+/**
+ * The screenshots in public/marketing are the real app (demo data, photos from Unsplash), 1440 px
+ * wide, each in the light and the dark theme; the page shows the one matching its own.
+ */
 const FEATURES = [
-  { id: 'site', points: 3, url: 'khach-san-demo.digistay.vn', src: '/marketing/site-home.jpg', height: 2016 },
-  { id: 'booking', points: 3, url: 'khach-san-demo.digistay.vn/rooms/standard', src: '/marketing/site-room.jpg', height: 880 },
+  { id: 'site', points: 3, url: 'khach-san-demo.digistay.vn', src: '/marketing/site-home.jpg', darkSrc: '/marketing/site-home-dark.jpg', height: 2016 },
+  { id: 'booking', points: 3, url: 'khach-san-demo.digistay.vn/rooms/standard', src: '/marketing/site-room.jpg', darkSrc: '/marketing/site-room-dark.jpg', height: 880 },
   { id: 'admin', points: 4, url: 'digistay.vn/workspace/…/bookings', src: '/marketing/admin-bookings.jpg', darkSrc: '/marketing/admin-bookings-dark.jpg', height: 1040 },
-  { id: 'money', points: 3, url: 'digistay.vn/workspace/…/payments', src: '/marketing/admin-payments.jpg', height: 1040 },
+  { id: 'money', points: 3, url: 'digistay.vn/workspace/…/payments', src: '/marketing/admin-payments.jpg', darkSrc: '/marketing/admin-payments-dark.jpg', height: 1040 },
 ] as const
 
 const FAQ = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6'] as const
@@ -132,7 +135,7 @@ export default async function HomePage() {
                   <BrowserFrame
                     url={f.url}
                     src={f.src}
-                    darkSrc={'darkSrc' in f ? f.darkSrc : undefined}
+                    darkSrc={f.darkSrc}
                     alt={t(`features.${f.id}.alt`)}
                     width={1440}
                     height={f.height}
