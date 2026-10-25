@@ -86,11 +86,12 @@ export function PayosCard({ propertyId }: { propertyId: string }) {
   return (
     <Card className="mb-6">
       <CardContent className="p-5 space-y-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <Zap className="w-5 h-5 text-warn mt-0.5" />
-            <div>
-              <p className="font-semibold text-fg flex items-center gap-2">
+        {/* Phones: the buttons go under the text (they were cut off at the right edge at 390px). */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <Zap className="w-5 h-5 shrink-0 text-warn mt-0.5" />
+            <div className="min-w-0">
+              <p className="font-semibold text-fg flex flex-wrap items-center gap-2">
                 {t('title')}
                 {status.connected ? <Badge variant="success">{t('connected')}</Badge> : <Badge variant="gray">{t('notConnected')}</Badge>}
               </p>
@@ -98,8 +99,8 @@ export function PayosCard({ propertyId }: { propertyId: string }) {
                 {t('intro')}
               </p>
               {status.connected && (
-                <p className="text-sm text-fg mt-2 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-ok" />
+                <p className="text-sm text-fg mt-2 flex items-start gap-1.5 break-words">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-ok mt-0.5" />
                   {t('payout', {
                     name: status.accountName ?? '',
                     number: status.accountNumber ?? '',
@@ -110,7 +111,7 @@ export function PayosCard({ propertyId }: { propertyId: string }) {
             </div>
           </div>
           {!editing && (
-            <div className="flex gap-2 shrink-0">
+            <div className="flex flex-wrap gap-2 shrink-0">
               <Button variant={status.connected ? 'outline' : 'primary'} size="sm" onClick={() => setEditing(true)}>
                 {status.connected ? t('changeKeys') : t('connect')}
               </Button>
