@@ -436,6 +436,7 @@
         "fit": "Hotel chains and resorts"
       },
       "perMonth": "/ month",
+      "perYear": "/ year",
       "vat": "Prices exclude VAT.",
       "properties": "Properties",
       "rooms": "Rooms",
@@ -547,6 +548,13 @@
       "title": "Pricing",
       "fit": "Best for:",
       "choose": "Choose this plan",
+      "billing": {
+        "label": "Billing period",
+        "monthly": "Monthly",
+        "yearly": "Yearly",
+        "badge": "{months} months free",
+        "saving": "Save {amount} compared with monthly"
+      },
       "addons": {
         "title": "Add-ons",
         "property": {

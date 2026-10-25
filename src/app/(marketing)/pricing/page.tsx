@@ -3,11 +3,12 @@ import Link from 'next/link'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { Faq } from '@/components/marketing/Faq'
 import { MarketingHeader } from '@/components/marketing/MarketingHeader'
-import { frame, inkButton, lineButton, revealDelay, sectionTitle, softText } from '@/components/marketing/styles'
+import { frame, inkButton, lineButton, sectionTitle, softText } from '@/components/marketing/styles'
 import { formatVnd } from '@/lib/bookings/display'
-import { ADDON_IDS, ADDON_PRICES, COMPARE, PLANS, type Cell, type Plan } from '@/lib/marketing/plans'
+import { ADDON_IDS, ADDON_PRICES, COMPARE, PLANS, YEARLY_MONTHS, yearlyPrice, type Cell, type Plan } from '@/lib/marketing/plans'
 import { cn } from '@/lib/utils'
 import { ComparePicker, CompareCell, type CompareGroupView } from './ComparePicker'
+import { PlanCards } from './PlanCards'
 import { appOrigin } from '@/lib/public-site/site-host'
 import { digistayPageMetadata } from '@/lib/seo/page-metadata'
 
@@ -47,39 +48,34 @@ export default async function PricingPage() {
     <>
       <MarketingHeader active="pricing" />
       <main>
-        <section className={cn(frame, 'pt-11 lg:pt-[88px]')}>
-          <h1 className="font-serif text-[40px] font-medium leading-[1.1] tracking-[-0.02em] lg:text-[72px] lg:leading-[1.05] lg:tracking-[-0.025em]">
-            {t('title')}
-          </h1>
-        </section>
-
-        {/* Plans */}
-        <section className={cn(frame, 'mt-8 grid gap-4 lg:mt-14 lg:grid-cols-3 lg:gap-5')}>
-          {PLANS.map((p, i) => (
-            <div key={p.id} data-reveal style={revealDelay(i * 100)} className="flex flex-col rounded-box border border-line bg-panel p-6 lg:p-8">
-              <h2 className="text-label font-medium uppercase text-muted">{tp(`${p.id}.name`)}</h2>
-              <p className="mt-2 text-[14px] text-muted">
-                {t('fit')} <span className="text-fg">{tp(`${p.id}.fit`)}</span>
-              </p>
-              <p className="mt-6 flex flex-wrap items-baseline gap-2">
-                <span className="text-[34px] font-semibold leading-none tracking-[-0.015em] tabular-nums">{formatVnd(p.price, locale)}</span>
-                <span className="text-[14px] text-muted">{tp('perMonth')}</span>
-              </p>
-              <Link href="/register" className={cn(inkButton, 'mt-7 h-12 text-[15px]')}>
-                {t('choose')}
-              </Link>
-              <dl className="mt-7 border-t border-line/70">
-                {(['properties', 'rooms', 'staff', 'invoices'] as const).map((k) => (
-                  <div key={k} className="flex items-center justify-between gap-4 border-b border-line/70 py-3 text-[14px]">
-                    <dt>{tp(k)}</dt>
-                    <dd className={cn('font-medium tabular-nums', k === 'invoices' && p.invoices === 0 ? 'text-muted' : 'text-fg')}>
-                      {limit(p, k)}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          ))}
+        {/* Title, monthly / yearly switch and the plans */}
+        <section className={cn(frame, 'pt-10 lg:pt-14')}>
+          <PlanCards
+            title={t('title')}
+            plans={PLANS.map((p) => ({
+              id: p.id,
+              name: tp(`${p.id}.name`),
+              fit: tp(`${p.id}.fit`),
+              monthly: formatVnd(p.price, locale),
+              yearly: formatVnd(yearlyPrice(p), locale),
+              saving: t('billing.saving', { amount: formatVnd(p.price * 12 - yearlyPrice(p), locale) }),
+              limits: (['properties', 'rooms', 'staff', 'invoices'] as const).map((k) => ({
+                label: tp(k),
+                value: limit(p, k),
+                muted: k === 'invoices' && p.invoices === 0,
+              })),
+            }))}
+            labels={{
+              billing: t('billing.label'),
+              monthly: t('billing.monthly'),
+              yearly: t('billing.yearly'),
+              badge: t('billing.badge', { months: 12 - YEARLY_MONTHS }),
+              perMonth: tp('perMonth'),
+              perYear: tp('perYear'),
+              fit: t('fit'),
+              choose: t('choose'),
+            }}
+          />
         </section>
         <p className={cn(frame, 'mt-4 text-[13px] text-muted')}>{tp('vat')}</p>
 

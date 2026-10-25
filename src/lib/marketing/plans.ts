@@ -27,6 +27,11 @@ export const PLANS: Plan[] = [
   { id: 'business', price: 4_990_000, properties: 10, rooms: 300, staff: 30, invoices: 500 },
 ]
 
+/** Paying a year at once costs this many months (two months free). Sample content, like the prices. */
+export const YEARLY_MONTHS = 10
+
+export const yearlyPrice = (plan: Plan) => plan.price * YEARLY_MONTHS
+
 export const ADDON_IDS = ['property', 'staff', 'domain', 'invoices'] as const
 export type AddonId = (typeof ADDON_IDS)[number]
 

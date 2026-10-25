@@ -436,6 +436,7 @@
         "fit": "Chuỗi khách sạn và resort"
       },
       "perMonth": "/ tháng",
+      "perYear": "/ năm",
       "vat": "Giá chưa gồm VAT.",
       "properties": "Số cơ sở",
       "rooms": "Số phòng",
@@ -547,6 +548,13 @@
       "title": "Bảng giá",
       "fit": "Phù hợp:",
       "choose": "Đăng ký gói này",
+      "billing": {
+        "label": "Chu kỳ thanh toán",
+        "monthly": "Theo tháng",
+        "yearly": "Theo năm",
+        "badge": "Tặng {months} tháng",
+        "saving": "Tiết kiệm {amount} so với trả theo tháng"
+      },
       "addons": {
         "title": "Mua thêm",
         "property": {
