@@ -47,11 +47,10 @@ export default async function PricingPage() {
     <>
       <MarketingHeader active="pricing" />
       <main>
-        <section className={cn(frame, 'grid gap-4 pt-11 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-end lg:gap-24 lg:pt-[88px]')}>
+        <section className={cn(frame, 'pt-11 lg:pt-[88px]')}>
           <h1 className="font-serif text-[40px] font-medium leading-[1.1] tracking-[-0.02em] lg:text-[72px] lg:leading-[1.05] lg:tracking-[-0.025em]">
             {t('title')}
           </h1>
-          <p className={cn('text-[15.5px] leading-[1.7] lg:text-[16px]', softText)}>{t('lead')}</p>
         </section>
 
         {/* Plans */}
@@ -66,7 +65,6 @@ export default async function PricingPage() {
                 <span className="text-[34px] font-semibold leading-none tracking-[-0.015em] tabular-nums">{formatVnd(p.price, locale)}</span>
                 <span className="text-[14px] text-muted">{tp('perMonth')}</span>
               </p>
-              <p className="mt-2 text-[13px] text-muted">{tp('vat')}</p>
               <Link href="/register" className={cn(inkButton, 'mt-7 h-12 text-[15px]')}>
                 {t('choose')}
               </Link>
@@ -83,6 +81,7 @@ export default async function PricingPage() {
             </div>
           ))}
         </section>
+        <p className={cn(frame, 'mt-4 text-[13px] text-muted')}>{tp('vat')}</p>
 
         {/* Add-ons */}
         <section className={cn(frame, 'pt-24 lg:pt-28')}>

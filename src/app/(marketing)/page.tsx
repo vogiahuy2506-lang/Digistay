@@ -48,43 +48,40 @@ export default async function HomePage() {
     <>
       <MarketingHeader />
       <main>
-        {/* Hero: headline and actions, then a hotel photo the app screenshots rise over */}
-        <section className={cn(frame, 'pt-10 lg:pt-20')}>
-          <p className="text-[11px] font-medium uppercase leading-[1.6] tracking-[0.16em] text-muted lg:text-[12px]">{t('eyebrow')}</p>
-          <div className="mt-3.5 grid gap-5 lg:mt-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-end lg:gap-20">
-            <h1 className="max-w-[900px] text-balance font-serif text-[38px] font-medium leading-[1.12] tracking-[-0.02em] lg:text-[64px] lg:leading-[1.08] lg:tracking-[-0.025em]">
+        {/* Hero: the headline over a hotel photo that fills the first screen; the app screenshots rise over its lower edge */}
+        <section className="relative isolate overflow-hidden bg-[#1c1b19]">
+          {/* eslint-disable-next-line @next/next/no-img-element -- srcSet of pre-cut widths (image optimization is off) */}
+          <img
+            src="/marketing/hero-hoi-an-1280.jpg"
+            srcSet={HERO_WIDTHS.map((w) => `/marketing/hero-hoi-an-${w}.jpg ${w}w`).join(', ')}
+            sizes="100vw"
+            width={2400}
+            height={1600}
+            alt={t('photoAlt')}
+            fetchPriority="high"
+            className="absolute inset-0 -z-10 h-full w-full object-cover object-[50%_70%]"
+          />
+          {/* Darker toward the text (left on wide screens, bottom on phones) so white type stays readable */}
+          <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-black/75 via-black/40 to-black/10 lg:bg-gradient-to-r lg:from-black/70 lg:via-black/35 lg:to-transparent" />
+          <div className={cn(frame, 'flex min-h-[calc(100svh-69px)] flex-col justify-end pb-32 pt-24 sm:pb-40 lg:min-h-[calc(100svh-81px)] lg:pb-[200px] lg:pt-28')}>
+            <p className="text-[11px] font-medium uppercase leading-[1.6] tracking-[0.16em] text-white/80 lg:text-[12px]">{t('eyebrow')}</p>
+            <h1 className="mt-3.5 max-w-[820px] text-balance font-serif text-[38px] font-medium leading-[1.12] tracking-[-0.02em] text-white lg:mt-5 lg:text-[60px] lg:leading-[1.08] lg:tracking-[-0.025em]">
               {t('title')}
             </h1>
-            <div className="lg:pb-2">
-              <p className={cn('text-pretty text-[16px] leading-[1.65] lg:text-[17px]', softText)}>{t('lead')}</p>
-              <div className="mt-6 flex flex-col gap-2.5 sm:flex-row lg:gap-3">
-                <Link href="/register" className={cn(inkButton, 'h-[52px] px-7 text-[15px]')}>
-                  {t('register')}
-                </Link>
-                <Link href="/pricing" className={cn(lineButton, 'h-[52px] px-[26px] text-[15px]')}>
-                  {t('seePricing')}
-                </Link>
-              </div>
+            <p className="mt-4 max-w-[600px] text-pretty text-[16px] leading-[1.65] text-white/85 lg:mt-5 lg:text-[18px]">{t('lead')}</p>
+            <div className="mt-6 flex flex-col gap-2.5 sm:flex-row lg:mt-8 lg:gap-3">
+              <Link href="/register" className={cn(inkButton, 'h-[52px] bg-white px-7 text-[15px] text-[#1c1b19] hover:bg-white/90')}>
+                {t('register')}
+              </Link>
+              <Link href="/pricing" className={cn(lineButton, 'h-[52px] border-white/80 px-[26px] text-[15px] text-white hover:bg-white/10')}>
+                {t('seePricing')}
+              </Link>
             </div>
           </div>
         </section>
 
-        <section className="mt-10 lg:mt-16">
-          <div className="relative mx-auto h-[300px] max-w-[1920px] overflow-hidden bg-plain-soft sm:h-[420px] lg:h-[600px]">
-            {/* eslint-disable-next-line @next/next/no-img-element -- srcSet of pre-cut widths (image optimization is off) */}
-            <img
-              src="/marketing/hero-hoi-an-1280.jpg"
-              srcSet={HERO_WIDTHS.map((w) => `/marketing/hero-hoi-an-${w}.jpg ${w}w`).join(', ')}
-              sizes="(min-width: 1920px) 1920px, 100vw"
-              width={2400}
-              height={1600}
-              alt={t('photoAlt')}
-              fetchPriority="high"
-              className="h-full w-full object-cover object-[50%_78%] dark:brightness-[.85]"
-            />
-          </div>
-
-          <div className={cn(frame, 'relative -mt-24 sm:-mt-32 lg:-mt-[200px]')}>
+        <section>
+          <div className={cn(frame, 'relative -mt-24 sm:-mt-32 lg:-mt-[140px]')}>
             <div className="relative mx-auto aspect-[350/420] max-w-[560px] lg:hidden">
               <BrowserFrame
                 url="digistay.vn"
@@ -123,20 +120,13 @@ export default async function HomePage() {
                 aspect="400/560"
                 className="absolute right-0 top-[120px] w-[31.25%] shadow-[0_40px_80px_-40px_rgba(28,27,25,.5)]"
               />
-              <p className="mt-6 flex gap-6 text-[13px] text-muted">
-                <span>{t('captionAdmin')}</span>
-                <span>{t('captionSite')}</span>
-              </p>
             </div>
           </div>
         </section>
 
         {/* Features */}
         <section id="tinh-nang" className={cn(frame, 'scroll-mt-6 pt-[72px] lg:pt-32')}>
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-end lg:gap-24">
-            <h2 className={cn(sectionTitle, 'max-w-[760px]')}>{t('features.title')}</h2>
-            <p className="text-[15px] leading-[1.7] text-muted">{t('features.lead')}</p>
-          </div>
+          <h2 className={cn(sectionTitle, 'max-w-[760px] text-balance')}>{t('features.title')}</h2>
 
           <div className="mt-9 flex flex-col gap-14 lg:mt-20 lg:gap-[120px]">
             {FEATURES.map((f, i) => (

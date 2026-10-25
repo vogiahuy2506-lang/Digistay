@@ -449,14 +449,11 @@
       "lead": "Build your own website with online booking and PayOS deposits, then run bookings, check-in and check-out, invoices and reports in one place.",
       "register": "Sign up",
       "seePricing": "See pricing",
-      "captionAdmin": "Left: the bookings page",
-      "captionSite": "Right: a hotel website built with Digistay",
       "altAdmin": "The bookings list in Digistay's management pages",
       "altSite": "A hotel's website built with Digistay",
       "photoAlt": "The pool, thatched umbrellas and beach of a resort in Hoi An",
       "features": {
         "title": "What Digistay does today",
-        "lead": "All four groups of features below are live. The pictures are the real hotel website and management pages.",
         "site": {
           "title": "A hotel website you build yourself, no code",
           "desc": "Put ready-made blocks together into a full website, and edit text and photos right on the page.",
@@ -548,7 +545,6 @@
     },
     "pricing": {
       "title": "Pricing",
-      "lead": "Three plans by hotel size. Every plan has the website, direct booking and the management pages; add more when you need it.",
       "fit": "Best for:",
       "choose": "Choose this plan",
       "addons": {

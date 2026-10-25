@@ -449,14 +449,11 @@
       "lead": "Tự dựng website có đặt phòng và đặt cọc qua PayOS, rồi quản lý đặt phòng, nhận trả phòng, hoá đơn và báo cáo ở cùng một nơi.",
       "register": "Đăng ký",
       "seePricing": "Xem bảng giá",
-      "captionAdmin": "Trái: trang quản lý đặt phòng",
-      "captionSite": "Phải: website khách sạn dựng bằng Digistay",
       "altAdmin": "Danh sách đặt phòng trong trang quản lý Digistay",
       "altSite": "Website của một khách sạn dựng bằng Digistay",
       "photoAlt": "Hồ bơi, dù lá và bãi biển của một resort ở Hội An",
       "features": {
         "title": "Những gì Digistay làm được hôm nay",
-        "lead": "Bốn nhóm tính năng dưới đây đều đang chạy. Ảnh là giao diện thật của website khách sạn và trang quản lý.",
         "site": {
           "title": "Website khách sạn, tự dựng không cần code",
           "desc": "Ghép các khối có sẵn thành website hoàn chỉnh, sửa chữ và ảnh ngay trên trang.",
@@ -548,7 +545,6 @@
     },
     "pricing": {
       "title": "Bảng giá",
-      "lead": "Ba gói theo quy mô khách sạn. Gói nào cũng có website, đặt phòng trực tiếp và trang quản lý; cần thêm thì mua thêm.",
       "fit": "Phù hợp:",
       "choose": "Đăng ký gói này",
       "addons": {
