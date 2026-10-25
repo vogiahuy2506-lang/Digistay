@@ -453,10 +453,10 @@
       "captionSite": "Right: a hotel website built with Digistay",
       "altAdmin": "The bookings list in Digistay's management pages",
       "altSite": "A hotel's website built with Digistay",
-      "customers": "Hotels using Digistay",
+      "photoAlt": "The pool, thatched umbrellas and beach of a resort in Hoi An",
       "features": {
         "title": "What Digistay does today",
-        "lead": "All five groups of features below are live. The pictures are the real hotel website and management pages.",
+        "lead": "All four groups of features below are live. The pictures are the real hotel website and management pages.",
         "site": {
           "title": "A hotel website you build yourself, no code",
           "desc": "Put ready-made blocks together into a full website, and edit text and photos right on the page.",
@@ -479,6 +479,7 @@
           "p1": "Bookings list and room calendar",
           "p2": "Walk-in bookings",
           "p3": "Check-in, check-out and late check-out fees",
+          "p4": "Revenue reports, a cash book and several properties in one workspace",
           "alt": "The bookings list by status in the management pages"
         },
         "money": {
@@ -488,16 +489,6 @@
           "p2": "Mắt Bão e-invoices: issue, adjust, replace",
           "p3": "Invoices emailed to guests",
           "alt": "Payments matched to their bookings"
-        },
-        "scale": {
-          "title": "Reports, several properties and security",
-          "desc": "One workspace for a whole chain, where everyone sees only their own work.",
-          "p1": "Revenue reports and a daily cash book",
-          "p2": "Several properties in one workspace",
-          "p3": "Owner, Manager and Front desk roles",
-          "p4": "A dark theme for night shifts",
-          "p5": "Two-step sign-in",
-          "alt": "The bookings page in the dark theme"
         }
       },
       "steps": {
@@ -517,8 +508,9 @@
       },
       "pricing": {
         "title": "Pricing",
-        "compare": "Compare all plans",
-        "details": "See plan details"
+        "from": "From {price} / month",
+        "summary": "Three plans by number of properties, rooms and staff accounts. Prices exclude VAT.",
+        "compare": "Compare plans"
       },
       "faq": {
         "title": "Frequently asked questions",

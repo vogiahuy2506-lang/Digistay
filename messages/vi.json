@@ -453,10 +453,10 @@
       "captionSite": "Phải: website khách sạn dựng bằng Digistay",
       "altAdmin": "Danh sách đặt phòng trong trang quản lý Digistay",
       "altSite": "Website của một khách sạn dựng bằng Digistay",
-      "customers": "Khách sạn đang dùng Digistay",
+      "photoAlt": "Hồ bơi, dù lá và bãi biển của một resort ở Hội An",
       "features": {
         "title": "Những gì Digistay làm được hôm nay",
-        "lead": "Năm nhóm tính năng dưới đây đều đang chạy. Ảnh là giao diện thật của website khách sạn và trang quản lý.",
+        "lead": "Bốn nhóm tính năng dưới đây đều đang chạy. Ảnh là giao diện thật của website khách sạn và trang quản lý.",
         "site": {
           "title": "Website khách sạn, tự dựng không cần code",
           "desc": "Ghép các khối có sẵn thành website hoàn chỉnh, sửa chữ và ảnh ngay trên trang.",
@@ -479,6 +479,7 @@
           "p1": "Danh sách đặt phòng và lịch phòng",
           "p2": "Tạo đặt phòng cho khách walk-in",
           "p3": "Nhận phòng, trả phòng, tính phí trả phòng muộn",
+          "p4": "Báo cáo doanh thu, sổ quỹ và nhiều cơ sở trong một workspace",
           "alt": "Danh sách đặt phòng theo trạng thái trong trang quản lý"
         },
         "money": {
@@ -488,16 +489,6 @@
           "p2": "Hoá đơn điện tử Mắt Bão: phát hành, điều chỉnh, thay thế",
           "p3": "Gửi hoá đơn cho khách qua email",
           "alt": "Danh sách thanh toán đã khớp với đặt phòng"
-        },
-        "scale": {
-          "title": "Báo cáo, nhiều cơ sở và bảo mật",
-          "desc": "Một workspace cho cả chuỗi, mỗi người chỉ thấy phần việc của mình.",
-          "p1": "Báo cáo doanh thu và sổ quỹ hằng ngày",
-          "p2": "Nhiều cơ sở trong một workspace",
-          "p3": "Phân quyền Chủ, Quản lý, Lễ tân",
-          "p4": "Giao diện tối cho ca đêm",
-          "p5": "Đăng nhập hai lớp",
-          "alt": "Trang quản lý đặt phòng ở giao diện tối"
         }
       },
       "steps": {
@@ -517,8 +508,9 @@
       },
       "pricing": {
         "title": "Bảng giá",
-        "compare": "So sánh đầy đủ các gói",
-        "details": "Xem chi tiết gói"
+        "from": "Từ {price} / tháng",
+        "summary": "Ba gói theo số cơ sở, số phòng và tài khoản nhân viên. Giá chưa gồm VAT.",
+        "compare": "So sánh các gói"
       },
       "faq": {
         "title": "Câu hỏi thường gặp",
