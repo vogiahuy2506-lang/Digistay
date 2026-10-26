@@ -42,10 +42,17 @@ test('the bell shows a new booking; opening it goes to the booking and marks it 
     await bell.click()
     const panel = page.getByRole('dialog', { name: 'Thông báo' })
     await expect(panel).toContainText(`Đơn mới từ website: ${booking.bookingCode} · ${booking.guestName}`)
+    // The bell marks it read optimistically, then sends the POST without
+    // waiting for it and goes to the booking: on a busy machine the page is
+    // there before the POST is answered. Wait for that answer, not the URL.
+    const markedRead = page.waitForResponse(
+      (res) => new URL(res.url()).pathname === '/api/notifications' && res.request().method() === 'POST'
+    )
     await panel.getByRole('button', { name: new RegExp(booking.bookingCode) }).click()
 
     await page.waitForURL(new RegExp(`/bookings/${booking.id}`))
     await expect(page.getByRole('button', { name: 'Thông báo', exact: true })).toBeVisible()
+    expect((await markedRead).ok()).toBe(true)
     expect((await prisma.notification.findFirstOrThrow({ where: { userId: admin.id } })).readAt).not.toBeNull()
   } finally {
     await prisma.$disconnect()
