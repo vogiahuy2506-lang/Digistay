@@ -49,6 +49,7 @@ type Kind =
   | 'contact_request'
   | 'subscription_paid'
   | 'subscription_reminder'
+  | 'subscription_switched'
 interface Message {
   to: EmailRecipient
   subject: string

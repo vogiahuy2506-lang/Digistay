@@ -172,8 +172,9 @@ enum SubscriptionPaymentStatus {
   FAILED
 }
 
-/// The workspace's Digistay plan: a 14-day trial first, then whatever was
-/// paid last. Each payment starts a new period from the day it is paid.
+/// The workspace's Digistay plan: a 14-day trial first, then what was paid
+/// (src/lib/billing/period.ts planChange: an upgrade starts now, a renewal
+/// is chained to periodEnd, a downgrade is scheduled for periodEnd in next*).
 /// Past periodEnd: 7 days of grace, then the workspace is read-only.
 model Subscription {
   workspaceId String         @id
@@ -187,6 +188,12 @@ model Subscription {
   periodEnd   DateTime
   /// Reminder emails already sent for this period, e.g. {"soon7": "2026-…"}
   reminders   Json?
+  /// A paid downgrade waiting for periodEnd: then plan/billing become these
+  /// and the period runs from periodEnd to nextPeriodEnd.
+  nextPlan      String?
+  nextBilling   BillingPeriod?
+  nextPeriodEnd DateTime?
+  nextPaymentId String?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
@@ -211,16 +218,83 @@ model SubscriptionPayment {
   expiresAt   DateTime?
   paidAt      DateTime?
   reference   String?
-  /// The period this payment started (set when paid)
+  /// The period this payment pays for (set when paid; in the future for a
+  /// renewal or a scheduled downgrade)
   periodStart DateTime?
   periodEnd   DateTime?
+  /// How it was applied when paid: new | renew | upgrade | downgrade (period.ts planChange)
+  change      String?
   createdById String?
+  /// Who the e-invoice is for, chosen at checkout (src/lib/billing/einvoice.ts):
+  /// {type: none | personal | company, name, idNumber, companyName, taxCode, address, phone}
+  invoiceBuyer Json?
+  invoice     SubscriptionInvoice?
   createdAt   DateTime                  @default(now())
   updatedAt   DateTime                  @updatedAt
 
   @@index([workspaceId, createdAt])
   @@index([status, createdAt])
   @@map("subscription_payments")
+}
+
+enum SubscriptionInvoiceStatus {
+  PENDING
+  ISSUING
+  ISSUED
+  FAILED
+}
+
+/// The VAT e-invoice of a paid plan payment, issued by Digistay under its
+/// own tax code through its Mắt Bão account (src/lib/billing/einvoice.ts).
+/// Made in the same transaction that marks the payment paid; issued right
+/// after, and by the plan jobs until it is.
+model SubscriptionInvoice {
+  id             String                    @id @default(cuid())
+  paymentId      String                    @unique
+  payment        SubscriptionPayment       @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  workspaceId    String
+  status         SubscriptionInvoiceStatus @default(PENDING)
+  /// none (sold to a consumer, not emailed) | personal | company
+  buyerType      String
+  buyerName      String?
+  idNumber       String?
+  companyName    String?
+  taxCode        String?
+  address        String?
+  phone          String?
+  /// Where the PDF is emailed; null for buyerType none
+  email          String?
+  /// VND, VAT included (the payment's amount)
+  amount         Int
+  vatCode        Int
+  /// MaTraCuu, fixed per invoice so a retry after a timeout answers 304
+  lookupCode     String                    @unique
+  environment    String?
+  templateCode   String?
+  series         String?
+  invoiceCode    String?
+  einvoiceNumber String?
+  issuedAt       DateTime?
+  attempts       Int                       @default(0)
+  /// Next try for PENDING/FAILED (null: needs someone), lease end for ISSUING
+  nextAttemptAt  DateTime?
+  error          String?
+  /// Tax office status from Mắt Bão's webhook (4 issued a code, 6 refused)
+  cqtStatus      Int?
+  cqtNote        String?
+  /// PENDING | SENDING | SENT | FAILED | SKIPPED
+  emailStatus    String?
+  emailAttempts  Int                       @default(0)
+  emailNextAt    DateTime?
+  emailedAt      DateTime?
+  emailError     String?
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+
+  @@index([status, nextAttemptAt])
+  @@index([emailStatus, emailNextAt])
+  @@index([workspaceId, createdAt])
+  @@map("subscription_invoices")
 }
 
 model WorkspaceMember {
@@ -1423,7 +1497,7 @@ model Notification {
 model EmailOutbox {
   id        String    @id
   /// booking_confirmation, owner_new_booking, workspace_invite, deposit_received, deposit_expired, contact_request,
-  /// subscription_paid, subscription_reminder
+  /// subscription_paid, subscription_reminder, subscription_switched
   kind      String
   toEmail   String
   /// encrypted JSON { to, name, subject, text, html }

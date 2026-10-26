@@ -10,17 +10,24 @@
  *   reached Digistay's account.
  * - The return URL never marks anything paid.
  *
- * Applying a payment starts a new period from that moment (decision
- * 2026-10-26: nothing carries over from the period before).
+ * A payment is applied by period.ts planChange, decided again when the
+ * money comes (the state may have moved since the QR): an upgrade or a
+ * first plan starts now, a renewal is chained to the end, a downgrade waits
+ * for the end (Subscription.next*). A downgrade already waiting moves when
+ * the period before it changes. The e-invoice is made in the same
+ * transaction when Digistay issues them (einvoice.ts).
  */
-import { Prisma, type BillingPeriod, type SubscriptionPayment } from '@prisma/client'
+import { Prisma, type BillingPeriod, type Subscription, type SubscriptionPayment } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { newOrderCode } from '@/lib/payments/payos'
 import { sendAfterResponse } from '@/lib/email/outbox'
-import type { PlanId } from '@/lib/marketing/plans'
-import { periodEndFrom, priceFor } from './period'
+import { isPlanId, planById, type PlanId } from '@/lib/marketing/plans'
+import { periodEndFrom, planChange, priceFor, type ChangeBlock, type PlanChange } from './period'
+import { ensureSubscription, startScheduledPlan } from './subscription'
+import { vnDate } from './emails'
 import { platformPayos, platformPayosConfigured } from './platform-payos'
 import { queueSubscriptionPaid } from './emails'
+import { issueAfterResponse, prepareSubscriptionInvoice, type InvoiceBuyer } from './einvoice'
 
 /** How long a plan's QR can be paid. */
 export const CHECKOUT_TTL_SEC = 30 * 60
@@ -39,6 +46,25 @@ export class BillingError extends Error {
 }
 
 const PLAN_CODE: Record<PlanId, string> = { starter: 'STARTER', growth: 'GROWTH', business: 'BUSINESS' }
+
+const planName = (id: string) => planById(id).id.charAt(0).toUpperCase() + planById(id).id.slice(1)
+
+/** Why checkout refuses a purchase (period.ts planChange), said to the payer. */
+export function changeBlockMessage(block: ChangeBlock, change: PlanChange, sub: Pick<Subscription, 'periodEnd' | 'nextPlan' | 'nextBilling'>): string {
+  if (block === 'RENEW_TOO_EARLY') {
+    return `Gói hiện tại còn hạn đến ${vnDate(sub.periodEnd)}. Bạn có thể gia hạn từ ngày ${vnDate(change.renewFrom!)}.`
+  }
+  if (block === 'YEARLY_TO_MONTHLY') {
+    return 'Gói năm còn từ 30 ngày trở lên nên chưa chuyển sang gói tháng được. Bạn có thể chuyển trong 30 ngày cuối của gói năm.'
+  }
+  return `Đã hẹn đổi sang gói ${planName(sub.nextPlan ?? '')} từ ngày ${vnDate(sub.periodEnd)}. Không thể hẹn thêm lần đổi gói khác.`
+}
+
+/** What buying `plan` / `billing` would do to the workspace's plan now. */
+export async function quoteChange(workspaceId: string, plan: PlanId, billing: BillingPeriod, now = new Date()) {
+  const sub = await startScheduledPlan(await ensureSubscription(workspaceId, prisma, now), prisma, now)
+  return { sub, change: planChange(sub, { plan, billing }, now) }
+}
 
 /** What the payer's bank shows: ASCII, at most 25 characters. */
 export function checkoutDescription(plan: PlanId, billing: BillingPeriod): string {
@@ -62,8 +88,12 @@ export async function createCheckout(input: {
   billing: BillingPeriod
   userId: string
   returnUrl: string
+  /** Who the e-invoice is for (einvoice.ts); kept until the money comes */
+  invoiceBuyer?: InvoiceBuyer
 }): Promise<SubscriptionPayment> {
   if (!platformPayosConfigured()) throw new BillingError(PAYOS_NOT_READY, 503)
+  const { sub, change } = await quoteChange(input.workspaceId, input.plan, input.billing)
+  if (change.blocked) throw new BillingError(changeBlockMessage(change.blocked, change, sub), 409)
   const amount = priceFor(input.plan, input.billing)
   await prisma.subscriptionPayment.updateMany({
     where: { workspaceId: input.workspaceId, status: 'PENDING' },
@@ -77,6 +107,7 @@ export async function createCheckout(input: {
       amount,
       orderCode: String(newOrderCode()),
       createdById: input.userId,
+      ...(input.invoiceBuyer && { invoiceBuyer: input.invoiceBuyer }),
     },
   })
   const expiredAt = Math.floor(Date.now() / 1000) + CHECKOUT_TTL_SEC
@@ -119,23 +150,62 @@ export async function applySubscriptionPaid(input: {
   }
 
   const paidAt = input.now ?? new Date()
-  const periodEnd = periodEndFrom(paidAt, payment.billing)
   const applied = await prisma.$transaction(async (tx) => {
+    const sub = await startScheduledPlan(await ensureSubscription(payment.workspaceId, tx, paidAt), tx, paidAt)
     const marked = await tx.subscriptionPayment.updateMany({
       where: { id: payment.id, status: { in: [...PAYABLE] } },
-      data: { status: 'PAID', paidAt, reference: input.reference ?? null, periodStart: paidAt, periodEnd },
+      data: { status: 'PAID', paidAt, reference: input.reference ?? null },
     })
     if (marked.count === 0) return null
-    await tx.subscription.upsert({
-      where: { workspaceId: payment.workspaceId },
-      create: { workspaceId: payment.workspaceId, plan: payment.plan, billing: payment.billing, trial: false, periodStart: paidAt, periodEnd },
-      update: { plan: payment.plan, billing: payment.billing, trial: false, periodStart: paidAt, periodEnd, reminders: Prisma.DbNull },
-    })
-    return queueSubscriptionPaid(payment.id, tx)
+    await applyToSubscription(sub, payment, paidAt, tx)
+    const invoiceId = await prepareSubscriptionInvoice(payment, tx)
+    return { emails: await queueSubscriptionPaid(payment.id, tx), invoiceId }
   })
   if (!applied) return 'duplicate'
-  sendAfterResponse(applied)
+  sendAfterResponse(applied.emails)
+  issueAfterResponse(applied.invoiceId)
   return 'paid'
+}
+
+/**
+ * Applies a paid payment to the subscription (period.ts planChange; a refusal
+ * at checkout does not matter now: the money came, so it buys its period),
+ * and writes on the payment the period it pays for and how it was applied.
+ */
+async function applyToSubscription(sub: Subscription, payment: SubscriptionPayment, paidAt: Date, tx: Prisma.TransactionClient) {
+  const plan = isPlanId(payment.plan) ? payment.plan : 'growth'
+  const change = planChange(sub, { plan, billing: payment.billing }, paidAt)
+  const waiting = sub.nextPlan && sub.nextPeriodEnd ? sub.nextPeriodEnd.getTime() - sub.periodEnd.getTime() : null
+  let period: { periodStart: Date; periodEnd: Date }
+  let data: Prisma.SubscriptionUpdateInput
+
+  if (change.kind === 'downgrade' || change.blocked === 'YEARLY_TO_MONTHLY') {
+    // After the period in force, or after a downgrade already waiting (two
+    // paid at once: the later one's plan, both periods' time).
+    const after = sub.nextPlan && sub.nextPeriodEnd ? sub.nextPeriodEnd : sub.periodEnd
+    period = { periodStart: sub.periodEnd, periodEnd: periodEndFrom(after, payment.billing) }
+    data = { nextPlan: plan, nextBilling: payment.billing, nextPeriodEnd: period.periodEnd, nextPaymentId: payment.id }
+    if (sub.nextPlan) console.warn(`[billing] plan payment ${payment.id} paid while a downgrade waited: merged into it`)
+  } else if (change.kind === 'renew') {
+    period = { periodStart: sub.periodEnd, periodEnd: periodEndFrom(sub.periodEnd, payment.billing) }
+    data = { plan, billing: payment.billing, trial: false, periodEnd: period.periodEnd, reminders: Prisma.DbNull }
+  } else {
+    period = { periodStart: paidAt, periodEnd: periodEndFrom(paidAt, payment.billing) }
+    data = { plan, billing: payment.billing, trial: false, periodStart: paidAt, periodEnd: period.periodEnd, reminders: Prisma.DbNull }
+  }
+
+  // A downgrade waiting starts when the period before it ends: move it with that end.
+  const end = (data.periodEnd as Date | undefined) ?? null
+  if (waiting !== null && end) {
+    const nextEnd = new Date(end.getTime() + waiting)
+    data.nextPeriodEnd = nextEnd
+    if (sub.nextPaymentId) {
+      await tx.subscriptionPayment.updateMany({ where: { id: sub.nextPaymentId }, data: { periodStart: end, periodEnd: nextEnd } })
+    }
+  }
+
+  await tx.subscription.update({ where: { workspaceId: sub.workspaceId }, data })
+  await tx.subscriptionPayment.update({ where: { id: payment.id }, data: { ...period, change: change.kind } })
 }
 
 /** Asks PayOS about one plan payment and applies what it says; returns the status after. */

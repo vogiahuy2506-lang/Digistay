@@ -25,6 +25,6 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
       console.warn('[billing] sync failed:', error.message)
     }
   }
-  const fresh = await prisma.subscriptionPayment.findUniqueOrThrow({ where: { id: payment.id } })
+  const fresh = await prisma.subscriptionPayment.findUniqueOrThrow({ where: { id: payment.id }, include: { invoice: true } })
   return NextResponse.json({ success: true, data: await paymentView(fresh) })
 }
