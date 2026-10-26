@@ -29,11 +29,8 @@
   "yearlyBadge": "{months} months free",
   "perMonth": "/ month",
   "perYear": "/ year",
-  "pay": "Pay {price}",
-  "renew": "Renew {price}",
   "thisPlan": "Current plan",
-  "newPeriodNote": "Each payment starts a new period on the day it is paid; what is left of the current plan does not carry over.",
-  "vat": "Prices exclude VAT.",
+  "vat": "All-inclusive prices: no tax is added when you pay.",
   "notReady": "Digistay has not connected PayOS for plan payments yet, so paying is not possible right now. Please try again later.",
   "planLimits": "{properties} properties · {rooms} rooms · {staff} staff",
   "planInvoices": "{count} e-invoices / month",
@@ -50,13 +47,21 @@
     "check": "I have transferred",
     "checking": "Checking…",
     "waiting": "Waiting for the money… this page updates when PayOS confirms.",
-    "paidTitle": "{plan} plan activated",
     "paidLead": "Thank you. The plan is valid until {date}. The receipt was sent by email.",
     "close": "Close",
     "newCode": "Make a new code",
     "qrAlt": "VietQR code for the Digistay plan payment",
     "resume": "You have a payment code waiting: {plan}, {amount}.",
-    "resumeOpen": "Open the code"
+    "resumeOpen": "Open the code",
+    "paid": {
+      "new": "{plan} is active",
+      "renew": "{plan} renewed",
+      "upgrade": "Upgraded to {plan}",
+      "downgrade": "Switch to {plan} scheduled"
+    },
+    "paidStarts": "Thank you. The new plan starts on {date}. A receipt was emailed.",
+    "invoiceSent": "The e-invoice will be sent to {email}.",
+    "invoiceIssued": "The e-invoice is being issued; see the payment history."
   },
   "history": {
     "title": "Payment history",
@@ -68,7 +73,17 @@
     "status": "Status",
     "period": "Valid",
     "PAID": "Paid",
-    "PENDING": "Waiting"
+    "PENDING": "Waiting",
+    "invoice": "Invoice",
+    "invoiceNumber": "No. {number}",
+    "invoicePdf": "View PDF",
+    "invoicePending": "Being issued",
+    "change": {
+      "new": "New",
+      "renew": "Renewal",
+      "upgrade": "Upgrade",
+      "downgrade": "Scheduled switch"
+    }
   },
   "banner": {
     "trial": "You are on the Digistay trial, {days} days left.",
@@ -99,5 +114,71 @@
       "fit": "Hotel chains and resorts"
     }
   },
-  "overLimit": "Using more than the plan allows: nothing is removed, but no more {what} can be added until you upgrade."
+  "overLimit": "Using more than the plan allows: nothing is removed, but no more {what} can be added until you upgrade.",
+  "action": {
+    "new": "Buy · {price}",
+    "renew": "Renew · {price}",
+    "upgrade": "Upgrade now · {price}",
+    "downgrade": "Switch on {date} · {price}",
+    "renewFrom": "Renewable from {date}",
+    "yearLocked": "Cannot switch to monthly yet",
+    "yearLockedHint": "Your yearly plan has 30 days or more left; you can switch in its last 30 days.",
+    "scheduledAlready": "A plan change is already scheduled"
+  },
+  "scheduled": "Scheduled to switch to {plan} ({billing}) on {date}.",
+  "rulesNote": "Upgrades take effect at once and start a new period today. Downgrades are paid now and start when the current plan ends. Renewing the same plan opens in its last {days} days and continues from the end date, so no days are lost.",
+  "vatInvoice": "VAT: {vat}; no tax is added to the price. The e-invoice is issued right after payment.",
+  "review": {
+    "title": {
+      "new": "Buy {plan}",
+      "renew": "Renew {plan}",
+      "upgrade": "Upgrade to {plan}",
+      "downgrade": "Switch to {plan}"
+    },
+    "period": "Period",
+    "fromPayment": "From payment until {date}",
+    "newNote": "The plan starts as soon as the payment is done.",
+    "trialNote": "You have {days} trial days left. The new plan starts at payment; the remaining trial days do not carry over.",
+    "upgradeNote": "You have {days} days left on your current plan. Upgrading now starts the new plan today; the remaining days do not carry over.",
+    "renewNote": "The new period continues from the current end date ({date}); no days are lost.",
+    "downgradeNote": "You pay now; {plan} starts on {date}, when the current plan ends. A scheduled change cannot be cancelled or refunded.",
+    "overNote": "{plan} allows less than you use now ({what}). After the switch you have 7 days to reduce it; then the excess is locked, newest first. No data is deleted.",
+    "scheduledMoves": "The scheduled switch to {plan} will move to after {date}.",
+    "later": "Not now",
+    "continue": "Continue to payment",
+    "confirmUpgrade": "Upgrade"
+  },
+  "invoice": {
+    "title": "E-invoice",
+    "type": {
+      "none": "No invoice",
+      "personal": "Individual",
+      "company": "Company"
+    },
+    "noneNote": "Digistay still issues an invoice as required (buyer did not ask for one) but does not send it to you.",
+    "name": "Full name",
+    "idNumber": "Citizen ID (CCCD)",
+    "address": "Address",
+    "taxCode": "Tax code",
+    "companyName": "Company name",
+    "companyAddress": "Company address",
+    "buyerName": "Buyer (optional)",
+    "errors": {
+      "name": "Enter the buyer's full name",
+      "idNumber": "The citizen ID has 12 digits (old ID cards: 9)",
+      "taxCode": "A tax code has 10 or 13 digits",
+      "companyName": "Enter the company name",
+      "address": "Enter the company address"
+    },
+    "lookup": {
+      "hint": "Enter the tax code to fill in the company's name and address.",
+      "loading": "Looking up the tax code…",
+      "found": "Name and address filled in from the tax code. Check them before you continue.",
+      "inactive": "Company status: {status}. Check the tax code.",
+      "missing": "This tax code was not found. Check it or type the details.",
+      "failed": "Could not look it up; please type the details."
+    },
+    "sentTo": "The invoice (PDF) goes to {email}.",
+    "vat": "VAT: {vat}."
+  }
 }

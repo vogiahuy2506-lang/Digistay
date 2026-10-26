@@ -32,6 +32,10 @@ matbao.addAccount({
   ...E2E.matbaoAccount,
   templates: [{ khmshDon: '1', khhDon: E2E.matbaoSeries, cLai: 100 }],
 })
+matbao.addAccount({
+  ...E2E.platformMatbao,
+  templates: [{ khmshDon: '1', khhDon: E2E.platformMatbaoSeries, cLai: 100 }],
+})
 
 // SMTP sink: accepts any login (AUTH PLAIN), no STARTTLS.
 const mails: { to: string; raw: string }[] = []

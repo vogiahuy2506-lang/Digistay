@@ -446,7 +446,7 @@
       },
       "perMonth": "/ month",
       "perYear": "/ year",
-      "vat": "Prices exclude VAT.",
+      "vat": "All-inclusive prices: no tax is added when you pay.",
       "properties": "Properties",
       "rooms": "Rooms",
       "staff": "Staff accounts",
@@ -516,7 +516,7 @@
       "pricing": {
         "title": "Pricing",
         "from": "From {price} / month",
-        "summary": "Three plans by number of properties, rooms and staff accounts. Prices exclude VAT.",
+        "summary": "Three plans by number of properties, rooms and staff accounts. All-inclusive prices, no tax added.",
         "compare": "Compare plans"
       },
       "faq": {
@@ -630,7 +630,7 @@
         },
         "q2": {
           "q": "Does Digistay issue VAT invoices for its fees?",
-          "a": "Yes. An e-invoice is emailed to the workspace owner after each payment."
+          "a": "Yes. Digistay issues an e-invoice right after each payment; choose an individual or company invoice at checkout to get the PDF by email."
         },
         "q3": {
           "q": "Are PayOS transaction fees included?",

@@ -29,11 +29,8 @@
   "yearlyBadge": "Tặng {months} tháng",
   "perMonth": "/ tháng",
   "perYear": "/ năm",
-  "pay": "Thanh toán {price}",
-  "renew": "Gia hạn {price}",
   "thisPlan": "Gói đang dùng",
-  "newPeriodNote": "Mỗi lần thanh toán bắt đầu một kỳ mới từ ngày thanh toán; thời gian còn lại của gói hiện tại không được cộng dồn.",
-  "vat": "Giá chưa gồm VAT.",
+  "vat": "Giá trọn gói, không cộng thêm thuế khi thanh toán.",
   "notReady": "Digistay chưa kết nối PayOS để nhận tiền mua gói, nên chưa thanh toán được. Vui lòng thử lại sau.",
   "planLimits": "{properties} cơ sở · {rooms} phòng · {staff} nhân viên",
   "planInvoices": "{count} hoá đơn điện tử / tháng",
@@ -50,13 +47,21 @@
     "check": "Tôi đã chuyển khoản",
     "checking": "Đang kiểm tra…",
     "waiting": "Đang chờ tiền về… trang tự cập nhật khi PayOS báo.",
-    "paidTitle": "Đã kích hoạt gói {plan}",
     "paidLead": "Cảm ơn bạn. Gói có hiệu lực đến {date}. Biên nhận đã gửi qua email.",
     "close": "Đóng",
     "newCode": "Tạo mã mới",
     "qrAlt": "Mã VietQR thanh toán gói Digistay",
     "resume": "Bạn có một mã thanh toán đang chờ: {plan}, {amount}.",
-    "resumeOpen": "Mở lại mã"
+    "resumeOpen": "Mở lại mã",
+    "paid": {
+      "new": "Đã kích hoạt gói {plan}",
+      "renew": "Đã gia hạn gói {plan}",
+      "upgrade": "Đã nâng cấp lên gói {plan}",
+      "downgrade": "Đã hẹn đổi sang gói {plan}"
+    },
+    "paidStarts": "Cảm ơn bạn. Gói mới bắt đầu từ {date}. Biên nhận đã gửi qua email.",
+    "invoiceSent": "Hoá đơn điện tử sẽ được gửi tới {email}.",
+    "invoiceIssued": "Hoá đơn điện tử đang được xuất; xem ở Lịch sử thanh toán."
   },
   "history": {
     "title": "Lịch sử thanh toán",
@@ -68,7 +73,17 @@
     "status": "Trạng thái",
     "period": "Hiệu lực",
     "PAID": "Đã thanh toán",
-    "PENDING": "Đang chờ"
+    "PENDING": "Đang chờ",
+    "invoice": "Hoá đơn",
+    "invoiceNumber": "Số {number}",
+    "invoicePdf": "Xem PDF",
+    "invoicePending": "Đang xuất",
+    "change": {
+      "new": "Mua mới",
+      "renew": "Gia hạn nối tiếp",
+      "upgrade": "Nâng cấp",
+      "downgrade": "Hẹn đổi gói"
+    }
   },
   "banner": {
     "trial": "Bạn đang dùng thử Digistay, còn {days} ngày.",
@@ -99,5 +114,71 @@
       "fit": "Chuỗi khách sạn và resort"
     }
   },
-  "overLimit": "Đang dùng nhiều hơn gói cho phép: dữ liệu vẫn giữ nguyên, nhưng không thêm được {what} cho tới khi nâng gói."
+  "overLimit": "Đang dùng nhiều hơn gói cho phép: dữ liệu vẫn giữ nguyên, nhưng không thêm được {what} cho tới khi nâng gói.",
+  "action": {
+    "new": "Mua gói · {price}",
+    "renew": "Gia hạn · {price}",
+    "upgrade": "Nâng cấp ngay · {price}",
+    "downgrade": "Hẹn đổi từ {date} · {price}",
+    "renewFrom": "Gia hạn được từ {date}",
+    "yearLocked": "Chưa chuyển sang gói tháng được",
+    "yearLockedHint": "Gói năm còn từ 30 ngày trở lên; chuyển được trong 30 ngày cuối.",
+    "scheduledAlready": "Đã có lệnh hẹn đổi gói"
+  },
+  "scheduled": "Đã hẹn đổi sang gói {plan} ({billing}) từ ngày {date}.",
+  "rulesNote": "Nâng cấp có hiệu lực ngay, kỳ mới tính từ hôm nay. Hạ gói được trả trước và bắt đầu khi gói hiện tại hết hạn. Gia hạn cùng gói mở trong {days} ngày cuối và nối tiếp ngày hết hạn, không mất ngày nào.",
+  "vatInvoice": "Thuế GTGT: {vat}; giá không cộng thêm thuế. Hoá đơn điện tử được xuất ngay sau khi thanh toán.",
+  "review": {
+    "title": {
+      "new": "Mua gói {plan}",
+      "renew": "Gia hạn gói {plan}",
+      "upgrade": "Nâng cấp lên gói {plan}",
+      "downgrade": "Hẹn đổi sang gói {plan}"
+    },
+    "period": "Thời hạn",
+    "fromPayment": "Từ lúc thanh toán đến {date}",
+    "newNote": "Gói có hiệu lực ngay khi thanh toán xong.",
+    "trialNote": "Bạn còn {days} ngày dùng thử. Gói mới tính từ lúc thanh toán; số ngày dùng thử còn lại không được cộng dồn.",
+    "upgradeNote": "Bạn còn {days} ngày sử dụng của gói hiện tại. Khi nâng cấp ngay, thời hạn gói mới được tính từ hôm nay và không cộng dồn số ngày cũ.",
+    "renewNote": "Kỳ mới nối tiếp ngày hết hạn hiện tại ({date}), không mất ngày nào.",
+    "downgradeNote": "Thanh toán bây giờ; gói {plan} bắt đầu từ {date}, khi gói hiện tại hết hạn. Lệnh hẹn đổi gói không huỷ được và không hoàn tiền.",
+    "overNote": "Gói {plan} cho phép ít hơn mức đang dùng ({what}). Sau khi đổi gói có 7 ngày để giảm bớt; sau đó phần vượt sẽ bị khoá, mới nhất trước. Dữ liệu không bị xoá.",
+    "scheduledMoves": "Lệnh hẹn đổi sang gói {plan} sẽ dời sang sau ngày {date}.",
+    "later": "Để sau",
+    "continue": "Tiếp tục thanh toán",
+    "confirmUpgrade": "Đồng ý nâng cấp"
+  },
+  "invoice": {
+    "title": "Hoá đơn điện tử",
+    "type": {
+      "none": "Không lấy hoá đơn",
+      "personal": "Cá nhân",
+      "company": "Công ty"
+    },
+    "noneNote": "Digistay vẫn xuất hoá đơn theo quy định (người mua không lấy hoá đơn) nhưng không gửi cho bạn.",
+    "name": "Họ và tên",
+    "idNumber": "Số CCCD",
+    "address": "Địa chỉ",
+    "taxCode": "Mã số thuế",
+    "companyName": "Tên công ty",
+    "companyAddress": "Địa chỉ công ty",
+    "buyerName": "Người mua hàng (không bắt buộc)",
+    "errors": {
+      "name": "Vui lòng nhập họ tên người mua",
+      "idNumber": "Số CCCD gồm 12 chữ số (CMND cũ: 9 chữ số)",
+      "taxCode": "Mã số thuế gồm 10 hoặc 13 chữ số",
+      "companyName": "Vui lòng nhập tên công ty",
+      "address": "Vui lòng nhập địa chỉ công ty"
+    },
+    "lookup": {
+      "hint": "Nhập mã số thuế để tự điền tên và địa chỉ công ty.",
+      "loading": "Đang tra cứu mã số thuế…",
+      "found": "Đã điền tên và địa chỉ theo mã số thuế. Kiểm tra lại trước khi tiếp tục.",
+      "inactive": "Doanh nghiệp: {status}. Kiểm tra lại mã số thuế.",
+      "missing": "Không tìm thấy mã số thuế này. Kiểm tra lại hoặc nhập tay.",
+      "failed": "Chưa tra cứu được, vui lòng nhập tay."
+    },
+    "sentTo": "Hoá đơn (PDF) gửi tới {email}.",
+    "vat": "Thuế GTGT: {vat}."
+  }
 }

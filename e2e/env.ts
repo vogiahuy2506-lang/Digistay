@@ -40,6 +40,13 @@ export const E2E = {
     password: shared('E2E_MATBAO_PASSWORD', hex(8)),
   },
   matbaoSeries: `C${String(new Date().getFullYear()).slice(-2)}TAA`,
+  /** Digistay's own Mắt Bão account, which issues the plan invoices (src/lib/billing/einvoice.ts). */
+  platformMatbao: {
+    taxCode: '0319990001',
+    username: 'digistay',
+    password: shared('E2E_PLATFORM_MATBAO_PASSWORD', hex(8)),
+  },
+  platformMatbaoSeries: `C${String(new Date().getFullYear()).slice(-2)}TDG`,
   /** the one company the fake tax register (e2e/fakes.ts) knows */
   taxCompany: {
     taxCode: '0315550001',

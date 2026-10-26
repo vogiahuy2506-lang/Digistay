@@ -446,7 +446,7 @@
       },
       "perMonth": "/ tháng",
       "perYear": "/ năm",
-      "vat": "Giá chưa gồm VAT.",
+      "vat": "Giá trọn gói, không cộng thêm thuế khi thanh toán.",
       "properties": "Số cơ sở",
       "rooms": "Số phòng",
       "staff": "Tài khoản nhân viên",
@@ -516,7 +516,7 @@
       "pricing": {
         "title": "Bảng giá",
         "from": "Từ {price} / tháng",
-        "summary": "Ba gói theo số cơ sở, số phòng và tài khoản nhân viên. Giá chưa gồm VAT.",
+        "summary": "Ba gói theo số cơ sở, số phòng và tài khoản nhân viên. Giá trọn gói, không cộng thêm thuế.",
         "compare": "So sánh các gói"
       },
       "faq": {
@@ -630,7 +630,7 @@
         },
         "q2": {
           "q": "Digistay có xuất hoá đơn VAT cho phí dịch vụ không?",
-          "a": "Có. Hoá đơn điện tử gửi tới email của chủ workspace sau mỗi kỳ thanh toán."
+          "a": "Có. Digistay xuất hoá đơn điện tử ngay sau mỗi lần thanh toán; chọn hoá đơn cá nhân hoặc công ty khi thanh toán để nhận bản PDF qua email."
         },
         "q3": {
           "q": "Phí giao dịch PayOS có nằm trong gói không?",
