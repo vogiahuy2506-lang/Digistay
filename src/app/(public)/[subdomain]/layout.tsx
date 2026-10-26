@@ -8,7 +8,8 @@ import { fontStack } from '@/lib/public-site/font-stack'
 import { loadSiteFrame, siteSeoTexts } from '@/lib/public-site/site-frame'
 import { loadVisibleSite } from '@/lib/public-site/visibility'
 import { OG_LOCALES } from '@/lib/seo/page-metadata'
-import { SiteBaseProvider } from './_components/site-base'
+import { SiteBaseProvider, type SiteHotel } from './_components/site-base'
+import { siteSections } from './_components/booking/frame'
 import { siteFontVariables } from './fonts'
 
 export async function generateMetadata({ params }: { params: Promise<{ subdomain: string }> }): Promise<Metadata> {
@@ -50,8 +51,18 @@ export default async function HotelSiteLayout({
   const { subdomain } = await params
   const requestHeaders = await headers()
   const host = requestHeaders.get('host')
-  const settings = (await loadSiteFrame(subdomain))?.websiteSettings
-  const preview = (await loadVisibleSite(subdomain))?.preview ?? false
+  const frame = await loadSiteFrame(subdomain)
+  const settings = frame?.websiteSettings
+  const visible = await loadVisibleSite(subdomain)
+  const preview = visible?.preview ?? false
+  // For the site's 404 (not-found.tsx): only a site this visitor may see.
+  const hotel: SiteHotel | null =
+    visible && frame
+      ? {
+          property: { name: frame.name, type: frame.type, city: frame.city, phone: frame.phone, address: frame.address },
+          sections: siteSections(frame.websiteBlocks.map((b) => b.type)),
+        }
+      : null
   const locale = await getLocale()
   const theme = await publicTheme()
   const t = await getTranslations('site')
@@ -89,7 +100,7 @@ export default async function HotelSiteLayout({
       style={style}
     >
       {preview && <p className="bg-ink px-4 py-2 text-center text-small text-on-ink">{t('preview')}</p>}
-      <SiteBaseProvider locale={locale} bases={bases} switchHref={switchHref} theme={theme}>
+      <SiteBaseProvider locale={locale} bases={bases} switchHref={switchHref} theme={theme} hotel={hotel}>
         {children}
       </SiteBaseProvider>
     </div>

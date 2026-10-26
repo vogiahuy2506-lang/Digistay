@@ -383,6 +383,13 @@
       "reception": "Lễ tân 24/7",
       "security": "Bảo vệ",
       "cctv": "Camera an ninh"
+    },
+    "notFound": {
+      "title": "Không tìm thấy trang này",
+      "lead": "Trang bạn mở không có trên website của {hotel}. Có thể phòng đã đổi tên, không còn nhận đặt, hoặc đường dẫn bị sai.",
+      "rooms": "Xem phòng trống",
+      "home": "Về trang chủ",
+      "help": "Cần hỗ trợ? Gọi khách sạn:"
     }
   },
   "marketing": {

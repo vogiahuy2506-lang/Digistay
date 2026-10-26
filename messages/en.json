@@ -383,6 +383,13 @@
       "reception": "24-hour front desk",
       "security": "Security staff",
       "cctv": "CCTV"
+    },
+    "notFound": {
+      "title": "We couldn't find this page",
+      "lead": "This page isn't on {hotel}'s website. The room may have been renamed or is no longer offered, or the link is wrong.",
+      "rooms": "See available rooms",
+      "home": "Back to home",
+      "help": "Need help? Call the hotel:"
     }
   },
   "marketing": {

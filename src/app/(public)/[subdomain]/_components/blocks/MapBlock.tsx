@@ -8,6 +8,8 @@ interface Props {
   property: PublicProperty
 }
 
+const BUILDER_DEFAULT = 'hà nội, việt nam'
+
 function coordinate(value: unknown): number | null {
   const n = typeof value === 'string' ? Number.parseFloat(value) : typeof value === 'number' ? value : NaN
   return Number.isFinite(n) ? n : null
@@ -18,8 +20,11 @@ export function MapBlock({ block, property }: Props) {
   const t = useTranslations('site.blocks.map')
   const locale = useLocale()
   const cfg = block.config || {}
+  // The builder's old default address, "Hà Nội, Việt Nam", is no choice of
+  // the hotel's: the map showed the city, not the hotel. Its own address then.
+  const typed = cfgText(cfg, 'mapAddress')
   const fullAddress =
-    cfgText(cfg, 'mapAddress') ??
+    (typed && typed.trim().toLowerCase() !== BUILDER_DEFAULT ? typed : null) ??
     [property.address, property.district, property.city, property.country].filter(Boolean).join(', ')
   // The default layout titles this block "Vị trí", which is already the eyebrow: show the address instead (3a).
   const custom = blockText(cfg, locale, 'title')

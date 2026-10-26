@@ -17,6 +17,12 @@ export const loadSiteFrame = cache((subdomain: string) =>
       name: true,
       description: true,
       translations: true,
+      // The site's header and footer, for its 404 ([subdomain]/not-found.tsx).
+      type: true,
+      city: true,
+      phone: true,
+      address: true,
+      websiteBlocks: { where: { isEnabled: true }, select: { type: true } },
       websiteSettings: {
         select: {
           primaryColor: true,
