@@ -706,6 +706,49 @@ curl -fsS https://digistay.vn/api/health; echo
 `cat … >` ghi đè nội dung mà giữ nguyên chủ sở hữu và quyền của file. Chỉ `.env.production` cần
 các biến này (`env_file:` của service `app`; `docker-compose.yml` không đọc chúng).
 
+## Đăng nhập bằng Google
+
+Nút "Tiếp tục với Google" (Đăng nhập) và "Đăng ký bằng Google" (Đăng ký) chỉ hiện khi app có đủ
+`GOOGLE_CLIENT_ID` và `GOOGLE_CLIENT_SECRET` (`src/lib/auth/google.ts`, đọc mỗi lần tải trang). Lần đầu
+đăng nhập bằng Google, tài khoản tự được tạo theo email Google; email đã có tài khoản thì gắn vào
+tài khoản đó.
+
+**Tạo OAuth client (một lần)** ở https://console.cloud.google.com/apis/credentials:
+
+1. Create credentials → OAuth client ID → Application type: **Web application**.
+2. Authorized JavaScript origins: `https://digistay.vn`
+3. Authorized redirect URIs: `https://digistay.vn/api/auth/callback/google`
+4. Nếu chưa có OAuth consent screen: User type **External**, tên app "Digistay", email hỗ trợ; ở
+   Publishing status bấm **Publish app** (để ở Testing thì chỉ email trong danh sách test mới vào được).
+
+**Cài trên VPS.** Khối lệnh hỏi Client ID và Client secret, ghi vào `.env.production` (giữ bản sao
+`.env.production.bak-…`), khởi động lại app và in `set`/`MISSING` (không in giá trị):
+
+```bash
+{
+cd /opt/digistay
+read -r -p "GOOGLE_CLIENT_ID: " GI
+read -r -s -p "GOOGLE_CLIENT_SECRET: " GS; echo
+sudo cp -p .env.production ".env.production.bak-$(date +%Y%m%d%H%M%S)"
+( umask 077
+  sudo grep -vE '^GOOGLE_CLIENT_(ID|SECRET)=' .env.production > /tmp/digistay-env.new
+  printf 'GOOGLE_CLIENT_ID=%s\nGOOGLE_CLIENT_SECRET=%s\n' "$GI" "$GS" >> /tmp/digistay-env.new
+  sudo sh -c 'cat /tmp/digistay-env.new > /opt/digistay/.env.production'
+  rm -f /tmp/digistay-env.new )
+unset GI GS
+sudo docker compose up -d --no-deps --no-build --force-recreate app
+sleep 25
+sudo docker compose exec -T app node -e "for (const k of ['GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET']) console.log(k, process.env[k] && !/^(CHANGE_ME|PASTE_)/.test(process.env[k]) ? 'set' : 'MISSING')"
+curl -fsS https://digistay.vn/api/health; echo
+}
+```
+
+Thử: mở https://digistay.vn/login trong cửa sổ ẩn danh, bấm "Tiếp tục với Google". Về lại trang đăng
+nhập với `?error=OAuthSignin` là thiếu biến; Google báo `redirect_uri_mismatch` là thiếu redirect URI ở
+bước 3.
+
+---
+
 ## Subdomain cho site khách sạn
 
 Site công khai của khách sạn luôn có ở `digistay.vn/<subdomain>`. Phần dưới đây bật thêm địa
