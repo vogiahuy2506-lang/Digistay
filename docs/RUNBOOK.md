@@ -698,12 +698,13 @@ sudo cp -p .env.production ".env.production.bak-$(date +%Y%m%d%H%M%S)"
 unset CN CK CS
 sudo docker compose up -d --no-deps --no-build --force-recreate app
 sleep 25
-sudo docker compose exec -T app node -e "for (const k of ['CLOUDINARY_CLOUD_NAME','CLOUDINARY_API_KEY','CLOUDINARY_API_SECRET']) console.log(k, process.env[k] && !/^(CHANGE_ME|PASTE_)/.test(process.env[k]) ? 'set' : 'MISSING')"
+sudo docker compose exec -T app node -e 'for (const k of ["CLOUDINARY_CLOUD_NAME","CLOUDINARY_API_KEY","CLOUDINARY_API_SECRET"]) { const v = process.env[k] || ""; console.log(k, v && v !== "CHANGE_ME" && v.indexOf("PASTE_") === -1 ? "set" : "MISSING") }'
 curl -fsS https://digistay.vn/api/health; echo
 }
 ```
 
-`cat … >` ghi đè nội dung mà giữ nguyên chủ sở hữu và quyền của file. Chỉ `.env.production` cần
+`cat … >` ghi đè nội dung mà giữ nguyên chủ sở hữu và quyền của file. Mã `node -e` nằm trong nháy
+đơn: trong nháy kép, bash tương tác coi `!` là lệnh lịch sử ("event not found") và bỏ cả dòng. Chỉ `.env.production` cần
 các biến này (`env_file:` của service `app`; `docker-compose.yml` không đọc chúng).
 
 ## Đăng nhập bằng Google
@@ -738,7 +739,7 @@ sudo cp -p .env.production ".env.production.bak-$(date +%Y%m%d%H%M%S)"
 unset GI GS
 sudo docker compose up -d --no-deps --no-build --force-recreate app
 sleep 25
-sudo docker compose exec -T app node -e "for (const k of ['GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET']) console.log(k, process.env[k] && !/^(CHANGE_ME|PASTE_)/.test(process.env[k]) ? 'set' : 'MISSING')"
+sudo docker compose exec -T app node -e 'for (const k of ["GOOGLE_CLIENT_ID","GOOGLE_CLIENT_SECRET"]) { const v = process.env[k] || ""; console.log(k, v && v !== "CHANGE_ME" && v.indexOf("PASTE_") === -1 ? "set" : "MISSING") }'
 curl -fsS https://digistay.vn/api/health; echo
 }
 ```
