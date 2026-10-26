@@ -39,9 +39,12 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
     }
 
-    // Check reception access
+    // Check reception access; outsiders get the 404 of a missing booking.
     const workspace = booking.property.workspace
     const isOwner = workspace.ownerId === session.user.id
+    if (!isOwner && workspace.members.length === 0) {
+      return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
+    }
     const isStaff = workspace.members.some(m => 
       ['ADMIN', 'MANAGER', 'RECEPTIONIST'].includes(m.role)
     )

@@ -8,18 +8,19 @@ import { invalidatePublicSite } from '@/lib/public-site/site'
 import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
 import { lockedResponseForProperty, planResponse } from '@/lib/billing/guard'
 import { roomTypeDelta } from '@/lib/billing/limits'
+import { hardCapacityProblem } from '@/lib/bookings/capacity'
 
 const updateRoomTypeSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().optional(),
   area: z.number().nullable().optional(),
   bedType: z.string().optional(),
-  maxAdults: z.number().int().min(1).optional(),
-  maxChildren: z.number().int().min(0).optional(),
+  maxAdults: z.number().int().min(1).max(10).optional(),
+  maxChildren: z.number().int().min(0).max(10).optional(),
   totalRooms: z.number().int().min(1).optional(),
   availableRooms: z.number().int().min(0).optional(),
-  baseOccupancy: z.number().int().min(1).optional(),
-  maxOccupancy: z.number().int().min(1).optional(),
+  baseOccupancy: z.number().int().min(1).max(10).optional(),
+  maxOccupancy: z.number().int().min(1).max(20).optional(),
   isActive: z.boolean().optional(),
   weekdayPrice: z.number().optional(),
   weekendPrice: z.number().optional(),
@@ -147,6 +148,23 @@ export async function PUT(request: NextRequest, props: RouteParams) {
     }
 
     const data = validation.data
+
+    // A capacity change must leave the type consistent (src/lib/bookings/capacity.ts).
+    const capacityFields = ['baseOccupancy', 'maxOccupancy', 'maxAdults', 'maxChildren'] as const
+    if (capacityFields.some((field) => data[field] !== undefined)) {
+      const capacity = {
+        baseOccupancy: data.baseOccupancy ?? roomType.baseOccupancy,
+        maxOccupancy: data.maxOccupancy ?? roomType.maxOccupancy,
+        maxAdults: data.maxAdults ?? roomType.maxAdults,
+        maxChildren: data.maxChildren ?? roomType.maxChildren,
+      }
+      if (hardCapacityProblem(capacity)) {
+        return NextResponse.json(
+          { success: false, error: 'Sức chứa không hợp lệ: kiểm tra lại số khách và số người lớn, trẻ em tối đa' },
+          { status: 400 }
+        )
+      }
+    }
 
     // Listed rooms decide the count (src/lib/bookings/rooms.ts): add or stop rooms instead.
     if (data.totalRooms !== undefined && data.totalRooms !== roomType.totalRooms && (await prisma.room.count({ where: { roomTypeId: roomType.id } })) > 0) {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/db'
-import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { getWorkspaceRole, requireSession, WorkspaceRoles } from '@/lib/auth/rbac'
 import { RoomError, assignRoomTx } from '@/lib/bookings/rooms'
 import { lockedResponse } from '@/lib/billing/guard'
 
@@ -18,10 +18,16 @@ const schema = z.object({ roomId: z.string().min(1).nullable(), fromDate: day.op
  */
 export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params
+  const sess = await requireSession()
+  if (!sess.ok) return sess.response
+  const userId = sess.session.user.id
   const booking = await prisma.booking.findUnique({ where: { id }, select: { id: true, propertyId: true, bookingCode: true, property: { select: { workspaceId: true } } } })
-  if (!booking) return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
-  const access = await requireWorkspaceRole(booking.property.workspaceId, WorkspaceRoles.STAFF_AND_UP)
-  if (!access.ok) return access.response
+  // Outsiders get the same 404 as a missing booking; members without the role 403.
+  const role = booking ? await getWorkspaceRole(booking.property.workspaceId, userId) : null
+  if (!booking || !role) return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
+  if (!(WorkspaceRoles.STAFF_AND_UP as readonly string[]).includes(role)) {
+    return NextResponse.json({ success: false, error: 'Bạn không có quyền thực hiện hành động này' }, { status: 403 })
+  }
   const locked = await lockedResponse(booking.property.workspaceId)
   if (locked) return locked
 
@@ -34,7 +40,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
       const result = await assignRoomTx(tx, { bookingId: id, roomId, fromDate, toDate })
       await tx.activityLog.create({
         data: {
-          userId: access.userId,
+          userId,
           propertyId: booking.propertyId,
           action: 'ROOM_ASSIGNED',
           entityType: 'BOOKING',

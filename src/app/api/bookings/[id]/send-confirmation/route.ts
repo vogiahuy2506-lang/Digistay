@@ -56,8 +56,9 @@ export async function POST(request: NextRequest, props: RouteParams) {
     const isStaff = workspace.members.length > 0
     const isGuest = booking.guestEmail === session.user.email
 
+    // Outsiders get the 404 of a missing booking (no hint the id exists).
     if (!isOwner && !isStaff && !isGuest) {
-      return NextResponse.json({ success: false, error: 'Không có quyền gửi email' }, { status: 403 })
+      return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
     }
     const locked = await lockedResponse(booking.property.workspaceId)
     if (locked) return locked

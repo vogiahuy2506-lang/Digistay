@@ -1,9 +1,4 @@
 {
-  "header": {
-    "section": "Operations",
-    "page": "Room calendar",
-    "live": "Live: <b>{date}</b> • {time}"
-  },
   "toolbar": {
     "prevMonth": "Previous month",
     "nextMonth": "Next month",
@@ -43,7 +38,18 @@
     },
     "busy": "{occupied}/{total} taken",
     "room": "Rm {number}",
-    "more": "+{count} more"
+    "more": "+{count} more",
+    "weekdaysShort": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
+    },
+    "free": "No bookings",
+    "addOn": "New booking on {date}"
   },
   "roomTypes": {
     "title": "Room types status",
@@ -71,7 +77,7 @@
     "guestNamePlaceholder": "e.g. Nguyen Van An",
     "phone": "Contact phone",
     "email": "Email",
-    "emailHint": "(Gets the confirmation email)",
+    "emailHint": "(optional · for the confirmation email)",
     "staySection": "2. Stay & room",
     "stayNights": "{count, plural, one {Stay: # night} other {Stay: # nights}}",
     "checkIn": "Check-in *",

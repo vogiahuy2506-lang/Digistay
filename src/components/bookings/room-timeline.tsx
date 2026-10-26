@@ -61,6 +61,7 @@ interface Timeline {
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const VN_MS = 7 * 60 * 60 * 1000
+/** the narrowest night column; wider ones fill the card (it used ~70% of a wide screen) */
 const COL = 44
 const LABEL = 132
 const ROW = 40
@@ -140,6 +141,19 @@ export function RoomTimeline({
   const [error, setError] = React.useState('')
   const [dragging, setDragging] = React.useState<Stay | null>(null)
   const [dropRow, setDropRow] = React.useState<string | null>(null)
+  // Night columns share the card's width, never narrower than COL (then it scrolls).
+  const scroller = React.useRef<HTMLDivElement>(null)
+  const [colW, setColW] = React.useState(COL)
+  const hasGrid = !!data && data.roomTypes.length > 0
+  React.useEffect(() => {
+    const el = scroller.current
+    if (!el) return
+    const fit = () => setColW(Math.max(COL, Math.floor((el.clientWidth - LABEL) / days)))
+    fit()
+    const observer = new ResizeObserver(fit)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [days, hasGrid])
 
   const load = React.useCallback(async () => {
     setError('')
@@ -226,7 +240,7 @@ export function RoomTimeline({
           STATUS_STYLE[stay.status] ?? STATUS_STYLE.CONFIRMED,
           movable && 'cursor-grab active:cursor-grabbing'
         )}
-        style={{ left: col.start * COL + 2, width: col.span * COL - 4 }}
+        style={{ left: col.start * colW + 2, width: col.span * colW - 4 }}
       >
         {stay.split && <ArrowRightLeft className="h-3 w-3 shrink-0 text-muted" aria-hidden="true" />}
         <span className="truncate font-medium">{stay.guestName}</span>
@@ -244,8 +258,8 @@ export function RoomTimeline({
         title={`${t('maintenance')}${lock.note ? ` · ${lock.note}` : ''}`}
         className="absolute top-1 bottom-1 rounded-[6px] border border-warn/40 text-[10px] text-warn flex items-center px-1.5 overflow-hidden"
         style={{
-          left: col.start * COL + 2,
-          width: col.span * COL - 4,
+          left: col.start * colW + 2,
+          width: col.span * colW - 4,
           backgroundImage: 'repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in srgb, currentColor 18%, transparent) 6px 8px)',
         }}
       >
@@ -268,7 +282,7 @@ export function RoomTimeline({
         </div>
         <div
           className={cn('relative', droppable && dropRow === key && 'bg-acc-soft')}
-          style={{ width: days * COL, height: ROW }}
+          style={{ width: days * colW, height: ROW }}
           onDragOver={(e) => {
             if (!droppable) return
             e.preventDefault()
@@ -294,7 +308,7 @@ export function RoomTimeline({
                   day === today && 'bg-acc-soft/40',
                   [0, 6].includes(new Date(`${day}T00:00:00Z`).getUTCDay()) && 'bg-fg/[0.02]'
                 )}
-                style={{ width: COL }}
+                style={{ width: colW }}
               />
             ))}
           </div>
@@ -351,8 +365,8 @@ export function RoomTimeline({
       ) : data.roomTypes.length === 0 ? (
         <p className="px-4 py-16 text-center text-sm text-muted">{t('noTypes')}</p>
       ) : (
-        <div className="overflow-x-auto">
-          <div style={{ width: LABEL + days * COL }}>
+        <div ref={scroller} className="overflow-x-auto">
+          <div style={{ width: LABEL + days * colW }}>
             {/* Days */}
             <div className="flex border-b border-line bg-fg/[0.03] sticky top-0 z-[3]">
               <div className="sticky left-0 z-[4] shrink-0 border-r border-line bg-panel px-3 py-2 text-[11px] font-semibold text-muted" style={{ width: LABEL }}>
@@ -362,7 +376,7 @@ export function RoomTimeline({
                 <div
                   key={day}
                   className={cn('shrink-0 border-r border-line/60 py-1.5 text-center leading-tight', day === today ? 'text-acc font-bold' : 'text-muted')}
-                  style={{ width: COL }}
+                  style={{ width: colW }}
                 >
                   <div className="text-[10px] uppercase">{weekday(day)}</div>
                   <div className="text-[11px] font-semibold tabular-nums">{day.slice(8)}/{day.slice(5, 7)}</div>
@@ -396,7 +410,7 @@ export function RoomTimeline({
                       <div
                         key={dayList[i]}
                         className={cn('shrink-0 border-r border-line/60 py-1.5 text-center text-[10px] tabular-nums', n <= 0 ? 'text-err font-semibold' : 'text-muted')}
-                        style={{ width: COL }}
+                        style={{ width: colW }}
                         title={t('left', { count: Math.max(0, n) })}
                       >
                         {n <= 0 ? t('full') : n}

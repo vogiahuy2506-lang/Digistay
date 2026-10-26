@@ -11,6 +11,8 @@ interface Preview {
   percent: number
   suggestedFee: number
   checkOutTime: string
+  /** owed before the late fee */
+  due?: number
 }
 
 type Decision = 'apply' | 'edit' | 'waive'
@@ -68,6 +70,9 @@ export function CheckOutDialog({
 
   const late = (preview?.suggestedFee ?? 0) > 0
   const needsReason = late && decision !== 'apply'
+  // What the guest still owes with the fee as decided: the desk collects it (it used to go unmentioned).
+  const fee = !late ? 0 : decision === 'apply' ? preview!.suggestedFee : decision === 'edit' ? Math.max(0, Math.round(Number(amount) || 0)) : 0
+  const toCollect = (preview?.due ?? 0) + fee
 
   const submit = async () => {
     if (needsReason && reason.trim().length < 3) {
@@ -152,6 +157,12 @@ export function CheckOutDialog({
               <Textarea label={t('checkOut.reason')} value={reason} onChange={(e) => setReason(e.target.value)} rows={2} />
             )}
           </div>
+        )}
+        {preview && toCollect > 0 && (
+          <p className="mt-3 flex justify-between gap-3 rounded-ctl bg-fg/5 px-3 py-2 text-small">
+            <span className="text-muted">{t('checkOut.toCollect')}</span>
+            <span className="font-semibold text-fg tabular-nums">{labels.money(toCollect)}</span>
+          </p>
         )}
         {error && <p className="text-small text-err">{error}</p>}
       </ModalBody>

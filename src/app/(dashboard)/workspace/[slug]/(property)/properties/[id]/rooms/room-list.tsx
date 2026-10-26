@@ -3,9 +3,10 @@
 import * as React from 'react'
 import { useTranslations } from 'next-intl'
 import { Check, DoorOpen, Pencil, Trash2 } from 'lucide-react'
-import { Badge, Button, Card, CardContent, Input } from '@/components/ui'
+import { Badge, Button, Card, CardContent, Input, Modal, ModalBody, ModalFooter } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
 import { apiError } from '@/lib/i18n/api-errors'
+import { parseRoomNumbers } from '@/lib/bookings/room-numbers'
 
 export interface ListedRoom {
   id: string
@@ -34,6 +35,8 @@ export function RoomList({ propertyId, onChanged }: { propertyId: string; onChan
   const [adding, setAdding] = React.useState<Record<string, { numbers: string; floor: string }>>({})
   const [editing, setEditing] = React.useState<{ id: string; number: string; floor: string } | null>(null)
   const [busy, setBusy] = React.useState<string | null>(null)
+  // A first list shorter than the type's count: the count drops to it, so ask first.
+  const [shrink, setShrink] = React.useState<{ type: RoomTypeRooms; count: number } | null>(null)
 
   const load = React.useCallback(async () => {
     const res = await fetch(`/api/properties/${propertyId}/rooms`, { cache: 'no-store' })
@@ -50,9 +53,21 @@ export function RoomList({ propertyId, onChanged }: { propertyId: string; onChan
     onChanged()
   }
 
-  const add = async (roomTypeId: string) => {
+  /**
+   * Adds the typed rooms. The first rooms listed for a type replace its typed
+   * count (rooms.ts): listing 101-105 for a type counted as 20 leaves 5 to
+   * sell, so that asks first.
+   */
+  const add = async (roomTypeId: string, confirmed = false) => {
     const form = adding[roomTypeId]
     if (!form?.numbers.trim()) return
+    const type = types?.find((t) => t.id === roomTypeId)
+    const count = parseRoomNumbers(form.numbers)?.length ?? 0
+    if (!confirmed && type && type.rooms.length === 0 && count > 0 && count < type.totalRooms) {
+      setShrink({ type, count })
+      return
+    }
+    setShrink(null)
     setBusy(`add:${roomTypeId}`)
     try {
       const res = await fetch(`/api/properties/${propertyId}/rooms`, {
@@ -118,6 +133,24 @@ export function RoomList({ propertyId, onChanged }: { propertyId: string; onChan
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted">{t('intro')}</p>
+      <Modal isOpen={!!shrink} onClose={() => setShrink(null)} size="sm" title={shrink ? t('shrinkTitle', { type: shrink.type.name }) : undefined} showHeader>
+        {shrink && (
+          <>
+            <ModalBody className="space-y-2">
+              <p className="text-small text-fg">
+                {t('shrinkBody', { type: shrink.type.name, current: shrink.type.totalRooms, count: shrink.count, fewer: shrink.type.totalRooms - shrink.count })}
+              </p>
+              <p className="text-small text-muted">{t('shrinkHint', { current: shrink.type.totalRooms })}</p>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="ghost" onClick={() => setShrink(null)}>
+                {tc('actions.cancel')}
+              </Button>
+              <Button onClick={() => add(shrink.type.id, true)}>{t('shrinkConfirm', { count: shrink.count })}</Button>
+            </ModalFooter>
+          </>
+        )}
+      </Modal>
       {types.map((type) => {
         const active = type.rooms.filter((r) => r.isActive).length
         const form = adding[type.id] ?? { numbers: '', floor: '' }

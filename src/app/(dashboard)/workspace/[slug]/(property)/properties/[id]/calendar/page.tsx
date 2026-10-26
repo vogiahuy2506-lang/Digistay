@@ -5,10 +5,12 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { Button, Modal, ModalBody, PaymentStatusBadge } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
+import { Header, PageContainer } from '@/components/layout'
+import { useWorkspaceRole } from '@/components/layout/workspace-context'
 import {
   Calendar as CalendarIcon, ChevronLeft, ChevronRight,
   Bed, Users, BedDouble, Plus, DoorOpen, Bell, Receipt,
-  Building2, PieChart, CheckCircle, Key, RefreshCw,
+  PieChart, CheckCircle, Key, RefreshCw,
   Clock, ListChecks, Eye, Loader2, XCircle
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -18,6 +20,7 @@ import { useProperty } from '@/lib/hooks/use-property'
 import { escapeHtml } from '@/lib/bookings/display'
 import { CheckOutDialog } from '@/components/bookings/check-out-dialog'
 import { CancelDialog } from '@/components/bookings/cancel-dialog'
+import { CheckInDialog } from '@/components/bookings/check-in-dialog'
 import { RoomTimeline } from '@/components/bookings/room-timeline'
 import { BookingActions, BookingDetailContent, useBooking } from '@/components/bookings/booking-detail'
 import { SidePanel, SidePanelBody, SidePanelFooter, SidePanelHeader, BookingStatusBadge, Loading } from '@/components/ui'
@@ -25,6 +28,7 @@ import { fetchWindow, staysNight, toCsv } from '@/lib/bookings/calendar'
 import { currentSpan, planNumbers, roomPlan, spanOnNight } from '@/lib/bookings/room-plan'
 import { format, addDays, parseISO } from 'date-fns'
 import { apiError } from '@/lib/i18n/api-errors'
+import { cn } from '@/lib/utils'
 
 interface RoomType {
   id: string
@@ -115,6 +119,8 @@ export default function CalendarPage() {
   const params = useParams<{ slug: string; id: string }>()
   const propertyId = params.id
   const { property } = useProperty()
+  // Revenue is for the owner and managers (nav.ts gives reports to them only).
+  const role = useWorkspaceRole()
   const t = useTranslations('dash.calendar')
   const tc = useTranslations('dash.common')
   const labels = useDashLabels()
@@ -132,20 +138,9 @@ export default function CalendarPage() {
   const [showExportModal, setShowExportModal] = React.useState(false)
   const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(null)
   const [isActionLoading, setIsActionLoading] = React.useState(false)
-  const [actionLoadingType, setActionLoadingType] = React.useState('')
-  // Set in the browser only: the server's clock (UTC on the VPS) never matches
-  // the guest's, and the mismatch broke hydration (React error #418).
-  const [currentTime, setCurrentTime] = React.useState<Date | null>(null)
   const [exportType, setExportType] = React.useState<'pdf' | 'excel' | 'csv'>('pdf')
   // The hotel's check-in / check-out times (Policy); the dialog said 14:00 / 12:00 whatever they were.
   const [stayTimes, setStayTimes] = React.useState<{ checkIn: string; checkOut: string } | null>(null)
-
-  // Update time every minute
-  React.useEffect(() => {
-    setCurrentTime(new Date())
-    const timer = setInterval(() => setCurrentTime(new Date()), 60000)
-    return () => clearInterval(timer)
-  }, [])
 
   // Month grid or room timeline (room-timeline.tsx); remembered in this browser.
   const [view, setView] = React.useState<'month' | 'rooms'>('month')
@@ -228,14 +223,15 @@ export default function CalendarPage() {
         fetch(`/api/room-types?propertyId=${propertyId}`).then((r) => r.json()),
         fetchBookingsAround(gridStart, gridEnd),
         todayOutside ? fetchBookingsAround(now, addDays(now, 1)) : Promise.resolve([]),
-        fetch(`/api/properties/${propertyId}/policy`).then((r) => r.json()).catch(() => null),
+        // The property (with its policy) is readable by every member; /policy is for those who edit it (receptionists got 403).
+        fetch(`/api/properties/${propertyId}`).then((r) => r.json()).catch(() => null),
       ])
 
       if (roomTypesData.success) {
         setRoomTypes(roomTypesData.data ?? [])
       }
       setBookings([...new Map([...shown, ...aroundToday].map((b) => [b.id, b])).values()])
-      const policy = policyData?.data
+      const policy = policyData?.data?.policy
       setStayTimes(policy ? { checkIn: policy.checkInTime, checkOut: policy.checkOutTime } : null)
     } catch (err) {
       console.error('Calendar fetch error:', err)
@@ -337,28 +333,8 @@ export default function CalendarPage() {
     }
   }
 
-  // Handle check-in
-  const handleCheckIn = async (bookingId: string) => {
-    setIsActionLoading(true)
-    setActionLoadingType('checkin')
-    try {
-      const response = await fetch(`/api/bookings/${bookingId}/check-in`, { method: 'POST' })
-      const data = await response.json()
-      if (data.success) {
-        toast.success(t('detail.checkInSuccess'))
-        setShowBookingDetailModal(false)
-        fetchCalendarData()
-      } else {
-        toast.error(apiError(data.error) || t('detail.checkInError'))
-      }
-    } catch (err) {
-      console.error('Check-in error:', err)
-      toast.error(t('detail.checkInError'))
-    } finally {
-      setIsActionLoading(false)
-      setActionLoadingType('')
-    }
-  }
+  // Check-in is confirmed in a dialog that also settles the room (check-in-dialog.tsx); it was one click.
+  const [checkingIn, setCheckingIn] = React.useState(false)
 
   // Check-out goes through the dialog that settles the late fee (check-out-dialog.tsx).
   const [checkOutBooking, setCheckOutBooking] = React.useState<{ id: string; code: string } | null>(null)
@@ -403,7 +379,7 @@ export default function CalendarPage() {
           checkedOutBookings,
           cancelledBookings,
           occupancyRate,
-          totalRevenue: stats.revenue,
+          ...(showRevenue && { totalRevenue: stats.revenue }),
         },
         bookings: monthBookings.map(b => ({
           bookingCode: b.bookingCode,
@@ -684,6 +660,8 @@ export default function CalendarPage() {
   })()
 
   const occupancyToday = occupancyForDay(today)
+  // Receptionists and staff see no revenue (src/components/layout/nav.ts: reports are for owner/managers).
+  const showRevenue = (role === 'ADMIN' || role === 'MANAGER') && bookings.every((b) => typeof b.totalAmount === 'number')
 
   const todayCheckIns = React.useMemo(() => {
     return bookings.filter(b => {
@@ -720,144 +698,84 @@ export default function CalendarPage() {
     return d === 0 || d === 6
   }
 
+  const ctl = 'h-9 sm:h-8 px-3 rounded-ctl border border-line bg-panel text-fg hover:bg-fg/[0.03] text-xs font-semibold transition-colors inline-flex items-center gap-1.5'
+
   return (
-    <div className="min-h-full bg-page text-fg antialiased flex flex-col font-sans">
-      {/* Top Hospitality CRM App Bar */}
-      <header className="bg-panel border-b border-line sticky top-0 z-40">
-        {/* Main Header */}
-        <div className="px-6 py-2.5 flex items-center justify-between gap-4">
-          {/* Left: Brand / Workspace & Breadcrumb */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2.5 pr-4 border-r border-line">
-              <div className="w-8 h-8 rounded-lg bg-ink text-on-ink flex items-center justify-center font-black text-sm shadow-sm">
-                D
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5 leading-none">
-                  <span className="font-bold text-sm tracking-tight text-fg">Digistay Hotel OS</span>
-                </div>
-                <div className="flex items-center gap-1 text-[11px] text-muted mt-0.5">
-                  <Building2 className="w-3 h-3 text-[10px] text-muted" />
-                  <span>{property?.name ?? '…'}</span>
-                </div>
-              </div>
-            </div>
-            {/* CRM Breadcrumbs */}
-            <nav className="hidden md:flex items-center gap-2 text-xs text-muted pl-1 font-medium">
-              <span>{t('header.section')}</span>
-              <i className="fa-solid fa-chevron-right text-[9px] text-muted" />
-              <span className="text-acc font-semibold">{t('header.page')}</span>
-            </nav>
-          </div>
-
-          {/* Right: Real-time Date/Clock */}
-          <div className="flex items-center gap-3">
-            {/* Live Indicator */}
-            <div className="hidden xl:flex items-center gap-2 px-3 py-1 bg-ok-soft border border-ok/30 rounded-lg text-ok text-[11px] font-medium">
-              <span className="w-2 h-2 rounded-full bg-ok animate-pulse" />
-              {currentTime && (
-                <span>
-                  {t.rich('header.live', {
-                    date: formatLocal(currentTime, { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }),
-                    time: formatLocal(currentTime, { hour: '2-digit', minute: '2-digit' }),
-                    b: (c) => <strong>{c}</strong>,
-                  })}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Sub Action Bar: Controls, Views & Operations */}
-        <div className="px-6 py-2 bg-panel border-t border-line flex flex-wrap items-center justify-between gap-3">
-          {/* Left side of Toolbar: month navigator */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Month grid or room timeline */}
-            <div role="tablist" aria-label={t('timeline.views')} className="flex items-center bg-fg/5 rounded-lg p-0.5">
-              {(['month', 'rooms'] as const).map((v) => (
-                <button
-                  key={v}
-                  role="tab"
-                  aria-selected={view === v}
-                  onClick={() => chooseView(v)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${view === v ? 'bg-panel text-fg shadow-xs' : 'text-muted hover:text-fg'}`}
-                >
-                  {v === 'month' ? t('timeline.viewMonth') : t('timeline.viewRooms')}
-                </button>
-              ))}
-            </div>
-            {view === 'month' && (<>
-            {/* Month Navigation */}
-            <div className="flex items-center bg-panel border border-line rounded-lg shadow-xs p-0.5">
-              <button 
-                onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}
-                className="w-7 h-7 rounded hover:bg-fg/[0.03] flex items-center justify-center text-muted transition-colors" 
-                title={t('toolbar.prevMonth')}
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-              </button>
-              <span className="px-2.5 text-xs font-bold text-fg tracking-tight flex items-center gap-1.5">
-                <CalendarIcon className="w-3 h-3 text-acc" />
-                {monthLabel}
-              </span>
-              <button 
-                onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}
-                className="w-7 h-7 rounded hover:bg-fg/[0.03] flex items-center justify-center text-muted transition-colors" 
-                title={t('toolbar.nextMonth')}
-              >
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            <button 
-              onClick={() => setCurrentDate(new Date())}
-              className="px-2.5 py-1.5 bg-panel border border-line hover:bg-fg/[0.03] rounded-lg text-xs font-semibold text-fg shadow-xs transition-colors"
-            >
-              {t('toolbar.today')}
-            </button>
-            </>)}
-          </div>
-
-          {/* Right side of Toolbar: CTA Buttons */}
-          <div className="flex items-center gap-2">
-            <button aria-label={tc('actions.refresh')} 
-              onClick={handleRefresh}
-              className="px-3 py-1.5 rounded-lg border border-line bg-panel text-fg hover:bg-fg/[0.03] text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs"
-              title={t('toolbar.refreshTitle')}
-            >
-              <RefreshCw className="w-3 h-3" />
+    <PageContainer className="max-w-none">
+      {/* The standard page header (it had its own "Digistay Hotel OS" bar and a live clock). */}
+      <Header
+        eyebrow={labels.longDate(new Date())}
+        title={tc('nav.calendar')}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <button aria-label={tc('actions.refresh')} onClick={handleRefresh} className={ctl} title={t('toolbar.refreshTitle')}>
+              <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
               <span className="hidden md:inline">{tc('actions.refresh')}</span>
             </button>
-            <button aria-label={t('toolbar.export')} 
-              onClick={() => setShowExportModal(true)}
-              className="px-3 py-1.5 rounded-lg border border-line bg-panel text-fg hover:bg-fg/[0.03] text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs"
-              title={t('toolbar.exportTitle')}
-            >
-              <Receipt className="w-3 h-3 text-ok" />
+            <button aria-label={t('toolbar.export')} onClick={() => setShowExportModal(true)} className={ctl} title={t('toolbar.exportTitle')}>
+              <Receipt className="w-3.5 h-3.5 text-ok" aria-hidden="true" />
               <span className="hidden md:inline">{t('toolbar.export')}</span>
             </button>
-            <button 
-              onClick={() => setShowCreateBookingModal(true)}
-              className="px-3 py-1.5 rounded-lg border border-line bg-panel text-fg hover:bg-fg/[0.03] text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs"
-            >
-              <CheckCircle className="w-3 h-3 text-acc" />
+            {/* The walk-in page (real availability and payment); this button opened the same dialog as the next one. */}
+            <Link href={routes.propertyBookingNew(params.slug, propertyId)} className={ctl}>
+              <CheckCircle className="w-3.5 h-3.5 text-acc" aria-hidden="true" />
               <span>{t('toolbar.walkIn')}</span>
-            </button>
-            <button 
-              onClick={() => setShowCreateBookingModal(true)}
-              className="px-3.5 py-1.5 rounded-lg bg-ink hover:bg-ink/90 text-on-ink text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
-            >
-              <Plus className="w-3 h-3 text-[10px]" />
-              <span>{t('toolbar.createBooking')}</span>
-            </button>
+            </Link>
+            <Button size="sm" onClick={() => setShowCreateBookingModal(true)}>
+              <Plus className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+              {t('toolbar.createBooking')}
+            </Button>
           </div>
-        </div>
-      </header>
+        }
+      />
 
-      {/* Main Dashboard Body Workspace */}
-      <main className="flex-1 px-6 py-4 space-y-4 max-w-[1720px] w-full mx-auto">
+      {/* View and month */}
+      <div className="mb-4 flex flex-wrap items-center gap-2.5">
+        <div role="tablist" aria-label={t('timeline.views')} className="flex items-center bg-fg/5 rounded-ctl p-0.5">
+          {(['month', 'rooms'] as const).map((v) => (
+            <button
+              key={v}
+              role="tab"
+              aria-selected={view === v}
+              onClick={() => chooseView(v)}
+              className={`px-3 h-8 rounded-[calc(var(--ds-r-ctl)-2px)] text-xs font-semibold transition-colors ${view === v ? 'bg-panel text-fg shadow-xs' : 'text-muted hover:text-fg'}`}
+            >
+              {v === 'month' ? t('timeline.viewMonth') : t('timeline.viewRooms')}
+            </button>
+          ))}
+        </div>
+        {view === 'month' && (
+          <>
+            <div className="flex items-center bg-panel border border-line rounded-ctl p-0.5">
+              <button
+                onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}
+                className="w-8 h-8 rounded hover:bg-fg/[0.03] flex items-center justify-center text-muted transition-colors"
+                aria-label={t('toolbar.prevMonth')}
+              >
+                <ChevronLeft className="w-3.5 h-3.5" aria-hidden="true" />
+              </button>
+              <span className="px-2.5 text-xs font-bold text-fg tracking-tight flex items-center gap-1.5">
+                <CalendarIcon className="w-3 h-3 text-acc" aria-hidden="true" />
+                {monthLabel}
+              </span>
+              <button
+                onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}
+                className="w-8 h-8 rounded hover:bg-fg/[0.03] flex items-center justify-center text-muted transition-colors"
+                aria-label={t('toolbar.nextMonth')}
+              >
+                <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
+              </button>
+            </div>
+            <button onClick={() => setCurrentDate(new Date())} className={ctl}>
+              {t('toolbar.today')}
+            </button>
+          </>
+        )}
+      </div>
+
+      <div className="space-y-4">
         {/* Executive CRM Stat Badges */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <section className={cn('grid grid-cols-1 sm:grid-cols-2 gap-3.5', showRevenue ? 'lg:grid-cols-4' : 'lg:grid-cols-3')}>
           {/* Card 1: Tổng số phòng */}
           <div className="bg-panel rounded-xl border border-line p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)] flex items-center justify-between">
             <div>
@@ -917,7 +835,8 @@ export default function CalendarPage() {
             </div>
           </div>
 
-          {/* Card 4: Doanh thu dự kiến */}
+          {/* Card 4: Doanh thu dự kiến — owner and managers only, and only when the amounts came. */}
+          {showRevenue && (
           <div className="bg-panel rounded-xl border border-line p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)] flex items-center justify-between">
             <div>
               <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">{t('stats.expectedRevenue', { month: currentDate.getMonth() + 1 })}</span>
@@ -933,6 +852,7 @@ export default function CalendarPage() {
               <Receipt className="w-5 h-5" />
             </div>
           </div>
+          )}
         </section>
 
         {view === 'rooms' && propertyId && (
@@ -962,12 +882,15 @@ export default function CalendarPage() {
                   </div>
             </div>
 
-            {/* Days of Week Header */}
-            <div className="grid grid-cols-7 border-b border-line bg-fg/[0.03] text-center text-xs font-bold text-muted divide-x divide-line">
+            {/* Days of Week Header (short names until there is room: the long ones wrapped onto 3 lines) */}
+            <div className="hidden sm:grid grid-cols-7 border-b border-line bg-fg/[0.03] text-center text-xs font-bold text-muted divide-x divide-line">
               {(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const).map((day, i) => (
-                <div key={day} className={`py-2 ${i >= 5 ? 'text-acc' : ''}`}>{t(`grid.weekdays.${day}`)}</div>
-                ))}
-              </div>
+                <div key={day} className={`py-2 ${i >= 5 ? 'text-acc' : ''}`}>
+                  <span className="hidden xl:inline">{t(`grid.weekdays.${day}`)}</span>
+                  <span className="xl:hidden">{t(`grid.weekdaysShort.${day}`)}</span>
+                </div>
+              ))}
+            </div>
 
             {/* Calendar Grid */}
             {isLoading ? (
@@ -975,7 +898,49 @@ export default function CalendarPage() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-acc" />
               </div>
             ) : (
-              <div className="grid grid-cols-7 divide-x divide-y divide-line bg-fg/5">
+              <>
+              {/* Phones: the month as a list of days (seven columns of 50 px could not be read). */}
+              <ol className="sm:hidden divide-y divide-line">
+                {days.filter((day) => day.isCurrentMonth).map((day) => {
+                  const dayBookings = bookingsForDay(day.date)
+                  const isToday = isSameDay(day.date, today)
+                  const badge = getOccupancyBadge(day.date)
+                  const weekdayKey = (['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const)[day.date.getDay()]
+                  return (
+                    <li key={day.date.getTime()} className={cn('flex gap-3 px-3 py-2.5', isToday && 'bg-acc-soft/50')}>
+                      <div className={cn('w-11 shrink-0 text-center leading-tight', isToday ? 'text-acc' : isWeekend(day.date) ? 'text-acc' : 'text-fg')}>
+                        <div className="text-[11px] font-semibold uppercase">{t(`grid.weekdaysShort.${weekdayKey}`)}</div>
+                        <div className="text-lg font-bold tabular-nums">{day.date.getDate()}</div>
+                      </div>
+                      <div className="min-w-0 flex-1 space-y-1">
+                        {badge && <span className={`inline-block text-[11px] px-1.5 rounded font-semibold border ${badge.className}`}>{badge.label}</span>}
+                        {dayBookings.slice(0, 3).map((b) => (
+                          <button
+                            key={b.id}
+                            type="button"
+                            onClick={() => handleViewBooking(b.id)}
+                            className="flex w-full items-center justify-between gap-2 rounded bg-info-soft border border-info/30 px-2 py-1 text-left text-xs text-fg"
+                          >
+                            <span className="truncate font-medium">{b.guestName}</span>
+                            {roomOn(b, day.date) && <span className="shrink-0 text-muted">{t('grid.room', { number: roomOn(b, day.date)! })}</span>}
+                          </button>
+                        ))}
+                        {dayBookings.length > 3 && <p className="text-[11px] text-muted">{t('grid.more', { count: dayBookings.length - 3 })}</p>}
+                        {dayBookings.length === 0 && !badge && <p className="text-xs text-muted py-1">{t('grid.free')}</p>}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => openCreateBookingForDate(day.date)}
+                        aria-label={t('grid.addOn', { date: `${day.date.getDate()}/${day.date.getMonth() + 1}` })}
+                        className="h-8 shrink-0 self-start rounded-ctl border border-line px-2.5 text-xs font-medium text-acc"
+                      >
+                        + {tc('actions.add')}
+                      </button>
+                    </li>
+                  )
+                })}
+              </ol>
+              <div className="hidden sm:grid grid-cols-7 divide-x divide-y divide-line bg-fg/5">
                 {days.map((day, index) => {
                   const dayBookings = bookingsForDay(day.date)
                   const occupancy = occupancyForDay(day.date)
@@ -1046,17 +1011,19 @@ export default function CalendarPage() {
                   </div>
 
                       {day.isCurrentMonth && (
-                        <span 
+                        <button
+                          type="button"
                           onClick={() => openCreateBookingForDate(day.date)}
-                          className="text-[10px] text-muted group-hover:text-acc cursor-pointer font-medium mt-1"
+                          className="self-start text-[10px] text-muted group-hover:text-acc hover:text-acc font-medium mt-1"
                         >
                           + {tc('actions.add')}
-                        </span>
+                        </button>
                       )}
               </div>
                   )
                 })}
         </div>
+              </>
             )}
           </section>
 
@@ -1184,7 +1151,7 @@ export default function CalendarPage() {
           </aside>
         </div>
         )}
-      </main>
+      </div>
 
       {/* Create booking: the shared Modal (it was a hand-made overlay with no
           dialog role, no Esc or focus handling, and an ink backdrop that
@@ -1279,8 +1246,9 @@ export default function CalendarPage() {
                       </div>
                       {/* Email */}
                       <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold text-fg">
-                          {t('create.email')} <span className="text-err">*</span> <span className="text-xs font-normal text-muted">{t('create.emailHint')}</span>
+                        {/* Optional: walk-in guests often have none (the API takes an empty one). */}
+                        <label htmlFor="create-guest-email" className="block text-xs font-semibold text-fg">
+                          {t('create.email')} <span className="text-xs font-normal text-muted">{t('create.emailHint')}</span>
                         </label>
                         <div className="relative rounded-lg shadow-xs">
                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted">
@@ -1288,8 +1256,8 @@ export default function CalendarPage() {
                           </div>
                           <input
                             className="block w-full pl-9 pr-3 py-2 text-sm text-fg rounded-lg border-line focus:ring-2 focus:ring-err/30 focus:border-err/30 transition"
+                            id="create-guest-email"
                             placeholder="an.nguyen@example.com"
-                            required
                             type="email"
                             value={newBooking.guestEmail}
                             onChange={(e) => setNewBooking(prev => ({ ...prev, guestEmail: e.target.value }))}
@@ -1626,17 +1594,10 @@ export default function CalendarPage() {
 
             <div className="flex flex-wrap gap-2 pt-4 border-t">
               {(selectedBooking.status === 'PENDING' || selectedBooking.status === 'CONFIRMED') && (
-                <Button
-                  onClick={() => handleCheckIn(selectedBooking.id)}
-                  disabled={isActionLoading}
-                >
-                  {isActionLoading && actionLoadingType === 'checkin' ? (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  ) : (
-                    <Key className="w-4 h-4 mr-2" />
-                  )}
+                <Button onClick={() => setCheckingIn(true)} disabled={isActionLoading}>
+                  <Key className="w-4 h-4 mr-2" aria-hidden="true" />
                   {t('checkIn')}
-              </Button>
+                </Button>
               )}
               
               {selectedBooking.status === 'CHECKED_IN' && (
@@ -1645,11 +1606,7 @@ export default function CalendarPage() {
                   disabled={isActionLoading}
                   className="bg-warn hover:bg-warn"
                 >
-                  {isActionLoading && actionLoadingType === 'checkout' ? (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  ) : (
-                    <DoorOpen className="w-4 h-4 mr-2" />
-                  )}
+                  <DoorOpen className="w-4 h-4 mr-2" aria-hidden="true" />
                   {t('checkOut')}
                 </Button>
               )}
@@ -1806,6 +1763,22 @@ export default function CalendarPage() {
           z-index: 10;
         }
       `}</style>
+      {selectedBooking && checkingIn && (
+        <CheckInDialog
+          booking={selectedBooking}
+          propertyId={propertyId}
+          checkInTime={stayTimes?.checkIn}
+          isOpen
+          onClose={() => setCheckingIn(false)}
+          onDone={(message) => {
+            toast.success(message)
+            setCheckingIn(false)
+            setShowBookingDetailModal(false)
+            setTimelineKey((k) => k + 1)
+            fetchCalendarData()
+          }}
+        />
+      )}
       {checkOutBooking && (
         <CheckOutDialog
           bookingId={checkOutBooking.id}
@@ -1866,6 +1839,6 @@ export default function CalendarPage() {
           }}
         />
       )}
-    </div>
+    </PageContainer>
   )
 }

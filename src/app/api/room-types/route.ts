@@ -5,6 +5,10 @@ import { prisma } from '@/lib/db'
 import { invalidatePublicSite } from '@/lib/public-site/site'
 import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
 import { planResponse } from '@/lib/billing/guard'
+import { z } from 'zod'
+import { bedTypeEnum } from '@/lib/validations'
+import { generateSlug } from '@/lib/utils'
+import { hardCapacityProblem } from '@/lib/bookings/capacity'
 
 // GET /api/room-types - Get all room types for a property
 export async function GET(request: NextRequest) {
@@ -62,6 +66,28 @@ export async function GET(request: NextRequest) {
 
 const roomTypeTranslations = translationsInput(['name', 'description'])
 
+/** A blank form field ('' or null, and 0 for these) is no value; numbers may come as strings. */
+const blank = (v: unknown) => (v === '' || v === null || v === undefined || v === 0 ? undefined : Number(v))
+const optionalNumber = z.preprocess(blank, z.number().positive().optional())
+
+// The ranges of createRoomTypeSchema (src/lib/validations), with the form's
+// defaults. The form used to send maxAdults/maxChildren it never asked for.
+const createSchema = z.object({
+  propertyId: z.string().min(1),
+  name: z.string().trim().min(1).max(100, 'Tên hạng phòng không được quá 100 ký tự'),
+  description: z.string().max(1000).nullable().optional(),
+  area: optionalNumber,
+  bedType: bedTypeEnum,
+  maxAdults: z.number().int().min(1, 'Số người lớn tối đa phải ít nhất là 1').max(10).default(2),
+  maxChildren: z.number().int().min(0).max(10).default(0),
+  totalRooms: z.number().int().min(1, 'Số phòng phải ít nhất là 1').default(1),
+  baseOccupancy: z.number().int().min(1).max(10).default(2),
+  maxOccupancy: z.number().int().min(1).max(20).default(4),
+  weekdayPrice: optionalNumber,
+  weekendPrice: optionalNumber,
+  amenityIds: z.array(z.string()).optional(),
+})
+
 // POST /api/room-types - Create a new room type
 export async function POST(request: NextRequest) {
   try {
@@ -71,6 +97,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    const parsed = createSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, error: parsed.error.errors[0].message }, { status: 400 })
+    }
     const {
       propertyId,
       name,
@@ -85,11 +115,12 @@ export async function POST(request: NextRequest) {
       weekdayPrice,
       weekendPrice,
       amenityIds,
-    } = body
-
-    // Validate required fields
-    if (!propertyId || !name || !bedType) {
-      return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 })
+    } = parsed.data
+    if (hardCapacityProblem({ baseOccupancy, maxOccupancy, maxAdults, maxChildren })) {
+      return NextResponse.json(
+        { success: false, error: 'Sức chứa không hợp lệ: kiểm tra lại số khách và số người lớn, trẻ em tối đa' },
+        { status: 400 }
+      )
     }
     const translations = roomTypeTranslations.safeParse(body.translations)
     if (!translations.success) {
@@ -114,11 +145,13 @@ export async function POST(request: NextRequest) {
     }
 
     // The plan's number of rooms (src/lib/billing).
-    const overPlan = await planResponse(property.workspaceId, 'rooms', totalRooms || 1)
+    const overPlan = await planResponse(property.workspaceId, 'rooms', totalRooms)
     if (overPlan) return overPlan
 
-    // Generate slug from name
-    const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+    // From the name with Vietnamese letters spelt out ("Phòng Đơn" → phong-don,
+    // not "phng-n"), unique within the property.
+    const taken = await prisma.roomType.findMany({ where: { propertyId }, select: { slug: true } })
+    const slug = generateSlug(name, taken.map((t) => t.slug)) || generateSlug('phong', taken.map((t) => t.slug))
 
     // Create or find pricing config for the property
     let pricingConfigId: string = ''
@@ -150,14 +183,14 @@ export async function POST(request: NextRequest) {
         slug,
         description,
         translations: mergeTranslations(null, translations.data),
-        area: area ? parseFloat(area) : null,
+        area: area ?? null,
         bedType,
-        maxAdults: maxAdults || 2,
-        maxChildren: maxChildren || 0,
-        totalRooms: totalRooms || 1,
-        availableRooms: totalRooms || 1,
-        baseOccupancy: baseOccupancy || 2,
-        maxOccupancy: maxOccupancy || 4,
+        maxAdults,
+        maxChildren,
+        totalRooms,
+        availableRooms: totalRooms,
+        baseOccupancy,
+        maxOccupancy,
         pricing: weekdayPrice || weekendPrice ? {
           create: {
             pricingId: pricingConfigId,
