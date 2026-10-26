@@ -709,11 +709,13 @@ export function invoiceEmailTemplate(props: {
   totalAmount: number
   taxAmount: number
   note?: string
+  /** The invoice's public page (src/lib/einvoice/lookup-link.ts): view it and download the PDF without signing in. */
+  lookupUrl?: string
   currency?: string
   /** The booking's language (Booking.locale). */
   locale?: EmailLocale
 }): { html: string; text: string; subject: string } {
-  const { customerName, einvoiceNumber, series, lookupCode, bookingCode, propertyName, totalAmount, taxAmount, note, currency = 'VND', locale = 'vi' } = props
+  const { customerName, einvoiceNumber, series, lookupCode, bookingCode, propertyName, totalAmount, taxAmount, note, lookupUrl, currency = 'VND', locale = 'vi' } = props
   const t = emailTranslator(locale, 'email.invoice')
   const common = emailTranslator(locale, 'email.common')
   const money = (amount: number) => formatVnd(amount, currency, locale)
@@ -754,9 +756,29 @@ export function invoiceEmailTemplate(props: {
       </tr>
     </table>
 
+    ${
+      lookupUrl
+        ? `
+    <p style="margin: 0 0 16px; font-size: 14px; line-height: 1.6; color: ${BRAND.textMuted};">
+      ${escapeHtml(t('lookupLink'))}
+    </p>
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 0 0 16px;">
+      <tr>
+        <td align="center">
+          <a href="${escapeHtml(lookupUrl)}" style="display: inline-block; background-color: ${BRAND.primary}; background: linear-gradient(135deg, ${BRAND.primary} 0%, ${BRAND.primaryLight} 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-size: 15px; font-weight: 600;">
+            ${escapeHtml(t('viewOnline'))}
+          </a>
+        </td>
+      </tr>
+    </table>
+    <p style="margin: 0; font-size: 12px; color: ${BRAND.textMuted}; line-height: 1.5; word-break: break-all;">
+      ${escapeHtml(common('copyLink'))} <a href="${escapeHtml(lookupUrl)}" style="color: ${BRAND.primary};">${escapeHtml(lookupUrl)}</a>
+    </p>`
+        : `
     <p style="margin: 0; font-size: 13px; line-height: 1.6; color: ${BRAND.textMuted};">
       ${escapeHtml(t('lookup'))}
-    </p>
+    </p>`
+    }
   `
 
   return {
@@ -770,6 +792,7 @@ export function invoiceEmailTemplate(props: {
       ...(note ? [`${t('note')}: ${note}`] : []),
       `${t('tax')}: ${money(taxAmount)}`,
       `${t('total')}: ${money(totalAmount)}`,
+      ...(lookupUrl ? ['', t('textLookupLink', { url: lookupUrl })] : []),
     ].join('\n'),
     subject: t('subject', { number: einvoiceNumber, hotel: propertyName }),
   }

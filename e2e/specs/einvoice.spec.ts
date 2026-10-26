@@ -27,9 +27,10 @@ test('connect, issue + email, adjust down, auto-issue on full payment', async ({
   await page.getByRole('button', { name: 'Lưu và kiểm tra' }).click()
   await expect(page.getByText('còn 100 số')).toBeVisible()
 
-  // 2. Options: emails on by default, auto-issue off; turn auto-issue on.
-  const auto = page.getByLabel(/Tự xuất hoá đơn khi đơn đã thanh toán đủ/)
+  // 2. Options: emails on by default, manual issuing; switch to automatic.
+  const auto = page.getByLabel(/Tự động: phát hành ngay khi đơn được thanh toán đủ/)
   await expect(page.getByLabel(/Gửi hoá đơn \(PDF\) qua email/)).toBeChecked()
+  await expect(page.getByLabel(/Thủ công: lễ tân\/kế toán bấm Phát hành/)).toBeChecked()
   await expect(auto).not.toBeChecked()
   await auto.click() // controlled: flips once the PATCH answers
   await expect(auto).toBeChecked()

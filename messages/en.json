@@ -390,6 +390,44 @@
       "rooms": "See available rooms",
       "home": "Back to home",
       "help": "Need help? Call the hotel:"
+    },
+    "invoice": {
+      "metaTitle": "E-invoice",
+      "title": "Invoice no. {number}",
+      "titleNoNumber": "E-invoice",
+      "lead": "{hotel} has issued this e-invoice to you. See the details below and download the PDF at any time.",
+      "statusIssued": "Issued",
+      "statusReplaced": "Replaced",
+      "demo": "This is a test invoice (Mắt Bão's demo environment) with no legal value.",
+      "pdfFailed": "The PDF can't be fetched from Mắt Bão right now. Please try again in a few minutes, or contact the hotel.",
+      "replacedBy": "This invoice has been replaced by invoice no. {number}.",
+      "replacedNoLink": "This invoice has been replaced. Please contact the hotel for the new invoice.",
+      "openReplacement": "View the replacement invoice",
+      "seller": "Seller",
+      "buyer": "Buyer",
+      "taxCode": "Tax code: {code}",
+      "buyerPerson": "Buyer's name: {name}",
+      "consumer": "Consumer, no invoice requested",
+      "number": "Invoice number",
+      "series": "Template · Series",
+      "date": "Issue date",
+      "lookupCode": "Lookup code",
+      "cqtCode": "Tax office code",
+      "note": "Note",
+      "adjustsDown": "Adjustment (decrease) to invoice no. {number}",
+      "adjustsUp": "Adjustment (increase) to invoice no. {number}",
+      "replaces": "Replaces invoice no. {number}",
+      "status": "Status",
+      "subtotal": "Amount before VAT",
+      "vat": "VAT ({rate})",
+      "vatNoRate": "VAT",
+      "vatExempt": "exempt",
+      "vatUndeclared": "not declared",
+      "total": "Total",
+      "downloadPdf": "Download PDF",
+      "taxPortal": "Check on the tax authority's portal",
+      "taxPortalHint": "On the tax authority's e-invoice portal (hoadondientu.gdt.gov.vn), under invoice lookup: enter the seller's tax code, the series, the invoice number and the amounts above.",
+      "tooMany": "You've opened this page too many times. Please try again in a few minutes."
     }
   },
   "marketing": {
@@ -1196,7 +1234,10 @@
       "textIssued": "{hotel} has issued an e-invoice for your booking (PDF attached).",
       "adjustsDown": "Adjustment (decrease) to invoice no. {number}",
       "adjustsUp": "Adjustment (increase) to invoice no. {number}",
-      "replaces": "Replaces invoice no. {number}"
+      "replaces": "Replaces invoice no. {number}",
+      "viewOnline": "View the invoice and download the PDF",
+      "lookupLink": "You can view this invoice and download its PDF at any time from the link below, no sign-in needed.",
+      "textLookupLink": "View the invoice and download the PDF: {url}"
     }
   }
 }

@@ -65,6 +65,8 @@ interface Invoice {
   emailStatus: string | null
   emailedAt: string | null
   emailError: string | null
+  /** The buyer's public page (src/lib/einvoice/lookup-link.ts); issued invoices only */
+  lookupUrl?: string | null
   createdAt: string
   updatedAt: string
   booking: {
@@ -1062,6 +1064,32 @@ export default function InvoicesPage() {
                       : selectedInvoice.emailStatus === 'SKIPPED'
                         ? t('detail.emailSkipped', { error: selectedInvoice.emailError ?? '' })
                         : t('detail.emailPending')}
+                </div>
+              )}
+
+              {selectedInvoice.lookupUrl && (
+                <div className="flex flex-col gap-3 rounded-lg border border-line p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="font-medium text-fg">{t('detail.lookupLink')}</p>
+                    <p className="text-xs text-muted mt-0.5">{t('detail.lookupLinkHint')}</p>
+                    <a
+                      href={selectedInvoice.lookupUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-1 block truncate text-xs text-acc hover:underline"
+                    >
+                      {selectedInvoice.lookupUrl}
+                    </a>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0"
+                    onClick={() => handleCopyToClipboard(selectedInvoice.lookupUrl!, 'lookupUrl')}
+                  >
+                    {copiedId === 'lookupUrl' ? <Check className="w-4 h-4 mr-2 text-ok" /> : <Copy className="w-4 h-4 mr-2" />}
+                    {copiedId === 'lookupUrl' ? t('detail.lookupCopied') : t('detail.copyLookupLink')}
+                  </Button>
                 </div>
               )}
 

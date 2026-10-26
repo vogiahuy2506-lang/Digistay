@@ -294,10 +294,20 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
     bật), gửi ngay sau response (`after()`), job định kỳ gửi phần còn lại. Gửi qua SMTP của
     Digistay, PDF lấy từ Mắt Bão đính kèm; không nhờ Mắt Bão gửi. Giành quyền gửi bằng UPDATE có
     điều kiện (`SENDING` + lease ở `emailNextAt`), lỗi thử lại 10 phút/30 phút/2 giờ/6 giờ rồi dừng.
-  - **Tự xuất hoá đơn** (`jobs.ts`, mặc định tắt, owner/ADMIN bật): đơn **thanh toán đủ** từ lúc
-    bật, chưa có hoá đơn nào → một hoá đơn bằng tổng đơn, người mua lấy từ `vat*` của booking
-    (không có thì là khách). Tiền cọc không kích hoạt (luật không tính cọc là thời điểm lập hoá
-    đơn). Mỗi đơn một lần; thông tin công ty sai thì để `PENDING` kèm lý do cho nhân viên.
+  - **Tự xuất hoá đơn** (`jobs.ts`, mặc định tắt, owner/ADMIN bật; thẻ Mắt Bão gọi là "Thủ công" /
+    "Tự động"): đơn **thanh toán đủ** từ lúc bật, chưa có hoá đơn nào → một hoá đơn bằng tổng đơn,
+    người mua lấy từ `vat*` của booking (không có thì là khách). Tiền cọc không kích hoạt (luật không
+    tính cọc là thời điểm lập hoá đơn). Mỗi đơn một lần; thông tin công ty sai thì để `PENDING` kèm
+    lý do cho nhân viên. Phát hành **ngay sau response** của lần ghi tiền làm đơn đủ tiền:
+    `syncBookingPayments` gọi `autoIssueAfterResponse` (`issue-now.ts`, `after()`), nên mọi đường ghi
+    tiền (PayOS, nhân viên xác nhận, tiền mặt...) đều có; job 10 phút chỉ còn là dự phòng / thử lại.
+    Hai đường dùng chung luật và các lần giành (khoá dòng booking, `PUBLISHING`, MaTraCuu 304).
+  - **Link tra cứu cho khách** (`lookup-link.ts`): `/<subdomain>/hoa-don/<token>` trên website khách
+    sạn (mở được cả khi website chưa xuất bản), token = id hoá đơn + HMAC (khoá dẫn xuất từ
+    `NEXTAUTH_SECRET`), không bao giờ là MaTraCuu (đoán được). Trang hiện người bán, người mua, số,
+    ký hiệu, ngày, tiền, trạng thái và nút "Tải PDF" (`GET /api/public/invoices/<token>/pdf`, giới
+    hạn theo IP, Mắt Bão lỗi thì quay lại trang với `?pdf=failed`). Link có trong email hoá đơn và
+    nút "Sao chép link tra cứu" ở chi tiết hoá đơn.
   - `MATBAO_BASE_URL` chỉ dùng cho test (Mắt Bão giả ở `src/test/integration/fake-matbao.ts`).
   - **Tra cứu mã số thuế** (`tax-lookup.ts`, `GET /api/public/tax-lookup`): form đặt phòng của khách và
     hộp thoại hoá đơn tự điền tên, địa chỉ công ty từ dữ liệu cơ quan thuế qua API miễn phí của VietQR.

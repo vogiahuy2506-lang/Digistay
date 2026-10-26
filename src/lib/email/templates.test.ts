@@ -218,6 +218,21 @@ describe('invoice email', () => {
     expect(mail.text).toContain('Total: 1,080,000 ₫')
     expect(invoiceAmendsNote('en', { kind: 'adjustsUp', einvoiceNumber: '9' })).toBe('Adjustment (increase) to invoice no. 9')
   })
+
+  it('links to the public invoice page when there is one, instead of pointing at the Mắt Bão portal', () => {
+    const lookupUrl = 'https://digistay.test/ks-sen/hoa-don/cminv1.sig?x=<b>'
+    const viMail = noKeys(invoiceEmailTemplate({ ...invoice, lookupUrl }))
+    expect(viMail.html).toContain('Xem hoá đơn và tải PDF')
+    expect(viMail.html).toContain('href="https://digistay.test/ks-sen/hoa-don/cminv1.sig?x=&lt;b&gt;"')
+    expect(viMail.html).not.toContain('<b>"')
+    expect(viMail.text).toContain(`Xem hoá đơn và tải PDF: ${lookupUrl}`)
+    expect(viMail.html).not.toContain('cổng hóa đơn của Mắt Bão')
+
+    const enMail = noKeys(invoiceEmailTemplate({ ...invoice, lookupUrl, locale: 'en' }))
+    expect(enMail.text).toContain(`View the invoice and download the PDF: ${lookupUrl}`)
+    // Without a link (older callers), the portal sentence as before.
+    expect(noKeys(invoiceEmailTemplate(invoice)).html).toContain('cổng hóa đơn của Mắt Bão')
+  })
 })
 
 describe('account emails', () => {

@@ -13,8 +13,12 @@ export default defineConfig({
   test: {
     globals: true,
     // A fresh key per run (never a committed one): code that stores
-    // secrets works in tests without each file setting it up.
-    env: { DATA_ENCRYPTION_KEYS: `test:${randomBytes(32).toString('base64')}` },
+    // secrets, or signs links (NEXTAUTH_SECRET: invoice emails carry a
+    // signed lookup link), works in tests without each file setting it up.
+    env: {
+      DATA_ENCRYPTION_KEYS: `test:${randomBytes(32).toString('base64')}`,
+      NEXTAUTH_SECRET: randomBytes(32).toString('base64'),
+    },
     environment: 'node',
     include: ['src/**/*.int.test.ts'],
     globalSetup: ['./src/test/integration/global-setup.ts'],

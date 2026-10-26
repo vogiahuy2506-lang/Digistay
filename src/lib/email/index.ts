@@ -258,6 +258,8 @@ export interface InvoiceEmailData {
   taxAmount: number
   /** e.g. "Điều chỉnh giảm cho hoá đơn số 12" (invoiceAmendsNote) */
   note?: string
+  /** The invoice's public page, to view it and download the PDF later (src/lib/einvoice/lookup-link.ts). */
+  lookupUrl?: string
   /** The booking's language (Booking.locale). */
   locale?: EmailLocale
   pdf: { filename: string; content: Buffer }

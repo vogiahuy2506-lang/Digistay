@@ -7,8 +7,13 @@
  * Before this, the cash paths set paymentStatus PAID whatever the amount
  * and never updated depositAmount: a 200k cash deposit on a 2M booking
  * showed as fully paid, and the 200k was missing from revenue.
+ *
+ * A booking that turns fully paid here gets the hotel's automatic e-invoice
+ * right after the response (src/lib/einvoice/issue-now.ts), whichever path
+ * recorded the money.
  */
 import type { Prisma } from '@prisma/client'
+import { autoIssueAfterResponse } from '@/lib/einvoice/issue-now'
 
 type Tx = Prisma.TransactionClient
 
@@ -33,20 +38,23 @@ export async function syncBookingPayments(
 ): Promise<{ totalPaid: number; closed: boolean }> {
   const booking = await tx.booking.findUniqueOrThrow({
     where: { id: bookingId },
-    select: { status: true, totalAmount: true },
+    select: { status: true, totalAmount: true, paymentStatus: true },
   })
   const paid = await tx.payment.aggregate({ where: { bookingId, status: 'PAID' }, _sum: { amount: true } })
   const totalPaid = paid._sum.amount ?? 0
   const closed = CLOSED_BOOKING_STATUSES.includes(booking.status)
   if (closed) return { totalPaid, closed }
 
+  const paymentStatus = totalPaid <= 0 ? 'PENDING' : totalPaid >= booking.totalAmount ? 'PAID' : 'PARTIAL'
   await tx.booking.update({
     where: { id: bookingId },
     data: {
       depositAmount: totalPaid,
-      paymentStatus: totalPaid <= 0 ? 'PENDING' : totalPaid >= booking.totalAmount ? 'PAID' : 'PARTIAL',
+      paymentStatus,
       status: booking.status === 'PENDING' && totalPaid > 0 ? 'CONFIRMED' : booking.status,
     },
   })
+  // Fully paid just now: the invoice goes out after the response, not at the job's next run.
+  if (paymentStatus === 'PAID' && booking.paymentStatus !== 'PAID') autoIssueAfterResponse(bookingId)
   return { totalPaid, closed }
 }
