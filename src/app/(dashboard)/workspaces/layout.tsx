@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
+import { AccountFrame } from '@/components/layout/account-frame'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('workspaces')
@@ -11,6 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
+/** /workspaces: the home page's header and frame (account-frame.tsx), like /profile. */
 export default function WorkspacesLayout({ children }: { children: React.ReactNode }) {
-  return children
+  return <AccountFrame>{children}</AccountFrame>
 }

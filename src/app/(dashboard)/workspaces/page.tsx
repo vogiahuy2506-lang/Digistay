@@ -30,7 +30,6 @@ import { ArrowRight, Building2, MoreVertical, Pencil, Plus, Search, Trash2, User
 import { apiError } from '@/lib/i18n/api-errors'
 import { uploadPhoto } from '@/lib/media/upload-client'
 import { useUploadProblemText } from '@/components/ui/photo-upload'
-import { AccountTopBar } from './account-top-bar'
 import { BUSINESS_TYPES, CURRENCIES, TIMEZONES, type BusinessType, workspaceSettingsOf } from './options'
 import { finishSlugInput, onNameTyped, onSlugTyped, slugFromName } from './slug-input'
 import { DeleteWorkspaceDialog } from '@/components/deletion/delete-workspace-dialog'
@@ -274,11 +273,9 @@ export default function WorkspacesPage() {
   })()
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* One slim bar: brand, then the account menu. No marketing header. */}
-      <AccountTopBar />
-
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+    <>
+      {/* The header and the frame come from layout.tsx (AccountFrame). */}
+      <div className="py-10 sm:py-14">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
           <div className="max-w-xl">
             <h1 className="font-serif text-[30px] leading-[1.15] tracking-[-0.02em] text-fg sm:text-[38px]">
@@ -415,7 +412,7 @@ export default function WorkspacesPage() {
 
         {/* The owner's workspaces deleted in the last 30 days, to restore. */}
         <RecentlyDeleted kind="workspace" reloadKey={deletedVersion} />
-      </main>
+      </div>
 
       <DeleteWorkspaceDialog
         workspaceId={deleting?.id ?? null}
@@ -435,7 +432,7 @@ export default function WorkspacesPage() {
         onClose={closeForm}
         onSubmit={submit}
       />
-    </div>
+    </>
   )
 }
 

@@ -4,9 +4,11 @@ import * as React from 'react'
 import { Moon, Sun } from 'lucide-react'
 import { saveThemePreference, type ThemePreference } from '@/lib/theme'
 import { cn } from '@/lib/utils'
+import { useTheme } from '@/components/layout/theme-root'
 
 /**
- * Light / dark on Digistay's public pages. Same choice as the dashboard's
+ * Light / dark on Digistay's public pages (and the account pages that use
+ * their header, account-frame.tsx). Same choice as the dashboard's
  * (THEME_COOKIE, src/lib/theme.ts): switches the page at once by setting
  * data-theme on PublicFrame's root, and the cookie keeps it for the next
  * page and the server's first paint.
@@ -26,11 +28,14 @@ export function ThemeToggle({
   withLabel?: boolean
 }) {
   const [theme, setTheme] = React.useState(initial)
+  // Inside the dashboard (the account pages use this header): its ThemeRoot follows too.
+  const root = useTheme()
   const dark = theme === 'dark'
   const toggle = () => {
     const next: ThemePreference = dark ? 'light' : 'dark'
     saveThemePreference(next)
     document.querySelectorAll<HTMLElement>('[data-public-theme]').forEach((el) => (el.dataset.theme = next))
+    root?.setPreference(next)
     setTheme(next)
   }
   return (

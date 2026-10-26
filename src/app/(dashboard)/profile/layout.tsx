@@ -1,15 +1,6 @@
-import { AccountTopBar } from '@/app/(dashboard)/workspaces/account-top-bar'
+import { AccountFrame } from '@/components/layout/account-frame'
 
-/**
- * /profile has the bar of /workspaces: the brand leads back to the
- * workspaces, with the theme, language and account buttons. Without it the
- * page was a dead end.
- */
+/** /profile: the home page's header and frame (account-frame.tsx), like /workspaces. */
 export default function ProfileLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="min-h-screen flex flex-col">
-      <AccountTopBar />
-      <main className="flex-1 w-full">{children}</main>
-    </div>
-  )
+  return <AccountFrame>{children}</AccountFrame>
 }

@@ -6,12 +6,11 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { signOut, useSession } from 'next-auth/react'
 import { useLocale, useTranslations } from 'next-intl'
-import { Header } from '@/components/layout'
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Badge } from '@/components/ui'
 import { Alert, AlertDescription, AlertIcon } from '@/components/ui/alert'
 import {
   User, Mail, Phone, MapPin, Calendar, FileText, Camera,
-  Save, Lock, Shield, LogOut, Check, Loader2, Eye, EyeOff
+  Save, Lock, Shield, Check, Loader2, Eye, EyeOff
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { enGB, vi } from 'date-fns/locale'
@@ -277,12 +276,6 @@ export default function ProfilePage() {
     }
   }
 
-  const handleLogout = () => {
-    if (confirm(t('account.confirmSignOut'))) {
-      signOut({ callbackUrl: '/login' })
-    }
-  }
-
   // Handle email change redirect messages
   React.useEffect(() => {
     if (typeof window === 'undefined') return
@@ -326,10 +319,11 @@ export default function ProfilePage() {
 
   return (
     <PageShell>
-      <Header
-        title={t('title')}
-        description={t('description')}
-      />
+      {/* The serif title of the other account page (/workspaces) and the home page. */}
+      <div className="mb-8 max-w-xl">
+        <h1 className="font-serif text-[30px] leading-[1.15] tracking-[-0.02em] text-fg sm:text-[38px]">{t('title')}</h1>
+        <p className="mt-2 text-small text-muted sm:text-body">{t('description')}</p>
+      </div>
 
       {/* Messages */}
       {error && (
@@ -518,25 +512,6 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
 
-            {/* Quick Actions */}
-            <Card className="border-warn/30 bg-warn-soft/50">
-              <CardHeader>
-                <CardTitle className="text-warn flex items-center gap-2">
-                  <LogOut className="w-5 h-5" />
-                  {t('account.title')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Button
-                  variant="outline"
-                  onClick={handleLogout}
-                  className="border-warn/30 text-warn hover:bg-warn-soft"
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  {tc('shell.signOut')}
-                </Button>
-              </CardContent>
-            </Card>
           </div>
         </div>
       )}
@@ -733,11 +708,7 @@ export default function ProfilePage() {
   )
 }
 
-/**
- * The page's column: centred, with the top bar's side padding. Narrower than
- * the workspace lists (max-w-7xl): it is a form, and its widest tab is the
- * avatar card next to the details.
- */
+/** The page's column: the public header's frame (layout.tsx), so the content lines up with it. */
 function PageShell({ children }: { children: React.ReactNode }) {
-  return <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 py-8 sm:py-10">{children}</div>
+  return <div className="py-8 sm:py-10">{children}</div>
 }
