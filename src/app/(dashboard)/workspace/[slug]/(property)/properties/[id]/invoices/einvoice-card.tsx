@@ -24,6 +24,9 @@ export interface EinvoiceStatus {
   autoIssueSince?: string | null
   /** email issued invoices to the buyer (src/lib/einvoice/delivery.ts) */
   emailInvoices?: boolean
+  /** the saved password cannot be decrypted (DATA_ENCRYPTION_KEYS changed): it must be typed again */
+  credentialsUnreadable?: boolean
+  credentialsError?: string
 }
 
 const yearPrefix = `C${String(new Date().getFullYear()).slice(-2)}`
@@ -148,6 +151,14 @@ export function EinvoiceCard({
   return (
     <Card className="mb-6">
       <CardContent className="p-5 space-y-4">
+        {status.credentialsUnreadable && !editing && (
+          <div role="alert" className="flex flex-col gap-3 rounded-ctl border border-warn/40 bg-warn-soft p-3 text-sm text-warn sm:flex-row sm:items-center sm:justify-between">
+            <span>{apiError(status.credentialsError) || status.credentialsError}</span>
+            <Button size="sm" variant="secondary" onClick={startEditing} className="shrink-0">
+              {t('reenterPassword')}
+            </Button>
+          </div>
+        )}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex items-start gap-3">
             <FileCheck2 className="w-5 h-5 text-info mt-0.5" />

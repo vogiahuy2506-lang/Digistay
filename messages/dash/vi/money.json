@@ -361,7 +361,8 @@
     "vat": {
       "exempt": "Không chịu thuế (KCT)",
       "undeclared": "Không kê khai, tính nộp thuế (KKKNT)"
-    }
+    },
+    "reenterPassword": "Nhập lại mật khẩu"
   },
   "bank": {
     "title": "Tài Khoản Ngân Hàng",

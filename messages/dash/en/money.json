@@ -361,7 +361,8 @@
     "vat": {
       "exempt": "Not subject to VAT (KCT)",
       "undeclared": "Not declared or paid (KKKNT)"
-    }
+    },
+    "reenterPassword": "Enter the password again"
   },
   "bank": {
     "title": "Bank Accounts",
