@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { BookingError, createBooking } from '@/lib/bookings/create-booking'
+import { HOLD_COOKIE, HOLD_HEADER, holdSessionId } from '@/lib/bookings/hold-session'
+import { heldBySession } from '@/lib/bookings/occupancy'
 import { emailLocale } from '@/lib/email/i18n'
 import { sendAfterResponse } from '@/lib/email/outbox'
 import { depositToken, depositUrl } from '@/lib/payments/deposit-link'
@@ -122,6 +124,11 @@ export async function POST(request: NextRequest) {
 
   // The hotel's online deposit, read once: the email links to it, and its link is made below.
   const depositPolicy: OnlineDeposit | null = await onlineDepositOf(data.propertyId).catch(() => null)
+  // The guest's hold: their session's current one (hold-session.ts) over the
+  // id the page kept, which a reload in another tab may have replaced.
+  const session = holdSessionId(request.headers.get(HOLD_HEADER)) ?? holdSessionId(request.cookies.get(HOLD_COOKIE)?.value)
+  const holdId =
+    (await heldBySession(prisma, { propertyId: data.propertyId, roomTypeId: data.roomTypeId, sessionId: session })) ?? data.holdId
 
   try {
     const { booking, emailIds } = await createBooking({
@@ -136,7 +143,7 @@ export async function POST(request: NextRequest) {
       numAdults: data.numAdults,
       numChildren: data.numChildren,
       services: data.services,
-      holdId: data.holdId,
+      holdId,
       deposit: depositPolicy,
       vat: { company: data.vatCompany, taxCode: data.vatTaxCode, address: data.vatAddress, email: data.vatEmail || null },
       createdById: null,

@@ -1,9 +1,11 @@
 import type { Metadata } from 'next'
+import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { localized, localizeRow } from '@/lib/i18n/content'
 import { prisma } from '@/lib/db'
-import { roomsTakenByType } from '@/lib/bookings/occupancy'
+import { heldBySession, roomsTakenByType } from '@/lib/bookings/occupancy'
+import { HOLD_COOKIE, holdSessionId } from '@/lib/bookings/hold-session'
 import { onlineDepositOf } from '@/lib/payments/guest-deposit'
 import { ROOM_RATE_INCLUDE, propertyRateDefaults } from '@/lib/pricing/rates'
 import { ratesFrom } from '@/lib/pricing/quote'
@@ -65,8 +67,14 @@ export default async function BookingPage({ params, searchParams }: PageProps) {
   const lang = (await getLocale()) === 'en' ? 'en' : 'vi'
   const rates = roomType ? ratesFrom(roomType.pricing[0], defaults) : null
   const validDates = !!checkIn && !!checkOut && checkOut > checkIn
+  // The guest's own hold (a reload, the page opened again) is theirs, not
+  // another guest's: left out, as the booking itself leaves it out.
+  const ownHoldId =
+    roomType && validDates
+      ? await heldBySession(prisma, { propertyId, sessionId: holdSessionId((await cookies()).get(HOLD_COOKIE)?.value) })
+      : null
   const taken = roomType && validDates
-    ? (await roomsTakenByType(prisma, { propertyId, checkIn: new Date(checkIn), checkOut: new Date(checkOut) })).get(roomType.id) ?? 0
+    ? (await roomsTakenByType(prisma, { propertyId, checkIn: new Date(checkIn), checkOut: new Date(checkOut), ownHoldId })).get(roomType.id) ?? 0
     : 0
   const bookable =
     roomType && rates && validDates && roomType.totalRooms - taken > 0 && roomType.maxAdults >= adults && roomType.maxChildren >= children

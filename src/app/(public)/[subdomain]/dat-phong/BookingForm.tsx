@@ -11,6 +11,7 @@ import { Container } from '../_components/site-ui'
 import { StaySummary, type SummaryLine } from '../_components/booking/StaySummary'
 import { apiError } from '@/lib/i18n/api-errors'
 import { useTaxLookup } from '@/lib/hooks/use-tax-lookup'
+import { HOLD_HEADER, browserHoldSession } from '@/lib/bookings/hold-session'
 
 interface Service extends PricedService {
   description: string | null
@@ -91,19 +92,45 @@ export function BookingForm({
     }))
   }, [])
 
-  // Hold the room while the guest fills the form in.
+  // Hold the room while the guest fills the form in, under the browser's one
+  // hold session (hold-session.ts): a reload replaces the hold, never adds one.
+  // Leaving the page (another page, the tab closed) frees the room at once,
+  // not 15 minutes later; coming back to it from the history holds it again.
   React.useEffect(() => {
-    fetch('/api/bookings/room-lock', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ propertyId: property.id, roomTypeId: room.id, checkInDate: stay.checkIn, checkOutDate: stay.checkOut }),
-    })
-      .then(async (res) => {
-        const data = await res.json().catch(() => ({}))
-        if (data.success) holdId.current = data.data.lockId
-        else if (res.status === 409) setProblem('roomGone')
+    let live = true
+    const session = browserHoldSession()
+    const sessionHeader: Record<string, string> = session ? { [HOLD_HEADER]: session } : {}
+    const hold = () =>
+      fetch('/api/bookings/room-lock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...sessionHeader },
+        body: JSON.stringify({ propertyId: property.id, roomTypeId: room.id, checkInDate: stay.checkIn, checkOutDate: stay.checkOut }),
       })
-      .catch(() => {})
+        .then(async (res) => {
+          const data = await res.json().catch(() => ({}))
+          if (!live) return
+          if (data.success) holdId.current = data.data.lockId
+          else if (res.status === 409) setProblem('roomGone')
+        })
+        .catch(() => {})
+    const release = () => {
+      const id = holdId.current
+      holdId.current = null
+      if (!id) return
+      fetch(`/api/bookings/room-lock?lockId=${encodeURIComponent(id)}`, { method: 'DELETE', headers: sessionHeader, keepalive: true }).catch(() => {})
+    }
+    const restored = (e: PageTransitionEvent) => {
+      if (e.persisted) void hold()
+    }
+    void hold()
+    window.addEventListener('pagehide', release)
+    window.addEventListener('pageshow', restored)
+    return () => {
+      live = false
+      window.removeEventListener('pagehide', release)
+      window.removeEventListener('pageshow', restored)
+      release()
+    }
   }, [property.id, room.id, stay.checkIn, stay.checkOut])
 
   React.useEffect(() => {
@@ -172,6 +199,8 @@ export function BookingForm({
         }),
       })
       const data = await res.json().catch(() => ({}))
+      // The booking took the hold: nothing left to release when the page goes.
+      if (res.ok && data.success) holdId.current = null
       if (res.ok && data.success && !data.data.token) {
         setBookedCode(data.data.bookingCode)
         setSending(false)

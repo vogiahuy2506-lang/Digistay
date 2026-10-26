@@ -7,6 +7,7 @@ import { getClientIp } from '@/lib/security/client-ip'
 import { LIMITS } from '@/lib/security/limits'
 import { hit, tooManyRequests } from '@/lib/security/rate-limit'
 import { ONLINE_BOOKING_PAUSED, isWorkspaceLocked } from '@/lib/billing/guard'
+import { HOLD_COOKIE, HOLD_COOKIE_MAX_AGE, HOLD_HEADER, holdSessionId } from '@/lib/bookings/hold-session'
 
 const lockSchema = z.object({
   propertyId: z.string(),
@@ -21,6 +22,10 @@ const lockSchema = z.object({
 
 const LOCK_DURATION_MINUTES = 15 // Lock for 15 minutes
 
+/** The guest's hold session (hold-session.ts): the header the booking page sends, else its cookie. */
+const sessionOf = (request: NextRequest) =>
+  holdSessionId(request.headers.get(HOLD_HEADER)) ?? holdSessionId(request.cookies.get(HOLD_COOKIE)?.value)
+
 export async function POST(request: NextRequest) {
   try {
     // Public endpoint and the session id is client-chosen, so without a
@@ -30,7 +35,7 @@ export async function POST(request: NextRequest) {
       return tooManyRequests('Bạn thao tác quá nhanh. Vui lòng thử lại sau ít phút.', byIp.retryAfterSec)
     }
 
-    const session = await request.headers.get('x-session-id') || randomUUID()
+    const session = sessionOf(request) ?? randomUUID()
     const body = await request.json()
 
     const validation = lockSchema.safeParse(body)
@@ -64,10 +69,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Same count as bookings (src/lib/bookings/occupancy.ts), under the room
-    // type's row lock; this session's earlier hold is replaced, not counted.
+    // type's row lock; this session's earlier hold at this hotel (a reload of
+    // the booking page, other dates, another room) is replaced, not counted:
+    // one hold per guest, whatever they reload.
     const lock = await prisma.$transaction(async (tx) => {
       await lockRoomType(tx, roomType.id)
-      await tx.roomLock.deleteMany({ where: { sessionId: session, type: 'HOLD', bookingId: null } })
+      await tx.roomLock.deleteMany({ where: { sessionId: session, propertyId, type: 'HOLD', bookingId: null } })
       const taken = await roomsTaken(tx, roomType.id, { propertyId, checkIn: lockStart, checkOut: lockEnd })
       if (taken >= roomType.totalRooms) return null
       return tx.roomLock.create({
@@ -87,7 +94,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Phòng đã hết trong khoảng thời gian này' }, { status: 409 })
     }
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       success: true,
       data: {
         lockId: lock.id,
@@ -97,6 +104,16 @@ export async function POST(request: NextRequest) {
       },
       message: `Phòng đã được giữ trong ${LOCK_DURATION_MINUTES} phút`,
     })
+    // The booking page reads the session from this cookie on its next load.
+    if (request.cookies.get(HOLD_COOKIE)?.value !== session) {
+      res.cookies.set(HOLD_COOKIE, session, {
+        path: '/',
+        maxAge: HOLD_COOKIE_MAX_AGE,
+        sameSite: 'lax',
+        secure: request.nextUrl.protocol === 'https:',
+      })
+    }
+    return res
   } catch (error) {
     console.error('Lock room error:', error)
     return NextResponse.json({ success: false, error: 'Lỗi khi giữ phòng' }, { status: 500 })
@@ -105,7 +122,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await request.headers.get('x-session-id')
+    const session = sessionOf(request)
     const { searchParams } = new URL(request.url)
     const lockId = searchParams.get('lockId')
 
