@@ -65,6 +65,10 @@
     "RESTAURANT_MENU": {
       "name": "Menu",
       "description": "Dishes and drinks with prices and photos (Menu page)"
+    },
+    "FOOTER": {
+      "name": "Footer",
+      "description": "The property's name, address and contacts at the bottom"
     }
   },
   "templates": {
@@ -169,47 +173,73 @@
       "moveDown": "Move down"
     },
     "servicesHint": "This block shows the services that are on in the Services page. Add or edit them there.",
-    "menuHint": "This block shows the dishes on sale in the Menu page, by group. With no dishes it doesn't show on the website."
+    "menuHint": "This block shows the dishes on sale in the Menu page, by group. With no dishes it doesn't show on the website.",
+    "footerHint": "This block shows the name, address, phone and email from the property's Overview page."
   },
   "preview": {
-    "propertyName": "Your hotel",
-    "propertyDescription": "A short description of your property",
+    "searchCheckIn": "Check-in",
+    "searchCheckOut": "Check-out",
+    "searchGuests": "Guests",
+    "searchButton": "Search",
+    "heroWelcome": "Welcome to {name}",
+    "roomsTitle": "Choose a room for your trip",
+    "roomsCount": "{count, plural, one {# room type} other {# room types}} at {name}.",
+    "roomsEmpty": "No rooms are listed yet. Please contact {name} directly.",
+    "noPhoto": "No photo yet",
+    "perNight": "/night",
+    "perPerson": "/person",
+    "once": "one-off",
+    "free": "Free",
+    "area": "{area} m²",
+    "moreAmenities": "{count, plural, one {+# more amenity} other {+# more amenities}}",
+    "details": "View details →",
     "bookNow": "Book now",
-    "roomsTitle": "Room types",
-    "roomName": "{name} Room",
-    "roomMeta": "2 guests • 25m²",
-    "roomPrice": "{price}/night",
-    "amenitiesTitle": "Top amenities",
-    "amenities": {
-      "wifi": "Free Wi-Fi",
-      "parking": "Parking",
-      "pool": "Swimming pool",
-      "restaurant": "Restaurant",
-      "spa": "Spa",
-      "karaoke": "Karaoke"
-    },
+    "amenitiesEyebrow": "Amenities",
+    "amenitiesTitle": "Everything for an easy stay",
+    "amenitiesEmpty": "The list of amenities is being updated.",
+    "aboutEyebrow": "About",
     "aboutTitle": "About us",
-    "galleryTitle": "Photo gallery",
+    "galleryEyebrow": "Photos",
+    "galleryTitle": "Gallery",
+    "galleryCount": "{count, plural, one {# photo} other {# photos}}",
+    "reviewsEyebrow": "Reviews",
     "reviewsTitle": "What our guests say",
+    "stars": "{rating} out of 5 stars",
     "reviews": {
       "none": "No reviews yet: this block is hidden on the website. Open its settings to add your guests' real reviews."
     },
-    "mapTitle": "Our location",
-    "mapNoLocation": "No location set yet",
-    "mapPreview": "Google Maps preview",
-    "contactTitle": "Contact us",
-    "form": {
-      "name": "Full name",
-      "email": "Email",
-      "message": "Message",
-      "send": "Send"
-    },
-    "ctaTitle": "Ready for your stay?",
-    "ctaSubtitle": "Book your room today!",
-    "servicesTitle": "Services",
-    "servicesFrom": "The services that are on in the Services page.",
+    "mapEyebrow": "Location",
+    "address": "Address",
+    "phone": "Phone",
+    "contactEyebrow": "Contact",
+    "contactTitle": "Contact us to book",
+    "contactIntro": "Reach the hotel directly through any of these.",
+    "zalo": "Message on Zalo",
+    "servicesEyebrow": "Services",
+    "servicesTitle": "Extra services",
+    "menuEyebrow": "Restaurant",
     "menuTitle": "Restaurant menu",
-    "menuFrom": "The dishes on sale in the Menu page, by group."
+    "moreDishes": "{count, plural, one {And # more dish} other {And # more dishes}}",
+    "ctaTitle": "Book your stay",
+    "ctaButton": "Book now",
+    "footerContact": "Contact",
+    "poweredBy": "Powered by",
+    "hidden": {
+      "about": "The About block isn't shown on the website: it has no text yet. Write it in the block's settings, or describe the property on the Overview page.",
+      "gallery": "The Gallery block isn't shown on the website: the property has no photos yet (Overview → Photos).",
+      "services": "The Services block isn't shown on the website: no service is on yet (Services page).",
+      "menu": "The Menu block isn't shown on the website: no dish is on sale yet (Menu page)."
+    },
+    "sections": {
+      "rooms": "Rooms",
+      "amenities": "Amenities",
+      "gallery": "Gallery",
+      "services": "Services",
+      "menu": "Menu",
+      "map": "Location",
+      "contact": "Contact"
+    },
+    "book": "Book"
   },
   "blocks": {
     "arrange": "Arrange blocks",
@@ -218,7 +248,8 @@
     "empty": "No blocks yet",
     "emptyHint": "Pick a template or add blocks yourself",
     "addTitle": "Add a block",
-    "addHint": "Pick a block to add to your website"
+    "addHint": "Pick a block to add to your website",
+    "defaultLayout": "The website shows the default layout below. Edit or reorder it, then press Save changes to make it your own."
   },
   "style": {
     "colors": "Colors",
@@ -262,7 +293,7 @@
   },
   "canvas": {
     "dragging": "Dragging... Drop the block where you want it",
-    "emptyHint": "Add blocks from the panel on the left or pick a template to get started",
+    "emptyHint": "Add blocks from the panel on the left or pick a template. Saved with no blocks, the website uses the default layout.",
     "allHidden": "All blocks are hidden"
   },
   "domain": {
@@ -272,8 +303,8 @@
     "check": "Check & connect",
     "checkFailed": "Couldn't check the domain, please try again",
     "recordsTitle": "Add these records where your domain's DNS is managed, then press Check again",
-    "stepPoint": "Point the domain to Digistay",
-    "stepOwn": "Prove you own the domain",
+    "stepPoint": "1. Point the domain to Digistay",
+    "stepOwn": "2. Prove you own the domain",
     "type": "Type",
     "name": "Name",
     "value": "Value",
@@ -286,11 +317,19 @@
     "httpsOk": "HTTPS is on (padlock)",
     "open": "Open the website",
     "httpsPending": "Getting the HTTPS certificate, usually under a minute…",
-    "httpsFailed": "Couldn't get the HTTPS certificate yet. Check the A record still points here; it's tried again in an hour.",
+    "httpsFailed": "Couldn't get the HTTPS certificate yet. Check the CNAME or A record still points here; it's tried again in an hour.",
     "retry": "Try now",
     "retryFailed": "Couldn't send the request, please try again",
     "remove": "Remove the domain",
     "removeConfirm": "Remove {domain} from the website? Visitors opening it won't see the website anymore.",
-    "removed": "Domain removed"
-  }
+    "removed": "Domain removed",
+    "pointCname": "For www.… or another subdomain: a CNAME record",
+    "pointApex": "For the root domain (without www, e.g. khachsan.vn): A records",
+    "pointA": "A records (for www.… and the root domain alike)",
+    "cnameLater": "CNAME records can't be used yet: use the A records.",
+    "pointOnlyOne": "Keep one way per name: remove that name's other A, AAAA or CNAME records.",
+    "httpsSlow": "The HTTPS certificate is taking longer than usual: requested at {when} and not here yet.",
+    "httpsSlowCheck": "Check that the CNAME or A record still points here as when you connected and that the domain has no other AAAA (IPv6) record, then press Try now. If it still doesn't come, contact Digistay support."
+  },
+  "noAccess": "Only the owner, admins and managers can edit the hotel website."
 }

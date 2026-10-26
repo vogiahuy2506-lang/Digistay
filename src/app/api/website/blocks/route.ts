@@ -3,7 +3,7 @@ import { BlockType, Prisma } from '@prisma/client'
 import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { invalidatePublicSite } from '@/lib/public-site/site'
+import { invalidatePublicSite, loadSiteProps } from '@/lib/public-site/site'
 import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { lockedResponse } from '@/lib/billing/guard'
 
@@ -58,11 +58,27 @@ export async function GET(request: NextRequest) {
       invalidatePublicSite(propertyId)
     }
 
+    // What the site shows, for the builder's preview: the real rooms (priced
+    // as on the site), photos, amenities, services and dishes. A site never
+    // laid out shows the default layout (src/lib/public-site/site.ts); the
+    // builder starts from those blocks instead of an empty page.
+    const site = await loadSiteProps(propertyId)
+    const preview = site && {
+      property: site.property,
+      images: site.images,
+      amenities: site.amenities,
+      roomTypes: site.roomTypes,
+      services: site.services,
+      menuItems: site.menuItems,
+      defaultBlocks: blocks.length === 0 ? site.blocks : [],
+    }
+
     return NextResponse.json({
       success: true,
       data: {
         blocks,
         settings,
+        site: preview,
       },
     })
   } catch (error) {
