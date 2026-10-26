@@ -328,6 +328,7 @@
     "pointA": "A records (for www.… and the root domain alike)",
     "cnameLater": "CNAME records can't be used yet: use the A records.",
     "pointOnlyOne": "Keep one way per name: remove that name's other A, AAAA or CNAME records.",
+    "dnsOnly": "Is your domain's DNS on Cloudflare? Keep these records DNS only (grey cloud), not Proxied.",
     "httpsSlow": "The HTTPS certificate is taking longer than usual: requested at {when} and not here yet.",
     "httpsSlowCheck": "Check that the CNAME or A record still points here as when you connected and that the domain has no other AAAA (IPv6) record, then press Try now. If it still doesn't come, contact Digistay support."
   },

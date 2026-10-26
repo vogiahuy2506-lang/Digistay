@@ -3,8 +3,10 @@
  * hostnames may be attached, and the two DNS checks before one is.
  *
  * 1. Routing: the hostname points at Digistay. A CNAME must name exactly
- *    this property's <subdomain>.<root>; without a CNAME (apex domains)
- *    every A record must be one of the root domain's addresses.
+ *    the target of pointingTarget(): this property's <subdomain>.<root>, or
+ *    the shared DNS-only CUSTOM_DOMAIN_CNAME_TARGET once that is set; without
+ *    a CNAME (apex domains) every A record must be one of that target's
+ *    addresses (the root domain's by default).
  * 2. Ownership: TXT `_digistay-verify.<host>` = `digistay-verify=<token>`,
  *    token = HMAC(key derived from NEXTAUTH_SECRET, workspace + host).
  *
@@ -20,7 +22,7 @@ import { createHmac, hkdfSync, timingSafeEqual } from 'crypto'
 import { promises as dns } from 'dns'
 import { isIP } from 'net'
 import { domainToASCII } from 'url'
-import { rootDomain } from '@/lib/subdomains'
+import { rootDomain, subdomainOf } from '@/lib/subdomains'
 
 export const OWNERSHIP_LABEL = '_digistay-verify'
 export const OWNERSHIP_PREFIX = 'digistay-verify='
@@ -67,6 +69,35 @@ export function ownershipRecord(workspaceId: string, host: string) {
   return { name: `${OWNERSHIP_LABEL}.${host}`, value: `${OWNERSHIP_PREFIX}${ownershipToken(workspaceId, host)}` }
 }
 
+/**
+ * Where a hotel points its domain: a CNAME (www.… and other subdomains) to
+ * `cname`, or A records (a root domain cannot have a CNAME) with the
+ * addresses of `addressesOf`.
+ *
+ * CUSTOM_DOMAIN_CNAME_TARGET (domains.digistay.vn: an A record to the VPS,
+ * DNS only) is for once *.<root> goes through Cloudflare's proxy. A CNAME to
+ * a proxied <subdomain>.<root> lands on Cloudflare, which does not know the
+ * hotel's domain (error 1001, or 1014 when the hotel's DNS is on Cloudflare
+ * too), and Let's Encrypt's HTTP check never reaches our nginx; the root
+ * domain's addresses would be Cloudflare's too if it were ever proxied.
+ * Every hotel then points at the same name, as A records always did: the
+ * TXT record (checkOwnership) is what ties a domain to one workspace.
+ * docs/RUNBOOK.md, "SSL tên miền con qua Cloudflare".
+ *
+ * Unset, or not usable (not a hostname, or a hotel's own subdomain, which is
+ * proxied as well): this site's <subdomain>.<root> and the root domain's
+ * addresses, as before.
+ */
+export function pointingTarget(
+  subdomain: string,
+  root = rootDomain(),
+  env: Record<string, string | undefined> = process.env
+): { cname: string; addressesOf: string } {
+  const target = env.CUSTOM_DOMAIN_CNAME_TARGET?.trim().toLowerCase().replace(/\.$/, '')
+  if (target && HOSTNAME_RE.test(target) && !subdomainOf(target, root)) return { cname: target, addressesOf: target }
+  return { cname: `${subdomain}.${root}`, addressesOf: root }
+}
+
 /** The DNS lookups used here; tests replace them on this object. */
 export const resolver = {
   resolveCname: (host: string) => dns.resolveCname(host),
@@ -86,11 +117,13 @@ export type RoutingCheck =
   | { ok: true; via: 'cname' | 'a' }
   | { ok: false; reason: 'not_found' | 'wrong_target' | 'transient'; found: string[] }
 
-export async function checkRouting(host: string, expectedCname: string, root = rootDomain()): Promise<RoutingCheck> {
+/** `expectedCname` and `addressesOf` come from pointingTarget(). */
+export async function checkRouting(host: string, expectedCname: string, addressesOf = rootDomain()): Promise<RoutingCheck> {
   try {
     const cnames = (await resolver.resolveCname(host)).map(clean)
-    // Exactly this property: any *.digistay.vn would let one hotel claim a
-    // domain that points at another hotel's site.
+    // Exactly the expected name: by default this property's own subdomain,
+    // as any *.digistay.vn would let one hotel claim a domain that points at
+    // another hotel's site.
     if (cnames.includes(clean(expectedCname))) return { ok: true, via: 'cname' }
     return { ok: false, reason: 'wrong_target', found: cnames }
   } catch (error) {
@@ -105,7 +138,7 @@ export async function checkRouting(host: string, expectedCname: string, root = r
   }
   let ours: string[]
   try {
-    ours = await resolver.resolve4(root)
+    ours = await resolver.resolve4(addressesOf)
   } catch {
     return { ok: false, reason: 'transient', found: addresses }
   }

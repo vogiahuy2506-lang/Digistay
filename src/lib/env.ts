@@ -27,6 +27,11 @@ const schema = z.object({
   NEXTAUTH_SECRET: z
     .string()
     .min(16, 'NEXTAUTH_SECRET must be at least 16 characters (use `openssl rand -hex 32`)'),
+  // The DNS-only hostname hotels' own domains point at (CNAME, and the A
+  // records' address) once *.digistay.vn is behind Cloudflare's proxy:
+  // src/lib/custom-domain.ts pointingTarget(). Optional: unset, each site's
+  // own <subdomain>.<root> and the root domain's address, as before.
+  CUSTOM_DOMAIN_CNAME_TARGET: z.string().optional(),
 
   // Secrets stored in the DB (2FA, payment keys): `<keyId>:<base64 32
   // bytes>`, comma-separated, newest first. Required since Part 4f; checked

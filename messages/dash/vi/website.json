@@ -328,6 +328,7 @@
     "pointA": "Bản ghi A (cho cả www.… và tên miền gốc)",
     "cnameLater": "Bản ghi CNAME chưa dùng được lúc này, hãy dùng bản ghi A.",
     "pointOnlyOne": "Mỗi tên chỉ giữ một cách trỏ: xoá các bản ghi A, AAAA hoặc CNAME khác của tên đó.",
+    "dnsOnly": "Tên miền dùng DNS của Cloudflare? Để các bản ghi này ở chế độ DNS only (đám mây xám), không bật Proxied.",
     "httpsSlow": "Chứng chỉ HTTPS lâu hơn bình thường: đã yêu cầu lúc {when} mà chưa có.",
     "httpsSlowCheck": "Kiểm tra bản ghi CNAME hoặc A vẫn trỏ đúng như lúc kết nối và tên miền không có bản ghi AAAA (IPv6) nào khác, rồi bấm Thử lại ngay. Vẫn chưa được thì liên hệ hỗ trợ Digistay."
   },

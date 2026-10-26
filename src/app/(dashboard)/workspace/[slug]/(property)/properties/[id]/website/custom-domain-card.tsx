@@ -25,7 +25,7 @@ interface DnsRecord {
 
 interface Records {
   cname: DnsRecord
-  /** <subdomain>.<root> resolves, so a CNAME to it works (POST /api/website/domain/verify). */
+  /** The CNAME target resolves to Digistay's server, so a CNAME to it works (POST /api/website/domain/verify). */
   cnameReady?: boolean
   a: DnsRecord[]
   txt: DnsRecord
@@ -240,10 +240,13 @@ export function CustomDomainCard({
 
 /**
  * The records to add at the domain's DNS provider (src/lib/custom-domain.ts):
- * point the name at Digistay — a CNAME to the site's own <subdomain>.<root>
- * for www.… and other subdomains, A records for a root domain (no CNAME
- * there) — and the TXT that proves ownership. The CNAME only once the
- * site's subdomain resolves (the API says so); until then A records for all.
+ * point the name at Digistay — a CNAME (to the site's own <subdomain>.<root>,
+ * or the DNS-only name of CUSTOM_DOMAIN_CNAME_TARGET) for www.… and other
+ * subdomains, A records for a root domain (no CNAME there) — and the TXT that
+ * proves ownership. The CNAME only once its target leads to Digistay's server
+ * (the API says so); until then A records for all. These records must not go
+ * through the hotel's own Cloudflare proxy: the check would see Cloudflare's
+ * addresses, and Let's Encrypt could not reach us.
  */
 function DnsSteps({ records }: { records: Records }) {
   const t = useTranslations('dash.website.domain')
@@ -257,6 +260,7 @@ function DnsSteps({ records }: { records: Records }) {
         {!records.cnameReady && <p className="text-xs text-muted">{t('cnameLater')}</p>}
         {records.a.length === 0 && <p className="text-xs text-warn">{t('noAddress')}</p>}
         <p className="text-xs text-muted">{t('pointOnlyOne')}</p>
+        <p className="text-xs text-muted">{t('dnsOnly')}</p>
       </div>
       <div className="space-y-2">
         <p className="text-sm font-medium text-fg">{t('stepOwn')}</p>
