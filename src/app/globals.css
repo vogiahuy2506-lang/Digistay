@@ -447,22 +447,16 @@
   }
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
+/* Scrollbars: neutral and thin, in both themes (they used to be pink on a
+   light track, also in the dark theme). The theme sits on a wrapper, so the
+   page's own scrollbar finds it with :has(). */
+html {
+  scrollbar-color: rgb(28 27 25 / 0.28) transparent;
 }
 
-::-webkit-scrollbar-track {
-  background: #f5f3f0;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #e0bfb8;
-  border-radius: 9999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #d4a8a0;
+html:has([data-theme='dark']) {
+  scrollbar-color: rgb(251 249 246 / 0.24) transparent;
+  color-scheme: dark;
 }
 
 /* Custom range input styling */

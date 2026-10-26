@@ -33,6 +33,7 @@ import { ArrowRight, Building2, LogOut, Moon, MoreVertical, Pencil, Plus, Search
 import { apiError } from '@/lib/i18n/api-errors'
 import { uploadPhoto } from '@/lib/media/upload-client'
 import { useUploadProblemText } from '@/components/ui/photo-upload'
+import { Logo } from '@/components/marketing/Logo'
 
 interface Workspace {
   id: string
@@ -262,10 +263,9 @@ export default function WorkspacesPage() {
           <div className="flex h-14 items-center justify-between gap-3">
             <Link
               href={routes.workspaces()}
-              className="inline-flex items-center gap-2 rounded-ctl text-brand font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
+              className="inline-flex shrink-0 items-center rounded-ctl focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
             >
-              <span className="w-2.5 h-2.5 rounded-[3px] bg-brand" aria-hidden="true" />
-              Digistay
+              <Logo size="sm" />
             </Link>
 
             <div className="flex items-center gap-1">

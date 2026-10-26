@@ -16,6 +16,7 @@ import { useTheme } from './theme-root'
 import { LanguageButton } from './language-button'
 import { NotificationBell } from './notification-bell'
 import { activeHref, primaryNav, workspaceNav, type NavItem, type WorkspaceRole } from './nav'
+import { Logo } from '@/components/marketing/Logo'
 
 interface WorkspaceShellProps {
   workspace: {
@@ -102,10 +103,9 @@ function Brand({ slug }: { slug: string }) {
   return (
     <Link
       href={routes.workspace(slug)}
-      className="inline-flex items-center gap-2 h-9 px-1 rounded-ctl text-brand font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
+      className="inline-flex items-center h-9 px-1 rounded-ctl focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
     >
-      <span className="w-2.5 h-2.5 rounded-[3px] bg-brand" aria-hidden="true" />
-      Digistay
+      <Logo size="sm" />
     </Link>
   )
 }
@@ -244,7 +244,7 @@ function UserBlock({ name, email, image, role }: { name?: string; email?: string
           {dark ? <Sun className="w-4 h-4" aria-hidden="true" /> : <Moon className="w-4 h-4" aria-hidden="true" />}
         </button>
       )}
-      <LanguageButton />
+      <LanguageButton compact />
       {/* signOut() sends NextAuth's CSRF token; the old bare form POST had none,
           so NextAuth ignored it and the session survived. */}
       <button

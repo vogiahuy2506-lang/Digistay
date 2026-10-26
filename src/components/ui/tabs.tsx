@@ -45,9 +45,9 @@ export function Tabs({ defaultValue, value: controlledValue, onValueChange, chil
 
 const listStyles: Record<TabsVariant, string> = {
   // Scrolls sideways when the tabs are wider than a phone.
-  segmented: 'inline-flex max-w-full items-center gap-1 overflow-x-auto p-1 bg-plain-soft rounded-ctl',
+  segmented: 'inline-flex max-w-full items-center gap-1 overflow-x-auto overflow-y-hidden p-1 bg-plain-soft rounded-ctl',
   // Bookings filter row (redesign 4a): text tabs over a 1 px line, scrolls sideways on phones.
-  underline: 'flex items-end gap-6 border-b border-line overflow-x-auto',
+  underline: 'flex items-end gap-6 border-b border-line overflow-x-auto overflow-y-hidden',
 }
 
 export function TabsList({
