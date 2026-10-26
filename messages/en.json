@@ -784,6 +784,7 @@
       "step2": "Step 2 of 2 · Verify your email",
       "title": "Create an account",
       "haveAccount": "Already have an account? <link>Sign in</link>",
+      "google": "Sign up with Google",
       "name": "Full name",
       "username": "Username",
       "usernamePlaceholder": "e.g. seaside_hotel",

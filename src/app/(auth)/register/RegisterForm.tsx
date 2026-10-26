@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 import {
   CodeInput,
   Field,
+  GoogleButton,
   Notice,
   PasswordInput,
   StrengthMeter,
@@ -31,13 +32,15 @@ const RESEND_SEC = 60
  * page, for an account never verified) opens on the code step: the login
  * page has just sent a new code.
  */
-export function RegisterForm() {
+export function RegisterForm({ google }: { google: boolean }) {
   const t = useTranslations('auth')
   const message = useAuthError()
   const router = useRouter()
   const [form, setForm] = React.useState({ name: '', username: '', email: '', phone: '', password: '', confirm: '' })
   const [terms, setTerms] = React.useState(false)
   const [tried, setTried] = React.useState(false)
+  // Set by "Sign up with Google" with the terms box unticked: only that box's error shows.
+  const [googleTried, setGoogleTried] = React.useState(false)
   const [busy, setBusy] = React.useState(false)
   const [taken, setTaken] = React.useState<{ username?: string; email?: string }>({})
   const [error, setError] = React.useState('')
@@ -243,13 +246,30 @@ export function RegisterForm() {
     )
   }
 
+  const termsError = shown.terms ?? (googleTried && !terms ? t('register.termsRequired') : undefined)
+
+  // Google makes the account on its first sign-in (next-auth adapter); the terms box counts for it too.
+  const signUpWithGoogle = () => {
+    if (!terms) {
+      setGoogleTried(true)
+      return
+    }
+    signIn('google', { callbackUrl: '/workspaces' })
+  }
+
   return (
     <form onSubmit={submit} noValidate>
       {stepBar(1)}
-      <h1 className={authTitle}>{t('register.title')}</h1>
-      <p className="mt-3 text-[15px] text-fg/80">
-        {t.rich('register.haveAccount', { link: (c) => <Link href="/login" className={cn(textLink, 'underline')}>{c}</Link> })}
-      </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className={authTitle}>{t('register.title')}</h1>
+          <p className="mt-3 text-[15px] text-fg/80">
+            {t.rich('register.haveAccount', { link: (c) => <Link href="/login" className={cn(textLink, 'underline')}>{c}</Link> })}
+          </p>
+        </div>
+        {/* Beside the title, not above the fields, so the step still fits one laptop screen */}
+        {google && <GoogleButton label={t('register.google')} onClick={signUpWithGoogle} disabled={busy} className="h-11 shrink-0 px-4 text-[14.5px]" />}
+      </div>
       <div className="mt-6 flex flex-col gap-5">
         {count > 0 && <Notice tone="err">⚠ {t('common.summary', { count })}</Notice>}
         {error && <Notice tone="err">⚠ {error}</Notice>}
@@ -325,8 +345,8 @@ export function RegisterForm() {
               checked={terms}
               onChange={(e) => setTerms(e.target.checked)}
               disabled={busy}
-              aria-invalid={!!shown.terms || undefined}
-              className={cn('mt-0.5 h-5 w-5 flex-none rounded-[4px] accent-ink', shown.terms && 'outline outline-1 outline-err')}
+              aria-invalid={!!termsError || undefined}
+              className={cn('mt-0.5 h-5 w-5 flex-none rounded-[4px] accent-ink', termsError && 'outline outline-1 outline-err')}
             />
             <span>
               {t.rich('register.terms', {
@@ -335,7 +355,7 @@ export function RegisterForm() {
               })}
             </span>
           </label>
-          {shown.terms && <span className="text-[13px] text-err">⚠ {shown.terms}</span>}
+          {termsError && <span className="text-[13px] text-err">⚠ {termsError}</span>}
         </div>
         <button type="submit" disabled={busy} className={cn(inkButton, 'h-[52px] w-full text-[15px] disabled:bg-muted')}>
           {busy ? t('register.submitting') : t('register.submit')}

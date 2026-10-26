@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
+import { googleSignInConfigured } from '@/lib/auth/google'
 import { AuthShell } from '../_components/AuthShell'
 import { RegisterForm } from './RegisterForm'
 
@@ -11,7 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function RegisterPage() {
   return (
     <AuthShell width={600}>
-      <RegisterForm />
+      <RegisterForm google={googleSignInConfigured()} />
     </AuthShell>
   )
 }

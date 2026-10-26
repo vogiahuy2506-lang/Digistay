@@ -5,12 +5,12 @@ import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { inkButton, lineButton, textLink } from '@/components/marketing/styles'
+import { inkButton, textLink } from '@/components/marketing/styles'
 import { afterLogin } from '@/lib/auth/after-login'
 import { LOGIN_ERRORS, TWO_FACTOR_ERRORS } from '@/lib/auth/error-messages'
 import { TWO_FACTOR_PROVIDER, TWO_FACTOR_QUERY, TWO_FACTOR_REQUIRED } from '@/lib/auth/two-factor-shared'
 import { cn } from '@/lib/utils'
-import { CodeInput, Field, Notice, PasswordInput, authTitle, describedBy, inputClass, useAuthError } from '../_components/ui'
+import { CodeInput, Field, GoogleButton, Notice, PasswordInput, authTitle, describedBy, inputClass, useAuthError } from '../_components/ui'
 
 type Problem = 'invalid' | 'tooMany' | 'locked' | 'unverified' | 'other'
 
@@ -19,7 +19,7 @@ type Problem = 'invalid' | 'tooMany' | 'locked' | 'unverified' | 'other'
  * password, or Google; then, for accounts with two-factor on, the code from
  * the app or a recovery code (the `two-factor` provider).
  */
-export function LoginForm() {
+export function LoginForm({ google }: { google: boolean }) {
   const t = useTranslations('auth')
   const message = useAuthError()
   const router = useRouter()
@@ -164,23 +164,16 @@ export function LoginForm() {
         )}
         {(problem?.kind === 'tooMany' || problem?.kind === 'other') && <Notice tone="err">⚠ {problem.text}</Notice>}
 
-        <button
-          type="button"
-          onClick={() => signIn('google', { callbackUrl: next })}
-          disabled={busy}
-          className={cn(lineButton, 'h-[50px] gap-3 border-line bg-panel text-[15px] hover:border-ink hover:bg-panel')}
-        >
-          <span aria-hidden className="flex h-[22px] w-[22px] items-center justify-center rounded-full border border-line text-[11px] font-bold">
-            G
-          </span>
-          {t('common.google')}
-        </button>
-
-        <div className="flex items-center gap-4 text-[13px] text-muted">
-          <span className="h-px flex-1 bg-line" />
-          {t('common.or')}
-          <span className="h-px flex-1 bg-line" />
-        </div>
+        {google && (
+          <>
+            <GoogleButton label={t('common.google')} onClick={() => signIn('google', { callbackUrl: next })} disabled={busy} className="h-[50px] text-[15px]" />
+            <div className="flex items-center gap-4 text-[13px] text-muted">
+              <span className="h-px flex-1 bg-line" />
+              {t('common.or')}
+              <span className="h-px flex-1 bg-line" />
+            </div>
+          </>
+        )}
 
         <form onSubmit={submit} noValidate className="flex flex-col gap-5">
           <Field id="login-username" label={t('login.login')} error={err.username}>

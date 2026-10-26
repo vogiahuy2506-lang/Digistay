@@ -215,3 +215,34 @@ export function useAuthError() {
     [t, locale],
   )
 }
+
+/** "Continue with Google" (sign-in) / "Sign up with Google": an outlined button with a G mark. */
+export function GoogleButton({
+  label,
+  onClick,
+  disabled,
+  className,
+}: {
+  label: string
+  onClick: () => void
+  disabled?: boolean
+  className?: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        'inline-flex items-center justify-center gap-3 rounded-ctl border border-line bg-panel font-medium text-fg transition-colors duration-160 ease-ds hover:border-ink disabled:opacity-60',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acc focus-visible:ring-offset-2 focus-visible:ring-offset-page',
+        className,
+      )}
+    >
+      <span aria-hidden className="flex h-[22px] w-[22px] items-center justify-center rounded-full border border-line text-[11px] font-bold">
+        G
+      </span>
+      {label}
+    </button>
+  )
+}
