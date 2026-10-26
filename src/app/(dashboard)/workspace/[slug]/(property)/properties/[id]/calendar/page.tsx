@@ -223,14 +223,15 @@ export default function CalendarPage() {
         fetch(`/api/room-types?propertyId=${propertyId}`).then((r) => r.json()),
         fetchBookingsAround(gridStart, gridEnd),
         todayOutside ? fetchBookingsAround(now, addDays(now, 1)) : Promise.resolve([]),
-        fetch(`/api/properties/${propertyId}/policy`).then((r) => r.json()).catch(() => null),
+        // The property (with its policy) is readable by every member; /policy is for those who edit it (receptionists got 403).
+        fetch(`/api/properties/${propertyId}`).then((r) => r.json()).catch(() => null),
       ])
 
       if (roomTypesData.success) {
         setRoomTypes(roomTypesData.data ?? [])
       }
       setBookings([...new Map([...shown, ...aroundToday].map((b) => [b.id, b])).values()])
-      const policy = policyData?.data
+      const policy = policyData?.data?.policy
       setStayTimes(policy ? { checkIn: policy.checkInTime, checkOut: policy.checkOutTime } : null)
     } catch (err) {
       console.error('Calendar fetch error:', err)

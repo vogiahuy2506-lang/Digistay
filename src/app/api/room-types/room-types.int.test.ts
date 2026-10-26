@@ -69,6 +69,17 @@ describe('POST /api/room-types', () => {
     ])
   })
 
+  it('takes the form as it sends a blank area and weekend price (null and 0)', async () => {
+    const { owner, property } = await createTenant()
+    signInAs(owner)
+
+    const res = await createRoomTypeRoute(req('/api/room-types', 'POST', form(property.id, { area: null, weekendPrice: 0 })))
+    expect(res.status).toBe(201)
+    const type = await prisma.roomType.findFirstOrThrow({ where: { propertyId: property.id }, include: { pricing: true } })
+    expect(type.area).toBeNull()
+    expect(type.pricing.map((p) => [p.weekdayPrice, p.weekendPrice])).toEqual([[600_000, 600_000]])
+  })
+
   it('refuses a capacity that does not hang together, or out of range', async () => {
     const { owner, property } = await createTenant()
     signInAs(owner)

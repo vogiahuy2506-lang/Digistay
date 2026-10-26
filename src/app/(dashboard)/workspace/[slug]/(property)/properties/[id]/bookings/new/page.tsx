@@ -94,11 +94,15 @@ export default function WalkinBookingPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [error, setError] = React.useState('')
 
-  // The hotel's check-in / check-out times.
+  // The hotel's check-in / check-out times (Policy), from the property: every member may read it
+  // (/policy is for those who edit it).
   React.useEffect(() => {
-    fetch(`/api/properties/${propertyId}/policy`)
+    fetch(`/api/properties/${propertyId}`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => d?.data && setStayTimes({ checkIn: d.data.checkInTime, checkOut: d.data.checkOutTime }))
+      .then((d) => {
+        const policy = d?.data?.policy
+        if (policy) setStayTimes({ checkIn: policy.checkInTime, checkOut: policy.checkOutTime })
+      })
       .catch(() => {})
   }, [propertyId])
 

@@ -66,8 +66,9 @@ export async function GET(request: NextRequest) {
 
 const roomTypeTranslations = translationsInput(['name', 'description'])
 
-/** A blank form field ('' or null) is no value; numbers may come as strings. */
-const optionalNumber = z.preprocess((v) => (v === '' || v === null || v === undefined ? undefined : Number(v)), z.number().positive().optional())
+/** A blank form field ('' or null, and 0 for these) is no value; numbers may come as strings. */
+const blank = (v: unknown) => (v === '' || v === null || v === undefined || v === 0 ? undefined : Number(v))
+const optionalNumber = z.preprocess(blank, z.number().positive().optional())
 
 // The ranges of createRoomTypeSchema (src/lib/validations), with the form's
 // defaults. The form used to send maxAdults/maxChildren it never asked for.
