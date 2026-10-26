@@ -98,14 +98,15 @@ export default function NewPropertyPage() {
     )
   }
 
+  // One form: the title and the card share a centred column (layout.tsx).
   return (
-    <>
+    <div className="mx-auto max-w-3xl">
       <TitleBlock
         title={t('new.title')}
         lead={t('new.description', { workspace: workspace.name })}
       />
 
-      <div className="mt-9 max-w-2xl">
+      <div className="mt-9">
         <Card>
           <CardContent className="p-6">
           <form onSubmit={handleCreate} className="space-y-4">
@@ -208,6 +209,6 @@ export default function NewPropertyPage() {
           </CardContent>
         </Card>
       </div>
-    </>
+    </div>
   )
 }

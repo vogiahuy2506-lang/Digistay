@@ -174,8 +174,9 @@ export default function WorkspaceSettingsPage() {
     return <Loading className="py-24" />
   }
 
+  // Forms: the title, tabs and cards share a centred column (layout.tsx).
   return (
-    <>
+    <div className="mx-auto max-w-3xl">
       <TitleBlock
         title={t('settings.title')}
         lead={t('settings.description', { name: workspace.name })}
@@ -452,6 +453,6 @@ export default function WorkspaceSettingsPage() {
           <DeleteWorkspaceZone workspaceId={workspace.id} workspaceName={workspace.name} />
         </div>
       )}
-    </>
+    </div>
   )
 }

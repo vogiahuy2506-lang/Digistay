@@ -28,11 +28,19 @@
   "shell": {
     "toDark": "Switch to the dark theme",
     "toLight": "Switch to the light theme",
-    "darkTheme": "Dark theme",
     "noDarkHere": "This page has no dark theme yet; your choice is kept for the pages that do",
     "signOut": "Sign out",
     "language": "Language",
-    "user": "User"
+    "user": "User",
+    "account": "Your account",
+    "profile": "Profile",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "languageNames": {
+      "vi": "Tiếng Việt",
+      "en": "English"
+    }
   },
   "notifications": {
     "title": "Notifications",
