@@ -6,6 +6,8 @@ import { z } from 'zod'
 import { BedType } from '@prisma/client'
 import { invalidatePublicSite } from '@/lib/public-site/site'
 import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
+import { lockedResponseForProperty, planResponse } from '@/lib/billing/guard'
+import { roomTypeDelta } from '@/lib/billing/limits'
 
 const updateRoomTypeSchema = z.object({
   name: z.string().min(1).optional(),
@@ -107,6 +109,7 @@ export async function PUT(request: NextRequest, props: RouteParams) {
         pricing: { orderBy: { createdAt: 'desc' }, take: 1 },
         property: {
           select: {
+            workspaceId: true,
             workspace: {
               select: {
                 ownerId: true,
@@ -152,6 +155,10 @@ export async function PUT(request: NextRequest, props: RouteParams) {
         { status: 400 }
       )
     }
+
+    // More rooms (a bigger count, or the type switched back on) count against the plan.
+    const overPlan = await planResponse(roomType.property.workspaceId, 'rooms', roomTypeDelta(roomType, data))
+    if (overPlan) return overPlan
 
     // Cast bedType to BedType enum
     const bedTypeValue = data.bedType as BedType | undefined
@@ -273,6 +280,8 @@ export async function DELETE(request: NextRequest, props: RouteParams) {
     if (!isOwner && !isManager) {
       return NextResponse.json({ success: false, error: 'Không có quyền xóa' }, { status: 403 })
     }
+    const locked = await lockedResponseForProperty(roomType.propertyId)
+    if (locked) return locked
 
     // Delete room type (cascades to images, amenities, pricing via Prisma)
     await prisma.roomType.delete({

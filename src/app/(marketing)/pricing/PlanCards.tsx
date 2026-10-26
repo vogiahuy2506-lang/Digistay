@@ -82,7 +82,8 @@ export function PlanCards({
             <p aria-live="polite" className="mt-2 h-5 text-[13px] font-medium text-ok">
               {billing === 'year' ? p.saving : ''}
             </p>
-            <Link href="/register" className={cn(inkButton, 'mt-5 h-12 text-[15px]')}>
+            {/* Signs up first when needed, then opens the plan's QR (/billing/start). */}
+            <Link href={`/billing/start?plan=${p.id}&billing=${billing === 'year' ? 'YEAR' : 'MONTH'}`} className={cn(inkButton, 'mt-5 h-12 text-[15px]')}>
               {labels.choose}
             </Link>
             <dl className="mt-7 border-t border-line/70">

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { invalidatePublicSite } from '@/lib/public-site/site'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 const assignSchema = z.object({
   propertyId: z.string(),
@@ -93,6 +94,8 @@ export async function PUT(
     if (!property) {
       return NextResponse.json({ success: false, error: 'Không có quyền' }, { status: 403 })
     }
+    const locked = await lockedResponseForProperty(params.id)
+    if (locked) return locked
 
     // Validate every id exists
     const validAmenities = await prisma.amenity.findMany({

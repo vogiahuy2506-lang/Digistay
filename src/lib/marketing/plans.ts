@@ -1,10 +1,12 @@
 /**
- * Digistay's plans, as the home and pricing pages show them.
+ * Digistay's plans: the pricing pages show them and src/lib/billing sells
+ * and enforces them (limits per workspace).
  *
- * SAMPLE CONTENT: Digistay has not launched, and the names, prices, limits,
- * add-ons and which plan has what are not decided yet. The app has no plans
- * of its own and enforces none of these limits. Change them here (numbers)
- * and in messages/*.json under marketing.plans / marketing.pricing (words).
+ * TEST PRICES (2026-10-26): while Digistay has no real customers the prices
+ * are a few thousand đồng so a real PayOS payment can be tried cheaply. Put
+ * the real ones here before launch; payments already made keep the amount
+ * they were bought at. Words live in messages/*.json under marketing.plans /
+ * marketing.pricing.
  */
 
 export const PLAN_IDS = ['starter', 'growth', 'business'] as const
@@ -22,12 +24,16 @@ export interface Plan {
 }
 
 export const PLANS: Plan[] = [
-  { id: 'starter', price: 990_000, properties: 1, rooms: 15, staff: 3, invoices: 0 },
-  { id: 'growth', price: 1_990_000, properties: 3, rooms: 60, staff: 10, invoices: 100 },
-  { id: 'business', price: 4_990_000, properties: 10, rooms: 300, staff: 30, invoices: 500 },
+  { id: 'starter', price: 2_000, properties: 1, rooms: 15, staff: 3, invoices: 0 },
+  { id: 'growth', price: 5_000, properties: 3, rooms: 60, staff: 10, invoices: 100 },
+  { id: 'business', price: 10_000, properties: 10, rooms: 300, staff: 30, invoices: 500 },
 ]
 
-/** Paying a year at once costs this many months (two months free). Sample content, like the prices. */
+export const isPlanId = (value: unknown): value is PlanId => typeof value === 'string' && (PLAN_IDS as readonly string[]).includes(value)
+
+export const planById = (id: string): Plan => PLANS.find((p) => p.id === id) ?? PLANS[1]
+
+/** Paying a year at once costs this many months (two months free). */
 export const YEARLY_MONTHS = 10
 
 export const yearlyPrice = (plan: Plan) => plan.price * YEARLY_MONTHS
@@ -35,12 +41,15 @@ export const yearlyPrice = (plan: Plan) => plan.price * YEARLY_MONTHS
 export const ADDON_IDS = ['property', 'staff', 'domain', 'invoices'] as const
 export type AddonId = (typeof ADDON_IDS)[number]
 
-/** VND per unit (the unit is in the messages: a property a month, a year...). */
+/**
+ * VND per unit (the unit is in the messages: a property a month, a year...).
+ * Shown on the pricing page only: add-ons cannot be bought yet. Test prices too.
+ */
 export const ADDON_PRICES: Record<AddonId, number> = {
-  property: 490_000,
-  staff: 49_000,
-  domain: 290_000,
-  invoices: 150_000,
+  property: 1_000,
+  staff: 500,
+  domain: 1_000,
+  invoices: 1_000,
 }
 
 /** A cell of the comparison table: in the plan or not, or the plan's own limit. */

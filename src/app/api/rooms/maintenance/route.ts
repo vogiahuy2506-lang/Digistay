@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { lockRoomType, roomsTaken } from '@/lib/bookings/occupancy'
 import { roomConflictMessage, roomTakenBy } from '@/lib/bookings/rooms'
+import { lockedResponse, lockedResponseForProperty } from '@/lib/billing/guard'
 
 const maintenanceSchema = z.object({
   propertyId: z.string(),
@@ -129,6 +130,8 @@ export async function POST(request: NextRequest) {
     if (!property) {
       return NextResponse.json({ success: false, error: 'Không có quyền truy cập' }, { status: 403 })
     }
+    const locked = await lockedResponse(property.workspaceId)
+    if (locked) return locked
 
     // The room type must be this property's, not just any id the client sends
     const roomType = await prisma.roomType.findFirst({
@@ -276,6 +279,8 @@ export async function DELETE(request: NextRequest) {
     if (!isOwner && !isStaff) {
       return NextResponse.json({ success: false, error: 'Không có quyền xóa lịch bảo trì' }, { status: 403 })
     }
+    const locked = await lockedResponseForProperty(lock.propertyId)
+    if (locked) return locked
 
     await prisma.roomLock.delete({
       where: { id: lock.id },

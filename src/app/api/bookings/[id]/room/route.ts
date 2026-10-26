@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { RoomError, assignRoomTx } from '@/lib/bookings/rooms'
+import { lockedResponse } from '@/lib/billing/guard'
 
 const day = z.string().max(10)
 const schema = z.object({ roomId: z.string().min(1).nullable(), fromDate: day.optional(), toDate: day.optional() })
@@ -21,6 +22,8 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
   if (!booking) return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
   const access = await requireWorkspaceRole(booking.property.workspaceId, WorkspaceRoles.STAFF_AND_UP)
   if (!access.ok) return access.response
+  const locked = await lockedResponse(booking.property.workspaceId)
+  if (locked) return locked
 
   const parsed = schema.safeParse(await request.json().catch(() => null))
   if (!parsed.success) return NextResponse.json({ success: false, error: 'Chọn một phòng' }, { status: 400 })

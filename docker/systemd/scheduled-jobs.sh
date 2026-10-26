@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # The app's scheduled jobs, run every 10 minutes by
 # docker/systemd/digistay-reconcile.timer (RUNBOOK, "Đối soát PayOS định kỳ"):
-#   - payos-reconcile: PayOS links whose webhook never came
+#   - payos-reconcile: PayOS links whose webhook never came (hotels' and plans')
+#   - subscription-jobs: plan reminders before and after a period ends
 #   - einvoice-jobs: auto-issue, uncertain publishes, invoice emails
 #   - email-outbox: booking and invitation emails not sent yet
 #   - ops-alerts: emails the people running Digistay about failed jobs,
@@ -13,7 +14,7 @@ set -u
 APP_CONTAINER="${APP_CONTAINER:-digistay-app}"
 
 rc=0
-for job in payos-reconcile einvoice-jobs email-outbox ops-alerts; do
+for job in payos-reconcile subscription-jobs einvoice-jobs email-outbox ops-alerts; do
   # Single quotes: $CRON_SECRET is expanded by the container's shell.
   if docker exec -e "JOB=$job" "$APP_CONTAINER" sh -c \
     'wget -q -O- --header "x-cron-secret: $CRON_SECRET" --post-data "" "http://127.0.0.1:3000/api/internal/$JOB"'; then

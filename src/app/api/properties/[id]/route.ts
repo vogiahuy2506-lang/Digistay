@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { updatePropertySchema } from '@/lib/validations'
 import { invalidatePublicSite } from '@/lib/public-site/site'
 import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
+import { lockedResponse, lockedResponseForProperty } from '@/lib/billing/guard'
 
 /** The editable fields, and the description in English. */
 const patchSchema = updatePropertySchema.extend({ translations: translationsInput(['description'], 2000) })
@@ -153,6 +154,8 @@ export async function PATCH(
         { status: 403 }
       )
     }
+    const locked = await lockedResponseForProperty(id)
+    if (locked) return locked
 
     const body = await request.json()
     
@@ -245,6 +248,8 @@ export async function DELETE(
         { status: 403 }
       )
     }
+    const locked = await lockedResponse(property.workspaceId)
+    if (locked) return locked
 
     await prisma.property.delete({
       where: { id },

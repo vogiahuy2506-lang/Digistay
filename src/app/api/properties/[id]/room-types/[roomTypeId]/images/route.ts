@@ -4,11 +4,13 @@ import { prisma } from '@/lib/db'
 import { getWorkspaceRole, requireSession } from '@/lib/auth/rbac'
 import { isStoredImageUrl } from '@/lib/media/image-url'
 import { invalidatePublicSite } from '@/lib/public-site/site'
+import { lockedResponse } from '@/lib/billing/guard'
 
 /**
  * A room type's own photos (RoomTypeImage): the hotel site's room cards and
  * room page show them, the main one first (src/lib/public-site/site.ts).
- * Who edits room types edits their photos: the owner and admins.
+ * Who edits room types edits their photos: the owner and admins; not while
+ * the workspace is locked (src/lib/billing).
  */
 
 type Props = { params: Promise<{ id: string; roomTypeId: string }> }
@@ -27,6 +29,8 @@ async function access(propertyId: string, roomTypeId: string, userId: string) {
   const role = roomType ? await getWorkspaceRole(roomType.property.workspaceId, userId) : null
   if (!roomType || !role) return { ok: false as const, response: fail(404, 'Không tìm thấy loại phòng') }
   if (role !== 'ADMIN') return { ok: false as const, response: fail(403, 'Bạn không có quyền thực hiện hành động này') }
+  const locked = await lockedResponse(roomType.property.workspaceId)
+  if (locked) return { ok: false as const, response: locked }
   return { ok: true as const }
 }
 

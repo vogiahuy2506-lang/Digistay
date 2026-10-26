@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 const updateSchema = z.object({
   bankName: z.string().min(2).optional(),
@@ -70,6 +71,8 @@ export async function PATCH(
     if (!authz.ok) {
       return NextResponse.json({ success: false, error: authz.error }, { status: authz.status })
     }
+    const locked = await lockedResponseForProperty(authz.bankAccount.propertyId)
+    if (locked) return locked
 
     const body = await request.json()
     const validation = updateSchema.safeParse(body)
@@ -117,6 +120,8 @@ export async function DELETE(
     if (!authz.ok) {
       return NextResponse.json({ success: false, error: authz.error }, { status: authz.status })
     }
+    const locked = await lockedResponseForProperty(authz.bankAccount.propertyId)
+    if (locked) return locked
 
     await prisma.bankAccount.delete({ where: { id: params.id } })
 

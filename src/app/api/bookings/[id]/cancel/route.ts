@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth'
 import { suggestRefund } from '@/lib/bookings/cancel-refund'
 import { lockBooking } from '@/lib/payments/booking-payments'
 import { z } from 'zod'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 /**
  * Cancel a booking and give money back. The refund is a suggestion from
@@ -140,6 +141,8 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
     const found = await bookingForStaff(id, session)
     if (found.error) return found.error
     const { booking } = found
+    const locked = await lockedResponseForProperty(booking.propertyId)
+    if (locked) return locked
 
     const policy = await policyOf(booking.propertyId)
 

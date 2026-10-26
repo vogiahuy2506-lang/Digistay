@@ -8,5 +8,5 @@ export async function POST(_request: NextRequest, props: { params: Promise<{ id:
   const sess = await requireSession()
   if (!sess.ok) return sess.response
   const { id } = await props.params
-  return payosPaymentAction(id, sess.session.user.id, cancelPayosPayment)
+  return payosPaymentAction(id, sess.session.user.id, cancelPayosPayment, { refuseWhenLocked: true })
 }

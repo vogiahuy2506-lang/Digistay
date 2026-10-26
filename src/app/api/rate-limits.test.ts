@@ -46,6 +46,8 @@ vi.mock('@/lib/db', () => ({
     invitation: { findFirst: vi.fn(), create: vi.fn() },
   },
 }))
+// The plan's staff limit (src/lib/billing) is not what this file tests.
+vi.mock('@/lib/billing/guard', () => ({ planResponse: vi.fn(async () => null), lockedResponse: vi.fn(async () => null), lockedResponseForProperty: vi.fn(async () => null) }))
 vi.mock('@/lib/email', () => ({
   sendOtpEmail: vi.fn(async ({ recipientEmail }: { recipientEmail: string }) => {
     h.sent.push(recipientEmail)

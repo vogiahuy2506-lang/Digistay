@@ -750,6 +750,47 @@ bước 3.
 
 ---
 
+## Bán gói (PayOS của Digistay)
+
+Khách sạn mua gói ở **Gói & thanh toán** (`/workspace/<slug>/billing`): mã VietQR trên chính trang đó,
+tiền vào **tài khoản PayOS của Digistay** (khác với PayOS của từng khách sạn). Code: `src/lib/billing`.
+Quy tắc (chốt 26/10/2026): workspace mới dùng thử 14 ngày gói Growth; mỗi lần thanh toán bắt đầu kỳ
+mới từ ngày trả (phần còn lại của kỳ cũ không cộng dồn); hết hạn 7 ngày thì workspace chỉ còn xem và
+website ngừng nhận đặt phòng online cho tới khi trả tiền. Giá và giới hạn: `src/lib/marketing/plans.ts`
+(đang là **giá test** 2.000/5.000/10.000 ₫ một tháng). Job `subscription-jobs` gửi email nhắc trước
+7 ngày, 1 ngày, khi hết hạn và khi khoá; `payos-reconcile` bắt các khoản webhook bỏ sót.
+
+**Cài trên VPS (một lần).** Trong PayOS, tạo một **kênh thanh toán riêng** cho Digistay (không dùng
+lại kênh của app khác: bước đăng ký webhook dưới đây sẽ thay webhook của kênh đó). Khối lệnh hỏi 3
+khoá của kênh, ghi vào `.env.production` (giữ bản sao), khởi động lại app, đăng ký webhook
+`https://digistay.vn/api/webhooks/payos/digistay` với PayOS, rồi in tên tài khoản nhận tiền:
+
+```bash
+{
+cd /opt/digistay
+read -r -p "DIGISTAY_PAYOS_CLIENT_ID: " PI
+read -r -s -p "DIGISTAY_PAYOS_API_KEY: " PA; echo
+read -r -s -p "DIGISTAY_PAYOS_CHECKSUM_KEY: " PC; echo
+sudo cp -p .env.production ".env.production.bak-$(date +%Y%m%d%H%M%S)"
+( umask 077
+  sudo grep -vE '^DIGISTAY_PAYOS_(CLIENT_ID|API_KEY|CHECKSUM_KEY)=' .env.production > /tmp/digistay-env.new
+  printf 'DIGISTAY_PAYOS_CLIENT_ID=%s\nDIGISTAY_PAYOS_API_KEY=%s\nDIGISTAY_PAYOS_CHECKSUM_KEY=%s\n' "$PI" "$PA" "$PC" >> /tmp/digistay-env.new
+  sudo sh -c 'cat /tmp/digistay-env.new > /opt/digistay/.env.production'
+  rm -f /tmp/digistay-env.new )
+unset PI PA PC
+sudo docker compose up -d --no-deps --no-build --force-recreate app
+sleep 25
+sudo docker compose exec -T app sh -c 'wget -q -O- --header "x-cron-secret: $CRON_SECRET" --post-data "" http://127.0.0.1:3000/api/internal/platform-payos/confirm-webhook'; echo
+curl -fsS https://digistay.vn/api/health; echo
+}
+```
+
+Kết quả đúng: `{"success":true,"data":{"webhookUrl":"https://digistay.vn/api/webhooks/payos/digistay",...}}`.
+Thử bằng tiền thật: vào Gói & thanh toán của một workspace, chọn Starter theo tháng (2.000 ₫), quét QR;
+trong vài giây trang báo "Đã kích hoạt" và email biên nhận gửi tới chủ workspace.
+
+---
+
 ## Subdomain cho site khách sạn
 
 Site công khai của khách sạn luôn có ở `digistay.vn/<subdomain>`. Phần dưới đây bật thêm địa

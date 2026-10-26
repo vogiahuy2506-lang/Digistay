@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { createPricingSchema, updatePricingSchema } from '@/lib/validations'
 import { invalidatePublicSite } from '@/lib/public-site/site'
+import { lockedResponse } from '@/lib/billing/guard'
 
 // Check if user has admin access to property's workspace
 async function checkPropertyAdmin(propertyId: string, userId: string) {
@@ -102,6 +103,8 @@ export async function POST(
         { status: 403 }
       )
     }
+    const locked = await lockedResponse(property.workspaceId)
+    if (locked) return locked
 
     const body = await request.json()
 
@@ -203,6 +206,8 @@ export async function PATCH(
         { status: 403 }
       )
     }
+    const locked = await lockedResponse(property.property.workspaceId)
+    if (locked) return locked
 
     // Validate input
     const validation = updatePricingSchema.safeParse(updateData)
@@ -300,6 +305,8 @@ export async function DELETE(
         { status: 403 }
       )
     }
+    const locked = await lockedResponse(property.property.workspaceId)
+    if (locked) return locked
 
     await prisma.pricingConfig.delete({
       where: { id: pricingId },

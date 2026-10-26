@@ -144,7 +144,13 @@ export function LoginForm({ google }: { google: boolean }) {
     <div>
       <h1 className={authTitle}>{t('login.title')}</h1>
       <p className="mt-3 text-[15px] text-fg/80">
-        {t.rich('login.noAccount', { link: (c) => <Link href="/register" className={cn(textLink, 'underline')}>{c}</Link> })}
+        {t.rich('login.noAccount', {
+          link: (c) => (
+            <Link href={next === '/workspaces' ? '/register' : `/register?callbackUrl=${encodeURIComponent(next)}`} className={cn(textLink, 'underline')}>
+              {c}
+            </Link>
+          ),
+        })}
       </p>
 
       <div className="mt-7 flex flex-col gap-5">

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { createPropertySchema } from '@/lib/validations'
 import { generateSlug, generateSubdomain } from '@/lib/utils'
+import { planResponse } from '@/lib/billing/guard'
 
 // Check if user has access to workspace
 async function checkWorkspaceAccess(workspaceId: string, userId: string) {
@@ -129,6 +130,10 @@ export async function POST(request: NextRequest) {
         { status: 403 }
       )
     }
+
+    // The plan's number of properties (src/lib/billing); also refused while the workspace is locked.
+    const overPlan = await planResponse(workspaceId, 'properties', 1)
+    if (overPlan) return overPlan
 
     // Validate input
     const validation = createPropertySchema.safeParse(propertyData)

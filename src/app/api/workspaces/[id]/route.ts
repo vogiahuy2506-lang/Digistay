@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { updateWorkspaceSchema } from '@/lib/validations'
+import { lockedResponse } from '@/lib/billing/guard'
 
 // Helper function to check workspace access
 async function checkWorkspaceAccess(workspaceId: string, userId: string) {
@@ -139,6 +140,8 @@ export async function PATCH(
         { status: 403 }
       )
     }
+    const locked = await lockedResponse(id)
+    if (locked) return locked
 
     const body = await request.json()
     

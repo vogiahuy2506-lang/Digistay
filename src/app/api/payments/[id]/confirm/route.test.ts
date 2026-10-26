@@ -10,6 +10,8 @@ import { NextRequest } from 'next/server'
 vi.mock('@/lib/auth', () => ({
   auth: vi.fn(),
 }))
+// The plan lock (src/lib/billing) has its own integration test: never locked here.
+vi.mock('@/lib/billing/guard', () => ({ lockedResponse: vi.fn(async () => null) }))
 
 const tx = {
   $queryRaw: vi.fn(),

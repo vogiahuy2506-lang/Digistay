@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
 import { registerSchema } from '@/lib/validations'
 import { generateSlug } from '@/lib/utils'
+import { trialFields } from '@/lib/billing/subscription'
 import { sendOtpEmail } from '@/lib/email'
 import { consumeOtp, issueOtp, normalizeEmail, OtpCooldownError } from '@/lib/auth/otp'
 import { requestLocale } from '@/lib/i18n/request-locale'
@@ -145,6 +146,7 @@ export async function POST(request: NextRequest) {
         slug: workspaceSlug,
         ownerId: user.id,
         description: 'Không gian làm việc mặc định',
+        subscription: { create: trialFields() },
       },
     })
 

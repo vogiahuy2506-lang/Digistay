@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { uploadImageSchema } from '@/lib/validations'
 import { invalidatePublicSite } from '@/lib/public-site/site'
+import { lockedResponse } from '@/lib/billing/guard'
 
 export async function GET(
   request: NextRequest,
@@ -101,6 +102,8 @@ export async function POST(
         { status: 403 }
       )
     }
+    const locked = await lockedResponse(property.workspaceId)
+    if (locked) return locked
 
     const body = await request.json()
 
@@ -209,6 +212,8 @@ export async function DELETE(
         { status: 403 }
       )
     }
+    const locked = await lockedResponse(property.property.workspaceId)
+    if (locked) return locked
 
     await prisma.propertyImage.delete({
       where: { id: imageId },

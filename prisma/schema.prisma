@@ -144,11 +144,83 @@ model Workspace {
   members     WorkspaceMember[]
   properties  Property[]
   invitations Invitation[]
+
+  // Digistay plan (src/lib/billing)
+  subscription         Subscription?
+  subscriptionPayments SubscriptionPayment[]
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@map("workspaces")
+}
+
+// ============================================
+// DIGISTAY PLANS (src/lib/billing)
+// ============================================
+
+enum BillingPeriod {
+  MONTH
+  YEAR
+}
+
+enum SubscriptionPaymentStatus {
+  PENDING
+  PAID
+  CANCELLED
+  EXPIRED
+  FAILED
+}
+
+/// The workspace's Digistay plan: a 14-day trial first, then whatever was
+/// paid last. Each payment starts a new period from the day it is paid.
+/// Past periodEnd: 7 days of grace, then the workspace is read-only.
+model Subscription {
+  workspaceId String         @id
+  workspace   Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  /// starter | growth | business (src/lib/marketing/plans.ts)
+  plan        String
+  /// null while on the trial
+  billing     BillingPeriod?
+  trial       Boolean        @default(true)
+  periodStart DateTime
+  periodEnd   DateTime
+  /// Reminder emails already sent for this period, e.g. {"soon7": "2026-…"}
+  reminders   Json?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([periodEnd])
+  @@map("subscriptions")
+}
+
+/// One attempt to buy a plan: a PayOS link on Digistay's own account.
+model SubscriptionPayment {
+  id          String                    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace                 @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  plan        String
+  billing     BillingPeriod
+  /// VND, before VAT
+  amount      Int
+  status      SubscriptionPaymentStatus @default(PENDING)
+  orderCode   String                    @unique
+  checkoutUrl String?
+  /// VietQR payload from PayOS, drawn on our own page
+  qrCode      String?
+  expiresAt   DateTime?
+  paidAt      DateTime?
+  reference   String?
+  /// The period this payment started (set when paid)
+  periodStart DateTime?
+  periodEnd   DateTime?
+  createdById String?
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+
+  @@index([workspaceId, createdAt])
+  @@index([status, createdAt])
+  @@map("subscription_payments")
 }
 
 model WorkspaceMember {
@@ -1350,7 +1422,8 @@ model Notification {
 /// after 30 days.
 model EmailOutbox {
   id        String    @id
-  /// booking_confirmation, owner_new_booking, workspace_invite, deposit_received, deposit_expired, contact_request
+  /// booking_confirmation, owner_new_booking, workspace_invite, deposit_received, deposit_expired, contact_request,
+  /// subscription_paid, subscription_reminder
   kind      String
   toEmail   String
   /// encrypted JSON { to, name, subject, text, html }

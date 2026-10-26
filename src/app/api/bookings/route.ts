@@ -6,6 +6,7 @@ import { ROOM_SEGMENT_SELECT, withRoomTypeNames } from '@/lib/bookings/room-type
 import { z } from 'zod'
 import { sendAfterResponse } from '@/lib/email/outbox'
 import { BookingError, createBooking } from '@/lib/bookings/create-booking'
+import { lockedResponse } from '@/lib/billing/guard'
 
 const MAX_LIMIT = 100
 
@@ -234,12 +235,14 @@ export async function POST(request: NextRequest) {
           ],
         },
       },
-      select: { id: true },
+      select: { id: true, workspaceId: true },
     })
 
     if (!property) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy cơ sở' }, { status: 404 })
     }
+    const locked = await lockedResponse(property.workspaceId)
+    if (locked) return locked
 
     const checkIn = new Date(data.checkInDate)
     const checkOut = new Date(data.checkOutDate)

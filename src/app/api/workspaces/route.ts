@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { createWorkspaceSchema } from '@/lib/validations'
 import { generateSlug } from '@/lib/utils'
+import { trialFields } from '@/lib/billing/subscription'
 
 export async function GET() {
   try {
@@ -118,6 +119,8 @@ export async function POST(request: NextRequest) {
         logo: logo || null,
         ownerId: session.user.id,
         settings: Object.keys(settings).length > 0 ? (settings as any) : undefined,
+        // Every new workspace starts with the trial (src/lib/billing).
+        subscription: { create: trialFields() },
       },
       include: {
         owner: {

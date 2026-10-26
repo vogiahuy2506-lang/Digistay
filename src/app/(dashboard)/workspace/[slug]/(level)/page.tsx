@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Alert, AlertDescription, Button, Input, Loading } from '@/components/ui'
 import { useWorkspace } from '@/lib/hooks/use-workspace'
+import { useWorkspaceRole } from '@/components/layout/workspace-context'
 import { cn } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
 import { ArrowRight, Building2, Search, SlidersHorizontal } from 'lucide-react'
@@ -30,6 +31,8 @@ interface Property {
  */
 export default function WorkspaceDashboardPage() {
   const t = useTranslations('workspaceHome')
+  const tb = useTranslations('dash.billing')
+  const role = useWorkspaceRole()
   const params = useParams<{ slug: string }>()
   const slug = params.slug
   const { workspace, loading: wsLoading } = useWorkspace()
@@ -93,7 +96,19 @@ export default function WorkspaceDashboardPage() {
         </div>
         <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
           {/* Members and shared details live in settings; the members list is
-              one page of its own next to it. */}
+              one page of its own next to it. The plan is for owners and admins. */}
+          {role === 'ADMIN' && (
+            <Link
+              href={routes.billing(slug)}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-ctl border border-ink h-9 sm:h-8 px-3',
+                'text-small font-medium text-fg hover:bg-panel transition-colors duration-160',
+                'focus:outline-none focus-visible:ring-2 focus-visible:ring-acc'
+              )}
+            >
+              {tb('nav')}
+            </Link>
+          )}
           <Link
             href={routes.members(slug)}
             className={cn(

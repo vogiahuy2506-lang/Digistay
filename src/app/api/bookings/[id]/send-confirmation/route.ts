@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { emailLocale } from '@/lib/email/i18n'
 import { appSiteUrl } from '@/lib/public-site/paths'
+import { lockedResponse } from '@/lib/billing/guard'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -58,6 +59,8 @@ export async function POST(request: NextRequest, props: RouteParams) {
     if (!isOwner && !isStaff && !isGuest) {
       return NextResponse.json({ success: false, error: 'Không có quyền gửi email' }, { status: 403 })
     }
+    const locked = await lockedResponse(booking.property.workspaceId)
+    if (locked) return locked
 
     // Get site URL. A guest's email: in their booking's language, linking to the site's pages in it.
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'

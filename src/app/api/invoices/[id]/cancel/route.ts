@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -52,6 +53,8 @@ export async function POST(request: NextRequest, props: RouteParams) {
     if (!isOwner && !isStaff) {
       return NextResponse.json({ success: false, error: 'Không có quyền hủy hóa đơn' }, { status: 403 })
     }
+    const locked = await lockedResponseForProperty(invoice.propertyId)
+    if (locked) return locked
 
     // Check if invoice can be cancelled
     if (invoice.status === 'CANCELLED') {

@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { isValidTiers } from '@/lib/bookings/late-checkout'
 import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 const policySchema = z.object({
   checkInTime: z
@@ -117,6 +118,8 @@ export async function PATCH(
         { status: 403 }
       )
     }
+    const locked = await lockedResponseForProperty(params.id)
+    if (locked) return locked
 
     const body = await request.json()
     const validation = policySchema.safeParse(body)

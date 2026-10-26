@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { RoomError, countRooms, parseRoomNumbers, peakTaken } from '@/lib/bookings/rooms'
 import { invalidatePublicSite } from '@/lib/public-site/site'
+import { planResponse } from '@/lib/billing/guard'
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -58,6 +59,21 @@ export async function POST(request: NextRequest, props: Props) {
   const numbers = parseRoomNumbers(parsed.data.numbers)
   if (!numbers) {
     return NextResponse.json({ success: false, error: 'Số phòng chưa đúng (ví dụ: 101-110, 201, 202; tối đa 200 phòng mỗi lần)' }, { status: 400 })
+  }
+
+  // The plan's number of rooms (src/lib/billing): the type's count becomes its active rooms plus these.
+  const typeNow = await prisma.roomType.findFirst({
+    where: { id: parsed.data.roomTypeId, propertyId: id },
+    select: { id: true, isActive: true, totalRooms: true },
+  })
+  if (typeNow) {
+    const [all, active] = await Promise.all([
+      prisma.room.count({ where: { roomTypeId: typeNow.id } }),
+      prisma.room.count({ where: { roomTypeId: typeNow.id, isActive: true } }),
+    ])
+    const after = (all > 0 ? active : 0) + numbers.length
+    const overPlan = await planResponse(workspaceId, 'rooms', typeNow.isActive ? after - typeNow.totalRooms : 0)
+    if (overPlan) return overPlan
   }
 
   try {

@@ -6,5 +6,8 @@
 export function googleSignInConfigured(
   env: Record<string, string | undefined> = process.env,
 ): boolean {
-  return Boolean(env.GOOGLE_CLIENT_ID?.trim() && env.GOOGLE_CLIENT_SECRET?.trim())
+  return real(env.GOOGLE_CLIENT_ID) && real(env.GOOGLE_CLIENT_SECRET)
 }
+
+/** Set, and not .env.production.template's placeholder (PASTE_… / CHANGE_ME). */
+const real = (value: string | undefined) => Boolean(value?.trim()) && !/^(PASTE_|CHANGE_ME)/.test(value!.trim())

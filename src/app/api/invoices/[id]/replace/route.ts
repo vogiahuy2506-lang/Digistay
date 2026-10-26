@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { requireSession, getWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { EinvoiceError } from '@/lib/einvoice/matbao'
 import { createReplacementDraft } from '@/lib/einvoice/replacement'
+import { lockedResponse } from '@/lib/billing/guard'
 
 /**
  * POST /api/invoices/[id]/replace — a draft replacement for an issued
@@ -19,6 +20,8 @@ export async function POST(_request: NextRequest, props: { params: Promise<{ id:
   if (!(WorkspaceRoles.STAFF_AND_UP as readonly string[]).includes(role)) {
     return NextResponse.json({ success: false, error: 'Không có quyền lập hoá đơn thay thế' }, { status: 403 })
   }
+  const locked = await lockedResponse(invoice.property.workspaceId)
+  if (locked) return locked
 
   try {
     const draft = await createReplacementDraft(id, sess.session.user.id)

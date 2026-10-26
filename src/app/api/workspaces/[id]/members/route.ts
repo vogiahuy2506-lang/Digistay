@@ -3,6 +3,7 @@ import { WorkspaceRole } from '@prisma/client'
 import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { lockedResponse } from '@/lib/billing/guard'
 
 const roleChangeSchema = z.object({
   memberId: z.string().min(1),
@@ -122,6 +123,8 @@ export async function PATCH(
         { status: 403 }
       )
     }
+    const locked = await lockedResponse(id)
+    if (locked) return locked
 
     const validation = roleChangeSchema.safeParse(await request.json().catch(() => null))
     if (!validation.success) {
@@ -194,6 +197,8 @@ export async function DELETE(
         { status: 403 }
       )
     }
+    const locked = await lockedResponse(id)
+    if (locked) return locked
 
     const { searchParams } = new URL(request.url)
     const memberId = searchParams.get('memberId')

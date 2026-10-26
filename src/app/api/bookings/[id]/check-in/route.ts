@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 export async function POST(
   request: NextRequest,
@@ -48,6 +49,8 @@ export async function POST(
     if (!isOwner && !isStaff) {
       return NextResponse.json({ success: false, error: 'Không có quyền check-in' }, { status: 403 })
     }
+    const locked = await lockedResponseForProperty(booking.propertyId)
+    if (locked) return locked
 
     // Check booking status
     if (booking.status !== 'CONFIRMED' && booking.status !== 'PENDING') {

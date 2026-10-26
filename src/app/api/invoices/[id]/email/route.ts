@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireSession, getWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { sendInvoiceEmailFor } from '@/lib/einvoice/delivery'
+import { lockedResponse } from '@/lib/billing/guard'
 
 /**
  * POST /api/invoices/[id]/email — send the issued invoice to the buyer now
@@ -21,6 +22,8 @@ export async function POST(_request: NextRequest, props: { params: Promise<{ id:
   if (!(WorkspaceRoles.STAFF_AND_UP as readonly string[]).includes(role)) {
     return NextResponse.json({ success: false, error: 'Không có quyền gửi hoá đơn' }, { status: 403 })
   }
+  const locked = await lockedResponse(invoice.property.workspaceId)
+  if (locked) return locked
   if (invoice.status !== 'PUBLISHED') {
     return NextResponse.json({ success: false, error: 'Chỉ gửi được hoá đơn đã phát hành' }, { status: 409 })
   }

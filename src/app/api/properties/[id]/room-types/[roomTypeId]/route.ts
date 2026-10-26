@@ -3,6 +3,8 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { updateRoomTypeSchema } from '@/lib/validations'
 import { invalidatePublicSite } from '@/lib/public-site/site'
+import { lockedResponse, planResponse } from '@/lib/billing/guard'
+import { roomTypeDelta } from '@/lib/billing/limits'
 
 // Check if user has admin access
 async function checkRoomTypeAdmin(roomTypeId: string, userId: string) {
@@ -130,6 +132,10 @@ export async function PATCH(
       )
     }
 
+    // More rooms (a bigger count, or the type switched back on) count against the plan.
+    const overPlan = await planResponse(roomType.property.workspaceId, 'rooms', roomTypeDelta(roomType, validation.data))
+    if (overPlan) return overPlan
+
     // Update room type
     const updatedRoomType = await prisma.roomType.update({
       where: { id: roomTypeId },
@@ -239,6 +245,8 @@ export async function DELETE(
         { status: 403 }
       )
     }
+    const locked = await lockedResponse(roomType.property.workspaceId)
+    if (locked) return locked
 
     await prisma.roomType.delete({
       where: { id: roomTypeId },

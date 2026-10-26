@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { invalidatePublicSite } from '@/lib/public-site/site'
 import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 const serviceSchema = z.object({
   propertyId: z.string(),
@@ -82,6 +83,8 @@ export async function POST(request: NextRequest) {
     if (!ok) {
       return NextResponse.json({ success: false, error: 'Không có quyền thêm dịch vụ' }, { status: 403 })
     }
+    const locked = await lockedResponseForProperty(validation.data.propertyId)
+    if (locked) return locked
 
     const { translations, ...fields } = validation.data
     const service = await prisma.extraService.create({

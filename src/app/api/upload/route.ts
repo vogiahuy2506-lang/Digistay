@@ -5,6 +5,7 @@ import { uploadImage, UploadError } from '@/lib/cloudinary'
 import { parseImageDataUrl } from '@/lib/media/upload-input'
 import { LIMITS } from '@/lib/security/limits'
 import { hit, tooManyRequests } from '@/lib/security/rate-limit'
+import { lockedResponse } from '@/lib/billing/guard'
 
 /**
  * POST /api/upload { base64, propertyId? | workspaceId? } — store one photo
@@ -17,7 +18,7 @@ import { hit, tooManyRequests } from '@/lib/security/rate-limit'
  * own folder (the logo of a workspace being created). A limited number per
  * hour: each upload uses the shared Cloudinary account's storage. The folder
  * is decided here — digistay/<workspace>/<property>, digistay/users/<user> —
- * never by the browser.
+ * never by the browser. Not for a locked workspace (src/lib/billing).
  */
 export async function POST(request: NextRequest) {
   const session = await requireSession()
@@ -34,11 +35,15 @@ export async function POST(request: NextRequest) {
     const role = property ? await getWorkspaceRole(property.workspaceId, userId) : null
     if (!property || !role) return NextResponse.json({ success: false, error: 'Không tìm thấy khách sạn' }, { status: 404 })
     if (!(WorkspaceRoles.ADMINS_AND_MANAGERS as readonly string[]).includes(role)) return forbidden()
+    const locked = await lockedResponse(property.workspaceId)
+    if (locked) return locked
     folder = `digistay/${property.workspaceId}/${propertyId}`
   } else if (workspaceId) {
     const role = await getWorkspaceRole(workspaceId, userId)
     if (!role) return NextResponse.json({ success: false, error: 'Không tìm thấy workspace' }, { status: 404 })
     if (!(WorkspaceRoles.ADMINS_AND_MANAGERS as readonly string[]).includes(role)) return forbidden()
+    const locked = await lockedResponse(workspaceId)
+    if (locked) return locked
     folder = `digistay/${workspaceId}`
   } else {
     folder = `digistay/users/${userId}`

@@ -13,6 +13,7 @@ import {
   resolver,
 } from '@/lib/custom-domain'
 import { certificateRequest } from '@/lib/public-site/custom-domains'
+import { lockedResponse } from '@/lib/billing/guard'
 
 const bodySchema = z.object({
   propertyId: z.string().min(1),
@@ -62,6 +63,8 @@ export async function POST(request: NextRequest) {
     // The domain decides where the hotel's brand traffic goes.
     const access = await requireWorkspaceRole(property.workspaceId, WorkspaceRoles.ADMINS_AND_MANAGERS)
     if (!access.ok) return access.response
+    const locked = await lockedResponse(property.workspaceId)
+    if (locked) return locked
 
     const root = rootDomain()
     const host = normalizeHostname(body.data.domain, root)

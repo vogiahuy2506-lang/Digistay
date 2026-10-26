@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { getWorkspaceRoleBySlug } from '@/lib/auth/rbac'
 import type { WorkspaceRole } from '@/components/layout/nav'
+import { workspacePlan } from '@/lib/billing/subscription'
+import type { SubscriptionStateName } from '@/lib/billing/period'
 
 export interface WorkspaceShellData {
   workspace: {
@@ -16,6 +18,8 @@ export interface WorkspaceShellData {
   userName?: string
   userEmail?: string
   userImage?: string
+  /** The Digistay plan's state, for the banner (src/components/layout/plan-banner.tsx). */
+  plan: { state: SubscriptionStateName; trial: boolean; planId: string; daysLeft: number; graceDaysLeft: number; periodEnd: string }
 }
 
 /**
@@ -65,7 +69,17 @@ export async function loadWorkspaceShell(slug: string): Promise<WorkspaceShellDa
     orderBy: { createdAt: 'asc' },
   })
 
+  const plan = await workspacePlan(workspace.id)
+
   return {
+    plan: {
+      state: plan.state,
+      trial: plan.subscription.trial,
+      planId: plan.planId,
+      daysLeft: plan.daysLeft,
+      graceDaysLeft: plan.graceDaysLeft,
+      periodEnd: plan.subscription.periodEnd.toISOString(),
+    },
     workspace: { id: workspace.id, name: workspace.name, slug: workspace.slug, role },
     workspaces: userWorkspaces.map((w) => ({
       id: w.id,

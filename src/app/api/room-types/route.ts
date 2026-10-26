@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { invalidatePublicSite } from '@/lib/public-site/site'
 import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
+import { planResponse } from '@/lib/billing/guard'
 
 // GET /api/room-types - Get all room types for a property
 export async function GET(request: NextRequest) {
@@ -111,6 +112,10 @@ export async function POST(request: NextRequest) {
     if (!property) {
       return NextResponse.json({ success: false, error: 'Property not found or access denied' }, { status: 404 })
     }
+
+    // The plan's number of rooms (src/lib/billing).
+    const overPlan = await planResponse(property.workspaceId, 'rooms', totalRooms || 1)
+    if (overPlan) return overPlan
 
     // Generate slug from name
     const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')

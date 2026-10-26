@@ -1,0 +1,103 @@
+{
+  "title": "Gói & thanh toán",
+  "lead": "Gói Digistay của workspace {workspace}: giới hạn, thời hạn và thanh toán.",
+  "nav": "Gói & thanh toán",
+  "state": {
+    "trial": "Dùng thử",
+    "active": "Đang dùng",
+    "grace": "Đã hết hạn",
+    "locked": "Đang khoá"
+  },
+  "current": "Gói hiện tại",
+  "trialOf": "Dùng thử gói {plan}",
+  "validUntil": "Hiệu lực đến {date}",
+  "daysLeft": "còn {days} ngày",
+  "endedOn": "Hết hạn ngày {date}",
+  "graceLeft": "Còn {days} ngày trước khi workspace chuyển sang chỉ xem ({date}).",
+  "lockedSince": "Workspace đang chỉ xem từ {date}. Thanh toán để mở lại ngay.",
+  "usage": "Đã dùng",
+  "limits": {
+    "properties": "Cơ sở",
+    "rooms": "Phòng",
+    "staff": "Tài khoản nhân viên",
+    "invoices": "Hoá đơn điện tử tháng này"
+  },
+  "noInvoices": "Không gồm",
+  "choose": "Chọn gói",
+  "monthly": "Theo tháng",
+  "yearly": "Theo năm",
+  "yearlyBadge": "Tặng {months} tháng",
+  "perMonth": "/ tháng",
+  "perYear": "/ năm",
+  "pay": "Thanh toán {price}",
+  "renew": "Gia hạn {price}",
+  "thisPlan": "Gói đang dùng",
+  "newPeriodNote": "Mỗi lần thanh toán bắt đầu một kỳ mới từ ngày thanh toán; thời gian còn lại của gói hiện tại không được cộng dồn.",
+  "vat": "Giá chưa gồm VAT.",
+  "notReady": "Digistay chưa kết nối PayOS để nhận tiền mua gói, nên chưa thanh toán được. Vui lòng thử lại sau.",
+  "planLimits": "{properties} cơ sở · {rooms} phòng · {staff} nhân viên",
+  "planInvoices": "{count} hoá đơn điện tử / tháng",
+  "planNoInvoices": "Không gồm hoá đơn điện tử",
+  "checkout": {
+    "title": "Quét mã để thanh toán",
+    "lead": "Mở ứng dụng ngân hàng, quét mã VietQR. Số tiền và nội dung đã điền sẵn.",
+    "plan": "Gói",
+    "amount": "Số tiền",
+    "content": "Nội dung",
+    "expires": "Mã hết hạn sau {time}",
+    "expired": "Mã đã hết hạn. Tạo mã mới để thanh toán.",
+    "openPayos": "Mở trang thanh toán PayOS",
+    "check": "Tôi đã chuyển khoản",
+    "checking": "Đang kiểm tra…",
+    "waiting": "Đang chờ tiền về… trang tự cập nhật khi PayOS báo.",
+    "paidTitle": "Đã kích hoạt gói {plan}",
+    "paidLead": "Cảm ơn bạn. Gói có hiệu lực đến {date}. Biên nhận đã gửi qua email.",
+    "close": "Đóng",
+    "newCode": "Tạo mã mới",
+    "qrAlt": "Mã VietQR thanh toán gói Digistay",
+    "resume": "Bạn có một mã thanh toán đang chờ: {plan}, {amount}.",
+    "resumeOpen": "Mở lại mã"
+  },
+  "history": {
+    "title": "Lịch sử thanh toán",
+    "empty": "Chưa có thanh toán nào.",
+    "date": "Ngày",
+    "plan": "Gói",
+    "billing": "Chu kỳ",
+    "amount": "Số tiền",
+    "status": "Trạng thái",
+    "period": "Hiệu lực",
+    "PAID": "Đã thanh toán",
+    "PENDING": "Đang chờ"
+  },
+  "banner": {
+    "trial": "Bạn đang dùng thử Digistay, còn {days} ngày.",
+    "active": "Gói {plan} hết hạn sau {days} ngày.",
+    "grace": "Gói đã hết hạn ngày {date}. Còn {days} ngày trước khi workspace chuyển sang chỉ xem.",
+    "locked": "Workspace đang ở chế độ chỉ xem vì gói đã hết hạn; website tạm ngừng nhận đặt phòng online.",
+    "choose": "Chọn gói",
+    "renew": "Gia hạn",
+    "askOwner": "Liên hệ chủ workspace để gia hạn."
+  },
+  "start": {
+    "title": "Chọn workspace để mua gói",
+    "lead": "Gói gắn với một workspace (một chuỗi khách sạn). Chọn workspace bạn muốn thanh toán.",
+    "none": "Bạn chưa có workspace nào mà bạn là chủ hoặc quản trị. Tạo workspace trước, rồi mua gói.",
+    "goWorkspaces": "Đến danh sách workspace"
+  },
+  "plans": {
+    "starter": {
+      "name": "Starter",
+      "fit": "Homestay, khách sạn nhỏ một cơ sở"
+    },
+    "growth": {
+      "name": "Growth",
+      "fit": "Khách sạn đang mở rộng, vài cơ sở"
+    },
+    "business": {
+      "name": "Business",
+      "fit": "Chuỗi khách sạn và resort"
+    }
+  },
+  "overLimit": "Đang dùng nhiều hơn gói cho phép: dữ liệu vẫn giữ nguyên, nhưng không thêm được {what} cho tới khi nâng gói."
+}

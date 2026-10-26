@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireSession, getWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { lockBooking, syncBookingPayments } from '@/lib/payments/booking-payments'
+import { lockedResponse } from '@/lib/billing/guard'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -49,6 +50,8 @@ export async function POST(request: NextRequest, props: RouteParams) {
         { status: 403 }
       )
     }
+    const locked = await lockedResponse(payment.property.workspaceId)
+    if (locked) return locked
 
     const paidAt = new Date()
     const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || null

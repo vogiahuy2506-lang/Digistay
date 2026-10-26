@@ -7,6 +7,7 @@ import { badParam, dayParam, enumParam, pageParams, paginationOf, searchParam } 
 import { EinvoiceError } from '@/lib/einvoice/matbao'
 import { generateInvoiceNumber, invoiceData, invoiceInputSchema } from '@/lib/einvoice/invoices'
 import type { VatCode } from '@/lib/einvoice/vat'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 // Amounts are computed on the server from the VAT-inclusive total and the
 // property's VAT code (src/lib/einvoice/invoices.ts).
@@ -179,6 +180,8 @@ export async function POST(request: NextRequest) {
     if (!isOwner && !isStaff) {
       return NextResponse.json({ success: false, error: 'Không có quyền tạo hóa đơn' }, { status: 403 })
     }
+    const locked = await lockedResponseForProperty(booking.propertyId)
+    if (locked) return locked
 
     const einvoice = booking.property.einvoice
     if (!einvoice?.verifiedAt) {

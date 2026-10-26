@@ -5,6 +5,7 @@ import { ROOM_SEGMENT_SELECT, withRoomTypeNames } from '@/lib/bookings/room-type
 import { RoomError, assignRoomTx, normalizeRoomNumber, roomConflictMessage, typedRoomNumberConflict } from '@/lib/bookings/rooms'
 import { lockBooking } from '@/lib/payments/booking-payments'
 import { z } from 'zod'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 const updateBookingSchema = z.object({
   guestName: z.string().min(2).optional(),
@@ -131,6 +132,8 @@ export async function PATCH(
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ success: false, error: 'Không có quyền chỉnh sửa' }, { status: 403 })
     }
+    const locked = await lockedResponseForProperty(booking.propertyId)
+    if (locked) return locked
 
     const body = await request.json()
     const validation = updateBookingSchema.safeParse(body)
@@ -268,6 +271,8 @@ export async function DELETE(
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ success: false, error: 'Không có quyền xóa' }, { status: 403 })
     }
+    const locked = await lockedResponseForProperty(booking.propertyId)
+    if (locked) return locked
 
     // Only allow delete for cancelled or no-show bookings
     if (!['CANCELLED', 'NO_SHOW', 'PENDING'].includes(booking.status)) {

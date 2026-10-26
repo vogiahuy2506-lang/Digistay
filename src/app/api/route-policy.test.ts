@@ -54,6 +54,10 @@ const PUBLIC_HANDLERS: Record<string, string> = {
     'scheduled job: checkCronSecret (CRON_SECRET header, timing-safe), and nginx does not route /api/internal/',
   'POST /api/internal/payos-reconcile':
     'scheduled job: checkCronSecret (CRON_SECRET header, timing-safe), and nginx does not route /api/internal/',
+  'POST /api/internal/subscription-jobs':
+    'scheduled job (plan reminders): checkCronSecret (CRON_SECRET header, timing-safe), and nginx does not route /api/internal/',
+  'POST /api/internal/platform-payos/confirm-webhook':
+    "one-off setup of Digistay's PayOS webhook (RUNBOOK): checkCronSecret, and nginx does not route /api/internal/",
   'GET /api/invitations/[token]': 'invitation preview; the unguessable token in the URL is the credential',
   'POST /api/public/bookings':
     'guests book on the hotel site: rate-limited per IP and per email, PENDING, never a payment (create-booking.ts)',
@@ -68,6 +72,8 @@ const PUBLIC_HANDLERS: Record<string, string> = {
     'Mắt Bão tax-office status; the per-property secret token in the URL is the credential (unsigned callbacks); per-IP limit',
   'POST /api/webhooks/payos/[propertyId]':
     "PayOS notifications; the HMAC signature, checked with that property's checksum key, is the credential; per-IP limit",
+  'POST /api/webhooks/payos/digistay':
+    "PayOS notifications for plan payments on Digistay's own account; the HMAC signature (Digistay's checksum key) is the credential; per-IP limit",
   'GET /api/properties/public': 'public property site (name, address, contact, rooms)',
 }
 

@@ -47,6 +47,8 @@ type Kind =
   | 'deposit_received'
   | 'deposit_expired'
   | 'contact_request'
+  | 'subscription_paid'
+  | 'subscription_reminder'
 interface Message {
   to: EmailRecipient
   subject: string

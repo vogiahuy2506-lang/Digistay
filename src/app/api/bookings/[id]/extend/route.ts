@@ -7,6 +7,7 @@ import { quoteStay, ratesFrom } from '@/lib/pricing/quote'
 import { auth } from '@/lib/auth'
 import { lockBooking, syncBookingPayments } from '@/lib/payments/booking-payments'
 import { z } from 'zod'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 const extendSchema = z.object({
   newCheckOutDate: z.string(),
@@ -87,6 +88,8 @@ export async function POST(request: NextRequest, props: RouteParams) {
     if (!isOwner && !isStaff) {
       return NextResponse.json({ success: false, error: 'Không có quyền gia hạn đặt phòng' }, { status: 403 })
     }
+    const locked = await lockedResponseForProperty(booking.propertyId)
+    if (locked) return locked
 
     // Only checked-in or confirmed bookings can be extended
     if (!['CHECKED_IN', 'CONFIRMED'].includes(booking.status)) {

@@ -6,6 +6,7 @@ import { normalizeHostname } from '@/lib/custom-domain'
 import { invalidatePublicSite } from '@/lib/public-site/site'
 import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
+import { lockedResponse } from '@/lib/billing/guard'
 
 // propertyId must be a string: undefined or a filter object reaching
 // Prisma would match the wrong property.
@@ -122,6 +123,8 @@ export async function PUT(request: NextRequest) {
     // Publishing decides whether guests see the site and can book.
     const access = await requireWorkspaceRole(property.workspaceId, WorkspaceRoles.ADMINS_AND_MANAGERS)
     if (!access.ok) return access.response
+    const locked = await lockedResponse(property.workspaceId)
+    if (locked) return locked
     const propertyId = property.id
 
     // The form sends the domain back unchanged, or empty to remove it. A new

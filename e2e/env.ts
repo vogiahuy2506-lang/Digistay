@@ -28,6 +28,12 @@ export const E2E = {
     apiKey: shared('E2E_PAYOS_API_KEY', hex(16)),
     checksumKey: shared('E2E_PAYOS_CHECKSUM_KEY', hex(16)),
   },
+  /** Digistay's own PayOS account, which plan payments go to (src/lib/billing). */
+  platformPayos: {
+    clientId: 'e2e-digistay-0001',
+    apiKey: shared('E2E_PLATFORM_PAYOS_API_KEY', hex(16)),
+    checksumKey: shared('E2E_PLATFORM_PAYOS_CHECKSUM_KEY', hex(16)),
+  },
   matbaoAccount: {
     taxCode: '0312345678',
     username: 'ks-demo',

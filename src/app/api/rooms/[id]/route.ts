@@ -6,6 +6,7 @@ import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { ACTIVE_BOOKING_STATUSES } from '@/lib/bookings/occupancy'
 import { RoomError, countRooms, normalizeRoomNumber, peakTaken } from '@/lib/bookings/rooms'
 import { invalidatePublicSite } from '@/lib/public-site/site'
+import { lockedResponse, planResponse } from '@/lib/billing/guard'
 
 type Props = { params: Promise<{ id: string }> }
 type Tx = Prisma.TransactionClient
@@ -63,6 +64,10 @@ export async function PATCH(request: NextRequest, props: Props) {
   if (!parsed.success) return NextResponse.json({ success: false, error: 'Thông tin phòng chưa đúng' }, { status: 400 })
   const number = parsed.data.number ? normalizeRoomNumber(parsed.data.number) : undefined
 
+  // A room put back in use counts against the plan (src/lib/billing).
+  const overPlan = await planResponse(room.property.workspaceId, 'rooms', parsed.data.isActive === true && !room.isActive ? 1 : 0)
+  if (overPlan) return overPlan
+
   try {
     const updated = await prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM room_types WHERE id = ${room.roomTypeId} FOR UPDATE`
@@ -107,6 +112,8 @@ export async function DELETE(_request: NextRequest, props: Props) {
   // Owner, admins and managers change the hotel's rooms.
   const access = await requireWorkspaceRole(room.property.workspaceId, WorkspaceRoles.ADMINS_AND_MANAGERS)
   if (!access.ok) return access.response
+  const locked = await lockedResponse(room.property.workspaceId)
+  if (locked) return locked
   const userId = access.userId
 
   try {

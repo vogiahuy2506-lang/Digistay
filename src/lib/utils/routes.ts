@@ -49,6 +49,7 @@ export const routes = {
   // Workspace-scoped
   members: (slug: string) => `/workspace/${slug}/members`,
   settings: (slug: string) => `/workspace/${slug}/settings`,
+  billing: (slug: string) => `/workspace/${slug}/billing`,
 
   // Public
   publicSite: (subdomain: string) => `/${subdomain}`,

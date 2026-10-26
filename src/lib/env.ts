@@ -50,6 +50,10 @@ const schema = z.object({
   // OAuth (optional)
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
+  // Digistay's own PayOS account, for plan payments (src/lib/billing/platform-payos.ts)
+  DIGISTAY_PAYOS_CLIENT_ID: z.string().optional(),
+  DIGISTAY_PAYOS_API_KEY: z.string().optional(),
+  DIGISTAY_PAYOS_CHECKSUM_KEY: z.string().optional(),
 
   // Email — optional; without RESEND_API_KEY the mailer just logs to
   // the console and reports sent=false to the caller.

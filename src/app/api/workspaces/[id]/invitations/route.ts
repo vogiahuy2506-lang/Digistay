@@ -7,6 +7,7 @@ import { inviteMemberSchema } from '@/lib/validations'
 import { generateRandomToken } from '@/lib/utils'
 import { LIMITS } from '@/lib/security/limits'
 import { hit, tooManyRequests } from '@/lib/security/rate-limit'
+import { planResponse } from '@/lib/billing/guard'
 
 // Check if user is workspace admin or owner
 async function checkWorkspaceAdmin(workspaceId: string, userId: string) {
@@ -157,6 +158,10 @@ export async function POST(
         { status: 400 }
       )
     }
+
+    // An open invitation takes a staff seat of the plan (src/lib/billing).
+    const overPlan = await planResponse(id, 'staff', 1)
+    if (overPlan) return overPlan
 
     // Find user by email
     const invitedUser = await prisma.user.findUnique({

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
+import { lockedResponse } from '@/lib/billing/guard'
 
 const bankAccountSchema = z.object({
   propertyId: z.string(),
@@ -84,6 +85,9 @@ export async function POST(request: NextRequest) {
     if (!property) {
       return NextResponse.json({ success: false, error: 'Không có quyền thêm tài khoản' }, { status: 403 })
     }
+
+    const locked = await lockedResponse(property.workspaceId)
+    if (locked) return locked
 
     const bankAccount = await prisma.bankAccount.create({
       data: {

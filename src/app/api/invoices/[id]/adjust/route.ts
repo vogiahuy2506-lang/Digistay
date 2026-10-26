@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { requireSession, getWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { EinvoiceError } from '@/lib/einvoice/matbao'
 import { adjustmentInputSchema, createAdjustmentDraft } from '@/lib/einvoice/adjustment'
+import { lockedResponse } from '@/lib/billing/guard'
 
 /**
  * POST /api/invoices/[id]/adjust — a draft adjustment (increase or
@@ -20,6 +21,8 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
   if (!(WorkspaceRoles.STAFF_AND_UP as readonly string[]).includes(role)) {
     return NextResponse.json({ success: false, error: 'Không có quyền lập hoá đơn điều chỉnh' }, { status: 403 })
   }
+  const locked = await lockedResponse(invoice.property.workspaceId)
+  if (locked) return locked
 
   const validation = adjustmentInputSchema.safeParse(await request.json().catch(() => null))
   if (!validation.success) {

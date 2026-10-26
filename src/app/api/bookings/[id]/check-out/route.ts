@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { lateCheckoutFee } from '@/lib/bookings/late-checkout'
 import { lockBooking, syncBookingPayments } from '@/lib/payments/booking-payments'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 /**
  * Check-out. The late fee is a suggestion (src/lib/bookings/late-checkout.ts):
@@ -131,6 +132,8 @@ export async function POST(
     const found = await bookingForStaff(id, session)
     if (found.error) return found.error
     const { booking } = found
+    const locked = await lockedResponseForProperty(booking.propertyId)
+    if (locked) return locked
 
     const parsed = checkOutSchema.safeParse(body ?? {})
     if (!parsed.success) {

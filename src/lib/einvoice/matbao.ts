@@ -30,6 +30,8 @@ import { decryptSecret, encryptSecret, secretContext } from '@/lib/security/secr
 import { vndToWords } from './amount-words'
 import { MatbaoClient, MatbaoError, type MatbaoEnvironment } from './matbao-client'
 import { isVatCode, splitGross, type VatCode } from './vat'
+import { WORKSPACE_LOCKED, isWorkspaceLocked } from '@/lib/billing/guard'
+import { planLimitProblem } from '@/lib/billing/limits'
 
 /** Longer than a login plus a create call, both 30 s at most. */
 export const PUBLISH_LEASE_MS = 2 * 60 * 1000
@@ -332,6 +334,14 @@ export async function publishInvoice(invoiceId: string, userId: string | null, n
   if (invoice.status === 'PUBLISHED') throw new EinvoiceError('Hoá đơn đã được phát hành', 409)
   if (invoice.status === 'CANCELLED' || invoice.status === 'REPLACED') {
     throw new EinvoiceError('Hoá đơn đã huỷ, không phát hành được', 409)
+  }
+  // The plan (src/lib/billing): no publishing while the workspace is locked, nor
+  // past its e-invoices this month. The reason stays on the invoice for staff.
+  const { workspaceId } = await prisma.property.findUniqueOrThrow({ where: { id: invoice.propertyId }, select: { workspaceId: true } })
+  const planProblem = (await isWorkspaceLocked(workspaceId)) ? WORKSPACE_LOCKED : await planLimitProblem(workspaceId, 'invoices', 1)
+  if (planProblem) {
+    await prisma.invoice.updateMany({ where: { id: invoiceId, status: { in: ['DRAFT', 'PENDING'] } }, data: { publishError: planProblem } })
+    throw new EinvoiceError(planProblem, planProblem === WORKSPACE_LOCKED ? 402 : 403)
   }
   const config = await verifiedConfig(invoice.propertyId)
   // Invoices created before this part have no VAT code: use the property's.

@@ -7,6 +7,7 @@ import { badParam, dayParam, enumParam, pageParams, paginationOf, searchParam } 
 import { WorkspaceRoles } from '@/lib/auth/rbac'
 import { lockBooking, syncBookingPayments, CLOSED_BOOKING_STATUSES } from '@/lib/payments/booking-payments'
 import { PayosError, createPayosLink, newOrderCode } from '@/lib/payments/payos'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 // PAYOS: a VietQR link from the property's own PayOS account, confirmed
 // automatically by webhook (src/lib/payments/payos.ts).
@@ -197,6 +198,8 @@ export async function POST(request: NextRequest) {
     if (!isMember && !isGuest) {
       return NextResponse.json({ success: false, error: 'Không có quyền tạo thanh toán' }, { status: 403 })
     }
+    const locked = await lockedResponseForProperty(booking.propertyId)
+    if (locked) return locked
 
     // CASH is marked PAID on creation, i.e. it confirms money received, so
     // only staff of this property may record it. Otherwise a guest could

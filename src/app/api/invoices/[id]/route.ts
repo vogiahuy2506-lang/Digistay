@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { EinvoiceError } from '@/lib/einvoice/matbao'
 import { assertEditable, invoiceData, invoiceInputSchema } from '@/lib/einvoice/invoices'
 import { isVatCode, type VatCode } from '@/lib/einvoice/vat'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 // The whole buyer and amount, as when creating; amounts are recomputed on
 // the server. Provider, template and series come from the property.
@@ -113,6 +114,8 @@ export async function PUT(request: NextRequest, props: RouteParams) {
     if (!isOwner && !isStaff) {
       return NextResponse.json({ success: false, error: 'Không có quyền chỉnh sửa hóa đơn' }, { status: 403 })
     }
+    const locked = await lockedResponseForProperty(invoice.propertyId)
+    if (locked) return locked
 
     assertEditable(invoice)
     if (invoice.adjustsInvoiceId) {
@@ -222,6 +225,8 @@ export async function DELETE(request: NextRequest, props: RouteParams) {
     if (!isOwner && !isStaff) {
       return NextResponse.json({ success: false, error: 'Không có quyền xóa hóa đơn' }, { status: 403 })
     }
+    const locked = await lockedResponseForProperty(invoice.propertyId)
+    if (locked) return locked
 
     assertEditable(invoice)
 

@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { inkButton, textLink } from '@/components/marketing/styles'
 import { AUTH_ERROR_KEYS } from '@/lib/auth/error-messages'
+import { afterLogin } from '@/lib/auth/after-login'
 import { cn } from '@/lib/utils'
 import {
   CodeInput,
@@ -50,9 +51,13 @@ export function RegisterForm({ google }: { google: boolean }) {
   const [codeError, setCodeError] = React.useState<'wrong' | 'tooMany' | string | null>(null)
   const [resent, setResent] = React.useState(false)
   const [cooldown, startCooldown] = useCountdown()
+  // Where to go once the account is ready: ?callbackUrl= (a plan picked on the pricing page, say).
+  const [next, setNext] = React.useState('/workspaces')
+  const withNext = (path: string) => (next === '/workspaces' ? path : `${path}${path.includes('?') ? '&' : '?'}callbackUrl=${encodeURIComponent(next)}`)
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search)
+    setNext(afterLogin(params.get('callbackUrl')))
     const fromLogin = params.get('email')
     if (fromLogin && params.get('resend') === '1') {
       setEmail(fromLogin)
@@ -129,11 +134,12 @@ export function RegisterForm({ google }: { google: boolean }) {
   // Signs in with what was just typed; back from the login page there is no password: sign in there.
   const finish = async () => {
     if (!form.password) {
-      router.push('/login?verified=1')
+      router.push(withNext('/login?verified=1'))
       return
     }
-    const result = await signIn('credentials', { username: form.username, password: form.password, redirect: false })
-    router.push(result?.error ? '/login?verified=1' : '/workspaces')
+    // callbackUrl: next-auth reads `error` back from the URL it returns (see LoginForm).
+    const result = await signIn('credentials', { username: form.username, password: form.password, redirect: false, callbackUrl: next })
+    router.push(result?.error ? withNext('/login?verified=1') : next)
   }
 
   const verify = async (e?: React.FormEvent) => {
@@ -254,7 +260,7 @@ export function RegisterForm({ google }: { google: boolean }) {
       setGoogleTried(true)
       return
     }
-    signIn('google', { callbackUrl: '/workspaces' })
+    signIn('google', { callbackUrl: next })
   }
 
   return (
@@ -264,7 +270,7 @@ export function RegisterForm({ google }: { google: boolean }) {
         <div>
           <h1 className={authTitle}>{t('register.title')}</h1>
           <p className="mt-3 text-[15px] text-fg/80">
-            {t.rich('register.haveAccount', { link: (c) => <Link href="/login" className={cn(textLink, 'underline')}>{c}</Link> })}
+            {t.rich('register.haveAccount', { link: (c) => <Link href={withNext('/login')} className={cn(textLink, 'underline')}>{c}</Link> })}
           </p>
         </div>
         {/* Beside the title, not above the fields, so the step still fits one laptop screen */}

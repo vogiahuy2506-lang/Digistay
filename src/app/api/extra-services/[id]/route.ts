@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { invalidatePublicSite } from '@/lib/public-site/site'
 import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
+import { lockedResponse } from '@/lib/billing/guard'
 
 const updateSchema = z.object({
   name: z.string().min(2).optional(),
@@ -57,6 +58,8 @@ export async function PATCH(
     if (!authz.ok) {
       return NextResponse.json({ success: false, error: authz.error }, { status: authz.status })
     }
+    const locked = await lockedResponse(authz.service.property.workspaceId)
+    if (locked) return locked
 
     const body = await request.json()
     const validation = updateSchema.safeParse(body)
@@ -94,6 +97,8 @@ export async function DELETE(
     if (!authz.ok) {
       return NextResponse.json({ success: false, error: authz.error }, { status: authz.status })
     }
+    const locked = await lockedResponse(authz.service.property.workspaceId)
+    if (locked) return locked
     const deleted = await prisma.extraService.delete({ where: { id: params.id } })
     invalidatePublicSite(deleted.propertyId)
     return NextResponse.json({ success: true, message: 'Đã xóa dịch vụ' })

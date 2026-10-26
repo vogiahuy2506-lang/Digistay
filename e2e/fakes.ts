@@ -5,7 +5,8 @@
  *
  *   GET  /ready                  → 200 once everything listens
  *   POST /payos/pay/<orderCode>  → the guest pays; the signed webhook is
- *                                  delivered to the app; { webhookStatus }
+ *                                  delivered to the app (Digistay's own
+ *                                  webhook for a plan payment); { webhookStatus }
  *   GET  /matbao/calls           → the create-invoice payloads received
  *   GET  /mail                   → the emails received (raw MIME)
  *   GET  /v2/business/<taxCode>  → the tax register lookup (TAX_LOOKUP_BASE_URL)
@@ -24,6 +25,7 @@ payos.deliver = async (url, body) => {
   return res.status
 }
 payos.addAccount(E2E.payosAccount)
+payos.addAccount(E2E.platformPayos)
 
 const matbao = new FakeMatbao()
 matbao.addAccount({
@@ -92,7 +94,9 @@ const control = http.createServer(async (req, res) => {
   if (req.method === 'POST' && pay) {
     try {
       const body = await payos.pay(Number(pay[1]))
-      const r = await fetch(payosWebhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      // A plan payment is on Digistay's account, whose webhook is registered once outside the tests.
+      const platform = payos.links.get(Number(pay[1]))?.account.clientId === E2E.platformPayos.clientId
+      const r = await fetch(platform ? `${E2E.baseURL}/api/webhooks/payos/digistay` : payosWebhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       return json(res, 200, { webhookStatus: r.status })
     } catch (error) {
       return json(res, 400, { error: String(error) })

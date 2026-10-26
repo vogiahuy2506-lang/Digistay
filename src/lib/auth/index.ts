@@ -8,6 +8,7 @@ import { isSessionRevoked, SessionRevokedError } from './session-revocation'
 import { requireSecondFactorIfEnabled } from './two-factor'
 import { authorizeWithSecondFactor, googleSignInGate } from './two-factor-login'
 import { TWO_FACTOR_PROVIDER } from './two-factor-shared'
+import { createDefaultWorkspace } from './default-workspace'
 
 export { getServerSession }
 
@@ -105,8 +106,12 @@ export const authOptions: NextAuthOptions = {
     },
   },
   events: {
+    // Only next-auth's adapter makes users here (a first Google sign-in); the
+    // sign-up form makes its own workspace (api/auth/register).
     async createUser({ user }) {
-      console.log('New user created:', user.email)
+      await createDefaultWorkspace(user.id, user.name || user.email || 'Digistay').catch((error) =>
+        console.error('[auth] default workspace for a Google account failed:', error),
+      )
     },
     async signIn({ user }) {
       console.log('User signed in:', user.email)

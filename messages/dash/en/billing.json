@@ -1,0 +1,103 @@
+{
+  "title": "Plan & billing",
+  "lead": "The Digistay plan of {workspace}: limits, dates and payments.",
+  "nav": "Plan & billing",
+  "state": {
+    "trial": "Trial",
+    "active": "Active",
+    "grace": "Expired",
+    "locked": "Locked"
+  },
+  "current": "Current plan",
+  "trialOf": "{plan} trial",
+  "validUntil": "Valid until {date}",
+  "daysLeft": "{days} days left",
+  "endedOn": "Ended on {date}",
+  "graceLeft": "{days} days before the workspace becomes read-only ({date}).",
+  "lockedSince": "The workspace has been read-only since {date}. Pay to unlock it now.",
+  "usage": "Used",
+  "limits": {
+    "properties": "Properties",
+    "rooms": "Rooms",
+    "staff": "Staff accounts",
+    "invoices": "E-invoices this month"
+  },
+  "noInvoices": "Not included",
+  "choose": "Choose a plan",
+  "monthly": "Monthly",
+  "yearly": "Yearly",
+  "yearlyBadge": "{months} months free",
+  "perMonth": "/ month",
+  "perYear": "/ year",
+  "pay": "Pay {price}",
+  "renew": "Renew {price}",
+  "thisPlan": "Current plan",
+  "newPeriodNote": "Each payment starts a new period on the day it is paid; what is left of the current plan does not carry over.",
+  "vat": "Prices exclude VAT.",
+  "notReady": "Digistay has not connected PayOS for plan payments yet, so paying is not possible right now. Please try again later.",
+  "planLimits": "{properties} properties · {rooms} rooms · {staff} staff",
+  "planInvoices": "{count} e-invoices / month",
+  "planNoInvoices": "No e-invoices",
+  "checkout": {
+    "title": "Scan to pay",
+    "lead": "Open your banking app and scan the VietQR code. The amount and transfer note are filled in.",
+    "plan": "Plan",
+    "amount": "Amount",
+    "content": "Transfer note",
+    "expires": "Code expires in {time}",
+    "expired": "The code has expired. Make a new one to pay.",
+    "openPayos": "Open the PayOS payment page",
+    "check": "I have transferred",
+    "checking": "Checking…",
+    "waiting": "Waiting for the money… this page updates when PayOS confirms.",
+    "paidTitle": "{plan} plan activated",
+    "paidLead": "Thank you. The plan is valid until {date}. The receipt was sent by email.",
+    "close": "Close",
+    "newCode": "Make a new code",
+    "qrAlt": "VietQR code for the Digistay plan payment",
+    "resume": "You have a payment code waiting: {plan}, {amount}.",
+    "resumeOpen": "Open the code"
+  },
+  "history": {
+    "title": "Payment history",
+    "empty": "No payments yet.",
+    "date": "Date",
+    "plan": "Plan",
+    "billing": "Billing",
+    "amount": "Amount",
+    "status": "Status",
+    "period": "Valid",
+    "PAID": "Paid",
+    "PENDING": "Waiting"
+  },
+  "banner": {
+    "trial": "You are on the Digistay trial, {days} days left.",
+    "active": "The {plan} plan ends in {days} days.",
+    "grace": "The plan ended on {date}. {days} days before the workspace becomes read-only.",
+    "locked": "The workspace is read-only because the plan has ended; the website has stopped taking online bookings.",
+    "choose": "Choose a plan",
+    "renew": "Renew",
+    "askOwner": "Ask the workspace owner to renew."
+  },
+  "start": {
+    "title": "Choose the workspace to pay for",
+    "lead": "A plan belongs to one workspace (one hotel group). Choose the one you want to pay for.",
+    "none": "You have no workspace you own or administer. Create one first, then buy a plan.",
+    "goWorkspaces": "Go to your workspaces"
+  },
+  "plans": {
+    "starter": {
+      "name": "Starter",
+      "fit": "Homestays and small single-property hotels"
+    },
+    "growth": {
+      "name": "Growth",
+      "fit": "Growing hotels with a few properties"
+    },
+    "business": {
+      "name": "Business",
+      "fit": "Hotel chains and resorts"
+    }
+  },
+  "overLimit": "Using more than the plan allows: nothing is removed, but no more {what} can be added until you upgrade."
+}

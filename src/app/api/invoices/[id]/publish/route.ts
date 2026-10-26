@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { requireSession, getWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { EinvoiceError, publishInvoice } from '@/lib/einvoice/matbao'
 import { emailAfterResponse } from '@/lib/einvoice/delivery'
+import { lockedResponse } from '@/lib/billing/guard'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -30,6 +31,8 @@ export async function POST(_request: NextRequest, props: RouteParams) {
   if (!(WorkspaceRoles.STAFF_AND_UP as readonly string[]).includes(role)) {
     return NextResponse.json({ success: false, error: 'Không có quyền phát hành hóa đơn' }, { status: 403 })
   }
+  const locked = await lockedResponse(invoice.property.workspaceId)
+  if (locked) return locked
 
   try {
     const published = await publishInvoice(id, sess.session.user.id)

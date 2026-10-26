@@ -22,7 +22,7 @@ const darkReadyPaths: RegExp[] = [
   /^\/profile\/?$/,
   /^\/admin\/system\/?$/,
   /^\/workspace\/[^/]+\/?$/,
-  /^\/workspace\/[^/]+\/(members|settings)\/?$/,
+  /^\/workspace\/[^/]+\/(members|settings|billing)\/?$/,
   /^\/workspace\/[^/]+\/properties(\/new)?\/?$/,
   /^\/workspace\/[^/]+\/properties\/[^/]+\/?$/,
   /^\/workspace\/[^/]+\/properties\/[^/]+\/bookings(\/[^/]+)?\/?$/,

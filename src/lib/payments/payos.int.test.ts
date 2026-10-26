@@ -445,6 +445,8 @@ describe('scheduled reconcile', () => {
         checked: 4, paid: 1, expired: 1, cancelled: 0, errors: 1,
         // then guest deposits past their deadline (guest-deposit.int.test.ts): none here
         deposits: { checked: 0, cancelled: 0, paid: 0, errors: 0 },
+        // then plan payments on Digistay's own account (src/lib/billing): not set up here
+        plans: { checked: 0, paid: 0, failed: 0 },
       })
       expect(warn.mock.calls.some(([m]) => String(m).includes('paid without a webhook'))).toBe(true)
 
@@ -455,7 +457,7 @@ describe('scheduled reconcile', () => {
       expect((await bookingOf(a.booking.id)).depositAmount).toBe(300_000)
 
       // Running again changes nothing and checks only what is still pending.
-      expect((await (await run(SECRET)).json()).data).toEqual({ checked: 2, paid: 0, expired: 0, cancelled: 0, errors: 1, deposits: { checked: 0, cancelled: 0, paid: 0, errors: 0 } })
+      expect((await (await run(SECRET)).json()).data).toEqual({ checked: 2, paid: 0, expired: 0, cancelled: 0, errors: 1, deposits: { checked: 0, cancelled: 0, paid: 0, errors: 0 }, plans: { checked: 0, paid: 0, failed: 0 } })
       expect(await prisma.activityLog.count({ where: { action: 'PAYOS_PAID' } })).toBe(1)
     } finally {
       if (previous === undefined) delete process.env.CRON_SECRET
