@@ -161,7 +161,7 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
     phòng, chặn trùng đêm với đơn khác, chặn phòng bảo trì / ngừng dùng; sang hạng khác chỉ khi hạng đó
     còn phòng mọi đêm, giá giữ nguyên. Số phòng là một phòng của cả khách sạn (không phân biệt hoa
     thường): số gõ tay cũng bị chặn trùng (khoá advisory theo số). Bảo trì có thể khoá một phòng
-    (`RoomLock.roomId`). Sơ đồ phòng × ngày: `room-timeline.tsx` trong trang Lịch phòng.
+    (`RoomLock.roomId`). Sơ đồ phòng × ngày: `room-timeline.tsx`, chế độ "Sơ đồ phòng" của trang Đặt phòng (`/calendar?view=rooms`; Danh sách | Lịch tháng | Sơ đồ phòng: `src/components/bookings/bookings-views.tsx`). Số liệu hôm nay ở Tổng quan (`src/components/property/today-overview.tsx`).
   - Tạo đơn: chỉ qua `src/lib/bookings/create-booking.ts` (nhân viên `POST /api/bookings`, khách
     `POST /api/public/bookings`), dưới khoá dòng hạng phòng. `subtotal` = tiền phòng,
     `extraCharges` = phụ thu + dịch vụ, `totalAmount` = tổng.
