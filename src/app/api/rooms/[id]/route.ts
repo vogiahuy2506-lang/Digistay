@@ -6,7 +6,8 @@ import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { ACTIVE_BOOKING_STATUSES } from '@/lib/bookings/occupancy'
 import { RoomError, countRooms, normalizeRoomNumber, peakTaken } from '@/lib/bookings/rooms'
 import { invalidatePublicSite } from '@/lib/public-site/site'
-import { lockedResponse, planResponse } from '@/lib/billing/guard'
+import { lockedResponseForProperty, planResponseForProperty } from '@/lib/billing/guard'
+import { reconcileOverageSoon } from '@/lib/billing/overage'
 
 type Props = { params: Promise<{ id: string }> }
 type Tx = Prisma.TransactionClient
@@ -15,7 +16,7 @@ type Tx = Prisma.TransactionClient
 function roomOf(id: string) {
   return prisma.room.findUnique({
     where: { id },
-    select: { id: true, number: true, propertyId: true, roomTypeId: true, isActive: true, property: { select: { workspaceId: true } } },
+    select: { id: true, number: true, propertyId: true, roomTypeId: true, isActive: true, roomType: { select: { planLockedAt: true } }, property: { select: { workspaceId: true } } },
   })
 }
 
@@ -64,8 +65,12 @@ export async function PATCH(request: NextRequest, props: Props) {
   if (!parsed.success) return NextResponse.json({ success: false, error: 'Thông tin phòng chưa đúng' }, { status: 400 })
   const number = parsed.data.number ? normalizeRoomNumber(parsed.data.number) : undefined
 
-  // A room put back in use counts against the plan (src/lib/billing).
-  const overPlan = await planResponse(room.property.workspaceId, 'rooms', parsed.data.isActive === true && !room.isActive ? 1 : 0)
+  // A room put back in use counts against the plan (src/lib/billing), unless its type is locked for being over it.
+  const overPlan = await planResponseForProperty(
+    room.propertyId,
+    'rooms',
+    parsed.data.isActive === true && !room.isActive && !room.roomType.planLockedAt ? 1 : 0,
+  )
   if (overPlan) return overPlan
 
   try {
@@ -96,6 +101,8 @@ export async function PATCH(request: NextRequest, props: Props) {
       return saved
     })
     invalidatePublicSite(room.propertyId)
+    // A room out of use: something locked over the plan may fit again.
+    if (parsed.data.isActive === false && room.isActive) reconcileOverageSoon(room.property.workspaceId)
     return NextResponse.json({ success: true, data: updated })
   } catch (error) {
     if (error instanceof RoomError) return NextResponse.json({ success: false, error: error.message }, { status: error.status })
@@ -112,7 +119,7 @@ export async function DELETE(_request: NextRequest, props: Props) {
   // Owner, admins and managers change the hotel's rooms.
   const access = await requireWorkspaceRole(room.property.workspaceId, WorkspaceRoles.ADMINS_AND_MANAGERS)
   if (!access.ok) return access.response
-  const locked = await lockedResponse(room.property.workspaceId)
+  const locked = await lockedResponseForProperty(room.propertyId)
   if (locked) return locked
   const userId = access.userId
 
@@ -129,6 +136,7 @@ export async function DELETE(_request: NextRequest, props: Props) {
       })
     })
     invalidatePublicSite(room.propertyId)
+    reconcileOverageSoon(room.property.workspaceId)
     return NextResponse.json({ success: true })
   } catch (error) {
     if (error instanceof RoomError) return NextResponse.json({ success: false, error: error.message }, { status: error.status })

@@ -16,7 +16,7 @@ async function checkWorkspaceAdmin(workspaceId: string, userId: string) {
       id: workspaceId,
       OR: [
         { ownerId: userId },
-        { members: { some: { userId, role: 'ADMIN' } } },
+        { members: { some: { userId, role: 'ADMIN', planLockedAt: null } } },
       ],
     },
   })

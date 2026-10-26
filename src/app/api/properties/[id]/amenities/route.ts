@@ -28,7 +28,7 @@ export async function GET(
         workspace: {
           OR: [
             { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id } } },
+            { members: { some: { userId: session.user.id, planLockedAt: null } } },
           ],
         },
       },
@@ -85,7 +85,7 @@ export async function PUT(
         workspace: {
           OR: [
             { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER'] } } } },
+            { members: { some: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER'] }, planLockedAt: null } } },
           ],
         },
       },

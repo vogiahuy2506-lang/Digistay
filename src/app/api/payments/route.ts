@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
               select: {
                 ownerId: true,
                 members: {
-                  where: { userId: session.user.id },
+                  where: { userId: session.user.id, planLockedAt: null },
                   select: { role: true },
                 },
               },

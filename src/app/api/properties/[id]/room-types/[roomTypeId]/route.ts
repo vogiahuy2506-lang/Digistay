@@ -3,7 +3,8 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { updateRoomTypeSchema } from '@/lib/validations'
 import { invalidatePublicSite } from '@/lib/public-site/site'
-import { lockedResponse, planResponse } from '@/lib/billing/guard'
+import { lockedResponseForProperty, planResponseForProperty } from '@/lib/billing/guard'
+import { reconcileOverageSoon } from '@/lib/billing/overage'
 import { roomTypeDelta } from '@/lib/billing/limits'
 
 // Check if user has admin access
@@ -15,7 +16,7 @@ async function checkRoomTypeAdmin(roomTypeId: string, userId: string) {
         workspace: {
           OR: [
             { ownerId: userId },
-            { members: { some: { userId, role: 'ADMIN' } } },
+            { members: { some: { userId, role: 'ADMIN', planLockedAt: null } } },
           ],
         },
       },
@@ -56,7 +57,7 @@ export async function GET(
           workspace: {
             OR: [
               { ownerId: session.user.id },
-              { members: { some: { userId: session.user.id } } },
+              { members: { some: { userId: session.user.id, planLockedAt: null } } },
             ],
           },
         },
@@ -133,7 +134,8 @@ export async function PATCH(
     }
 
     // More rooms (a bigger count, or the type switched back on) count against the plan.
-    const overPlan = await planResponse(roomType.property.workspaceId, 'rooms', roomTypeDelta(roomType, validation.data))
+    const delta = roomTypeDelta(roomType, validation.data)
+    const overPlan = await planResponseForProperty(roomType.property.id, 'rooms', delta)
     if (overPlan) return overPlan
 
     // Update room type
@@ -157,6 +159,8 @@ export async function PATCH(
 
     // The site shows room types, their amenities and images.
     invalidatePublicSite(roomType.property.id)
+    // Fewer rooms (or a locked type turned off): something locked over the plan may fit again.
+    if (delta < 0 || roomType.planLockedAt) reconcileOverageSoon(roomType.property.workspaceId)
 
     // Update amenities if provided
     if (amenityIds !== undefined) {
@@ -245,13 +249,14 @@ export async function DELETE(
         { status: 403 }
       )
     }
-    const locked = await lockedResponse(roomType.property.workspaceId)
+    const locked = await lockedResponseForProperty(roomType.property.id)
     if (locked) return locked
 
     await prisma.roomType.delete({
       where: { id: roomTypeId },
     })
     invalidatePublicSite(roomType.property.id)
+    reconcileOverageSoon(roomType.property.workspaceId)
 
     // Log activity
     await prisma.activityLog.create({

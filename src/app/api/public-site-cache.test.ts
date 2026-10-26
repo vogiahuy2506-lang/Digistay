@@ -37,6 +37,11 @@ const EXEMPT: Record<string, string> = {
   'DELETE /api/website/ssl/provision': 'clears the SSL status, which the site does not show',
 }
 
+/** Library code that writes those models on its own (a job), and drops the cache itself. */
+const LIB_WRITERS: Record<string, string> = {
+  'src/lib/billing/overage.ts': 'locks and unlocks properties and room types over the plan (the plan jobs)',
+}
+
 function files(dir: string, keep: (f: string) => boolean): string[] {
   return readdirSync(dir).flatMap((name) => {
     const full = path.join(dir, name)
@@ -66,8 +71,9 @@ describe('public site cache', () => {
   it('no library code writes those models behind the handlers’ back', () => {
     const writers = files(LIB, (f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))
       .filter((f) => WRITE.test(readFileSync(f, 'utf8')))
-      .map((f) => path.relative(process.cwd(), f))
-    expect(writers).toEqual([])
+      .map((f) => path.relative(process.cwd(), f).split(path.sep).join('/'))
+    expect(writers.filter((f) => !LIB_WRITERS[f])).toEqual([])
+    for (const f of Object.keys(LIB_WRITERS)) expect(readFileSync(f, 'utf8'), f).toContain('invalidatePublicSite(')
   })
 
   it('every exemption still exists (a stale entry would hide nothing)', () => {

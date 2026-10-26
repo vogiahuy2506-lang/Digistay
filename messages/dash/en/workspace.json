@@ -150,7 +150,9 @@
       "roleHint": "Admins can manage properties and invite other members",
       "send": "Send invitation"
     },
-    "pending": "Pending invitations"
+    "pending": "Pending invitations",
+    "planLocked": "Locked",
+    "planLockedNote": "No access: the workspace is over its plan’s staff limit."
   },
   "settings": {
     "back": "Back to workspace",

@@ -1004,7 +1004,9 @@
       "delete": "Xoá workspace",
       "deleteConfirm": "Xoá workspace “{name}”? Toàn bộ cơ sở và thành viên sẽ mất vĩnh viễn."
     },
-    "current": "Đang chọn"
+    "current": "Đang chọn",
+    "planLocked": "Bị khoá",
+    "planLockedNote": "Tài khoản của bạn trong workspace này đang bị khoá vì workspace dùng vượt giới hạn gói. Liên hệ chủ workspace."
   },
   "workspaceHome": {
     "title": "Cơ sở của bạn",

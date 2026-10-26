@@ -5,7 +5,7 @@ import { uploadImage, UploadError } from '@/lib/cloudinary'
 import { parseImageDataUrl } from '@/lib/media/upload-input'
 import { LIMITS } from '@/lib/security/limits'
 import { hit, tooManyRequests } from '@/lib/security/rate-limit'
-import { lockedResponse } from '@/lib/billing/guard'
+import { lockedResponse, lockedResponseForProperty } from '@/lib/billing/guard'
 
 /**
  * POST /api/upload { base64, propertyId? | workspaceId? } — store one photo
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     const role = property ? await getWorkspaceRole(property.workspaceId, userId) : null
     if (!property || !role) return NextResponse.json({ success: false, error: 'Không tìm thấy khách sạn' }, { status: 404 })
     if (!(WorkspaceRoles.ADMINS_AND_MANAGERS as readonly string[]).includes(role)) return forbidden()
-    const locked = await lockedResponse(property.workspaceId)
+    const locked = await lockedResponseForProperty(propertyId)
     if (locked) return locked
     folder = `digistay/${property.workspaceId}/${propertyId}`
   } else if (workspaceId) {

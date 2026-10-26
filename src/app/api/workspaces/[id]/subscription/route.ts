@@ -9,6 +9,7 @@ import { GRACE_DAYS, RENEW_WINDOW_DAYS, TRIAL_DAYS, planChange } from '@/lib/bil
 import { changeBlockMessage } from '@/lib/billing/checkout'
 import { paymentView } from '@/lib/billing/view'
 import { lastBuyer, platformEinvoiceConfigured, platformVatLabel } from '@/lib/billing/einvoice'
+import { overageView } from '@/lib/billing/overage'
 
 /**
  * GET /api/workspaces/[id]/subscription — the plan page (owner and admins):
@@ -23,13 +24,14 @@ export async function GET(_request: NextRequest, props: { params: Promise<{ id: 
   if (!access.ok) return access.response
 
   const einvoice = platformEinvoiceConfigured()
-  const [current, usage, workspace, payments, buyer, me] = await Promise.all([
+  const [current, usage, workspace, payments, buyer, me, overage] = await Promise.all([
     workspacePlan(id),
     workspaceUsage(id),
     prisma.workspace.findUnique({ where: { id }, select: { id: true, name: true, slug: true } }),
     prisma.subscriptionPayment.findMany({ where: { workspaceId: id }, orderBy: { createdAt: 'desc' }, take: 20, include: { invoice: true } }),
     einvoice ? lastBuyer(id) : null,
     prisma.user.findUnique({ where: { id: access.userId }, select: { email: true } }),
+    overageView(id),
   ])
   const waiting = payments.find((p) => p.status === 'PENDING' && (!p.expiresAt || p.expiresAt.getTime() > Date.now()))
   const sub = current.subscription
@@ -80,6 +82,8 @@ export async function GET(_request: NextRequest, props: { params: Promise<{ id: 
       changes,
       limits: { properties: current.plan.properties, rooms: current.plan.rooms, staff: current.plan.staff, invoices: current.plan.invoices },
       usage,
+      // Over the plan: the 7-day grace, then what is locked (src/lib/billing/overage.ts)
+      overage,
       plans: PLANS,
       yearlyMonths: YEARLY_MONTHS,
       trialDays: TRIAL_DAYS,

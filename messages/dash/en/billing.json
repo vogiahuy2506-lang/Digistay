@@ -61,7 +61,8 @@
     },
     "paidStarts": "Thank you. The new plan starts on {date}. A receipt was emailed.",
     "invoiceSent": "The e-invoice will be sent to {email}.",
-    "invoiceIssued": "The e-invoice is being issued; see the payment history."
+    "invoiceIssued": "The e-invoice is being issued; see the payment history.",
+    "paidTitle": "{plan} plan activated"
   },
   "history": {
     "title": "Payment history",
@@ -92,7 +93,21 @@
     "locked": "The workspace is read-only because the plan has ended; the website has stopped taking online bookings.",
     "choose": "Choose a plan",
     "renew": "Renew",
-    "askOwner": "Ask the workspace owner to renew."
+    "askOwner": "Ask the workspace owner to renew.",
+    "overGrace": "Over the plan’s limits: {what}. From {date} the excess will be locked, newest first, unless you reduce it or upgrade.",
+    "overLocked": "Locked for being over the plan: {what}. Nothing is deleted; upgrade or reduce to unlock.",
+    "overKinds": {
+      "properties": "properties",
+      "rooms": "rooms",
+      "staff": "staff accounts"
+    },
+    "lockedCount": {
+      "properties": "{count, plural, one {# property} other {# properties}}",
+      "roomTypes": "{count, plural, one {# room type} other {# room types}}",
+      "members": "{count, plural, one {# staff account} other {# staff accounts}}"
+    },
+    "viewPlan": "See plan",
+    "askOwnerPlan": "Contact the workspace owner."
   },
   "start": {
     "title": "Choose the workspace to pay for",
@@ -114,7 +129,6 @@
       "fit": "Hotel chains and resorts"
     }
   },
-  "overLimit": "Using more than the plan allows: nothing is removed, but no more {what} can be added until you upgrade.",
   "action": {
     "new": "Buy · {price}",
     "renew": "Renew · {price}",
@@ -180,5 +194,21 @@
     },
     "sentTo": "The invoice (PDF) goes to {email}.",
     "vat": "VAT: {vat}."
+  },
+  "pay": "Pay {price}",
+  "renew": "Renew {price}",
+  "newPeriodNote": "Each payment starts a new period on the day it is paid; what is left of the current plan does not carry over.",
+  "planLockedBadge": "Locked (over plan)",
+  "propertyLocked": {
+    "title": "This property is locked (view only): the workspace is over its plan",
+    "text": "You can still see its data but not change it; its website stays up but takes no online bookings. Upgrade the plan or reduce the number of properties to unlock it.",
+    "link": "Plan & billing"
+  },
+  "overage": {
+    "lockedTitle": "Locked for being over the plan (the data is kept):",
+    "property": "Property {name}",
+    "roomType": "Room type {name} ({property}, {rooms} rooms)",
+    "member": "Account {name}",
+    "howToUnlock": "Upgrade, or delete/turn off something else: locked items come back by themselves once they fit."
   }
 }

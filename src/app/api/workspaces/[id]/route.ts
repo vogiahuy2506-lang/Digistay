@@ -12,12 +12,12 @@ async function checkWorkspaceAccess(workspaceId: string, userId: string) {
       id: workspaceId,
       OR: [
         { ownerId: userId },
-        { members: { some: { userId } } },
+        { members: { some: { userId, planLockedAt: null } } },
       ],
     },
     include: {
       owner: { select: { id: true } },
-      members: { where: { userId }, select: { role: true } },
+      members: { where: { userId, planLockedAt: null }, select: { role: true } },
     },
   })
 

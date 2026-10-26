@@ -7,6 +7,10 @@
  * - Staff: the members other than the owner, plus invitations still open
  *   (an invitation is a seat being taken).
  * - E-invoices: published this calendar month, Vietnam time.
+ *
+ * What is locked for being over the plan (src/lib/billing/overage.ts) does
+ * not count: a locked property (and its rooms), a locked room type's rooms,
+ * a locked member.
  */
 import type { Prisma, PrismaClient } from '@prisma/client'
 import { prisma } from '@/lib/db'
@@ -35,9 +39,12 @@ export async function workspaceUsage(workspaceId: string, db: Db = prisma, now =
   const { start, end } = vietnamMonth(now)
   const [workspace, properties, rooms, members, invitations, invoices] = await Promise.all([
     db.workspace.findUnique({ where: { id: workspaceId }, select: { ownerId: true } }),
-    db.property.count({ where: { workspaceId } }),
-    db.roomType.aggregate({ where: { isActive: true, property: { workspaceId } }, _sum: { totalRooms: true } }),
-    db.workspaceMember.findMany({ where: { workspaceId }, select: { userId: true } }),
+    db.property.count({ where: { workspaceId, planLockedAt: null } }),
+    db.roomType.aggregate({
+      where: { isActive: true, planLockedAt: null, property: { workspaceId, planLockedAt: null } },
+      _sum: { totalRooms: true },
+    }),
+    db.workspaceMember.findMany({ where: { workspaceId, planLockedAt: null }, select: { userId: true } }),
     db.invitation.count({ where: { workspaceId, status: 'PENDING', expiresAt: { gt: now } } }),
     db.invoice.count({ where: { property: { workspaceId }, publishedAt: { gte: start, lt: end } } }),
   ])
@@ -68,8 +75,16 @@ export async function planLimitProblem(workspaceId: string, kind: LimitKind, add
   return MESSAGES[kind](limit)
 }
 
-/** How many rooms a room type change adds to the workspace's count (negative when it removes some). */
-export function roomTypeDelta(current: { isActive: boolean; totalRooms: number }, next: { isActive?: boolean; totalRooms?: number }): number {
+/**
+ * How many rooms a room type change adds to the workspace's count (negative
+ * when it removes some). A type locked for being over the plan counts for
+ * nothing either way: its rooms are checked when it is unlocked.
+ */
+export function roomTypeDelta(
+  current: { isActive: boolean; totalRooms: number; planLockedAt?: Date | null },
+  next: { isActive?: boolean; totalRooms?: number },
+): number {
+  if (current.planLockedAt) return 0
   const before = current.isActive ? current.totalRooms : 0
   const after = (next.isActive ?? current.isActive) ? (next.totalRooms ?? current.totalRooms) : 0
   return after - before

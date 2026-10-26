@@ -49,7 +49,7 @@ export default async function WorkspacePickerLayout({
     where: {
       OR: [
         { ownerId: session.user.id },
-        { members: { some: { userId: session.user.id } } },
+        { members: { some: { userId: session.user.id, planLockedAt: null } } },
       ],
     },
     select: {
@@ -58,7 +58,7 @@ export default async function WorkspacePickerLayout({
       slug: true,
       ownerId: true,
       members: {
-        where: { userId: session.user.id },
+        where: { userId: session.user.id, planLockedAt: null },
         select: { role: true },
         take: 1,
       },

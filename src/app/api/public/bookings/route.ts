@@ -11,7 +11,7 @@ import { onlineDepositOf, startGuestDeposit, type OnlineDeposit } from '@/lib/pa
 import { getClientIp } from '@/lib/security/client-ip'
 import { LIMITS } from '@/lib/security/limits'
 import { hit, tooManyRequests } from '@/lib/security/rate-limit'
-import { ONLINE_BOOKING_PAUSED, isWorkspaceLocked } from '@/lib/billing/guard'
+import { onlineBookingRefusal } from '@/lib/billing/guard'
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/
 const MAX_NIGHTS = 30
@@ -96,13 +96,18 @@ export async function POST(request: NextRequest) {
       isActive: true,
       property: { isActive: true, websiteSettings: { isPublished: true } },
     },
-    select: { maxAdults: true, maxChildren: true, maxOccupancy: true, property: { select: { workspaceId: true, subdomain: true, policy: { select: { childrenAllowed: true } } } } },
+    select: {
+      maxAdults: true,
+      maxChildren: true,
+      maxOccupancy: true,
+      planLockedAt: true,
+      property: { select: { workspaceId: true, planLockedAt: true, subdomain: true, policy: { select: { childrenAllowed: true } } } },
+    },
   })
   if (!roomType) return NextResponse.json({ success: false, error: 'Không tìm thấy hạng phòng' }, { status: 404 })
-  // A locked workspace (src/lib/billing) takes no online bookings.
-  if (await isWorkspaceLocked(roomType.property.workspaceId)) {
-    return NextResponse.json({ success: false, error: ONLINE_BOOKING_PAUSED }, { status: 403 })
-  }
+  // A locked workspace, or a property or room type locked for being over the plan (src/lib/billing), takes no online bookings.
+  const refusal = await onlineBookingRefusal(roomType)
+  if (refusal) return NextResponse.json({ success: false, error: refusal }, { status: 403 })
   if (data.numChildren > 0 && roomType.property.policy?.childrenAllowed === false) {
     return NextResponse.json({ success: false, error: 'Khách sạn không nhận trẻ em' }, { status: 400 })
   }

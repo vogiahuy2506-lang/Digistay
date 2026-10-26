@@ -36,6 +36,17 @@ export interface BillingData {
   changes: Record<PlanId, Record<Billing, ChangeView>>
   limits: Record<LimitKey, number>
   usage: Record<LimitKey, number>
+  /** src/lib/billing/overage.ts overageView */
+  overage: {
+    since: string | null
+    locksAt: string | null
+    over: Partial<Record<'properties' | 'rooms' | 'staff', { used: number; limit: number }>>
+    locked: {
+      properties: { id: string; name: string }[]
+      roomTypes: { id: string; name: string; propertyName: string; rooms: number }[]
+      members: { userId: string; name: string | null; email: string }[]
+    }
+  }
   plans: Plan[]
   yearlyMonths: number
   checkoutReady: boolean

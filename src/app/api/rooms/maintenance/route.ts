@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { lockRoomType, roomsTaken } from '@/lib/bookings/occupancy'
 import { roomConflictMessage, roomTakenBy } from '@/lib/bookings/rooms'
-import { lockedResponse, lockedResponseForProperty } from '@/lib/billing/guard'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 const maintenanceSchema = z.object({
   propertyId: z.string(),
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
         workspace: {
           OR: [
             { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id } } },
+            { members: { some: { userId: session.user.id, planLockedAt: null } } },
           ],
         },
       },
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
         workspace: {
           OR: [
             { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id } } },
+            { members: { some: { userId: session.user.id, planLockedAt: null } } },
           ],
         },
       },
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
     if (!property) {
       return NextResponse.json({ success: false, error: 'Không có quyền truy cập' }, { status: 403 })
     }
-    const locked = await lockedResponse(property.workspaceId)
+    const locked = await lockedResponseForProperty(property.id)
     if (locked) return locked
 
     // The room type must be this property's, not just any id the client sends
@@ -256,7 +256,7 @@ export async function DELETE(request: NextRequest) {
               select: {
                 ownerId: true,
                 members: {
-                  where: { userId: session.user.id },
+                  where: { userId: session.user.id, planLockedAt: null },
                   select: { role: true },
                 },
               },

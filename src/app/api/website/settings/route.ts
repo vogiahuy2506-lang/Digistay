@@ -6,7 +6,7 @@ import { normalizeHostname } from '@/lib/custom-domain'
 import { invalidatePublicSite } from '@/lib/public-site/site'
 import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
-import { lockedResponse } from '@/lib/billing/guard'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 // propertyId must be a string: undefined or a filter object reaching
 // Prisma would match the wrong property.
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
         workspace: {
           OR: [
             { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id } } },
+            { members: { some: { userId: session.user.id, planLockedAt: null } } },
           ],
         },
       },
@@ -109,7 +109,7 @@ export async function PUT(request: NextRequest) {
         workspace: {
           OR: [
             { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id } } },
+            { members: { some: { userId: session.user.id, planLockedAt: null } } },
           ],
         },
       },
@@ -123,7 +123,7 @@ export async function PUT(request: NextRequest) {
     // Publishing decides whether guests see the site and can book.
     const access = await requireWorkspaceRole(property.workspaceId, WorkspaceRoles.ADMINS_AND_MANAGERS)
     if (!access.ok) return access.response
-    const locked = await lockedResponse(property.workspaceId)
+    const locked = await lockedResponseForProperty(property.id)
     if (locked) return locked
     const propertyId = property.id
 

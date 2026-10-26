@@ -19,6 +19,8 @@ interface Member {
   role: string
   joinedAt: string
   isOwner?: boolean
+  /** Locked because the workspace is over its plan's staff limit: no access until unlocked. */
+  planLockedAt?: string | null
   user: {
     id: string
     name: string | null
@@ -259,9 +261,11 @@ export default function MembersPage() {
                             {member.user.name || t('members.noName')}
                           </p>
                           <p className="text-small text-muted truncate">{member.user.email}</p>
+                          {member.planLockedAt && <p className="text-small text-err">{t('members.planLockedNote')}</p>}
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
+                        {member.planLockedAt && <Badge variant="danger">{t('members.planLocked')}</Badge>}
                         {getRoleBadge(member.role, member.isOwner)}
 
                         {!member.isOwner && (

@@ -8,7 +8,7 @@ import { prisma } from '@/lib/db'
 import { getWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { translationsInput } from '@/lib/i18n/translations-input'
 import { isMenuImageUrl } from '@/lib/menu/menu'
-import { lockedResponse } from '@/lib/billing/guard'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 /** A hotel's menu stays a menu, not a store: more than this is refused. */
 export const MAX_MENU_ITEMS = 500
@@ -29,7 +29,7 @@ export async function menuAccess(propertyId: string, userId: string, write: bool
     return fail(403, 'Bạn không có quyền thực hiện hành động này')
   }
   if (write) {
-    const locked = await lockedResponse(property.workspaceId)
+    const locked = await lockedResponseForProperty(propertyId)
     if (locked) return { ok: false as const, response: locked }
   }
   return { ok: true as const }

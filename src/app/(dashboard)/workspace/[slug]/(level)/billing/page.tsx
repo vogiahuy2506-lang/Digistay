@@ -139,15 +139,7 @@ export default function BillingPage() {
             )
           })}
         </dl>
-        {(() => {
-          const over = LIMITS.filter((k) => data.limits[k] > 0 && data.usage[k] > data.limits[k])
-          if (!over.length) return null
-          return (
-            <p className="text-small text-err lg:col-span-2">
-              {t('overLimit', { what: over.map((k) => t(`limits.${k}`).toLowerCase()).join(', ') })}
-            </p>
-          )
-        })()}
+        <OverageNote data={data} />
       </section>
 
       {data.pending && !resume && !buying && (
@@ -302,5 +294,46 @@ export default function BillingPage() {
         />
       )}
     </>
+  )
+}
+
+/**
+ * Over the plan (src/lib/billing/overage.ts): during the 7-day grace, what
+ * is over and when the excess locks; after it, what is locked, by name.
+ */
+function OverageNote({ data }: { data: BillingData }) {
+  const t = useTranslations('dash.billing')
+  const { overage } = data
+  const kinds = (['properties', 'rooms', 'staff'] as const).filter((k) => overage.over[k])
+  const { properties, roomTypes, members } = overage.locked
+  if (!kinds.length && !properties.length && !roomTypes.length && !members.length) return null
+  return (
+    <div className="grid gap-2 text-small lg:col-span-2">
+      {kinds.length > 0 && overage.locksAt && (
+        <p className="rounded-ctl border border-warn/40 bg-warn-soft p-3 text-warn">
+          {t('banner.overGrace', {
+            what: kinds.map((k) => `${t(`banner.overKinds.${k}`)} ${overage.over[k]!.used}/${overage.over[k]!.limit}`).join(', '),
+            date: vnDate(overage.locksAt),
+          })}
+        </p>
+      )}
+      {(properties.length > 0 || roomTypes.length > 0 || members.length > 0) && (
+        <div className="rounded-ctl border border-err/30 bg-err-soft p-3 text-err">
+          <p className="font-medium">{t('overage.lockedTitle')}</p>
+          <ul className="mt-1.5 grid gap-0.5">
+            {properties.map((p) => (
+              <li key={p.id}>{t('overage.property', { name: p.name })}</li>
+            ))}
+            {roomTypes.map((r) => (
+              <li key={r.id}>{t('overage.roomType', { name: r.name, property: r.propertyName, rooms: r.rooms })}</li>
+            ))}
+            {members.map((m) => (
+              <li key={m.userId}>{t('overage.member', { name: m.name ?? m.email })}</li>
+            ))}
+          </ul>
+          <p className="mt-1.5 text-fg/80">{t('overage.howToUnlock')}</p>
+        </div>
+      )}
+    </div>
   )
 }

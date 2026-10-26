@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { PayosError, connectPayos, disconnectPayos, getPayosStatus } from '@/lib/payments/payos'
-import { lockedResponse } from '@/lib/billing/guard'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -41,7 +41,7 @@ export async function PUT(request: NextRequest, props: Props) {
   if (!workspaceId) return NOT_FOUND()
   const access = await requireWorkspaceRole(workspaceId, WorkspaceRoles.ADMINS)
   if (!access.ok) return access.response
-  const locked = await lockedResponse(workspaceId)
+  const locked = await lockedResponseForProperty(id)
   if (locked) return locked
 
   const parsed = connectSchema.safeParse(await request.json().catch(() => ({})))
@@ -70,7 +70,7 @@ export async function DELETE(_request: NextRequest, props: Props) {
   if (!workspaceId) return NOT_FOUND()
   const access = await requireWorkspaceRole(workspaceId, WorkspaceRoles.ADMINS)
   if (!access.ok) return access.response
-  const locked = await lockedResponse(workspaceId)
+  const locked = await lockedResponseForProperty(id)
   if (locked) return locked
 
   await disconnectPayos(id)

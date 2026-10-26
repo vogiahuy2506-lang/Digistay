@@ -148,7 +148,8 @@
         "baseOccupancy": "Base occupancy",
         "baseOccupancyHint": "Guests included in the base rate",
         "maxOccupancy": "Max occupancy"
-      }
+      },
+      "planLocked": "Locked (over plan)"
     },
     "bedTypes": {
       "SINGLE": "Single bed",

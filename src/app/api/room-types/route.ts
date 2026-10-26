@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { invalidatePublicSite } from '@/lib/public-site/site'
 import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
-import { planResponse } from '@/lib/billing/guard'
+import { planResponseForProperty } from '@/lib/billing/guard'
 import { z } from 'zod'
 import { bedTypeEnum } from '@/lib/validations'
 import { generateSlug } from '@/lib/utils'
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
         workspace: {
           OR: [
             { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id } } },
+            { members: { some: { userId: session.user.id, planLockedAt: null } } },
           ],
         },
       },
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
         workspace: {
           OR: [
             { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER'] } } } },
+            { members: { some: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER'] }, planLockedAt: null } } },
           ],
         },
       },
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
     }
 
     // The plan's number of rooms (src/lib/billing).
-    const overPlan = await planResponse(property.workspaceId, 'rooms', totalRooms)
+    const overPlan = await planResponseForProperty(property.id, 'rooms', totalRooms)
     if (overPlan) return overPlan
 
     // From the name with Vietnamese letters spelt out ("Phòng Đơn" → phong-don,

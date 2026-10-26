@@ -194,6 +194,8 @@ model Subscription {
   nextBilling   BillingPeriod?
   nextPeriodEnd DateTime?
   nextPaymentId String?
+  /// When the workspace went over its plan's limits (src/lib/billing/overage.ts): 7 days later the excess is locked
+  overLimitSince DateTime?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
@@ -307,6 +309,8 @@ model WorkspaceMember {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   joinedAt    DateTime  @default(now())
+  /// Locked because the workspace is over its plan's staff limit (src/lib/billing/overage.ts): no access until unlocked
+  planLockedAt DateTime?
   
   @@unique([workspaceId, userId])
   @@map("workspace_members")
@@ -412,6 +416,8 @@ model Property {
   menuItems       MenuItem[]
   dailyRevenues   DailyRevenue[]
   policy      Policy?
+  /// Locked because the workspace is over its plan's limits (src/lib/billing/overage.ts): read-only, no online booking
+  planLockedAt DateTime?
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -464,6 +470,8 @@ model RoomType {
   amenities   RoomTypeAmenity[]
   
   isActive    Boolean  @default(true)
+  /// Locked because the workspace is over its plan's room limit (src/lib/billing/overage.ts): no new bookings into it
+  planLockedAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db'
 import { requireSession, getWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { EinvoiceError, publishInvoice } from '@/lib/einvoice/matbao'
 import { emailAfterResponse } from '@/lib/einvoice/delivery'
-import { lockedResponse } from '@/lib/billing/guard'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -22,7 +22,7 @@ export async function POST(_request: NextRequest, props: RouteParams) {
 
   const invoice = await prisma.invoice.findUnique({
     where: { id },
-    select: { property: { select: { workspaceId: true } } },
+    select: { propertyId: true, property: { select: { workspaceId: true } } },
   })
   const role = invoice ? await getWorkspaceRole(invoice.property.workspaceId, sess.session.user.id) : null
   if (!invoice || !role) {
@@ -31,7 +31,7 @@ export async function POST(_request: NextRequest, props: RouteParams) {
   if (!(WorkspaceRoles.STAFF_AND_UP as readonly string[]).includes(role)) {
     return NextResponse.json({ success: false, error: 'Không có quyền phát hành hóa đơn' }, { status: 403 })
   }
-  const locked = await lockedResponse(invoice.property.workspaceId)
+  const locked = await lockedResponseForProperty(invoice.propertyId)
   if (locked) return locked
 
   try {

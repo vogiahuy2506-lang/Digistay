@@ -28,6 +28,7 @@ import { vnDate } from './emails'
 import { platformPayos, platformPayosConfigured } from './platform-payos'
 import { queueSubscriptionPaid } from './emails'
 import { issueAfterResponse, prepareSubscriptionInvoice, type InvoiceBuyer } from './einvoice'
+import { reconcileOverageSoon } from './overage'
 
 /** How long a plan's QR can be paid. */
 export const CHECKOUT_TTL_SEC = 30 * 60
@@ -164,6 +165,8 @@ export async function applySubscriptionPaid(input: {
   if (!applied) return 'duplicate'
   sendAfterResponse(applied.emails)
   issueAfterResponse(applied.invoiceId)
+  // A bigger plan unlocks what was locked over the old one at once (overage.ts).
+  reconcileOverageSoon(payment.workspaceId)
   return 'paid'
 }
 

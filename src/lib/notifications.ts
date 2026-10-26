@@ -37,7 +37,7 @@ async function notify(
     select: {
       name: true,
       workspaceId: true,
-      workspace: { select: { slug: true, ownerId: true, members: { where: { role: { in: input.roles } }, select: { userId: true } } } },
+      workspace: { select: { slug: true, ownerId: true, members: { where: { role: { in: input.roles }, planLockedAt: null }, select: { userId: true } } } },
     },
   })
   const recipients = new Set([property.workspace.ownerId, ...property.workspace.members.map((m) => m.userId)])

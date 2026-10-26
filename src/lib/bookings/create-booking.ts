@@ -25,6 +25,7 @@ import { appSiteUrl } from '@/lib/public-site/paths'
 import { depositFor, quoteStay, ratesFrom, type PricedService } from '@/lib/pricing/quote'
 import { depositUrl } from '@/lib/payments/deposit-link'
 import { NO_PRICE_MESSAGE, ROOM_RATE_INCLUDE, propertyRateDefaults } from '@/lib/pricing/rates'
+import { ROOM_TYPE_PLAN_LOCKED } from '@/lib/billing/guard'
 import { lockRoomType, roomsTaken } from './occupancy'
 
 type Tx = Prisma.TransactionClient
@@ -203,6 +204,9 @@ export async function createBooking(input: NewBooking) {
     throw new BookingError('Ngày trả phòng phải sau ngày nhận phòng', 400)
   }
   const { roomType, quote } = await priceBooking(input)
+  // A room type locked for being over the plan (src/lib/billing/overage.ts)
+  // takes no new bookings; its existing ones go on as usual.
+  if (roomType.planLockedAt) throw new BookingError(ROOM_TYPE_PLAN_LOCKED, 409)
 
   return prisma.$transaction(async (tx) => {
     await lockRoomType(tx, roomType.id)

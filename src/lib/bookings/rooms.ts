@@ -28,6 +28,7 @@
  *   active stay too, under an advisory lock per number.
  */
 import type { Prisma } from '@prisma/client'
+import { ROOM_TYPE_PLAN_LOCKED } from '@/lib/billing/guard'
 import { lockBooking } from '@/lib/payments/booking-payments'
 import { ACTIVE_BOOKING_STATUSES, lockRoomType, roomsTaken } from './occupancy'
 import { normalizeRoomNumber } from './room-numbers'
@@ -272,8 +273,11 @@ export async function assignRoomTx(
 
   if (leaving.length) {
     // Those nights leave their type for this one: it needs a room free on
-    // each (the stay's own nights there are others, so never counted).
-    const type = await tx.roomType.findUniqueOrThrow({ where: { id: room.roomTypeId }, select: { name: true, totalRooms: true } })
+    // each (the stay's own nights there are others, so never counted), and
+    // it must not be locked for being over the plan (no new stays move in;
+    // a stay already in it can change rooms within it).
+    const type = await tx.roomType.findUniqueOrThrow({ where: { id: room.roomTypeId }, select: { name: true, totalRooms: true, planLockedAt: true } })
+    if (type.planLockedAt) throw new RoomError(ROOM_TYPE_PLAN_LOCKED)
     for (const run of leaving) {
       const used = await roomsTaken(tx, room.roomTypeId, { propertyId: booking.propertyId, checkIn: run.from, checkOut: run.to })
       if (used >= type.totalRooms) throw new RoomError(`Hạng ${type.name} đã kín trong những ngày này`)

@@ -150,7 +150,9 @@
       "roleHint": "Quản trị viên có thể quản lý cơ sở và mời thành viên khác",
       "send": "Gửi lời mời"
     },
-    "pending": "Lời mời đang chờ"
+    "pending": "Lời mời đang chờ",
+    "planLocked": "Bị khoá",
+    "planLockedNote": "Không vào được workspace: vượt số nhân viên của gói."
   },
   "settings": {
     "back": "Quay lại workspace",

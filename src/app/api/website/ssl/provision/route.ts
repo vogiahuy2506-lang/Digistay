@@ -4,10 +4,10 @@ import { auth } from '@/lib/auth'
 import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { certificateRequest } from '@/lib/public-site/custom-domains'
 import { sslState } from '@/lib/public-site/ssl-state'
-import { lockedResponse } from '@/lib/billing/guard'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 const memberOf = (userId: string) => ({
-  workspace: { OR: [{ ownerId: userId }, { members: { some: { userId } } }] },
+  workspace: { OR: [{ ownerId: userId }, { members: { some: { userId, planLockedAt: null } } }] },
 })
 
 /**
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
         workspace: {
           OR: [
             { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id } } },
+            { members: { some: { userId: session.user.id, planLockedAt: null } } },
           ],
         },
       },
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 
     const access = await requireWorkspaceRole(property.workspaceId, WorkspaceRoles.ADMINS_AND_MANAGERS)
     if (!access.ok) return access.response
-    const locked = await lockedResponse(property.workspaceId)
+    const locked = await lockedResponseForProperty(property.id)
     if (locked) return locked
 
     const settings = property.websiteSettings
@@ -184,7 +184,7 @@ export async function DELETE(request: NextRequest) {
         workspace: {
           OR: [
             { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id } } },
+            { members: { some: { userId: session.user.id, planLockedAt: null } } },
           ],
         },
       },
@@ -196,7 +196,7 @@ export async function DELETE(request: NextRequest) {
 
     const access = await requireWorkspaceRole(property.workspaceId, WorkspaceRoles.ADMINS_AND_MANAGERS)
     if (!access.ok) return access.response
-    const locked = await lockedResponse(property.workspaceId)
+    const locked = await lockedResponseForProperty(property.id)
     if (locked) return locked
 
     await prisma.websiteSettings.update({

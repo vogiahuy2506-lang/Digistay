@@ -16,7 +16,7 @@ export function workspacesWithRole(userId: string, roles: readonly WorkspaceRole
   return {
     OR: [
       { ownerId: userId },
-      { members: { some: { userId, role: { in: [...roles] } } } },
+      { members: { some: { userId, role: { in: [...roles] }, planLockedAt: null } } },
     ],
   }
 }

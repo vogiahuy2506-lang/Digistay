@@ -35,7 +35,10 @@ export async function requireSession() {
 /**
  * Resolve the caller's effective role for a workspace. Owners are
  * treated as ADMIN. Members get their stored role. Everyone else is
- * `null`.
+ * `null` — including a member locked because the workspace is over its
+ * plan's staff limit (WorkspaceMember.planLockedAt, src/lib/billing/overage.ts):
+ * they have no access until unlocked. Queries that check membership
+ * themselves add `planLockedAt: null` (src/app/api/member-filter.test.ts).
  */
 export async function getWorkspaceRole(
   workspaceId: string,
@@ -46,7 +49,7 @@ export async function getWorkspaceRole(
     select: {
       ownerId: true,
       members: {
-        where: { userId },
+        where: { userId, planLockedAt: null },
         select: { role: true },
         take: 1,
       },
@@ -59,12 +62,13 @@ export async function getWorkspaceRole(
 
 /**
  * Resolve the caller's effective role for a workspace, looked up by
- * the workspace's slug instead of its id.
+ * the workspace's slug instead of its id. A locked member's role is null
+ * too, with `planLocked` set so the page can say why.
  */
 export async function getWorkspaceRoleBySlug(
   slug: string,
   userId: string
-): Promise<{ workspaceId: string; role: WorkspaceRole | null } | null> {
+): Promise<{ workspaceId: string; role: WorkspaceRole | null; planLocked?: boolean } | null> {
   const workspace = await prisma.workspace.findUnique({
     where: { slug },
     select: {
@@ -72,14 +76,16 @@ export async function getWorkspaceRoleBySlug(
       ownerId: true,
       members: {
         where: { userId },
-        select: { role: true },
+        select: { role: true, planLockedAt: true },
         take: 1,
       },
     },
   })
   if (!workspace) return null
-  const role = workspace.ownerId === userId ? 'ADMIN' : workspace.members[0]?.role ?? null
-  return { workspaceId: workspace.id, role }
+  if (workspace.ownerId === userId) return { workspaceId: workspace.id, role: 'ADMIN' }
+  const member = workspace.members[0]
+  if (member?.planLockedAt) return { workspaceId: workspace.id, role: null, planLocked: true }
+  return { workspaceId: workspace.id, role: member?.role ?? null }
 }
 
 /**

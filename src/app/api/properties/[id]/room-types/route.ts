@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth'
 import { createRoomTypeSchema, updateRoomTypeSchema } from '@/lib/validations'
 import { generateSlug } from '@/lib/utils'
 import { invalidatePublicSite } from '@/lib/public-site/site'
-import { planResponse } from '@/lib/billing/guard'
+import { planResponseForProperty } from '@/lib/billing/guard'
 
 // Check if user has admin access to property's workspace
 async function checkPropertyAdmin(propertyId: string, userId: string) {
@@ -14,7 +14,7 @@ async function checkPropertyAdmin(propertyId: string, userId: string) {
       workspace: {
         OR: [
           { ownerId: userId },
-          { members: { some: { userId, role: 'ADMIN' } } },
+          { members: { some: { userId, role: 'ADMIN', planLockedAt: null } } },
         ],
       },
     },
@@ -49,7 +49,7 @@ export async function GET(
         workspace: {
           OR: [
             { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id } } },
+            { members: { some: { userId: session.user.id, planLockedAt: null } } },
           ],
         },
       },
@@ -133,7 +133,7 @@ export async function POST(
     const { name, ...rest } = validation.data
 
     // The plan's number of rooms (src/lib/billing).
-    const overPlan = await planResponse(property.workspaceId, 'rooms', rest.totalRooms || 1)
+    const overPlan = await planResponseForProperty(id, 'rooms', rest.totalRooms || 1)
     if (overPlan) return overPlan
 
     // Generate unique slug

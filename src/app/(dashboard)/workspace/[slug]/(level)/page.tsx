@@ -17,6 +17,8 @@ interface Property {
   name: string
   type: string
   isActive: boolean
+  /** Locked because the workspace is over its plan (src/lib/billing/overage.ts): read-only. */
+  planLockedAt?: string | null
   subdomain: string
   address: string | null
   city: string | null
@@ -203,6 +205,7 @@ export default function WorkspaceDashboardPage() {
                 paused: t('paused'),
                 roomTypes: t('roomTypes', { count: property._count.roomTypes }),
                 open: t('open'),
+                planLocked: tb('planLockedBadge'),
               }}
             />
           ))}
@@ -215,7 +218,7 @@ export default function WorkspaceDashboardPage() {
 interface PropertyRowProps {
   property: Property
   href: string
-  labels: { active: string; paused: string; roomTypes: string; open: string }
+  labels: { active: string; paused: string; roomTypes: string; open: string; planLocked: string }
 }
 
 /** One property: name and address on the left, counts, then the way in. */
@@ -242,6 +245,9 @@ function PropertyRow({ property, href, labels }: PropertyRowProps) {
             >
               {property.isActive ? labels.active : labels.paused}
             </span>
+            {property.planLockedAt && (
+              <span className="shrink-0 rounded-sm bg-err-soft px-1.5 py-0.5 text-[11px] text-err">{labels.planLocked}</span>
+            )}
           </div>
           {where && <p className="mt-1 text-small text-muted line-clamp-1">{where}</p>}
           <p className="mt-1.5 text-small text-muted tabular-nums">{labels.roomTypes}</p>

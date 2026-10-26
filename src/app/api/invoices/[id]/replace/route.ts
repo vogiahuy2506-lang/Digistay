@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db'
 import { requireSession, getWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { EinvoiceError } from '@/lib/einvoice/matbao'
 import { createReplacementDraft } from '@/lib/einvoice/replacement'
-import { lockedResponse } from '@/lib/billing/guard'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 /**
  * POST /api/invoices/[id]/replace — a draft replacement for an issued
@@ -14,13 +14,13 @@ export async function POST(_request: NextRequest, props: { params: Promise<{ id:
   const sess = await requireSession()
   if (!sess.ok) return sess.response
 
-  const invoice = await prisma.invoice.findUnique({ where: { id }, select: { property: { select: { workspaceId: true } } } })
+  const invoice = await prisma.invoice.findUnique({ where: { id }, select: { propertyId: true, property: { select: { workspaceId: true } } } })
   const role = invoice ? await getWorkspaceRole(invoice.property.workspaceId, sess.session.user.id) : null
   if (!invoice || !role) return NextResponse.json({ success: false, error: 'Không tìm thấy hóa đơn' }, { status: 404 })
   if (!(WorkspaceRoles.STAFF_AND_UP as readonly string[]).includes(role)) {
     return NextResponse.json({ success: false, error: 'Không có quyền lập hoá đơn thay thế' }, { status: 403 })
   }
-  const locked = await lockedResponse(invoice.property.workspaceId)
+  const locked = await lockedResponseForProperty(invoice.propertyId)
   if (locked) return locked
 
   try {

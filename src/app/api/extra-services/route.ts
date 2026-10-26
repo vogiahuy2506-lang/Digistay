@@ -25,7 +25,7 @@ async function userOwnsProperty(propertyId: string, userId: string) {
       workspace: {
         OR: [
           { ownerId: userId },
-          { members: { some: { userId, role: { in: ['ADMIN', 'MANAGER'] } } } },
+          { members: { some: { userId, role: { in: ['ADMIN', 'MANAGER'] }, planLockedAt: null } } },
         ],
       },
     },

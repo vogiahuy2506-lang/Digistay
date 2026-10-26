@@ -55,9 +55,18 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     })
 
+    // A member locked for being over the plan (src/lib/billing/overage.ts)
+    // still sees the workspace in their list, flagged and without its
+    // people, so the page can say why they cannot open it.
+    const userId = session.user.id
+    const data = workspaces.map((workspace) => {
+      const planLocked = workspace.ownerId !== userId && workspace.members.some((m) => m.userId === userId && m.planLockedAt)
+      return planLocked ? { ...workspace, planLocked, members: workspace.members.filter((m) => m.userId === userId) } : { ...workspace, planLocked }
+    })
+
     return NextResponse.json({
       success: true,
-      data: workspaces,
+      data,
     })
   } catch (error) {
     console.error('Get workspaces error:', error)

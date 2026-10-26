@@ -28,7 +28,7 @@ export default async function BillingStartPage({ searchParams }: { searchParams:
   if (!userId) redirect(`/register?callbackUrl=${encodeURIComponent(`/billing/start?${query}`)}`)
 
   const workspaces = await prisma.workspace.findMany({
-    where: { OR: [{ ownerId: userId }, { members: { some: { userId, role: 'ADMIN' } } }] },
+    where: { OR: [{ ownerId: userId }, { members: { some: { userId, role: 'ADMIN', planLockedAt: null } } }] },
     select: { name: true, slug: true },
     orderBy: { createdAt: 'asc' },
   })
