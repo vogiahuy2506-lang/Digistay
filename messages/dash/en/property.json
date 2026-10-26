@@ -21,10 +21,6 @@
     "subdomainHint": "Link: {subdomain}.digistay.vn",
     "address": "Address",
     "addressPlaceholder": "e.g. 123 ABC Street",
-    "city": "City/Province",
-    "cityPlaceholder": "e.g. Hanoi",
-    "district": "District (optional)",
-    "districtPlaceholder": "e.g. Ba Dinh District",
     "phone": "Phone number (optional)",
     "email": "Email (optional)",
     "emailPlaceholder": "e.g. info@example.com",
@@ -32,6 +28,25 @@
     "descriptionPlaceholder": "A short introduction to your property",
     "submit": "Create property",
     "error": "Something went wrong"
+  },
+  "address": {
+    "province": "Province/City",
+    "ward": "Ward/Commune",
+    "placeholder": "Choose or type to search",
+    "wardPickProvinceFirst": "Choose the province first",
+    "wardLoading": "Loading the list…",
+    "wardLoadFailed": "Couldn’t load the wards and communes.",
+    "retry": "Try again",
+    "noMatch": "No match",
+    "count": "{count, plural, one {# result} other {# results}}",
+    "showList": "Show the list",
+    "clear": "Clear",
+    "kind": {
+      "city": "City",
+      "province": "Province"
+    },
+    "legacy": "Saved as “{city}”, which is not one of today’s 34 provinces and cities. Choose again to update the address.",
+    "legacyMerged": "Saved as “{city}”, now part of {province}. Choose the province and ward again to update the address."
   },
   "list": {
     "title": "Properties",
