@@ -541,9 +541,10 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Security Tab */}
+      {/* Security Tab: one column up to lg, then two, so the cards fill the
+          page's column like the profile tab instead of hugging its left side. */}
       {activeTab === 'security' && (
-        <div className="max-w-2xl space-y-6">
+        <div className="grid max-w-2xl gap-6 lg:max-w-none lg:grid-cols-2 lg:items-start">
           {/* Email change */}
           <Card>
             <CardHeader>
