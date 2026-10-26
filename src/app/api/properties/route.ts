@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { createPropertySchema } from '@/lib/validations'
 import { generateSlug, generateSubdomain } from '@/lib/utils'
 import { planResponse } from '@/lib/billing/guard'
+import { getWorkspaceRole } from '@/lib/auth/rbac'
 
 // Check if user has access to workspace
 async function checkWorkspaceAccess(workspaceId: string, userId: string) {
@@ -123,8 +124,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const hasAccess = await checkWorkspaceAccess(workspaceId, session.user.id)
-    if (!hasAccess) {
+    // Owners, admins and managers add properties; receptionists and staff
+    // only work in the ones they have (the "Thêm cơ sở" button follows this).
+    const role = await getWorkspaceRole(workspaceId, session.user.id)
+    if (role !== 'ADMIN' && role !== 'MANAGER') {
       return NextResponse.json(
         { success: false, error: 'Bạn không có quyền tạo cơ sở trong workspace này' },
         { status: 403 }
