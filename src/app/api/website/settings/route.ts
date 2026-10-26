@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { normalizeHostname } from '@/lib/custom-domain'
 import { invalidatePublicSite } from '@/lib/public-site/site'
+import { keepSiteBaseline, recordSiteVersion } from '@/lib/public-site/versions'
 import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
 import { lockedResponse } from '@/lib/billing/guard'
@@ -159,40 +160,47 @@ export async function PUT(request: NextRequest) {
         }
       : {}
 
-    // Update or create settings
-    const updatedSettings = await prisma.websiteSettings.upsert({
-      where: { propertyId },
-      update: {
-        primaryColor: settings.primaryColor,
-        secondaryColor: settings.secondaryColor,
-        ...(settings.buttonColor !== undefined && { buttonColor: hexColorOrNull(settings.buttonColor) }),
-        ...(settings.headingColor !== undefined && { headingColor: hexColorOrNull(settings.headingColor) }),
-        accentColor: settings.accentColor,
-        fontFamily: settings.fontFamily,
-        headingFont: settings.headingFont,
-        layout: settings.layout,
-        metaTitle: settings.metaTitle,
-        metaDescription: settings.metaDescription,
-        translations: mergeTranslations(current?.translations, translations.data),
-        ...domainFields,
-        isPublished: settings.isPublished,
-        publishedAt: settings.isPublished ? new Date() : null,
-      },
-      create: {
-        propertyId,
-        primaryColor: settings.primaryColor || '#3B82F6',
-        secondaryColor: settings.secondaryColor || '#10B981',
-        buttonColor: hexColorOrNull(settings.buttonColor),
-        headingColor: hexColorOrNull(settings.headingColor),
-        accentColor: settings.accentColor || '#F59E0B',
-        fontFamily: settings.fontFamily || 'Inter',
-        headingFont: settings.headingFont || 'Playfair Display',
-        layout: settings.layout || 'modern',
-        metaTitle: settings.metaTitle,
-        metaDescription: settings.metaDescription,
-        translations: mergeTranslations(null, translations.data),
-        isPublished: settings.isPublished || false,
-      },
+    // Update or create settings, and keep the site as saved as a version
+    // (src/lib/public-site/versions.ts; publishing alone adds none).
+    const userId = session.user.id
+    const updatedSettings = await prisma.$transaction(async (tx) => {
+      await keepSiteBaseline(tx, propertyId)
+      const saved = await tx.websiteSettings.upsert({
+        where: { propertyId },
+        update: {
+          primaryColor: settings.primaryColor,
+          secondaryColor: settings.secondaryColor,
+          ...(settings.buttonColor !== undefined && { buttonColor: hexColorOrNull(settings.buttonColor) }),
+          ...(settings.headingColor !== undefined && { headingColor: hexColorOrNull(settings.headingColor) }),
+          accentColor: settings.accentColor,
+          fontFamily: settings.fontFamily,
+          headingFont: settings.headingFont,
+          layout: settings.layout,
+          metaTitle: settings.metaTitle,
+          metaDescription: settings.metaDescription,
+          translations: mergeTranslations(current?.translations, translations.data),
+          ...domainFields,
+          isPublished: settings.isPublished,
+          publishedAt: settings.isPublished ? new Date() : null,
+        },
+        create: {
+          propertyId,
+          primaryColor: settings.primaryColor || '#3B82F6',
+          secondaryColor: settings.secondaryColor || '#10B981',
+          buttonColor: hexColorOrNull(settings.buttonColor),
+          headingColor: hexColorOrNull(settings.headingColor),
+          accentColor: settings.accentColor || '#F59E0B',
+          fontFamily: settings.fontFamily || 'Inter',
+          headingFont: settings.headingFont || 'Playfair Display',
+          layout: settings.layout || 'modern',
+          metaTitle: settings.metaTitle,
+          metaDescription: settings.metaDescription,
+          translations: mergeTranslations(null, translations.data),
+          isPublished: settings.isPublished || false,
+        },
+      })
+      await recordSiteVersion(tx, { propertyId, userId })
+      return saved
     })
 
     // Log activity

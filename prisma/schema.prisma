@@ -330,6 +330,7 @@ model Property {
   invoices    Invoice[]
   websiteBlocks WebsiteBlock[]
   websiteSettings WebsiteSettings?
+  siteVersions  SiteVersion[]
   bankAccounts   BankAccount[]
   payos          PropertyPayos?
   einvoice       PropertyEinvoice?
@@ -696,6 +697,38 @@ model WebsiteSettings {
   updatedAt   DateTime @updatedAt
 
   @@map("website_settings")
+}
+
+/// A saved state of the hotel's website: its blocks, look and SEO texts, as
+/// the builder saves them (src/lib/public-site/versions.ts). One per save;
+/// saves by the same person within 2 minutes update the newest one; the
+/// newest 50 per property are kept. Restoring puts one back.
+model SiteVersion {
+  id          String   @id @default(cuid())
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  kind        SiteVersionKind @default(AUTO)
+  /// { v: 1, blocks: [{ type, name, config, isEnabled }], settings: {...} } (SiteSnapshot)
+  snapshot    Json
+  /// Who saved it (a user id, no foreign key, like activity_logs.userId); null for INITIAL.
+  createdById String?
+  /// RESTORE: the version put back (no foreign key: it may have been pruned since).
+  restoredFromId String?
+
+  createdAt   DateTime @default(now())
+  /// The last save merged into it (AUTO), else createdAt.
+  updatedAt   DateTime @updatedAt
+
+  @@index([propertyId, createdAt])
+  @@map("site_versions")
+}
+
+enum SiteVersionKind {
+  AUTO            // a save in the builder
+  RESTORE         // the site after a restore
+  BEFORE_RESTORE  // the site just before a restore, so it can be undone
+  INITIAL         // the site as it was before its first versioned save
 }
 
 // ============================================
