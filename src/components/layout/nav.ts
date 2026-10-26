@@ -21,10 +21,15 @@ export type NavKey =
   | 'members'
   | 'settings'
 
+/** The sidebar's sections, in order; 'main' has no heading (dash.common.nav.groups.<group>). */
+export const NAV_GROUPS = ['main', 'operations', 'property', 'finance', 'workspace'] as const
+export type NavGroup = (typeof NAV_GROUPS)[number]
+
 export interface NavItem {
   key: NavKey
   href: string
   roles: WorkspaceRole[]
+  group: NavGroup
 }
 
 const everyone: WorkspaceRole[] = ['ADMIN', 'MANAGER', 'RECEPTIONIST', 'USER']
@@ -36,31 +41,32 @@ export function primaryNav(slug: string, propertyId?: string): NavItem[] {
   if (!propertyId) {
     // The workspace home lists the properties, so there is no second
     // "Cơ sở" entry to walk to.
-    return [{ key: 'properties', href: routes.workspace(slug), roles: everyone }]
+    return [{ key: 'properties', href: routes.workspace(slug), roles: everyone, group: 'main' }]
   }
   const id = propertyId
+  // Grouped like the work: the day at the desk, what the hotel sells, the money.
   return [
-    { key: 'overview', href: routes.property(slug, id), roles: everyone },
-    { key: 'bookings', href: routes.propertyBookings(slug, id), roles: everyone },
-    { key: 'calendar', href: routes.propertyCalendar(slug, id), roles: staff },
-    { key: 'rooms', href: routes.propertyRooms(slug, id), roles: staff },
-    { key: 'services', href: routes.propertyServices(slug, id), roles: managers },
-    { key: 'menu', href: routes.propertyMenu(slug, id), roles: managers },
-    { key: 'payments', href: routes.propertyPayments(slug, id), roles: staff },
-    { key: 'invoices', href: routes.propertyInvoices(slug, id), roles: managers },
-    { key: 'reports', href: routes.propertyReports(slug, id), roles: managers },
-    { key: 'cashbook', href: routes.propertyDailyReport(slug, id), roles: ['ADMIN', 'RECEPTIONIST'] },
-    { key: 'bankAccounts', href: routes.propertyBankAccounts(slug, id), roles: ['ADMIN'] },
-    { key: 'policies', href: routes.propertyPolicies(slug, id), roles: managers },
-    { key: 'website', href: routes.propertyWebsite(slug, id), roles: managers },
+    { key: 'overview', href: routes.property(slug, id), roles: everyone, group: 'main' },
+    { key: 'bookings', href: routes.propertyBookings(slug, id), roles: everyone, group: 'operations' },
+    { key: 'calendar', href: routes.propertyCalendar(slug, id), roles: staff, group: 'operations' },
+    { key: 'rooms', href: routes.propertyRooms(slug, id), roles: staff, group: 'property' },
+    { key: 'services', href: routes.propertyServices(slug, id), roles: managers, group: 'property' },
+    { key: 'menu', href: routes.propertyMenu(slug, id), roles: managers, group: 'property' },
+    { key: 'policies', href: routes.propertyPolicies(slug, id), roles: managers, group: 'property' },
+    { key: 'website', href: routes.propertyWebsite(slug, id), roles: managers, group: 'property' },
+    { key: 'payments', href: routes.propertyPayments(slug, id), roles: staff, group: 'finance' },
+    { key: 'invoices', href: routes.propertyInvoices(slug, id), roles: managers, group: 'finance' },
+    { key: 'cashbook', href: routes.propertyDailyReport(slug, id), roles: ['ADMIN', 'RECEPTIONIST'], group: 'finance' },
+    { key: 'reports', href: routes.propertyReports(slug, id), roles: managers, group: 'finance' },
+    { key: 'bankAccounts', href: routes.propertyBankAccounts(slug, id), roles: ['ADMIN'], group: 'finance' },
   ]
 }
 
 /** Workspace-wide links under the divider. */
 export function workspaceNav(slug: string): NavItem[] {
   return [
-    { key: 'members', href: routes.members(slug), roles: managers },
-    { key: 'settings', href: routes.settings(slug), roles: ['ADMIN'] },
+    { key: 'members', href: routes.members(slug), roles: managers, group: 'workspace' },
+    { key: 'settings', href: routes.settings(slug), roles: ['ADMIN'], group: 'workspace' },
   ]
 }
 

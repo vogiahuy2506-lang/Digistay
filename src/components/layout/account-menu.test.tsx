@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 /**
- * The account menu (sidebar foot and top bars): a menu button that holds the
- * profile, theme, language and sign out, usable from the keyboard.
+ * The account menu (sidebar foot): a menu button that holds the profile, the
+ * site header's theme and VI | EN buttons, and sign out, usable from the keyboard.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import * as React from 'react'
@@ -40,8 +40,10 @@ function render(variant: 'bar' | 'sidebar' = 'sidebar') {
 
 const button = () => container.querySelector<HTMLButtonElement>('button[aria-haspopup="menu"]')!
 const menu = () => container.querySelector('[role="menu"]')
-const items = () => Array.from(container.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'))
-const focused = () => document.activeElement?.textContent
+const items = () => Array.from(container.querySelectorAll<HTMLButtonElement>('[role="menuitem"], [role="menuitemradio"]'))
+/** An entry's name: the icon buttons have only their aria-label. */
+const nameOf = (el: Element | null | undefined) => el?.getAttribute('aria-label') ?? el?.textContent
+const focused = () => nameOf(document.activeElement)
 
 function press(key: string) {
   const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })
@@ -67,18 +69,15 @@ afterEach(() => {
 })
 
 describe('AccountMenu', () => {
-  it('opens from the user row with the profile, theme, language and sign out, focus on the first', () => {
+  it('opens from the user row with the profile, the theme and language buttons and sign out, focus on the first', () => {
     render()
     expect(menu()).toBeNull()
     act(() => button().click())
     expect(button().getAttribute('aria-expanded')).toBe('true')
     expect(menu()?.getAttribute('aria-labelledby')).toBe(button().id)
-    expect(items().map((item) => item.textContent)).toEqual([
-      'profile',
-      'themethemeLight',
-      'languagelanguageNames.vi',
-      'signOut',
-    ])
+    expect(items().map(nameOf)).toEqual(['profile', 'toDark', 'languageNames.vi', 'languageNames.en', 'signOut'])
+    // The language buttons say which one is in use, like the header's VI | EN.
+    expect(items().map((item) => item.getAttribute('aria-checked'))).toEqual([null, null, 'true', 'false', null])
     expect(focused()).toBe('profile')
   })
 
@@ -86,7 +85,7 @@ describe('AccountMenu', () => {
     render()
     act(() => button().click())
     press('ArrowDown')
-    expect(focused()).toBe('themethemeLight')
+    expect(focused()).toBe('toDark')
     press('End')
     expect(focused()).toBe('signOut')
     press('ArrowDown')
@@ -129,7 +128,7 @@ describe('AccountMenu', () => {
     act(() => button().click())
     act(() => items()[1].click())
     expect(menu()).not.toBeNull()
-    expect(items()[1].textContent).toBe('themethemeDark')
+    expect(nameOf(items()[1])).toBe('toLight')
     expect(container.querySelector('[data-theme]')?.getAttribute('data-theme')).toBe('dark')
     expect(document.cookie).toContain('ds-theme=dark')
   })
@@ -137,7 +136,10 @@ describe('AccountMenu', () => {
   it('switches the language through the language cookie and reloads the page data', () => {
     render()
     act(() => button().click())
+    // The language in use does nothing; the other one switches.
     act(() => items()[2].click())
+    expect(router.refresh).not.toHaveBeenCalled()
+    act(() => items()[3].click())
     expect(document.cookie).toContain('NEXT_LOCALE=en')
     expect(router.refresh).toHaveBeenCalledTimes(1)
     expect(menu()).not.toBeNull()
@@ -151,7 +153,7 @@ describe('AccountMenu', () => {
     expect(menu()).toBeNull()
 
     act(() => button().click())
-    act(() => items()[3].click())
+    act(() => items()[4].click())
     expect(onSignOut).toHaveBeenCalledTimes(1)
     expect(menu()).toBeNull()
   })

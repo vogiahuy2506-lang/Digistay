@@ -22,7 +22,13 @@
     "settings": "Settings",
     "switchProperty": "All properties",
     "allWorkspaces": "All workspaces",
-    "current": "Current"
+    "current": "Current",
+    "groups": {
+      "operations": "Operations",
+      "property": "Hotel",
+      "finance": "Finance",
+      "workspace": "Workspace"
+    }
   },
   "shell": {
     "toDark": "Switch to the dark theme",

@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { ChevronsUpDown, Languages, LogOut, Moon, Sun, UserRound } from 'lucide-react'
+import { ChevronsUpDown, LogOut, Moon, Sun, UserRound } from 'lucide-react'
 import { Avatar } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
@@ -66,7 +66,8 @@ export function AccountMenu({ name, email, image, variant, detail, links = [], o
   const menuId = `${id}-menu`
 
   const dark = theme?.preference === 'dark'
-  const entries: (Entry | 'divider')[] = [
+  // 'controls': the theme and VI | EN buttons of the site header, on one row.
+  const entries: (Entry | 'divider' | 'controls')[] = [
     ...links.map<Entry>((link) => ({
       key: link.href,
       label: link.label,
@@ -79,30 +80,7 @@ export function AccountMenu({ name, email, image, variant, detail, links = [], o
       icon: <UserRound className="w-4 h-4" aria-hidden="true" />,
       onSelect: () => router.push(routes.profile()),
     },
-    ...(theme
-      ? [
-          {
-            key: 'theme',
-            label: t('theme'),
-            value: dark ? t('themeDark') : t('themeLight'),
-            icon: dark ? <Moon className="w-4 h-4" aria-hidden="true" /> : <Sun className="w-4 h-4" aria-hidden="true" />,
-            title: theme.darkAvailable ? (dark ? t('toLight') : t('toDark')) : t('noDarkHere'),
-            keepOpen: true,
-            onSelect: () => theme.setPreference(dark ? 'light' : 'dark'),
-          },
-        ]
-      : []),
-    {
-      key: 'language',
-      label: t('language'),
-      value: t(`languageNames.${language.locale}`),
-      valueLang: language.locale,
-      icon: <Languages className="w-4 h-4" aria-hidden="true" />,
-      title: t(`languageNames.${language.next}`),
-      keepOpen: true,
-      disabled: language.pending,
-      onSelect: language.switchLanguage,
-    },
+    'controls',
     'divider',
     {
       key: 'signOut',
@@ -243,6 +221,57 @@ export function AccountMenu({ name, email, image, variant, detail, links = [], o
         >
           {entries.map((entry, i) => {
             if (entry === 'divider') return <div key={`divider-${i}`} role="separator" className="my-1 border-t border-line" />
+            if (entry === 'controls') {
+              // The same controls as the site header (ThemeToggle, LocaleToggle): icons, not words.
+              const themeIndex = theme ? itemIndex++ : -1
+              const langIndex = [itemIndex++, itemIndex++]
+              return (
+                <div key="controls" role="none" className="flex items-center gap-2 px-3 py-1.5">
+                  {theme && (
+                    <button
+                      ref={(node) => {
+                        itemsRef.current[themeIndex] = node
+                      }}
+                      type="button"
+                      role="menuitem"
+                      tabIndex={-1}
+                      aria-label={theme.darkAvailable ? (dark ? t('toLight') : t('toDark')) : t('noDarkHere')}
+                      onClick={() => theme.setPreference(dark ? 'light' : 'dark')}
+                      className="flex h-8 w-8 items-center justify-center rounded-ctl border border-line text-fg transition-colors duration-160 hover:bg-fg/5 focus:outline-none focus-visible:bg-fg/5 focus-visible:ring-2 focus-visible:ring-acc"
+                    >
+                      {dark ? <Sun className="w-4 h-4" aria-hidden="true" /> : <Moon className="w-4 h-4" aria-hidden="true" />}
+                    </button>
+                  )}
+                  <div role="none" className="flex gap-0.5 rounded-ctl border border-line p-0.5">
+                    {(['vi', 'en'] as const).map((l, k) => (
+                      <button
+                        key={l}
+                        ref={(node) => {
+                          itemsRef.current[langIndex[k]] = node
+                        }}
+                        type="button"
+                        role="menuitemradio"
+                        tabIndex={-1}
+                        lang={l}
+                        aria-label={t(`languageNames.${l}`)}
+                        aria-checked={language.locale === l}
+                        aria-disabled={language.pending || undefined}
+                        onClick={() => {
+                          if (language.locale !== l && !language.pending) language.switchLanguage()
+                        }}
+                        className={cn(
+                          'h-7 rounded-[4px] px-2.5 text-[12.5px] font-semibold uppercase transition-colors duration-160 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc',
+                          language.locale === l ? 'bg-ink text-on-ink' : 'text-muted hover:text-fg',
+                          language.pending && 'cursor-wait opacity-60'
+                        )}
+                      >
+                        {l}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
+            }
             const index = itemIndex++
             return (
               <button

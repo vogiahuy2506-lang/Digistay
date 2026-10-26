@@ -5,7 +5,28 @@ import * as React from 'react'
 import { usePathname, useRouter, useParams } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
-import { ChevronDown, Menu, X } from 'lucide-react'
+import {
+  BarChart3,
+  BedDouble,
+  Building2,
+  CalendarCheck,
+  CalendarDays,
+  ChevronDown,
+  ConciergeBell,
+  CreditCard,
+  Globe,
+  Landmark,
+  LayoutDashboard,
+  Menu,
+  Receipt,
+  ScrollText,
+  Settings,
+  UsersRound,
+  UtensilsCrossed,
+  Wallet,
+  X,
+  type LucideIcon,
+} from 'lucide-react'
 import { useDashLabels } from '@/lib/i18n/dash'
 import { cn } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
@@ -14,7 +35,27 @@ import { Dropdown, DropdownItem, DropdownDivider } from '@/components/ui'
 import { useDialogBehavior } from '@/components/ui/dialog-behavior'
 import { AccountMenu } from './account-menu'
 import { NotificationBell } from './notification-bell'
-import { activeHref, primaryNav, workspaceNav, type NavItem, type WorkspaceRole } from './nav'
+import { NAV_GROUPS, activeHref, primaryNav, workspaceNav, type NavItem, type NavKey, type WorkspaceRole } from './nav'
+
+/** One icon per menu entry, so the grouped menu reads at a glance. */
+const NAV_ICONS: Record<NavKey, LucideIcon> = {
+  overview: LayoutDashboard,
+  properties: Building2,
+  bookings: CalendarCheck,
+  calendar: CalendarDays,
+  rooms: BedDouble,
+  services: ConciergeBell,
+  menu: UtensilsCrossed,
+  payments: CreditCard,
+  invoices: Receipt,
+  reports: BarChart3,
+  cashbook: Wallet,
+  bankAccounts: Landmark,
+  policies: ScrollText,
+  website: Globe,
+  members: UsersRound,
+  settings: Settings,
+}
 import { useDocumentTitle } from './document-title'
 import { Logo } from '@/components/marketing/Logo'
 
@@ -157,21 +198,29 @@ function SidebarContent({
 
   const renderItem = (item: NavItem) => {
     const active = item.href === current
+    const Icon = NAV_ICONS[item.key]
     return (
       <Link
         key={item.href}
         href={item.href}
         aria-current={active ? 'page' : undefined}
         className={cn(
-          'flex items-center h-10 lg:h-8 px-3 rounded-ctl text-sm transition-colors duration-160',
+          'flex items-center gap-2.5 h-10 lg:h-8 px-3 rounded-ctl text-sm transition-colors duration-160',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-acc',
           active ? 'bg-acc-soft text-acc font-medium' : 'text-fg/80 hover:text-fg hover:bg-fg/5'
         )}
       >
-        {t(item.key)}
+        <Icon className={cn('h-4 w-4 shrink-0', active ? 'text-acc' : 'text-muted')} aria-hidden="true" />
+        <span className="truncate">{t(item.key)}</span>
       </Link>
     )
   }
+  // Both sidebars (desk, phone drawer) draw this: ids of their own for the section headings.
+  const groupId = React.useId()
+  // The entries by section (nav.ts NAV_GROUPS); a section the role sees nothing of is left out.
+  const sections = NAV_GROUPS.map((group) => ({ group, items: [...main, ...bottom].filter((item) => item.group === group) })).filter(
+    (section) => section.items.length > 0
+  )
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -225,12 +274,19 @@ function SidebarContent({
 
       <div className="relative flex-1 min-h-0 flex flex-col">
         <nav ref={navRef} aria-label={t('main')} className="flex-1 min-h-0 overflow-y-auto px-3 pb-2">
-          <div className="space-y-0.5">{main.map(renderItem)}</div>
-          {bottom.length > 0 && (
-            <>
-              <div className="my-2 mx-3 border-t border-line" role="separator" />
-              <div className="space-y-0.5">{bottom.map(renderItem)}</div>
-            </>
+          {sections.map(({ group, items }) =>
+            group === 'main' ? (
+              <div key={group} className="space-y-0.5">
+                {items.map(renderItem)}
+              </div>
+            ) : (
+              <div key={group} role="group" aria-labelledby={`${groupId}-${group}`} className="mt-3">
+                <p id={`${groupId}-${group}`} className="px-3 pb-1 text-[11px] font-medium uppercase tracking-[0.06em] text-muted">
+                  {t(`groups.${group}`)}
+                </p>
+                <div className="space-y-0.5">{items.map(renderItem)}</div>
+              </div>
+            )
           )}
         </nav>
         {more && (

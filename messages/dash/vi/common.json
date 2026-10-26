@@ -22,7 +22,13 @@
     "settings": "Cài đặt",
     "switchProperty": "Danh sách cơ sở",
     "allWorkspaces": "Tất cả workspace",
-    "current": "Đang chọn"
+    "current": "Đang chọn",
+    "groups": {
+      "operations": "Vận hành",
+      "property": "Khách sạn",
+      "finance": "Tài chính",
+      "workspace": "Workspace"
+    }
   },
   "shell": {
     "toDark": "Chuyển sang giao diện tối",
