@@ -477,10 +477,13 @@
       "openMenu": "Mở menu",
       "closeMenu": "Đóng menu",
       "language": "Ngôn ngữ",
-      "dashboard": "Vào trang quản lý ({email})",
       "toDark": "Chuyển sang giao diện tối",
       "toLight": "Chuyển sang giao diện sáng",
-      "theme": "Giao diện"
+      "theme": "Giao diện",
+      "account": "Tài khoản {email}",
+      "toDashboard": "Vào trang quản lý",
+      "profile": "Hồ sơ",
+      "signOut": "Đăng xuất"
     },
     "footer": {
       "tagline": "Website và phần mềm quản lý cho khách sạn, homestay, resort.",

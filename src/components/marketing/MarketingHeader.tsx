@@ -4,6 +4,7 @@ import { isLocale } from '@/i18n/locales'
 import { auth } from '@/lib/auth'
 import { cn } from '@/lib/utils'
 import { LocaleToggle } from './LocaleToggle'
+import { MarketingAccount, MarketingSignOutButton } from './MarketingAccount'
 import { Logo } from './Logo'
 import { MobileMenu } from './MobileMenu'
 import { publicTheme } from './PublicFrame'
@@ -20,8 +21,10 @@ const LINKS = [
 
 /**
  * Header of Digistay's own public pages: logo, Tính năng / Bảng giá / Liên
- * hệ, VI | EN, Đăng nhập, Đăng ký. Below lg the links, language and sign-in
- * move into MobileMenu. `active` marks the page the visitor is on.
+ * hệ, VI | EN, Đăng nhập, Đăng ký, or for a signed-in visitor the account
+ * menu (dashboard, profile, sign out). Below lg the links, language and
+ * sign-in / sign-out move into MobileMenu. `active` marks the page the
+ * visitor is on.
  */
 export async function MarketingHeader({ active }: { active?: MarketingPage }) {
   const t = await getTranslations('marketing.nav')
@@ -31,7 +34,6 @@ export async function MarketingHeader({ active }: { active?: MarketingPage }) {
   // Signed in: the account instead of "Đăng nhập" / "Đăng ký" (Claude Design "Digistay Loi Moi").
   // A session that cannot be read (revoked, broken cookie) just shows the signed-out header.
   const email = await auth().then((session) => session?.user?.email ?? null, () => null)
-  const initials = email ? email.slice(0, 2).toUpperCase() : ''
   const theme = await publicTheme()
 
   return (
@@ -69,16 +71,10 @@ export async function MarketingHeader({ active }: { active?: MarketingPage }) {
             <LocaleToggle locale={locale} label={t('language')} />
           </div>
           {email ? (
-            <Link
-              href="/workspaces"
-              aria-label={t('dashboard', { email })}
-              className="flex h-11 items-center gap-2.5 rounded-ctl px-1.5 font-medium text-fg hover:bg-fg/5 lg:h-10"
-            >
-              <span aria-hidden className="flex h-8 w-8 items-center justify-center rounded-full bg-plain-soft text-[12px] font-semibold">
-                {initials}
-              </span>
-              <span className="hidden max-w-[200px] truncate lg:block">{email}</span>
-            </Link>
+            <MarketingAccount
+              email={email}
+              labels={{ menu: t('account', { email }), dashboard: t('toDashboard'), profile: t('profile'), signOut: t('signOut') }}
+            />
           ) : (
             <>
               <Link
@@ -117,7 +113,9 @@ export async function MarketingHeader({ active }: { active?: MarketingPage }) {
               <span className="text-[14px] text-muted">{t('theme')}</span>
               <ThemeToggle initial={theme} toDark={t('toDark')} toLight={t('toLight')} className="h-11 w-11 border border-line" />
             </div>
-            {!email && (
+            {email ? (
+              <MarketingSignOutButton label={t('signOut')} />
+            ) : (
               <Link
                 href="/login"
                 className="mt-1 flex h-12 items-center justify-center rounded-ctl border border-ink text-[15px] font-medium text-fg"

@@ -477,10 +477,13 @@
       "openMenu": "Open menu",
       "closeMenu": "Close menu",
       "language": "Language",
-      "dashboard": "Open your management pages ({email})",
       "toDark": "Switch to the dark theme",
       "toLight": "Switch to the light theme",
-      "theme": "Theme"
+      "theme": "Theme",
+      "account": "Account {email}",
+      "toDashboard": "Go to dashboard",
+      "profile": "Profile",
+      "signOut": "Sign out"
     },
     "footer": {
       "tagline": "Websites and management software for hotels, homestays and resorts.",
