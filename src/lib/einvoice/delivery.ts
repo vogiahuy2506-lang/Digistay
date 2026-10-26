@@ -17,6 +17,7 @@ import { sendInvoiceEmail } from '@/lib/email'
 import { emailLocale } from '@/lib/email/i18n'
 import { invoiceAmendsNote } from '@/lib/email/templates'
 import { EinvoiceError, getInvoicePdf } from './matbao'
+import { invoiceLookupUrl } from './lookup-link'
 
 export const EMAIL_MAX_ATTEMPTS = 5
 const EMAIL_LEASE_MS = 3 * 60 * 1000
@@ -66,7 +67,7 @@ export async function sendInvoiceEmailFor(
   const invoice = await prisma.invoice.findUniqueOrThrow({
     where: { id: invoiceId },
     include: {
-      booking: { select: { bookingCode: true, locale: true, property: { select: { name: true } } } },
+      booking: { select: { bookingCode: true, locale: true, property: { select: { name: true, subdomain: true } } } },
       adjustsInvoice: { select: { einvoiceNumber: true } },
       replacesInvoice: { select: { einvoiceNumber: true } },
     },
@@ -104,6 +105,8 @@ export async function sendInvoiceEmailFor(
       totalAmount: invoice.totalAmount,
       taxAmount: invoice.taxAmount,
       note,
+      // Task 39: the PDF attached may get lost; the page keeps it, no account needed.
+      lookupUrl: invoiceLookupUrl(invoice.booking.property.subdomain, invoice.id, locale),
       locale,
       pdf: { filename, content: pdf },
     })

@@ -390,6 +390,44 @@
       "rooms": "Xem phòng trống",
       "home": "Về trang chủ",
       "help": "Cần hỗ trợ? Gọi khách sạn:"
+    },
+    "invoice": {
+      "metaTitle": "Hoá đơn điện tử",
+      "title": "Hoá đơn số {number}",
+      "titleNoNumber": "Hoá đơn điện tử",
+      "lead": "{hotel} đã phát hành hoá đơn điện tử này cho bạn. Xem thông tin bên dưới và tải bản PDF bất cứ lúc nào.",
+      "statusIssued": "Đã phát hành",
+      "statusReplaced": "Đã được thay thế",
+      "demo": "Đây là hoá đơn thử nghiệm (môi trường demo của Mắt Bão), không có giá trị pháp lý.",
+      "pdfFailed": "Chưa tải được bản PDF từ Mắt Bão lúc này. Vui lòng thử lại sau ít phút, hoặc liên hệ khách sạn.",
+      "replacedBy": "Hoá đơn này đã được thay thế bằng hoá đơn số {number}.",
+      "replacedNoLink": "Hoá đơn này đã được thay thế. Vui lòng liên hệ khách sạn để nhận hoá đơn mới.",
+      "openReplacement": "Xem hoá đơn thay thế",
+      "seller": "Người bán",
+      "buyer": "Người mua",
+      "taxCode": "MST: {code}",
+      "buyerPerson": "Người mua hàng: {name}",
+      "consumer": "Người tiêu dùng không lấy hoá đơn",
+      "number": "Số hoá đơn",
+      "series": "Mẫu số · Ký hiệu",
+      "date": "Ngày lập",
+      "lookupCode": "Mã tra cứu",
+      "cqtCode": "Mã của cơ quan thuế",
+      "note": "Ghi chú",
+      "adjustsDown": "Điều chỉnh giảm cho hoá đơn số {number}",
+      "adjustsUp": "Điều chỉnh tăng cho hoá đơn số {number}",
+      "replaces": "Thay thế cho hoá đơn số {number}",
+      "status": "Trạng thái",
+      "subtotal": "Tiền chưa thuế",
+      "vat": "Thuế GTGT ({rate})",
+      "vatNoRate": "Thuế GTGT",
+      "vatExempt": "không chịu thuế",
+      "vatUndeclared": "không kê khai, tính nộp thuế",
+      "total": "Tổng thanh toán",
+      "downloadPdf": "Tải PDF",
+      "taxPortal": "Kiểm tra trên cổng của cơ quan thuế",
+      "taxPortalHint": "Trên cổng hoá đơn điện tử của cơ quan thuế (hoadondientu.gdt.gov.vn), mục Tra cứu hoá đơn: nhập mã số thuế người bán, ký hiệu, số hoá đơn và số tiền ở trên.",
+      "tooMany": "Bạn mở trang này quá nhiều lần. Vui lòng thử lại sau ít phút."
     }
   },
   "marketing": {
@@ -1194,7 +1232,10 @@
       "textIssued": "{hotel} đã phát hành hóa đơn điện tử cho đơn đặt phòng của bạn (PDF đính kèm).",
       "adjustsDown": "Điều chỉnh giảm cho hoá đơn số {number}",
       "adjustsUp": "Điều chỉnh tăng cho hoá đơn số {number}",
-      "replaces": "Thay thế cho hoá đơn số {number}"
+      "replaces": "Thay thế cho hoá đơn số {number}",
+      "viewOnline": "Xem hoá đơn và tải PDF",
+      "lookupLink": "Bạn có thể xem lại hoá đơn và tải bản PDF bất cứ lúc nào tại link dưới đây, không cần đăng nhập.",
+      "textLookupLink": "Xem hoá đơn và tải PDF: {url}"
     }
   }
 }

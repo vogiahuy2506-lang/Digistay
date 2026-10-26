@@ -268,7 +268,11 @@
       "sendEmail": "Email the invoice",
       "cancel": "Cancel invoice",
       "publish": "Issue",
-      "republish": "Issue again"
+      "republish": "Issue again",
+      "lookupLink": "Lookup link for the guest",
+      "lookupLinkHint": "The guest opens this link to view the invoice and download the PDF, no sign-in needed. It is also in the invoice email.",
+      "copyLookupLink": "Copy lookup link",
+      "lookupCopied": "Copied"
     },
     "adjust": {
       "title": "Create adjustment invoice",

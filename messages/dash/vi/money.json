@@ -268,7 +268,11 @@
       "sendEmail": "Gửi email hoá đơn",
       "cancel": "Hủy hóa đơn",
       "publish": "Phát hành",
-      "republish": "Phát hành lại"
+      "republish": "Phát hành lại",
+      "lookupLink": "Link tra cứu cho khách",
+      "lookupLinkHint": "Khách mở link này để xem hoá đơn và tải PDF, không cần đăng nhập. Link có sẵn trong email hoá đơn.",
+      "copyLookupLink": "Sao chép link tra cứu",
+      "lookupCopied": "Đã sao chép"
     },
     "adjust": {
       "title": "Lập hoá đơn điều chỉnh",

@@ -414,6 +414,8 @@ export async function publishInvoice(invoiceId: string, userId: string | null, n
       eInvoiceProvider: 'MATBAO',
       invoicePattern: config.templateCode,
       invoiceSeries: config.series,
+      // The seller's tax code it is issued under, for the public lookup page (lookup-view.ts).
+      fiscalCode: config.taxCode,
       vatCode,
       subtotal: split.net,
       taxAmount: split.vat,

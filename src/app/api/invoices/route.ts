@@ -6,6 +6,8 @@ import { InvoiceStatus, type Prisma } from '@prisma/client'
 import { badParam, dayParam, enumParam, pageParams, paginationOf, searchParam } from '@/lib/api/list-params'
 import { EinvoiceError } from '@/lib/einvoice/matbao'
 import { generateInvoiceNumber, invoiceData, invoiceInputSchema } from '@/lib/einvoice/invoices'
+import { invoiceLookupUrl } from '@/lib/einvoice/lookup-link'
+import { isLocale } from '@/i18n/locales'
 import type { VatCode } from '@/lib/einvoice/vat'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
 import { managerWorkspaces, seesMoneyTotals } from '../payments/money-access'
@@ -84,10 +86,12 @@ export async function GET(request: NextRequest) {
               guestName: true,
               checkInDate: true,
               checkOutDate: true,
+              locale: true,
               property: {
                 select: {
                   id: true,
                   name: true,
+                  subdomain: true,
                 },
               },
             },
@@ -118,7 +122,14 @@ export async function GET(request: NextRequest) {
     const count = (s: string) => byStatus.find((r) => r.status === s)?._count._all ?? 0
     return NextResponse.json({
       success: true,
-      data: invoices,
+      data: invoices.map((invoice) => ({
+        ...invoice,
+        // The buyer's page (task 39), in their language, for staff to copy and send.
+        lookupUrl:
+          invoice.status === 'PUBLISHED' || invoice.status === 'REPLACED'
+            ? invoiceLookupUrl(invoice.booking.property.subdomain, invoice.id, isLocale(invoice.booking.locale) ? invoice.booking.locale : 'vi')
+            : null,
+      })),
       pagination: paginationOf(page, limit, total),
       stats: {
         total: byStatus.reduce((n, r) => n + r._count._all, 0),
