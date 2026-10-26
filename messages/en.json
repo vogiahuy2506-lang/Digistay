@@ -1004,7 +1004,9 @@
       "delete": "Delete workspace",
       "deleteConfirm": "Delete “{name}”? Every property and member will be lost for good."
     },
-    "current": "Current"
+    "current": "Current",
+    "planLocked": "Locked",
+    "planLockedNote": "Your account in this workspace is locked because the workspace uses more than its plan allows. Contact the workspace owner."
   },
   "workspaceHome": {
     "title": "Your properties",

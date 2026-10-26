@@ -77,7 +77,21 @@
     "locked": "Workspace đang ở chế độ chỉ xem vì gói đã hết hạn; website tạm ngừng nhận đặt phòng online.",
     "choose": "Chọn gói",
     "renew": "Gia hạn",
-    "askOwner": "Liên hệ chủ workspace để gia hạn."
+    "askOwner": "Liên hệ chủ workspace để gia hạn.",
+    "overGrace": "Vượt giới hạn gói: {what}. Từ {date}, phần vượt sẽ bị khoá (mới nhất trước) nếu chưa giảm bớt hoặc nâng cấp gói.",
+    "overLocked": "Đang khoá vì vượt giới hạn gói: {what}. Dữ liệu vẫn giữ nguyên; nâng cấp gói hoặc giảm bớt để mở lại.",
+    "overKinds": {
+      "properties": "cơ sở",
+      "rooms": "phòng",
+      "staff": "tài khoản nhân viên"
+    },
+    "lockedCount": {
+      "properties": "{count} cơ sở",
+      "roomTypes": "{count} hạng phòng",
+      "members": "{count} tài khoản nhân viên"
+    },
+    "viewPlan": "Xem gói",
+    "askOwnerPlan": "Liên hệ chủ workspace."
   },
   "start": {
     "title": "Chọn workspace để mua gói",
@@ -99,5 +113,11 @@
       "fit": "Chuỗi khách sạn và resort"
     }
   },
-  "overLimit": "Đang dùng nhiều hơn gói cho phép: dữ liệu vẫn giữ nguyên, nhưng không thêm được {what} cho tới khi nâng gói."
+  "overLimit": "Đang dùng nhiều hơn gói cho phép: dữ liệu vẫn giữ nguyên, nhưng không thêm được {what} cho tới khi nâng gói.",
+  "planLockedBadge": "Bị khoá (vượt gói)",
+  "propertyLocked": {
+    "title": "Cơ sở này đang bị khoá (chỉ xem) do workspace vượt giới hạn gói",
+    "text": "Bạn vẫn xem được dữ liệu nhưng không thay đổi được; website vẫn hiển thị nhưng ngừng nhận đặt phòng online. Nâng cấp gói hoặc giảm bớt số cơ sở để mở lại.",
+    "link": "Gói & thanh toán"
+  }
 }

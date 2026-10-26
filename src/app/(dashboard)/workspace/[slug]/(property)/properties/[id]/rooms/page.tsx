@@ -35,6 +35,8 @@ interface RoomType {
   baseOccupancy: number
   maxOccupancy: number
   isActive: boolean
+  /** Locked because the workspace is over its plan's room limit: no new bookings into it. */
+  planLockedAt?: string | null
   images: { id: string; url: string; isPrimary: boolean }[]
   amenities: { amenity: { id: string; name: string; slug: string; icon: string | null } }[]
   pricing: { weekdayPrice: number; weekendPrice: number }[]
@@ -758,6 +760,9 @@ export default function RoomTypesPage() {
                   )}
                   
                   {/* Status */}
+                  {roomType.planLockedAt && (
+                    <Badge variant="danger" className="mt-2 mr-1.5">{t('card.planLocked')}</Badge>
+                  )}
                   {!roomType.isActive && (
                     <Badge variant="secondary" className="mt-2">{t('card.inactive')}</Badge>
                   )}

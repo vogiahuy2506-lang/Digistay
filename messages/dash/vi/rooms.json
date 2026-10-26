@@ -42,7 +42,8 @@
       "inactive": "Không hoạt động",
       "capacityGuests": "{count} khách",
       "capacityDetail": "{adults} NL · {children} TE",
-      "capacityTitle": "Tối đa {count} khách: {adults} người lớn, {children} trẻ em; giá gồm {base} khách"
+      "capacityTitle": "Tối đa {count} khách: {adults} người lớn, {children} trẻ em; giá gồm {base} khách",
+      "planLocked": "Bị khoá (vượt gói)"
     },
     "form": {
       "name": "Tên hạng phòng",

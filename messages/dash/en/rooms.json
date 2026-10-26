@@ -42,7 +42,8 @@
       "inactive": "Inactive",
       "capacityGuests": "{count, plural, one {# guest} other {# guests}}",
       "capacityDetail": "{adults} A · {children} C",
-      "capacityTitle": "Up to {count} guests: {adults} adults, {children} children; the price covers {base}"
+      "capacityTitle": "Up to {count} guests: {adults} adults, {children} children; the price covers {base}",
+      "planLocked": "Locked (over plan)"
     },
     "form": {
       "name": "Room type name",

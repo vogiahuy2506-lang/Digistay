@@ -56,6 +56,8 @@ interface RoomType {
   baseOccupancy: number
   maxOccupancy: number
   isActive: boolean
+  /** Locked because the workspace is over its plan's room limit: no new bookings into it. */
+  planLockedAt?: string | null
   images: { id: string; url: string; isPrimary: boolean }[]
   amenities: { amenity: Amenity }[]
 }
@@ -592,6 +594,7 @@ export default function PropertyDetailPage() {
                       <div className="flex items-center gap-2 mb-2">
                         <Bed className="w-4 h-4 text-muted" />
                         <span className="font-medium text-fg">{room.name}</span>
+                        {room.planLockedAt && <Badge variant="danger">{t('rooms.planLocked')}</Badge>}
                       </div>
                       <p className="text-sm text-muted">
                         {t('rooms.capacity', { rooms: room.totalRooms, guests: room.maxOccupancy })}
@@ -648,6 +651,7 @@ export default function PropertyDetailPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
+                        {room.planLockedAt && <Badge variant="danger">{t('rooms.planLocked')}</Badge>}
                         <Badge variant={room.isActive ? 'success' : 'gray'}>
                           {room.isActive ? tp('status.active') : tp('status.inactive')}
                         </Badge>

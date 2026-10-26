@@ -6,6 +6,7 @@ import { getWorkspaceRoleBySlug } from '@/lib/auth/rbac'
 import type { WorkspaceRole } from '@/components/layout/nav'
 import { workspacePlan } from '@/lib/billing/subscription'
 import type { SubscriptionStateName } from '@/lib/billing/period'
+import { overageBanner, type OverageBanner } from '@/lib/billing/overage'
 
 export interface WorkspaceShellData {
   workspace: {
@@ -19,7 +20,16 @@ export interface WorkspaceShellData {
   userEmail?: string
   userImage?: string
   /** The Digistay plan's state, for the banner (src/components/layout/plan-banner.tsx). */
-  plan: { state: SubscriptionStateName; trial: boolean; planId: string; daysLeft: number; graceDaysLeft: number; periodEnd: string }
+  plan: {
+    state: SubscriptionStateName
+    trial: boolean
+    planId: string
+    daysLeft: number
+    graceDaysLeft: number
+    periodEnd: string
+    /** Over the plan's limits or with things locked for it (src/lib/billing/overage.ts); null otherwise or while read-only. */
+    overage: OverageBanner | null
+  }
 }
 
 /**
@@ -52,7 +62,7 @@ export async function loadWorkspaceShell(slug: string): Promise<WorkspaceShellDa
     where: {
       OR: [
         { ownerId: session.user.id },
-        { members: { some: { userId: session.user.id } } },
+        { members: { some: { userId: session.user.id, planLockedAt: null } } },
       ],
     },
     select: {
@@ -61,7 +71,7 @@ export async function loadWorkspaceShell(slug: string): Promise<WorkspaceShellDa
       slug: true,
       ownerId: true,
       members: {
-        where: { userId: session.user.id },
+        where: { userId: session.user.id, planLockedAt: null },
         select: { role: true },
         take: 1,
       },
@@ -70,6 +80,7 @@ export async function loadWorkspaceShell(slug: string): Promise<WorkspaceShellDa
   })
 
   const plan = await workspacePlan(workspace.id)
+  const overage = plan.state === 'locked' ? null : await overageBanner(workspace.id, plan.subscription.overLimitSince, plan.plan)
 
   return {
     plan: {
@@ -79,6 +90,7 @@ export async function loadWorkspaceShell(slug: string): Promise<WorkspaceShellDa
       daysLeft: plan.daysLeft,
       graceDaysLeft: plan.graceDaysLeft,
       periodEnd: plan.subscription.periodEnd.toISOString(),
+      overage,
     },
     workspace: { id: workspace.id, name: workspace.name, slug: workspace.slug, role },
     workspaces: userWorkspaces.map((w) => ({

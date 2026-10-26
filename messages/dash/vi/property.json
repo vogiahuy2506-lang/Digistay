@@ -148,7 +148,8 @@
         "baseOccupancy": "Số người cơ bản",
         "baseOccupancyHint": "Số người tính theo giá cơ bản",
         "maxOccupancy": "Số người tối đa"
-      }
+      },
+      "planLocked": "Bị khoá (vượt gói)"
     },
     "bedTypes": {
       "SINGLE": "Giường đơn",

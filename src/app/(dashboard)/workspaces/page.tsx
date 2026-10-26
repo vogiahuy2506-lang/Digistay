@@ -44,6 +44,8 @@ interface Workspace {
   settings?: unknown
   members?: { userId: string; role: string }[]
   _count: { properties: number; members: number }
+  /** The caller is a member locked for being over the plan (src/lib/billing/overage.ts). */
+  planLocked?: boolean
 }
 
 interface CurrentUser {
@@ -350,6 +352,8 @@ export default function WorkspacesPage() {
                   owner: t('owner'),
                   edit: t('actions.edit'),
                   remove: t('actions.delete'),
+                  planLocked: t('planLocked'),
+                  planLockedNote: t('planLockedNote'),
                 }}
                 roleLabel={(role) =>
                   role === 'ADMIN' || role === 'MANAGER' || role === 'RECEPTIONIST' || role === 'USER'
@@ -437,6 +441,8 @@ interface WorkspaceRowProps {
     owner: string
     edit: string
     remove: string
+    planLocked: string
+    planLockedNote: string
   }
   roleLabel: (role: string) => string
   onEdit: () => void
@@ -462,17 +468,26 @@ function WorkspaceRow({ workspace, isOwner, role, labels, roleLabel, onEdit, onR
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2.5 min-w-0">
             <Building2 className="w-4 h-4 text-muted shrink-0" aria-hidden="true" />
-            <Link
-              href={routes.workspace(workspace.slug)}
-              className="text-body font-medium text-fg truncate hover:text-acc rounded-ctl focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
-            >
-              {workspace.name}
-            </Link>
+            {workspace.planLocked ? (
+              <span className="text-body font-medium text-muted truncate">{workspace.name}</span>
+            ) : (
+              <Link
+                href={routes.workspace(workspace.slug)}
+                className="text-body font-medium text-fg truncate hover:text-acc rounded-ctl focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
+              >
+                {workspace.name}
+              </Link>
+            )}
             <span className="shrink-0 rounded-sm bg-plain-soft px-1.5 py-0.5 text-[11px] text-plain">
               {isOwner ? labels.owner : role ? roleLabel(role) : ''}
             </span>
+            {workspace.planLocked && (
+              <span className="shrink-0 rounded-sm bg-err-soft px-1.5 py-0.5 text-[11px] text-err">{labels.planLocked}</span>
+            )}
           </div>
-          {workspace.description && (
+          {workspace.planLocked ? (
+            <p className="mt-1 text-small text-err">{labels.planLockedNote}</p>
+          ) : workspace.description && (
             <p className="mt-1 text-small text-muted line-clamp-1">{workspace.description}</p>
           )}
           <p className="mt-1.5 text-small text-muted flex items-center gap-3 flex-wrap">
@@ -501,17 +516,19 @@ function WorkspaceRow({ workspace, isOwner, role, labels, roleLabel, onEdit, onR
           </Dropdown>
         )}
 
-        <Link
-          href={routes.workspace(workspace.slug)}
-          className={cn(
-            'inline-flex items-center gap-1.5 rounded-ctl border border-ink px-3 h-9 sm:h-8 text-small font-medium text-fg',
-            'hover:bg-panel transition-colors duration-160 shrink-0',
-            'focus:outline-none focus-visible:ring-2 focus-visible:ring-acc focus-visible:ring-offset-2 focus-visible:ring-offset-page'
-          )}
-        >
-          {labels.open}
-          <ArrowRight className="w-4 h-4" aria-hidden="true" />
-        </Link>
+        {!workspace.planLocked && (
+          <Link
+            href={routes.workspace(workspace.slug)}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-ctl border border-ink px-3 h-9 sm:h-8 text-small font-medium text-fg',
+              'hover:bg-panel transition-colors duration-160 shrink-0',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-acc focus-visible:ring-offset-2 focus-visible:ring-offset-page'
+            )}
+          >
+            {labels.open}
+            <ArrowRight className="w-4 h-4" aria-hidden="true" />
+          </Link>
+        )}
       </div>
     </li>
   )
