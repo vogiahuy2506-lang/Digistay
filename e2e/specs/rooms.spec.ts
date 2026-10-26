@@ -22,7 +22,7 @@ test('list rooms, book a room from the timeline, drag the guest to another room'
 
   // 1. The room list: Suite gets rooms 501-505.
   await page.goto(propertyPath('/rooms'))
-  await page.getByRole('button', { name: 'Danh sách phòng' }).click()
+  await page.getByRole('tab', { name: 'Danh sách phòng' }).click()
   await page.getByLabel('Thêm phòng cho Suite').fill('501-505')
   await page.getByLabel('Thêm phòng cho Suite').press('Enter')
   await expect(page.getByText('Đã thêm 5 phòng')).toBeVisible()

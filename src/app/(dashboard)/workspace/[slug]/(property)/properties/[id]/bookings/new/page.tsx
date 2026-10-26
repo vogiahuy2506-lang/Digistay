@@ -1,238 +1,204 @@
 'use client'
 
 import * as React from 'react'
+import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
-import { 
-  Search, Calendar, Users, CreditCard, User, Phone, Mail, 
-  Home, Check, ArrowLeft, ChevronRight, Clock, Copy, AlertCircle,
-  MapPin, Bed, Wifi, UtensilsCrossed, Ban, Bath, Mountain, Tv,
-  Coffee, Droplets, Wine, Banknote, Timer, RefreshCw, Workflow, QrCode,
-  CreditCard as CreditCardIcon, BedDouble, DoorClosed, Plus, ArrowRight,
-  Filter
-} from 'lucide-react'
-import { format, addDays, differenceInDays } from 'date-fns'
+import { AlertCircle, ArrowLeft, Banknote, Bed, Check, Clock, CreditCard, Landmark, Plus, RefreshCw, Users } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { quoteStay, type Rates } from '@/lib/pricing/quote'
+import { Header, PageContainer } from '@/components/layout'
+import { Button } from '@/components/ui'
+import { toast } from '@/components/ui/toast'
+import { getIcon } from '@/lib/amenity-icons'
+import { addDays, vnDay } from '@/lib/bookings/room-plan'
+import { nightsBetween } from '@/lib/bookings/display'
+import type { Rates } from '@/lib/pricing/quote'
+import { resizedImage } from '@/lib/media/image-url'
 import { routes } from '@/lib/utils/routes'
+import { cn } from '@/lib/utils'
 import { useDashLabels } from '@/lib/i18n/dash'
 import { apiError } from '@/lib/i18n/api-errors'
 
+/** A room type as GET /api/bookings/availability returns it (all=1): the hotel's own data and price for these dates and guests. */
 interface RoomType {
   id: string
   name: string
+  description: string | null
+  area: number | null
   bedType: string
   baseOccupancy: number
   maxOccupancy: number
+  maxAdults: number
+  maxChildren: number
   totalRooms: number
   availableRooms: number
-  isActive: boolean
-  isAvailable?: boolean
-  description?: string
-  size?: number
-  floorRange?: string
-  amenities?: string[]
-  /** from /api/bookings/availability: the rates bookings are charged */
+  isAvailable: boolean
+  /** takes these adults and children */
+  fits: boolean
+  image: string | null
+  amenities: { id: string; name: string; icon: string | null }[]
+  /** room nights (basePrice) and with the surcharges for these guests (total), as the booking is charged */
   pricing: Rates & { basePrice: number; total: number }
 }
 
+/** One of the hotel's listed rooms free on these nights (GET /api/rooms/available). */
 interface Room {
   id: string
   number: string
-  floor: number
-  status: string
-  isClean?: boolean
+  floor: number | null
 }
 
-interface Property {
-  id: string
-  name: string
-  subdomain: string
-}
+type Method = 'NONE' | 'CASH' | 'CARD' | 'QR_VIETQR'
+type Recorded = { ok: boolean; pending?: boolean; error?: string }
 
-interface GuestInfo {
-  name: string
-  phone: string
-  email: string
-  note: string
-}
+const BED_TYPES = ['SINGLE', 'DOUBLE', 'TWIN', 'TRIPLE', 'QUADRUPLE', 'KING', 'QUEEN', 'SUITE', 'BUNK'] as const
 
-interface BookingResult {
-  id: string
-  bookingCode: string
-  status: string
-}
+/** "26/10" of a yyyy-mm-dd day. */
+const dayMonth = (day: string) => (day ? `${day.slice(8, 10)}/${day.slice(5, 7)}` : '')
 
-const BED_TYPES = ['SINGLE', 'DOUBLE', 'TWIN', 'TRIPLE', 'KING', 'QUEEN'] as const
-
-const amenityIcons: Record<string, React.ReactNode> = {
-  'wifi': <Wifi className="w-3 h-3" />,
-  'breakfast': <UtensilsCrossed className="w-3 h-3" />,
-  'non-smoking': <Ban className="w-3 h-3" />,
-  'bath': <Bath className="w-3 h-3" />,
-  'balcony': <Mountain className="w-3 h-3" />,
-  'tv': <Tv className="w-3 h-3" />,
-  'coffee': <Coffee className="w-3 h-3" />,
-  'shower': <Droplets className="w-3 h-3" />,
-}
-
+/**
+ * Walk-in (front desk): a booking for a guest at the desk. Everything shown
+ * is the hotel's: rooms free for the dates and guests chosen
+ * (/api/bookings/availability, the count the booking checks), each type's
+ * own area, beds, amenities and price, its free rooms when it has a room
+ * list. The booking goes through POST /api/bookings; money collected now is
+ * recorded through POST /api/payments (cash and a POS card are money in
+ * hand; a transfer waits for confirmation in Payments). The page used to
+ * show made-up figures, a countdown that held nothing and buttons that did
+ * nothing.
+ */
 export default function WalkinBookingPage() {
   const router = useRouter()
   const params = useParams<{ slug: string; id: string }>()
-  const propertyIdFromUrl = params.id
+  const propertyId = params.id
   const t = useTranslations('dash.bookings.walkIn')
-  const tc = useTranslations('dash.common')
   const labels = useDashLabels()
-  
-  const [properties, setProperties] = React.useState<Property[]>([])
-  const [selectedProperty, setSelectedProperty] = React.useState(propertyIdFromUrl || '')
+
+  // Vietnam days: the same on the server and in the browser.
+  const [checkInDate, setCheckInDate] = React.useState(() => vnDay(new Date()))
+  const [checkOutDate, setCheckOutDate] = React.useState(() => addDays(vnDay(new Date()), 1))
+  const [numAdults, setNumAdults] = React.useState(2)
+  const [numChildren, setNumChildren] = React.useState(0)
+  const [stayTimes, setStayTimes] = React.useState<{ checkIn: string; checkOut: string } | null>(null)
+
   const [roomTypes, setRoomTypes] = React.useState<RoomType[]>([])
-  const [availableRooms, setAvailableRooms] = React.useState<Room[]>([])
   const [isLoading, setIsLoading] = React.useState(false)
-  
-  // Search criteria
-  const [checkInDate, setCheckInDate] = React.useState(format(new Date(), 'yyyy-MM-dd'))
-  const [checkOutDate, setCheckOutDate] = React.useState(format(addDays(new Date(), 1), 'yyyy-MM-dd'))
-  const [checkInTime, setCheckInTime] = React.useState('14:00')
-  const [checkOutTime, setCheckOutTime] = React.useState('12:00')
-  const [numAdults, setNumAdults] = React.useState('2')
-  const [numChildren, setNumChildren] = React.useState('0')
-  
-  // Selected items
-  const [selectedRoomType, setSelectedRoomType] = React.useState<RoomType | null>(null)
-  const [selectedRoom, setSelectedRoom] = React.useState<Room | null>(null)
-  const [guestInfo, setGuestInfo] = React.useState<GuestInfo>({
-    name: '',
-    phone: '',
-    email: '',
-    note: '',
-  })
-  
-  // Payment
-  const [paymentMethod, setPaymentMethod] = React.useState('QR_VIETQR')
-  const [paymentScope, setPaymentScope] = React.useState('full')
+  const [searchKey, setSearchKey] = React.useState(0)
+  const [selectedTypeId, setSelectedTypeId] = React.useState<string | null>(null)
+  // null: loading; listed false: the type has no room list.
+  const [rooms, setRooms] = React.useState<{ listed: boolean; list: Room[] } | null>(null)
+  const [roomId, setRoomId] = React.useState('')
+
+  const [guest, setGuest] = React.useState({ name: '', phone: '', email: '', note: '' })
+  const [method, setMethod] = React.useState<Method>('NONE')
+  const [scope, setScope] = React.useState<'full' | 'deposit'>('full')
   const [isSubmitting, setIsSubmitting] = React.useState(false)
-  const [bookingResult, setBookingResult] = React.useState<BookingResult | null>(null)
   const [error, setError] = React.useState('')
-  
-  // Hold timer
-  const [holdTime, setHoldTime] = React.useState(14 * 60 + 59) // 14:59
-  const [bookingCode, setBookingCode] = React.useState('')
 
+  // The hotel's check-in / check-out times.
   React.useEffect(() => {
-    fetchProperties()
-    // Generate booking code on client side only to avoid hydration mismatch
-    setBookingCode(`WK-${format(new Date(), 'yyyyMMdd')}-${Math.floor(Math.random() * 100).toString().padStart(2, '0')}`)
-  }, [])
+    fetch(`/api/properties/${propertyId}/policy`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d?.data && setStayTimes({ checkIn: d.data.checkInTime, checkOut: d.data.checkOutTime }))
+      .catch(() => {})
+  }, [propertyId])
 
+  // Every priced room type for these dates and guests; the list shows those that fit and have a room free.
   React.useEffect(() => {
-    if (selectedProperty && checkInDate && checkOutDate) {
-      searchAvailability()
-    }
-  }, [selectedProperty, checkInDate, checkOutDate])
-
-  // Hold timer countdown
-  React.useEffect(() => {
-    const interval = setInterval(() => {
-      setHoldTime(prev => prev > 0 ? prev - 1 : 0)
-    }, 1000)
-    return () => clearInterval(interval)
-  }, [])
-
-  const formatHoldTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-  }
-
-  const fetchProperties = async () => {
-    try {
-      const res = await fetch('/api/properties')
-      const data = await res.json()
-      if (data.success && data.data.length > 0) {
-        setProperties(data.data)
-        if (!selectedProperty) {
-          setSelectedProperty(data.data[0].id)
-        }
-      }
-    } catch (err) {
-      console.error('Failed to fetch properties:', err)
-    }
-  }
-
-  const searchAvailability = async () => {
+    if (!checkInDate || !checkOutDate || checkOutDate <= checkInDate) return
+    const controller = new AbortController()
     setIsLoading(true)
     setError('')
-    try {
-      const res = await fetch(
-        `/api/bookings/availability?propertyId=${selectedProperty}&checkInDate=${checkInDate}&checkOutDate=${checkOutDate}&numGuests=${parseInt(numAdults) + parseInt(numChildren)}`
-      )
-      const data = await res.json()
-      if (data.success) {
-        setRoomTypes(data.data.filter((rt: RoomType) => rt.isAvailable))
-      } else {
-        setError(apiError(data.error) || t('search.searchError'))
-      }
-    } catch (err) {
-      console.error('Failed to search availability:', err)
-      setError(t('search.connectionError'))
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const fetchAvailableRooms = async (roomTypeId: string) => {
-    try {
-      const res = await fetch(
-        `/api/rooms/available?propertyId=${selectedProperty}&roomTypeId=${roomTypeId}&checkIn=${checkInDate}&checkOut=${checkOutDate}`
-      )
-      const data = await res.json()
-      if (data.success) {
-        setAvailableRooms(data.data)
-      }
-    } catch (err) {
-      console.error('Failed to fetch rooms:', err)
-    }
-  }
-
-  const calculateNights = () => {
-    return differenceInDays(new Date(checkOutDate), new Date(checkInDate))
-  }
-
-  // The server charges exactly this (src/lib/pricing/quote.ts). Prices include
-  // VAT: the estimate used to add 8% on top, which the booking never charged.
-  const calculatePrice = () => {
-    if (!selectedRoomType) return { subtotal: 0, surcharges: 0, total: 0 }
-    const quote = quoteStay({
-      rates: selectedRoomType.pricing,
-      checkIn: new Date(checkInDate),
-      checkOut: new Date(checkOutDate),
-      numAdults: parseInt(numAdults) || 1,
-      numChildren: parseInt(numChildren) || 0,
-      baseOccupancy: selectedRoomType.baseOccupancy,
+    const query = new URLSearchParams({
+      propertyId,
+      checkInDate,
+      checkOutDate,
+      numAdults: String(numAdults),
+      numChildren: String(numChildren),
+      all: '1',
     })
-    return { subtotal: quote.basePrice, surcharges: quote.extraAdultCharge + quote.extraChildCharge, total: quote.total }
-  }
+    fetch(`/api/bookings/availability?${query}`, { signal: controller.signal })
+      .then((r) => r.json())
+      .then((data) => {
+        if (controller.signal.aborted) return
+        if (data.success) setRoomTypes(data.data)
+        else setError(apiError(data.error) || t('search.searchError'))
+      })
+      .catch((err) => {
+        if (!controller.signal.aborted && err?.name !== 'AbortError') setError(t('search.connectionError'))
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoading(false)
+      })
+    return () => controller.abort()
+  }, [propertyId, checkInDate, checkOutDate, numAdults, numChildren, searchKey, t])
 
-  const formatPrice = labels.money
+  const offered = roomTypes.filter((rt) => rt.fits && rt.isAvailable)
+  const selected = offered.find((rt) => rt.id === selectedTypeId) ?? null
+  const vacancy = roomTypes.reduce((sum, rt) => ({ available: sum.available + rt.availableRooms, total: sum.total + rt.totalRooms }), { available: 0, total: 0 })
+
+  // The chosen type's free rooms, once it has a room list.
+  React.useEffect(() => {
+    setRoomId('')
+    if (!selectedTypeId) return setRooms(null)
+    const controller = new AbortController()
+    setRooms(null)
+    const query = new URLSearchParams({ propertyId, roomTypeId: selectedTypeId, checkIn: checkInDate, checkOut: checkOutDate })
+    fetch(`/api/rooms/available?${query}`, { signal: controller.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (controller.signal.aborted) return
+        // Without a list the API makes up numbered slots: not rooms of the hotel, so not offered.
+        const list: Room[] = data?.success && data.meta?.listed ? data.data : []
+        setRooms({ listed: !!(data?.success && data.meta?.listed), list })
+        if (list[0]) setRoomId(list[0].id)
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setRooms({ listed: false, list: [] })
+      })
+    return () => controller.abort()
+  }, [propertyId, selectedTypeId, checkInDate, checkOutDate])
+
+  const nights = checkOutDate > checkInDate ? nightsBetween(`${checkInDate}T00:00:00Z`, `${checkOutDate}T00:00:00Z`) : 0
+  const total = selected?.pricing.total ?? 0
+  const roomCharge = selected?.pricing.basePrice ?? 0
+  const amountNow = scope === 'full' ? total : Math.round(total / 2)
+  const room = rooms?.list.find((r) => r.id === roomId) ?? null
 
   const bedTypeLabel = (bedType: string) =>
-    t(`bedTypes.${BED_TYPES.includes(bedType as never) ? (bedType as (typeof BED_TYPES)[number]) : 'KING'}`)
+    BED_TYPES.includes(bedType as never) ? t(`bedTypes.${bedType as (typeof BED_TYPES)[number]}`) : bedType
 
-  const handleSelectRoomType = (roomType: RoomType) => {
-    setSelectedRoomType(roomType)
-    fetchAvailableRooms(roomType.id)
+  const resetForm = () => {
+    setSelectedTypeId(null)
+    setGuest({ name: '', phone: '', email: '', note: '' })
+    setMethod('NONE')
+    setScope('full')
+    setError('')
   }
 
-  const handleSelectRoom = (room: Room) => {
-    setSelectedRoom(room)
+  /** Records what is collected now (POST /api/payments); a POS card is confirmed at once: the money is in. */
+  const recordPayment = async (bookingId: string, amount: number): Promise<Recorded> => {
+    const res = await fetch('/api/payments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bookingId, method, amount }),
+    })
+    const data = await res.json().catch(() => null)
+    if (!data?.success) return { ok: false, error: apiError(data?.error) }
+    if (method === 'QR_VIETQR') return { ok: true, pending: true }
+    if (method === 'CARD') {
+      const confirmed = await fetch(`/api/payments/${data.data.id}/confirm`, { method: 'POST' })
+      const body = await confirmed.json().catch(() => null)
+      if (!body?.success) return { ok: false, error: apiError(body?.error) }
+    }
+    return { ok: true }
   }
 
-  const handleSubmitBooking = async () => {
-    if (!guestInfo.name || !guestInfo.phone) {
+  const handleSubmit = async () => {
+    if (!guest.name.trim() || !guest.phone.trim()) {
       setError(t('summary.missingGuest'))
       return
     }
-    
+    if (!selected) return
     setIsSubmitting(true)
     setError('')
     try {
@@ -240,684 +206,380 @@ export default function WalkinBookingPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          propertyId: selectedProperty,
-          roomTypeId: selectedRoomType?.id,
-          guestName: guestInfo.name,
-          guestPhone: guestInfo.phone,
-          guestEmail: guestInfo.email,
-          guestNote: guestInfo.note,
+          propertyId,
+          roomTypeId: selected.id,
+          guestName: guest.name.trim(),
+          guestPhone: guest.phone.trim(),
+          guestEmail: guest.email.trim(),
+          guestNote: guest.note.trim() || undefined,
           checkInDate,
           checkOutDate,
-          numAdults: parseInt(numAdults),
-          numChildren: parseInt(numChildren),
-          roomNumber: selectedRoom?.number,
-          // A listed room (rooms.ts) rather than a numbered slot.
-          ...(selectedRoom && !selectedRoom.id.startsWith('slot-') && { roomId: selectedRoom.id }),
+          numAdults,
+          numChildren,
+          ...(room && { roomId: room.id }),
         }),
       })
       const data = await res.json()
-      
       if (!data.success) {
-        throw new Error(apiError(data.error) || t('summary.bookingFailed'))
+        setError(apiError(data.error) || t('summary.bookingFailed'))
+        return
       }
-
-      const booking = data.data
-      setBookingResult({ id: booking.id, bookingCode: booking.bookingCode, status: booking.status })
-      
-      // Navigate to booking confirmation
-      router.push(routes.propertyBooking(params.slug, propertyIdFromUrl!, booking.id))
-    } catch (err: any) {
-      setError(err.message)
+      const booking = data.data as { id: string; bookingCode: string; totalAmount: number }
+      // The server's total (quote.ts), not the page's.
+      const amount = scope === 'full' ? booking.totalAmount : Math.round(booking.totalAmount / 2)
+      if (method !== 'NONE' && amount > 0) {
+        const paid = await recordPayment(booking.id, amount).catch((): Recorded => ({ ok: false }))
+        if (!paid.ok) toast.error(t('done.paymentFailed', { code: booking.bookingCode }), paid.error)
+        else if (paid.pending) toast.success(t('done.pending', { code: booking.bookingCode, amount: labels.money(amount) }))
+        else toast.success(t('done.paid', { code: booking.bookingCode, amount: labels.money(amount) }))
+      } else {
+        toast.success(t('done.created', { code: booking.bookingCode }))
+      }
+      router.push(routes.propertyBooking(params.slug, propertyId, booking.id))
+    } catch {
+      setError(t('search.connectionError'))
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const resetForm = () => {
-    setSelectedRoomType(null)
-    setSelectedRoom(null)
-    setGuestInfo({ name: '', phone: '', email: '', note: '' })
-    setPaymentMethod('QR_VIETQR')
-    setPaymentScope('full')
-    setHoldTime(14 * 60 + 59)
-  }
-
-  const pricing = calculatePrice()
+  const field = 'block w-full h-10 sm:h-9 px-3 rounded-ctl border border-line bg-panel text-base sm:text-small text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-acc/30 focus-visible:border-acc'
+  const methods: { value: Method; label: string; icon: React.ReactNode }[] = [
+    { value: 'NONE', label: t('summary.payLater'), icon: <Clock className="w-4 h-4" aria-hidden="true" /> },
+    { value: 'CASH', label: t('summary.cash'), icon: <Banknote className="w-4 h-4" aria-hidden="true" /> },
+    { value: 'CARD', label: t('summary.posCard'), icon: <CreditCard className="w-4 h-4" aria-hidden="true" /> },
+    { value: 'QR_VIETQR', label: t('summary.transfer'), icon: <Landmark className="w-4 h-4" aria-hidden="true" /> },
+  ]
 
   return (
-    <div className="min-h-screen bg-page">
-      {/* BEGIN: CRM Global Top Bar */}
-      <header className="min-h-16 bg-panel border-b border-line px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 sticky top-0 z-30">
-        {/* Breadcrumb & Context Navigation */}
-        <div className="flex items-center gap-2 text-xs text-muted font-medium">
-          <span className="">{t('breadcrumb')}</span>
-          <ChevronRight className="w-2.5 h-2.5 text-muted" />
-          <span className="text-fg font-bold">{t('crumb')}</span>
-          <span className="ml-2 hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-err-soft text-err border border-err/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-err animate-pulse"></span>
-            {t('walkInBadge')}
-          </span>
-        </div>
-        {/* Quick Topbar Utilities */}
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => router.back()}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-line text-fg bg-panel hover:bg-fg/5 text-xs font-semibold shadow-xs transition-colors"
+    <PageContainer>
+      <Header
+        title={t('title')}
+        description={t('intro')}
+        actions={
+          <Link
+            href={routes.propertyCalendar(params.slug, propertyId)}
+            className="inline-flex items-center gap-2 h-9 px-3 rounded-ctl border border-line bg-panel text-small font-medium text-fg hover:bg-fg/5"
           >
-            <ArrowLeft className="w-3.5 h-3.5 text-muted" />
+            <ArrowLeft className="w-4 h-4 text-muted" aria-hidden="true" />
             {t('backToCalendar')}
-          </button>
-        </div>
-      </header>
-      {/* END: CRM Global Top Bar */}
+          </Link>
+        }
+      />
 
-      {/* Main Scrollable Content Area */}
-      <div className="p-6 md:p-8 max-w-7xl mx-auto w-full space-y-6">
-        {/* BEGIN: Page Header Title Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-line/60">
+      {/* Dates and guests; the list follows them. */}
+      <section className="bg-panel rounded-box border border-line p-4 sm:p-5 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-[1fr_1fr_8rem_8rem_auto] gap-3 items-end">
           <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-extrabold text-fg tracking-tight">{t('title')}</h1>
-              <span className="text-xs px-2.5 py-0.5 rounded-md font-medium bg-warn-soft text-warn border border-warn/30">
-                <span className="mr-1">⚡</span>
-                {t('instantHold')}
-              </span>
-            </div>
-            <p className="text-sm text-muted mt-1">
-              {t('intro')}
-            </p>
+            <label htmlFor="walkin-in" className="flex justify-between gap-2 text-small font-medium text-fg mb-1.5">
+              {t('search.checkIn')}
+              {stayTimes && <span className="text-xs font-normal text-muted">{t('search.from', { time: stayTimes.checkIn })}</span>}
+            </label>
+            <input
+              id="walkin-in"
+              type="date"
+              value={checkInDate}
+              onChange={(e) => {
+                const next = e.target.value
+                if (!next) return
+                setCheckInDate(next)
+                setCheckOutDate((prev) => (!prev || prev <= next ? addDays(next, 1) : prev))
+              }}
+              className={field}
+            />
           </div>
-          {/* Room Status Quick Stats Pill */}
-          <div className="flex items-center gap-4 bg-panel px-4 py-2 rounded-xl border border-line shadow-xs">
-            <div className="text-right">
-              <span className="text-[11px] uppercase tracking-wider text-muted font-semibold block">{t('vacancyToday')}</span>
-              <span className="text-sm font-bold text-fg">{t('vacancyCount', { available: 48, total: 60 })}</span>
-            </div>
-            <div className="w-10 h-10 rounded-lg bg-ok-soft text-ok flex items-center justify-center font-bold text-sm border border-ok/30">
-              80%
-            </div>
+          <div>
+            <label htmlFor="walkin-out" className="flex justify-between gap-2 text-small font-medium text-fg mb-1.5">
+              {t('search.checkOut')}
+              {stayTimes && <span className="text-xs font-normal text-muted">{t('search.until', { time: stayTimes.checkOut })}</span>}
+            </label>
+            <input
+              id="walkin-out"
+              type="date"
+              value={checkOutDate}
+              min={addDays(checkInDate, 1)}
+              onChange={(e) => e.target.value && setCheckOutDate(e.target.value)}
+              className={field}
+            />
+          </div>
+          <div>
+            <label htmlFor="walkin-adults" className="block text-small font-medium text-fg mb-1.5">{t('search.adults')}</label>
+            <select id="walkin-adults" value={numAdults} onChange={(e) => setNumAdults(Number(e.target.value))} className={field}>
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="walkin-children" className="block text-small font-medium text-fg mb-1.5">{t('search.children')}</label>
+            <select id="walkin-children" value={numChildren} onChange={(e) => setNumChildren(Number(e.target.value))} className={field}>
+              {[0, 1, 2, 3, 4].map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+          </div>
+          <div className="col-span-2 lg:col-span-1 flex flex-wrap items-center justify-between gap-3 lg:justify-end">
+            <p className="text-small text-muted lg:text-right">
+              {t('vacancy', { from: dayMonth(checkInDate), to: dayMonth(checkOutDate) })}
+              <span className="block font-semibold text-fg tabular-nums">
+                {isLoading ? '…' : t('vacancyCount', { available: vacancy.available, total: vacancy.total })}
+              </span>
+            </p>
+            <Button variant="outline" size="sm" onClick={() => setSearchKey((k) => k + 1)} isLoading={isLoading}>
+              <RefreshCw className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+              {t('search.refresh')}
+            </Button>
           </div>
         </div>
-        {/* END: Page Header Title Section */}
+      </section>
 
-        {/* BEGIN: Interactive 4-Step Booking Workflow Stepper */}
-        <section className="bg-panel rounded-2xl p-4 border border-line shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 relative">
-            {/* Step 1: Active */}
-            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-warn-soft border border-warn/30 transition-all">
-              <div className="w-9 h-9 rounded-xl bg-ink text-on-ink flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
-                <Bed className="w-4 h-4" />
-              </div>
-              <div className="overflow-hidden">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-warn block">{t('steps.current', { step: 1 })}</span>
-                <span className="text-xs font-extrabold text-fg truncate block">{t('steps.room')}</span>
-              </div>
-            </div>
-            {/* Step 2: Inactive */}
-            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-fg/[0.03] border border-transparent opacity-70 hover:opacity-100 transition-all">
-              <div className="w-9 h-9 rounded-xl bg-panel border border-line text-muted flex items-center justify-center font-bold text-sm shrink-0">
-                <User className="w-4 h-4" />
-              </div>
-              <div className="overflow-hidden">
-                <span className="text-[10px] font-semibold text-muted block">{t('steps.step', { step: 2 })}</span>
-                <span className="text-xs font-semibold text-fg truncate block">{t('steps.guest')}</span>
-              </div>
-            </div>
-            {/* Step 3: Inactive */}
-            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-fg/[0.03] border border-transparent opacity-70 hover:opacity-100 transition-all">
-              <div className="w-9 h-9 rounded-xl bg-panel border border-line text-muted flex items-center justify-center font-bold text-sm shrink-0">
-                <CreditCardIcon className="w-4 h-4" />
-              </div>
-              <div className="overflow-hidden">
-                <span className="text-[10px] font-semibold text-muted block">{t('steps.step', { step: 3 })}</span>
-                <span className="text-xs font-semibold text-fg truncate block">{t('steps.payment')}</span>
-              </div>
-            </div>
-            {/* Step 4: Inactive */}
-            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-fg/[0.03] border border-transparent opacity-70 hover:opacity-100 transition-all">
-              <div className="w-9 h-9 rounded-xl bg-panel border border-line text-muted flex items-center justify-center font-bold text-sm shrink-0">
-                <Check className="w-4 h-4" />
-              </div>
-              <div className="overflow-hidden">
-                <span className="text-[10px] font-semibold text-muted block">{t('steps.step', { step: 4 })}</span>
-                <span className="text-xs font-semibold text-fg truncate block">{t('steps.done')}</span>
-              </div>
-            </div>
-          </div>
-        </section>
-        {/* END: Interactive 4-Step Booking Workflow Stepper */}
-
-        {/* BEGIN: Room Availability Search & Filter Control Bar */}
-        <section className="bg-panel rounded-2xl p-5 border border-line shadow-sm">
-          <div className="flex items-center justify-between mb-4 pb-3 border-b border-line/60">
-            <h2 className="text-sm font-bold text-fg flex items-center gap-2">
-              <Filter className="w-4 h-4 text-warn" />
-              {t('search.title')}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Room types with a room free */}
+        <div className="lg:col-span-7 space-y-4 min-w-0">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-body font-semibold text-fg flex items-center gap-2">
+              {t('rooms.title')}
+              <span className="text-xs font-medium text-muted tabular-nums">{t('rooms.typeCount', { count: offered.length })}</span>
             </h2>
-            <span className="text-xs text-muted">
-              {t.rich('search.today', {
-                date: format(new Date(), 'dd/MM/yyyy'),
-                strong: (chunks) => <strong className="text-fg">{chunks}</strong>,
-              })}
-            </span>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3.5">
-            {/* Property selector */}
-            <div className="lg:col-span-2">
-              <label className="block text-xs font-bold text-fg mb-1.5">
-                <MapPin className="w-3 h-3 inline mr-1" />
-                {t('search.property')}
-              </label>
-              <select 
-                value={selectedProperty}
-                onChange={(e) => setSelectedProperty(e.target.value)}
-                className="block w-full px-3 py-2.5 bg-page/50 text-xs font-semibold text-fg border border-line rounded-xl focus:ring-2 focus:ring-warn/30 focus:border-warn/30"
-              >
-                {properties.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-                {properties.length === 0 && (
-                  <option>{t('search.demoProperty')}</option>
-                )}
-              </select>
-            </div>
-            
-            {/* Check-in datetime */}
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label className="text-xs font-bold text-fg">{t('search.checkIn')}</label>
-                <span className="text-[10px] text-warn font-bold bg-warn-soft px-1.5 py-0.2 rounded">{checkInTime}</span>
-              </div>
-              <input 
-                type="date" 
-                value={checkInDate}
-                onChange={(e) => {
-                  const next = e.target.value
-                  setCheckInDate(next)
-                  setCheckOutDate((prev) =>
-                    !prev || prev <= next
-                      ? format(addDays(new Date(next), 1), 'yyyy-MM-dd')
-                      : prev
-                  )
-                }}
-                className="block w-full px-3 py-2.5 bg-page/50 text-xs font-semibold text-fg border border-line rounded-xl focus:ring-2 focus:ring-warn/30 focus:border-warn/30"
-              />
-            </div>
-            
-            {/* Check-out datetime */}
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label className="text-xs font-bold text-fg">{t('search.checkOut')}</label>
-                <span className="text-[10px] text-muted font-medium">{checkOutTime}</span>
-              </div>
-              <input 
-                type="date" 
-                value={checkOutDate}
-                onChange={(e) => setCheckOutDate(e.target.value)}
-                min={checkInDate}
-                className="block w-full px-3 py-2.5 bg-page/50 text-xs font-semibold text-fg border border-line rounded-xl focus:ring-2 focus:ring-warn/30 focus:border-warn/30"
-              />
-            </div>
-            
-            {/* Adults */}
-            <div>
-              <label className="block text-xs font-bold text-fg mb-1.5">
-                <Users className="w-3 h-3 inline mr-1" />
-                {t('search.adults')}
-              </label>
-              <select 
-                value={numAdults}
-                onChange={(e) => setNumAdults(e.target.value)}
-                className="block w-full px-3 py-2.5 bg-page/50 text-xs font-semibold text-fg border border-line rounded-xl focus:ring-2 focus:ring-warn/30 focus:border-warn/30"
-              >
-                <option>1</option>
-                <option>2</option>
-                <option>3</option>
-                <option>4+</option>
-              </select>
-            </div>
-            
-            {/* Children */}
-            <div>
-              <label className="block text-xs font-bold text-fg mb-1.5">
-                <Users className="w-3 h-3 inline mr-1" />
-                {t('search.children')}
-              </label>
-              <select 
-                value={numChildren}
-                onChange={(e) => setNumChildren(e.target.value)}
-                className="block w-full px-3 py-2.5 bg-page/50 text-xs font-semibold text-fg border border-line rounded-xl focus:ring-2 focus:ring-warn/30 focus:border-warn/30"
-              >
-                <option>0</option>
-                <option>1</option>
-                <option>2</option>
-              </select>
-            </div>
+            <span className="text-xs text-muted">{t('rooms.priceNote')}</span>
           </div>
 
-          {/* Filter tags & Search Action Bar */}
-          <div className="mt-4 pt-3 border-t border-line/50 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold text-muted mr-1">{t('search.quickFilters')}</span>
-              <button className="px-2.5 py-1 text-xs rounded-lg bg-fg/[0.03] border border-line text-fg hover:border-warn/30 font-medium transition-colors">
-                {t('search.allFloors')}
-              </button>
-              <button className="px-2.5 py-1 text-xs rounded-lg bg-fg/[0.03] border border-line text-fg hover:border-warn/30 font-medium transition-colors">
-                <Ban className="w-3 h-3 inline mr-1 text-muted" /> {t('search.nonSmoking')}
-              </button>
-              <button className="px-2.5 py-1 text-xs rounded-lg bg-fg/[0.03] border border-line text-fg hover:border-warn/30 font-medium transition-colors">
-                <Bath className="w-3 h-3 inline mr-1 text-muted" /> {t('search.bathtub')}
-              </button>
-              <button className="px-2.5 py-1 text-xs rounded-lg bg-fg/[0.03] border border-line text-fg hover:border-warn/30 font-medium transition-colors">
-                <Mountain className="w-3 h-3 inline mr-1 text-muted" /> {t('search.balcony')}
-              </button>
+          {isLoading && roomTypes.length === 0 ? (
+            <p className="bg-panel rounded-box border border-line p-12 text-center text-small text-muted">{t('rooms.searching')}</p>
+          ) : offered.length === 0 ? (
+            <div className="bg-panel rounded-box border border-line p-12 text-center">
+              <Bed className="w-10 h-10 mx-auto text-muted mb-3" aria-hidden="true" />
+              <p className="text-small text-muted">{t('rooms.none')}</p>
             </div>
-            {/* Primary Search Trigger Button */}
-            <button 
-              onClick={searchAvailability}
-              disabled={isLoading}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-ink hover:bg-ink/90 text-on-ink text-xs font-bold shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
-            >
-              <Search className="w-4 h-4" />
-              {isLoading ? t('search.searching') : t('search.submit', { count: calculateNights() })}
-            </button>
-          </div>
-        </section>
-        {/* END: Room Availability Search & Filter Control Bar */}
-
-        {/* BEGIN: 2-Column Main Workspace (65% Room List + 35% Live Summary Panel) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Column Left: Available Room Categories (65% Width) */}
-          <div className="lg:col-span-7 space-y-4">
-            <div className="flex items-center justify-between pb-1">
-              <h3 className="text-sm font-bold text-fg uppercase tracking-wider flex items-center gap-2">
-                {t('rooms.title')}
-                <span className="inline-flex items-center justify-center bg-warn-soft text-warn text-xs px-2 py-0.5 rounded-full font-bold">
-                  {t('rooms.typeCount', { count: roomTypes.length })}
-                </span>
-              </h3>
-              <span className="text-xs text-muted font-medium">{t('rooms.priceNote')}</span>
-            </div>
-
-            {/* Room Cards */}
-            {isLoading ? (
-              <div className="text-center py-12">
-                <div className="animate-spin w-8 h-8 border-4 border-warn/30 border-t-transparent rounded-full mx-auto mb-4" />
-                <p className="text-muted">{t('rooms.searching')}</p>
-              </div>
-            ) : roomTypes.length === 0 ? (
-              <div className="bg-panel rounded-2xl border border-line p-12 text-center">
-                <Bed className="w-12 h-12 mx-auto text-muted mb-4" />
-                <p className="text-muted">
-                  {selectedProperty ? t('rooms.none') : t('rooms.chooseProperty')}
-                </p>
-              </div>
-            ) : (
-              roomTypes.map((roomType, index) => {
-                const isSelected = selectedRoomType?.id === roomType.id
-                return (
-                  <div 
-                    key={roomType.id}
-                    className={`bg-panel rounded-2xl overflow-hidden transition-all ${
-                      isSelected 
-                        ? 'border-2 border-warn/30 shadow-md' 
-                        : 'border border-line hover:border-line shadow-sm'
-                    }`}
-                  >
-                    {/* Active Highlight Banner */}
-                    {isSelected && (
-                      <div className="bg-warn-soft text-warn px-4 py-1.5 flex items-center justify-between text-xs font-bold">
-                        <span className="flex items-center gap-1.5">
-                          <Check className="w-3 h-3" /> {t('rooms.selectedBanner')}
-                        </span>
-                        <span className="bg-warn/15 text-warn text-[11px] px-2 py-0.5 rounded">{t('rooms.deskPriority')}</span>
+          ) : (
+            offered.map((roomType) => {
+              const isSelected = selected?.id === roomType.id
+              return (
+                <article
+                  key={roomType.id}
+                  className={cn('bg-panel rounded-box overflow-hidden border transition-colors', isSelected ? 'border-acc ring-1 ring-acc' : 'border-line')}
+                >
+                  <div className="p-4 sm:p-5 flex flex-col sm:flex-row gap-4">
+                    <div className="relative w-full sm:w-36 h-32 sm:h-28 shrink-0 overflow-hidden rounded-ctl bg-acc-soft/60 flex items-center justify-center">
+                      {roomType.image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={resizedImage(roomType.image, 480)} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <Bed className="w-10 h-10 text-acc/40" aria-hidden="true" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+                        <div className="min-w-0">
+                          <h3 className="text-body font-semibold text-fg">{roomType.name}</h3>
+                          <p className="text-xs text-muted mt-0.5">
+                            {[bedTypeLabel(roomType.bedType), roomType.area ? t('rooms.area', { area: roomType.area }) : null].filter(Boolean).join(' · ')}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="text-body font-semibold text-fg tabular-nums">{labels.money(roomType.pricing.weekdayPrice)}</span>
+                          <span className="text-xs text-muted"> {t('rooms.perNight')}</span>
+                        </div>
                       </div>
-                    )}
-                    
-                    <div className="p-5">
-                      <div className="flex flex-col sm:flex-row gap-4 items-start">
-                        {/* Thumbnail Placeholder */}
-                        <div className="w-full sm:w-36 h-28 rounded-xl bg-warn-soft border border-warn/30 shrink-0 overflow-hidden relative flex flex-col justify-end p-2.5">
-                          <span className="absolute top-2 left-2 bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
-                            {roomType.floorRange || t('rooms.floorFallback')}
-                          </span>
-                          <BedDouble className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl text-warn/40" />
-                          <span className="text-[11px] font-bold text-warn bg-panel/90 px-1.5 py-0.5 rounded w-fit">
-                            {roomType.size || 35} m²
-                          </span>
-                        </div>
-                        
-                        {/* Details */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h4 className="text-base font-extrabold text-fg">{roomType.name}</h4>
-                                <span className="bg-ok-soft text-ok border border-ok/30 text-[10px] font-semibold px-2 py-0.5 rounded-full">
-                                  {t('rooms.left', { count: roomType.availableRooms })}
-                                </span>
-                                {index === 0 && (
-                                  <span className="bg-err-soft text-err border border-err/30 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                                    {t('rooms.popular')}
-                                  </span>
-                                )}
+
+                      <ul className="flex flex-wrap items-center gap-1.5 mt-3 text-xs text-fg">
+                        <li className="inline-flex items-center gap-1 rounded-full bg-ok-soft text-ok px-2 py-0.5 font-medium">
+                          {t('rooms.left', { count: roomType.availableRooms })}
+                        </li>
+                        <li className="inline-flex items-center gap-1 rounded-full bg-fg/5 px-2 py-0.5">
+                          <Users className="w-3 h-3 text-muted" aria-hidden="true" />
+                          {t('rooms.capacity', { count: roomType.maxOccupancy })} ({labels.guests(roomType.maxAdults, roomType.maxChildren)})
+                        </li>
+                        {roomType.amenities.slice(0, 4).map((a) => {
+                          const Icon = getIcon(a.icon)
+                          return (
+                            <li key={a.id} className="inline-flex items-center gap-1 rounded-full bg-fg/5 px-2 py-0.5">
+                              <Icon className="w-3 h-3 text-muted" aria-hidden="true" />
+                              {a.name}
+                            </li>
+                          )
+                        })}
+                        {roomType.amenities.length > 4 && <li className="rounded-full bg-fg/5 px-2 py-0.5 text-muted">+{roomType.amenities.length - 4}</li>}
+                      </ul>
+
+                      <div className="mt-4 pt-3 border-t border-line flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+                        {isSelected ? (
+                          <div className="min-w-0 flex-1">
+                            {rooms === null ? (
+                              <p className="text-small text-muted">{t('rooms.loadingRooms')}</p>
+                            ) : rooms.listed ? (
+                              <div className="sm:max-w-[16rem]">
+                                <label htmlFor="walkin-room" className="block text-small font-medium text-fg mb-1.5">{t('rooms.room')}</label>
+                                <select id="walkin-room" value={roomId} onChange={(e) => setRoomId(e.target.value)} className={field}>
+                                  <option value="">{t('rooms.later')}</option>
+                                  {rooms.list.map((r) => (
+                                    <option key={r.id} value={r.id}>
+                                      {r.floor !== null ? t('rooms.roomOptionFloor', { number: r.number, floor: r.floor }) : t('rooms.roomOption', { number: r.number })}
+                                    </option>
+                                  ))}
+                                </select>
                               </div>
-                              <p className="text-xs text-muted mt-0.5">
-                                {t('rooms.bedLine', { bed: bedTypeLabel(roomType.bedType) })}
-                              </p>
-                            </div>
-                            {/* Pricing */}
-                            <div className="text-right shrink-0">
-                              <div className="text-lg font-black text-warn">
-                                {formatPrice(roomType.pricing.weekdayPrice)}
-                              </div>
-                              <div className="text-[10px] font-medium text-muted">{t('rooms.perNight')}</div>
-                            </div>
+                            ) : (
+                              <p className="text-xs text-muted">{t('rooms.noList')}</p>
+                            )}
                           </div>
-                          
-                          {/* Amenities Tags */}
-                          <div className="flex flex-wrap items-center gap-2 mt-3 text-[11px] text-muted">
-                            <span className="bg-fg/[0.03] px-2 py-1 rounded-md border border-line/60 flex items-center gap-1">
-                              <Users className="w-3 h-3 text-muted" /> {t('rooms.occupancy', { min: roomType.baseOccupancy, max: roomType.maxOccupancy })}
-                            </span>
-                            <span className="bg-fg/[0.03] px-2 py-1 rounded-md border border-line/60 flex items-center gap-1">
-                              <Wifi className="w-3 h-3 text-muted" /> {t('rooms.wifi')}
-                            </span>
-                            <span className="bg-fg/[0.03] px-2 py-1 rounded-md border border-line/60 flex items-center gap-1">
-                              <UtensilsCrossed className="w-3 h-3 text-muted" /> {t('rooms.breakfast')}
-                            </span>
-                            <span className="bg-fg/[0.03] px-2 py-1 rounded-md border border-line/60 flex items-center gap-1">
-                              <Ban className="w-3 h-3 text-muted" /> {t('rooms.nonSmoking')}
-                            </span>
-                          </div>
-                          
-                          {/* Room Assignment Selector Section */}
-                          <div className="mt-4 pt-3 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-3">
-                            <div className="flex items-center gap-2 w-full sm:w-auto">
-                              <label className="text-xs font-bold text-fg whitespace-nowrap">{t('rooms.pickNumber')}</label>
-                              <select 
-                                value={selectedRoom?.id || ''}
-                                onChange={(e) => {
-                                  const room = availableRooms.find(r => r.id === e.target.value)
-                                  if (room) handleSelectRoom(room)
-                                }}
-                                className="text-xs font-bold text-warn bg-warn-soft border-warn/30 rounded-lg py-1.5 pl-3 pr-8 focus:ring-warn/30 focus:border-warn/30"
-                              >
-                                <option value="">{t('rooms.pickRoom')}</option>
-                                {availableRooms.map((room) => (
-                                  <option key={room.id} value={room.id}>
-                                    {t('rooms.roomOption', {
-                                      number: room.number,
-                                      floor: room.floor,
-                                      state: room.isClean ? t('rooms.cleaned') : t('rooms.ready'),
-                                    })}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                            <button 
-                              onClick={() => handleSelectRoomType(roomType)}
-                              className={`w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors ${
-                                isSelected
-                                  ? 'bg-ink text-on-ink hover:bg-ink/90'
-                                  : 'border border-warn/30 text-warn hover:bg-warn-soft'
-                              }`}
-                            >
-                              {isSelected ? (
-                                <>
-                                  <Check className="w-3 h-3" /> {t('rooms.chosen')}
-                                </>
-                              ) : (
-                                <>
-                                  <Plus className="w-3 h-3" /> {t('rooms.choose')}
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        </div>
+                        ) : (
+                          <span />
+                        )}
+                        <Button
+                          size="sm"
+                          variant={isSelected ? 'primary' : 'outline'}
+                          onClick={() => setSelectedTypeId(roomType.id)}
+                          aria-pressed={isSelected}
+                          className="w-full sm:w-auto shrink-0"
+                        >
+                          {isSelected ? <Check className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> : <Plus className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />}
+                          {isSelected ? t('rooms.chosen') : t('rooms.choose')}
+                        </Button>
                       </div>
                     </div>
                   </div>
-                )
-              })
-            )}
-          </div>
-          {/* END: Column Left: Available Rooms List */}
+                </article>
+              )
+            })
+          )}
+          {!isLoading && roomTypes.length > offered.length && (
+            <p className="text-xs text-muted">{t('rooms.hidden', { count: roomTypes.length - offered.length })}</p>
+          )}
+        </div>
 
-          {/* BEGIN: Column Right: Walk-in Live Summary Panel (35% Width) */}
-          <div className="lg:col-span-5 sticky top-20">
-            <div className="bg-panel rounded-2xl border border-line shadow-sm overflow-hidden">
-              {/* Summary Card Header with Hold Timer */}
-              <div className="bg-fg/[0.03] px-5 py-4 border-b border-line flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-extrabold text-fg uppercase tracking-wider">{t('summary.title')}</h3>
-                  <p className="text-[11px] text-muted">{t('summary.autoLock')}</p>
-                </div>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-warn-soft border border-warn/30 text-warn text-xs font-bold">
-                  <Timer className="w-3 h-3 animate-spin" />
-                  <span>{formatHoldTime(holdTime)}</span>
-                </div>
-              </div>
-
-              {/* Selected Stay Specs */}
-              <div className="p-5 space-y-4">
-                {/* Quick Room Tag */}
-                {selectedRoomType && selectedRoom ? (
-                  <div className="p-3 bg-warn-soft/60 rounded-xl border border-warn/30 flex items-start justify-between">
-                    <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-warn block">{t('summary.selectedRoom')}</span>
-                      <h5 className="text-sm font-extrabold text-fg">
-                        {t('summary.roomLine', { roomType: selectedRoomType.name, number: selectedRoom.number })}
-                      </h5>
-                      <p className="text-xs text-muted mt-0.5">{t('summary.floorReady', { floor: selectedRoom.floor })}</p>
-                    </div>
-                    <span className="px-2 py-1 bg-panel text-warn text-xs font-bold rounded-lg border border-warn/30 shadow-xs">
-                      {t('summary.nights', { count: calculateNights() })}
-                    </span>
+        {/* The booking */}
+        <aside className="lg:col-span-5 lg:sticky lg:top-20 min-w-0">
+          <div className="bg-panel rounded-box border border-line">
+            <div className="px-5 py-4 border-b border-line">
+              <h2 className="text-body font-semibold text-fg">{t('summary.title')}</h2>
+            </div>
+            <div className="p-5 space-y-5">
+              <div className="rounded-ctl bg-fg/[0.03] border border-line p-3 text-small">
+                {selected ? (
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <p className="font-semibold text-fg min-w-0">
+                      {room ? t('summary.roomLine', { roomType: selected.name, number: room.number }) : t('summary.roomLater', { roomType: selected.name })}
+                    </p>
+                    <span className="text-xs text-muted shrink-0">{t('summary.nights', { count: nights })}</span>
                   </div>
                 ) : (
-                  <div className="p-3 bg-fg/[0.03] rounded-xl border border-line flex items-center justify-center">
-                    <span className="text-xs text-muted">{t('summary.noRoom')}</span>
-                  </div>
+                  <p className="text-muted text-center">{t('summary.noRoom')}</p>
                 )}
-
-                {/* Stay Schedule Row */}
-                <div className="grid grid-cols-2 gap-2 text-xs bg-page p-3 rounded-xl border border-line/80">
+                <dl className="grid grid-cols-2 gap-2 mt-2 text-xs">
                   <div>
-                    <span className="text-muted block text-[10px] font-semibold uppercase">{t('summary.checkIn')}</span>
-                    <span className="font-bold text-fg">{checkInTime} - {format(new Date(checkInDate), 'dd/MM/yyyy')}</span>
+                    <dt className="text-muted">{t('summary.checkIn')}</dt>
+                    <dd className="font-medium text-fg tabular-nums">{dayMonth(checkInDate)}{stayTimes ? ` · ${stayTimes.checkIn}` : ''}</dd>
                   </div>
                   <div>
-                    <span className="text-muted block text-[10px] font-semibold uppercase">{t('summary.checkOut')}</span>
-                    <span className="font-bold text-fg">{checkOutTime} - {format(new Date(checkOutDate), 'dd/MM/yyyy')}</span>
+                    <dt className="text-muted">{t('summary.checkOut')}</dt>
+                    <dd className="font-medium text-fg tabular-nums">{dayMonth(checkOutDate)}{stayTimes ? ` · ${stayTimes.checkOut}` : ''}</dd>
                   </div>
-                </div>
-
-                {/* Fast Guest Information Input Form */}
-                <div className="pt-2 border-t border-line/60">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-bold text-fg uppercase tracking-wider">{t('summary.guestInfo')}</label>
-                    <span className="text-[10px] text-warn cursor-pointer hover:underline font-semibold">{t('summary.scanId')}</span>
-                  </div>
-                  <div className="space-y-2">
-                    <div>
-                      <input 
-                        className="block w-full text-xs font-semibold px-3 py-2 bg-page/40 border border-line rounded-xl focus:ring-2 focus:ring-warn/30 focus:border-warn/30" 
-                        placeholder={t('summary.namePlaceholder')}
-                        value={guestInfo.name}
-                        onChange={(e) => setGuestInfo({ ...guestInfo, name: e.target.value })}
-                        type="text"
-                      />
-                    </div>
-                    <div>
-                      <input 
-                        className="block w-full text-xs font-semibold px-3 py-2 bg-page/40 border border-line rounded-xl focus:ring-2 focus:ring-warn/30 focus:border-warn/30" 
-                        placeholder={t('summary.phonePlaceholder')}
-                        value={guestInfo.phone}
-                        onChange={(e) => setGuestInfo({ ...guestInfo, phone: e.target.value })}
-                        type="tel"
-                      />
-                    </div>
-                    <div>
-                      <input 
-                        className="block w-full text-xs font-semibold px-3 py-2 bg-page/40 border border-line rounded-xl focus:ring-2 focus:ring-warn/30 focus:border-warn/30" 
-                        placeholder={t('summary.emailPlaceholder')}
-                        value={guestInfo.email}
-                        onChange={(e) => setGuestInfo({ ...guestInfo, email: e.target.value })}
-                        type="email"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bill Calculation Table */}
-                <div className="pt-3 border-t border-line/60 space-y-2 text-xs">
-                  {selectedRoomType && (
-                    <>
-                      <div className="flex justify-between text-muted">
-                        <span className="">{t('summary.roomCharge', { count: calculateNights(), roomType: selectedRoomType.name })}</span>
-                        <span className="font-semibold text-fg">{formatPrice(pricing.subtotal)}</span>
-                      </div>
-                      {pricing.surcharges > 0 && (
-                        <div className="flex justify-between text-muted">
-                          <span>{t('summary.extraGuests')}</span>
-                          <span className="font-semibold text-fg">{formatPrice(pricing.surcharges)}</span>
-                        </div>
-                      )}
-                    </>
-                  )}
-                  <div className="pt-2 border-t border-dashed border-line flex justify-between items-baseline">
-                    <div>
-                      <span className="text-sm font-black text-fg block">{t('summary.total')}</span>
-                      <span className="text-[10px] text-muted">{t('summary.vatIncluded')}</span>
-                    </div>
-                    <span className="text-xl font-black text-warn tracking-tight">{formatPrice(pricing.total)}</span>
-                  </div>
-                </div>
-
-                {/* Walk-in Payment Method Quick Selection */}
-                <div className="pt-3 border-t border-line/60">
-                  <label className="block text-xs font-bold text-fg mb-2 uppercase tracking-wider">{t('summary.paymentMethod')}</label>
-                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                    {/* VietQR Option */}
-                    <button 
-                      onClick={() => setPaymentMethod('QR_VIETQR')}
-                      className={`p-2.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${
-                        paymentMethod === 'QR_VIETQR'
-                          ? 'border-2 border-warn/30 bg-warn-soft/50'
-                          : 'border border-line bg-panel hover:bg-fg/[0.03]'
-                      }`}
-                      type="button"
-                    >
-                      <QrCode className={`text-base ${paymentMethod === 'QR_VIETQR' ? 'text-warn' : 'text-muted'}`} />
-                      <span className={`font-bold text-[11px] ${paymentMethod === 'QR_VIETQR' ? 'text-warn' : 'text-fg'}`}>VietQR 247</span>
-                    </button>
-                    {/* Cash Option */}
-                    <button 
-                      onClick={() => setPaymentMethod('CASH')}
-                      className={`p-2.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${
-                        paymentMethod === 'CASH'
-                          ? 'border-2 border-warn/30 bg-warn-soft/50'
-                          : 'border border-line bg-panel hover:bg-fg/[0.03]'
-                      }`}
-                      type="button"
-                    >
-                      <Banknote className={`text-base ${paymentMethod === 'CASH' ? 'text-warn' : 'text-muted'}`} />
-                      <span className={`font-semibold text-[11px] ${paymentMethod === 'CASH' ? 'text-warn' : 'text-fg'}`}>{tc('paymentMethod.CASH')}</span>
-                    </button>
-                    {/* POS Card Option */}
-                    <button 
-                      onClick={() => setPaymentMethod('POS')}
-                      className={`p-2.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${
-                        paymentMethod === 'POS'
-                          ? 'border-2 border-warn/30 bg-warn-soft/50'
-                          : 'border border-line bg-panel hover:bg-fg/[0.03]'
-                      }`}
-                      type="button"
-                    >
-                      <CreditCardIcon className={`text-base ${paymentMethod === 'POS' ? 'text-warn' : 'text-muted'}`} />
-                      <span className={`font-semibold text-[11px] ${paymentMethod === 'POS' ? 'text-warn' : 'text-fg'}`}>{t('summary.posCard')}</span>
-                    </button>
-                  </div>
-
-                  {/* Collection Amount Radio Options */}
-                  <div className="mt-3 flex items-center justify-between text-xs bg-fg/[0.03] p-2 rounded-xl">
-                    <label className="inline-flex items-center gap-1.5 cursor-pointer">
-                      <input 
-                        checked={paymentScope === 'full'}
-                        onChange={() => setPaymentScope('full')}
-                        className="text-warn focus:ring-warn/30 h-3.5 w-3.5" 
-                        name="payment_scope" 
-                        type="radio" 
-                      />
-                      <span className="font-bold text-fg">{t('summary.payFull', { amount: formatPrice(pricing.total) })}</span>
-                    </label>
-                    <label className="inline-flex items-center gap-1.5 cursor-pointer">
-                      <input 
-                        checked={paymentScope === 'deposit'}
-                        onChange={() => setPaymentScope('deposit')}
-                        className="text-warn focus:ring-warn/30 h-3.5 w-3.5" 
-                        name="payment_scope" 
-                        type="radio" 
-                      />
-                      <span className="font-medium text-muted">{t('summary.deposit')}</span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Error Message */}
-                {error && (
-                  <div className="p-3 rounded-lg bg-err-soft border border-err/30 text-err text-xs flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4" />
-                    {error}
-                  </div>
-                )}
-
-                {/* Final Action Buttons CTA */}
-                <div className="space-y-2 pt-2">
-                  <button 
-                    onClick={handleSubmitBooking}
-                    disabled={!selectedRoomType || !selectedRoom || !guestInfo.name || !guestInfo.phone || isSubmitting}
-                    className="w-full py-3 px-4 rounded-xl bg-ink hover:bg-ink/90 text-on-ink font-extrabold text-sm shadow-sm flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
-                    type="button"
-                  >
-                    <span className="">{t('summary.continue')}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button 
-                      className="py-2 px-3 rounded-lg border border-line bg-panel hover:bg-fg/[0.03] text-fg font-semibold text-xs transition-colors" 
-                      type="button"
-                    >
-                      <Clock className="w-3 h-3 inline mr-1 text-muted" /> {t('summary.hold')}
-                    </button>
-                    <button 
-                      onClick={resetForm}
-                      className="py-2 px-3 rounded-lg border border-err/30 bg-err-soft/50 hover:bg-err-soft/50 text-err font-semibold text-xs transition-colors" 
-                      type="button"
-                    >
-                      <RefreshCw className="w-3 h-3 inline mr-1" /> {t('summary.reset')}
-                    </button>
-                  </div>
-                </div>
+                </dl>
               </div>
 
-              {/* Live Synchronized System Footer Tag */}
-              <div className="px-5 py-2.5 bg-fg/[0.03] border-t border-line text-[11px] text-muted flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <Workflow className="w-3 h-3 text-ok" />
-                  {t('summary.synced')}
-                </span>
-                <span className="font-mono text-[10px] text-muted">#{bookingCode}</span>
+              <fieldset className="space-y-2">
+                <legend className="text-small font-medium text-fg mb-2">{t('summary.guestInfo')}</legend>
+                <input className={field} placeholder={t('summary.namePlaceholder')} aria-label={t('summary.namePlaceholder')} value={guest.name} onChange={(e) => setGuest({ ...guest, name: e.target.value })} autoComplete="off" />
+                <input className={field} placeholder={t('summary.phonePlaceholder')} aria-label={t('summary.phonePlaceholder')} value={guest.phone} onChange={(e) => setGuest({ ...guest, phone: e.target.value })} type="tel" autoComplete="off" />
+                <input className={field} placeholder={t('summary.emailPlaceholder')} aria-label={t('summary.emailPlaceholder')} value={guest.email} onChange={(e) => setGuest({ ...guest, email: e.target.value })} type="email" autoComplete="off" />
+                <textarea
+                  className={cn(field, 'h-auto py-2')}
+                  rows={2}
+                  placeholder={t('summary.notePlaceholder')}
+                  aria-label={t('summary.notePlaceholder')}
+                  value={guest.note}
+                  onChange={(e) => setGuest({ ...guest, note: e.target.value })}
+                />
+              </fieldset>
+
+              {selected && (
+                <div className="space-y-1.5 text-small">
+                  <div className="flex justify-between gap-3 text-muted">
+                    <span>{t('summary.roomCharge', { count: nights })}</span>
+                    <span className="text-fg tabular-nums">{labels.money(roomCharge)}</span>
+                  </div>
+                  {total > roomCharge && (
+                    <div className="flex justify-between gap-3 text-muted">
+                      <span>{t('summary.extraGuests')}</span>
+                      <span className="text-fg tabular-nums">{labels.money(total - roomCharge)}</span>
+                    </div>
+                  )}
+                  <div className="pt-2 border-t border-line flex justify-between items-baseline gap-3">
+                    <span className="font-semibold text-fg">
+                      {t('summary.total')} <span className="text-xs font-normal text-muted">{t('summary.vatIncluded')}</span>
+                    </span>
+                    <span className="text-lg font-semibold text-fg tabular-nums">{labels.money(total)}</span>
+                  </div>
+                </div>
+              )}
+
+              <fieldset>
+                <legend className="text-small font-medium text-fg mb-2">{t('summary.paymentMethod')}</legend>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" role="radiogroup" aria-label={t('summary.paymentMethod')}>
+                  {methods.map((m) => (
+                    <button
+                      key={m.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={method === m.value}
+                      onClick={() => setMethod(m.value)}
+                      className={cn(
+                        'h-14 rounded-ctl border flex flex-col items-center justify-center gap-1 text-xs font-medium transition-colors',
+                        method === m.value ? 'border-acc bg-acc-soft text-fg' : 'border-line bg-panel text-muted hover:text-fg'
+                      )}
+                    >
+                      {m.icon}
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+                {method !== 'NONE' && (
+                  <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-small" role="radiogroup">
+                    {(['full', 'deposit'] as const).map((value) => (
+                      <label key={value} className="inline-flex items-center gap-2 cursor-pointer text-fg">
+                        <input type="radio" name="walkin-scope" checked={scope === value} onChange={() => setScope(value)} className="h-4 w-4" />
+                        {value === 'full' ? t('summary.payFull') : t('summary.deposit')}
+                      </label>
+                    ))}
+                  </div>
+                )}
+                <p className="mt-2 text-xs text-muted">
+                  {method === 'NONE'
+                    ? t('summary.laterNote')
+                    : method === 'QR_VIETQR'
+                      ? t('summary.transferNote')
+                      : selected
+                        ? t('summary.collectNow', { amount: labels.money(amountNow) })
+                        : null}
+                </p>
+              </fieldset>
+
+              {error && (
+                <p className="p-3 rounded-ctl bg-err-soft text-err text-small flex items-start gap-2" role="alert">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+                  {error}
+                </p>
+              )}
+
+              <div className="flex flex-col-reverse sm:flex-row gap-2">
+                <Button type="button" variant="ghost" onClick={resetForm} className="sm:w-auto">
+                  {t('summary.reset')}
+                </Button>
+                <Button
+                  type="button"
+                  className="flex-1"
+                  onClick={handleSubmit}
+                  isLoading={isSubmitting}
+                  disabled={!selected || !guest.name.trim() || !guest.phone.trim()}
+                >
+                  {t('summary.submit')}
+                </Button>
               </div>
             </div>
           </div>
-          {/* END: Column Right: Walk-in Live Summary Panel */}
-        </div>
-        {/* END: 2-Column Main Workspace */}
+        </aside>
       </div>
-      {/* END: Main Scrollable Content Area */}
-    </div>
+    </PageContainer>
   )
 }
