@@ -26,7 +26,7 @@
 import { randomBytes } from 'crypto'
 import type { Invoice, Prisma, PropertyEinvoice } from '@prisma/client'
 import { prisma } from '@/lib/db'
-import { decryptSecret, encryptSecret, secretContext } from '@/lib/security/secret-box'
+import { SecretBoxError, decryptSecret, encryptSecret, secretContext } from '@/lib/security/secret-box'
 import { vndToWords } from './amount-words'
 import { MatbaoClient, MatbaoError, type MatbaoEnvironment } from './matbao-client'
 import { isVatCode, splitGross, type VatCode } from './vat'
@@ -55,12 +55,38 @@ export function einvoiceWebhookUrl(propertyId: string, token: string): string {
   return `${process.env.NEXTAUTH_URL}/api/webhooks/matbao/${propertyId}/${token}`
 }
 
+/**
+ * Said when the stored password cannot be decrypted (DATA_ENCRYPTION_KEYS
+ * lost or changed the key it was saved with): saving it again fixes it.
+ */
+export const CREDENTIALS_UNREADABLE = 'Không đọc được mật khẩu Mắt Bão đã lưu — nhập lại mật khẩu'
+
+/** The stored secret, or CREDENTIALS_UNREADABLE (instead of a 500 or "Lỗi khi gọi Mắt Bão"). */
+function readSecret(stored: string, context: string): string {
+  try {
+    return decryptSecret(stored, context)
+  } catch (error) {
+    if (error instanceof SecretBoxError) throw new EinvoiceError(CREDENTIALS_UNREADABLE, 409)
+    throw error
+  }
+}
+
+function readable(stored: string, context: string): boolean {
+  try {
+    decryptSecret(stored, context)
+    return true
+  } catch (error) {
+    if (error instanceof SecretBoxError) return false
+    throw error
+  }
+}
+
 function clientFor(config: PropertyEinvoice): MatbaoClient {
   return new MatbaoClient({
     environment: config.environment as MatbaoEnvironment,
     taxCode: config.taxCode,
     username: config.username,
-    password: decryptSecret(config.password, passwordCtx(config.propertyId)),
+    password: readSecret(config.password, passwordCtx(config.propertyId)),
   })
 }
 
@@ -70,17 +96,26 @@ export function lookupCodeFor(invoice: Pick<Invoice, 'invoiceNumber' | 'lookupCo
 
 /**
  * The settings, never the password. The webhook URL contains a secret:
- * only owners/ADMINs get it (they send it to Mắt Bão support).
+ * only owners/ADMINs get it (they send it to Mắt Bão support). A password
+ * or token the keys cannot decrypt is flagged (credentialsUnreadable, with
+ * what to do) instead of failing the whole answer.
  */
 export async function getEinvoiceStatus(propertyId: string, { includeWebhookUrl = false } = {}) {
   const row = await prisma.propertyEinvoice.findUnique({ where: { propertyId } })
   if (!row) return { connected: false as const }
-  const { password: _password, connectedById: _by, webhookToken, ...visible } = row
+  const { password, connectedById: _by, webhookToken, ...visible } = row
+  const tokenReadable = webhookToken ? readable(webhookToken, webhookTokenCtx(propertyId)) : true
+  const unreadable = !readable(password, passwordCtx(propertyId)) || !tokenReadable
   const webhookUrl =
-    includeWebhookUrl && webhookToken
+    includeWebhookUrl && webhookToken && tokenReadable
       ? einvoiceWebhookUrl(propertyId, decryptSecret(webhookToken, webhookTokenCtx(propertyId)))
       : undefined
-  return { connected: Boolean(row.verifiedAt), ...visible, ...(webhookUrl && { webhookUrl }) }
+  return {
+    connected: Boolean(row.verifiedAt),
+    ...visible,
+    ...(webhookUrl && { webhookUrl }),
+    ...(unreadable && { credentialsUnreadable: true as const, credentialsError: CREDENTIALS_UNREADABLE }),
+  }
 }
 
 export interface EinvoiceSettings {
@@ -109,8 +144,12 @@ export async function connectEinvoice(propertyId: string, input: EinvoiceSetting
     verifiedAt: null,
     remainingNumbers: null,
     connectedById: userId,
-    // Kept across changes: Mắt Bão support has the URL.
-    webhookToken: previous?.webhookToken ?? encryptSecret(randomBytes(24).toString('hex'), webhookTokenCtx(propertyId)),
+    // Kept across changes: Mắt Bão support has the URL. One the keys can no
+    // longer read is replaced (no callback could match it anyway).
+    webhookToken:
+      previous?.webhookToken && readable(previous.webhookToken, webhookTokenCtx(propertyId))
+        ? previous.webhookToken
+        : encryptSecret(randomBytes(24).toString('hex'), webhookTokenCtx(propertyId)),
   }
   const row = await prisma.propertyEinvoice.upsert({ where: { propertyId }, create: { propertyId, ...data }, update: data })
 
@@ -344,6 +383,17 @@ export async function publishInvoice(invoiceId: string, userId: string | null, n
     throw new EinvoiceError(planProblem, planProblem === WORKSPACE_LOCKED ? 402 : 403)
   }
   const config = await verifiedConfig(invoice.propertyId)
+  // A password the keys cannot read stops here, before the invoice is
+  // claimed, with what to do (it used to say "Lỗi khi gọi Mắt Bão").
+  let client: MatbaoClient
+  try {
+    client = clientFor(config)
+  } catch (error) {
+    if (error instanceof EinvoiceError) {
+      await prisma.invoice.updateMany({ where: { id: invoiceId, status: { in: ['DRAFT', 'PENDING'] } }, data: { publishError: error.message } })
+    }
+    throw error
+  }
   // Invoices created before this part have no VAT code: use the property's.
   const vatCode: VatCode = isVatCode(invoice.vatCode) ? invoice.vatCode : (config.vatCode as VatCode)
   const split = splitGross(invoice.totalAmount, vatCode)
@@ -374,7 +424,7 @@ export async function publishInvoice(invoiceId: string, userId: string | null, n
 
   let result
   try {
-    result = await clientFor(config).createInvoice(
+    result = await client.createInvoice(
       buildMatbaoInvoice({ ...invoice, lookupCode }, config, vatCode, now, related)
     )
   } catch (error) {
