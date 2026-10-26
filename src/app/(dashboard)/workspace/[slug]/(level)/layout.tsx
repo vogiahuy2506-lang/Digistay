@@ -2,6 +2,7 @@ import { loadWorkspaceShell } from '@/lib/auth/workspace-shell-data'
 import { WorkspaceTopBar } from '@/components/layout/workspace-top-bar'
 import { WorkspaceRoleProvider } from '@/components/layout/workspace-role-provider'
 import { PlanBanner } from '@/components/layout/plan-banner'
+import { WorkspaceLevelTitle } from '@/components/layout/document-title'
 
 /**
  * The workspace level — the property list, members and settings — has the
@@ -20,6 +21,7 @@ export default async function WorkspaceLevelLayout({
 
   return (
     <WorkspaceRoleProvider role={data.workspace.role}>
+      <WorkspaceLevelTitle workspaceName={data.workspace.name} />
       <div className="min-h-screen flex flex-col">
         <WorkspaceTopBar
           workspace={data.workspace}
