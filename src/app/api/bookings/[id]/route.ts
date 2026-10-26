@@ -76,8 +76,10 @@ export async function GET(
     const isMember = workspace.members.length > 0
     const isGuest = booking.guestEmail === session.user.email
 
+    // Outsiders get the same 404 as a missing booking (CLAUDE.md, API rule 3):
+    // a 403 told them the id exists.
     if (!isOwner && !isMember && !isGuest) {
-      return NextResponse.json({ success: false, error: 'Không có quyền truy cập' }, { status: 403 })
+      return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
     }
 
     const [data] = await withRoomTypeNames([booking])
@@ -124,9 +126,12 @@ export async function PATCH(
       return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
     }
 
-    // Check admin access
+    // Check admin access; outsiders get the 404 of a missing booking.
     const workspace = booking.property.workspace
     const isOwner = workspace.ownerId === session.user.id
+    if (!isOwner && workspace.members.length === 0) {
+      return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
+    }
     const isAdmin = workspace.members.some(m => ['ADMIN', 'MANAGER', 'RECEPTIONIST'].includes(m.role))
 
     if (!isOwner && !isAdmin) {
@@ -263,9 +268,12 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
     }
 
-    // Check admin access
+    // Check admin access; outsiders get the 404 of a missing booking.
     const workspace = booking.property.workspace
     const isOwner = workspace.ownerId === session.user.id
+    if (!isOwner && workspace.members.length === 0) {
+      return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
+    }
     const isAdmin = workspace.members.some(m => ['ADMIN', 'MANAGER'].includes(m.role))
 
     if (!isOwner && !isAdmin) {
