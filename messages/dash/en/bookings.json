@@ -179,7 +179,8 @@
     "amount": "Late fee (VND)",
     "waive": "Waive the late fee",
     "reason": "Reason (required, kept in the log)",
-    "submit": "Check out"
+    "submit": "Check out",
+    "toCollect": "To collect at check-out"
   },
   "walkIn": {
     "breadcrumb": "Front desk & Operations",
@@ -282,5 +283,23 @@
       "reset": "Reset form",
       "synced": "Synced live with the room map"
     }
+  },
+  "checkIn": {
+    "title": "Check in {code}",
+    "guestLine": "{guest} · {from} → {to} ({nights})",
+    "room": "Room",
+    "roomHint": "Confirm or change the guest's room.",
+    "later": "Assign a room later",
+    "laterHint": "No room chosen: the guest checks in and gets a room on the booking later.",
+    "noFreeRoom": "This room type has no free room for these nights. Pick a room of another type, or check in and assign one later.",
+    "taken": "occupied",
+    "roomNumber": "Room number",
+    "typedHint": "The hotel has not listed this type's rooms: type the room number if there is one.",
+    "splitPlan": "Rooms night by night: {plan}",
+    "earlyDay": "Checking in before the booked day ({date}).",
+    "earlyTime": "Early check-in: the hotel's check-in time is {time}.",
+    "due": "Still to collect",
+    "submit": "Check in",
+    "roomFailed": "Could not assign the room"
   }
 }

@@ -179,7 +179,8 @@
     "amount": "Số tiền phụ thu (đồng)",
     "waive": "Miễn phí trả muộn",
     "reason": "Lý do (bắt buộc, lưu vào nhật ký)",
-    "submit": "Trả phòng"
+    "submit": "Trả phòng",
+    "toCollect": "Còn phải thu khi trả phòng"
   },
   "walkIn": {
     "breadcrumb": "Lễ tân & Vận hành",
@@ -282,5 +283,23 @@
       "reset": "Làm mới đơn",
       "synced": "Đồng bộ tức thì với Sơ đồ phòng"
     }
+  },
+  "checkIn": {
+    "title": "Nhận phòng {code}",
+    "guestLine": "{guest} · {from} → {to} ({nights})",
+    "room": "Phòng",
+    "roomHint": "Xác nhận hoặc đổi phòng khách sẽ ở.",
+    "later": "Xếp phòng sau",
+    "laterHint": "Chưa chọn phòng: khách nhận phòng, xếp phòng sau ở đơn.",
+    "noFreeRoom": "Hạng này không còn phòng trống cho các đêm này. Có thể chọn phòng hạng khác, hoặc nhận phòng rồi xếp sau.",
+    "taken": "đang có khách",
+    "roomNumber": "Số phòng",
+    "typedHint": "Khách sạn chưa liệt kê phòng của hạng này: nhập số phòng nếu có.",
+    "splitPlan": "Phòng theo từng đêm: {plan}",
+    "earlyDay": "Nhận phòng trước ngày đã đặt ({date}).",
+    "earlyTime": "Nhận phòng sớm: giờ nhận phòng của khách sạn là {time}.",
+    "due": "Còn phải thu",
+    "submit": "Nhận phòng",
+    "roomFailed": "Chưa xếp được phòng"
   }
 }

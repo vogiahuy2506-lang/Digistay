@@ -107,6 +107,8 @@ export async function GET(
         percent: quote.percent,
         suggestedFee: quote.fee,
         checkOutTime: policy?.checkOutTime ?? '12:00',
+        /** still owed before any late fee (total less what is paid): the dialog reminds the desk to collect it */
+        due: Math.max(0, booking.totalAmount - booking.depositAmount),
       },
     })
   } catch (error) {

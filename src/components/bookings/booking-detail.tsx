@@ -22,6 +22,7 @@ import {
 import { canManageBookings, useWorkspaceRole } from '@/components/layout/workspace-context'
 import { CheckOutDialog } from './check-out-dialog'
 import { CancelDialog } from './cancel-dialog'
+import { CheckInDialog } from './check-in-dialog'
 import { buildPrintHtml, nightsBetween, remainingAmount } from '@/lib/bookings/display'
 import { addDays as addDay, nightStart, roomPlan, spanOnNight, vnDay } from '@/lib/bookings/room-plan'
 import { useDashLabels } from '@/lib/i18n/dash'
@@ -203,9 +204,13 @@ export function BookingDetailContent({ booking, onChanged }: { booking: BookingD
         </div>
         <dl className="mt-2">
           <Field label={t('email')}>
-            <a href={`mailto:${booking.guestEmail}`} className="hover:underline">
-              {booking.guestEmail}
-            </a>
+            {booking.guestEmail ? (
+              <a href={`mailto:${booking.guestEmail}`} className="hover:underline">
+                {booking.guestEmail}
+              </a>
+            ) : (
+              <span className="text-muted">—</span>
+            )}
           </Field>
           <Field label={t('guest.guests')}>{labels.guests(booking.numAdults, booking.numChildren)}</Field>
         </dl>
@@ -655,7 +660,7 @@ export function BookingActions({
   const tc = useTranslations('dash.common')
   const labels = useDashLabels()
   const [busy, setBusy] = React.useState<ActionKey | null>(null)
-  const [dialog, setDialog] = React.useState<'cancel' | 'extend' | 'noshow' | 'checkout' | null>(null)
+  const [dialog, setDialog] = React.useState<'cancel' | 'extend' | 'noshow' | 'checkin' | 'checkout' | null>(null)
   const [extendDate, setExtendDate] = React.useState('')
   const [dialogError, setDialogError] = React.useState('')
 
@@ -712,7 +717,12 @@ export function BookingActions({
   const primary = !canManage
     ? null
     : canCheckIn
-      ? { label: t('actions.checkIn'), key: 'checkin' as const, run: () => run('checkin', 'check-in', undefined, () => t('actions.checkedIn')) }
+      ? {
+          label: t('actions.checkIn'),
+          key: 'checkin' as const,
+          // Confirmed in the dialog, with the room (check-in-dialog.tsx); it was one click.
+          run: () => setDialog('checkin'),
+        }
       : canCheckOut
         ? {
             label: t('actions.checkOut'),
@@ -779,6 +789,19 @@ export function BookingActions({
           </DropdownItem>
         )}
       </Dropdown>
+
+      <CheckInDialog
+        booking={booking}
+        propertyId={booking.property.id}
+        checkInTime={booking.property.policy?.checkInTime}
+        isOpen={dialog === 'checkin'}
+        onClose={() => setDialog(null)}
+        onDone={(message) => {
+          toast.success(message)
+          setDialog(null)
+          onChanged()
+        }}
+      />
 
       <CheckOutDialog
         bookingId={booking.id}
