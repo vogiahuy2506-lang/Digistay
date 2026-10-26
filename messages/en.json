@@ -952,13 +952,6 @@
       "accept": "Accept",
       "decline": "Decline"
     },
-    "account": {
-      "label": "Your account",
-      "profile": "Profile",
-      "dark": "Dark interface",
-      "light": "Light interface",
-      "signOut": "Sign out"
-    },
     "form": {
       "createTitle": "Create a workspace",
       "createLead": "A separate operating environment for your properties or group.",

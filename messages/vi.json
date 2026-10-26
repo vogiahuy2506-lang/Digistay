@@ -952,13 +952,6 @@
       "accept": "Chấp nhận",
       "decline": "Từ chối"
     },
-    "account": {
-      "label": "Tài khoản của bạn",
-      "profile": "Hồ sơ",
-      "dark": "Giao diện tối",
-      "light": "Giao diện sáng",
-      "signOut": "Đăng xuất"
-    },
     "form": {
       "createTitle": "Tạo workspace mới",
       "createLead": "Một môi trường vận hành riêng cho cơ sở hoặc chuỗi của bạn.",

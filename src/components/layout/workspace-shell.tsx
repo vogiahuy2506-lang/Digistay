@@ -5,15 +5,14 @@ import * as React from 'react'
 import { usePathname, useRouter, useParams } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
-import { ChevronDown, LogOut, Menu, Moon, Sun, X } from 'lucide-react'
+import { ChevronDown, Menu, X } from 'lucide-react'
 import { useDashLabels } from '@/lib/i18n/dash'
 import { cn } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
 import { useProperty, type PropertyContext } from '@/lib/hooks/use-property'
-import { Avatar, Dropdown, DropdownItem, DropdownDivider } from '@/components/ui'
+import { Dropdown, DropdownItem, DropdownDivider } from '@/components/ui'
 import { useDialogBehavior } from '@/components/ui/dialog-behavior'
-import { useTheme } from './theme-root'
-import { LanguageButton } from './language-button'
+import { AccountMenu } from './account-menu'
 import { NotificationBell } from './notification-bell'
 import { activeHref, primaryNav, workspaceNav, type NavItem, type WorkspaceRole } from './nav'
 import { useDocumentTitle } from './document-title'
@@ -249,54 +248,25 @@ function SidebarContent({
   )
 }
 
+/**
+ * The foot of the sidebar: the user, whose row opens the account menu
+ * (profile, theme, language, sign out) upwards.
+ */
 function UserBlock({ name, email, image, role }: { name?: string; email?: string; image?: string; role: WorkspaceRole }) {
-  const t = useTranslations('dash.common.shell')
   const labels = useDashLabels()
-  const theme = useTheme()
-  const dark = theme?.preference === 'dark'
-  const iconButton =
-    'w-8 h-8 rounded-ctl flex items-center justify-center text-muted hover:text-fg hover:bg-fg/5 transition-colors duration-160 ' +
-    'focus:outline-none focus-visible:ring-2 focus-visible:ring-acc disabled:opacity-40 disabled:cursor-not-allowed'
 
-  // The name has the block's whole width; the role shares the second line with the buttons.
   return (
-    <div className="shrink-0 border-t border-line px-3 py-2.5 flex items-start gap-2.5">
-      <Avatar src={image} name={name || t('user')} size="sm" />
-      <div className="min-w-0 flex-1">
-        {/* The name leads to the profile (/profile): nothing else in the dashboard does. */}
-        <Link href={routes.profile()} className="block text-sm font-medium text-fg truncate rounded-ctl hover:underline underline-offset-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc" title={email}>
-          {name || email || t('user')}
-        </Link>
-        <div className="flex items-center justify-between gap-1">
-          <p className="min-w-0 text-xs text-muted truncate">{labels.role(role)}</p>
-          <div className="-mr-1 flex shrink-0 items-center">
-            {theme && (
-              <button
-                type="button"
-                onClick={() => theme.setPreference(dark ? 'light' : 'dark')}
-                aria-pressed={dark}
-                aria-label={t('darkTheme')}
-                title={theme.darkAvailable ? (dark ? t('toLight') : t('toDark')) : t('noDarkHere')}
-                className={iconButton}
-              >
-                {dark ? <Sun className="w-4 h-4" aria-hidden="true" /> : <Moon className="w-4 h-4" aria-hidden="true" />}
-              </button>
-            )}
-            <LanguageButton compact />
-            {/* signOut() sends NextAuth's CSRF token; the old bare form POST had none,
-                so NextAuth ignored it and the session survived. */}
-            <button
-              type="button"
-              onClick={() => signOut({ callbackUrl: '/login' })}
-              aria-label={t('signOut')}
-              title={t('signOut')}
-              className={cn(iconButton, 'hover:text-err hover:bg-err-soft')}
-            >
-              <LogOut className="w-4 h-4" aria-hidden="true" />
-            </button>
-          </div>
-        </div>
-      </div>
+    <div className="shrink-0 border-t border-line px-3 py-2">
+      {/* signOut() sends NextAuth's CSRF token; the old bare form POST had none,
+          so NextAuth ignored it and the session survived. */}
+      <AccountMenu
+        variant="sidebar"
+        name={name}
+        email={email}
+        image={image}
+        detail={labels.role(role)}
+        onSignOut={() => signOut({ callbackUrl: '/login' })}
+      />
     </div>
   )
 }

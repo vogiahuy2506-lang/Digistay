@@ -28,11 +28,19 @@
   "shell": {
     "toDark": "Chuyển sang giao diện tối",
     "toLight": "Chuyển sang giao diện sáng",
-    "darkTheme": "Giao diện tối",
     "noDarkHere": "Trang này chưa có giao diện tối; lựa chọn vẫn được lưu cho các trang đã có",
     "signOut": "Đăng xuất",
     "language": "Ngôn ngữ",
-    "user": "Người dùng"
+    "user": "Người dùng",
+    "account": "Tài khoản của bạn",
+    "profile": "Hồ sơ",
+    "theme": "Giao diện",
+    "themeLight": "Sáng",
+    "themeDark": "Tối",
+    "languageNames": {
+      "vi": "Tiếng Việt",
+      "en": "English"
+    }
   },
   "notifications": {
     "title": "Thông báo",
