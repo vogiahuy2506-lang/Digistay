@@ -17,6 +17,7 @@ import { useTranslations } from 'next-intl'
 import { useDashLabels } from '@/lib/i18n/dash'
 import { EditPropertyModal } from './edit-property-modal'
 import { DeletePropertyZone } from '@/components/deletion/delete-property-zone'
+import { TodayOverview } from '@/components/property/today-overview'
 import { apiError } from '@/lib/i18n/api-errors'
 import { PhotoUploadButton } from '@/components/ui/photo-upload'
 import { resizedImage } from '@/lib/media/image-url'
@@ -471,8 +472,9 @@ export default function PropertyDetailPage() {
           <TabsTrigger value="website">{t('tabs.website')}</TabsTrigger>
         </TabsList>
 
-        {/* Overview Tab */}
+        {/* Overview Tab: today at the hotel first (the figures the calendar page had), then the property. */}
         <TabsContent value="overview">
+          <TodayOverview slug={slug} propertyId={propertyId} />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Images */}
             <div className="lg:col-span-2">

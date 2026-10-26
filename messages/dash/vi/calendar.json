@@ -9,20 +9,6 @@
     "exportTitle": "Xuất báo cáo công suất",
     "createBooking": "Tạo đặt phòng"
   },
-  "stats": {
-    "totalRooms": "Tổng số phòng",
-    "physicalRooms": "phòng vật lý",
-    "monthOccupancy": "Công suất tháng: <b>{percent}%</b>",
-    "inHouse": "Đang ở",
-    "ofRooms": "/ {count} phòng",
-    "guestsInHouse": "{count} khách đang lưu trú",
-    "arrivingToday": "Dự kiến đến hôm nay",
-    "checkIns": "Lượt check-in",
-    "awaitingPayment": "{count} đơn chờ thanh toán",
-    "expectedRevenue": "Doanh thu dự kiến T{month}",
-    "millions": "{amount} tr",
-    "confirmed": "{count} booking đã xác nhận"
-  },
   "grid": {
     "title": "Lịch đặt phòng theo tháng",
     "daysShown": "{count} ngày hiển thị",
@@ -49,20 +35,6 @@
     },
     "free": "Chưa có đơn",
     "addOn": "Tạo đơn ngày {date}"
-  },
-  "roomTypes": {
-    "title": "Tình trạng hạng phòng",
-    "summary": "{count} phòng • hôm nay",
-    "empty": "Chưa có hạng phòng nào.",
-    "rooms": "{count} phòng",
-    "free": "Trống {count}p",
-    "full": "{percent}% kín"
-  },
-  "today": {
-    "title": "Lượt đến & đi hôm nay",
-    "viewAll": "Xem tất cả ({count})",
-    "noArrivals": "Không có lượt đến nào hôm nay",
-    "roomLine": "Phòng {room} • #{code}"
   },
   "checkIn": "Check-in",
   "checkOut": "Check-out",

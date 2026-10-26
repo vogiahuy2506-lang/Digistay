@@ -9,20 +9,6 @@
     "exportTitle": "Export occupancy report",
     "createBooking": "New booking"
   },
-  "stats": {
-    "totalRooms": "Total rooms",
-    "physicalRooms": "physical rooms",
-    "monthOccupancy": "Month occupancy: <b>{percent}%</b>",
-    "inHouse": "In-house",
-    "ofRooms": "/ {count, plural, one {# room} other {# rooms}}",
-    "guestsInHouse": "{count, plural, one {# guest staying} other {# guests staying}}",
-    "arrivingToday": "Arriving today",
-    "checkIns": "Check-ins",
-    "awaitingPayment": "{count, plural, one {# booking awaiting payment} other {# bookings awaiting payment}}",
-    "expectedRevenue": "Expected revenue, month {month}",
-    "millions": "{amount}M",
-    "confirmed": "{count, plural, one {# booking confirmed} other {# bookings confirmed}}"
-  },
   "grid": {
     "title": "Monthly booking grid",
     "daysShown": "{count} days shown",
@@ -49,20 +35,6 @@
     },
     "free": "No bookings",
     "addOn": "New booking on {date}"
-  },
-  "roomTypes": {
-    "title": "Room types status",
-    "summary": "{count, plural, one {# room} other {# rooms}} • today",
-    "empty": "No room types yet.",
-    "rooms": "{count, plural, one {# room} other {# rooms}}",
-    "free": "{count} free",
-    "full": "{percent}% full"
-  },
-  "today": {
-    "title": "Today's arrivals & departures",
-    "viewAll": "View all ({count})",
-    "noArrivals": "No arrivals today",
-    "roomLine": "Room {room} • #{code}"
   },
   "checkIn": "Check-in",
   "checkOut": "Check-out",

@@ -256,5 +256,40 @@
       "published": "Đã xuất bản",
       "unpublished": "Chưa xuất bản"
     }
+  },
+  "today": {
+    "title": "Hôm nay tại khách sạn",
+    "loadError": "Chưa tải được số liệu hôm nay",
+    "stats": {
+      "totalRooms": "Tổng số phòng",
+      "physicalRooms": "phòng vật lý",
+      "monthOccupancy": "Công suất tháng: <b>{percent}%</b>",
+      "inHouse": "Đang ở",
+      "ofRooms": "/ {count} phòng",
+      "guestsInHouse": "{count} khách đang lưu trú",
+      "arrivingToday": "Dự kiến đến hôm nay",
+      "checkIns": "Lượt check-in",
+      "awaitingPayment": "{count} đơn chờ thanh toán",
+      "expectedRevenue": "Doanh thu dự kiến T{month}",
+      "millions": "{amount} tr",
+      "confirmed": "{count} booking đã xác nhận"
+    },
+    "roomTypes": {
+      "title": "Tình trạng hạng phòng",
+      "summary": "{count} phòng • đêm nay",
+      "empty": "Chưa có hạng phòng nào.",
+      "rooms": "{count} phòng",
+      "free": "Trống {count}p",
+      "full": "{percent}% kín"
+    },
+    "moves": {
+      "title": "Lượt đến & đi hôm nay",
+      "viewAll": "Xem tất cả ({count})",
+      "none": "Hôm nay không có lượt đến hay đi nào",
+      "roomLine": "Phòng {room} • #{code}",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "more": "+{count} lượt nữa"
+    }
   }
 }
