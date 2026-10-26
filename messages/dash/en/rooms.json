@@ -173,7 +173,9 @@
       "leisure": "Leisure",
       "parking": "Parking",
       "security": "Security",
-      "service": "Services"
+      "service": "Services",
+      "transport": "Transport",
+      "view": "View"
     },
     "serviceCategory": {
       "laundry": "Laundry",

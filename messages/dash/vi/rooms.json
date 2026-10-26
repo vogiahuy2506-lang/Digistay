@@ -170,10 +170,12 @@
       "facility": "Cơ sở",
       "food": "Ăn uống",
       "internet": "Internet",
-      "leisure": "Giải trí",
+      "leisure": "Thư giãn",
       "parking": "Đỗ xe",
       "security": "An ninh",
-      "service": "Dịch vụ"
+      "service": "Dịch vụ",
+      "transport": "Di chuyển",
+      "view": "Cảnh quan"
     },
     "serviceCategory": {
       "laundry": "Giặt ủi",

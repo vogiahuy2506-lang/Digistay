@@ -41,7 +41,7 @@ interface ExtraService {
 const SERVICE_CATEGORIES = ['laundry', 'transport', 'food', 'entertainment', 'other'] as const
 type ServiceCategory = (typeof SERVICE_CATEGORIES)[number]
 
-const AMENITY_CATEGORIES = ['comfort', 'entertainment', 'facility', 'food', 'internet', 'leisure', 'parking', 'security', 'service'] as const
+const AMENITY_CATEGORIES = ['comfort', 'entertainment', 'facility', 'food', 'internet', 'leisure', 'parking', 'security', 'service', 'transport', 'view'] as const
 type AmenityCategory = (typeof AMENITY_CATEGORIES)[number]
 
 export default function ServicesPage() {

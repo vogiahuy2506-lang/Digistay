@@ -233,7 +233,7 @@
     },
     "summary": {
       "title": "Đơn walk-in",
-      "noRoom": "Chọn một hạng phòng bên trái",
+      "noRoom": "Chưa chọn hạng phòng",
       "roomLine": "{roomType} · phòng {number}",
       "roomLater": "{roomType} · xếp phòng sau",
       "nights": "{count} đêm",

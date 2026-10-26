@@ -233,7 +233,7 @@
     },
     "summary": {
       "title": "Walk-in booking",
-      "noRoom": "Choose a room type on the left",
+      "noRoom": "No room type chosen yet",
       "roomLine": "{roomType} · room {number}",
       "roomLater": "{roomType} · room later",
       "nights": "{count, plural, one {# night} other {# nights}}",
