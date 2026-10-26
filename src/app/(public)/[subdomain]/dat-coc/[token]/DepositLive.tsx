@@ -212,13 +212,24 @@ export function DepositLive({
             </div>
             <div>
               <dl className="border-t border-line">
-                {rows.map((r) => (
-                  <div key={r.label} className="flex items-center gap-3 border-b border-line py-3 sm:gap-4">
-                    <dt className="w-[88px] flex-none text-[13px] text-muted sm:w-[110px] sm:text-[13.5px]">{r.label}</dt>
-                    <dd className="min-w-0 flex-1 break-words text-[15px] font-medium tabular-nums text-fg">{r.value}</dd>
-                    {r.copy && <CopyButton value={r.copy} />}
-                  </div>
-                ))}
+                {rows.map((r) =>
+                  manual ? (
+                    // Five rows with long values (the holder's name, the code): the label above, the value the full width.
+                    <div key={r.label} className="flex items-center gap-3 border-b border-line py-2.5 sm:gap-4">
+                      <div className="min-w-0 flex-1">
+                        <dt className="text-[12.5px] text-muted">{r.label}</dt>
+                        <dd className="mt-0.5 break-words text-[15px] font-medium tabular-nums text-fg">{r.value}</dd>
+                      </div>
+                      {r.copy && <CopyButton value={r.copy} />}
+                    </div>
+                  ) : (
+                    <div key={r.label} className="flex items-center gap-3 border-b border-line py-3 sm:gap-4">
+                      <dt className="w-[88px] flex-none text-[13px] text-muted sm:w-[110px] sm:text-[13.5px]">{r.label}</dt>
+                      <dd className="min-w-0 flex-1 break-words text-[15px] font-medium tabular-nums text-fg">{r.value}</dd>
+                      {r.copy && <CopyButton value={r.copy} />}
+                    </div>
+                  ),
+                )}
               </dl>
               <p className="mt-4 text-[13px] leading-[1.6] text-fg/80">{manual ? t('exactManual', { hotel: hotel.name }) : t('exact', { hotel: hotel.name })}</p>
             </div>

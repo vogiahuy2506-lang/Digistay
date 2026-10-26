@@ -398,7 +398,7 @@
       "accountHolderHint": "As the bank prints it: capitals, no accents",
       "addMomoTitle": "Add a MoMo wallet",
       "editMomoTitle": "Edit MoMo wallet",
-      "momoPhonePlaceholder": "The phone number registered with MoMo, e.g. 0901234567",
+      "momoPhonePlaceholder": "e.g. 0901234567",
       "momoPhoneHint": "The QR pays into the MoMo wallet of this number (any banking app can scan it).",
       "momoHolderPlaceholder": "The wallet holder’s name, as MoMo shows it",
       "submitAddMomo": "Add wallet"

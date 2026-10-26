@@ -398,7 +398,7 @@
       "accountHolderHint": "Như ngân hàng in: chữ in hoa, không dấu",
       "addMomoTitle": "Thêm ví MoMo",
       "editMomoTitle": "Sửa ví MoMo",
-      "momoPhonePlaceholder": "Số điện thoại đăng ký MoMo, vd 0901234567",
+      "momoPhonePlaceholder": "VD: 0901234567",
       "momoPhoneHint": "Mã QR chuyển vào ví MoMo gắn với số này (ứng dụng ngân hàng nào cũng quét được).",
       "momoHolderPlaceholder": "Tên chủ ví, như MoMo hiển thị",
       "submitAddMomo": "Thêm ví"
