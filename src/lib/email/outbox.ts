@@ -49,6 +49,8 @@ type Kind =
   | 'contact_request'
   | 'subscription_paid'
   | 'subscription_reminder'
+  | 'plan_overage_grace'
+  | 'plan_overage_locked'
 interface Message {
   to: EmailRecipient
   subject: string

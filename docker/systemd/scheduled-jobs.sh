@@ -2,7 +2,8 @@
 # The app's scheduled jobs, run every 10 minutes by
 # docker/systemd/digistay-reconcile.timer (RUNBOOK, "Đối soát PayOS định kỳ"):
 #   - payos-reconcile: PayOS links whose webhook never came (hotels' and plans')
-#   - subscription-jobs: plan reminders before and after a period ends
+#   - subscription-jobs: plan reminders before and after a period ends, and
+#     what is over the plan (grace, then locking the excess; unlocking)
 #   - einvoice-jobs: auto-issue, uncertain publishes, invoice emails
 #   - email-outbox: booking and invitation emails not sent yet
 #   - ops-alerts: emails the people running Digistay about failed jobs,
