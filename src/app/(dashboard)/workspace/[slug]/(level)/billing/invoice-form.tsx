@@ -99,7 +99,7 @@ export function InvoiceForm({
             aria-checked={value.type === type}
             onClick={() => set({ type })}
             className={cn(
-              'h-9 rounded-[6px] px-2 text-small font-medium transition-colors duration-160',
+              'min-h-9 rounded-[6px] px-2 py-1.5 text-small font-medium leading-tight transition-colors duration-160',
               value.type === type ? 'bg-ink text-on-ink' : 'text-fg/80 hover:text-fg',
             )}
           >
