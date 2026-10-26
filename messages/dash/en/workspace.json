@@ -11,12 +11,6 @@
     "upload": "Upload logo"
   },
   "defaultCurrency": "Default currency",
-  "currencies": {
-    "VND": "VND (₫) - Vietnamese dong",
-    "USD": "USD ($) - US Dollar",
-    "EUR": "EUR (€) - Euro",
-    "SGD": "SGD ($) - Singapore Dollar"
-  },
   "descriptionOptional": "Description (optional)",
   "propertyStatus": {
     "active": "Active",
@@ -160,7 +154,7 @@
   },
   "settings": {
     "back": "Back to workspace",
-    "title": "Business details",
+    "title": "Workspace settings",
     "description": "General settings of {name}: name, logo, currency and time zone.",
     "saved": "Settings saved!",
     "saveFailed": "Could not save",
@@ -178,21 +172,8 @@
       "namePlaceholder": "e.g. ABC Hotel",
       "description": "Description",
       "descriptionPlaceholder": "A short description of the workspace...",
-      "domain": "Custom domain",
-      "domainPlaceholder": "e.g. abchotel.com",
-      "domainHint": "Connect the workspace to your own domain",
       "regional": "Regional settings",
-      "timezone": "Time zone",
-      "businessType": "Business type",
-      "businessTypes": {
-        "HOTEL": "Hotel",
-        "RESORT": "Resort",
-        "HOMESTAY": "Homestay / serviced apartment",
-        "BOUTIQUE": "Boutique hotel",
-        "VILLA": "Villa",
-        "MOTEL": "Motel",
-        "HOSTEL": "Hostel / backpacker"
-      }
+      "timezone": "Time zone"
     },
     "notifications": {
       "title": "Notification settings",

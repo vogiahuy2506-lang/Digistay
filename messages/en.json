@@ -924,6 +924,16 @@
       "title": "No workspace matches",
       "text": "Try another keyword, or create a new workspace."
     },
+    "emptyOwned": {
+      "title": "You do not own a workspace yet",
+      "text": "Create one for your property or group, then add properties and invite your staff."
+    },
+    "emptyInvited": {
+      "title": "No invitations",
+      "text": "When someone invites you to their workspace, the invitation shows up on this page.",
+      "pendingTitle": "You have not joined an invited workspace yet",
+      "pending": "{count, plural, one {# invitation is} other {# invitations are}} waiting for you below: accept one to join that workspace."
+    },
     "invitations": {
       "title": "Collaboration invitations",
       "pending": "{count} pending",
@@ -947,7 +957,7 @@
       "name": "Workspace name",
       "namePlaceholder": "e.g. An Nam Boutique Hotel",
       "shortName": "Short name",
-      "shortNameHint": "Website address: {slug}.digistay.vn — lowercase letters, no accents or spaces.",
+      "shortNameHint": "Dashboard address: …/workspace/{slug} — lowercase letters, no accents or spaces. It cannot be changed later.",
       "shortNameEdit": "Change short name",
       "businessType": "Hospitality model",
       "businessTypes": {
@@ -961,7 +971,7 @@
       "logoHint": "PNG, JPG or WebP. A square image around 512×512 px looks best.",
       "logoAlt": "Workspace logo",
       "description": "Description",
-      "descriptionPlaceholder": "Internal notes about this property",
+      "descriptionPlaceholder": "Internal notes about this workspace",
       "currency": "Currency",
       "timezone": "Operating timezone",
       "cancel": "Cancel",
@@ -991,8 +1001,9 @@
     "title": "Your properties",
     "lead": "Each property is a hotel of its own: rooms, bookings and website.",
     "customize": "Customise",
-    "customizeLabel": "Customise this property: members and shared details",
+    "customizeLabel": "Customise this workspace: members and shared details",
     "members": "Members",
+    "addProperty": "Add property",
     "search": "Search properties",
     "searchPlaceholder": "Search by name, city or address",
     "active": "Active",

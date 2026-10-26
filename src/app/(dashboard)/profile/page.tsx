@@ -6,12 +6,12 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { signOut, useSession } from 'next-auth/react'
 import { useLocale, useTranslations } from 'next-intl'
-import { Header, PageContainer } from '@/components/layout'
+import { Header } from '@/components/layout'
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Badge } from '@/components/ui'
 import { Alert, AlertDescription, AlertIcon } from '@/components/ui/alert'
 import {
   User, Mail, Phone, MapPin, Calendar, FileText, Camera,
-  Save, Lock, Shield, LogOut, Check, Loader2
+  Save, Lock, Shield, LogOut, Check, Loader2, Eye, EyeOff
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { enGB, vi } from 'date-fns/locale'
@@ -309,16 +309,23 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <PageContainer>
+      <PageShell>
         <div className="flex items-center justify-center h-64">
           <Loader2 className="w-8 h-8 animate-spin text-acc" />
         </div>
-      </PageContainer>
+      </PageShell>
     )
   }
 
+  // A message belongs to the tab it came from.
+  const switchTab = (tab: 'profile' | 'security') => {
+    setActiveTab(tab)
+    setError('')
+    setSuccess('')
+  }
+
   return (
-    <PageContainer>
+    <PageShell>
       <Header
         title={t('title')}
         description={t('description')}
@@ -341,7 +348,7 @@ export default function ProfilePage() {
       {/* Tabs */}
       <div className="flex items-center gap-2 mb-6 bg-fg/5 p-1 rounded-lg w-fit">
         <button
-          onClick={() => setActiveTab('profile')}
+          onClick={() => switchTab('profile')}
           className={`px-4 py-2 rounded-md text-sm font-medium transition flex items-center gap-2 ${
             activeTab === 'profile'
               ? 'bg-panel text-acc shadow-sm'
@@ -352,7 +359,7 @@ export default function ProfilePage() {
           {t('tabs.profile')}
         </button>
         <button
-          onClick={() => setActiveTab('security')}
+          onClick={() => switchTab('security')}
           className={`px-4 py-2 rounded-md text-sm font-medium transition flex items-center gap-2 ${
             activeTab === 'security'
               ? 'bg-panel text-acc shadow-sm'
@@ -368,7 +375,7 @@ export default function ProfilePage() {
       {activeTab === 'profile' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Avatar Card */}
-          <Card className="lg:col-span-1">
+          <Card className="lg:col-span-1 lg:self-start">
             <CardHeader>
               <CardTitle>{t('avatar.title')}</CardTitle>
             </CardHeader>
@@ -494,7 +501,7 @@ export default function ProfilePage() {
                     {t('info.bio')}
                   </label>
                   <textarea
-                    className="w-full px-4 py-3 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-charcoal placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none resize-none"
+                    className="w-full px-4 py-3 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-fg placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none resize-none"
                     rows={3}
                     value={formData.bio}
                     onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
@@ -561,7 +568,7 @@ export default function ProfilePage() {
                   type="email"
                   value={emailForm.newEmail}
                   onChange={(e) => setEmailForm({ ...emailForm, newEmail: e.target.value })}
-                  className="w-full px-4 py-3 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-charcoal placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none"
+                  className="w-full px-4 py-3 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-fg placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none"
                   placeholder={t('email.newEmailPlaceholder')}
                 />
               </div>
@@ -575,7 +582,7 @@ export default function ProfilePage() {
                     type={showNewEmailPassword ? 'text' : 'password'}
                     value={emailForm.password}
                     onChange={(e) => setEmailForm({ ...emailForm, password: e.target.value })}
-                    className="w-full px-4 py-3 pr-12 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-charcoal placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none"
+                    className="w-full px-4 py-3 pr-12 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-fg placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none"
                     placeholder={t('email.passwordPlaceholder')}
                   />
                   <button
@@ -583,9 +590,9 @@ export default function ProfilePage() {
                     onClick={() => setShowNewEmailPassword(!showNewEmailPassword)}
                     aria-label={showNewEmailPassword ? ta('hidePassword') : ta('showPassword')}
                     aria-pressed={showNewEmailPassword}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-muted"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-fg rounded-ctl focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
                   >
-                    {showNewEmailPassword ? '🙈' : '👁️'}
+                    {showNewEmailPassword ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
                   </button>
                 </div>
                 <p className="text-xs text-muted mt-1">
@@ -624,7 +631,7 @@ export default function ProfilePage() {
                     type={showCurrentPassword ? 'text' : 'password'}
                     value={passwordForm.currentPassword}
                     onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                    className="w-full px-4 py-3 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-charcoal placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none pr-12"
+                    className="w-full px-4 py-3 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-fg placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none pr-12"
                     placeholder={t('password.currentPlaceholder')}
                   />
                   <button
@@ -632,9 +639,9 @@ export default function ProfilePage() {
                     onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                     aria-label={showCurrentPassword ? ta('hidePassword') : ta('showPassword')}
                     aria-pressed={showCurrentPassword}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-muted"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-fg rounded-ctl focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
                   >
-                    {showCurrentPassword ? '🙈' : '👁️'}
+                    {showCurrentPassword ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
                   </button>
                 </div>
               </div>
@@ -648,7 +655,7 @@ export default function ProfilePage() {
                     type={showNewPassword ? 'text' : 'password'}
                     value={passwordForm.newPassword}
                     onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                    className="w-full px-4 py-3 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-charcoal placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none pr-12"
+                    className="w-full px-4 py-3 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-fg placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none pr-12"
                     placeholder={t('password.newPlaceholder')}
                   />
                   <button
@@ -656,9 +663,9 @@ export default function ProfilePage() {
                     onClick={() => setShowNewPassword(!showNewPassword)}
                     aria-label={showNewPassword ? ta('hidePassword') : ta('showPassword')}
                     aria-pressed={showNewPassword}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-muted"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-fg rounded-ctl focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
                   >
-                    {showNewPassword ? '🙈' : '👁️'}
+                    {showNewPassword ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
                   </button>
                 </div>
                 <p className="text-xs text-muted mt-1">
@@ -674,7 +681,7 @@ export default function ProfilePage() {
                   type="password"
                   value={passwordForm.confirmPassword}
                   onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                  className="w-full px-4 py-3 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-charcoal placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none"
+                  className="w-full px-4 py-3 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-fg placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none"
                   placeholder={t('password.confirmPlaceholder')}
                 />
               </div>
@@ -700,19 +707,19 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-start gap-3">
-                <div className="w-2 h-2 rounded-full bg-ok mt-2"></div>
+                <div className="w-2 h-2 shrink-0 rounded-full bg-ok mt-2"></div>
                 <p className="text-sm text-fg">
                   {t('securityInfo.encrypted')}
                 </p>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-2 h-2 rounded-full bg-ok mt-2"></div>
+                <div className="w-2 h-2 shrink-0 rounded-full bg-ok mt-2"></div>
                 <p className="text-sm text-fg">
                   {t('securityInfo.sessions')}
                 </p>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-2 h-2 rounded-full bg-ok mt-2"></div>
+                <div className="w-2 h-2 shrink-0 rounded-full bg-ok mt-2"></div>
                 <p className="text-sm text-fg">
                   {t('securityInfo.strong')}
                 </p>
@@ -721,6 +728,11 @@ export default function ProfilePage() {
           </Card>
         </div>
       )}
-    </PageContainer>
+    </PageShell>
   )
+}
+
+/** The page's column, as wide as the top bar's (layout.tsx), so their edges line up. */
+function PageShell({ children }: { children: React.ReactNode }) {
+  return <div className="mx-auto w-full max-w-5xl px-5 sm:px-8 py-8 sm:py-10">{children}</div>
 }

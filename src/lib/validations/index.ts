@@ -46,22 +46,27 @@ export const updateProfileSchema = z.object({
 })
 
 // Workspace Validations
+
+// The workspace forms send null (or "") for "no logo" / "no domain": both mean none.
+const workspaceDomain = z.string().url('Domain không hợp lệ').or(z.literal('')).nullish()
+const workspaceLogo = z.string().url('Logo phải là URL hợp lệ').or(z.literal('')).nullish()
+
 export const createWorkspaceSchema = z.object({
   name: z.string().min(2, 'Tên workspace phải có ít nhất 2 ký tự').max(100, 'Tên workspace không được quá 100 ký tự'),
   description: z.string().max(500, 'Mô tả không được quá 500 ký tự').optional(),
-  domain: z.string().url('Domain không hợp lệ').optional().or(z.literal('')),
+  domain: workspaceDomain,
   slug: z.string().min(2, 'Tên rút gọn phải có ít nhất 2 ký tự').max(100, 'Tên rút gọn không được quá 100 ký tự').regex(/^[a-z0-9-]+$/, 'Tên rút gọn chỉ chứa chữ thường, số và dấu gạch ngang').optional(),
   businessType: z.enum(['boutique_hotel', 'resort', 'homestay']).optional(),
   currency: z.string().max(10).optional(),
   timezone: z.string().max(50).optional(),
-  logo: z.string().url('Logo phải là URL hợp lệ').optional().or(z.literal('')),
+  logo: workspaceLogo,
 })
 
 export const updateWorkspaceSchema = z.object({
   name: z.string().min(2, 'Tên workspace phải có ít nhất 2 ký tự').max(100, 'Tên workspace không được quá 100 ký tự').optional(),
   description: z.string().max(500, 'Mô tả không được quá 500 ký tự').optional(),
-  domain: z.string().url('Domain không hợp lệ').optional().or(z.literal('')),
-  logo: z.string().url('Logo phải là URL hợp lệ').optional().or(z.literal('')),
+  domain: workspaceDomain,
+  logo: workspaceLogo,
   businessType: z.enum(['boutique_hotel', 'resort', 'homestay']).optional(),
   currency: z.string().max(10).optional(),
   timezone: z.string().max(50).optional(),
@@ -197,6 +202,17 @@ export const amenitySchema = z.object({
   icon: z.string().max(50).optional(),
   category: z.string().max(50).default('general'),
 })
+
+/**
+ * The first problem of a failed parse, for the response. The schemas carry
+ * Vietnamese messages; zod's own ones ("Invalid input", "Expected string,
+ * received null") are English and would reach the page as they are.
+ */
+export function validationMessage(error: z.ZodError): string {
+  const issue = error.errors[0]
+  const zodOwn = ['invalid_type', 'invalid_union', 'invalid_literal', 'invalid_enum_value', 'unrecognized_keys']
+  return !issue || zodOwn.includes(issue.code) ? 'Dữ liệu không hợp lệ' : issue.message
+}
 
 // Types
 export type LoginInput = z.infer<typeof loginSchema>

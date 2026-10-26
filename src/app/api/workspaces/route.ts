@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { createWorkspaceSchema } from '@/lib/validations'
+import { createWorkspaceSchema, validationMessage } from '@/lib/validations'
 import { generateSlug } from '@/lib/utils'
 import { trialFields } from '@/lib/billing/subscription'
 
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     const validation = createWorkspaceSchema.safeParse(body)
     if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: validation.error.errors[0].message },
+        { success: false, error: validationMessage(validation.error) },
         { status: 400 }
       )
     }

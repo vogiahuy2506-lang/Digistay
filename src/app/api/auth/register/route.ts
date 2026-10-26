@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { registerSchema } from '@/lib/validations'
 import { generateSlug } from '@/lib/utils'
 import { trialFields } from '@/lib/billing/subscription'
+import { defaultWorkspaceName } from '@/lib/auth/default-workspace'
 import { sendOtpEmail } from '@/lib/email'
 import { consumeOtp, issueOtp, normalizeEmail, OtpCooldownError } from '@/lib/auth/otp'
 import { requestLocale } from '@/lib/i18n/request-locale'
@@ -142,7 +143,7 @@ export async function POST(request: NextRequest) {
     
     await prisma.workspace.create({
       data: {
-        name: `${name}'s Workspace`,
+        name: defaultWorkspaceName(name),
         slug: workspaceSlug,
         ownerId: user.id,
         description: 'Không gian làm việc mặc định',
