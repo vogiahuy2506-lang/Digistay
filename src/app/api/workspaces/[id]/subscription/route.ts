@@ -24,18 +24,20 @@ export async function GET(_request: NextRequest, props: { params: Promise<{ id: 
   if (!access.ok) return access.response
 
   const einvoice = platformEinvoiceConfigured()
+  // One clock for every read: a workspace's first read makes its trial, and two
+  // reads with their own `now` racing to make it showed "15 days" of a 14-day trial.
+  const now = new Date()
   const [current, usage, workspace, payments, buyer, me, overage] = await Promise.all([
-    workspacePlan(id),
+    workspacePlan(id, prisma, now),
     workspaceUsage(id),
     prisma.workspace.findUnique({ where: { id }, select: { id: true, name: true, slug: true } }),
     prisma.subscriptionPayment.findMany({ where: { workspaceId: id }, orderBy: { createdAt: 'desc' }, take: 20, include: { invoice: true } }),
     einvoice ? lastBuyer(id) : null,
     prisma.user.findUnique({ where: { id: access.userId }, select: { email: true } }),
-    overageView(id),
+    overageView(id, now),
   ])
   const waiting = payments.find((p) => p.status === 'PENDING' && (!p.expiresAt || p.expiresAt.getTime() > Date.now()))
   const sub = current.subscription
-  const now = new Date()
   const changes = Object.fromEntries(
     PLAN_IDS.map((plan) => [
       plan,
