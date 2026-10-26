@@ -48,7 +48,7 @@ export function WorkspaceTopBar({ workspace, workspaces, userName, userEmail, us
               href={routes.workspaces()}
               className="inline-flex shrink-0 items-center rounded-ctl focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
             >
-              <Logo size="sm" />
+              <Logo size="sm" markBelowSm />
             </Link>
 
             <span aria-hidden="true" className="hidden sm:block w-px h-4 bg-line" />
