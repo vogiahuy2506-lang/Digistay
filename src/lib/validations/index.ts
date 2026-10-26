@@ -70,6 +70,8 @@ export const updateWorkspaceSchema = z.object({
   businessType: z.enum(['boutique_hotel', 'resort', 'homestay']).optional(),
   currency: z.string().max(10).optional(),
   timezone: z.string().max(50).optional(),
+  /** Email the owner on every new booking (settings.notifications.newBookingEmail; on unless false). */
+  newBookingEmail: z.boolean().optional(),
 })
 
 // Invitation Validations

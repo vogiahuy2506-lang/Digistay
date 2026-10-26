@@ -112,7 +112,7 @@ const BOOKING_EMAIL_INCLUDE = {
       ward: true,
       district: true,
       policy: { select: { checkInTime: true, checkOutTime: true } },
-      workspace: { select: { slug: true, owner: { select: { email: true, name: true } } } },
+      workspace: { select: { slug: true, settings: true, owner: { select: { email: true, name: true } } } },
     },
   },
 } satisfies Prisma.BookingInclude
@@ -172,7 +172,9 @@ async function queueBookingEmails(tx: Tx, booking: BookingForEmails, deposit?: N
     )
   )
   const owner = prop.workspace?.owner
-  if (owner?.email) {
+  // The owner may turn these emails off (workspace settings, Thông báo); the bell still shows the booking.
+  const notifications = (prop.workspace?.settings as { notifications?: { newBookingEmail?: unknown } } | null)?.notifications
+  if (owner?.email && notifications?.newBookingEmail !== false) {
     ids.push(
       await queueOwnerNewBooking(
         {

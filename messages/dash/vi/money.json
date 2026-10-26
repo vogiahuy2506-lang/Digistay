@@ -126,6 +126,19 @@
       "markPaid": "Xác nhận đã thanh toán",
       "refunded": "Đã hoàn lại cho khách {amount}.",
       "refundedAt": "Đã hoàn lại cho khách {amount} lúc {date}."
+    },
+    "export": {
+      "file": "giao-dich",
+      "error": "Không xuất được danh sách giao dịch, vui lòng thử lại.",
+      "time": "Thời gian",
+      "booking": "Mã đặt phòng",
+      "guest": "Khách",
+      "method": "Phương thức",
+      "status": "Trạng thái",
+      "amount": "Số tiền",
+      "fee": "Phí",
+      "net": "Thực nhận",
+      "content": "Nội dung chuyển khoản"
     }
   },
   "invoices": {

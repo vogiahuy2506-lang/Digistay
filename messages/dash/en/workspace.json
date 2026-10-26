@@ -178,14 +178,14 @@
       "timezone": "Time zone"
     },
     "notifications": {
-      "title": "Notification settings",
-      "intro": "Choose how the system notifies you",
-      "email": "Email notifications",
-      "emailText": "Get emails about new bookings and updates",
-      "push": "Push notifications",
-      "pushText": "Get notifications in your browser",
-      "booking": "New booking alerts",
-      "bookingText": "Get notified as soon as a new booking comes in"
+      "title": "Notifications",
+      "intro": "Choose which emails the system sends to the workspace owner.",
+      "newBookingEmail": "Email on new bookings",
+      "newBookingEmailText": "Email the workspace owner on every new booking, including bookings from the hotel website.",
+      "bellNote": "The bell in the dashboard always shows new bookings, even with the email off.",
+      "savedOn": "New booking emails are on.",
+      "savedOff": "New booking emails are off.",
+      "saveError": "Could not save, please try again."
     },
     "security": {
       "title": "Security information",

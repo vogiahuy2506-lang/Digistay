@@ -159,19 +159,26 @@ export async function PATCH(
       )
     }
 
-    const { name, description, domain, logo, businessType, currency, timezone } = validation.data
+    const { name, description, domain, logo, businessType, currency, timezone, newBookingEmail } = validation.data
 
     // Business type, currency and timezone live in the settings JSON (as POST
     // /api/workspaces stores them); the other keys there are kept.
-    const settingsChange = Object.fromEntries(
+    const settingsChange: Record<string, Prisma.InputJsonValue> = Object.fromEntries(
       Object.entries({ businessType, currency, timezone }).filter(([, value]) => value)
-    )
+    ) as Record<string, string>
     let settings: Prisma.InputJsonObject | undefined
-    if (Object.keys(settingsChange).length > 0) {
+    if (Object.keys(settingsChange).length > 0 || newBookingEmail !== undefined) {
       const current = await prisma.workspace.findUnique({ where: { id }, select: { settings: true } })
       const saved = current?.settings && typeof current.settings === 'object' && !Array.isArray(current.settings)
         ? (current.settings as Prisma.InputJsonObject)
         : {}
+      // The notification choices (the settings page's Thông báo tab), next to the other keys there.
+      if (newBookingEmail !== undefined) {
+        const notifications = saved.notifications && typeof saved.notifications === 'object' && !Array.isArray(saved.notifications)
+          ? (saved.notifications as Prisma.InputJsonObject)
+          : {}
+        settingsChange.notifications = { ...notifications, newBookingEmail }
+      }
       settings = { ...saved, ...settingsChange }
     }
 

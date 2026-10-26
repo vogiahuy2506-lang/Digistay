@@ -179,13 +179,13 @@
     },
     "notifications": {
       "title": "Cài đặt thông báo",
-      "intro": "Chọn cách bạn nhận thông báo từ hệ thống",
-      "email": "Thông báo qua Email",
-      "emailText": "Nhận email về booking mới và cập nhật",
-      "push": "Thông báo đẩy",
-      "pushText": "Nhận thông báo trên trình duyệt",
-      "booking": "Thông báo booking mới",
-      "bookingText": "Thông báo ngay khi có đặt phòng mới"
+      "intro": "Chọn những email hệ thống gửi cho chủ workspace.",
+      "newBookingEmail": "Email báo đặt phòng mới",
+      "newBookingEmailText": "Gửi email cho chủ workspace mỗi khi có đặt phòng mới, kể cả từ website khách sạn.",
+      "bellNote": "Chuông thông báo trong trang quản lý luôn hiện đặt phòng mới, kể cả khi tắt email.",
+      "savedOn": "Đã bật email báo đặt phòng mới.",
+      "savedOff": "Đã tắt email báo đặt phòng mới.",
+      "saveError": "Chưa lưu được, vui lòng thử lại."
     },
     "security": {
       "title": "Thông tin bảo mật",

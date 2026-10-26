@@ -126,6 +126,19 @@
       "markPaid": "Mark as paid",
       "refunded": "{amount} was refunded to the guest.",
       "refundedAt": "{amount} was refunded to the guest on {date}."
+    },
+    "export": {
+      "file": "transactions",
+      "error": "Could not export the transactions, please try again.",
+      "time": "Time",
+      "booking": "Booking code",
+      "guest": "Guest",
+      "method": "Method",
+      "status": "Status",
+      "amount": "Amount",
+      "fee": "Fee",
+      "net": "Net",
+      "content": "Transfer content"
     }
   },
   "invoices": {

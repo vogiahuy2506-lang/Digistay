@@ -8,7 +8,7 @@ import { TitleBlock } from '@/components/layout'
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Loading, Select, Textarea } from '@/components/ui'
 import {
   Settings, Building2, Bell, Shield, Users,
-  Mail, DollarSign, Save, Upload
+  Mail, Save, Upload
 } from 'lucide-react'
 import { useWorkspace } from '@/lib/hooks/use-workspace'
 import { cn } from '@/lib/utils'
@@ -32,9 +32,8 @@ interface WorkspaceSettings {
     timezone?: string
     businessType?: string
     notifications?: {
-      email?: boolean
-      sms?: boolean
-      bookingAlert?: boolean
+      /** Email the owner on every new booking; on unless false (create-booking.ts) */
+      newBookingEmail?: boolean
     }
   }
   owner: {
@@ -78,6 +77,32 @@ export default function WorkspaceSettingsPage() {
       fetchSettings()
     }
   }, [workspace?.id])
+
+  // Settings → Thông báo: the one notification setting that does something (create-booking.ts reads it).
+  const newBookingEmail = settings?.settings?.notifications?.newBookingEmail !== false
+  const [savingNotifications, setSavingNotifications] = React.useState(false)
+  const saveNewBookingEmail = async (on: boolean) => {
+    if (!workspace?.id) return
+    setSavingNotifications(true)
+    setError('')
+    setSuccess('')
+    try {
+      const res = await fetch(`/api/workspaces/${workspace.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newBookingEmail: on }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data?.success) {
+        setError(apiError(data?.error) || t('settings.notifications.saveError'))
+        return
+      }
+      setSettings(data.data)
+      setSuccess(on ? t('settings.notifications.savedOn') : t('settings.notifications.savedOff'))
+    } finally {
+      setSavingNotifications(false)
+    }
+  }
 
   const fetchSettings = async () => {
     if (!workspace?.id) return
@@ -362,49 +387,27 @@ export default function WorkspaceSettingsPage() {
               {t('settings.notifications.intro')}
             </p>
 
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-fg/[0.03] rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Mail className="w-5 h-5 text-muted" />
-                  <div>
-                    <p className="font-medium text-fg">{t('settings.notifications.email')}</p>
-                    <p className="text-sm text-muted">{t('settings.notifications.emailText')}</p>
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" defaultChecked className="sr-only peer" />
-                  <div className="w-11 h-6 bg-fg/10 peer-focus:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-acc rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-on-ink after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-panel after:border-line after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-ink"></div>
-                </label>
-              </div>
-
-              <div className="flex items-center justify-between p-4 bg-fg/[0.03] rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Bell className="w-5 h-5 text-muted" />
-                  <div>
-                    <p className="font-medium text-fg">{t('settings.notifications.push')}</p>
-                    <p className="text-sm text-muted">{t('settings.notifications.pushText')}</p>
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" defaultChecked className="sr-only peer" />
-                  <div className="w-11 h-6 bg-fg/10 peer-focus:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-acc rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-on-ink after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-panel after:border-line after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-ink"></div>
-                </label>
-              </div>
-
-              <div className="flex items-center justify-between p-4 bg-fg/[0.03] rounded-lg">
-                <div className="flex items-center gap-3">
-                  <DollarSign className="w-5 h-5 text-muted" />
-                  <div>
-                    <p className="font-medium text-fg">{t('settings.notifications.booking')}</p>
-                    <p className="text-sm text-muted">{t('settings.notifications.bookingText')}</p>
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" defaultChecked className="sr-only peer" />
-                  <div className="w-11 h-6 bg-fg/10 peer-focus:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-acc rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-on-ink after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-panel after:border-line after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-ink"></div>
-                </label>
-              </div>
-            </div>
+            <label className="flex items-center justify-between gap-4 p-4 bg-fg/[0.03] rounded-lg cursor-pointer">
+              <span className="flex items-center gap-3">
+                <Mail className="w-5 h-5 shrink-0 text-muted" aria-hidden="true" />
+                <span>
+                  <span className="block font-medium text-fg">{t('settings.notifications.newBookingEmail')}</span>
+                  <span className="block text-sm text-muted">{t('settings.notifications.newBookingEmailText')}</span>
+                </span>
+              </span>
+              <span className="relative inline-flex shrink-0 items-center">
+                <input
+                  type="checkbox"
+                  role="switch"
+                  className="sr-only peer"
+                  checked={newBookingEmail}
+                  disabled={savingNotifications}
+                  onChange={(e) => saveNewBookingEmail(e.target.checked)}
+                />
+                <span aria-hidden="true" className="w-11 h-6 bg-fg/10 peer-focus:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-acc rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-on-ink after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-panel after:border-line after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-ink peer-disabled:opacity-60"></span>
+              </span>
+            </label>
+            <p className="text-sm text-muted">{t('settings.notifications.bellNote')}</p>
           </CardContent>
         </Card>
       )}

@@ -371,6 +371,25 @@ describe('the public booking route', () => {
     expect(await send(base)).toBe(200)
   })
 
+  it('emails the owner only while the workspace has new booking emails on (Cài đặt → Thông báo)', async () => {
+    const { workspace, property } = await createTenant()
+    await publishSite(property.id)
+    const room = await createRoomType(property.id, { totalRooms: 5 })
+    const book = async (n: number) => {
+      const res = await call(guestBooking(json({ propertyId: property.id, roomTypeId: room.id, ...guest(n), ...WEEKDAYS, numAdults: 2 }, freshIp())))
+      expect(res.status).toBe(200)
+      return prisma.booking.findFirstOrThrow({ where: { bookingCode: res.body.data.bookingCode } })
+    }
+    const kinds = async (bookingId: string) => (await prisma.emailOutbox.findMany({ where: { refId: bookingId } })).map((m) => m.kind).sort()
+
+    await prisma.workspace.update({ where: { id: workspace.id }, data: { settings: { currency: 'VND', notifications: { newBookingEmail: false } } } })
+    // The guest still gets the confirmation; the owner gets no email.
+    expect(await kinds((await book(11)).id)).toEqual(['booking_confirmation'])
+
+    await prisma.workspace.update({ where: { id: workspace.id }, data: { settings: { notifications: { newBookingEmail: true } } } })
+    expect(await kinds((await book(12)).id)).toEqual(['booking_confirmation', 'owner_new_booking'])
+  })
+
   it("tells the guest it awaits the hotel, with the hotel's times, and escapes the guest in the owner's email", async () => {
     const { property } = await createTenant()
     await publishSite(property.id)

@@ -19,6 +19,15 @@ import { toast } from '@/components/ui/toast'
 import { bankLabel, toBankName } from '@/lib/vietqr'
 import { BookingPicker, bookingBalance } from '@/components/payment/booking-picker'
 import { MONEY_MANAGERS, NoAccess, useHasRole } from '@/components/payment/no-access'
+import { toCsv } from '@/lib/reports/revenue'
+import { MAX_PAGE_SIZE } from '@/lib/api/list-params'
+
+/** dd/mm/yyyy HH:mm in Vietnam time, written by hand (Intl differs between Node and browsers). */
+function vnDateTime(iso: string): string {
+  const d = new Date(new Date(iso).getTime() + 7 * 3600_000)
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)}/${d.getUTCFullYear()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`
+}
 
 interface Payment {
   id: string
@@ -285,6 +294,54 @@ export default function PaymentsPage() {
   const methodIcon = (p: Payment) =>
     p.paymentGateway === 'PAYOS' ? QrCode : (paymentMethodIcons[p.method] ?? CreditCard)
 
+  // "Xuất Excel": every transaction the filters select (all pages), as a CSV Excel opens (UTF-8 BOM).
+  const [exporting, setExporting] = React.useState(false)
+  const exportCsv = async () => {
+    if (!selectedProperty) return
+    setExporting(true)
+    try {
+      const rows: Payment[] = []
+      for (let p = 1; p <= 50; p++) {
+        const params = new URLSearchParams({ propertyId: selectedProperty, page: String(p), limit: String(MAX_PAGE_SIZE) })
+        if (statusFilter) params.set('status', statusFilter)
+        if (methodFilter) params.set('method', methodFilter)
+        if (debouncedQuery) params.set('q', debouncedQuery)
+        if (dateFrom) params.set('startDate', dateFrom)
+        if (dateTo) params.set('endDate', dateTo)
+        const res = await fetch(`/api/payments?${params}`, { cache: 'no-store' }).catch(() => null)
+        const data = await res?.json().catch(() => null)
+        if (!res?.ok || !data?.success) {
+          toast.error(apiError(data?.error) || t('export.error'))
+          return
+        }
+        rows.push(...data.data)
+        if (p >= data.pagination.totalPages) break
+      }
+      const csv = toCsv([
+        [t('export.time'), t('export.booking'), t('export.guest'), t('export.method'), t('export.status'), t('export.amount'), t('export.fee'), t('export.net'), t('export.content')],
+        ...rows.map((r) => [
+          vnDateTime(r.paidAt ?? r.createdAt),
+          r.booking?.bookingCode,
+          r.booking?.guestName,
+          methodLabel(r),
+          t(`status.${statusKey(r)}`),
+          r.amount,
+          r.fee,
+          r.netAmount,
+          r.transferContent,
+        ]),
+      ])
+      const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${t('export.file')}_${vnDateTime(new Date().toISOString()).slice(0, 10).split('/').reverse().join('-')}.csv`
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(url), 0)
+    } finally {
+      setExporting(false)
+    }
+  }
+
   const handleRefresh = () => {
     if (selectedProperty) {
       fetchPayments(selectedProperty)
@@ -514,7 +571,15 @@ export default function PaymentsPage() {
                 <p className="text-xs text-muted">{t('stats.transactions', { count: pagination.total })}</p>
               </div>
             </div>
-            <Button aria-label={tc('actions.export')} size="sm" variant="ghost" className="gap-2 text-muted hover:text-fg">
+            <Button
+              aria-label={tc('actions.export')}
+              size="sm"
+              variant="ghost"
+              className="gap-2 text-muted hover:text-fg"
+              onClick={exportCsv}
+              isLoading={exporting}
+              disabled={pagination.total === 0}
+            >
               <Download className="w-4 h-4" />
               <span className="hidden lg:inline">{tc('actions.export')}</span>
             </Button>
