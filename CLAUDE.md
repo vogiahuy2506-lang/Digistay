@@ -365,6 +365,12 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
   của website) và màu tiêu đề (`headingColor`, tiêu đề `font-site`) tự chỉnh cho đọc được ở hai theme
   (`hotelButtonVariables` / `hotelHeadingVariables`, `src/lib/public-site/accent.ts`); khối Dịch vụ và
   Thực đơn lấy dữ liệu từ trang Dịch vụ / Thực đơn, không có gì thì không hiện.
+- Lịch sử phiên bản website (`src/lib/public-site/versions.ts`, bảng `site_versions`): mỗi lần lưu khối /
+  cài đặt website giữ một phiên bản trong cùng transaction (`keepSiteBaseline` trước khi ghi,
+  `recordSiteVersion` sau khi ghi; cùng người trong 2 phút thì gộp; giữ 50 bản). Route mới ghi khối hay
+  giao diện website cũng phải gọi hai hàm này. Khôi phục (`/api/website/versions/[versionId]/restore`) lưu
+  bản hiện tại trước (`BEFORE_RESTORE`); không đụng trạng thái xuất bản và tên miền. Xem trước:
+  `/<subdomain>/phien-ban/<id>`, chỉ owner/ADMIN/MANAGER.
 - Tên miền riêng: xác minh ở `/api/website/domain/verify` (A hoặc CNAME cho www + TXT); middleware phục vụ site trên tên
   miền đó qua `/api/public/site-host` (`src/lib/public-site/custom-host.ts`); chứng chỉ HTTPS do
   `docker/certbot/custom-domains.sh` trên VPS cấp mỗi phút (`/api/internal/custom-domains`), nginx
