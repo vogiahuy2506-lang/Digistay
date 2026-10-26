@@ -1,10 +1,15 @@
 name: CI
 
+# Commits that only touch docs run nothing (Actions minutes are paid past the
+# free 2,000 a month; docs never reach the image). A docs-only tip of main is
+# simply not deployed, which changes nothing on the site.
 on:
   push:
     branches: [main]
+    paths-ignore: ['**.md', 'docs/**', '.github/dependabot.yml']
   pull_request:
     branches: [main]
+    paths-ignore: ['**.md', 'docs/**', '.github/dependabot.yml']
 
 # Cancel in-progress runs on the same ref — saves CI minutes on rapid pushes.
 concurrency:

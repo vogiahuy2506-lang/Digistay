@@ -1,4 +1,4 @@
-# Dependabot version updates: weekly, Monday 02:00 Vietnam time.
+# Dependabot version updates: monthly (each PR runs CI, and Actions minutes are paid past the free 2,000).
 #
 # - Minor + patch for each ecosystem are grouped into ONE pull request.
 # - Major versions are ignored for npm and Docker: the repo is 20+ majors
@@ -13,8 +13,7 @@ updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
       time: "02:00"
       timezone: Asia/Ho_Chi_Minh
     open-pull-requests-limit: 5
@@ -31,8 +30,7 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
       time: "02:00"
       timezone: Asia/Ho_Chi_Minh
     open-pull-requests-limit: 5
@@ -48,8 +46,7 @@ updates:
   - package-ecosystem: docker
     directory: /
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
       time: "02:00"
       timezone: Asia/Ho_Chi_Minh
     open-pull-requests-limit: 5
@@ -67,8 +64,7 @@ updates:
   - package-ecosystem: docker-compose
     directory: /
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
       time: "02:00"
       timezone: Asia/Ho_Chi_Minh
     open-pull-requests-limit: 5
