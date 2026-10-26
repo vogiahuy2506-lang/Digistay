@@ -56,7 +56,8 @@ const BED_TYPES = ['SINGLE', 'DOUBLE', 'TWIN', 'TRIPLE', 'QUADRUPLE', 'KING', 'Q
 const dayMonth = (day: string) => (day ? `${day.slice(8, 10)}/${day.slice(5, 7)}` : '')
 
 /**
- * Walk-in (front desk): a booking for a guest at the desk. Everything shown
+ * New booking (front desk: a guest at the desk or on the phone; reached from
+ * "Đặt phòng" and "Lịch phòng", no menu entry of its own). Everything shown
  * is the hotel's: rooms free for the dates and guests chosen
  * (/api/bookings/availability, the count the booking checks), each type's
  * own area, beds, amenities and price, its free rooms when it has a room

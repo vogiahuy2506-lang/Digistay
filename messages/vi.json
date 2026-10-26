@@ -551,7 +551,7 @@
           "title": "Quản lý đặt phòng hằng ngày",
           "desc": "Lễ tân xem và xử lý mọi đặt phòng từ website và khách đến trực tiếp ở cùng một danh sách.",
           "p1": "Danh sách đặt phòng và lịch phòng",
-          "p2": "Tạo đặt phòng cho khách walk-in",
+          "p2": "Tạo đặt phòng cho khách tại quầy",
           "p3": "Nhận phòng, trả phòng, tính phí trả phòng muộn",
           "p4": "Báo cáo doanh thu, sổ quỹ và nhiều cơ sở trong một workspace",
           "alt": "Danh sách đặt phòng theo trạng thái trong trang quản lý"
@@ -678,7 +678,7 @@
           "deposit": "Đặt cọc qua PayOS",
           "reconcile": "Đối soát PayOS tự động",
           "bookings": "Quản lý đặt phòng và lịch phòng",
-          "walkIn": "Khách walk-in",
+          "walkIn": "Khách tại quầy",
           "checkInOut": "Nhận / trả phòng, phí trả phòng muộn",
           "einvoice": "Hoá đơn điện tử Mắt Bão",
           "revenue": "Báo cáo doanh thu",

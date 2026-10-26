@@ -8,7 +8,6 @@ export type NavKey =
   | 'properties'
   | 'bookings'
   | 'calendar'
-  | 'walkIn'
   | 'rooms'
   | 'services'
   | 'menu'
@@ -44,7 +43,6 @@ export function primaryNav(slug: string, propertyId?: string): NavItem[] {
     { key: 'overview', href: routes.property(slug, id), roles: everyone },
     { key: 'bookings', href: routes.propertyBookings(slug, id), roles: everyone },
     { key: 'calendar', href: routes.propertyCalendar(slug, id), roles: staff },
-    { key: 'walkIn', href: routes.propertyBookingNew(slug, id), roles: staff },
     { key: 'rooms', href: routes.propertyRooms(slug, id), roles: staff },
     { key: 'services', href: routes.propertyServices(slug, id), roles: managers },
     { key: 'menu', href: routes.propertyMenu(slug, id), roles: managers },
@@ -68,8 +66,8 @@ export function workspaceNav(slug: string): NavItem[] {
 
 /**
  * The menu entry for `pathname`: the longest href that equals it or is a
- * parent of it, so a booking's detail page still lights up "Đặt phòng" while
- * /bookings/new lights up "Walk-in" only.
+ * parent of it, so a booking's detail page and the new-booking page
+ * (/bookings/new: walk-ins and phone bookings) light up "Đặt phòng".
  */
 export function activeHref(pathname: string, items: NavItem[]): string | undefined {
   let best: string | undefined

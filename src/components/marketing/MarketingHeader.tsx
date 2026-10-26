@@ -20,13 +20,24 @@ const LINKS = [
 ] as const
 
 /**
- * Header of Digistay's own public pages: logo, Tính năng / Bảng giá / Liên
- * hệ, VI | EN, Đăng nhập, Đăng ký, or for a signed-in visitor the account
- * menu (dashboard, profile, sign out). Below lg the links, language and
- * sign-in / sign-out move into MobileMenu. `active` marks the page the
- * visitor is on.
+ * The site header, one for every page with a top bar: Digistay's public
+ * pages, the account pages (/workspaces, /profile) and the workspace level.
+ * Logo, Tính năng / Bảng giá / Liên hệ, theme, VI | EN, Đăng nhập / Đăng ký
+ * or the account menu (dashboard, profile, sign out). Below lg the links,
+ * language, theme and sign-in / sign-out move into MobileMenu. `active`
+ * marks the page the visitor is on. Inside a workspace, `context` (the
+ * workspace switcher) takes the links' place next to the logo and `actions`
+ * (the bell) sits before the theme button.
  */
-export async function MarketingHeader({ active }: { active?: MarketingPage }) {
+export async function MarketingHeader({
+  active,
+  context,
+  actions,
+}: {
+  active?: MarketingPage
+  context?: React.ReactNode
+  actions?: React.ReactNode
+}) {
   const t = await getTranslations('marketing.nav')
   const current = await getLocale()
   const locale = isLocale(current) ? current : 'vi'
@@ -39,16 +50,23 @@ export async function MarketingHeader({ active }: { active?: MarketingPage }) {
   return (
     <header className="relative border-b border-line/70">
       <div className={cn(frame, 'flex items-center justify-between gap-8 py-3 pr-3 lg:py-5 lg:pr-20')}>
-        <div className="flex items-center gap-14">
-          <Link href="/" className="rounded-ctl">
+        <div className={cn('flex min-w-0 items-center', context ? 'gap-3 lg:gap-5' : 'gap-14')}>
+          <Link href="/" className="shrink-0 rounded-ctl">
             <span className="lg:hidden">
-              <Logo size="sm" />
+              {/* With the workspace switcher beside it, phones get the seal only. */}
+              <Logo size="sm" markBelowSm={Boolean(context)} />
             </span>
             <span className="hidden lg:block">
               <Logo />
             </span>
           </Link>
-          <nav aria-label={t('main')} className="hidden gap-8 text-[14px] lg:flex">
+          {context && (
+            <>
+              <span aria-hidden className="hidden h-5 w-px bg-line sm:block" />
+              <div className="min-w-0">{context}</div>
+            </>
+          )}
+          <nav aria-label={t('main')} className={cn('hidden gap-8 text-[14px]', !context && 'lg:flex')}>
             {LINKS.map((l) => (
               <Link
                 key={l.id}
@@ -65,7 +83,8 @@ export async function MarketingHeader({ active }: { active?: MarketingPage }) {
           </nav>
         </div>
 
-        <div className="flex items-center gap-1 text-[14px] lg:gap-5">
+        <div className="flex shrink-0 items-center gap-1 text-[14px] lg:gap-5">
+          {actions}
           <div className="hidden items-center gap-2 lg:flex">
             <ThemeToggle initial={theme} toDark={t('toDark')} toLight={t('toLight')} />
             <LocaleToggle locale={locale} label={t('language')} />

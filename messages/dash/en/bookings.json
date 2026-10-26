@@ -196,8 +196,8 @@
     "toCollect": "To collect at check-out"
   },
   "walkIn": {
-    "title": "Walk-in guest",
-    "intro": "Book a room for a guest at the desk: pick the dates and guests, a room type with rooms free, the room, then record what you collect (if anything).",
+    "title": "New booking",
+    "intro": "Book a guest at the desk or on the phone: pick the dates and guests, an available room type and room, then record any payment.",
     "backToCalendar": "Room calendar",
     "vacancy": "Free {from} → {to}",
     "vacancyCount": "{available}/{total} rooms",
@@ -245,7 +245,7 @@
       "BUNK": "Bunk beds"
     },
     "summary": {
-      "title": "Walk-in booking",
+      "title": "Booking",
       "noRoom": "No room type chosen yet",
       "roomLine": "{roomType} · room {number}",
       "roomLater": "{roomType} · room later",

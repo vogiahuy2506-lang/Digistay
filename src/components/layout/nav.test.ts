@@ -10,8 +10,8 @@ describe('dashboard menu', () => {
     expect(activeHref(`${P}/bookings`, items)).toBe(`${P}/bookings`)
     // A booking's page belongs to "Đặt phòng"...
     expect(activeHref(`${P}/bookings/b1`, items)).toBe(`${P}/bookings`)
-    // ...but the walk-in form has its own entry.
-    expect(activeHref(`${P}/bookings/new`, items)).toBe(`${P}/bookings/new`)
+    // ...and so does the new-booking form (walk-ins, phone bookings): no menu entry of its own.
+    expect(activeHref(`${P}/bookings/new`, items)).toBe(`${P}/bookings`)
     expect(activeHref(`${P}/reports/daily`, items)).toBe(`${P}/reports/daily`)
     expect(activeHref(`${P}/reports`, items)).toBe(`${P}/reports`)
   })

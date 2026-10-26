@@ -716,12 +716,9 @@ export default function CalendarPage() {
               <Receipt className="w-3.5 h-3.5 text-ok" aria-hidden="true" />
               <span className="hidden md:inline">{t('toolbar.export')}</span>
             </button>
-            {/* The walk-in page (real availability and payment); this button opened the same dialog as the next one. */}
-            <Link href={routes.propertyBookingNew(params.slug, propertyId)} className={ctl}>
-              <CheckCircle className="w-3.5 h-3.5 text-acc" aria-hidden="true" />
-              <span>{t('toolbar.walkIn')}</span>
-            </Link>
-            <Button size="sm" onClick={() => setShowCreateBookingModal(true)}>
+            {/* One way to create a booking, the same page as "Đặt phòng" opens (real
+                availability and payment); a click on an empty night still opens the quick dialog. */}
+            <Button size="sm" onClick={() => router.push(routes.propertyBookingNew(params.slug, propertyId))}>
               <Plus className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
               {t('toolbar.createBooking')}
             </Button>

@@ -196,8 +196,8 @@
     "toCollect": "Còn phải thu khi trả phòng"
   },
   "walkIn": {
-    "title": "Khách walk-in",
-    "intro": "Đặt phòng cho khách đến thẳng quầy: chọn ngày và số khách, hạng phòng còn trống, phòng, rồi ghi nhận tiền thu (nếu có).",
+    "title": "Tạo đặt phòng",
+    "intro": "Đặt phòng cho khách đến tại quầy hoặc gọi điện: chọn ngày và số khách, hạng phòng còn trống, phòng, rồi ghi nhận tiền thu (nếu có).",
     "backToCalendar": "Lịch phòng",
     "vacancy": "Còn trống {from} → {to}",
     "vacancyCount": "{available}/{total} phòng",
@@ -245,7 +245,7 @@
       "BUNK": "Giường tầng"
     },
     "summary": {
-      "title": "Đơn walk-in",
+      "title": "Đơn đặt phòng",
       "noRoom": "Chưa chọn hạng phòng",
       "roomLine": "{roomType} · phòng {number}",
       "roomLater": "{roomType} · xếp phòng sau",

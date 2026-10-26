@@ -7,7 +7,6 @@
     "refreshed": "Đã làm mới dữ liệu",
     "export": "Xuất báo cáo",
     "exportTitle": "Xuất báo cáo công suất",
-    "walkIn": "Khách walk-in",
     "createBooking": "Tạo đặt phòng"
   },
   "stats": {
@@ -71,7 +70,7 @@
   "create": {
     "title": "Tạo đặt phòng mới",
     "heading": "Tạo đặt phòng mới",
-    "badge": "Lễ tân / Walk-in",
+    "badge": "Lễ tân / Khách tại quầy",
     "guestSection": "1. Thông tin khách lưu trú",
     "guestName": "Họ và tên khách hàng",
     "guestNamePlaceholder": "Ví dụ: Nguyễn Văn An",
