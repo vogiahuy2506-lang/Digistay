@@ -183,7 +183,22 @@
     },
     "amenities": {
       "title": "Tiện ích",
-      "subtitle": "Chọn các tiện ích có sẵn tại cơ sở của bạn"
+      "subtitle": "Chọn các tiện ích có sẵn tại cơ sở của bạn",
+      "saved": "Đã lưu tiện ích",
+      "categories": {
+        "internet": "Internet",
+        "comfort": "Tiện nghi",
+        "food": "Ăn uống",
+        "service": "Dịch vụ",
+        "leisure": "Thư giãn",
+        "entertainment": "Giải trí",
+        "facility": "Cơ sở vật chất",
+        "parking": "Đỗ xe",
+        "transport": "Đưa đón",
+        "view": "Cảnh quan",
+        "security": "An ninh",
+        "other": "Khác"
+      }
     },
     "policy": {
       "title": "Chính sách",

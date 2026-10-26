@@ -2,13 +2,14 @@
 
 import * as React from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { Header, PageContainer } from '@/components/layout'
-import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Tabs, TabsList, TabsTrigger, TabsContent, Input, Select, Textarea } from '@/components/ui'
+import { PageContainer } from '@/components/layout'
+import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Modal, ModalBody, ModalFooter, ModalHeader, Tabs, TabsList, TabsTrigger, TabsContent, Input, Select, Textarea } from '@/components/ui'
 import {
   ArrowLeft, MapPin, Phone, Mail, Globe, Bed, Plus, Pencil, Trash2, Save, Baby, ExternalLink, PawPrint, Cigarette,
 } from 'lucide-react'
 import { toast } from '@/components/ui/toast'
 import { getIcon } from '@/lib/amenity-icons'
+import { groupAmenities } from '@/lib/amenity-categories'
 import { amenityName } from '@/lib/i18n/amenities'
 import { routes } from '@/lib/utils/routes'
 import Image from 'next/image'
@@ -155,7 +156,7 @@ export default function PropertyDetailPage() {
 
   const handleUploadImage = async () => {
     if (!imageForm.url) {
-      alert(t('images.urlRequired'))
+      toast.error(t('images.urlRequired'))
       return
     }
 
@@ -378,6 +379,7 @@ export default function PropertyDetailPage() {
       })
       const data = await response.json().catch(() => ({}))
       if (!response.ok || !data.success) throw new Error(apiError(data.error) || tc('states.error'))
+      toast.success(t('amenities.saved'))
       fetchProperty()
     } catch (err) {
       // Put the switch back: the change was not saved.
@@ -421,35 +423,34 @@ export default function PropertyDetailPage() {
         </Button>
       </div>
 
-      <Header
-        title={property.name}
-        description={`${property.subdomain} • ${property.isActive ? tp('status.active') : tp('status.inactive')}`}
-        actions={
-          <div className="flex items-center gap-2">
-            <Badge variant={property.isActive ? 'success' : 'gray'} className="text-sm px-3 py-1">
+      {/* The name keeps the full width until there is room for the buttons
+          beside it (xl): at tablet width they took it and broke it over two lines.
+          The status is a badge after the address, not a fourth button-sized pill. */}
+      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-4 mb-6">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-[22px] leading-8 font-semibold tracking-tight text-fg">{property.name}</h1>
+          <p className="mt-1 flex flex-wrap items-center gap-2 text-small text-muted">
+            <span className="break-all">{property.subdomain}</span>
+            <Badge variant={property.isActive ? 'success' : 'gray'}>
               {property.isActive ? tp('status.active') : tp('status.inactive')}
             </Badge>
-            <Button 
-              variant="outline" 
-              onClick={() => window.open(`/${property.subdomain}`, '_blank')}
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              {t('viewWebsite')}
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => router.push(routes.propertyWebsite(slug, propertyId))}
-            >
-              <Globe className="w-4 h-4 mr-2" />
-              {t('websiteBuilder')}
-            </Button>
-            <Button variant="outline" onClick={() => setShowEditModal(true)}>
-              <Pencil className="w-4 h-4 mr-2" />
-              {t('edit')}
-            </Button>
-          </div>
-        }
-      />
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+          <Button variant="outline" onClick={() => window.open(`/${property.subdomain}`, '_blank')}>
+            <ExternalLink className="w-4 h-4 mr-2" />
+            {t('viewWebsite')}
+          </Button>
+          <Button variant="outline" onClick={() => router.push(routes.propertyWebsite(slug, propertyId))}>
+            <Globe className="w-4 h-4 mr-2" />
+            {t('websiteBuilder')}
+          </Button>
+          <Button variant="outline" onClick={() => setShowEditModal(true)}>
+            <Pencil className="w-4 h-4 mr-2" />
+            {t('edit')}
+          </Button>
+        </div>
+      </div>
       <EditPropertyModal property={property} isOpen={showEditModal} onClose={() => setShowEditModal(false)} onSaved={fetchProperty} />
 
       {/* Tabs */}
@@ -469,9 +470,9 @@ export default function PropertyDetailPage() {
             {/* Images */}
             <div className="lg:col-span-2">
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
+                <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <CardTitle>{t('overview.images')}</CardTitle>
-                  <div className="flex flex-wrap justify-end gap-2">
+                  <div className="flex flex-wrap sm:justify-end gap-2">
                     <PhotoUploadButton target={{ propertyId }} multiple onUploaded={addUploadedImage} />
                     <Button variant="ghost" size="sm" onClick={() => setShowImageModal(true)}>
                       <Plus className="w-4 h-4 mr-2" />
@@ -481,20 +482,22 @@ export default function PropertyDetailPage() {
                 </CardHeader>
                 <CardContent>
                   {property.images.length > 0 ? (
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                       {property.images.map((img) => (
                         <div key={img.id} className="relative aspect-video rounded-lg overflow-hidden group">
                           <Image src={resizedImage(img.url, 480)} alt={img.alt || property.name} fill className="object-cover" />
                           {img.isPrimary && (
-                            <div className="absolute top-2 left-2 px-2 py-1 bg-ink text-on-ink text-xs rounded">
+                            <div className="absolute top-1.5 left-1.5 px-2 py-1 bg-ink text-on-ink text-xs rounded">
                               {t('overview.primaryImage')}
                             </div>
                           )}
+                          {/* Shown on hover where there is one; always on touch screens, where it
+                              is small and quiet so it does not cover the "main photo" label. */}
                           <button aria-label={tc('actions.delete')}
                             onClick={() => handleDeleteImage(img.id)}
-                            className="absolute top-2 right-2 p-1 bg-err text-on-err rounded transition-opacity sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
+                            className="absolute top-1.5 right-1.5 p-1.5 rounded-ctl border border-line bg-panel/90 text-err hover:bg-err-soft transition-opacity [@media(hover:hover)]:opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                           </button>
                         </div>
                       ))}
@@ -582,7 +585,7 @@ export default function PropertyDetailPage() {
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 {property.roomTypes.length > 0 ? (
                   property.roomTypes.map((room) => (
                     <div key={room.id} className="p-4 bg-fg/[0.03] rounded-lg">
@@ -596,7 +599,7 @@ export default function PropertyDetailPage() {
                     </div>
                   ))
                 ) : (
-                  <p className="text-muted col-span-4 text-center py-4">
+                  <p className="text-muted col-span-full text-center py-4">
                     {t('rooms.empty')}
                   </p>
                 )}
@@ -676,107 +679,108 @@ export default function PropertyDetailPage() {
           </Card>
 
           {/* Room Type Modal */}
-          {showRoomTypeModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-panel rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                <div className="p-6 border-b border-line">
-                  <h2 className="text-xl font-semibold">
-                    {editingRoomType ? t('rooms.modal.editTitle') : t('rooms.modal.addTitle')}
-                  </h2>
-                </div>
-                <div className="p-6 space-y-4">
+          <Modal
+            isOpen={showRoomTypeModal}
+            onClose={() => setShowRoomTypeModal(false)}
+            size="lg"
+            title={editingRoomType ? t('rooms.modal.editTitle') : t('rooms.modal.addTitle')}
+          >
+            <ModalHeader onClose={() => setShowRoomTypeModal(false)}>
+              <h2 className="text-lg font-semibold text-fg">
+                {editingRoomType ? t('rooms.modal.editTitle') : t('rooms.modal.addTitle')}
+              </h2>
+            </ModalHeader>
+            <ModalBody className="space-y-4">
+              <Input
+                label={t('rooms.modal.name')}
+                placeholder={t('rooms.modal.namePlaceholder')}
+                value={roomTypeForm.name}
+                onChange={(e) => setRoomTypeForm({ ...roomTypeForm, name: e.target.value })}
+                required
+              />
+
+              <Textarea
+                label={t('rooms.modal.description')}
+                placeholder={t('rooms.modal.descriptionPlaceholder')}
+                value={roomTypeForm.description}
+                onChange={(e) => setRoomTypeForm({ ...roomTypeForm, description: e.target.value })}
+                rows={3}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label={t('rooms.modal.area')}
+                  type="number"
+                  placeholder="25"
+                  value={roomTypeForm.area}
+                  onChange={(e) => setRoomTypeForm({ ...roomTypeForm, area: e.target.value })}
+                />
+
+                <Select
+                  label={t('rooms.modal.bedType')}
+                  options={bedTypes}
+                  value={roomTypeForm.bedType}
+                  onChange={(e) => setRoomTypeForm({ ...roomTypeForm, bedType: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label={t('rooms.modal.totalRooms')}
+                  type="number"
+                  min="1"
+                  value={roomTypeForm.totalRooms}
+                  onChange={(e) => setRoomTypeForm({ ...roomTypeForm, totalRooms: parseInt(e.target.value) || 1 })}
+                  required
+                />
+
+                <div className="grid grid-cols-2 gap-2">
                   <Input
-                    label={t('rooms.modal.name')}
-                    placeholder={t('rooms.modal.namePlaceholder')}
-                    value={roomTypeForm.name}
-                    onChange={(e) => setRoomTypeForm({ ...roomTypeForm, name: e.target.value })}
-                    required
+                    label={t('rooms.modal.maxAdults')}
+                    type="number"
+                    min="1"
+                    value={roomTypeForm.maxAdults}
+                    onChange={(e) => setRoomTypeForm({ ...roomTypeForm, maxAdults: parseInt(e.target.value) || 1 })}
                   />
-
-                  <Textarea
-                    label={t('rooms.modal.description')}
-                    placeholder={t('rooms.modal.descriptionPlaceholder')}
-                    value={roomTypeForm.description}
-                    onChange={(e) => setRoomTypeForm({ ...roomTypeForm, description: e.target.value })}
-                    rows={3}
+                  <Input
+                    label={t('rooms.modal.maxChildren')}
+                    type="number"
+                    min="0"
+                    value={roomTypeForm.maxChildren}
+                    onChange={(e) => setRoomTypeForm({ ...roomTypeForm, maxChildren: parseInt(e.target.value) || 0 })}
                   />
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <Input
-                      label={t('rooms.modal.area')}
-                      type="number"
-                      placeholder="25"
-                      value={roomTypeForm.area}
-                      onChange={(e) => setRoomTypeForm({ ...roomTypeForm, area: e.target.value })}
-                    />
-
-                    <Select
-                      label={t('rooms.modal.bedType')}
-                      options={bedTypes}
-                      value={roomTypeForm.bedType}
-                      onChange={(e) => setRoomTypeForm({ ...roomTypeForm, bedType: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <Input
-                      label={t('rooms.modal.totalRooms')}
-                      type="number"
-                      min="1"
-                      value={roomTypeForm.totalRooms}
-                      onChange={(e) => setRoomTypeForm({ ...roomTypeForm, totalRooms: parseInt(e.target.value) || 1 })}
-                      required
-                    />
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        label={t('rooms.modal.maxAdults')}
-                        type="number"
-                        min="1"
-                        value={roomTypeForm.maxAdults}
-                        onChange={(e) => setRoomTypeForm({ ...roomTypeForm, maxAdults: parseInt(e.target.value) || 1 })}
-                      />
-                      <Input
-                        label={t('rooms.modal.maxChildren')}
-                        type="number"
-                        min="0"
-                        value={roomTypeForm.maxChildren}
-                        onChange={(e) => setRoomTypeForm({ ...roomTypeForm, maxChildren: parseInt(e.target.value) || 0 })}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <Input
-                      label={t('rooms.modal.baseOccupancy')}
-                      type="number"
-                      min="1"
-                      value={roomTypeForm.baseOccupancy}
-                      onChange={(e) => setRoomTypeForm({ ...roomTypeForm, baseOccupancy: parseInt(e.target.value) || 1 })}
-                      hint={t('rooms.modal.baseOccupancyHint')}
-                    />
-
-                    <Input
-                      label={t('rooms.modal.maxOccupancy')}
-                      type="number"
-                      min="1"
-                      value={roomTypeForm.maxOccupancy}
-                      onChange={(e) => setRoomTypeForm({ ...roomTypeForm, maxOccupancy: parseInt(e.target.value) || 4 })}
-                    />
-                  </div>
-                </div>
-                <div className="p-6 border-t border-line flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setShowRoomTypeModal(false)}>
-                    {tc('actions.cancel')}
-                  </Button>
-                  <Button onClick={handleSaveRoomType}>
-                    <Save className="w-4 h-4 mr-2" />
-                    {tc('actions.save')}
-                  </Button>
                 </div>
               </div>
-            </div>
-          )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label={t('rooms.modal.baseOccupancy')}
+                  type="number"
+                  min="1"
+                  value={roomTypeForm.baseOccupancy}
+                  onChange={(e) => setRoomTypeForm({ ...roomTypeForm, baseOccupancy: parseInt(e.target.value) || 1 })}
+                  hint={t('rooms.modal.baseOccupancyHint')}
+                />
+
+                <Input
+                  label={t('rooms.modal.maxOccupancy')}
+                  type="number"
+                  min="1"
+                  value={roomTypeForm.maxOccupancy}
+                  onChange={(e) => setRoomTypeForm({ ...roomTypeForm, maxOccupancy: parseInt(e.target.value) || 4 })}
+                />
+              </div>
+            </ModalBody>
+            <ModalFooter className="sm:justify-end">
+              <Button variant="outline" onClick={() => setShowRoomTypeModal(false)}>
+                {tc('actions.cancel')}
+              </Button>
+              <Button onClick={handleSaveRoomType}>
+                <Save className="w-4 h-4 mr-2" />
+                {tc('actions.save')}
+              </Button>
+            </ModalFooter>
+          </Modal>
         </TabsContent>
 
         {/* Pricing Tab */}
@@ -837,71 +841,67 @@ export default function PropertyDetailPage() {
           </Card>
 
           {/* Pricing Modal */}
-          {showPricingModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-panel rounded-xl max-w-md w-full">
-                <div className="p-6 border-b border-line">
-                  <h2 className="text-xl font-semibold">{t('pricing.modal.title')}</h2>
-                </div>
-                <div className="p-6 space-y-4">
-                  <Input
-                    label={t('pricing.modal.name')}
-                    placeholder={t('pricing.modal.namePlaceholder')}
-                    value={pricingForm.name}
-                    onChange={(e) => setPricingForm({ ...pricingForm, name: e.target.value })}
-                    required
-                  />
+          <Modal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} size="sm" title={t('pricing.modal.title')}>
+            <ModalHeader onClose={() => setShowPricingModal(false)}>
+              <h2 className="text-lg font-semibold text-fg">{t('pricing.modal.title')}</h2>
+            </ModalHeader>
+            <ModalBody className="space-y-4">
+              <Input
+                label={t('pricing.modal.name')}
+                placeholder={t('pricing.modal.namePlaceholder')}
+                value={pricingForm.name}
+                onChange={(e) => setPricingForm({ ...pricingForm, name: e.target.value })}
+                required
+              />
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <Input
-                      label={t('pricing.modal.weekday')}
-                      type="number"
-                      min="0"
-                      value={pricingForm.weekdayPrice}
-                      onChange={(e) => setPricingForm({ ...pricingForm, weekdayPrice: parseInt(e.target.value) || 0 })}
-                      required
-                    />
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label={t('pricing.modal.weekday')}
+                  type="number"
+                  min="0"
+                  value={pricingForm.weekdayPrice}
+                  onChange={(e) => setPricingForm({ ...pricingForm, weekdayPrice: parseInt(e.target.value) || 0 })}
+                  required
+                />
 
-                    <Input
-                      label={t('pricing.modal.weekend')}
-                      type="number"
-                      min="0"
-                      value={pricingForm.weekendPrice}
-                      onChange={(e) => setPricingForm({ ...pricingForm, weekendPrice: parseInt(e.target.value) || 0 })}
-                      required
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <Input
-                      label={t('pricing.modal.extraAdult')}
-                      type="number"
-                      min="0"
-                      value={pricingForm.extraAdultPrice}
-                      onChange={(e) => setPricingForm({ ...pricingForm, extraAdultPrice: parseInt(e.target.value) || 0 })}
-                    />
-
-                    <Input
-                      label={t('pricing.modal.extraChild')}
-                      type="number"
-                      min="0"
-                      value={pricingForm.extraChildPrice}
-                      onChange={(e) => setPricingForm({ ...pricingForm, extraChildPrice: parseInt(e.target.value) || 0 })}
-                    />
-                  </div>
-                </div>
-                <div className="p-6 border-t border-line flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setShowPricingModal(false)}>
-                    {tc('actions.cancel')}
-                  </Button>
-                  <Button onClick={handleSavePricing}>
-                    <Save className="w-4 h-4 mr-2" />
-                    {tc('actions.save')}
-                  </Button>
-                </div>
+                <Input
+                  label={t('pricing.modal.weekend')}
+                  type="number"
+                  min="0"
+                  value={pricingForm.weekendPrice}
+                  onChange={(e) => setPricingForm({ ...pricingForm, weekendPrice: parseInt(e.target.value) || 0 })}
+                  required
+                />
               </div>
-            </div>
-          )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label={t('pricing.modal.extraAdult')}
+                  type="number"
+                  min="0"
+                  value={pricingForm.extraAdultPrice}
+                  onChange={(e) => setPricingForm({ ...pricingForm, extraAdultPrice: parseInt(e.target.value) || 0 })}
+                />
+
+                <Input
+                  label={t('pricing.modal.extraChild')}
+                  type="number"
+                  min="0"
+                  value={pricingForm.extraChildPrice}
+                  onChange={(e) => setPricingForm({ ...pricingForm, extraChildPrice: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+            </ModalBody>
+            <ModalFooter className="sm:justify-end">
+              <Button variant="outline" onClick={() => setShowPricingModal(false)}>
+                {tc('actions.cancel')}
+              </Button>
+              <Button onClick={handleSavePricing}>
+                <Save className="w-4 h-4 mr-2" />
+                {tc('actions.save')}
+              </Button>
+            </ModalFooter>
+          </Modal>
         </TabsContent>
 
         {/* Amenities Tab */}
@@ -911,37 +911,35 @@ export default function PropertyDetailPage() {
               <CardTitle>{t('amenities.title')}</CardTitle>
               <p className="text-sm text-muted mt-1">{t('amenities.subtitle')}</p>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {amenityOptions.map((amenity) => {
-                  const isSelected = amenity.isSelected
-                  const Icon = getIcon(amenity.icon)
-                  return (
-                    <button
-                      key={amenity.id}
-                      type="button"
-                      aria-pressed={isSelected}
-                      onClick={() => handleToggleAmenity(amenity.id)}
-                      className={`p-4 rounded-lg border-2 transition-all text-left ${
-                        isSelected 
-                          ? 'border-acc bg-acc-soft' 
-                          : 'border-line hover:border-line'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          isSelected ? 'bg-acc-soft text-acc' : 'bg-fg/5 text-muted'
-                        }`}>
-                          <Icon className="w-5 h-5" aria-hidden="true" />
-                        </div>
-                        <span className={`font-medium ${isSelected ? 'text-acc' : 'text-fg'}`}>
-                          {amenityName(amenity.slug, amenity.name, labels.locale)}
-                        </span>
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
+            <CardContent className="space-y-6">
+              {/* By group, with the labels and the selected look of the Services page. */}
+              {groupAmenities(amenityOptions).map(({ category, items }) => (
+                <section key={category}>
+                  <h3 className="text-sm font-medium text-fg mb-3">{t(`amenities.categories.${category}`)}</h3>
+                  <div className="grid grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    {items.map((amenity) => {
+                      const isSelected = amenity.isSelected
+                      const Icon = getIcon(amenity.icon)
+                      return (
+                        <button
+                          key={amenity.id}
+                          type="button"
+                          aria-pressed={isSelected}
+                          onClick={() => handleToggleAmenity(amenity.id)}
+                          className={`flex items-center gap-3 px-4 py-3 rounded-lg border text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-acc ${
+                            isSelected ? 'border-info/30 bg-info-soft' : 'border-line hover:bg-fg/[0.03]'
+                          }`}
+                        >
+                          <Icon className={`w-5 h-5 shrink-0 ${isSelected ? 'text-info' : 'text-muted'}`} aria-hidden="true" />
+                          <span className={`text-sm font-medium ${isSelected ? 'text-info' : 'text-fg'}`}>
+                            {amenityName(amenity.slug, amenity.name, labels.locale)}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </section>
+              ))}
             </CardContent>
           </Card>
         </TabsContent>
@@ -1117,81 +1115,77 @@ export default function PropertyDetailPage() {
       </Tabs>
 
       {/* Image Upload Modal */}
-      {showImageModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-panel rounded-xl max-w-lg w-full">
-            <div className="p-6 border-b border-line">
-              <h2 className="text-xl font-semibold">{t('images.addTitle')}</h2>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-fg mb-1">
-                  {t('images.url')} <span className="text-err">*</span>
-                </label>
-                <Input
-                  placeholder="https://example.com/image.jpg"
-                  value={imageForm.url}
-                  onChange={(e) => setImageForm({ ...imageForm, url: e.target.value })}
-                />
-                <p className="text-xs text-muted mt-1">
-                  {t('images.urlHint')}
-                </p>
-              </div>
-
-              {imageForm.url && (
-                <div>
-                  <p className="text-sm font-medium text-fg mb-2">{t('images.preview')}</p>
-                  <div className="relative w-full h-48 rounded-lg overflow-hidden bg-fg/5">
-                    <Image src={imageForm.url} alt={t('images.previewAlt')} fill className="object-contain" />
-                  </div>
-                </div>
-              )}
-
-              <Input
-                label={t('images.alt')}
-                placeholder={t('images.altPlaceholder')}
-                value={imageForm.alt}
-                onChange={(e) => setImageForm({ ...imageForm, alt: e.target.value })}
-              />
-
-              <div>
-                <label className="block text-sm font-medium text-fg mb-1">
-                  {t('images.category')}
-                </label>
-                <Select
-                  options={[
-                    { value: '', label: t('images.categories.none') },
-                    ...IMAGE_CATEGORIES.map((value) => ({ value, label: t(`images.categories.${value}`) })),
-                  ]}
-                  value={imageForm.category}
-                  onChange={(e) => setImageForm({ ...imageForm, category: e.target.value })}
-                />
-              </div>
-
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="isPrimary"
-                  checked={imageForm.isPrimary}
-                  onChange={(e) => setImageForm({ ...imageForm, isPrimary: e.target.checked })}
-                  className="w-4 h-4 text-acc rounded border-line focus-visible:ring-acc focus-visible:ring-2"
-                />
-                <label htmlFor="isPrimary" className="text-sm text-fg">
-                  {t('images.primary')}
-                </label>
-              </div>
-            </div>
-            <div className="p-6 border-t border-line flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setShowImageModal(false)}>
-                {tc('actions.cancel')}
-              </Button>
-              <Button onClick={handleUploadImage} disabled={isUploading}>
-                {isUploading ? t('images.uploading') : t('images.add')}
-              </Button>
-            </div>
+      <Modal isOpen={showImageModal} onClose={() => setShowImageModal(false)} title={t('images.addTitle')}>
+        <ModalHeader onClose={() => setShowImageModal(false)}>
+          <h2 className="text-lg font-semibold text-fg">{t('images.addTitle')}</h2>
+        </ModalHeader>
+        <ModalBody className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-fg mb-1">
+              {t('images.url')} <span className="text-err">*</span>
+            </label>
+            <Input
+              placeholder="https://example.com/image.jpg"
+              value={imageForm.url}
+              onChange={(e) => setImageForm({ ...imageForm, url: e.target.value })}
+            />
+            <p className="text-xs text-muted mt-1">
+              {t('images.urlHint')}
+            </p>
           </div>
-        </div>
-      )}
+
+          {imageForm.url && (
+            <div>
+              <p className="text-sm font-medium text-fg mb-2">{t('images.preview')}</p>
+              <div className="relative w-full h-48 rounded-lg overflow-hidden bg-fg/5">
+                <Image src={imageForm.url} alt={t('images.previewAlt')} fill className="object-contain" />
+              </div>
+            </div>
+          )}
+
+          <Input
+            label={t('images.alt')}
+            placeholder={t('images.altPlaceholder')}
+            value={imageForm.alt}
+            onChange={(e) => setImageForm({ ...imageForm, alt: e.target.value })}
+          />
+
+          <div>
+            <label className="block text-sm font-medium text-fg mb-1">
+              {t('images.category')}
+            </label>
+            <Select
+              options={[
+                { value: '', label: t('images.categories.none') },
+                ...IMAGE_CATEGORIES.map((value) => ({ value, label: t(`images.categories.${value}`) })),
+              ]}
+              value={imageForm.category}
+              onChange={(e) => setImageForm({ ...imageForm, category: e.target.value })}
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="isPrimary"
+              checked={imageForm.isPrimary}
+              onChange={(e) => setImageForm({ ...imageForm, isPrimary: e.target.checked })}
+              className="w-4 h-4 text-acc rounded border-line focus-visible:ring-acc focus-visible:ring-2"
+            />
+            <label htmlFor="isPrimary" className="text-sm text-fg">
+              {t('images.primary')}
+            </label>
+          </div>
+        </ModalBody>
+        <ModalFooter className="sm:justify-end">
+          <Button variant="outline" onClick={() => setShowImageModal(false)}>
+            {tc('actions.cancel')}
+          </Button>
+          <Button onClick={handleUploadImage} disabled={isUploading}>
+            {isUploading ? t('images.uploading') : t('images.add')}
+          </Button>
+        </ModalFooter>
+      </Modal>
     </PageContainer>
   )
 }

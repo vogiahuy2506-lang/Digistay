@@ -183,7 +183,22 @@
     },
     "amenities": {
       "title": "Amenities",
-      "subtitle": "Choose the amenities your property offers"
+      "subtitle": "Choose the amenities your property offers",
+      "saved": "Amenities saved",
+      "categories": {
+        "internet": "Internet",
+        "comfort": "Comfort",
+        "food": "Food & drink",
+        "service": "Services",
+        "leisure": "Leisure",
+        "entertainment": "Entertainment",
+        "facility": "Facilities",
+        "parking": "Parking",
+        "transport": "Transport",
+        "view": "Views",
+        "security": "Security",
+        "other": "Other"
+      }
     },
     "policy": {
       "title": "Policies",
