@@ -7,8 +7,12 @@
  * appends to it, so its first entries are client-controlled and would let an
  * attacker pick a fresh "IP" per request.
  *
- * If a CDN such as Cloudflare is ever put in front, $remote_addr becomes the
- * CDN's address: configure nginx's real_ip module first.
+ * Behind Cloudflare's proxy (hotel subdomains) $remote_addr would be
+ * Cloudflare's address. nginx's real-ip module fixes that before X-Real-IP
+ * is set (docker/nginx/conf.d/cloudflare-real-ip.inc, in every server
+ * block): it takes CF-Connecting-IP only from Cloudflare's published ranges.
+ * So CF-Connecting-IP is never read here either: a request sent straight to
+ * the server, around Cloudflare, could put anything in it.
  */
 type HeaderSource = Headers | Record<string, string | string[] | undefined> | undefined
 

@@ -77,6 +77,7 @@ beforeEach(async () => {
 })
 afterEach(() => {
   vi.restoreAllMocks()
+  delete process.env.CUSTOM_DOMAIN_CNAME_TARGET
 })
 afterAll(() => prisma.$disconnect())
 
@@ -144,6 +145,45 @@ describe('POST /api/website/domain/verify', () => {
     expect(after.cnameReady).toBe(true)
     expect(after.cname).toEqual({ type: 'CNAME', name: HOST, value: `${a.property.subdomain}.${ROOT}` })
     expect(await settingsOf(a.property.id)).toBeNull()
+  })
+
+  it("never offers a CNAME to a subdomain behind Cloudflare's proxy (it would not reach this server)", async () => {
+    const a = await createTenant()
+    signInAs(a.owner)
+
+    dns({ a: { [`${a.property.subdomain}.${ROOT}`]: ['104.16.1.1'] } })
+    const records = (await (await verifyAs(a.property.id)).json()).data.records
+    expect(records.cnameReady).toBe(false)
+    expect(records.a).toEqual([{ type: 'A', name: HOST, value: OUR_IP }])
+  })
+
+  it('with CUSTOM_DOMAIN_CNAME_TARGET, every site points at that DNS-only name, not at its proxied subdomain', async () => {
+    process.env.CUSTOM_DOMAIN_CNAME_TARGET = 'domains.digistay.vn'
+    const a = await createTenant()
+    signInAs(a.owner)
+    // The subdomain is proxied (Cloudflare's address); the apex too, to show A records follow the target.
+    const zone = {
+      a: { 'domains.digistay.vn': [OUR_IP], [`${a.property.subdomain}.${ROOT}`]: ['104.16.1.1'], [ROOT]: ['104.16.1.2'] },
+      txt: txtFor(a.workspace.id),
+    }
+
+    dns({ ...zone, cname: { [HOST]: `${a.property.subdomain}.${ROOT}` } })
+    const old = await verifyAs(a.property.id)
+    expect(old.status).toBe(422)
+    const { data } = await old.json()
+    expect(data.status).toBe('wrong_target')
+    expect(data.records.cnameReady).toBe(true)
+    expect(data.records.cname).toEqual({ type: 'CNAME', name: HOST, value: 'domains.digistay.vn' })
+    expect(data.records.a).toEqual([{ type: 'A', name: HOST, value: OUR_IP }])
+    expect(await settingsOf(a.property.id)).toBeNull()
+
+    dns({ ...zone, cname: { [HOST]: 'domains.digistay.vn.' } })
+    expect((await verifyAs(a.property.id)).status).toBe(200)
+    expect(await settingsOf(a.property.id)).toEqual({ customDomain: HOST, domainVerificationStatus: 'verified' })
+
+    // A root domain: A records with the target's address.
+    dns({ ...zone, a: { ...zone.a, 'khachsan.vn': [OUR_IP] }, txt: txtFor(a.workspace.id, 'khachsan.vn') })
+    expect((await verifyAs(a.property.id, 'khachsan.vn')).status).toBe(200)
   })
 
   it('a domain another site holds answers 409 and stays with that site', async () => {

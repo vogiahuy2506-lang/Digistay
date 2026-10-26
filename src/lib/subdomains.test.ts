@@ -10,7 +10,7 @@ describe('subdomains', () => {
   })
 
   it('ignores the apex, www, reserved names, deeper levels and other domains', () => {
-    for (const host of ['digistay.vn', 'www.digistay.vn', 'api.digistay.vn', 'login.digistay.vn', 'a.b.digistay.vn', 'evil.vn', 'digistay.vn.evil.vn', '-x.digistay.vn']) {
+    for (const host of ['digistay.vn', 'www.digistay.vn', 'api.digistay.vn', 'login.digistay.vn', 'domains.digistay.vn', 'a.b.digistay.vn', 'evil.vn', 'digistay.vn.evil.vn', '-x.digistay.vn']) {
       expect(subdomainOf(host, 'digistay.vn')).toBeNull()
     }
   })
@@ -24,7 +24,8 @@ describe('subdomains', () => {
 
   it('new properties cannot take a reserved name', () => {
     expect(isAllowedSubdomain('khach-san-sen')).toBe(true)
-    for (const name of ['login', 'api', 'www', 'workspace', 'admin', '-sen', 'sen-']) {
+    // 'domains': the DNS-only name hotels' own domains point at (CUSTOM_DOMAIN_CNAME_TARGET)
+    for (const name of ['login', 'api', 'www', 'workspace', 'admin', 'domains', '-sen', 'sen-']) {
       expect(isAllowedSubdomain(name)).toBe(false)
     }
     const base = { name: 'Khách sạn Sen', type: 'HOTEL', address: '12 Lê Lợi', city: 'Đà Lạt' }

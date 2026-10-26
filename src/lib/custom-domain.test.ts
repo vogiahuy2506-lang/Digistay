@@ -5,6 +5,7 @@ import {
   normalizeHostname,
   ownershipRecord,
   ownershipToken,
+  pointingTarget,
   resolver,
 } from './custom-domain'
 
@@ -74,6 +75,32 @@ describe('ownership token', () => {
   })
 })
 
+describe('pointingTarget', () => {
+  it("is the site's own subdomain and the root domain's addresses by default", () => {
+    expect(pointingTarget('khach-san-a', ROOT, {})).toEqual({ cname: 'khach-san-a.digistay.vn', addressesOf: ROOT })
+    expect(pointingTarget('khach-san-a', ROOT, { CUSTOM_DOMAIN_CNAME_TARGET: '  ' })).toEqual({
+      cname: 'khach-san-a.digistay.vn',
+      addressesOf: ROOT,
+    })
+  })
+
+  it('is the DNS-only CUSTOM_DOMAIN_CNAME_TARGET for every site once set, for CNAMEs and A records alike', () => {
+    const env = { CUSTOM_DOMAIN_CNAME_TARGET: ' Domains.Digistay.vn. ' }
+    expect(pointingTarget('khach-san-a', ROOT, env)).toEqual({ cname: 'domains.digistay.vn', addressesOf: 'domains.digistay.vn' })
+    expect(pointingTarget('khach-san-b', ROOT, env).cname).toBe('domains.digistay.vn')
+    expect(pointingTarget('khach-san-a', ROOT, { CUSTOM_DOMAIN_CNAME_TARGET: 'edge.example.net' }).cname).toBe('edge.example.net')
+  })
+
+  it("ignores a target that is not a hostname, or is a hotel's subdomain (proxied like the others)", () => {
+    for (const value of ['http://domains.digistay.vn', 'domains.digistay.vn/x', '1.2.3.4', 'domains', 'khach-san-b.digistay.vn']) {
+      expect(pointingTarget('khach-san-a', ROOT, { CUSTOM_DOMAIN_CNAME_TARGET: value }), value).toEqual({
+        cname: 'khach-san-a.digistay.vn',
+        addressesOf: ROOT,
+      })
+    }
+  })
+})
+
 describe('checkRouting', () => {
   const target = 'khach-san-a.digistay.vn'
 
@@ -108,6 +135,22 @@ describe('checkRouting', () => {
 
     dns({ a: { 'khachsan.vn': ['203.0.113.10', '198.51.100.7'], [ROOT]: ['203.0.113.10'] } })
     expect(await checkRouting('khachsan.vn', target, ROOT)).toMatchObject({ ok: false, reason: 'wrong_target' })
+  })
+
+  it('with a shared DNS-only target: a CNAME to it, or A records with its addresses', async () => {
+    const shared = 'domains.digistay.vn'
+    dns({ cname: ['domains.digistay.vn.'] })
+    expect(await checkRouting('www.khachsan.vn', shared, shared)).toEqual({ ok: true, via: 'cname' })
+
+    // The site's own subdomain is proxied by then: it would lead to Cloudflare, not here.
+    dns({ cname: [target] })
+    expect(await checkRouting('www.khachsan.vn', shared, shared)).toMatchObject({ ok: false, reason: 'wrong_target' })
+
+    // A records follow the target, not the root domain (which Cloudflare may front later).
+    dns({ a: { 'khachsan.vn': ['203.0.113.10'], [shared]: ['203.0.113.10'], [ROOT]: ['104.16.1.1'] } })
+    expect(await checkRouting('khachsan.vn', shared, shared)).toEqual({ ok: true, via: 'a' })
+    dns({ a: { 'khachsan.vn': ['104.16.1.1'], [shared]: ['203.0.113.10'], [ROOT]: ['104.16.1.1'] } })
+    expect(await checkRouting('khachsan.vn', shared, shared)).toMatchObject({ ok: false, reason: 'wrong_target' })
   })
 
   it('tells a missing record from a DNS failure', async () => {

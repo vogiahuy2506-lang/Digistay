@@ -60,9 +60,13 @@ while IFS= read -r domain; do
   fi
 done <<< "$domains"
 
-# nginx reads certificates per handshake (ssl_certificate_cache valid=1m); the
-# reload only makes a new one show at once.
+# nginx reads certificates per handshake (ssl_certificate_cache valid=1m), in
+# its worker processes, which cannot read certbot's root-only files until
+# nginx-readable.sh opens them to the nginx group. The reload only makes a
+# new certificate show at once.
 if [ "$issued" = 1 ]; then
+  CERTBOT_IMAGE="$IMAGE" bash "$(dirname "${BASH_SOURCE[0]}")/nginx-readable.sh" \
+    || echo "[custom-domains] could not let nginx read the new certificates" >&2
   cd "$COMPOSE_DIR" && docker compose exec -T nginx nginx -s reload || true
 fi
 exit 0

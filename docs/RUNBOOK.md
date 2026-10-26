@@ -596,23 +596,30 @@ docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -
 
 ## Bật Cloudflare proxy (đám mây cam)
 
-DNS của digistay.vn nằm ở Cloudflare nhưng **chưa bật proxy** (response không có header `cf-ray`).
-Bật proxy thì có chống DDoS, cache file tĩnh ở biên, và giấu IP của VPS. nginx đã sẵn sàng:
-`docker/nginx/conf.d/cloudflare-real-ip.inc` lấy IP thật của khách từ `CF-Connecting-IP`, **chỉ**
-khi kết nối đến từ dải IP của Cloudflare. Không có file này, mọi khách sẽ mang IP của Cloudflare
-và giới hạn số lần thử/khoá tài khoản sẽ khoá nhầm cả đám đông.
+DNS của digistay.vn nằm ở Cloudflare. Kế hoạch từ 26/10/2026: **chỉ `*` (subdomain khách sạn) bật
+proxy**, theo mục "SSL tên miền con qua Cloudflare". `digistay.vn`, `www`, `domains` và tên miền riêng
+của khách sạn vẫn **DNS only** (mây xám).
 
-1. Deploy bản có file này. Kiểm: `curl -sI https://digistay.vn | grep -i server` vẫn ra nginx.
-2. Cloudflare → SSL/TLS: chế độ **Full (strict)** (VPS có chứng chỉ Let's Encrypt hợp lệ). Đừng
-   dùng "Flexible": Cloudflare sẽ gọi VPS bằng HTTP và nginx chuyển hướng vòng tròn.
-3. Cloudflare → DNS: bật đám mây cam cho `digistay.vn`, `www` và `*` (nếu đã có).
-4. Kiểm: `curl -sI https://digistay.vn | grep -i cf-ray` có kết quả; đăng nhập sai vài lần rồi xem
-   log app: IP trong cảnh báo là IP thật, không phải `172.64…`/`104.16…`.
-5. Gia hạn chứng chỉ dùng DNS-01 qua API Cloudflare nên không bị ảnh hưởng.
+IP thật của khách: `docker/nginx/conf.d/cloudflare-real-ip.inc`, include ở **mọi** server block, lấy IP
+từ `CF-Connecting-IP` **chỉ** khi kết nối đến từ dải IP của Cloudflare; kết nối khác giữ địa chỉ của
+chính nó, nên không ai tự chọn được IP bằng header. Không có file này, mọi khách đi qua Cloudflare sẽ
+mang IP của Cloudflare và giới hạn số lần thử/khoá tài khoản sẽ khoá nhầm cả đám đông.
+`scripts/nginx-config.test.mjs` chặn `set_real_ip_from` ở bất kỳ chỗ nào khác.
 
-Tuỳ chọn, sau khi ổn định: chặn cổng 80/443 với mọi IP ngoài dải Cloudflare (firewall GCE) để
-không ai đi vòng qua Cloudflare. Danh sách dải IP đổi rất hiếm; khi Cloudflare thông báo thay đổi:
-`bash docker/nginx/update-cloudflare-ips.sh`, xem diff, commit.
+Bật proxy cho `digistay.vn` và `www` là việc **sau**, chưa làm. Trước khi bật phải kiểm:
+- Chứng chỉ Let's Encrypt của `digistay.vn` gia hạn qua **HTTP (webroot)**, không phải DNS-01 như mục
+  này từng ghi. Bật proxy xong chạy `sudo bash docker/certbot/renew.sh --dry-run`; lỗi thì tắt proxy lại.
+- Webhook PayOS / Mắt Bão gọi `digistay.vn`: Bot Fight Mode, WAF hay Under Attack không được chặn chúng.
+- Bản ghi A của khách sạn lấy IP của `domains.digistay.vn` khi đã đặt `CUSTOM_DOMAIN_CNAME_TARGET`; chưa
+  đặt thì lấy IP của `digistay.vn`, tức IP của Cloudflare: sai.
+- Chế độ SSL đã là Full (strict) và chứng chỉ Let's Encrypt hợp lệ, nên phần chứng chỉ không phải đổi.
+
+**Không** chặn cổng 80/443 với IP ngoài dải Cloudflare ở firewall: các tên DNS only ở trên đi thẳng tới VPS.
+
+Dải IP Cloudflare đổi rất hiếm. Kiểm trên máy dev (mỗi quý, hoặc khi Cloudflare thông báo):
+`bash docker/nginx/update-cloudflare-ips.sh --check`. Báo khác thì chạy lại không có `--check`, xem
+diff, commit, deploy (deploy reload nginx). Thiếu một dải thì mọi khách đi qua dải đó bị tính chung một
+IP của Cloudflare.
 
 ---
 
@@ -660,6 +667,15 @@ systemctl list-timers digistay-cert-renew.timer
 ```
 
 Nếu VPS đã có cron gia hạn riêng (ngoài repo) thì bỏ cron đó, để không chạy hai nơi.
+
+- Chứng chỉ **Origin CA** của `*.digistay.vn` (mục "SSL tên miền con qua Cloudflare") **không** gia
+  hạn: hạn 15 năm. Ghi ngày hết hạn (`notAfter` in ra lúc cài) vào lịch; trước hạn tạo cái mới trên
+  Cloudflare và chạy lại khối lệnh cài.
+- nginx đọc chứng chỉ tên miền riêng và chứng chỉ Origin CA theo từng lượt bắt tay, bằng tiến trình
+  worker (user `nginx`, nhóm 101), không phải root; certbot để `live/`, `archive/` và khoá riêng chỉ root
+  đọc được. Vì vậy `renew.sh` và `custom-domains.sh` chạy `docker/certbot/nginx-readable.sh` sau khi
+  gia hạn/cấp (cho nhóm 101 đọc khoá). Log nginx có `cannot load certificate ... Permission denied` thì
+  chạy tay: `sudo bash docker/certbot/nginx-readable.sh`.
 
 ---
 
@@ -851,45 +867,311 @@ Thử: mua Starter theo tháng, chọn **Công ty** với một MST thật; sau 
 
 ## Subdomain cho site khách sạn
 
-Site công khai của khách sạn luôn có ở `digistay.vn/<subdomain>`. Phần dưới đây bật thêm địa
-chỉ `<subdomain>.digistay.vn`:
-- **Code:** đã sẵn sàng. `src/middleware.ts` chuyển request sang đúng site; nginx đã có
-  `*.digistay.vn` trong `server_name`; app tự lấy tên miền gốc từ `NEXTAUTH_URL`.
-- **Còn thiếu:** chứng chỉ wildcard và bản ghi DNS.
+Site công khai của khách sạn luôn có ở `digistay.vn/<subdomain>`. Địa chỉ `<subdomain>.digistay.vn`:
+- **Code:** đã sẵn sàng. `src/middleware.ts` chuyển request sang đúng site; nginx có server block riêng
+  cho `*.digistay.vn` (`app-secure.conf.template`); app tự lấy tên miền gốc từ `NEXTAUTH_URL`.
+- **Còn thiếu (26/10/2026):** chứng chỉ Cloudflare Origin CA trên VPS và bản ghi DNS `*` bật proxy
+  Cloudflare. Làm theo mục "SSL tên miền con qua Cloudflare" ngay dưới. Cách ghi ở đây trước kia
+  (chứng chỉ wildcard Let's Encrypt qua DNS-01 bằng API token Cloudflare, bản ghi `*` DNS only) đã bỏ;
+  lý do ở mục dưới.
 
-**Làm đúng thứ tự: chứng chỉ trước, DNS sau.** Nếu thêm DNS trước, khách vào subdomain sẽ gặp
-lỗi chứng chỉ không thể bỏ qua, vì HSTS đang bật `includeSubDomains`.
+Các tên dành riêng (`www`, `api`, `login`, `domains`...) không bao giờ thành site khách sạn
+(`src/lib/subdomains.ts`).
 
-1. **API token Cloudflare** (DNS của digistay.vn ở Cloudflare): My Profile → API Tokens →
-   Create Token → mẫu "Edit zone DNS", Zone Resources = chỉ `digistay.vn`.
-2. **Trên VPS:**
+---
 
-   ```bash
-   sudo install -m 600 /dev/null /etc/digistay/cloudflare.ini
-   echo 'dns_cloudflare_api_token = <token>' | sudo tee /etc/digistay/cloudflare.ini >/dev/null
-   ```
+## SSL tên miền con qua Cloudflare
 
-3. **Cấp lại chứng chỉ** cùng tên, gồm cả `*.digistay.vn`. Chạy thử trước bằng `--dry-run`, ổn
-   rồi chạy lại không có cờ đó:
+Cách chạy:
+- Khách mở `<subdomain>.digistay.vn` → **Cloudflare** (bản ghi `*` bật proxy, đám mây cam). Trình duyệt
+  thấy chứng chỉ của Cloudflare (Universal SSL: miễn phí, tự gia hạn, phủ `digistay.vn` và
+  `*.digistay.vn`).
+- Cloudflare gọi VPS bằng HTTPS ở chế độ **Full (strict)**: nginx trình chứng chỉ **Cloudflare Origin CA**
+  (`*.digistay.vn` + `digistay.vn`, hạn 15 năm) từ server block `*.digistay.vn` trong
+  `docker/nginx/conf.d/app-secure.conf.template`. File nằm trong volume certbot,
+  `cloudflare-origin/digistay.vn/{cert,key}.pem`; nginx đọc theo từng lượt bắt tay, nên khi chưa có file
+  nginx vẫn chạy và deploy vẫn qua, chỉ subdomain lỗi.
+- IP thật của khách: `cloudflare-real-ip.inc` (mục "Bật Cloudflare proxy").
+- `digistay.vn` và `www` **không đổi**: DNS only, Let's Encrypt qua HTTP, timer `digistay-cert-renew`.
+- Tên miền riêng của khách sạn **không đổi**: DNS only, Let's Encrypt qua HTTP (`custom-domains.sh`).
+  Riêng đích CNAME đổi: không còn là `<subdomain>.digistay.vn` (đã đi qua proxy) mà là
+  **`domains.digistay.vn`**, bản ghi A **DNS only** về IP của VPS, đặt qua biến
+  `CUSTOM_DOMAIN_CNAME_TARGET`. CNAME tới một tên đang bật proxy đưa khách tới Cloudflare, nơi không biết
+  tên miền của khách sạn: lỗi 1001, hoặc lỗi **1014 (CNAME Cross-User Banned)** nếu DNS của khách sạn
+  cũng ở Cloudflare (tài khoản khác); Let's Encrypt cũng không tới được nginx để cấp chứng chỉ. Bản ghi
+  A của tên miền gốc khách sạn lấy IP của `domains.digistay.vn`. Mọi khách sạn trỏ cùng một tên, như
+  bản ghi A xưa nay: bản ghi TXT mới là thứ chứng minh tên miền thuộc workspace nào.
 
-   ```bash
-   cd /opt/digistay
-   sudo docker run --rm -v digistay_certbot_conf:/etc/letsencrypt \
-     -v /etc/digistay/cloudflare.ini:/etc/digistay/cloudflare.ini:ro \
-     certbot/dns-cloudflare:v5.8.0 certonly --non-interactive --dry-run \
-     --dns-cloudflare --dns-cloudflare-credentials /etc/digistay/cloudflare.ini \
-     --cert-name digistay.vn -d digistay.vn -d '*.digistay.vn' \
-     --email <email> --agree-tos --no-eff-email
-   sudo docker compose exec -T nginx nginx -s reload
-   ```
+**Vì sao Origin CA, không phải Let's Encrypt wildcard (DNS-01).** DNS-01 cần một API token sửa được
+DNS của cả zone `digistay.vn` nằm trên VPS: ai chiếm được VPS thì sửa được mọi bản ghi, kể cả email.
+Việc gia hạn mỗi 60 ngày phụ thuộc token đó, và cấp lại chứng chỉ `digistay.vn` theo cách ấy kéo luôn
+tên miền gốc vào. Origin CA không cần secret nào trên VPS ngoài khoá của chính nó và không phải gia hạn.
+Đổi lại: chỉ Cloudflare tin chứng chỉ này, nên `*` phải **luôn bật proxy**; tắt proxy (mây xám) là trình
+duyệt báo lỗi chứng chỉ và HSTS `includeSubDomains` không cho bỏ qua. Muốn gỡ thì **xoá** bản ghi
+(phần Gỡ bỏ).
 
-   Không ghi thêm `www.digistay.vn`: wildcard đã gồm nó, và Let's Encrypt từ chối tên trùng.
-   Từ đó `renew.sh` gia hạn cả chứng chỉ này qua DNS (file `cloudflare.ini` phải còn đó).
-4. **DNS trên Cloudflare:** bản ghi `A`, tên `*`, trỏ về IP của VPS, **DNS only** (mây xám). Bật
-   proxy (mây cam) sẽ làm hỏng cách lấy IP thật của các giới hạn tần suất.
-5. **Kiểm tra:** `curl -sI https://<subdomain của một khách sạn>.digistay.vn` trả `200`. Subdomain
-   không tồn tại trả `404`. Các tên dành riêng (`www`, `api`, `login`...) không bao giờ thành site
-   khách sạn.
+**Làm đúng thứ tự:** (1) deploy → (2) Cloudflare: bản ghi `domains` + tạo chứng chỉ → (3) khối lệnh VPS →
+(4) Cloudflare: Full (strict), tắt tính năng sửa HTML, rồi mới thêm `*` → (5) kiểm tra. Thêm `*` trước
+bước 3 thì subdomain lỗi 526 (VPS chưa có chứng chỉ); trước khi chọn Full (strict) thì có thể lỗi chuyển
+hướng vòng tròn. App không bao giờ hướng dẫn CNAME vào một subdomain đã đi qua proxy (IP khác IP của
+bản ghi A), nên thứ tự sai không làm hỏng tên miền riêng.
+
+### 1. Deploy
+
+Bản có server block `*.digistay.vn`, `docker/certbot/nginx-readable.sh` và `CUSTOM_DOMAIN_CNAME_TARGET`
+phải đang chạy trên VPS (đã merge vào `main`, workflow Deploy xanh). Khối lệnh ở bước 3 tự kiểm.
+
+### 2. Cloudflare (trước khối lệnh VPS)
+
+1. dash.cloudflare.com → zone `digistay.vn` → **DNS → Records → Add record**: Type **A**, Name **`domains`**,
+   IPv4 **`136.85.106.193`** (IP của VPS, giống bản ghi `digistay.vn`), Proxy status **DNS only** (mây
+   xám), TTL Auto → Save.
+2. **SSL/TLS → Origin Server → Create Certificate**: "Generate private key and CSR with Cloudflare",
+   Private key type **RSA (2048)**, Hostnames giữ mặc định **`*.digistay.vn`** và **`digistay.vn`**,
+   Certificate Validity **15 years** → Create. Key Format **PEM**. **Giữ trang này mở**: Private key chỉ
+   hiện một lần. Không gửi khoá qua email/chat; lỡ lộ hay mất thì tạo chứng chỉ mới, chạy lại bước 3, rồi
+   Revoke cái cũ ở cùng trang.
+
+### 3. Trên VPS: dán nguyên khối
+
+Khối lệnh: kiểm trước khi đổi gì (bản deploy, `domains.digistay.vn` trỏ đúng IP của VPS, không cơ sở nào
+dùng subdomain `domains`; in các tên miền riêng đang gắn, cái nào **KIỂM TRA** thì báo khách sạn trỏ lại);
+hỏi chứng chỉ rồi khoá (khoá không hiện trên màn hình) và kiểm: đúng Cloudflare Origin CA, gồm
+`*.digistay.vn`, còn hạn, khoá khớp chứng chỉ; ghi vào volume certbot (giữ bản cũ nếu có) và cho nginx
+đọc được (`nginx-readable.sh`, sửa luôn chứng chỉ tên miền riêng đã cấp); đặt
+`CUSTOM_DOMAIN_CNAME_TARGET=domains.digistay.vn` trong `.env.production` (bản sao
+`.env.production.bak-…`) và khởi động lại app; `nginx -t` rồi mới reload; tự kiểm. Có gì sai thì in
+**DỪNG** và không làm tiếp.
+
+Khi khối lệnh hỏi: chép **Origin Certificate** trên trang Cloudflare (nút copy), dán, Enter; rồi chép
+**Private key**, dán, Enter.
+
+```bash
+(
+set -u
+cd /opt/digistay || exit 1
+TARGET=domains.digistay.vn
+STAMP="$(date +%Y%m%d%H%M%S)"
+TMP="$(mktemp -d)"
+trap 'stty echo 2>/dev/null; rm -rf "$TMP"' EXIT
+stop() { echo; echo "DỪNG: $*"; echo "Không có gì bị đổi thêm từ chỗ này. Gửi toàn bộ output cho người review."; exit 1; }
+# Đọc một khối PEM từ bàn phím: bỏ qua dòng trước -----BEGIN, dừng ở -----END.
+read_pem() {
+  local line started=0
+  : > "$1"
+  while IFS= read -r line; do
+    line="${line%$'\r'}"
+    case "$line" in -----BEGIN*) started=1 ;; esac
+    [ "$started" = 1 ] && printf '%s\n' "$line" >> "$1"
+    case "$line" in -----END*) [ "$started" = 1 ] && return 0 ;; esac
+  done
+  return 1
+}
+
+echo "== 1/6 Kiểm tra trước (chưa đổi gì)"
+sudo grep -q 'server_name \*\.digistay\.vn;' docker/nginx/conf.d/app-secure.conf && [ -f docker/certbot/nginx-readable.sh ] \
+  || stop "VPS chưa chạy bản có block *.digistay.vn: deploy bản mới trước (bước 1)"
+VPS_IP="$(getent ahostsv4 digistay.vn | awk 'NR==1{print $1}')"
+TARGET_IP="$(getent ahostsv4 "$TARGET" | awk 'NR==1{print $1}')"
+echo "digistay.vn -> ${VPS_IP:-?}    $TARGET -> ${TARGET_IP:-?}"
+[ -n "$TARGET_IP" ] && [ "$TARGET_IP" = "$VPS_IP" ] \
+  || stop "$TARGET chưa trỏ về IP của VPS (bước 2.1: bản ghi A, DNS only), hoặc DNS chưa cập nhật: đợi 5 phút rồi chạy lại"
+USED="$(sudo docker compose exec -T postgres psql -U digistay -d digistay -tAc "SELECT count(*) FROM properties WHERE lower(subdomain) = 'domains'")" \
+  || stop "không đọc được database"
+[ "$USED" = 0 ] || stop "đã có cơ sở dùng subdomain 'domains'"
+echo "Tên miền riêng đang gắn (sau khi bật proxy cho *, chỉ tên trỏ thẳng về VPS mới chạy):"
+sudo docker compose exec -T postgres psql -U digistay -d digistay -tAc \
+  "SELECT \"customDomain\" FROM website_settings WHERE \"customDomain\" IS NOT NULL AND \"domainVerificationStatus\" = 'verified' ORDER BY 1" \
+  | while read -r d; do
+      [ -n "$d" ] || continue
+      ip="$(getent ahostsv4 "$d" | awk 'NR==1{print $1}')"
+      if [ "$ip" = "$VPS_IP" ]; then echo "  OK        $d"; else echo "  KIỂM TRA  $d -> ${ip:-không phân giải được} (báo khách sạn trỏ CNAME về $TARGET hoặc A về $VPS_IP)"; fi
+    done
+
+echo "== 2/6 Chứng chỉ Origin CA (dán từ trang Cloudflare, bước 2.2)"
+echo "Dán Origin Certificate (cả dòng -----BEGIN CERTIFICATE----- và -----END CERTIFICATE-----) rồi Enter:"
+read_pem "$TMP/cert.pem" || stop "không đọc được chứng chỉ"
+echo "Dán Private key (KHÔNG hiện trên màn hình, cả dòng BEGIN và END) rồi Enter:"
+stty -echo 2>/dev/null
+read_pem "$TMP/key.pem"; rc=$?
+stty echo 2>/dev/null; echo
+[ "$rc" = 0 ] || stop "không đọc được khoá"
+openssl x509 -in "$TMP/cert.pem" -noout -subject -issuer -enddate || stop "chứng chỉ hỏng (dán thiếu dòng?)"
+openssl x509 -in "$TMP/cert.pem" -noout -issuer | grep -qi 'CloudFlare Origin' || stop "đây không phải chứng chỉ Cloudflare Origin CA"
+openssl x509 -in "$TMP/cert.pem" -noout -checkhost kiem-tra.digistay.vn | grep -q 'does match' || stop "chứng chỉ không gồm *.digistay.vn"
+openssl x509 -in "$TMP/cert.pem" -noout -checkend 2592000 >/dev/null || stop "chứng chỉ đã hoặc sắp hết hạn"
+[ "$(openssl x509 -in "$TMP/cert.pem" -noout -pubkey | openssl sha256)" = "$(openssl pkey -in "$TMP/key.pem" -pubout | openssl sha256)" ] \
+  || stop "khoá không khớp chứng chỉ (dán nhầm khoá?)"
+echo "Chứng chỉ và khoá hợp lệ, khớp nhau."
+
+echo "== 3/6 Ghi vào volume certbot (bản cũ nếu có được giữ lại)"
+VOL="$(sudo docker volume inspect -f '{{.Mountpoint}}' digistay_certbot_conf)" || stop "không thấy volume digistay_certbot_conf"
+DEST="$VOL/cloudflare-origin/digistay.vn"
+if sudo test -e "$DEST"; then sudo cp -a "$DEST" "$DEST.bak-$STAMP" && echo "Bản cũ: $DEST.bak-$STAMP"; fi
+sudo install -d -m 755 "$VOL/cloudflare-origin" "$DEST"
+sudo install -m 644 "$TMP/cert.pem" "$DEST/cert.pem"
+sudo install -m 600 "$TMP/key.pem" "$DEST/key.pem"
+# Cho tiến trình worker của nginx (nhóm 101) đọc được khoá; sửa luôn chứng chỉ tên miền riêng.
+sudo bash docker/certbot/nginx-readable.sh || stop "nginx-readable.sh lỗi"
+sudo ls -l "$DEST"
+
+echo "== 4/6 CUSTOM_DOMAIN_CNAME_TARGET=$TARGET, khởi động lại app"
+sudo cp -p .env.production ".env.production.bak-$STAMP"
+sudo grep -v '^CUSTOM_DOMAIN_CNAME_TARGET=' .env.production > "$TMP/env.new"
+printf 'CUSTOM_DOMAIN_CNAME_TARGET=%s\n' "$TARGET" >> "$TMP/env.new"
+sudo sh -c "cat '$TMP/env.new' > /opt/digistay/.env.production"
+sudo docker compose up -d --no-deps --no-build --force-recreate app
+ok=0
+for i in $(seq 1 40); do
+  if sudo docker exec digistay-app wget -qO- http://127.0.0.1:3000/api/health 2>/dev/null | grep -q '"status":"ok"'; then ok=1; break; fi
+  sleep 3
+done
+[ "$ok" = 1 ] || stop "app chưa khoẻ sau 2 phút: xem 'sudo docker compose logs --tail 50 app'; bản cũ .env.production.bak-$STAMP"
+echo "app đọc được: CUSTOM_DOMAIN_CNAME_TARGET=$(sudo docker exec digistay-app printenv CUSTOM_DOMAIN_CNAME_TARGET)"
+
+echo "== 5/6 nginx -t rồi reload"
+sudo docker compose exec -T nginx nginx -t || stop "nginx -t báo lỗi: chưa reload, nginx vẫn chạy cấu hình cũ"
+sudo docker compose exec -T nginx nginx -s reload
+
+echo "== 6/6 Kiểm tra trên VPS"
+echo "*.digistay.vn (phải là CloudFlare Origin):"
+echo | openssl s_client -connect 127.0.0.1:443 -servername kiem-tra.digistay.vn 2>/dev/null | openssl x509 -noout -issuer -enddate
+echo "digistay.vn (vẫn là Let's Encrypt):"
+echo | openssl s_client -connect 127.0.0.1:443 -servername digistay.vn 2>/dev/null | openssl x509 -noout -issuer -enddate
+echo "kiem-tra.digistay.vn qua nginx -> app: HTTP $(curl -sk -o /dev/null -w '%{http_code}' --resolve kiem-tra.digistay.vn:443:127.0.0.1 https://kiem-tra.digistay.vn/) (404 là đúng: không có khách sạn tên này)"
+curl -fsS https://digistay.vn/api/health; echo
+echo "XONG phần VPS. Tiếp: bước 4 trên Cloudflare."
+)
+```
+
+Ghi lại ngày `notAfter` của chứng chỉ Origin CA (in ở bước 2/6 và 6/6) vào lịch: không có gì tự gia hạn
+nó.
+
+### 4. Cloudflare (sau khối lệnh VPS)
+
+1. **SSL/TLS → Overview → Configure**: chọn **Custom SSL/TLS → Full (strict)** → Save. Chế độ này áp cho
+   cả zone nhưng chỉ ảnh hưởng tên bật proxy (lúc này chỉ có `*`). Đừng dùng "Flexible": Cloudflare sẽ
+   gọi VPS bằng HTTP và nginx chuyển hướng vòng tròn (ERR_TOO_MANY_REDIRECTS).
+2. **SSL/TLS → Edge Certificates**: Universal SSL **Active** (gồm `digistay.vn, *.digistay.vn`);
+   **Always Use HTTPS: On**; **Minimum TLS Version: TLS 1.2**; **Automatic HTTPS Rewrites: Off** (nó sửa
+   HTML; app đã chỉ dùng https).
+3. Tắt các tính năng **sửa HTML** (tìm theo tên bằng ô tìm kiếm của dashboard: Cloudflare hay dời chỗ
+   các mục này):
+   **Email Address Obfuscation: Off** (thay email trong HTML bằng link `/cdn-cgi/...` và thêm script:
+   React thấy HTML khác bản server, bỏ đi vẽ lại, lỗi #418 trên trang có email khách sạn);
+   **Rocket Loader: Off**. **Bot Fight Mode: Off**. Không tạo Cache Rule "Cache Everything" cho
+   subdomain (giá, phòng trống, trang đặt phòng phải luôn mới).
+4. **DNS → Records → Add record**: Type **A**, Name **`*`**, IPv4 **`136.85.106.193`**, Proxy status
+   **Proxied** (mây cam), TTL Auto → Save. Bản ghi có tên riêng (`www`, `domains`...) vẫn theo cài đặt
+   của chính nó; đừng tạo bản ghi riêng DNS only cho một khách sạn.
+
+### 5. Kiểm tra
+
+Trên **máy của bạn** (Terminal macOS, zsh hay bash đều được), sau bước 4 khoảng 1–2 phút. Khối lệnh hỏi
+subdomain của một khách sạn đã xuất bản website (xem ở trang Website khách sạn):
+
+```bash
+(
+printf 'Subdomain của một khách sạn đã xuất bản website: '; read -r SUB
+H="$SUB.digistay.vn"
+echo "== Phải thấy HTTP/2 200, server: cloudflare, cf-ray:"
+curl -sI "https://$H/" | grep -iE '^(HTTP|server|cf-ray|strict-transport-security)'
+echo "== Chứng chỉ trình duyệt thấy: của Cloudflare (Google Trust Services, Let's Encrypt hoặc SSL.com), KHÔNG phải 'CloudFlare Origin':"
+echo | openssl s_client -connect "$H:443" -servername "$H" 2>/dev/null | openssl x509 -noout -issuer -subject
+echo "== IP của bạn theo Cloudflare:"
+curl -s "https://$H/cdn-cgi/trace" | grep '^ip='
+curl -s -o /dev/null -A digistay-ip-check "https://$H/"
+echo "Giờ chạy lệnh xem log trên VPS: dòng digistay-ip-check phải bắt đầu bằng đúng IP này."
+)
+```
+
+Trên **VPS** (IP thật của khách tới được nginx và app; app nhận nó qua `X-Real-IP`):
+
+```bash
+sudo docker compose -f /opt/digistay/docker-compose.yml logs --since 15m nginx | grep digistay-ip-check
+```
+
+Dòng log bắt đầu bằng IP của bạn (không phải `104.16…`, `172.64…`, `162.158…` hay dải nào của
+Cloudflare). Mở thêm subdomain trên điện thoại (4G) cho chắc: hiện trang khách sạn, ổ khoá hợp lệ.
+
+Lỗi thường gặp:
+- **526** (Invalid SSL certificate): VPS chưa có chứng chỉ Origin CA hoặc sai → xem lại bước 3, dòng 6/6.
+- **525** (SSL handshake failed): nginx không đọc được khoá. `sudo docker compose -f /opt/digistay/docker-compose.yml logs --tail 50 nginx | grep 'cannot load'`;
+  có `Permission denied` thì `cd /opt/digistay && sudo bash docker/certbot/nginx-readable.sh`.
+- **ERR_TOO_MANY_REDIRECTS**: SSL đang Flexible → Full (strict).
+- **521/522**: VPS hay nginx không trả lời (giống như khi không có Cloudflare).
+- Khách sạn báo **1014** hay **1001** trên tên miền riêng: CNAME của họ trỏ vào `<subdomain>.digistay.vn`
+  (đã đi qua proxy). Trỏ lại về `domains.digistay.vn`; DNS của họ ở Cloudflare thì để bản ghi đó **DNS
+  only** (trang Tên miền riêng đã ghi), rồi bấm Kiểm tra lại.
+
+### Lưu ý và rủi ro
+
+- `*` phải luôn **Proxied** (Origin CA chỉ Cloudflare tin). Gỡ thì xoá bản ghi, không chuyển sang DNS only.
+- Giới hạn của Cloudflare (gói Free) cho subdomain: request tối đa **100 MB** (nginx đã cắt ở 12 MB, ảnh
+  tối đa 10 MB; dashboard và tải ảnh nằm ở `digistay.vn`, không qua proxy); chờ origin tối đa **100 giây**
+  rồi trả 524 (nginx cắt ở 60 giây trước); WebSocket: app không dùng.
+- Cache mặc định của Cloudflare chỉ giữ file tĩnh theo đuôi (`.js`, `.css`, ảnh, font, `.pdf`...) và tôn
+  trọng `Cache-Control`; HTML và `/api` không bị cache. `/_next/static/` cache 1 năm là đúng (tên file có
+  hash). Không route riêng tư nào có đuôi file tĩnh (PDF hoá đơn là `/api/invoices/<id>/pdf`, cần đăng
+  nhập, và cookie đăng nhập chỉ thuộc `digistay.vn`). Đổi hình ảnh trong `public/` mà giữ tên file thì
+  Cloudflare có thể giữ bản cũ tới hết hạn: Caching → Configuration → Purge Cache.
+- Cloudflare giải mã toàn bộ lưu lượng subdomain (TLS kết thúc ở Cloudflare), kể cả form đặt phòng (tên,
+  số điện thoại, email khách). Chính sách bảo mật nên nhắc Cloudflare là đơn vị xử lý.
+- Dải IP Cloudflare: kiểm định kỳ (`update-cloudflare-ips.sh --check`, mục "Bật Cloudflare proxy").
+
+### Gỡ bỏ
+
+**Gỡ nhanh, đủ cho mọi sự cố của subdomain:** Cloudflare → DNS → xoá bản ghi `*` (không chuyển sang DNS
+only, lý do ở trên). Subdomain trở lại như trước (chưa có); website vẫn ở `digistay.vn/<subdomain>`. Giữ
+bản ghi `domains`, chế độ Full (strict) và mọi thứ trên VPS: vô hại, và tên miền riêng đang trỏ về
+`domains.digistay.vn` vẫn chạy.
+
+**Gỡ cả phần VPS** (chỉ khi thật cần): bỏ biến `CUSTOM_DOMAIN_CNAME_TARGET` (bản sao
+`.env.production.bak-…`), khởi động lại app, cất chứng chỉ Origin CA sang `…disabled-<giờ>`, `nginx -t`
+rồi reload, và in các tên miền riêng đang trỏ CNAME về `domains.digistay.vn`: còn tên nào thì **giữ** bản
+ghi `domains` trên Cloudflare (xoá thì các site đó mất).
+
+```bash
+(
+set -u
+cd /opt/digistay || exit 1
+TARGET=domains.digistay.vn
+STAMP="$(date +%Y%m%d%H%M%S)"
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+stop() { echo; echo "DỪNG: $*"; echo "Gửi toàn bộ output cho người review."; exit 1; }
+
+echo "== 1/4 Bỏ CUSTOM_DOMAIN_CNAME_TARGET (bản sao .env.production.bak-$STAMP), khởi động lại app"
+sudo cp -p .env.production ".env.production.bak-$STAMP"
+sudo grep -v '^CUSTOM_DOMAIN_CNAME_TARGET=' .env.production > "$TMP/env.new"
+sudo sh -c "cat '$TMP/env.new' > /opt/digistay/.env.production"
+sudo docker compose up -d --no-deps --no-build --force-recreate app
+ok=0
+for i in $(seq 1 40); do
+  if sudo docker exec digistay-app wget -qO- http://127.0.0.1:3000/api/health 2>/dev/null | grep -q '"status":"ok"'; then ok=1; break; fi
+  sleep 3
+done
+[ "$ok" = 1 ] || stop "app chưa khoẻ sau 2 phút: xem 'sudo docker compose logs --tail 50 app'; bản cũ .env.production.bak-$STAMP"
+
+echo "== 2/4 Cất chứng chỉ Origin CA"
+VOL="$(sudo docker volume inspect -f '{{.Mountpoint}}' digistay_certbot_conf)" || stop "không thấy volume digistay_certbot_conf"
+DEST="$VOL/cloudflare-origin/digistay.vn"
+if sudo test -e "$DEST"; then sudo mv "$DEST" "$DEST.disabled-$STAMP" && echo "Đã cất: $DEST.disabled-$STAMP"; else echo "Không có chứng chỉ Origin CA để cất"; fi
+
+echo "== 3/4 nginx -t rồi reload"
+sudo docker compose exec -T nginx nginx -t || stop "nginx -t báo lỗi: chưa reload"
+sudo docker compose exec -T nginx nginx -s reload
+
+echo "== 4/4 Tên miền riêng đang trỏ CNAME về $TARGET (còn tên nào thì GIỮ bản ghi domains trên Cloudflare)"
+sudo docker compose exec -T postgres psql -U digistay -d digistay -tAc \
+  "SELECT \"customDomain\" FROM website_settings WHERE \"customDomain\" IS NOT NULL AND \"domainVerificationStatus\" = 'verified' ORDER BY 1" \
+  | while read -r d; do
+      [ -n "$d" ] || continue
+      [ "$(getent ahostsv4 "$d" | awk 'NR==1{print $3}')" = "$TARGET" ] && echo "  $d"
+    done
+echo "XONG. Trên Cloudflare: xoá bản ghi * nếu chưa xoá."
+)
+```
 
 ---
 
@@ -899,6 +1181,9 @@ Khách sạn gắn tên miền của mình (vd `www.khachsan.vn`) bằng nút x�
 (`POST /api/website/domain/verify`, chỉ ADMIN/MANAGER). Chỉ gắn được khi DNS có đủ hai thứ:
 - **Trỏ đúng site:** CNAME `www.khachsan.vn` → `<subdomain của chính site đó>.digistay.vn`. Tên miền
   gốc (`khachsan.vn`) không đặt CNAME được: dùng bản ghi A, mọi địa chỉ phải là IP của `digistay.vn`.
+  Khi đã đặt `CUSTOM_DOMAIN_CNAME_TARGET=domains.digistay.vn` (mục "SSL tên miền con qua Cloudflare"):
+  CNAME của mọi khách sạn → `domains.digistay.vn` (DNS only), bản ghi A → IP của tên đó; CNAME về
+  `<subdomain>.digistay.vn` bị từ chối vì tên đó đi qua proxy Cloudflare (khách sẽ gặp lỗi 1001/1014).
 - **Chứng minh chủ sở hữu:** TXT `_digistay-verify.<tên miền>` = `digistay-verify=<mã>`. Mã do app
   tính từ workspace + tên miền (HMAC, khoá dẫn xuất từ `NEXTAUTH_SECRET`); API trả về trong
   `data.records.txt`.
@@ -909,10 +1194,15 @@ gắn mới phải thêm TXT mới. Kiểm thất bại (kể cả DNS lỗi t�
 
 **Phục vụ và HTTPS (tự động):**
 - Khách sạn nhập tên miền ở **Website khách sạn → Cài đặt → Tên miền riêng**, thêm các bản ghi
-  được hướng dẫn rồi bấm Kiểm tra. Giao diện hướng dẫn bản ghi **A** (về IP của `digistay.vn`) cho
-  tên miền gốc + TXT, và **CNAME** cho `www.` tới `<subdomain>.digistay.vn` — CNAME chỉ được đưa ra khi
-  `<subdomain>.digistay.vn` đã phân giải được (`records.cnameReady`), tức `*.digistay.vn` đã có DNS (mục
-  "Subdomain cho site khách sạn" ở trên); trước đó CNAME qua được bước kiểm nhưng không dẫn tới đâu.
+  được hướng dẫn rồi bấm Kiểm tra. Giao diện hướng dẫn bản ghi **A** (về IP của `digistay.vn`, hoặc của
+  `domains.digistay.vn` khi đã đặt biến) cho tên miền gốc + TXT, và **CNAME** cho `www.` tới đích CNAME
+  (`domains.digistay.vn`, chưa đặt biến thì `<subdomain>.digistay.vn`). CNAME chỉ được đưa ra khi đích
+  đó phân giải về đúng IP của bản ghi A (`records.cnameReady`): chưa có DNS thì CNAME qua được bước kiểm
+  nhưng không dẫn tới đâu, còn subdomain đi qua proxy Cloudflare (IP khác) thì dẫn tới Cloudflare.
+- Khách sạn dùng DNS của Cloudflare phải để các bản ghi này **DNS only** (mây xám; trang Tên miền riêng
+  có ghi): bật proxy thì bước kiểm chỉ thấy IP của Cloudflare, và Let's Encrypt có thể không tới được
+  nginx. Lỗi **1014 (CNAME Cross-User Banned)** chỉ xảy ra khi CNAME của họ trỏ vào một tên đang bật
+  proxy ở tài khoản Cloudflare khác, tức `<subdomain>.digistay.vn`: trỏ về `domains.digistay.vn` thì hết.
 - Xác minh xong, app phục vụ site trên tên miền đó: `src/middleware.ts` hỏi
   `/api/public/site-host` tên miền thuộc site nào (nhớ 60 giây), như với subdomain.
 - Chứng chỉ: xác minh xong là vào hàng đợi (`sslRequestedAt`). Timer `digistay-custom-domains` chạy
@@ -922,6 +1212,13 @@ gắn mới phải thêm TXT mới. Kiểm thất bại (kể cả DNS lỗi t�
   (`docker/nginx/conf.d/custom-domains.conf`, server mặc định của cổng 443) chọn chứng chỉ theo tên
   trình duyệt hỏi, từ `live/<tên miền>/`. Thất bại thì một giờ sau tự thử lại, hoặc khách sạn bấm
   "Thử lại ngay". `renew.sh` hằng ngày gia hạn cả các chứng chỉ này.
+- nginx đọc các chứng chỉ này theo từng lượt bắt tay, bằng tiến trình worker (nhóm 101), mà certbot để
+  `live/`, `archive/` và khoá chỉ root đọc được: trước bản sửa ngày 26/10/2026, tên miền riêng lỗi bắt tay
+  TLS dù chứng chỉ đã cấp (`cannot load certificate ... Permission denied` trong log nginx; tái hiện với
+  nginx:1.31-alpine và volume do certbot tạo, chưa xem trên VPS).
+  `custom-domains.sh` và `renew.sh` nay chạy `docker/certbot/nginx-readable.sh` sau khi cấp/gia hạn;
+  chứng chỉ cấp trước đó cần chạy tay một lần: `cd /opt/digistay && sudo bash docker/certbot/nginx-readable.sh`
+  (khối lệnh của mục "SSL tên miền con qua Cloudflare" đã gồm bước này).
 - Header HSTS của tên miền riêng **không** có `includeSubDomains` và chỉ một ngày
   (`security-headers-site.inc`): các subdomain khác của khách sạn không phải của Digistay.
 

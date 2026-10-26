@@ -7,10 +7,11 @@
 # Until this existed nothing renewed them: the compose `certbot` service
 # only sleeps, and certificates last 90 days.
 #
-# The dns-cloudflare image renews both kinds: the apex certificate issued
-# over HTTP (webroot) and, once subdomains are enabled, the wildcard
-# issued over DNS, which needs /etc/digistay/cloudflare.ini
-# (docs/RUNBOOK.md, "Subdomain cho site khách sạn").
+# Renews the apex certificate and hotels' own domains, all issued over HTTP
+# (webroot). Hotel subdomains use a Cloudflare Origin CA certificate valid
+# 15 years, which nothing renews (docs/RUNBOOK.md, "SSL tên miền con qua
+# Cloudflare"). /etc/digistay/cloudflare.ini is mounted when present, for a
+# certificate issued over DNS with the dns-cloudflare image.
 # ============================================================
 set -euo pipefail
 
@@ -24,6 +25,9 @@ if [[ -f "$CLOUDFLARE_INI" ]]; then
 fi
 
 docker run --rm "${MOUNTS[@]}" "$IMAGE" renew --quiet "$@"
+# nginx's workers read hotels' certificates per handshake (custom-domains.conf).
+CERTBOT_IMAGE="$IMAGE" bash "$(dirname "${BASH_SOURCE[0]}")/nginx-readable.sh" \
+  || echo "[renew] could not let nginx read the certificates (nginx-readable.sh)" >&2
 
 # Serve the renewed files (harmless when nothing changed).
 cd "$COMPOSE_DIR"

@@ -10,6 +10,7 @@ import {
   checkRouting,
   normalizeHostname,
   ownershipRecord,
+  pointingTarget,
   resolver,
 } from '@/lib/custom-domain'
 import { certificateRequest } from '@/lib/public-site/custom-domains'
@@ -72,9 +73,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Tên miền không hợp lệ' }, { status: 400 })
     }
 
-    const target = `${property.subdomain}.${root}`
+    const { cname: target, addressesOf } = pointingTarget(property.subdomain, root)
     const txt = ownershipRecord(property.workspaceId, host)
-    const records = await expectedRecords(host, target, txt, root)
+    const records = await expectedRecords(host, target, txt, addressesOf)
 
     // Held by another site: never moved automatically, even with valid DNS
     // (RUNBOOK "Tên miền riêng"). The records let support check the claim.
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
     })
     if (taken) return domainTaken(records)
 
-    const routing = await checkRouting(host, target, root)
+    const routing = await checkRouting(host, target, addressesOf)
     if (!routing.ok) return failed(routing.reason, records, routing.found)
 
     // This site's own verified domain is not asked for the TXT again.
@@ -144,21 +145,23 @@ export async function POST(request: NextRequest) {
 type Records = Awaited<ReturnType<typeof expectedRecords>>
 
 /**
- * What the hotel adds at its DNS provider: a CNAME to this site's own
- * <subdomain>.<root> (www.… and other subdomains), or A records to the root
- * domain's addresses (a root domain cannot have a CNAME), plus the TXT.
- * The CNAME is offered only once <subdomain>.<root> resolves: before the
- * wildcard DNS exists (RUNBOOK "Subdomain cho site khách sạn") it would pass
- * the check and lead nowhere.
+ * What the hotel adds at its DNS provider (pointingTarget): a CNAME to
+ * `target` (www.… and other subdomains), or A records with the addresses of
+ * `addressesOf` (a root domain cannot have a CNAME), plus the TXT. The CNAME
+ * is offered only once `target` resolves to those same addresses: before
+ * its DNS record exists it would pass the check and lead nowhere, and a
+ * <subdomain>.<root> behind Cloudflare's proxy (other addresses than the
+ * root's) would lead to Cloudflare, which does not know the hotel's domain
+ * (RUNBOOK "SSL tên miền con qua Cloudflare").
  */
-async function expectedRecords(host: string, target: string, txt: { name: string; value: string }, root: string) {
+async function expectedRecords(host: string, target: string, txt: { name: string; value: string }, addressesOf: string) {
   const [addresses, targetAddresses] = await Promise.all([
-    resolver.resolve4(root).catch(() => [] as string[]),
+    resolver.resolve4(addressesOf).catch(() => [] as string[]),
     resolver.resolve4(target).catch(() => [] as string[]),
   ])
   return {
     cname: { type: 'CNAME', name: host, value: target },
-    cnameReady: targetAddresses.length > 0,
+    cnameReady: targetAddresses.length > 0 && targetAddresses.every((ip) => addresses.includes(ip)),
     a: addresses.map((ip) => ({ type: 'A', name: host, value: ip })),
     txt: { type: 'TXT', name: txt.name, value: txt.value },
   }

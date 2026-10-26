@@ -184,7 +184,10 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
   (lỗ hổng RCE AVIF chỉ được vá từ Next 15.5.24; đang dùng 15.5.28). Muốn bật lại thì chỉ với
   `remotePatterns` liệt kê đúng host của mình, không bao giờ `**`; có test chặn.
 - Chứng chỉ HTTPS gia hạn bằng timer `digistay-cert-renew` (RUNBOOK). Trước đó không có gì
-  gia hạn.
+  gia hạn. Subdomain khách sạn (`*.digistay.vn`) đi qua proxy Cloudflare, chứng chỉ Origin CA 15 năm
+  không gia hạn (RUNBOOK "SSL tên miền con qua Cloudflare"). Chứng chỉ có biến trong đường dẫn được
+  worker nginx (nhóm 101) đọc theo từng lượt bắt tay, không phải root: certbot để khoá chỉ root đọc,
+  nên sau khi cấp/gia hạn phải chạy `docker/certbot/nginx-readable.sh`.
 - `/workspace-picker/*` luôn chuyển về `/workspaces`: layout của nó nằm trên `[slug]` nên không
   bao giờ nhận được `slug` (có từ trước, Next 15 mới lộ ra khi kiểm kiểu). Dọn hay sửa là quyết
   định sản phẩm; trang lời mời đang trỏ tới đó.
@@ -384,7 +387,9 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
 - Tên miền riêng: xác minh ở `/api/website/domain/verify` (A hoặc CNAME cho www + TXT); middleware phục vụ site trên tên
   miền đó qua `/api/public/site-host` (`src/lib/public-site/custom-host.ts`); chứng chỉ HTTPS do
   `docker/certbot/custom-domains.sh` trên VPS cấp mỗi phút (`/api/internal/custom-domains`), nginx
-  `custom-domains.conf` chọn theo SNI. RUNBOOK "Tên miền riêng của khách sạn".
+  `custom-domains.conf` chọn theo SNI. RUNBOOK "Tên miền riêng của khách sạn". Đích CNAME/A lấy từ
+  `pointingTarget()` (`src/lib/custom-domain.ts`): `CUSTOM_DOMAIN_CNAME_TARGET` (tên DNS only) khi
+  subdomain đã qua proxy Cloudflare, không bao giờ một subdomain đang bật proxy (lỗi 1001/1014).
 
 ## Song ngữ (tiếng Việt / tiếng Anh)
 

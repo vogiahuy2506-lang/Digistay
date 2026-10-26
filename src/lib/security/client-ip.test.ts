@@ -17,6 +17,11 @@ describe('getClientIp', () => {
     ).toBe('203.0.113.7')
   })
 
+  it('never reads CF-Connecting-IP itself: nginx checks it came from Cloudflare first', () => {
+    expect(getClientIp(new Headers({ 'cf-connecting-ip': '1.2.3.4' }))).toBe('unknown')
+    expect(getClientIp(new Headers({ 'cf-connecting-ip': '1.2.3.4', 'x-real-ip': '203.0.113.7' }))).toBe('203.0.113.7')
+  })
+
   it('falls back to "unknown" for missing or malformed values', () => {
     expect(getClientIp(undefined)).toBe('unknown')
     expect(getClientIp(new Headers())).toBe('unknown')

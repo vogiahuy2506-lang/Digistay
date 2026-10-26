@@ -19,6 +19,8 @@ export const RESERVED_SUBDOMAINS: ReadonlySet<string> = new Set([
   'static', 'assets', 'cdn', 'img', 'images', 'media', 'files', 'download', 'mail', 'email',
   'smtp', 'imap', 'pop', 'ftp', 'ns1', 'ns2', 'dns', 'vpn', 'webhook', 'webhooks', 'internal',
   'dev', 'staging', 'test', 'demo', 'beta', 'digistay',
+  // the DNS-only name hotels' own domains point at (CUSTOM_DOMAIN_CNAME_TARGET, src/lib/custom-domain.ts)
+  'domains',
 ])
 
 const SUBDOMAIN_RE = /^[a-z0-9](?:[a-z0-9-]{1,48}[a-z0-9])$/
