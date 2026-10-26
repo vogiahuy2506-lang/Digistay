@@ -16,9 +16,27 @@ describe('dashboard menu', () => {
     expect(activeHref(`${P}/reports`, items)).toBe(`${P}/reports`)
   })
 
+  it('has one entry for the bookings: the calendar lights up "Đặt phòng"', () => {
+    // The list, the month and the room plan are views of one page (bookings-views.tsx).
+    expect(items.map((i) => i.key)).not.toContain('calendar')
+    expect(items.filter((i) => i.href.endsWith('/calendar'))).toEqual([])
+    expect(activeHref(`${P}/calendar`, items)).toBe(`${P}/bookings`)
+  })
+
   it('does not match a sibling that only shares a prefix', () => {
     expect(activeHref('/workspace/demo/properties/p10/bookings', items)).toBeUndefined()
     expect(activeHref('/workspace/demo/membership', items)).toBeUndefined()
+    expect(activeHref(`${P}/calendars`, items)).toBe(P)
+  })
+
+  it('prefers the longer path, whether an href or an extra one', () => {
+    const nested = [
+      { key: 'overview' as const, href: '/a', also: ['/a/b/c'], roles: [], group: 'main' as const },
+      { key: 'bookings' as const, href: '/a/b', roles: [], group: 'main' as const },
+    ]
+    expect(activeHref('/a/b', nested)).toBe('/a/b')
+    expect(activeHref('/a/b/c/d', nested)).toBe('/a')
+    expect(activeHref('/a/x', nested)).toBe('/a')
   })
 
   it('shows the workspace menu outside a property', () => {

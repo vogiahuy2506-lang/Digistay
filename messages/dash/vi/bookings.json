@@ -32,6 +32,12 @@
     "prevBooking": "Đặt phòng trước",
     "nextBooking": "Đặt phòng sau"
   },
+  "views": {
+    "label": "Cách xem đặt phòng",
+    "list": "Danh sách",
+    "month": "Lịch tháng",
+    "rooms": "Sơ đồ phòng"
+  },
   "room": {
     "none": "Chưa có phòng",
     "deletedType": "Hạng phòng đã xoá"
@@ -198,7 +204,7 @@
   "walkIn": {
     "title": "Tạo đặt phòng",
     "intro": "Đặt phòng cho khách đến tại quầy hoặc gọi điện: chọn ngày và số khách, hạng phòng còn trống, phòng, rồi ghi nhận tiền thu (nếu có).",
-    "backToCalendar": "Lịch phòng",
+    "backToList": "Đặt phòng",
     "vacancy": "Còn trống {from} → {to}",
     "vacancyCount": "{available}/{total} phòng",
     "search": {

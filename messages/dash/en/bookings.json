@@ -32,6 +32,12 @@
     "prevBooking": "Previous booking",
     "nextBooking": "Next booking"
   },
+  "views": {
+    "label": "Booking views",
+    "list": "List",
+    "month": "Month",
+    "rooms": "Room timeline"
+  },
   "room": {
     "none": "No room yet",
     "deletedType": "Deleted room type"
@@ -198,7 +204,7 @@
   "walkIn": {
     "title": "New booking",
     "intro": "Book a guest at the desk or on the phone: pick the dates and guests, an available room type and room, then record any payment.",
-    "backToCalendar": "Room calendar",
+    "backToList": "Bookings",
     "vacancy": "Free {from} → {to}",
     "vacancyCount": "{available}/{total} rooms",
     "search": {

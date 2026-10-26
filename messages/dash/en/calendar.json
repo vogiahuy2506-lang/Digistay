@@ -162,9 +162,6 @@
     }
   },
   "timeline": {
-    "views": "Calendar view",
-    "viewMonth": "Month",
-    "viewRooms": "Room timeline",
     "loading": "Loading the room timeline…",
     "loadError": "Could not load the room timeline",
     "noTypes": "No room types yet.",

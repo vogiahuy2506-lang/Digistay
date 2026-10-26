@@ -162,9 +162,6 @@
     }
   },
   "timeline": {
-    "views": "Kiểu xem lịch",
-    "viewMonth": "Lịch tháng",
-    "viewRooms": "Sơ đồ phòng",
     "loading": "Đang tải sơ đồ phòng…",
     "loadError": "Không tải được sơ đồ phòng",
     "noTypes": "Chưa có hạng phòng nào.",

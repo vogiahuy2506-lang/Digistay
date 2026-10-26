@@ -262,12 +262,13 @@ export default function WalkinBookingPage() {
         title={t('title')}
         description={t('intro')}
         actions={
+          // Back to the bookings: the list, whose switcher also leads to the calendar.
           <Link
-            href={routes.propertyCalendar(params.slug, propertyId)}
+            href={routes.propertyBookings(params.slug, propertyId)}
             className="inline-flex items-center gap-2 h-9 px-3 rounded-ctl border border-line bg-panel text-small font-medium text-fg hover:bg-fg/5"
           >
             <ArrowLeft className="w-4 h-4 text-muted" aria-hidden="true" />
-            {t('backToCalendar')}
+            {t('backToList')}
           </Link>
         }
       />

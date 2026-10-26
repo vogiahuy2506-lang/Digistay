@@ -31,6 +31,7 @@ import {
   TabsTrigger,
 } from '@/components/ui'
 import { BookingActions, BookingDetailContent, useBooking } from '@/components/bookings/booking-detail'
+import { BookingsViews } from '@/components/bookings/bookings-views'
 import { canManageBookings, useWorkspaceRole } from '@/components/layout/workspace-context'
 import { paymentStatusMeta } from '@/lib/booking-status'
 import { bookingSources, nightsBetween } from '@/lib/bookings/display'
@@ -193,6 +194,9 @@ export default function BookingsPage() {
           )
         }
       />
+
+      {/* The list, the month and the room plan: one menu entry, three views. */}
+      <BookingsViews slug={params.slug} propertyId={propertyId} current="list" className="mb-4" />
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as (typeof tabs)[number])}>
         <TabsList variant="underline" className="mb-4">

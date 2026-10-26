@@ -7,7 +7,6 @@ export type NavKey =
   | 'overview'
   | 'properties'
   | 'bookings'
-  | 'calendar'
   | 'rooms'
   | 'services'
   | 'menu'
@@ -30,6 +29,8 @@ export interface NavItem {
   href: string
   roles: WorkspaceRole[]
   group: NavGroup
+  /** Other pages of this entry, by path: they light it up and title the tab with it. */
+  also?: string[]
 }
 
 const everyone: WorkspaceRole[] = ['ADMIN', 'MANAGER', 'RECEPTIONIST', 'USER']
@@ -47,8 +48,15 @@ export function primaryNav(slug: string, propertyId?: string): NavItem[] {
   // Grouped like the work: the day at the desk, what the hotel sells, the money.
   return [
     { key: 'overview', href: routes.property(slug, id), roles: everyone, group: 'main' },
-    { key: 'bookings', href: routes.propertyBookings(slug, id), roles: everyone, group: 'operations' },
-    { key: 'calendar', href: routes.propertyCalendar(slug, id), roles: staff, group: 'operations' },
+    // One entry for the bookings and their calendar: the pages switch between the list,
+    // the month and the room plan (src/components/bookings/bookings-views.tsx).
+    {
+      key: 'bookings',
+      href: routes.propertyBookings(slug, id),
+      also: [routes.propertyCalendar(slug, id)],
+      roles: everyone,
+      group: 'operations',
+    },
     { key: 'rooms', href: routes.propertyRooms(slug, id), roles: staff, group: 'property' },
     { key: 'services', href: routes.propertyServices(slug, id), roles: managers, group: 'property' },
     { key: 'menu', href: routes.propertyMenu(slug, id), roles: managers, group: 'property' },
@@ -71,16 +79,21 @@ export function workspaceNav(slug: string): NavItem[] {
 }
 
 /**
- * The menu entry for `pathname`: the longest href that equals it or is a
- * parent of it, so a booking's detail page and the new-booking page
- * (/bookings/new: walk-ins and phone bookings) light up "Đặt phòng".
+ * The menu entry for `pathname` (its href): the one with the longest path,
+ * its href or one of its `also`, that equals it or is a parent of it, so a
+ * booking's detail page, the new-booking page (/bookings/new: walk-ins and
+ * phone bookings) and the calendar light up "Đặt phòng".
  */
 export function activeHref(pathname: string, items: NavItem[]): string | undefined {
-  let best: string | undefined
-  for (const { href } of items) {
-    if ((pathname === href || pathname.startsWith(`${href}/`)) && (!best || href.length > best.length)) best = href
+  let best: { href: string; length: number } | undefined
+  for (const item of items) {
+    for (const path of [item.href, ...(item.also ?? [])]) {
+      if ((pathname === path || pathname.startsWith(`${path}/`)) && (!best || path.length > best.length)) {
+        best = { href: item.href, length: path.length }
+      }
+    }
   }
-  return best
+  return best?.href
 }
 
 /** Vietnamese role names, for code without a translator; pages use useDashLabels().role. */

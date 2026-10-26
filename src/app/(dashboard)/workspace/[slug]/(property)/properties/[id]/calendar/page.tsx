@@ -1,17 +1,17 @@
 'use client'
 
 import * as React from 'react'
-import Link from 'next/link'
-import { useParams, useRouter } from 'next/navigation'
-import { Button, Modal, ModalBody, PaymentStatusBadge } from '@/components/ui'
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { Button, Modal, ModalBody } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
 import { Header, PageContainer } from '@/components/layout'
-import { useWorkspaceRole } from '@/components/layout/workspace-context'
+import { NoAccess } from '@/components/layout/no-access'
+import { canManageBookings, useWorkspaceRole } from '@/components/layout/workspace-context'
 import {
   Calendar as CalendarIcon, ChevronLeft, ChevronRight,
-  Bed, Users, BedDouble, Plus, DoorOpen, Bell, Receipt,
-  PieChart, CheckCircle, Key, RefreshCw,
-  Clock, ListChecks, Eye, Loader2, XCircle
+  Plus, DoorOpen, Receipt,
+  Key, RefreshCw,
+  Eye, Loader2, XCircle
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { routes } from '@/lib/utils/routes'
@@ -22,10 +22,11 @@ import { CheckOutDialog } from '@/components/bookings/check-out-dialog'
 import { CancelDialog } from '@/components/bookings/cancel-dialog'
 import { CheckInDialog } from '@/components/bookings/check-in-dialog'
 import { RoomTimeline } from '@/components/bookings/room-timeline'
+import { BookingsViews, calendarViewParam, type CalendarView } from '@/components/bookings/bookings-views'
 import { BookingActions, BookingDetailContent, useBooking } from '@/components/bookings/booking-detail'
 import { SidePanel, SidePanelBody, SidePanelFooter, SidePanelHeader, BookingStatusBadge, Loading } from '@/components/ui'
-import { fetchWindow, staysNight, toCsv } from '@/lib/bookings/calendar'
-import { currentSpan, planNumbers, roomPlan, spanOnNight } from '@/lib/bookings/room-plan'
+import { fetchBookingsAround, monthOccupancy as occupancyOfMonth, nightOccupancy, roomOn, toCsv } from '@/lib/bookings/calendar'
+import { planNumbers, roomPlan } from '@/lib/bookings/room-plan'
 import { format, addDays, parseISO } from 'date-fns'
 import { apiError } from '@/lib/i18n/api-errors'
 import { cn } from '@/lib/utils'
@@ -74,14 +75,6 @@ interface Booking {
   createdAt?: string
 }
 
-/**
- * The room a stay is in on a local day: that night's for a stay that
- * changes rooms, the last one on its check-out day.
- */
-function roomOn(b: Booking, day: Date): string | null {
-  return currentSpan(roomPlan(b), format(day, 'yyyy-MM-dd'))?.roomNumber ?? null
-}
-
 /** Every room of a stay, in night order ("101 → 205"). */
 const roomsOf = (b: Booking) => (b.roomSegments?.length ? planNumbers(roomPlan(b)) : b.bookingItems.map((i) => i.roomNumber).filter(Boolean).join(', '))
 
@@ -119,7 +112,7 @@ export default function CalendarPage() {
   const params = useParams<{ slug: string; id: string }>()
   const propertyId = params.id
   const { property } = useProperty()
-  // Revenue is for the owner and managers (nav.ts gives reports to them only).
+  // The calendar is for staff (bookings-views.tsx); a USER has the list.
   const role = useWorkspaceRole()
   const t = useTranslations('dash.calendar')
   const tc = useTranslations('dash.common')
@@ -142,18 +135,29 @@ export default function CalendarPage() {
   // The hotel's check-in / check-out times (Policy); the dialog said 14:00 / 12:00 whatever they were.
   const [stayTimes, setStayTimes] = React.useState<{ checkIn: string; checkOut: string } | null>(null)
 
-  // Month grid or room timeline (room-timeline.tsx); remembered in this browser.
-  const [view, setView] = React.useState<'month' | 'rooms'>('month')
+  // Month grid or room timeline (room-timeline.tsx): the address says which
+  // (?view=, the switcher on the bookings list links here), else the one last
+  // chosen in this browser.
+  const pathname = usePathname()
+  const urlView = calendarViewParam(useSearchParams().get('view'))
+  const [view, setView] = React.useState<CalendarView>(urlView ?? 'month')
   React.useEffect(() => {
     try {
-      if (localStorage.getItem('ds-calendar-view') === 'rooms') setView('rooms')
+      if (urlView) {
+        setView(urlView)
+        localStorage.setItem('ds-calendar-view', urlView)
+      } else if (localStorage.getItem('ds-calendar-view') === 'rooms') {
+        setView('rooms')
+      }
     } catch {}
-  }, [])
-  const chooseView = (next: 'month' | 'rooms') => {
+  }, [urlView])
+  // In place, at once; the address follows (replace: no history entry per click).
+  const chooseView = (next: CalendarView) => {
     setView(next)
     try {
       localStorage.setItem('ds-calendar-view', next)
     } catch {}
+    router.replace(`${pathname}?view=${next}`, { scroll: false })
   }
   const [timelineKey, setTimelineKey] = React.useState(0)
   // A booking opened from the timeline: the shared booking panel.
@@ -188,41 +192,17 @@ export default function CalendarPage() {
     }
   }, [propertyId, currentDate.getFullYear(), currentDate.getMonth()])
 
-  /**
-   * Every booking the list API returns for a widened window, all pages: it
-   * caps a page at 100 (this asked for 200 and silently got 100), and only
-   * returns stays inside the window, so it is asked wider than the days
-   * shown (src/lib/bookings/calendar.ts).
-   */
-  const fetchBookingsAround = async (from: Date, to: Date): Promise<Booking[]> => {
-    const { startDate, endDate } = fetchWindow(from, to)
-    const found: Booking[] = []
-    for (let page = 1, pages = 1; page <= pages && page <= 20; page++) {
-      const res = await fetch(
-        `/api/bookings?propertyId=${propertyId}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&limit=100&page=${page}`
-      )
-      const data = await res.json()
-      if (!data.success) break
-      found.push(...(data.data ?? []))
-      pages = data.pagination?.totalPages ?? 1
-    }
-    return found
-  }
-
   const fetchCalendarData = async () => {
     setIsLoading(true)
     try {
       const grid = buildMonthGrid(currentDate)
       const gridStart = grid[0].date
       const gridEnd = addDays(grid[grid.length - 1].date, 1)
-      const now = startOfDay(new Date())
-      // Today's arrivals and departures stay listed while another month is shown.
-      const todayOutside = now < gridStart || now >= gridEnd
 
-      const [roomTypesData, shown, aroundToday, policyData] = await Promise.all([
+      const [roomTypesData, shown, policyData] = await Promise.all([
         fetch(`/api/room-types?propertyId=${propertyId}`).then((r) => r.json()),
-        fetchBookingsAround(gridStart, gridEnd),
-        todayOutside ? fetchBookingsAround(now, addDays(now, 1)) : Promise.resolve([]),
+        // Every page, asked wider than the days shown (src/lib/bookings/calendar.ts).
+        fetchBookingsAround<Booking>(propertyId, gridStart, gridEnd),
         // The property (with its policy) is readable by every member; /policy is for those who edit it (receptionists got 403).
         fetch(`/api/properties/${propertyId}`).then((r) => r.json()).catch(() => null),
       ])
@@ -230,7 +210,7 @@ export default function CalendarPage() {
       if (roomTypesData.success) {
         setRoomTypes(roomTypesData.data ?? [])
       }
-      setBookings([...new Map([...shown, ...aroundToday].map((b) => [b.id, b])).values()])
+      setBookings(shown)
       const policy = policyData?.data?.policy
       setStayTimes(policy ? { checkIn: policy.checkInTime, checkOut: policy.checkOutTime } : null)
     } catch (err) {
@@ -252,18 +232,7 @@ export default function CalendarPage() {
   }
 
   /** Rooms taken the night of `day`, per room type (a booking's check-out day is free). */
-  const occupancyForDay = (day: Date) => {
-    const result = new Map<string, number>()
-    for (const b of bookings) {
-      if (b.status === 'CANCELLED' || b.status === 'NO_SHOW' || !staysNight(b, day)) continue
-      // A stay that changes rooms counts in the type of that night's room.
-      const part = b.roomSegments?.length ? spanOnNight(roomPlan(b), format(day, 'yyyy-MM-dd')) : null
-      for (const item of part ? [part] : b.bookingItems) {
-        result.set(item.roomTypeId, (result.get(item.roomTypeId) ?? 0) + 1)
-      }
-    }
-    return result
-  }
+  const occupancyForDay = (day: Date) => nightOccupancy(bookings, day)
 
   // Handle creating a new booking
   const handleCreateBooking = async (e: React.FormEvent) => {
@@ -379,7 +348,6 @@ export default function CalendarPage() {
           checkedOutBookings,
           cancelledBookings,
           occupancyRate,
-          ...(showRevenue && { totalRevenue: stats.revenue }),
         },
         bookings: monthBookings.map(b => ({
           bookingCode: b.bookingCode,
@@ -606,76 +574,9 @@ export default function CalendarPage() {
   const days = buildMonthGrid(currentDate)
   const totalRooms = roomTypes.reduce((sum, rt) => sum + rt.totalRooms, 0)
 
-  const stats = React.useMemo(() => {
-    let activeBookings = 0
-    let checkedIn = 0
-    let guestsInHouse = 0
-    let pending = 0
-    let revenue = 0
-
-    // Bookings are loaded around the month (and today), so the month's figures
-    // take the bookings arriving in it; who is in house is as of now.
-    const year = currentDate.getFullYear()
-    const month = currentDate.getMonth()
-    for (const b of bookings) {
-      if (b.status === 'CANCELLED' || b.status === 'NO_SHOW') continue
-      if (b.status === 'CHECKED_IN') {
-        checkedIn++
-        guestsInHouse += (b.numAdults ?? 0) + (b.numChildren ?? 0)
-      }
-      const arrival = new Date(b.checkInDate)
-      if (arrival.getFullYear() !== year || arrival.getMonth() !== month) continue
-      activeBookings++
-      if (b.status === 'PENDING') pending++
-      revenue += Number(b.totalAmount) || 0
-    }
-
-    const checkInsToday = bookings.filter(b => {
-      if (b.status !== 'CONFIRMED' && b.status !== 'PENDING') return false
-      return isSameDay(new Date(b.checkInDate), today)
-    }).length
-
-    return {
-      totalRooms,
-      activeBookings,
-      checkedIn,
-      guestsInHouse,
-      pending,
-      revenue,
-      checkInsToday
-    }
-  }, [bookings, totalRooms, today, currentDate])
-
-  // Booked room-nights over room-nights available in the month shown, in %.
-  const monthOccupancy = (() => {
-    const year = currentDate.getFullYear()
-    const month = currentDate.getMonth()
-    const daysInMonth = new Date(year, month + 1, 0).getDate()
-    if (totalRooms === 0) return 0
-    let occupied = 0
-    for (let d = 1; d <= daysInMonth; d++) {
-      for (const taken of occupancyForDay(new Date(year, month, d)).values()) occupied += taken
-    }
-    return (occupied / (totalRooms * daysInMonth)) * 100
-  })()
-
-  const occupancyToday = occupancyForDay(today)
-  // Receptionists and staff see no revenue (src/components/layout/nav.ts: reports are for owner/managers).
-  const showRevenue = (role === 'ADMIN' || role === 'MANAGER') && bookings.every((b) => typeof b.totalAmount === 'number')
-
-  const todayCheckIns = React.useMemo(() => {
-    return bookings.filter(b => {
-      if (b.status !== 'CONFIRMED' && b.status !== 'PENDING') return false
-      return isSameDay(new Date(b.checkInDate), today)
-    })
-  }, [bookings, today])
-
-  const todayCheckOuts = React.useMemo(() => {
-    return bookings.filter(b => {
-      if (b.status !== 'CHECKED_IN') return false
-      return isSameDay(new Date(b.checkOutDate), today)
-    })
-  }, [bookings, today])
+  // Booked room-nights over room-nights available in the month shown, in %
+  // (the export's summary; the day's figures are on the overview now).
+  const monthOccupancy = occupancyOfMonth(bookings, totalRooms, currentDate.getFullYear(), currentDate.getMonth())
 
   const dayOfWeekLabel = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']
 
@@ -700,12 +601,22 @@ export default function CalendarPage() {
 
   const ctl = 'h-9 sm:h-8 px-3 rounded-ctl border border-line bg-panel text-fg hover:bg-fg/[0.03] text-xs font-semibold transition-colors inline-flex items-center gap-1.5'
 
+  // Opened by its address by a USER (the menu and the switcher only show it to staff).
+  if (!canManageBookings(role)) {
+    return (
+      <PageContainer>
+        <NoAccess backHref={routes.propertyBookings(params.slug, propertyId)} backLabel={tc('nav.bookings')} />
+      </PageContainer>
+    )
+  }
+
   return (
     <PageContainer className="max-w-none">
-      {/* The standard page header (it had its own "Digistay Hotel OS" bar and a live clock). */}
+      {/* The standard page header (it had its own "Digistay Hotel OS" bar and a live clock);
+          one "Đặt phòng" with the list (bookings-views.tsx). */}
       <Header
         eyebrow={labels.longDate(new Date())}
-        title={tc('nav.calendar')}
+        title={tc('nav.bookings')}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <button aria-label={tc('actions.refresh')} onClick={handleRefresh} className={ctl} title={t('toolbar.refreshTitle')}>
@@ -726,21 +637,9 @@ export default function CalendarPage() {
         }
       />
 
-      {/* View and month */}
+      {/* The view (list, month, room plan) and the month */}
       <div className="mb-4 flex flex-wrap items-center gap-2.5">
-        <div role="tablist" aria-label={t('timeline.views')} className="flex items-center bg-fg/5 rounded-ctl p-0.5">
-          {(['month', 'rooms'] as const).map((v) => (
-            <button
-              key={v}
-              role="tab"
-              aria-selected={view === v}
-              onClick={() => chooseView(v)}
-              className={`px-3 h-8 rounded-[calc(var(--ds-r-ctl)-2px)] text-xs font-semibold transition-colors ${view === v ? 'bg-panel text-fg shadow-xs' : 'text-muted hover:text-fg'}`}
-            >
-              {v === 'month' ? t('timeline.viewMonth') : t('timeline.viewRooms')}
-            </button>
-          ))}
-        </div>
+        <BookingsViews slug={params.slug} propertyId={propertyId} current={view} onCalendarView={chooseView} />
         {view === 'month' && (
           <>
             <div className="flex items-center bg-panel border border-line rounded-ctl p-0.5">
@@ -771,87 +670,6 @@ export default function CalendarPage() {
       </div>
 
       <div className="space-y-4">
-        {/* Executive CRM Stat Badges */}
-        <section className={cn('grid grid-cols-1 sm:grid-cols-2 gap-3.5', showRevenue ? 'lg:grid-cols-4' : 'lg:grid-cols-3')}>
-          {/* Card 1: Tổng số phòng */}
-          <div className="bg-panel rounded-xl border border-line p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)] flex items-center justify-between">
-            <div>
-              <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">{t('stats.totalRooms')}</span>
-              <div className="flex items-baseline gap-2 mt-0.5">
-                <span className="text-2xl font-black text-fg">{stats.totalRooms}</span>
-                <span className="text-[11px] text-muted font-medium">{t('stats.physicalRooms')}</span>
-            </div>
-              <div className="text-[11px] text-ok font-semibold mt-0.5 flex items-center gap-1">
-                <PieChart className="w-3 h-3 text-ok" />
-                <span>
-                  {t.rich('stats.monthOccupancy', {
-                    percent: monthOccupancy.toLocaleString(intlLocale, { maximumFractionDigits: 1 }),
-                    b: (c) => <strong className="text-acc">{c}</strong>,
-                  })}
-                </span>
-              </div>
-            </div>
-            <div className="w-10 h-10 rounded-lg bg-info-soft text-info border border-info/30 flex items-center justify-center text-base shrink-0">
-              <DoorOpen className="w-5 h-5" />
-            </div>
-          </div>
-
-          {/* Card 2: Đang lưu trú (In-house) */}
-          <div className="bg-panel rounded-xl border border-line p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)] flex items-center justify-between">
-            <div>
-              <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">{t('stats.inHouse')}</span>
-              <div className="flex items-baseline gap-2 mt-0.5">
-                <span className="text-2xl font-black text-ok">{stats.checkedIn}</span>
-                <span className="text-[11px] text-muted font-medium">{t('stats.ofRooms', { count: stats.totalRooms })}</span>
-            </div>
-              <div className="text-[11px] text-muted font-medium mt-0.5 flex items-center gap-1">
-                <Users className="w-3 h-3 text-ok" />
-                <span>{t('stats.guestsInHouse', { count: stats.guestsInHouse })}</span>
-              </div>
-            </div>
-            <div className="w-10 h-10 rounded-lg bg-ok-soft text-ok border border-ok/30 flex items-center justify-center text-base shrink-0">
-              <Bed className="w-5 h-5" />
-            </div>
-          </div>
-
-          {/* Card 3: Dự kiến đến hôm nay (Check-in) */}
-          <div className="bg-panel rounded-xl border border-line p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)] flex items-center justify-between">
-            <div>
-              <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">{t('stats.arrivingToday')}</span>
-              <div className="flex items-baseline gap-2 mt-0.5">
-                <span className="text-2xl font-black text-warn">{todayCheckIns.length}</span>
-                <span className="text-[11px] text-warn bg-warn-soft px-1.5 py-0.2 rounded font-bold border border-warn/30">{t('stats.checkIns')}</span>
-            </div>
-              <div className="text-[11px] text-warn font-medium mt-0.5 flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                <span>{t('stats.awaitingPayment', { count: todayCheckIns.filter(b => b.status === 'PENDING').length })}</span>
-              </div>
-            </div>
-            <div className="w-10 h-10 rounded-lg bg-warn-soft text-warn border border-warn/30 flex items-center justify-center text-base shrink-0">
-              <Bell className="w-5 h-5" />
-            </div>
-          </div>
-
-          {/* Card 4: Doanh thu dự kiến — owner and managers only, and only when the amounts came. */}
-          {showRevenue && (
-          <div className="bg-panel rounded-xl border border-line p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)] flex items-center justify-between">
-            <div>
-              <span className="text-[11px] font-semibold text-muted uppercase tracking-wider">{t('stats.expectedRevenue', { month: currentDate.getMonth() + 1 })}</span>
-              <div className="flex items-baseline gap-2 mt-0.5">
-                <span className="text-2xl font-black text-fg">{t('stats.millions', { amount: (stats.revenue / 1_000_000).toLocaleString(intlLocale, { maximumFractionDigits: 1 }) })}</span>
-            </div>
-              <div className="text-[11px] text-muted font-medium mt-0.5 flex items-center gap-1">
-                <CheckCircle className="w-3 h-3 text-acc" />
-                <span>{t('stats.confirmed', { count: stats.activeBookings - stats.pending })}</span>
-      </div>
-            </div>
-            <div className="w-10 h-10 rounded-lg bg-refund-soft text-refund border border-refund/30 flex items-center justify-center text-base shrink-0">
-              <Receipt className="w-5 h-5" />
-            </div>
-          </div>
-          )}
-        </section>
-
         {view === 'rooms' && propertyId && (
           <RoomTimeline
             propertyId={propertyId}
@@ -866,11 +684,9 @@ export default function CalendarPage() {
           />
         )}
 
-        {/* Balanced 2-Column CRM Workspace */}
+        {/* The month grid, the whole width (the day's figures are on the overview). */}
         {view === 'month' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-          {/* LEFT: Interactive CRM Room Calendar Grid */}
-          <section className="lg:col-span-8 xl:col-span-8 2xl:col-span-9 bg-panel rounded-xl border border-line shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)] flex flex-col overflow-hidden">
+          <section className="bg-panel rounded-xl border border-line shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)] flex flex-col overflow-hidden">
             {/* Calendar Matrix Header Bar */}
             <div className="px-4 py-2.5 bg-panel border-b border-line flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -1023,130 +839,6 @@ export default function CalendarPage() {
               </>
             )}
           </section>
-
-          {/* RIGHT: CRM Activity & Room Inventory Panel */}
-          <aside className="lg:col-span-4 xl:col-span-4 2xl:col-span-3 space-y-3.5">
-            {/* SECTION 1: Trạng thái buồng phòng theo hạng */}
-            <div className="bg-panel rounded-xl border border-line p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)]">
-              <div className="flex items-center justify-between pb-2.5 border-b border-line">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-md bg-acc-soft text-acc flex items-center justify-center text-xs">
-                    <BedDouble className="w-3 h-3" />
-                  </div>
-                  <h2 className="font-bold text-xs text-fg">{t('roomTypes.title')}</h2>
-                </div>
-                <span className="text-[11px] font-semibold text-muted">{t('roomTypes.summary', { count: totalRooms })}</span>
-              </div>
-
-              <div className="divide-y divide-line text-xs">
-                {roomTypes.length === 0 ? (
-                  <p className="py-4 text-center text-muted text-xs">{t('roomTypes.empty')}</p>
-                ) : (
-                  roomTypes.map((rt) => {
-                    const occupied = Math.min(rt.totalRooms, occupancyToday.get(rt.id) ?? 0)
-                    const empty = rt.totalRooms - occupied
-                    const percent = rt.totalRooms > 0 ? Math.round((occupied / rt.totalRooms) * 100) : 0
-                    return (
-                      <div key={rt.id} className="py-2.5">
-                          <div className="flex items-center justify-between">
-                            <div>
-                            <h3 className="font-bold text-fg">{rt.name}</h3>
-                            <p className="text-[11px] text-muted">
-                              {t('roomTypes.rooms', { count: rt.totalRooms })}
-                            </p>
-                            </div>
-                          <div className="text-right">
-                            <span className={`inline-block px-1.5 py-0.5 rounded font-bold text-[11px] border ${
-                              empty === 0 ? 'bg-err-soft text-err border-err/30' :
-                              empty <= 3 ? 'bg-warn-soft text-warn border-warn/30' :
-                              'bg-ok-soft text-ok border-ok/30'
-                            }`}>
-                              {t('roomTypes.free', { count: empty })}
-                            </span>
-                            <div className="text-[10px] text-muted mt-0.5">{t('roomTypes.full', { percent })}</div>
-                          </div>
-                        </div>
-                        <div className="w-full bg-fg/5 h-1.5 rounded-full mt-1.5 overflow-hidden">
-                          <div 
-                            className={`h-full rounded-full ${
-                              percent >= 90 ? 'bg-err' :
-                              percent >= 70 ? 'bg-warn' :
-                              'bg-ok'
-                            }`}
-                            style={{ width: `${percent}%` }}
-                          />
-                        </div>
-                      </div>
-                    )
-                  })
-                )}
-              </div>
-            </div>
-
-            {/* SECTION 2: Khách Check-in / Check-out trong ngày */}
-            <div className="bg-panel rounded-xl border border-line p-3.5 shadow-[0_2px_8px_-1px_rgba(36,26,24,0.04),0_1px_4px_-1px_rgba(36,26,24,0.02)]">
-              <div className="flex items-center justify-between pb-2.5 border-b border-line">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-md bg-info-soft text-info flex items-center justify-center text-xs">
-                    <ListChecks className="w-3 h-3" />
-                  </div>
-                  <h2 className="font-bold text-xs text-fg">{t('today.title')}</h2>
-                </div>
-                <Link
-                  href={routes.propertyBookings(params.slug, params.id)}
-                  className="text-[11px] text-acc font-semibold hover:underline"
-                >
-                  {t('today.viewAll', { count: todayCheckIns.length + todayCheckOuts.length })}
-                </Link>
-              </div>
-
-              <div className="space-y-2 mt-2.5">
-                {/* Check-ins */}
-                {todayCheckIns.length === 0 ? (
-                  <div className="text-center py-4 text-muted text-xs">{t('today.noArrivals')}</div>
-                ) : (
-                  todayCheckIns.slice(0, 3).map((b) => (
-                    <div key={`in-${b.id}`} className="p-2.5 rounded-lg border border-line bg-page/60 hover:bg-panel hover:border-acc/40 transition-all">
-                      {/* The badge drops under the name when the card is narrow (the aside at lg): it is nowrap,
-                          and next to a long name or booking code it ran past the page edge at 1024px. */}
-                      <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
-                        <div className="min-w-0 flex-[1_1_8rem]">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="font-bold text-fg text-xs break-words">{b.guestName}</span>
-                            <span className="text-[9px] bg-ok-soft text-ok border border-ok/30 px-1 rounded font-bold">{t('checkIn')}</span>
-                          </div>
-                          <p className="text-[11px] text-muted mt-0.5">
-                            {t('today.roomLine', { room: roomOn(b, today) || '---', code: b.bookingCode })}
-                          </p>
-                        </div>
-                        <PaymentStatusBadge status={b.paymentStatus} className="shrink-0" />
-                      </div>
-                    </div>
-                  ))
-                )}
-
-                {/* Check-outs */}
-                {todayCheckOuts.length > 0 && todayCheckOuts.slice(0, 2).map((b) => (
-                  <div key={`out-${b.id}`} className="p-2.5 rounded-lg border border-line bg-page/60 hover:bg-panel hover:border-acc/40 transition-all">
-                    <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
-                      <div className="min-w-0 flex-[1_1_8rem]">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="font-bold text-fg text-xs break-words">{b.guestName}</span>
-                          <span className="text-[9px] bg-warn-soft text-warn border border-warn/30 px-1 rounded font-bold">{t('checkOut')}</span>
-                        </div>
-                        <p className="text-[11px] text-muted mt-0.5">
-                          {t('today.roomLine', { room: roomOn(b, today) || '---', code: b.bookingCode })}
-                        </p>
-                      </div>
-                      <PaymentStatusBadge status={b.paymentStatus} className="shrink-0" />
-                    </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-          </aside>
-        </div>
         )}
       </div>
 
