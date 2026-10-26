@@ -33,7 +33,16 @@ export async function handleMatbaoWebhook(
     select: { webhookToken: true },
   })
   if (!config?.webhookToken) return { status: 404, outcome: 'not_connected' }
-  if (!sameSecret(token, decryptSecret(config.webhookToken, webhookTokenCtx(propertyId)))) {
+  // A token saved under keys this server no longer has (DATA_ENCRYPTION_KEYS changed) cannot match
+  // anything: answer like a wrong token instead of a 500 that makes Mắt Bão retry for nothing. Saving
+  // the account again makes a new token (api/properties/[id]/einvoice).
+  let saved: string | null = null
+  try {
+    saved = decryptSecret(config.webhookToken, webhookTokenCtx(propertyId))
+  } catch {
+    saved = null
+  }
+  if (saved === null || !sameSecret(token, saved)) {
     return { status: 401, outcome: 'bad_token' }
   }
 
