@@ -148,10 +148,17 @@ model Workspace {
   // Digistay plan (src/lib/billing)
   subscription         Subscription?
   subscriptionPayments SubscriptionPayment[]
+
+  /// Deleted by its owner (src/lib/deletion): hidden everywhere at once,
+  /// restorable for 30 days, then the purge job removes it for good.
+  deletedAt   DateTime?
+  /// Who deleted it (a user id, no foreign key, like activity_logs.userId).
+  deletedById String?
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  @@index([deletedAt])
   @@map("workspaces")
 }
 
@@ -338,10 +345,18 @@ model Property {
   menuItems       MenuItem[]
   dailyRevenues   DailyRevenue[]
   policy      Policy?
+
+  /// Deleted by the workspace owner (src/lib/deletion): hidden everywhere at
+  /// once, restorable for 30 days, then the purge job removes it for good.
+  /// Its subdomain and custom domain stay taken until then.
+  deletedAt   DateTime?
+  /// Who deleted it (a user id, no foreign key, like activity_logs.userId).
+  deletedById String?
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  @@index([deletedAt])
   @@map("properties")
 }
 

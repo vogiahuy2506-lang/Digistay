@@ -1,7 +1,9 @@
 import { PrismaClient } from '@prisma/client'
+import { hideDeleted } from './soft-delete'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
+  prismaWithDeleted: PrismaClient | undefined
 }
 
 // Ensure the pooled URL has the params Neon pooler requires
@@ -34,9 +36,23 @@ function createPrismaClient() {
   })
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient()
+/**
+ * Sees soft-deleted properties and workspaces (src/lib/db/soft-delete.ts):
+ * only for the deletion code itself and the checks that a subdomain, slug or
+ * custom domain is free (they stay taken for the 30 days a restore is possible).
+ */
+export const prismaWithDeleted = globalForPrisma.prismaWithDeleted ?? createPrismaClient()
+
+/**
+ * The app's client: reads never see soft-deleted properties and workspaces, nor
+ * what belongs to them. The extension only rewrites query arguments, so the
+ * client keeps PrismaClient's type (and the extended one is what runs in
+ * $transaction callbacks too).
+ */
+export const prisma = globalForPrisma.prisma ?? (prismaWithDeleted.$extends(hideDeleted) as unknown as PrismaClient)
 
 if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prismaWithDeleted = prismaWithDeleted
   globalForPrisma.prisma = prisma
 }
 
@@ -48,7 +64,7 @@ if (process.env.NODE_ENV !== 'production') {
     try {
       // eslint-disable-next-line no-console
       console.log(`[prisma] received ${signal}, disconnecting...`)
-      await prisma.$disconnect()
+      await prismaWithDeleted.$disconnect()
     } catch {
       // ignore
     }
