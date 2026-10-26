@@ -11,12 +11,6 @@
     "upload": "Tải logo lên"
   },
   "defaultCurrency": "Tiền tệ mặc định",
-  "currencies": {
-    "VND": "VND (₫) - Đồng Việt Nam",
-    "USD": "USD ($) - US Dollar",
-    "EUR": "EUR (€) - Euro",
-    "SGD": "SGD ($) - Singapore Dollar"
-  },
   "descriptionOptional": "Mô tả (tùy chọn)",
   "propertyStatus": {
     "active": "Hoạt động",
@@ -160,7 +154,7 @@
   },
   "settings": {
     "back": "Quay lại workspace",
-    "title": "Thông tin cơ sở",
+    "title": "Cài đặt workspace",
     "description": "Cấu hình chung của {name}: tên, logo, tiền tệ và múi giờ vận hành.",
     "saved": "Lưu cài đặt thành công!",
     "saveFailed": "Lỗi khi lưu",
@@ -178,21 +172,8 @@
       "namePlaceholder": "VD: Khách sạn ABC",
       "description": "Mô tả",
       "descriptionPlaceholder": "Mô tả ngắn về workspace...",
-      "domain": "Tên miền tùy chỉnh",
-      "domainPlaceholder": "VD: khachsanabc.com",
-      "domainHint": "Liên kết workspace với tên miền riêng",
       "regional": "Cài đặt khu vực",
-      "timezone": "Múi giờ",
-      "businessType": "Loại hình kinh doanh",
-      "businessTypes": {
-        "HOTEL": "Khách sạn (Hotel)",
-        "RESORT": "Resort / Khu nghỉ dưỡng",
-        "HOMESTAY": "Homestay / Căn hộ dịch vụ",
-        "BOUTIQUE": "Boutique Hotel",
-        "VILLA": "Villa / Biệt thự",
-        "MOTEL": "Motel",
-        "HOSTEL": "Hostel / Backpacker"
-      }
+      "timezone": "Múi giờ"
     },
     "notifications": {
       "title": "Cài đặt thông báo",

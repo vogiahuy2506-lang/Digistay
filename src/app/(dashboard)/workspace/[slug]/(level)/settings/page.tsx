@@ -5,10 +5,10 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { TitleBlock } from '@/components/layout'
-import { Card, CardHeader, CardTitle, CardContent, Button, Input, Loading, Select, Textarea, Badge } from '@/components/ui'
+import { Card, CardHeader, CardTitle, CardContent, Button, Input, Loading, Select, Textarea } from '@/components/ui'
 import {
-  Settings, Building2, Globe, Bell, Shield, Users,
-  Mail, Clock, DollarSign, Save, ArrowLeft, Upload
+  Settings, Building2, Bell, Shield, Users,
+  Mail, DollarSign, Save, Upload
 } from 'lucide-react'
 import { useWorkspace } from '@/lib/hooks/use-workspace'
 import { cn } from '@/lib/utils'
@@ -16,6 +16,8 @@ import { routes } from '@/lib/utils/routes'
 import Image from 'next/image'
 import { uploadPhoto } from '@/lib/media/upload-client'
 import { useUploadProblemText } from '@/components/ui/photo-upload'
+import { apiError } from '@/lib/i18n/api-errors'
+import { BUSINESS_TYPES, CURRENCIES, TIMEZONES, type BusinessType, workspaceSettingsOf } from '@/app/(dashboard)/workspaces/options'
 
 interface WorkspaceSettings {
   id: string
@@ -45,26 +47,16 @@ interface WorkspaceSettings {
   }
 }
 
-// Option labels come from the messages: dash.workspace.currencies.<value> and
-// dash.workspace.settings.general.businessTypes.<value>.
-const CURRENCIES = ['VND', 'USD', 'EUR', 'SGD'] as const
-
-const timezones = [
-  { value: 'Asia/Ho_Chi_Minh', label: 'Asia/Ho_Chi_Minh (GMT+7)' },
-  { value: 'Asia/Bangkok', label: 'Asia/Bangkok (GMT+7)' },
-  { value: 'Asia/Singapore', label: 'Asia/Singapore (GMT+8)' },
-  { value: 'UTC', label: 'UTC (GMT+0)' },
-]
-
-const BUSINESS_TYPES = ['HOTEL', 'RESORT', 'HOMESTAY', 'BOUTIQUE', 'VILLA', 'MOTEL', 'HOSTEL'] as const
-
 export default function WorkspaceSettingsPage() {
   const t = useTranslations('dash.workspace')
   const uploadProblem = useUploadProblemText()
   const tc = useTranslations('dash.common')
   const router = useRouter()
-  const currencies = CURRENCIES.map((value) => ({ value, label: t(`currencies.${value}`) }))
-  const businessTypes = BUSINESS_TYPES.map((value) => ({ value, label: t(`settings.general.businessTypes.${value}`) }))
+  // The same lists and labels as the create dialog on /workspaces (messages workspaces.form.*).
+  const tw = useTranslations('workspaces')
+  const currencies = CURRENCIES.map((value) => ({ value, label: tw(`form.currencies.${value}`) }))
+  const timezones = TIMEZONES.map(({ value, key }) => ({ value, label: tw(`form.timezones.${key}`) }))
+  const businessTypes = BUSINESS_TYPES.map((value) => ({ value, label: tw(`form.businessTypes.${value}`) }))
   const { workspace, loading: wsLoading } = useWorkspace()
   const [settings, setSettings] = React.useState<WorkspaceSettings | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
@@ -77,10 +69,7 @@ export default function WorkspaceSettingsPage() {
     name: '',
     description: '',
     logo: null as string | null,
-    domain: '',
-    currency: 'VND',
-    timezone: 'Asia/Ho_Chi_Minh',
-    businessType: 'HOTEL',
+    ...workspaceSettingsOf(null),
   })
 
   React.useEffect(() => {
@@ -102,10 +91,7 @@ export default function WorkspaceSettingsPage() {
           name: ws.name,
           description: ws.description || '',
           logo: ws.logo || null,
-          domain: ws.domain || '',
-          currency: ws.settings?.currency || 'VND',
-          timezone: ws.settings?.timezone || 'Asia/Ho_Chi_Minh',
-          businessType: ws.settings?.businessType || 'HOTEL',
+          ...workspaceSettingsOf(ws.settings),
         })
       }
     } catch (err) {
@@ -122,37 +108,24 @@ export default function WorkspaceSettingsPage() {
     setSuccess('')
 
     try {
-      // First update basic info
-      const basicRes = await fetch(`/api/workspaces/${workspace.id}`, {
+      // One request: the name and logo, and the regional settings (kept in the
+      // workspace's settings JSON). No logo is null.
+      const res = await fetch(`/api/workspaces/${workspace.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: formData.name,
+          name: formData.name.trim(),
           description: formData.description,
           logo: formData.logo,
-          domain: formData.domain || null,
-        }),
-      })
-
-      if (!basicRes.ok) {
-        const basicData = await basicRes.json()
-        throw new Error(basicData.error || t('settings.saveFailed'))
-      }
-
-      // Then update settings
-      const settingsRes = await fetch(`/api/workspaces/${workspace.id}/settings`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
           currency: formData.currency,
           timezone: formData.timezone,
           businessType: formData.businessType,
         }),
       })
 
-      if (!settingsRes.ok) {
-        const settingsData = await settingsRes.json()
-        console.warn('Settings save partial failure:', settingsData.error)
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(apiError(data.error) || t('settings.saveFailed'))
       }
 
       setSuccess(t('settings.saved'))
@@ -222,18 +195,18 @@ export default function WorkspaceSettingsPage() {
 
       {/* Success/Error Messages */}
       {success && (
-        <div className="mb-4 p-3 rounded-lg bg-ok-soft border border-ok/30 text-ok text-sm">
+        <div role="status" className="mt-6 p-3 rounded-lg bg-ok-soft border border-ok/30 text-ok text-sm">
           {success}
         </div>
       )}
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-err-soft border border-err/30 text-err text-sm">
+        <div role="alert" className="mt-6 p-3 rounded-lg bg-err-soft border border-err/30 text-err text-sm">
           {error}
         </div>
       )}
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 mb-6 bg-fg/5 p-1 rounded-lg w-fit">
+      <div className="flex items-center gap-2 mt-8 mb-6 bg-fg/5 p-1 rounded-lg w-fit max-w-full overflow-x-auto">
         <button
           onClick={() => setActiveTab('general')}
           className={`px-4 py-2 rounded-md text-sm font-medium transition ${
@@ -332,14 +305,6 @@ export default function WorkspaceSettingsPage() {
                 placeholder={t('settings.general.descriptionPlaceholder')}
                 rows={3}
               />
-
-              <Input
-                label={t('settings.general.domain')}
-                value={formData.domain}
-                onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
-                placeholder={t('settings.general.domainPlaceholder')}
-                hint={t('settings.general.domainHint')}
-              />
             </CardContent>
           </Card>
 
@@ -366,10 +331,10 @@ export default function WorkspaceSettingsPage() {
               </div>
 
               <Select
-                label={t('settings.general.businessType')}
+                label={tw('form.businessType')}
                 options={businessTypes}
                 value={formData.businessType}
-                onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, businessType: e.target.value as BusinessType })}
               />
             </CardContent>
           </Card>

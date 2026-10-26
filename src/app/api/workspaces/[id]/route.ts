@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { updateWorkspaceSchema } from '@/lib/validations'
+import { updateWorkspaceSchema, validationMessage } from '@/lib/validations'
 import { lockedResponse } from '@/lib/billing/guard'
 
 // Helper function to check workspace access
@@ -149,12 +150,26 @@ export async function PATCH(
     const validation = updateWorkspaceSchema.safeParse(body)
     if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: validation.error.errors[0].message },
+        { success: false, error: validationMessage(validation.error) },
         { status: 400 }
       )
     }
 
-    const { name, description, domain, logo } = validation.data
+    const { name, description, domain, logo, businessType, currency, timezone } = validation.data
+
+    // Business type, currency and timezone live in the settings JSON (as POST
+    // /api/workspaces stores them); the other keys there are kept.
+    const settingsChange = Object.fromEntries(
+      Object.entries({ businessType, currency, timezone }).filter(([, value]) => value)
+    )
+    let settings: Prisma.InputJsonObject | undefined
+    if (Object.keys(settingsChange).length > 0) {
+      const current = await prisma.workspace.findUnique({ where: { id }, select: { settings: true } })
+      const saved = current?.settings && typeof current.settings === 'object' && !Array.isArray(current.settings)
+        ? (current.settings as Prisma.InputJsonObject)
+        : {}
+      settings = { ...saved, ...settingsChange }
+    }
 
     const workspace = await prisma.workspace.update({
       where: { id },
@@ -162,7 +177,8 @@ export async function PATCH(
         ...(name && { name }),
         ...(description !== undefined && { description }),
         ...(domain !== undefined && { domain: domain || null }),
-        ...(logo !== undefined && { logo }),
+        ...(logo !== undefined && { logo: logo || null }),
+        ...(settings && { settings }),
       },
       include: {
         owner: {
