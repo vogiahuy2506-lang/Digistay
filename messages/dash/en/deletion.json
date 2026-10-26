@@ -1,5 +1,6 @@
 {
-  "zone": "Danger zone",
+  "zoneProperty": "Delete property",
+  "zoneWorkspace": "Delete workspace",
   "typeName": "Type <b>{name}</b> to confirm",
   "nameLabel": "Name to confirm",
   "nameMismatch": "The name does not match: type it exactly, with its accents.",

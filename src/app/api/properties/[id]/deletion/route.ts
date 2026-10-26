@@ -6,7 +6,7 @@ import { RESTORE_DAYS } from '@/lib/deletion/rules'
 
 /**
  * GET /api/properties/[id]/deletion — what deleting the property involves,
- * for the owner's confirm dialog (the "Vùng nguy hiểm" card shows only when
+ * for the owner's confirm dialog (the "Xoá cơ sở" card shows only when
  * this answers): the name to type, the guests booked (who stop it), the
  * e-invoices issued (to download before the purge) and the days to restore.
  */

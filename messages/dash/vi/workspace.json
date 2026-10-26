@@ -191,7 +191,6 @@
       "title": "Thông tin bảo mật",
       "owner": "Chủ sở hữu Workspace",
       "propertyCount": "{count} cơ sở",
-      "dangerZone": "Vùng nguy hiểm",
       "delete": "Xóa Workspace",
       "deleteText": "Khi xóa workspace, toàn bộ dữ liệu bao gồm cơ sở, đặt phòng, và thành viên sẽ bị xóa vĩnh viễn.",
       "confirmDelete": "Bạn có chắc chắn muốn xóa workspace này? Hành động này không thể hoàn tác.",

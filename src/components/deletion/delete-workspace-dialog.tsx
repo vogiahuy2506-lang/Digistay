@@ -146,7 +146,7 @@ export function DeleteWorkspaceDialog({
 }
 
 /**
- * "Vùng nguy hiểm" in the workspace's settings: the owner deletes the
+ * "Xoá workspace" in the workspace's settings: the owner deletes the
  * workspace, then lands on /workspaces where it waits under "Đã xoá gần đây".
  * An admin who is not the owner is told only the owner can.
  */
@@ -175,7 +175,7 @@ export function DeleteWorkspaceZone({ workspaceId, workspaceName }: { workspaceI
       <div data-testid="workspace-danger-zone">
         <Card className="border-err/30">
           <CardHeader>
-            <CardTitle className="text-err">{t('zone')}</CardTitle>
+            <CardTitle className="text-err">{t('zoneWorkspace')}</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <p className="text-small text-muted max-w-xl">{owner ? t('workspace.zoneText') : t('workspace.ownerOnly')}</p>

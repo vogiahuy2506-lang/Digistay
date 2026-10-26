@@ -191,7 +191,6 @@
       "title": "Security information",
       "owner": "Workspace owner",
       "propertyCount": "{count, plural, one {# property} other {# properties}}",
-      "dangerZone": "Danger zone",
       "delete": "Delete workspace",
       "deleteText": "Deleting the workspace permanently deletes all its data, including properties, bookings and members.",
       "confirmDelete": "Are you sure you want to delete this workspace? This cannot be undone.",

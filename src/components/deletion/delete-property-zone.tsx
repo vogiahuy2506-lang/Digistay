@@ -19,7 +19,7 @@ interface PropertyDeletionInfo {
 }
 
 /**
- * "Vùng nguy hiểm" on the property's page: deleting it (src/lib/deletion).
+ * "Xoá cơ sở" on the property's page: deleting it (src/lib/deletion).
  * For the workspace's owner only: the card shows when the deletion details
  * answer, which they do for the owner alone. Then the workspace home, where
  * the property waits under "Đã xoá gần đây".
@@ -97,7 +97,7 @@ export function DeletePropertyZone({ propertyId, slug }: { propertyId: string; s
       <div className="mt-6" data-testid="property-danger-zone">
         <Card className="border-err/30">
           <CardHeader>
-            <CardTitle className="text-err">{t('zone')}</CardTitle>
+            <CardTitle className="text-err">{t('zoneProperty')}</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <p className="text-small text-muted max-w-xl">{t('property.zoneText')}</p>

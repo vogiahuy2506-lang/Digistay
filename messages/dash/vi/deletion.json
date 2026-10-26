@@ -1,5 +1,6 @@
 {
-  "zone": "Vùng nguy hiểm",
+  "zoneProperty": "Xoá cơ sở",
+  "zoneWorkspace": "Xoá workspace",
   "typeName": "Gõ <b>{name}</b> để xác nhận",
   "nameLabel": "Tên để xác nhận",
   "nameMismatch": "Tên chưa khớp: gõ đúng tên, có dấu.",
