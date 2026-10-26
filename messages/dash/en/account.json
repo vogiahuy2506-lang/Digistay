@@ -191,7 +191,8 @@
         "emailOutbox": "Email queue",
         "opsAlerts": "Ops alerts",
         "backup": "Database backup",
-        "subscriptionJobs": "Plans: reminders & invoices"
+        "subscriptionJobs": "Plans: reminders & invoices",
+        "purgeDeleted": "Purge items deleted over 30 days ago"
       }
     },
     "queues": {

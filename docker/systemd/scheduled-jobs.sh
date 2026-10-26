@@ -6,6 +6,7 @@
 #     what is over the plan (grace, then locking the excess; unlocking)
 #   - einvoice-jobs: auto-issue, uncertain publishes, invoice emails
 #   - email-outbox: booking and invitation emails not sent yet
+#   - purge-deleted: properties and workspaces deleted more than 30 days ago
 #   - ops-alerts: emails the people running Digistay about failed jobs,
 #     late backups, stuck invoices, PayOS flags (last: it reads the others)
 # Each is a POST to /api/internal/<job> from inside the app container, where
@@ -15,7 +16,7 @@ set -u
 APP_CONTAINER="${APP_CONTAINER:-digistay-app}"
 
 rc=0
-for job in payos-reconcile subscription-jobs einvoice-jobs email-outbox ops-alerts; do
+for job in payos-reconcile subscription-jobs einvoice-jobs email-outbox purge-deleted ops-alerts; do
   # Single quotes: $CRON_SECRET is expanded by the container's shell.
   if docker exec -e "JOB=$job" "$APP_CONTAINER" sh -c \
     'wget -q -O- --header "x-cron-secret: $CRON_SECRET" --post-data "" "http://127.0.0.1:3000/api/internal/$JOB"'; then

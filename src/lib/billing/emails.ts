@@ -5,7 +5,7 @@
  * (src/lib/email/i18n.ts).
  */
 import type { Prisma } from '@prisma/client'
-import { prisma } from '@/lib/db'
+import { prisma, prismaWithDeleted } from '@/lib/db'
 import { queueEmail } from '@/lib/email/outbox'
 import { formatVnd } from '@/lib/bookings/display'
 import { planById } from '@/lib/marketing/plans'
@@ -23,7 +23,9 @@ export function vnDate(d: Date): string {
 const billingUrl = (slug: string) => `${appOrigin()}/workspace/${slug}/billing`
 
 async function recipients(workspaceId: string, extraUserId: string | null, db: Db) {
-  const workspace = await db.workspace.findUniqueOrThrow({
+  // Read outside `db` with the plain client: a deleted workspace (src/lib/deletion,
+  // hidden from `prisma`) still gets the receipt of money that reached Digistay.
+  const workspace = await prismaWithDeleted.workspace.findUniqueOrThrow({
     where: { id: workspaceId },
     select: { name: true, slug: true, owner: { select: { id: true, email: true, name: true } } },
   })

@@ -1,14 +1,16 @@
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { Lock } from 'lucide-react'
 import { prisma } from '@/lib/db'
 import { routes } from '@/lib/utils/routes'
 
 /**
- * Every page of one property: a property locked because the workspace is
- * over its plan (src/lib/billing/overage.ts) says so on top. The parent
- * layout has already checked the caller belongs to the workspace; the
- * property is looked up within it.
+ * Every page of one property: a property that is not in this workspace, or
+ * was deleted (src/lib/deletion; `prisma` does not see it), is not found,
+ * rather than each page failing on its own requests; one locked because the
+ * workspace is over its plan (src/lib/billing/overage.ts) says so on top.
+ * The parent layout has already checked the caller belongs to the workspace.
  */
 export default async function PropertyLayout({
   children,
@@ -19,7 +21,8 @@ export default async function PropertyLayout({
 }) {
   const { slug, id } = await params
   const property = await prisma.property.findFirst({ where: { id, workspace: { slug } }, select: { planLockedAt: true } })
-  if (!property?.planLockedAt) return children
+  if (!property) notFound()
+  if (!property.planLockedAt) return children
   const t = await getTranslations('dash.billing')
   return (
     <>

@@ -4,11 +4,11 @@
  * email queues, and the latest plan e-invoices (src/lib/billing/einvoice.ts)
  * with what can be done about them.
  */
-import { prisma } from '@/lib/db'
+import { prisma, prismaWithDeleted } from '@/lib/db'
 import { missingMigrations, redisState } from './health-checks'
 import { alertRecipients, findProblems } from './alerts'
 
-export const SYSTEM_JOBS = ['payos-reconcile', 'subscription-jobs', 'einvoice-jobs', 'email-outbox', 'ops-alerts', 'backup'] as const
+export const SYSTEM_JOBS = ['payos-reconcile', 'subscription-jobs', 'einvoice-jobs', 'email-outbox', 'purge-deleted', 'ops-alerts', 'backup'] as const
 const DAY = 24 * 60 * 60 * 1000
 
 /** Users whose platform role allows the system page (read from the DB, not the token). */
@@ -52,7 +52,8 @@ export async function systemStatus(now = new Date()) {
     prisma.emailOutbox.groupBy({ by: ['status'], _count: { _all: true } }),
     prisma.invoice.groupBy({ by: ['emailStatus'], where: { emailStatus: { not: null } }, _count: { _all: true } }),
     prisma.jobRun.findMany({ orderBy: { startedAt: 'desc' }, take: 30 }),
-    prisma.subscriptionInvoice.findMany({
+    // With deleted workspaces: their plan invoices still matter.
+    prismaWithDeleted.subscriptionInvoice.findMany({
       orderBy: { createdAt: 'desc' },
       take: 20,
       include: { payment: { select: { orderCode: true, plan: true, billing: true, workspace: { select: { name: true } } } } },

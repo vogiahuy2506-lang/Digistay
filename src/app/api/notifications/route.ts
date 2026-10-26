@@ -1,11 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { prisma } from '@/lib/db'
+import type { Prisma } from '@prisma/client'
+import { prisma, prismaWithDeleted } from '@/lib/db'
 import { auth } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
 const LIMIT = 30
+
+/**
+ * Notices about a deleted property or workspace (src/lib/deletion) leave the
+ * bell with it: they would open a page that is gone. Notices carry ids, not
+ * relations, so the deleted ones are listed (at most 30 days' worth).
+ */
+async function liveNotices(): Promise<Prisma.NotificationWhereInput> {
+  const [properties, workspaces] = await Promise.all([
+    prismaWithDeleted.property.findMany({
+      where: { OR: [{ deletedAt: { not: null } }, { workspace: { deletedAt: { not: null } } }] },
+      select: { id: true },
+    }),
+    prismaWithDeleted.workspace.findMany({ where: { deletedAt: { not: null } }, select: { id: true } }),
+  ])
+  return {
+    AND: [
+      { OR: [{ propertyId: null }, { propertyId: { notIn: properties.map((p) => p.id) } }] },
+      { OR: [{ workspaceId: null }, { workspaceId: { notIn: workspaces.map((w) => w.id) } }] },
+    ],
+  }
+}
 
 /**
  * GET /api/notifications — the signed-in user's bell (src/lib/notifications.ts):
@@ -17,14 +39,15 @@ export async function GET() {
     return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
   }
   const userId = session.user.id
+  const live = await liveNotices()
   const [items, unread] = await Promise.all([
     prisma.notification.findMany({
-      where: { userId },
+      where: { userId, ...live },
       orderBy: { createdAt: 'desc' },
       take: LIMIT,
       select: { id: true, type: true, data: true, link: true, readAt: true, createdAt: true },
     }),
-    prisma.notification.count({ where: { userId, readAt: null } }),
+    prisma.notification.count({ where: { userId, readAt: null, ...live } }),
   ])
   return NextResponse.json({ success: true, data: { items, unread } }, { headers: { 'Cache-Control': 'no-store' } })
 }

@@ -23,7 +23,7 @@ import { timingSafeEqual } from 'crypto'
 import { after } from 'next/server'
 import { z } from 'zod'
 import type { Prisma, SubscriptionInvoice, SubscriptionPayment } from '@prisma/client'
-import { prisma } from '@/lib/db'
+import { prisma, prismaWithDeleted } from '@/lib/db'
 import { sendRendered } from '@/lib/email'
 import { MatbaoClient, MatbaoError, type MatbaoEnvironment } from '@/lib/einvoice/matbao-client'
 import { formatNLap } from '@/lib/einvoice/matbao'
@@ -175,7 +175,8 @@ async function payerEmail(payment: Pick<SubscriptionPayment, 'workspaceId' | 'cr
     ? await db.user.findUnique({ where: { id: payment.createdById }, select: { email: true } })
     : null
   if (payer?.email) return payer.email
-  const { owner } = await db.workspace.findUniqueOrThrow({ where: { id: payment.workspaceId }, select: { owner: { select: { email: true } } } })
+  // The plain client: a deleted workspace (src/lib/deletion) still gets its invoice.
+  const { owner } = await prismaWithDeleted.workspace.findUniqueOrThrow({ where: { id: payment.workspaceId }, select: { owner: { select: { email: true } } } })
   return owner.email
 }
 
@@ -365,7 +366,8 @@ export async function sendSubscriptionInvoiceEmail(id: string, now = new Date(),
   })
   if (claimed.count === 0) return { outcome: 'not-due' as const }
 
-  const invoice = await prisma.subscriptionInvoice.findUniqueOrThrow({
+  // The plain client: a deleted workspace's invoice is still sent (the money came).
+  const invoice = await prismaWithDeleted.subscriptionInvoice.findUniqueOrThrow({
     where: { id },
     include: { payment: { include: { workspace: { select: { name: true, slug: true } } } } },
   })

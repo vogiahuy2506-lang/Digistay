@@ -15,7 +15,7 @@
  * here runs. An outside uptime check of /api/health covers the app.
  */
 import { createHash } from 'crypto'
-import { prisma } from '@/lib/db'
+import { prisma, prismaWithDeleted } from '@/lib/db'
 import { sendOpsAlertEmail } from '@/lib/email'
 
 export type Severity = 'critical' | 'warning'
@@ -34,7 +34,7 @@ const HOUR = 60 * 60 * 1000
 const REPEAT_MS: Record<Severity, number> = { critical: 6 * HOUR, warning: 24 * HOUR }
 const MAX_LINES = 10
 /** The jobs whose failures are alerted; ops-alerts itself is not (it would be the one telling). */
-export const WATCHED_JOBS = ['payos-reconcile', 'subscription-jobs', 'einvoice-jobs', 'email-outbox', 'backup'] as const
+export const WATCHED_JOBS = ['payos-reconcile', 'subscription-jobs', 'einvoice-jobs', 'email-outbox', 'purge-deleted', 'backup'] as const
 /** A RUNNING row this old means the process died mid-run. */
 const STUCK_RUN_MS = HOUR
 /** The daily backup timer runs once a day; a day and a bit without a good one is late. */
@@ -150,7 +150,8 @@ async function einvoiceEmailGaveUp(now: Date): Promise<Finding[]> {
 
 /** Plan e-invoices (src/lib/billing/einvoice.ts) that will not settle by themselves. */
 async function planInvoiceProblems(now: Date): Promise<Finding[]> {
-  const rows = await prisma.subscriptionInvoice.findMany({
+  // With deleted workspaces: their plan invoices still matter.
+  const rows = await prismaWithDeleted.subscriptionInvoice.findMany({
     where: {
       OR: [
         // Refused by Mắt Bão, or out of retries: someone must retry it (/admin/system).

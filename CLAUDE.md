@@ -69,6 +69,13 @@ DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54329/digistay_test" npm 
   (server) hoặc `React.use(params)` (client component).
 - Multi-tenant: `Workspace` (chủ `ownerId` + `WorkspaceMember` vai trò ADMIN / MANAGER /
   RECEPTIONIST / USER) → nhiều `Property` (khách sạn) → `Booking`, `Payment`...
+- **Xoá cơ sở / workspace là xoá mềm** (`deletedAt`, khôi phục 30 ngày, rồi job `purge-deleted` xoá
+  hẳn; `src/lib/deletion`). `prisma` (`src/lib/db`) có extension `src/lib/db/soft-delete.ts`: mọi
+  lệnh **đọc** tự bỏ cơ sở / workspace đã xoá và mọi bản ghi thuộc chúng (đơn, thanh toán, hoá đơn,
+  thành viên, lời mời…), kể cả trong bộ lọc quan hệ và danh sách `include`. Không cần tự thêm
+  `deletedAt: null`. Muốn thấy bản ghi đã xoá: đặt `deletedAt` trong `where`, hoặc dùng
+  `prismaWithDeleted` (code xoá / khôi phục, và kiểm tra subdomain, slug, tên miền còn trống: bản ghi
+  đã xoá vẫn giữ chúng tới khi xoá hẳn). Không áp dụng: `Subscription`, `SubscriptionPayment`, SQL thô.
 - `src/middleware.ts` chỉ làm một việc: chuyển `<subdomain>.digistay.vn/...` sang
   `/<subdomain>/...` (site công khai). Nó không đụng tới `/api` và không chặn gì: mỗi route API
   tự kiểm tra đăng nhập, còn `/` là trang giới thiệu.

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { z } from 'zod'
-import { prisma } from '@/lib/db'
+import { prisma, prismaWithDeleted } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { rootDomain } from '@/lib/subdomains'
@@ -79,7 +79,8 @@ export async function POST(request: NextRequest) {
 
     // Held by another site: never moved automatically, even with valid DNS
     // (RUNBOOK "Tên miền riêng"). The records let support check the claim.
-    const taken = await prisma.websiteSettings.findFirst({
+    // A deleted site keeps its domain until it is purged (src/lib/deletion).
+    const taken = await prismaWithDeleted.websiteSettings.findFirst({
       where: { customDomain: host, NOT: { propertyId: property.id } },
       select: { id: true },
     })

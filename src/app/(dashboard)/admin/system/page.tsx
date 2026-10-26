@@ -59,6 +59,7 @@ interface PlanInvoice {
 const JOB_KEYS = {
   'payos-reconcile': 'payosReconcile',
   'subscription-jobs': 'subscriptionJobs',
+  'purge-deleted': 'purgeDeleted',
   'einvoice-jobs': 'einvoiceJobs',
   'email-outbox': 'emailOutbox',
   'ops-alerts': 'opsAlerts',

@@ -14,13 +14,15 @@ import { queueSubscriptionReminder } from './emails'
 import { startScheduledPlan } from './subscription'
 
 export async function runSubscriptionReminders(now = new Date()) {
-  const due = await prisma.subscription.findMany({ where: { nextPlan: { not: null }, periodEnd: { lte: now } }, take: 500 })
+  // Subscriptions are not hidden with a deleted workspace (src/lib/db/soft-delete.ts): skip those here.
+  const live = { workspace: { deletedAt: null } }
+  const due = await prisma.subscription.findMany({ where: { nextPlan: { not: null }, periodEnd: { lte: now }, ...live }, take: 500 })
   for (const sub of due) await startScheduledPlan(sub, prisma, now)
 
   // Ending within 30 days, or ended up to a day after the lock: the only ones with something due.
   const from = new Date(now.getTime() - (GRACE_DAYS + 1) * 86_400_000)
   const to = new Date(now.getTime() + 30 * 86_400_000)
-  const subs = await prisma.subscription.findMany({ where: { periodEnd: { gte: from, lte: to } }, take: 500 })
+  const subs = await prisma.subscription.findMany({ where: { periodEnd: { gte: from, lte: to }, ...live }, take: 500 })
   let sent = 0
   for (const sub of subs) {
     const kind = dueReminder(sub, now)

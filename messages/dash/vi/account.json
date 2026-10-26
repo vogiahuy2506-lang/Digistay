@@ -191,7 +191,8 @@
         "emailOutbox": "Hàng đợi email",
         "opsAlerts": "Cảnh báo vận hành",
         "backup": "Backup database",
-        "subscriptionJobs": "Gói: nhắc hạn & hoá đơn"
+        "subscriptionJobs": "Gói: nhắc hạn & hoá đơn",
+        "purgeDeleted": "Xoá hẳn dữ liệu đã xoá quá 30 ngày"
       }
     },
     "queues": {

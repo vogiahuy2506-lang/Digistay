@@ -18,6 +18,7 @@ import { uploadPhoto } from '@/lib/media/upload-client'
 import { useUploadProblemText } from '@/components/ui/photo-upload'
 import { apiError } from '@/lib/i18n/api-errors'
 import { BUSINESS_TYPES, CURRENCIES, TIMEZONES, type BusinessType, workspaceSettingsOf } from '@/app/(dashboard)/workspaces/options'
+import { DeleteWorkspaceZone } from '@/components/deletion/delete-workspace-dialog'
 
 interface WorkspaceSettings {
   id: string
@@ -447,30 +448,8 @@ export default function WorkspaceSettingsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-err/30">
-            <CardHeader>
-              <CardTitle className="text-err">{t('settings.security.dangerZone')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 bg-err-soft rounded-lg border border-err/30">
-                <p className="font-medium text-err mb-1">{t('settings.security.delete')}</p>
-                <p className="text-sm text-err mb-3">
-                  {t('settings.security.deleteText')}
-                </p>
-                <Button
-                  variant="danger"
-                  onClick={() => {
-                    if (confirm(t('settings.security.confirmDelete'))) {
-                      // TODO: Implement workspace deletion
-                      alert(t('settings.security.comingSoon'))
-                    }
-                  }}
-                >
-                  {t('settings.security.delete')}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Deleting the workspace: its owner only (src/lib/deletion). */}
+          <DeleteWorkspaceZone workspaceId={workspace.id} workspaceName={workspace.name} />
         </div>
       )}
     </>

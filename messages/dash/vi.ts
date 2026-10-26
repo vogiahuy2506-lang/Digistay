@@ -15,6 +15,7 @@ import account from './vi/account.json'
 import ui from './vi/ui.json'
 import menu from './vi/menu.json'
 import billing from './vi/billing.json'
+import deletion from './vi/deletion.json'
 
-const dash = { common, bookings, calendar, property, rooms, menu, money, reports, website, workspace, account, ui, billing }
+const dash = { common, bookings, calendar, property, rooms, menu, money, reports, website, workspace, account, ui, billing, deletion }
 export default dash

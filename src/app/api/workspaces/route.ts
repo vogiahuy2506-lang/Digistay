@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { prisma, prismaWithDeleted } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { createWorkspaceSchema, validationMessage } from '@/lib/validations'
 import { generateSlug } from '@/lib/utils'
@@ -106,8 +106,9 @@ export async function POST(request: NextRequest) {
     let slug = baseSlug
     let counter = 1
     
-    // Check if slug already exists and make it unique
-    while (await prisma.workspace.findUnique({ where: { slug } })) {
+    // Check if slug already exists and make it unique (a deleted workspace
+    // keeps its slug until it is purged, src/lib/deletion)
+    while (await prismaWithDeleted.workspace.findUnique({ where: { slug } })) {
       slug = `${baseSlug}-${counter}`
       counter++
     }

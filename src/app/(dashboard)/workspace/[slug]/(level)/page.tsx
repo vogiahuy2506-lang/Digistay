@@ -12,6 +12,7 @@ import { routes } from '@/lib/utils/routes'
 import { ArrowRight, Building2, Plus, Search, SlidersHorizontal } from 'lucide-react'
 import { apiError } from '@/lib/i18n/api-errors'
 import { addressLocality } from '@/lib/vn-admin/address'
+import { RecentlyDeleted } from '@/components/deletion/recently-deleted'
 
 interface Property {
   id: string
@@ -213,6 +214,9 @@ export default function WorkspaceDashboardPage() {
           ))}
         </ul>
       )}
+
+      {/* Properties deleted in the last 30 days, for the owner (who alone gets the list). */}
+      {role === 'ADMIN' && workspace && <RecentlyDeleted kind="property" workspaceId={workspace.id} slug={slug} />}
     </>
   )
 }
