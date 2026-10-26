@@ -51,7 +51,8 @@ function confirm(id = 'pay-1') {
   return POST(
     new NextRequest(`http://localhost/api/payments/${id}/confirm`, {
       method: 'POST',
-      headers: { 'x-forwarded-for': '203.0.113.7, 10.0.0.1', 'user-agent': 'vitest' },
+      // The first X-Forwarded-For entry is the client's own claim; nginx's x-real-ip is what counts.
+      headers: { 'x-forwarded-for': '198.51.100.66, 10.0.0.1', 'x-real-ip': '203.0.113.7', 'user-agent': 'vitest' },
     }),
     { params: Promise.resolve({ id }) }
   )

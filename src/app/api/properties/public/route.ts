@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { SITE_VISIBILITY_SELECT, siteVisibility } from '@/lib/public-site/visibility'
 import { onlineDepositFrom } from '@/lib/payments/guest-deposit'
+import { DEPOSIT_MODE_SELECT } from '@/lib/payments/deposit-mode'
 
 /**
  * GET /api/properties/public
@@ -61,7 +62,8 @@ export async function GET(request: NextRequest) {
         // The hotel's own terms, shown before the guest books (the page used
         // to print made-up ones), and whether it takes a deposit online.
         policy: { select: { cancellationHours: true, cancellationPolicy: true, childrenAllowed: true, onlineDepositPercent: true, depositDeadlineMinutes: true } },
-        payos: { select: { webhookConfirmedAt: true } },
+        // How the deposit is paid (PayOS or a manual transfer): read to decide, not sent.
+        ...DEPOSIT_MODE_SELECT,
       },
     })
 
@@ -79,6 +81,9 @@ export async function GET(request: NextRequest) {
       workspaceId: undefined,
       websiteSettings: undefined,
       payos: undefined,
+      depositMode: undefined,
+      depositAccountId: undefined,
+      bankAccounts: undefined,
       policy: property.policy && {
         cancellationHours: property.policy.cancellationHours,
         cancellationPolicy: property.policy.cancellationPolicy,

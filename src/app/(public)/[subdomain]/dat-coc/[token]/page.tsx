@@ -21,7 +21,8 @@ export const metadata: Metadata = { robots: { index: false, follow: false } }
 /**
  * Step 3, the guest pays their deposit (Claude Design "Digistay Dat Coc
  * PayOS"): the PayOS VietQR right on the hotel's site, with the account,
- * amount and transfer message, until the webhook marks it paid. Also the
+ * amount and transfer message, until the webhook marks it paid; or, for a
+ * hotel taking manual transfers, its own VietQR until staff confirm it. Also the
  * link in the booking email (src/lib/payments/deposit-link.ts). Showing it
  * changes nothing (mail scanners open links).
  */
@@ -59,6 +60,9 @@ export default async function DepositPage({ params }: PageProps) {
               <DepositLive
                 token={token}
                 state={view.state}
+                mode={view.mode}
+                claimedAt={view.claimedAt?.toISOString() ?? null}
+                bookingCode={view.bookingCode}
                 amount={view.payment?.amount ?? view.amounts.deposit}
                 qrImage={qrImage}
                 checkoutUrl={view.payment?.checkoutUrl ?? null}

@@ -7,8 +7,11 @@
  * - booking_new: a guest booked on the hotel's site → the owner, admins,
  *   managers and receptionists; staff made one → the owner and admins, not
  *   whoever made it.
- * - deposit_paid: a guest's online deposit came in (PayOS) → the
- *   owner, admins, managers and receptionists.
+ * - deposit_paid: a guest's online deposit came in (PayOS, or staff
+ *   confirmed a manual transfer) → the owner, admins, managers and
+ *   receptionists.
+ * - transfer_claimed: a guest says they transferred a manual deposit
+ *   (manual-deposit.ts) → the same people, to check the account.
  *
  * Stored as a type and data, so each reader sees it in their own language.
  */
@@ -16,7 +19,7 @@ import type { Prisma, WorkspaceRole } from '@prisma/client'
 
 type Tx = Prisma.TransactionClient
 
-export const NOTIFICATION_TYPES = ['booking_new', 'deposit_paid'] as const
+export const NOTIFICATION_TYPES = ['booking_new', 'deposit_paid', 'transfer_claimed'] as const
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number]
 
 const FRONT_DESK: WorkspaceRole[] = ['ADMIN', 'MANAGER', 'RECEPTIONIST']
@@ -99,5 +102,19 @@ export async function notifyDepositPaid(tx: Tx, payment: { bookingId: string; am
     type: 'deposit_paid',
     roles: FRONT_DESK,
     data: { bookingCode: booking.bookingCode, guestName: booking.guestName, amount: payment.amount },
+  })
+}
+
+/** A guest pressed "Tôi đã chuyển khoản": someone should look at the hotel's account. */
+export function notifyTransferClaimed(
+  tx: Tx,
+  claim: { bookingId: string; propertyId: string; bookingCode: string; guestName: string; amount: number; claimedAt: Date }
+) {
+  return notify(tx, {
+    propertyId: claim.propertyId,
+    bookingId: claim.bookingId,
+    type: 'transfer_claimed',
+    roles: FRONT_DESK,
+    data: { bookingCode: claim.bookingCode, guestName: claim.guestName, amount: claim.amount, claimedAt: claim.claimedAt.toISOString() },
   })
 }

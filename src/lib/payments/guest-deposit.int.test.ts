@@ -452,7 +452,7 @@ describe('what the hotel and the site see', () => {
     await prisma.policy.update({ where: { propertyId: property.id }, data: { cancellationHours: 48, cancellationPolicy: 'Hoàn cọc khi huỷ trước 48 giờ.' } })
     const res = await publicProperty(new NextRequest(`http://digistay.test/api/properties/public?subdomain=${property.subdomain}`))
     const { data } = await res.json()
-    expect(data.onlineDeposit).toEqual({ percent: 25, deadlineMinutes: 0 })
+    expect(data.onlineDeposit).toEqual({ percent: 25, deadlineMinutes: 0, mode: 'PAYOS' })
     expect(data.policy).toEqual({ cancellationHours: 48, cancellationPolicy: 'Hoàn cọc khi huỷ trước 48 giờ.', childrenAllowed: true })
     expect(data).not.toHaveProperty('payos')
 

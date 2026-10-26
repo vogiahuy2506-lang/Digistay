@@ -45,6 +45,8 @@
     "bookingNewDetail": "{hotel} · {dates} · {total}",
     "depositPaid": "Deposit paid: {code} · {guest}",
     "depositPaidDetail": "{hotel} · {amount}, the booking is confirmed",
+    "transferClaimed": "Guest says the deposit was transferred: {code} · {guest}",
+    "transferClaimedDetail": "{hotel} · {amount}. Check the account, then confirm it on the booking",
     "other": "Notification"
   },
   "roles": {

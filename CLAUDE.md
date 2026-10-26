@@ -226,7 +226,11 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
   khoản `REFUNDED` không bao giờ sống lại. Return URL không bao giờ đánh dấu đã trả.
   `PAYOS_BASE_URL` chỉ dùng cho test (PayOS giả ở `src/test/integration/fake-payos.ts`).
   - **Khách đặt cọc trên website** (`src/lib/payments/guest-deposit.ts`): khách sạn đặt % ở trang
-    Chính sách (`Policy.onlineDepositPercent`) và phải đã kết nối PayOS, không thì không thu cọc.
+    Chính sách (`Policy.onlineDepositPercent`) và chọn cách thu ở trang Ngân hàng
+    (`Property.depositMode`, `src/lib/payments/deposit-mode.ts`): **Tự động** qua PayOS của khách
+    sạn, hoặc **Thủ công**: VietQR tới tài khoản/ví MoMo của khách sạn (`depositAccountId`), khách
+    bấm "Tôi đã chuyển khoản" (gia hạn hạn cọc một lần, báo lễ tân), lễ tân bấm "Xác nhận đã nhận
+    tiền" (`POST /api/payments/[id]/confirm`). Không chọn: PayOS nếu đã kết nối, không thì thủ công.
     Số tiền chỉ tính bằng `depositFor()` (`src/lib/pricing/quote.ts`). Đơn tạo như thường (PENDING)
     rồi mới tạo link; PayOS lỗi thì đơn vẫn giữ, khách được báo khách sạn sẽ liên hệ. Chỉ webhook /
     đối soát đánh dấu đã trả; `syncBookingPayments` xác nhận đơn, và khoản cọc của khách

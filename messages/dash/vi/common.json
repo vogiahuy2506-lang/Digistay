@@ -45,6 +45,8 @@
     "bookingNewDetail": "{hotel} · {dates} · {total}",
     "depositPaid": "Khách đã đặt cọc: {code} · {guest}",
     "depositPaidDetail": "{hotel} · {amount}, đơn đã được xác nhận",
+    "transferClaimed": "Khách báo đã chuyển khoản cọc: {code} · {guest}",
+    "transferClaimedDetail": "{hotel} · {amount}. Kiểm tra tài khoản, tiền về thì xác nhận ở đơn",
     "other": "Thông báo"
   },
   "roles": {

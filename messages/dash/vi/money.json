@@ -377,6 +377,7 @@
     "description": "Quản lý tài khoản ngân hàng để nhận thanh toán",
     "noProperty": "Không xác định được cơ sở.",
     "add": "Thêm tài khoản",
+    "addMomo": "Thêm ví MoMo",
     "infoTitle": "Nhận tiền qua chuyển khoản",
     "infoText": "Gửi số tài khoản hoặc mã QR (nút Tải QR) cho khách qua Zalo, email. Chuyển khoản kiểu này không tự xác nhận: khi tiền về, vào Thanh toán, mở (hoặc tạo) khoản thanh toán của đơn đó rồi bấm Xác nhận đã thanh toán; doanh thu tự được tính vào báo cáo. Muốn tiền tự được xác nhận, kết nối PayOS bên dưới.",
     "empty": "Chưa có tài khoản ngân hàng nào",
@@ -388,6 +389,10 @@
     "accountHolder": "Tên tài khoản",
     "downloadQr": "Tải QR",
     "transferContent": "Nội dung chuyển khoản",
+    "momoWallet": "Ví MoMo",
+    "walletPhone": "Số điện thoại MoMo",
+    "copyWalletPhone": "Copy số điện thoại",
+    "depositAccount": "Dùng cho QR đặt cọc",
     "form": {
       "editTitle": "Sửa tài khoản",
       "addTitle": "Thêm tài khoản ngân hàng",
@@ -397,7 +402,13 @@
       "accountHolderPlaceholder": "Tên chủ tài khoản",
       "enableQr": "Bật thanh toán VietQR",
       "submitAdd": "Thêm tài khoản",
-      "accountHolderHint": "Như ngân hàng in: chữ in hoa, không dấu"
+      "accountHolderHint": "Như ngân hàng in: chữ in hoa, không dấu",
+      "addMomoTitle": "Thêm ví MoMo",
+      "editMomoTitle": "Sửa ví MoMo",
+      "momoPhonePlaceholder": "VD: 0901234567",
+      "momoPhoneHint": "Mã QR chuyển vào ví MoMo gắn với số này (ứng dụng ngân hàng nào cũng quét được).",
+      "momoHolderPlaceholder": "Tên chủ ví, như MoMo hiển thị",
+      "submitAddMomo": "Thêm ví"
     },
     "toast": {
       "loadFailed": "Không thể tải danh sách tài khoản",
@@ -413,9 +424,11 @@
       "deleteError": "Đã xảy ra lỗi khi xóa tài khoản",
       "copied": "Đã copy",
       "copyFailed": "Không thể copy, vui lòng thử lại",
-      "qrFailed": "Không tạo được mã QR cho tài khoản này"
+      "qrFailed": "Không tạo được mã QR cho tài khoản này",
+      "badPhone": "Số điện thoại MoMo chưa đúng (10 số, bắt đầu bằng 0)"
     },
-    "confirmDelete": "Bạn có chắc chắn muốn xóa tài khoản này?"
+    "confirmDelete": "Bạn có chắc chắn muốn xóa tài khoản này?",
+    "emptyHint": "Thêm tài khoản ngân hàng hoặc ví MoMo để khách chuyển khoản tiền cọc bằng mã VietQR."
   },
   "payos": {
     "title": "Thanh toán online (PayOS)",
@@ -439,6 +452,27 @@
     "disconnectedToast": "Đã ngắt kết nối PayOS",
     "disconnectFailed": "Không ngắt kết nối được",
     "confirmDisconnect": "Ngắt kết nối PayOS? Các link đã gửi cho khách sẽ không còn tự xác nhận nữa."
+  },
+  "depositMode": {
+    "title": "Cách khách đặt cọc khi đặt trên website",
+    "percent": "Mức cọc: {percent}% tổng tiền (trang Chính sách).",
+    "percentOff": "Đang không thu cọc online: đặt mức cọc ở trang Chính sách để bật.",
+    "deadline": "Quá {time} chưa nhận cọc thì đơn tự huỷ.",
+    "minutes": "{count} phút",
+    "hours": "{count} giờ",
+    "manualTitle": "Thủ công",
+    "manualWhat": "Khách quét VietQR chuyển thẳng vào tài khoản ngân hàng hoặc ví MoMo của khách sạn, rồi bấm “Tôi đã chuyển khoản”.",
+    "manualDo": "Khách sạn: kiểm tra tài khoản, tiền về thì bấm “Xác nhận đã nhận tiền” ở đơn.",
+    "payosTitle": "Tự động (PayOS)",
+    "payosWhat": "Khách quét mã PayOS; tiền về là đơn tự được xác nhận, không cần kiểm tra sao kê.",
+    "payosDo": "Khách sạn: tạo tài khoản PayOS và nhập khoá ở thẻ PayOS bên dưới.",
+    "chosen": "Đang dùng",
+    "needsPayos": "Cần kết nối PayOS trước",
+    "account": "Tài khoản nhận cọc",
+    "noAccount": "Chưa có tài khoản nhận: thêm tài khoản ngân hàng hoặc ví MoMo bên dưới. Chưa có thì khách không phải đặt cọc, khách sạn tự liên hệ.",
+    "payosFallback": "PayOS đã ngắt kết nối: khách đang chuyển khoản thủ công vào tài khoản bên dưới.",
+    "saved": "Đã lưu cách nhận cọc",
+    "saveFailed": "Chưa lưu được"
   },
   "qr": {
     "scanToPay": "Quét mã QR để thanh toán",

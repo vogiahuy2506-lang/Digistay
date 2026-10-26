@@ -1,6 +1,7 @@
 {
   "list": {
     "create": "Tạo đặt phòng",
+    "transferClaimed": "Khách báo đã CK",
     "all": "Tất cả",
     "searchPlaceholder": "Tìm mã đặt phòng, tên khách, SĐT…",
     "searchLabel": "Tìm đặt phòng",
@@ -69,6 +70,18 @@
       "remaining": "Còn lại",
       "payments": "Các lần thanh toán",
       "noPayments": "Chưa có lần thanh toán nào."
+    },
+    "transfer": {
+      "claimed": "Khách báo đã chuyển khoản lúc {time}",
+      "waiting": "Chờ khách chuyển khoản tiền cọc",
+      "amountLine": "{amount} · nội dung {code}",
+      "account": "Vào {account}",
+      "holdUntil": "Giữ phòng đến {time}; quá hạn mà chưa xác nhận thì đơn tự huỷ.",
+      "confirm": "Xác nhận đã nhận tiền",
+      "confirmTitle": "Xác nhận đã nhận tiền cọc?",
+      "confirmText": "Chỉ xác nhận khi đã thấy {amount} với nội dung {code} trong tài khoản. Đơn được xác nhận và khách nhận email.",
+      "confirmed": "Đã ghi nhận tiền cọc",
+      "confirmFailed": "Chưa xác nhận được"
     },
     "vat": {
       "title": "Xuất hóa đơn công ty",

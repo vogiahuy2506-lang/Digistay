@@ -271,13 +271,13 @@
     },
     "deposit": {
       "label": "Đặt cọc khi khách đặt trên website (%)",
-      "hint": "0 = không thu cọc, khách trả tại quầy. Có cọc thì khách chuyển khoản qua PayOS ngay khi đặt, tiền vào thẳng tài khoản khách sạn, và đặt phòng tự được xác nhận khi tiền về.",
+      "hint": "0 = không thu cọc, khách trả tại quầy. Có cọc thì khách chuyển khoản ngay khi đặt, tiền vào thẳng tài khoản khách sạn: qua PayOS (đơn tự xác nhận khi tiền về) hoặc bằng mã VietQR vào tài khoản ngân hàng / ví MoMo (khách sạn tự xác nhận). Chọn cách ở trang Tài khoản ngân hàng.",
       "deadline": "Tự huỷ đơn nếu khách chưa đặt cọc sau",
-      "deadlineHint": "Quá hạn mà tiền chưa về, đơn tự huỷ, phòng được mở lại và khách nhận email. App hỏi lại PayOS trước khi huỷ: khách đã trả thì đơn được xác nhận. Không tự huỷ thì đơn chờ khách sạn xử lý.",
+      "deadlineHint": "Quá hạn mà tiền chưa về, đơn tự huỷ, phòng được mở lại và khách nhận email. PayOS: app hỏi lại PayOS trước khi huỷ, khách đã trả thì đơn được xác nhận. Chuyển khoản thủ công: khách bấm “Tôi đã chuyển khoản” thì hạn được cộng thêm 30 phút (một lần) để bạn kiểm tra. Không tự huỷ thì đơn chờ khách sạn xử lý.",
       "noAutoCancel": "Không tự huỷ",
       "minutes": "{count} phút",
       "hours": "{count} giờ",
-      "payosMissing": "Chưa kết nối PayOS (Tài khoản ngân hàng → Thanh toán online): khách chưa phải đặt cọc cho tới khi kết nối."
+      "noReceiver": "Chưa có cách nhận cọc: thêm tài khoản ngân hàng / ví MoMo hoặc kết nối PayOS (trang Tài khoản ngân hàng). Tới lúc đó khách chưa phải đặt cọc."
     },
     "rules": {
       "title": "Quy định khác",

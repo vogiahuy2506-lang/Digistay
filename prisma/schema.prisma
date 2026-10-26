@@ -417,6 +417,13 @@ model Property {
   siteVersions  SiteVersion[]
   bankAccounts   BankAccount[]
   payos          PropertyPayos?
+  /// How a guest pays the online deposit (Policy.onlineDepositPercent): MANUAL, a VietQR to
+  /// depositAccount that staff confirm; PAYOS, the hotel's PayOS, confirmed by webhook. null: PAYOS
+  /// when PayOS is connected, else MANUAL (src/lib/payments/deposit-mode.ts).
+  depositMode      DepositPaymentMode?
+  /// The receiving account (bank or MoMo wallet) the manual QR names; null: the oldest active one.
+  depositAccountId String?
+  depositAccount   BankAccount? @relation("DepositAccount", fields: [depositAccountId], references: [id], onDelete: SetNull)
   einvoice       PropertyEinvoice?
   roomLocks      RoomLock[]
   extraServices   ExtraService[]
@@ -883,6 +890,9 @@ model Booking {
   /// The guest's language, 'vi' | 'en': the page they booked on (staff bookings: 'vi').
   /// Their emails follow it (src/lib/email/i18n.ts).
   locale          String   @default("vi")
+  /// The guest pressed "Tôi đã chuyển khoản" on the manual deposit page
+  /// (src/lib/payments/manual-deposit.ts): set once, staff are told then.
+  transferClaimedAt DateTime?
   
   // Relations
   bookingItems    BookingItem[]
@@ -1181,6 +1191,12 @@ enum PaymentStatus {
   EXPIRED         // Hết hạn
 }
 
+/// How guests pay the online deposit (Property.depositMode)
+enum DepositPaymentMode {
+  MANUAL // VietQR to the hotel's own account or MoMo wallet; staff confirm the money
+  PAYOS  // the hotel's PayOS; the webhook confirms it
+}
+
 enum PaymentGateway {
   VIETQR
   PAYOS
@@ -1220,6 +1236,8 @@ model BankAccount {
   // Status
   isActive        Boolean @default(true)
   isVerified      Boolean @default(false)
+  /// the property whose manual deposit QR names this account (Property.depositAccountId)
+  depositFor      Property[] @relation("DepositAccount")
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -1526,7 +1544,7 @@ model Notification {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   workspaceId String?
   propertyId  String?
-  /// booking_new | deposit_paid
+  /// booking_new | deposit_paid | transfer_claimed
   type        String
   data        Json
   link        String?
