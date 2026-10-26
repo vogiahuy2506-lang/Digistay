@@ -196,6 +196,12 @@
       }
     },
     "preview": "Preview: this site is not published; only the hotel's signed-in members can see it.",
+    "versionPreview": {
+      "title": "Version saved at {time}",
+      "by": "by {name}",
+      "hint": "View only: the live site is unchanged.",
+      "back": "Back to the website builder"
+    },
     "booking": {
       "steps": {
         "label": "Booking steps",

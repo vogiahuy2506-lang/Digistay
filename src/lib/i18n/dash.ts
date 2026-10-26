@@ -45,6 +45,11 @@ export function useDashLabels() {
         const d = vn(value)
         return `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}`
       },
+      /** "26/10 21:40" */
+      dayMonthTime: (value: string | Date) => {
+        const d = vn(value)
+        return `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`
+      },
       /** "Thứ Hai, 26/10/2026" / "Monday, 26/10/2026" */
       longDate: (value: string | Date) => {
         const d = vn(value)

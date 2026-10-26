@@ -12,6 +12,7 @@ import { EnglishCopy } from '@/components/ui/english-copy'
 import { CoverPicker } from './cover-picker'
 import { ReviewsEditor, type ReviewEntry } from './reviews-editor'
 import { CustomDomainCard, type DomainSettings } from './custom-domain-card'
+import { VersionHistory } from './version-history'
 import { useProperty } from '@/lib/hooks/use-property'
 import { Card, CardContent, CardHeader, CardTitle, Button, Input, Badge, Tabs, TabsList, TabsTrigger, TabsContent, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import {
@@ -45,7 +46,7 @@ import {
   Plus, Trash2, GripVertical, Settings, Layout, Search, ArrowRight,
   Check, X, ChevronRight, Shield, AlertCircle, Loader2, ExternalLink, RefreshCw, Star,
   LayoutGrid, Hotel, ImageIcon, MapPin, Phone, MousePointer2, Zap, Sparkles,
-  FileText, Clock, Undo2, Redo2, Copy, Wand2, ChevronDown, ChevronUp, ConciergeBell, UtensilsCrossed, PanelBottom
+  FileText, Clock, Undo2, Redo2, Copy, Wand2, ChevronDown, ChevronUp, ConciergeBell, UtensilsCrossed, PanelBottom, History as HistoryIcon
 } from 'lucide-react'
 import { apiError } from '@/lib/i18n/api-errors'
 
@@ -1265,6 +1266,7 @@ export default function WebsiteBuilderPage() {
   const [isDragging, setIsDragging] = React.useState(false)
   const [previewBlocks, setPreviewBlocks] = React.useState<Block[]>([])
   const [showTemplateModal, setShowTemplateModal] = React.useState(false)
+  const [showHistory, setShowHistory] = React.useState(false)
   const [propertyData, setPropertyData] = React.useState<any>(null)
   // What the site shows (real rooms, prices, photos...), for the preview.
   const [site, setSite] = React.useState<PreviewSite | null>(null)
@@ -1401,6 +1403,15 @@ export default function WebsiteBuilderPage() {
     } finally {
       setIsSaving(false)
     }
+  }
+
+  // A version was put back: the builder shows the site as it now is, with a fresh undo history.
+  const afterRestore = () => {
+    setSelectedBlockId(null)
+    setHistory([])
+    setHistoryIndex(-1)
+    setUsingDefaults(false)
+    void fetchWebsiteData()
   }
 
   const togglePublish = () => {
@@ -1589,6 +1600,17 @@ export default function WebsiteBuilderPage() {
           >
             <Wand2 className="w-4 h-4" />
             {t('header.template')}
+          </Button>
+
+          {/* Saved versions: view, restore */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowHistory(true)}
+            className="gap-2"
+          >
+            <HistoryIcon className="w-4 h-4" />
+            {t('versions.open')}
           </Button>
 
           {/* Preview Mode Toggle */}
@@ -2056,6 +2078,14 @@ export default function WebsiteBuilderPage() {
           onClose={() => setShowTemplateModal(false)}
         />
       )}
+
+      <VersionHistory
+        propertyId={propertyId}
+        subdomain={property?.subdomain}
+        isOpen={showHistory}
+        onClose={() => setShowHistory(false)}
+        onRestored={afterRestore}
+      />
     </PageContainer>
   )
 }

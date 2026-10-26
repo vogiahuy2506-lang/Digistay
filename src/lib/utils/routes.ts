@@ -53,6 +53,8 @@ export const routes = {
 
   // Public
   publicSite: (subdomain: string) => `/${subdomain}`,
+  /** A saved version of the site, read-only, for the people who may edit it. */
+  siteVersionPreview: (subdomain: string, versionId: string) => `/${subdomain}/phien-ban/${versionId}`,
 
   // User
   profile: () => '/profile',

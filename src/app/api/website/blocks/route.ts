@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { invalidatePublicSite, loadSiteProps } from '@/lib/public-site/site'
+import { keepSiteBaseline, recordSiteVersion } from '@/lib/public-site/versions'
 import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
 
@@ -144,10 +145,13 @@ export async function PUT(request: NextRequest) {
     const locked = await lockedResponseForProperty(property.id)
     if (locked) return locked
 
-    // One transaction: a failure keeps the current layout instead of none.
-    await prisma.$transaction([
-      prisma.websiteBlock.deleteMany({ where: { propertyId: property.id } }),
-      prisma.websiteBlock.createMany({
+    // One transaction: a failure keeps the current layout instead of none,
+    // and the save always has its version (src/lib/public-site/versions.ts).
+    const userId = session.user.id
+    await prisma.$transaction(async (tx) => {
+      await keepSiteBaseline(tx, property.id)
+      await tx.websiteBlock.deleteMany({ where: { propertyId: property.id } })
+      await tx.websiteBlock.createMany({
         data: blocks.map((block, index) => ({
           propertyId: property.id,
           type: block.type,
@@ -156,18 +160,19 @@ export async function PUT(request: NextRequest) {
           isEnabled: block.isEnabled ?? true,
           sortOrder: index,
         })),
-      }),
-      prisma.activityLog.create({
+      })
+      await tx.activityLog.create({
         data: {
-          userId: session.user.id,
+          userId,
           propertyId: property.id,
           action: 'UPDATE',
           entityType: 'WEBSITE',
           entityId: property.id,
           changes: { blocksUpdated: true },
         },
-      }),
-    ])
+      })
+      await recordSiteVersion(tx, { propertyId: property.id, userId })
+    })
     invalidatePublicSite(property.id)
 
     return NextResponse.json({
