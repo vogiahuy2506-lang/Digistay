@@ -133,3 +133,23 @@ describe("hotels' own domains (custom-domains.conf)", () => {
     expect(http).toMatch(/location \^~ \/\.well-known\/acme-challenge\//)
   })
 })
+
+describe('certificates nginx reads per handshake (a variable in the path)', () => {
+  const certbot = (name) => readFileSync(new URL(`../docker/certbot/${name}`, import.meta.url), 'utf8')
+
+  it("are opened to nginx's workers after every issuance and renewal, keys to its group only", () => {
+    // Read by the workers (user nginx, gid 101), not the root master: certbot's
+    // root-only live/ and 0600 keys failed every such handshake (checked in Docker).
+    for (const [name, text] of [['custom-domains.conf', conf('custom-domains.conf')], ['app-secure.conf', secure]]) {
+      expect(text, name).toMatch(/ssl_certificate_key\s+\S*\$\w+/)
+    }
+    for (const script of ['custom-domains.sh', 'renew.sh']) {
+      expect(certbot(script), script).toContain('bash "$(dirname "${BASH_SOURCE[0]}")/nginx-readable.sh"')
+    }
+    const fix = certbot('nginx-readable.sh')
+    expect(fix).toMatch(/NGINX_GID=101/)
+    expect(fix).toContain('for dir in live archive cloudflare-origin; do')
+    expect(fix).toMatch(/-name "privkey\*\.pem" -o -name "key\.pem"/)
+    expect(fix).toMatch(/chgrp "\$NGINX_GID" \{\} \+ -exec chmod 0640 \{\} \+/)
+  })
+})
