@@ -9,6 +9,10 @@ import { useTranslations } from 'next-intl'
 import { useWorkspace } from '@/lib/hooks/use-workspace'
 import { routes } from '@/lib/utils/routes'
 import { apiError } from '@/lib/i18n/api-errors'
+import { finishSlugInput, onNameTyped, onSlugTyped } from '@/app/(dashboard)/workspaces/slug-input'
+
+/** createPropertySchema's limit for a subdomain. */
+const SUBDOMAIN_MAX = 50
 
 const PROPERTY_TYPES = ['HOTEL', 'HOMESTAY', 'RESORT', 'RESTAURANT', 'VILLA', 'MOTEL', 'OTHER'] as const
 
@@ -16,10 +20,13 @@ export default function NewPropertyPage() {
   const router = useRouter()
   const t = useTranslations('dash.property')
   const tc = useTranslations('dash.common')
+  const tw = useTranslations('dash.workspace')
   const propertyTypes = PROPERTY_TYPES.map((value) => ({ value, label: t(`types.${value}`) }))
   const { workspace, loading: wsLoading } = useWorkspace()
   const [isCreating, setIsCreating] = React.useState(false)
   const [error, setError] = React.useState('')
+  // The subdomain follows the name until it is typed by hand.
+  const [subdomainEdited, setSubdomainEdited] = React.useState(false)
   const [formData, setFormData] = React.useState({
     name: '',
     type: 'HOTEL',
@@ -44,6 +51,7 @@ export default function NewPropertyPage() {
       subdomain: '',
       description: '',
     })
+    setSubdomainEdited(false)
   }
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -59,6 +67,7 @@ export default function NewPropertyPage() {
         body: JSON.stringify({
           workspaceId: workspace.id,
           ...formData,
+          subdomain: finishSlugInput(formData.subdomain),
         }),
       })
       const data = await res.json()
@@ -83,7 +92,7 @@ export default function NewPropertyPage() {
     return (
       <div className="rounded-box border border-line bg-panel px-6 py-16 text-center">
         <Building2 className="w-6 h-6 text-muted mx-auto mb-4" />
-        <p className="text-body text-fg">Vui lòng chọn Workspace</p>
+        <p className="text-body text-fg">{tw('noWorkspace.title')}</p>
       </div>
     )
   }
@@ -111,16 +120,9 @@ export default function NewPropertyPage() {
                 placeholder={t('form.namePlaceholder')}
                 value={formData.name}
                 onChange={(e) => {
-                  setFormData({ ...formData, name: e.target.value })
-                  if (!formData.subdomain) {
-                    const subdomain = e.target.value
-                      .toLowerCase()
-                      .normalize('NFD')
-                      .replace(/[\u0300-\u036f]/g, '')
-                      .replace(/[^a-z0-9]+/g, '-')
-                      .replace(/^-+|-+$/g, '')
-                    setFormData((prev) => ({ ...prev, subdomain }))
-                  }
+                  const name = e.target.value
+                  const { slug } = onNameTyped(name, { slug: formData.subdomain, slugEdited: subdomainEdited }, SUBDOMAIN_MAX)
+                  setFormData({ ...formData, name, subdomain: slug })
                 }}
                 required
               />
@@ -138,12 +140,12 @@ export default function NewPropertyPage() {
               label={t('form.subdomain')}
               placeholder={t('form.subdomainPlaceholder')}
               value={formData.subdomain}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  subdomain: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
-                })
-              }
+              onChange={(e) => {
+                const { slug, slugEdited } = onSlugTyped(e.target.value, SUBDOMAIN_MAX)
+                setSubdomainEdited(slugEdited)
+                setFormData({ ...formData, subdomain: slug })
+              }}
+              onBlur={() => setFormData({ ...formData, subdomain: finishSlugInput(formData.subdomain) })}
               hint={t('form.subdomainHint', { subdomain: formData.subdomain || t('form.subdomainPlaceholder') })}
               required
             />
