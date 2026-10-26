@@ -143,20 +143,31 @@ export async function POST(request: NextRequest) {
 
 type Records = Awaited<ReturnType<typeof expectedRecords>>
 
-/** What the hotel adds at its DNS provider: CNAME (or A for an apex domain) plus the TXT. */
+/**
+ * What the hotel adds at its DNS provider: a CNAME to this site's own
+ * <subdomain>.<root> (www.… and other subdomains), or A records to the root
+ * domain's addresses (a root domain cannot have a CNAME), plus the TXT.
+ * The CNAME is offered only once <subdomain>.<root> resolves: before the
+ * wildcard DNS exists (RUNBOOK "Subdomain cho site khách sạn") it would pass
+ * the check and lead nowhere.
+ */
 async function expectedRecords(host: string, target: string, txt: { name: string; value: string }, root: string) {
-  const addresses = await resolver.resolve4(root).catch(() => [] as string[])
+  const [addresses, targetAddresses] = await Promise.all([
+    resolver.resolve4(root).catch(() => [] as string[]),
+    resolver.resolve4(target).catch(() => [] as string[]),
+  ])
   return {
     cname: { type: 'CNAME', name: host, value: target },
+    cnameReady: targetAddresses.length > 0,
     a: addresses.map((ip) => ({ type: 'A', name: host, value: ip })),
     txt: { type: 'TXT', name: txt.name, value: txt.value },
   }
 }
 
 const MESSAGES: Record<string, string> = {
-  not_found: 'Chưa thấy bản ghi DNS nào cho tên miền này. Thêm bản ghi A và TXT theo hướng dẫn bên dưới.',
+  not_found: 'Chưa thấy bản ghi DNS nào cho tên miền này. Thêm các bản ghi theo hướng dẫn bên dưới.',
   wrong_target:
-    'Tên miền chưa trỏ đúng về website này: bản ghi A phải là địa chỉ IP bên dưới (xoá các bản ghi A, AAAA hoặc CNAME khác của tên này).',
+    'Tên miền chưa trỏ đúng về website này: CNAME hoặc bản ghi A phải đúng giá trị bên dưới (xoá các bản ghi A, AAAA hoặc CNAME khác của tên này).',
   txt_missing: 'Tên miền đã trỏ đúng, nhưng chưa thấy bản ghi TXT xác minh chủ sở hữu. Thêm bản ghi TXT bên dưới.',
   txt_wrong: 'Tên miền đã trỏ đúng, nhưng bản ghi TXT xác minh chủ sở hữu có giá trị chưa đúng. Sửa theo giá trị bên dưới.',
   transient: 'Không kiểm tra được DNS lúc này. Vui lòng thử lại sau ít phút.',
