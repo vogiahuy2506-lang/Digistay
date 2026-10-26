@@ -1,15 +1,16 @@
 # ============================================================
-# HTTPS server block for digistay.vn
-# Domain placeholders are resolved by `envsubst` on container start.
+# HTTPS server blocks for digistay.vn and its hotel subdomains.
+# Domain placeholders are resolved by `envsubst` (docker/deploy.sh renders
+# this into app-secure.conf on every deploy).
 # ============================================================
 server {
     listen 443 ssl;
     listen [::]:443 ssl;
     http2 on;
 
-    # *.${DOMAIN}: property sites (src/middleware.ts). They need the wildcard
-    # certificate and DNS record first: docs/RUNBOOK.md, "Subdomain cho site khách sạn".
-    server_name ${DOMAIN} www.${DOMAIN} *.${DOMAIN};
+    # The apex and www: DNS only (no Cloudflare proxy), Let's Encrypt over
+    # HTTP. Hotel subdomains have their own block below.
+    server_name ${DOMAIN} www.${DOMAIN};
 
     # ---- TLS material (certbot volume) ----
     ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
@@ -80,6 +81,90 @@ server {
         proxy_pass http://app:3000;
         proxy_set_header Host $host;
         proxy_cache_valid 200 30d;
+        add_header Cache-Control "public, max-age=2592000";
+        include /etc/nginx/conf.d/security-headers.inc;
+    }
+}
+
+# ============================================================
+# Hotel sites on *.${DOMAIN} (src/middleware.ts), behind Cloudflare's proxy.
+#
+# Visitors see Cloudflare's certificate. Cloudflare connects here over HTTPS
+# in "Full (strict)" mode and checks this Cloudflare Origin CA certificate,
+# which only Cloudflare trusts: a *.${DOMAIN} record left DNS only would get
+# a certificate error (HSTS includeSubDomains makes it impossible to click
+# through). docs/RUNBOOK.md, "SSL tên miền con qua Cloudflare".
+# ============================================================
+
+# A variable in the certificate path makes nginx read the files per
+# handshake instead of at start: before the Origin CA certificate is
+# installed, nginx still starts and every deploy's `nginx -t` passes; only
+# *.${DOMAIN} handshakes fail, and no DNS record points there until then.
+map $ssl_server_name $digistay_origin_cert {
+    default ${DOMAIN};
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name *.${DOMAIN};
+
+    # Written by the RUNBOOK block into the certbot volume (certbot leaves
+    # other directories alone). Valid 15 years: nothing renews it.
+    ssl_certificate     /etc/letsencrypt/cloudflare-origin/$digistay_origin_cert/cert.pem;
+    ssl_certificate_key /etc/letsencrypt/cloudflare-origin/$digistay_origin_cert/key.pem;
+    ssl_certificate_cache max=10 inactive=10m valid=10m;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+
+    server_tokens off;
+    include /etc/nginx/conf.d/security-headers.inc;
+    # Every request comes from Cloudflare here: without this, every guest
+    # would share Cloudflare's few addresses in rate limits and lockouts.
+    include /etc/nginx/conf.d/cloudflare-real-ip.inc;
+
+    client_max_body_size 12m;
+
+    location /api/internal/ {
+        return 404;
+    }
+
+    location / {
+        proxy_pass http://app:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host  $host;
+        proxy_set_header X-Forwarded-Port  $server_port;
+        proxy_set_header Upgrade           $http_upgrade;
+        proxy_set_header Connection        "upgrade";
+
+        proxy_read_timeout  60s;
+        proxy_send_timeout  60s;
+        proxy_connect_timeout 10s;
+        proxy_redirect off;
+    }
+
+    location /_next/static/ {
+        proxy_pass http://app:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        include /etc/nginx/conf.d/security-headers.inc;
+        access_log off;
+    }
+
+    location /static/ {
+        proxy_pass http://app:3000;
+        proxy_set_header Host $host;
         add_header Cache-Control "public, max-age=2592000";
         include /etc/nginx/conf.d/security-headers.inc;
     }
