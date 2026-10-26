@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { emailLocale } from '@/lib/email/i18n'
 import { appSiteUrl } from '@/lib/public-site/paths'
-import { lockedResponse } from '@/lib/billing/guard'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest, props: RouteParams) {
                   select: { email: true, name: true },
                 },
                 members: {
-                  where: { userId: session.user.id },
+                  where: { userId: session.user.id, planLockedAt: null },
                   select: { role: true },
                 },
               },
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest, props: RouteParams) {
     if (!isOwner && !isStaff && !isGuest) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
     }
-    const locked = await lockedResponse(booking.property.workspaceId)
+    const locked = await lockedResponseForProperty(booking.propertyId)
     if (locked) return locked
 
     // Get site URL. A guest's email: in their booking's language, linking to the site's pages in it.

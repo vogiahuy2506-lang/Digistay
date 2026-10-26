@@ -27,7 +27,7 @@ async function userCanManageService(serviceId: string, userId: string) {
             select: {
               ownerId: true,
               members: {
-                where: { userId, role: { in: ['ADMIN', 'MANAGER'] } },
+                where: { userId, role: { in: ['ADMIN', 'MANAGER'] }, planLockedAt: null },
                 select: { id: true },
               },
             },

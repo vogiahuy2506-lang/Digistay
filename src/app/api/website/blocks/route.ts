@@ -5,7 +5,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { invalidatePublicSite, loadSiteProps } from '@/lib/public-site/site'
 import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
-import { lockedResponse } from '@/lib/billing/guard'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 export async function GET(request: NextRequest) {
   try {
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
         workspace: {
           OR: [
             { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id } } },
+            { members: { some: { userId: session.user.id, planLockedAt: null } } },
           ],
         },
       },
@@ -126,7 +126,7 @@ export async function PUT(request: NextRequest) {
         workspace: {
           OR: [
             { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id } } },
+            { members: { some: { userId: session.user.id, planLockedAt: null } } },
           ],
         },
       },
@@ -141,7 +141,7 @@ export async function PUT(request: NextRequest) {
     // Publishing decides whether guests see the site and can book.
     const access = await requireWorkspaceRole(property.workspaceId, WorkspaceRoles.ADMINS_AND_MANAGERS)
     if (!access.ok) return access.response
-    const locked = await lockedResponse(property.workspaceId)
+    const locked = await lockedResponseForProperty(property.id)
     if (locked) return locked
 
     // One transaction: a failure keeps the current layout instead of none.

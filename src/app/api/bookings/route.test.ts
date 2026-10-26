@@ -29,7 +29,7 @@ const mockPrisma = prisma as unknown as {
 }
 
 const workspaceAccess = (userId: string) => ({
-  OR: [{ ownerId: userId }, { members: { some: { userId } } }],
+  OR: [{ ownerId: userId }, { members: { some: { userId, planLockedAt: null } } }],
 })
 
 function get(query = '') {

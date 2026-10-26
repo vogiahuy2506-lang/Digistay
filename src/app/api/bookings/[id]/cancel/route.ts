@@ -46,7 +46,7 @@ async function bookingForStaff(id: string, session: Session) {
             select: {
               ownerId: true,
               members: {
-                where: { userId: session.user.id },
+                where: { userId: session.user.id, planLockedAt: null },
                 select: { role: true },
               },
             },

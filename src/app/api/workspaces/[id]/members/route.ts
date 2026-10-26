@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { lockedResponse } from '@/lib/billing/guard'
+import { reconcileOverageSoon } from '@/lib/billing/overage'
 
 const roleChangeSchema = z.object({
   memberId: z.string().min(1),
@@ -29,7 +30,7 @@ async function checkWorkspaceAdmin(workspaceId: string, userId: string) {
       id: workspaceId,
       OR: [
         { ownerId: userId },
-        { members: { some: { userId, role: 'ADMIN' } } },
+        { members: { some: { userId, role: 'ADMIN', planLockedAt: null } } },
       ],
     },
   })
@@ -249,6 +250,8 @@ export async function DELETE(
     await prisma.workspaceMember.delete({
       where: { id: member.id },
     })
+    // A seat is free: a member locked for being over the plan may come back.
+    reconcileOverageSoon(id)
 
     return NextResponse.json({
       success: true,

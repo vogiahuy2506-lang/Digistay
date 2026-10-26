@@ -6,7 +6,7 @@ import { ROOM_SEGMENT_SELECT, withRoomTypeNames } from '@/lib/bookings/room-type
 import { z } from 'zod'
 import { sendAfterResponse } from '@/lib/email/outbox'
 import { BookingError, createBooking } from '@/lib/bookings/create-booking'
-import { lockedResponse } from '@/lib/billing/guard'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 const MAX_LIMIT = 100
 
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
         workspace: {
           OR: [
             { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id } } },
+            { members: { some: { userId: session.user.id, planLockedAt: null } } },
           ],
         },
         ...(workspaceId && { workspaceId }),
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
           workspace: {
             OR: [
               { ownerId: session.user.id },
-              { members: { some: { userId: session.user.id } } },
+              { members: { some: { userId: session.user.id, planLockedAt: null } } },
             ],
           },
         },
@@ -231,7 +231,7 @@ export async function POST(request: NextRequest) {
         workspace: {
           OR: [
             { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id } } },
+            { members: { some: { userId: session.user.id, planLockedAt: null } } },
           ],
         },
       },
@@ -241,7 +241,7 @@ export async function POST(request: NextRequest) {
     if (!property) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy cơ sở' }, { status: 404 })
     }
-    const locked = await lockedResponse(property.workspaceId)
+    const locked = await lockedResponseForProperty(property.id)
     if (locked) return locked
 
     const checkIn = new Date(data.checkInDate)

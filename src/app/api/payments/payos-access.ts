@@ -9,7 +9,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { PayosError } from '@/lib/payments/payos'
-import { lockedResponse } from '@/lib/billing/guard'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 export async function payosPaymentAction(
   paymentId: string,
@@ -19,7 +19,7 @@ export async function payosPaymentAction(
 ) {
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
-    select: { id: true, property: { select: { workspaceId: true } } },
+    select: { id: true, propertyId: true, property: { select: { workspaceId: true } } },
   })
   const role = payment ? await getWorkspaceRole(payment.property.workspaceId, userId) : null
   if (!payment || !role) {
@@ -29,7 +29,7 @@ export async function payosPaymentAction(
     return NextResponse.json({ success: false, error: 'Bạn không có quyền với khoản thanh toán này' }, { status: 403 })
   }
   if (options.refuseWhenLocked) {
-    const locked = await lockedResponse(payment.property.workspaceId)
+    const locked = await lockedResponseForProperty(payment.propertyId)
     if (locked) return locked
   }
   try {

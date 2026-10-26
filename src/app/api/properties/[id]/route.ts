@@ -5,6 +5,7 @@ import { updatePropertySchema } from '@/lib/validations'
 import { invalidatePublicSite } from '@/lib/public-site/site'
 import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
 import { lockedResponse, lockedResponseForProperty } from '@/lib/billing/guard'
+import { reconcileOverageSoon } from '@/lib/billing/overage'
 
 /** The editable fields, and the description in English. */
 const patchSchema = updatePropertySchema.extend({ translations: translationsInput(['description'], 2000) })
@@ -17,7 +18,7 @@ async function checkPropertyAccess(propertyId: string, userId: string) {
       workspace: {
         OR: [
           { ownerId: userId },
-          { members: { some: { userId } } },
+          { members: { some: { userId, planLockedAt: null } } },
         ],
       },
     },
@@ -25,7 +26,7 @@ async function checkPropertyAccess(propertyId: string, userId: string) {
       workspace: {
         select: {
           ownerId: true,
-          members: { where: { userId }, select: { role: true } },
+          members: { where: { userId, planLockedAt: null }, select: { role: true } },
         },
       },
     },
@@ -248,6 +249,8 @@ export async function DELETE(
         { status: 403 }
       )
     }
+    // Only the workspace's lock: a property locked for being over the plan
+    // can still be deleted (that is one way to fit the plan again).
     const locked = await lockedResponse(property.workspaceId)
     if (locked) return locked
 
@@ -255,6 +258,7 @@ export async function DELETE(
       where: { id },
     })
     invalidatePublicSite(id)
+    reconcileOverageSoon(property.workspaceId)
 
     // Log activity
     await prisma.activityLog.create({

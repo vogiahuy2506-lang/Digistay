@@ -6,7 +6,8 @@ import { z } from 'zod'
 import { BedType } from '@prisma/client'
 import { invalidatePublicSite } from '@/lib/public-site/site'
 import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
-import { lockedResponseForProperty, planResponse } from '@/lib/billing/guard'
+import { lockedResponseForProperty, planResponseForProperty } from '@/lib/billing/guard'
+import { reconcileOverageSoon } from '@/lib/billing/overage'
 import { roomTypeDelta } from '@/lib/billing/limits'
 import { hardCapacityProblem } from '@/lib/bookings/capacity'
 
@@ -58,7 +59,7 @@ export async function GET(request: NextRequest, props: RouteParams) {
               select: {
                 ownerId: true,
                 members: {
-                  where: { userId: session.user.id },
+                  where: { userId: session.user.id, planLockedAt: null },
                   select: { role: true },
                 },
               },
@@ -115,7 +116,7 @@ export async function PUT(request: NextRequest, props: RouteParams) {
               select: {
                 ownerId: true,
                 members: {
-                  where: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER'] } },
+                  where: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER'] }, planLockedAt: null },
                   select: { role: true },
                 },
               },
@@ -175,7 +176,8 @@ export async function PUT(request: NextRequest, props: RouteParams) {
     }
 
     // More rooms (a bigger count, or the type switched back on) count against the plan.
-    const overPlan = await planResponse(roomType.property.workspaceId, 'rooms', roomTypeDelta(roomType, data))
+    const delta = roomTypeDelta(roomType, data)
+    const overPlan = await planResponseForProperty(roomType.propertyId, 'rooms', delta)
     if (overPlan) return overPlan
 
     // Cast bedType to BedType enum
@@ -235,6 +237,8 @@ export async function PUT(request: NextRequest, props: RouteParams) {
 
     // Log activity
     invalidatePublicSite(roomType.propertyId)
+    // Fewer rooms (or a locked type turned off): something locked over the plan may fit again.
+    if (delta < 0 || roomType.planLockedAt) reconcileOverageSoon(roomType.property.workspaceId)
 
     await prisma.activityLog.create({
       data: {
@@ -272,11 +276,12 @@ export async function DELETE(request: NextRequest, props: RouteParams) {
       include: {
         property: {
           select: {
+            workspaceId: true,
             workspace: {
               select: {
                 ownerId: true,
                 members: {
-                  where: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER'] } },
+                  where: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER'] }, planLockedAt: null },
                   select: { role: true },
                 },
               },
@@ -306,6 +311,7 @@ export async function DELETE(request: NextRequest, props: RouteParams) {
       where: { id: params.id },
     })
     invalidatePublicSite(roomType.propertyId)
+    reconcileOverageSoon(roomType.property.workspaceId)
 
     // Log activity
     await prisma.activityLog.create({

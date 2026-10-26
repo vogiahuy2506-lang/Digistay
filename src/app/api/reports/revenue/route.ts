@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
         workspace: {
           OR: [
             { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER'] } } } },
+            { members: { some: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER'] }, planLockedAt: null } } },
           ],
         },
       },

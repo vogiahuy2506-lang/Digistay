@@ -50,7 +50,8 @@ export default async function BookingPage({ params, searchParams }: PageProps) {
   const [roomType, defaults, policy, services, deposit] = await Promise.all([
     q.room
       ? prisma.roomType.findFirst({
-          where: { id: q.room, propertyId, isActive: true },
+          // Not one locked for being over the plan (src/lib/billing/overage.ts): shown as unavailable.
+          where: { id: q.room, propertyId, isActive: true, planLockedAt: null, property: { planLockedAt: null } },
           include: { images: { where: { isPrimary: true }, take: 1 }, ...ROOM_RATE_INCLUDE },
         })
       : null,

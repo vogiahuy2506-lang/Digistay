@@ -68,6 +68,7 @@ export async function GET(request: NextRequest) {
         property: { isActive: true },
       },
       include: {
+        property: { select: { planLockedAt: true } },
         images: {
           where: { isPrimary: true },
           take: 1,
@@ -90,7 +91,9 @@ export async function GET(request: NextRequest) {
       const rates = ratesFrom(roomType.pricing[0], defaults)
       // A room type without a price cannot be booked: not offered.
       if (!rates) return []
-      const availableRooms = Math.max(0, roomType.totalRooms - (taken.get(roomType.id) ?? 0))
+      // Locked for being over the plan (src/lib/billing/overage.ts): shown, but none free.
+      const planLocked = !!roomType.planLockedAt || !!roomType.property.planLockedAt
+      const availableRooms = planLocked ? 0 : Math.max(0, roomType.totalRooms - (taken.get(roomType.id) ?? 0))
       const quote = quoteStay({ rates, checkIn, checkOut, numAdults: adults, numChildren: children, baseOccupancy: roomType.baseOccupancy })
 
       return [{

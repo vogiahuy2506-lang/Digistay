@@ -45,7 +45,7 @@ const mockPrisma = prisma as unknown as {
 }
 
 const workspacesOf = (userId: string, roles: string[]) => ({
-  OR: [{ ownerId: userId }, { members: { some: { userId, role: { in: roles } } } }],
+  OR: [{ ownerId: userId }, { members: { some: { userId, role: { in: roles }, planLockedAt: null } } }],
 })
 /** Staff of the workspace list payments; a USER member does not. */
 const accessFilter = (userId: string) => ({

@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
             { ownerId: session.user.id },
             {
               members: {
-                some: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER', 'RECEPTIONIST'] } },
+                some: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER', 'RECEPTIONIST'] }, planLockedAt: null },
               },
             },
           ],

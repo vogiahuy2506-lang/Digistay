@@ -13,7 +13,7 @@ async function checkWorkspaceAccess(workspaceId: string, userId: string) {
       id: workspaceId,
       OR: [
         { ownerId: userId },
-        { members: { some: { userId } } },
+        { members: { some: { userId, planLockedAt: null } } },
       ],
     },
   })
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
         where: {
           OR: [
             { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id } } },
+            { members: { some: { userId: session.user.id, planLockedAt: null } } },
           ],
         },
         select: { id: true },

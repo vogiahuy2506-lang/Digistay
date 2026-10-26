@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { createPricingSchema, updatePricingSchema } from '@/lib/validations'
 import { invalidatePublicSite } from '@/lib/public-site/site'
-import { lockedResponse } from '@/lib/billing/guard'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 // Check if user has admin access to property's workspace
 async function checkPropertyAdmin(propertyId: string, userId: string) {
@@ -13,7 +13,7 @@ async function checkPropertyAdmin(propertyId: string, userId: string) {
       workspace: {
         OR: [
           { ownerId: userId },
-          { members: { some: { userId, role: 'ADMIN' } } },
+          { members: { some: { userId, role: 'ADMIN', planLockedAt: null } } },
         ],
       },
     },
@@ -48,7 +48,7 @@ export async function GET(
         workspace: {
           OR: [
             { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id } } },
+            { members: { some: { userId: session.user.id, planLockedAt: null } } },
           ],
         },
       },
@@ -103,7 +103,7 @@ export async function POST(
         { status: 403 }
       )
     }
-    const locked = await lockedResponse(property.workspaceId)
+    const locked = await lockedResponseForProperty(id)
     if (locked) return locked
 
     const body = await request.json()
@@ -186,7 +186,7 @@ export async function PATCH(
           workspace: {
             OR: [
               { ownerId: session.user.id },
-              { members: { some: { userId: session.user.id, role: 'ADMIN' } } },
+              { members: { some: { userId: session.user.id, role: 'ADMIN', planLockedAt: null } } },
             ],
           },
         },
@@ -206,7 +206,7 @@ export async function PATCH(
         { status: 403 }
       )
     }
-    const locked = await lockedResponse(property.property.workspaceId)
+    const locked = await lockedResponseForProperty(id)
     if (locked) return locked
 
     // Validate input
@@ -285,7 +285,7 @@ export async function DELETE(
           workspace: {
             OR: [
               { ownerId: session.user.id },
-              { members: { some: { userId: session.user.id, role: 'ADMIN' } } },
+              { members: { some: { userId: session.user.id, role: 'ADMIN', planLockedAt: null } } },
             ],
           },
         },
@@ -305,7 +305,7 @@ export async function DELETE(
         { status: 403 }
       )
     }
-    const locked = await lockedResponse(property.property.workspaceId)
+    const locked = await lockedResponseForProperty(id)
     if (locked) return locked
 
     await prisma.pricingConfig.delete({

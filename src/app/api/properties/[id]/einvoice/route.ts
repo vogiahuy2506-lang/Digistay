@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db'
 import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { EinvoiceError, connectEinvoice, disconnectEinvoice, getEinvoiceStatus } from '@/lib/einvoice/matbao'
 import { isVatCode } from '@/lib/einvoice/vat'
-import { lockedResponse } from '@/lib/billing/guard'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -43,7 +43,7 @@ export async function PUT(request: NextRequest, props: Props) {
   if (!workspaceId) return NOT_FOUND()
   const access = await requireWorkspaceRole(workspaceId, WorkspaceRoles.ADMINS)
   if (!access.ok) return access.response
-  const locked = await lockedResponse(workspaceId)
+  const locked = await lockedResponseForProperty(id)
   if (locked) return locked
 
   const parsed = settingsSchema.safeParse(await request.json().catch(() => ({})))
@@ -93,7 +93,7 @@ export async function PATCH(request: NextRequest, props: Props) {
   if (!workspaceId) return NOT_FOUND()
   const access = await requireWorkspaceRole(workspaceId, WorkspaceRoles.ADMINS)
   if (!access.ok) return access.response
-  const locked = await lockedResponse(workspaceId)
+  const locked = await lockedResponseForProperty(id)
   if (locked) return locked
 
   const parsed = optionsSchema.safeParse(await request.json().catch(() => ({})))
@@ -137,7 +137,7 @@ export async function DELETE(_request: NextRequest, props: Props) {
   if (!workspaceId) return NOT_FOUND()
   const access = await requireWorkspaceRole(workspaceId, WorkspaceRoles.ADMINS)
   if (!access.ok) return access.response
-  const locked = await lockedResponse(workspaceId)
+  const locked = await lockedResponseForProperty(id)
   if (locked) return locked
   await disconnectEinvoice(id)
   await prisma.activityLog.create({

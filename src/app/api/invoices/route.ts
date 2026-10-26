@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
         workspace: {
           OR: [
             { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id } } },
+            { members: { some: { userId: session.user.id, planLockedAt: null } } },
           ],
         },
       },
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
                 ownerId: true,
                 // Staff only, like publishing (STAFF_AND_UP)
                 members: {
-                  where: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER', 'RECEPTIONIST'] } },
+                  where: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER', 'RECEPTIONIST'] }, planLockedAt: null },
                 },
               },
             },

@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { uploadImageSchema } from '@/lib/validations'
 import { invalidatePublicSite } from '@/lib/public-site/site'
-import { lockedResponse } from '@/lib/billing/guard'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 export async function GET(
   request: NextRequest,
@@ -27,7 +27,7 @@ export async function GET(
         workspace: {
           OR: [
             { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id } } },
+            { members: { some: { userId: session.user.id, planLockedAt: null } } },
           ],
         },
       },
@@ -85,7 +85,7 @@ export async function POST(
         workspace: {
           OR: [
             { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, role: 'ADMIN' } } },
+            { members: { some: { userId: session.user.id, role: 'ADMIN', planLockedAt: null } } },
           ],
         },
       },
@@ -102,7 +102,7 @@ export async function POST(
         { status: 403 }
       )
     }
-    const locked = await lockedResponse(property.workspaceId)
+    const locked = await lockedResponseForProperty(id)
     if (locked) return locked
 
     const body = await request.json()
@@ -192,7 +192,7 @@ export async function DELETE(
           workspace: {
             OR: [
               { ownerId: session.user.id },
-              { members: { some: { userId: session.user.id, role: 'ADMIN' } } },
+              { members: { some: { userId: session.user.id, role: 'ADMIN', planLockedAt: null } } },
             ],
           },
         },
@@ -212,7 +212,7 @@ export async function DELETE(
         { status: 403 }
       )
     }
-    const locked = await lockedResponse(property.property.workspaceId)
+    const locked = await lockedResponseForProperty(id)
     if (locked) return locked
 
     await prisma.propertyImage.delete({

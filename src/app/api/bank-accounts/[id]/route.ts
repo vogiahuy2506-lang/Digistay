@@ -29,7 +29,7 @@ async function userCanManageBankAccount(
               // ADMIN only, like creating an account and PayOS: the account
               // number decides where guests' QR transfers go.
               members: {
-                where: { userId, role: 'ADMIN' },
+                where: { userId, role: 'ADMIN', planLockedAt: null },
                 select: { id: true },
               },
             },

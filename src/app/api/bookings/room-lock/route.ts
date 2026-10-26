@@ -6,7 +6,7 @@ import { randomUUID } from 'crypto'
 import { getClientIp } from '@/lib/security/client-ip'
 import { LIMITS } from '@/lib/security/limits'
 import { hit, tooManyRequests } from '@/lib/security/rate-limit'
-import { ONLINE_BOOKING_PAUSED, isWorkspaceLocked } from '@/lib/billing/guard'
+import { onlineBookingRefusal } from '@/lib/billing/guard'
 import { HOLD_COOKIE, HOLD_COOKIE_MAX_AGE, HOLD_HEADER, holdSessionId } from '@/lib/bookings/hold-session'
 
 const lockSchema = z.object({
@@ -54,16 +54,15 @@ export async function POST(request: NextRequest) {
     // The room type must be this property's, of an active hotel.
     const roomType = await prisma.roomType.findFirst({
       where: { id: roomTypeId, propertyId, isActive: true, property: { isActive: true } },
-      select: { id: true, totalRooms: true, property: { select: { workspaceId: true } } },
+      select: { id: true, totalRooms: true, planLockedAt: true, property: { select: { workspaceId: true, planLockedAt: true } } },
     })
 
     if (!roomType) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy hạng phòng' }, { status: 404 })
     }
-    // The guest's hold before booking online: none while the workspace is locked (src/lib/billing).
-    if (await isWorkspaceLocked(roomType.property.workspaceId)) {
-      return NextResponse.json({ success: false, error: ONLINE_BOOKING_PAUSED }, { status: 403 })
-    }
+    // The guest's hold before booking online: none while the workspace, the property or the room type is locked (src/lib/billing).
+    const refusal = await onlineBookingRefusal(roomType)
+    if (refusal) return NextResponse.json({ success: false, error: refusal }, { status: 403 })
     if (Number.isNaN(lockStart.getTime()) || Number.isNaN(lockEnd.getTime()) || lockEnd <= lockStart) {
       return NextResponse.json({ success: false, error: 'Ngày không hợp lệ' }, { status: 400 })
     }

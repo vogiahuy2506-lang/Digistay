@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db'
 import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { RoomError, countRooms, parseRoomNumbers, peakTaken } from '@/lib/bookings/rooms'
 import { invalidatePublicSite } from '@/lib/public-site/site'
-import { planResponse } from '@/lib/billing/guard'
+import { planResponseForProperty } from '@/lib/billing/guard'
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest, props: Props) {
   // The plan's number of rooms (src/lib/billing): the type's count becomes its active rooms plus these.
   const typeNow = await prisma.roomType.findFirst({
     where: { id: parsed.data.roomTypeId, propertyId: id },
-    select: { id: true, isActive: true, totalRooms: true },
+    select: { id: true, isActive: true, totalRooms: true, planLockedAt: true },
   })
   if (typeNow) {
     const [all, active] = await Promise.all([
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest, props: Props) {
       prisma.room.count({ where: { roomTypeId: typeNow.id, isActive: true } }),
     ])
     const after = (all > 0 ? active : 0) + numbers.length
-    const overPlan = await planResponse(workspaceId, 'rooms', typeNow.isActive ? after - typeNow.totalRooms : 0)
+    const overPlan = await planResponseForProperty(id, 'rooms', typeNow.isActive && !typeNow.planLockedAt ? after - typeNow.totalRooms : 0)
     if (overPlan) return overPlan
   }
 

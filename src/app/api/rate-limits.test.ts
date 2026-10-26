@@ -47,7 +47,14 @@ vi.mock('@/lib/db', () => ({
   },
 }))
 // The plan's staff limit (src/lib/billing) is not what this file tests.
-vi.mock('@/lib/billing/guard', () => ({ planResponse: vi.fn(async () => null), lockedResponse: vi.fn(async () => null), lockedResponseForProperty: vi.fn(async () => null) }))
+vi.mock('@/lib/billing/guard', () => ({
+  planResponse: vi.fn(async () => null),
+  planResponseForProperty: vi.fn(async () => null),
+  lockedResponse: vi.fn(async () => null),
+  lockedResponseForProperty: vi.fn(async () => null),
+  onlineBookingRefusal: vi.fn(async () => null),
+  ROOM_TYPE_PLAN_LOCKED: 'locked',
+}))
 vi.mock('@/lib/email', () => ({
   sendOtpEmail: vi.fn(async ({ recipientEmail }: { recipientEmail: string }) => {
     h.sent.push(recipientEmail)

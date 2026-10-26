@@ -44,7 +44,7 @@ export async function GET(
                   select: { email: true, name: true },
                 },
                 members: {
-                  where: { userId: session.user.id },
+                  where: { userId: session.user.id, planLockedAt: null },
                   select: { role: true },
                 },
               },
@@ -112,7 +112,7 @@ export async function PATCH(
               select: {
                 ownerId: true,
                 members: {
-                  where: { userId: session.user.id },
+                  where: { userId: session.user.id, planLockedAt: null },
                   select: { role: true },
                 },
               },
@@ -254,7 +254,7 @@ export async function DELETE(
               select: {
                 ownerId: true,
                 members: {
-                  where: { userId: session.user.id },
+                  where: { userId: session.user.id, planLockedAt: null },
                   select: { role: true },
                 },
               },

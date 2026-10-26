@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
-import { lockedResponse } from '@/lib/billing/guard'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
 import { bankAccountFields } from './fields'
 
 const bankAccountSchema = z.object({
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
         workspace: {
           OR: [
             { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id } } },
+            { members: { some: { userId: session.user.id, planLockedAt: null } } },
           ],
         },
       },
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
         workspace: {
           OR: [
             { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, role: 'ADMIN' } } },
+            { members: { some: { userId: session.user.id, role: 'ADMIN', planLockedAt: null } } },
           ],
         },
       },
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Không có quyền thêm tài khoản' }, { status: 403 })
     }
 
-    const locked = await lockedResponse(property.workspaceId)
+    const locked = await lockedResponseForProperty(property.id)
     if (locked) return locked
 
     const bankAccount = await prisma.bankAccount.create({
