@@ -33,6 +33,8 @@ import { useUploadProblemText } from '@/components/ui/photo-upload'
 import { AccountTopBar } from './account-top-bar'
 import { BUSINESS_TYPES, CURRENCIES, TIMEZONES, type BusinessType, workspaceSettingsOf } from './options'
 import { finishSlugInput, onNameTyped, onSlugTyped, slugFromName } from './slug-input'
+import { DeleteWorkspaceDialog } from '@/components/deletion/delete-workspace-dialog'
+import { RecentlyDeleted } from '@/components/deletion/recently-deleted'
 
 interface Workspace {
   id: string
@@ -96,6 +98,9 @@ export default function WorkspacesPage() {
   const [saving, setSaving] = React.useState(false)
   const [editing, setEditing] = React.useState<Workspace | null>(null)
   const [createOpen, setCreateOpen] = React.useState(false)
+  /** The workspace in the delete dialog (src/lib/deletion); bumping deletedVersion reloads "Đã xoá gần đây". */
+  const [deleting, setDeleting] = React.useState<Workspace | null>(null)
+  const [deletedVersion, setDeletedVersion] = React.useState(0)
 
   const fetchWorkspaces = React.useCallback(async () => {
     const [listRes, meRes] = await Promise.all([fetch('/api/workspaces'), fetch('/api/users/me')])
@@ -230,16 +235,13 @@ export default function WorkspacesPage() {
     }
   }
 
-  const remove = async (ws: Workspace) => {
-    if (!window.confirm(t('actions.deleteConfirm', { name: ws.name }))) return
-    const res = await fetch(`/api/workspaces/${ws.id}`, { method: 'DELETE' })
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}))
-      toast.error(apiError(data.error) || t('form.failed'))
-      return
-    }
+  // Deleting asks for the name and says what happens (DeleteWorkspaceDialog).
+  const remove = (ws: Workspace) => setDeleting(ws)
+
+  const removed = async () => {
+    setDeleting(null)
     await fetchWorkspaces()
-    toast.success(t('actions.delete'))
+    setDeletedVersion((v) => v + 1)
   }
 
   const answerInvitation = async (invitation: Invitation, accept: boolean) => {
@@ -406,7 +408,18 @@ export default function WorkspacesPage() {
             </ul>
           </section>
         )}
+
+        {/* The owner's workspaces deleted in the last 30 days, to restore. */}
+        <RecentlyDeleted kind="workspace" reloadKey={deletedVersion} />
       </main>
+
+      <DeleteWorkspaceDialog
+        workspaceId={deleting?.id ?? null}
+        workspaceName={deleting?.name}
+        open={deleting !== null}
+        onClose={() => setDeleting(null)}
+        onDeleted={removed}
+      />
 
       <WorkspaceFormModal
         open={createOpen}

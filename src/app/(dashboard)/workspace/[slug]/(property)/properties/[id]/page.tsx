@@ -16,6 +16,7 @@ import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { useDashLabels } from '@/lib/i18n/dash'
 import { EditPropertyModal } from './edit-property-modal'
+import { DeletePropertyZone } from '@/components/deletion/delete-property-zone'
 import { apiError } from '@/lib/i18n/api-errors'
 import { PhotoUploadButton } from '@/components/ui/photo-upload'
 import { resizedImage } from '@/lib/media/image-url'
@@ -606,6 +607,9 @@ export default function PropertyDetailPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Deleting the property: its workspace's owner only. */}
+          <DeletePropertyZone propertyId={propertyId} slug={slug} />
         </TabsContent>
 
         {/* Room Types Tab */}

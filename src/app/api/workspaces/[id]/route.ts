@@ -97,6 +97,8 @@ export async function GET(
             subdomain: true,
           },
         },
+        // The settings page's security tab shows these (it crashed without them).
+        _count: { select: { properties: true, members: true } },
       },
     })
 
