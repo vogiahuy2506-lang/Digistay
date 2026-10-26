@@ -4,6 +4,8 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { updateWorkspaceSchema, validationMessage } from '@/lib/validations'
 import { lockedResponse } from '@/lib/billing/guard'
+import { guestsBooked, liveWorkspaceForOwner, lockRoomTypes, openPlanPayment } from '@/lib/deletion/deletion'
+import { purgeAt, sameName } from '@/lib/deletion/rules'
 
 // Helper function to check workspace access
 async function checkWorkspaceAccess(workspaceId: string, userId: string) {
@@ -218,6 +220,15 @@ export async function PATCH(
   }
 }
 
+/**
+ * DELETE { confirmName } — the owner deletes the workspace (src/lib/deletion):
+ * it, its properties and their sites disappear at once for everyone; the
+ * owner can restore it for 30 days (POST ./restore), then it is purged.
+ * Refused while guests are staying or booked at any of its properties, and
+ * while a plan payment link is still open. A paid plan's remaining time is
+ * not refunded; its end date does not move. The workspace's lock does not
+ * stop it.
+ */
 export async function DELETE(
   request: NextRequest,
   props: { params: Promise<{ id: string }> }
@@ -233,34 +244,75 @@ export async function DELETE(
         { status: 401 }
       )
     }
+    const userId = session.user.id
 
-    const workspace = await prisma.workspace.findUnique({
-      where: { id },
-      select: { ownerId: true },
-    })
+    const found = await liveWorkspaceForOwner(id, userId)
+    if (!found.ok) {
+      return found.status === 404
+        ? NextResponse.json({ success: false, error: 'Không tìm thấy workspace' }, { status: 404 })
+        : NextResponse.json({ success: false, error: 'Chỉ chủ sở hữu mới có thể xóa workspace' }, { status: 403 })
+    }
+    const workspace = found.row
 
-    if (!workspace) {
+    const body = await request.json().catch(() => null)
+    if (!sameName(body?.confirmName, workspace.name)) {
       return NextResponse.json(
-        { success: false, error: 'Không tìm thấy workspace' },
-        { status: 404 }
+        { success: false, error: 'Tên workspace không khớp. Gõ đúng tên workspace để xác nhận xoá.', code: 'NAME_MISMATCH' },
+        { status: 400 }
+      )
+    }
+    const now = new Date()
+    if (await openPlanPayment(id, now)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Workspace đang có một thanh toán gói chưa hoàn tất. Đợi thanh toán xong hoặc hết hạn rồi xoá lại.',
+          code: 'PLAN_PAYMENT_OPEN',
+        },
+        { status: 409 }
       )
     }
 
-    // Only owner can delete workspace
-    if (workspace.ownerId !== session.user.id) {
+    const outcome = await prisma.$transaction(async (tx) => {
+      await lockRoomTypes(tx, { workspaceId: id })
+      const booked = await guestsBooked(tx, { workspaceId: id }, now)
+      if (booked > 0) return { booked }
+      const { count } = await tx.workspace.updateMany({
+        where: { id, deletedAt: null },
+        data: { deletedAt: now, deletedById: userId },
+      })
+      if (count === 0) return { gone: true as const }
+      await tx.activityLog.create({
+        data: {
+          userId,
+          workspaceId: id,
+          action: 'DELETE',
+          entityType: 'WORKSPACE',
+          entityId: id,
+          metadata: { name: workspace.name, slug: workspace.slug, purgeAt: purgeAt(now).toISOString() },
+        },
+      })
+      return { deleted: true as const }
+    })
+    if ('booked' in outcome) {
       return NextResponse.json(
-        { success: false, error: 'Chỉ chủ sở hữu mới có thể xóa workspace' },
-        { status: 403 }
+        {
+          success: false,
+          error: `Workspace còn ${outcome.booked} đơn đặt phòng của khách đang ở hoặc sắp đến. Huỷ hoặc chuyển các đơn này trước khi xoá.`,
+          code: 'GUESTS_BOOKED',
+          count: outcome.booked,
+        },
+        { status: 409 }
       )
     }
-
-    await prisma.workspace.delete({
-      where: { id },
-    })
+    if ('gone' in outcome) {
+      return NextResponse.json({ success: false, error: 'Không tìm thấy workspace' }, { status: 404 })
+    }
 
     return NextResponse.json({
       success: true,
-      message: 'Xóa workspace thành công',
+      data: { purgeAt: purgeAt(now).toISOString() },
+      message: 'Đã xoá workspace. Bạn có thể khôi phục trong 30 ngày.',
     })
   } catch (error) {
     console.error('Delete workspace error:', error)

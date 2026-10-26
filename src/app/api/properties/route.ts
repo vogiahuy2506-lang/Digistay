@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { prisma, prismaWithDeleted } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { createPropertySchema } from '@/lib/validations'
 import { generateSlug, generateSubdomain } from '@/lib/utils'
@@ -149,9 +149,10 @@ export async function POST(request: NextRequest) {
 
     const { name, subdomain, ...rest } = validation.data
 
-    // Generate slug and check uniqueness
+    // Generate slug and check uniqueness. A deleted property keeps its slug
+    // and subdomain until it is purged (src/lib/deletion), so they count.
     const slug = generateSlug(name)
-    const existingProperty = await prisma.property.findUnique({
+    const existingProperty = await prismaWithDeleted.property.findUnique({
       where: { slug },
     })
 
@@ -163,7 +164,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check subdomain uniqueness
-    const existingSubdomain = await prisma.property.findUnique({
+    const existingSubdomain = await prismaWithDeleted.property.findUnique({
       where: { subdomain },
     })
 

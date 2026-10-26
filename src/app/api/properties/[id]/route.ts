@@ -4,7 +4,9 @@ import { auth } from '@/lib/auth'
 import { updatePropertySchema } from '@/lib/validations'
 import { invalidatePublicSite } from '@/lib/public-site/site'
 import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
-import { lockedResponse, lockedResponseForProperty } from '@/lib/billing/guard'
+import { lockedResponseForProperty } from '@/lib/billing/guard'
+import { guestsBooked, livePropertyForOwner, lockRoomTypes } from '@/lib/deletion/deletion'
+import { purgeAt, sameName } from '@/lib/deletion/rules'
 
 /** The editable fields, and the description in English. */
 const patchSchema = updatePropertySchema.extend({ translations: translationsInput(['description'], 2000) })
@@ -212,6 +214,12 @@ export async function PATCH(
   }
 }
 
+/**
+ * DELETE { confirmName } — the workspace's owner deletes the property
+ * (src/lib/deletion): hidden at once everywhere, restorable for 30 days
+ * (POST ./restore), then purged. Refused while guests are staying or booked.
+ * The workspace's lock does not stop it: deleting is one way back under the plan.
+ */
 export async function DELETE(
   request: NextRequest,
   props: { params: Promise<{ id: string }> }
@@ -227,49 +235,67 @@ export async function DELETE(
         { status: 401 }
       )
     }
+    const userId = session.user.id
 
-    // Only owner can delete
-    const property = await prisma.property.findFirst({
-      where: {
-        id,
-        workspace: {
-          ownerId: session.user.id,
-        },
-      },
-      select: {
-        id: true,
-        workspaceId: true,
-      },
-    })
+    const found = await livePropertyForOwner(id, userId)
+    if (!found.ok) {
+      return found.status === 404
+        ? NextResponse.json({ success: false, error: 'Không tìm thấy cơ sở' }, { status: 404 })
+        : NextResponse.json({ success: false, error: 'Chỉ chủ sở hữu workspace mới có thể xoá cơ sở' }, { status: 403 })
+    }
+    const property = found.row
 
-    if (!property) {
+    const body = await request.json().catch(() => null)
+    if (!sameName(body?.confirmName, property.name)) {
       return NextResponse.json(
-        { success: false, error: 'Bạn không có quyền xóa cơ sở này' },
-        { status: 403 }
+        { success: false, error: 'Tên cơ sở không khớp. Gõ đúng tên cơ sở để xác nhận xoá.', code: 'NAME_MISMATCH' },
+        { status: 400 }
       )
     }
-    const locked = await lockedResponse(property.workspaceId)
-    if (locked) return locked
 
-    await prisma.property.delete({
-      where: { id },
+    const now = new Date()
+    const outcome = await prisma.$transaction(async (tx) => {
+      await lockRoomTypes(tx, { propertyId: id })
+      const booked = await guestsBooked(tx, { propertyId: id }, now)
+      if (booked > 0) return { booked }
+      const { count } = await tx.property.updateMany({
+        where: { id, deletedAt: null },
+        data: { deletedAt: now, deletedById: userId },
+      })
+      if (count === 0) return { gone: true as const }
+      await tx.activityLog.create({
+        data: {
+          userId,
+          workspaceId: property.workspaceId,
+          propertyId: id,
+          action: 'DELETE',
+          entityType: 'PROPERTY',
+          entityId: id,
+          metadata: { name: property.name, subdomain: property.subdomain, purgeAt: purgeAt(now).toISOString() },
+        },
+      })
+      return { deleted: true as const }
     })
+    if ('booked' in outcome) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Cơ sở còn ${outcome.booked} đơn đặt phòng của khách đang ở hoặc sắp đến. Huỷ hoặc chuyển các đơn này trước khi xoá.`,
+          code: 'GUESTS_BOOKED',
+          count: outcome.booked,
+        },
+        { status: 409 }
+      )
+    }
+    if ('gone' in outcome) {
+      return NextResponse.json({ success: false, error: 'Không tìm thấy cơ sở' }, { status: 404 })
+    }
     invalidatePublicSite(id)
-
-    // Log activity
-    await prisma.activityLog.create({
-      data: {
-        userId: session.user.id,
-        workspaceId: property.workspaceId,
-        action: 'DELETE',
-        entityType: 'PROPERTY',
-        entityId: id,
-      },
-    })
 
     return NextResponse.json({
       success: true,
-      message: 'Xóa cơ sở thành công',
+      data: { purgeAt: purgeAt(now).toISOString() },
+      message: 'Đã xoá cơ sở. Bạn có thể khôi phục trong 30 ngày.',
     })
   } catch (error) {
     console.error('Delete property error:', error)
