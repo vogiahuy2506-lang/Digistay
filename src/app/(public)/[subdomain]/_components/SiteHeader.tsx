@@ -26,9 +26,11 @@ export function SiteHeader({ property, sections, onHome = true }: Props) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-page/95 backdrop-blur">
-      <Container className="flex h-16 sm:h-20 items-center gap-6">
+      <Container className="flex h-16 sm:h-20 items-center gap-3 sm:gap-6">
+        {/* Phones: the name on up to two lines and the controls tighter; it
+            used to be cut to "Khách sạn…" beside EN, "Đặt phòng" and the menu. */}
         <SiteLink path="/" className="min-w-0 shrink focus:outline-none focus-visible:underline">
-          <span className="block font-site text-[20px] sm:text-[24px] leading-tight text-fg truncate">{property.name}</span>
+          <span className="block font-site text-[17px] leading-[1.15] sm:text-[24px] text-fg text-balance line-clamp-2 [overflow-wrap:anywhere]">{property.name}</span>
           <span className="block text-[10px] uppercase tracking-[0.18em] text-muted truncate">
             {propertyTypeLabel(property.type, t)} · {property.city}
           </span>
@@ -50,7 +52,7 @@ export function SiteHeader({ property, sections, onHome = true }: Props) {
           </nav>
         )}
 
-        <div className="ml-auto flex items-center gap-3 sm:gap-5 shrink-0">
+        <div className="ml-auto flex items-center gap-1.5 sm:gap-5 shrink-0">
           <div className="flex items-center">
             {/* Below lg, where the section menu is, the toggle sits in that menu: the hotel's name needs the room. */}
             <SiteThemeToggle
@@ -65,11 +67,11 @@ export function SiteHeader({ property, sections, onHome = true }: Props) {
             </a>
           )}
           {onHome ? (
-            <a href={bookPath} className="inline-flex h-11 items-center rounded-ctl bg-ink px-5 text-small font-medium text-on-ink hover:bg-ink/90 transition-colors">
+            <a href={bookPath} className="inline-flex h-11 items-center whitespace-nowrap rounded-ctl bg-ink px-3 sm:px-5 text-small font-medium text-on-ink hover:bg-ink/90 transition-colors">
               {t('nav.book')}
             </a>
           ) : (
-            <SiteLink path={bookPath} className="inline-flex h-11 items-center rounded-ctl bg-ink px-5 text-small font-medium text-on-ink hover:bg-ink/90 transition-colors">
+            <SiteLink path={bookPath} className="inline-flex h-11 items-center whitespace-nowrap rounded-ctl bg-ink px-3 sm:px-5 text-small font-medium text-on-ink hover:bg-ink/90 transition-colors">
               {t('nav.book')}
             </SiteLink>
           )}

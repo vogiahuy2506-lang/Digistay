@@ -84,6 +84,24 @@ export async function roomsTakenByType(db: Db, span: Span) {
   return taken
 }
 
+/**
+ * The guest's own hold at a hotel, by their hold session (hold-session.ts;
+ * the room-lock route keeps one per session and hotel): its id, to pass as
+ * `ownHoldId`. `roomTypeId`: only a hold of that room type.
+ */
+export async function heldBySession(
+  db: Db,
+  { propertyId, roomTypeId, sessionId }: { propertyId: string; roomTypeId?: string; sessionId: string | null | undefined },
+) {
+  if (!sessionId) return null
+  const hold = await db.roomLock.findFirst({
+    where: { propertyId, sessionId, type: 'HOLD', bookingId: null, ...(roomTypeId && { roomTypeId }) },
+    orderBy: { createdAt: 'desc' },
+    select: { id: true },
+  })
+  return hold?.id ?? null
+}
+
 /** Serializes bookings of one room type: two requests for the last room cannot both pass the count. */
 export async function lockRoomType(tx: Prisma.TransactionClient, roomTypeId: string) {
   await tx.$queryRaw`SELECT id FROM room_types WHERE id = ${roomTypeId} FOR UPDATE`

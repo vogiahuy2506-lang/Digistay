@@ -25,7 +25,7 @@ import { roomPath, sitePageUrl } from '@/lib/seo/urls'
 
 interface PageProps {
   params: Promise<{ subdomain: string; roomId: string }>
-  searchParams: Promise<{ checkIn?: string; checkOut?: string }>
+  searchParams: Promise<{ checkIn?: string; checkOut?: string; adults?: string; children?: string }>
 }
 
 export const dynamic = 'force-dynamic'
@@ -38,6 +38,10 @@ const SECTIONS: Record<string, SiteSection> = {
 }
 
 const day = (v: string | undefined) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined)
+const guests = (v: string | undefined) => {
+  const n = Number.parseInt(v ?? '', 10)
+  return Number.isFinite(n) ? n : undefined
+}
 
 /** The hotel and the room type (active only), once per request for the metadata and the page. */
 const loadRoomPage = cache(async (propertyId: string, roomId: string) => {
@@ -276,6 +280,8 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
                 maxChildren={room.maxChildren}
                 checkIn={day(query.checkIn)}
                 checkOut={day(query.checkOut)}
+                adults={guests(query.adults)}
+                childGuests={guests(query.children)}
               />
             </aside>
           </div>

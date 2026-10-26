@@ -42,7 +42,8 @@ export function RoomsBlock({ block, roomTypes, property }: Props) {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img {...responsiveImage(room.image, '(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw', { fallback: 800 })} alt={room.name} loading="lazy" className="aspect-[4/3] w-full object-cover" />
               ) : (
-                <PhotoPlaceholder label={t('room.noPhoto')} className="aspect-[4/3] w-full" />
+                // One column on phones: no photo to line up with, so no tall empty block.
+                <PhotoPlaceholder label={t('room.noPhoto')} className="h-28 w-full sm:h-auto sm:aspect-[4/3]" />
               )}
               <div className="flex flex-1 flex-col p-5">
                 <div className="flex items-start justify-between gap-3">

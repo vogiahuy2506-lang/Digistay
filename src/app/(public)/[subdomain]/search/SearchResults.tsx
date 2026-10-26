@@ -8,7 +8,7 @@ import { nightsOf } from '@/lib/pricing/quote'
 import { cn } from '@/lib/utils'
 import { responsiveImage } from '@/lib/media/image-url'
 import { SiteLink, useSiteHref } from '../_components/site-base'
-import { Container, bedLabel } from '../_components/site-ui'
+import { Container, PhotoPlaceholder, bedLabel } from '../_components/site-ui'
 import { stayDate } from '../_components/booking/StaySummary'
 
 interface Result {
@@ -47,12 +47,15 @@ export function SearchResults({
   checkInTime,
   checkOutTime,
   initial,
+  vatRate,
 }: {
   propertyId: string
   phone: string | null
   checkInTime: string
   checkOutTime: string
   initial: StayQuery
+  /** the hotel's VAT rate (%), included in its prices; null: none on its invoices */
+  vatRate: number | null
 }) {
   const t = useTranslations('site')
   const locale = useLocale()
@@ -192,7 +195,9 @@ export function SearchResults({
             {stayDate(query.checkIn, locale, false)} → {stayDate(query.checkOut, locale, false)} · {nightsText} · {guestsText(query.adults, query.children)}
           </p>
         </div>
-        <p className="max-w-[400px] text-[13px] leading-[1.6] text-muted lg:text-right">{t('booking.search.note')}</p>
+        <p className="max-w-[400px] text-[13px] leading-[1.6] text-muted lg:text-right">
+          {t('booking.search.note')} {vatRate ? t('booking.common.pricesIncludeVat', { rate: vatRate }) : t('booking.common.pricesIncludeTaxes')}
+        </p>
       </Container>
 
       <Container className="mt-6 flex flex-col gap-5 lg:mt-8">
@@ -292,10 +297,13 @@ export function SearchResults({
             })
             return (
               <article key={r.id} className="grid border border-line bg-panel lg:grid-cols-[400px_minmax(0,1fr)_320px]">
-                <div className="relative aspect-[16/10] bg-plain-soft lg:aspect-auto lg:min-h-[260px]">
-                  {r.image && (
+                <div className={cn('relative bg-plain-soft lg:aspect-auto lg:min-h-[260px]', r.image ? 'aspect-[16/10]' : 'h-28 lg:h-auto')}>
+                  {r.image ? (
                     // eslint-disable-next-line @next/next/no-img-element -- hotel photos from its own storage, any size
                     <img {...responsiveImage(r.image, '(min-width: 1024px) 400px, 100vw', { fallback: 800 })} alt={t('booking.common.photoOf', { name: r.name })} className={cn('absolute inset-0 h-full w-full object-cover', sold && 'opacity-50')} />
+                  ) : (
+                    // No photo yet: a small placeholder, not a ~300px grey block on phones.
+                    <PhotoPlaceholder label={t('room.noPhoto')} className="absolute inset-0" />
                   )}
                   {sold && <span className="absolute left-3 top-3 bg-ink px-2.5 py-1 text-[12px] font-medium text-on-ink">{t('booking.search.soldBadge')}</span>}
                 </div>
@@ -312,7 +320,7 @@ export function SearchResults({
                       ))}
                     </ul>
                   )}
-                  <SiteLink path={`/rooms/${r.id}?checkIn=${query.checkIn}&checkOut=${query.checkOut}`} className="mt-auto pt-2 text-[14px] font-medium text-acc hover:underline">
+                  <SiteLink path={`/rooms/${r.id}?${queryString(query)}`} className="mt-auto pt-2 text-[14px] font-medium text-acc hover:underline">
                     {t('booking.search.details')}
                   </SiteLink>
                 </div>

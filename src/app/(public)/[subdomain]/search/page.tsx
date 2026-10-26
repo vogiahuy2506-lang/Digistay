@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
+import { onlineDepositOf } from '@/lib/payments/guest-deposit'
 import { BookingFooter, BookingHeader, BookingSteps, loadBookingFrame } from '../_components/booking/frame'
 import { SearchResults, type StayQuery } from './SearchResults'
 
@@ -26,7 +27,10 @@ export default async function SearchPage({ params, searchParams }: PageProps) {
   const q = await searchParams
   const frame = await loadBookingFrame(subdomain)
   if (!frame) notFound()
-  const policy = await prisma.policy.findUnique({ where: { propertyId: frame.property.id }, select: { checkInTime: true, checkOutTime: true } })
+  const [policy, deposit] = await Promise.all([
+    prisma.policy.findUnique({ where: { propertyId: frame.property.id }, select: { checkInTime: true, checkOutTime: true } }),
+    onlineDepositOf(frame.property.id),
+  ])
 
   const checkIn = q.checkIn && DAY.test(q.checkIn) ? q.checkIn : vnDay(0)
   const dayAfter = new Date(Date.parse(`${checkIn}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10)
@@ -43,13 +47,14 @@ export default async function SearchPage({ params, searchParams }: PageProps) {
     <>
       <BookingHeader frame={frame} />
       <main>
-        <BookingSteps current={1} />
+        <BookingSteps current={1} deposit={!!deposit} />
         <SearchResults
           propertyId={frame.property.id}
           phone={frame.property.phone}
           checkInTime={policy?.checkInTime ?? '14:00'}
           checkOutTime={policy?.checkOutTime ?? '12:00'}
           initial={initial}
+          vatRate={frame.vatRate}
         />
       </main>
       <BookingFooter property={frame.property} />

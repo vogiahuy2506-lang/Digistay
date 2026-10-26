@@ -5,6 +5,7 @@
  * the public route checks what a stranger can send.
  */
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest'
+import { randomBytes } from 'crypto'
 import { NextRequest } from 'next/server'
 
 const session = vi.hoisted(() => ({ current: null as unknown }))
@@ -37,6 +38,7 @@ import { prisma } from '@/lib/db'
 import { createRoomType, createTenant, publishSite, resetDatabase } from '@/test/integration/fixtures'
 import { decryptSecret, secretContext } from '@/lib/security/secret-box'
 import { quoteStay } from '@/lib/pricing/quote'
+import { heldBySession, roomsTakenByType } from '@/lib/bookings/occupancy'
 import { POST as staffBooking } from '@/app/api/bookings/route'
 import { POST as guestBooking } from '@/app/api/public/bookings/route'
 import { GET as availability } from '@/app/api/bookings/availability/route'
@@ -191,6 +193,53 @@ describe('rooms', () => {
     expect(mine.status).toBe(200) // their own hold used to block them
     expect(await prisma.roomLock.count({ where: { id: hold.body.data.lockId } })).toBe(0)
     expect((await call(guestBooking(json(body(3), freshIp())))).status).toBe(409) // booked now
+  })
+
+  it('a guest reloading the booking page keeps one hold and is not blocked by it; another browser is', async () => {
+    const { property } = await createTenant()
+    await publishSite(property.id)
+    const room = await createRoomType(property.id, { totalRooms: 1 })
+    const [mine, theirs] = [randomBytes(16).toString('hex'), randomBytes(16).toString('hex')]
+    const stay = { propertyId: property.id, roomTypeId: room.id, ...WEEKDAYS }
+    const holdAs = (session: string) => call(holdRoom(json(stay, { ...freshIp(), 'x-session-id': session })))
+    const holds = () => prisma.roomLock.count({ where: { roomTypeId: room.id, type: 'HOLD' } })
+    // What the booking page (dat-phong/page.tsx) counts for a visitor: their own hold left out.
+    const roomsLeft = async (session: string) => {
+      const ownHoldId = await heldBySession(prisma, { propertyId: property.id, sessionId: session })
+      const span = { propertyId: property.id, checkIn: new Date(WEEKDAYS.checkInDate), checkOut: new Date(WEEKDAYS.checkOutDate), ownHoldId }
+      return room.totalRooms - ((await roomsTakenByType(prisma, span)).get(room.id) ?? 0)
+    }
+
+    const first = await holdAs(mine)
+    expect(first.status).toBe(200)
+    // Three reloads: each used to add a 15-minute hold and show "no longer available".
+    for (let i = 0; i < 3; i++) {
+      expect(await roomsLeft(mine)).toBe(1)
+      expect((await holdAs(mine)).status).toBe(200)
+    }
+    expect(await holds()).toBe(1)
+    // The page's own request carries the session as a cookie, not the header.
+    const byCookie = await holdRoom(
+      new NextRequest('http://digistay.test/api/x', { method: 'POST', body: JSON.stringify(stay), headers: { ...freshIp(), cookie: `ds-hold=${mine}` } })
+    )
+    expect(byCookie.status).toBe(200)
+    expect(byCookie.cookies.get('ds-hold')).toBeUndefined() // already set
+    expect(await holds()).toBe(1)
+
+    // Another browser: still kept out of the last room.
+    expect(await roomsLeft(theirs)).toBe(0)
+    expect((await holdAs(theirs)).status).toBe(409)
+    expect(await holds()).toBe(1)
+
+    // A first visit gets its session as a cookie (the page reads it on reload).
+    const other = await createRoomType(property.id, { name: 'Suite', totalRooms: 1 })
+    const fresh = await holdRoom(json({ ...stay, roomTypeId: other.id }, freshIp()))
+    expect(fresh.cookies.get('ds-hold')?.value).toMatch(/^[\w-]+$/)
+
+    // The guest's booking uses the session's hold even when the page lost its id.
+    const booked = await call(guestBooking(json({ ...stay, ...guest(1), numAdults: 2 }, { ...freshIp(), 'x-session-id': mine })))
+    expect(booked.status).toBe(200)
+    expect(await holds()).toBe(0)
   })
 
   it("a hold id from the browser frees only that guest's hold: not maintenance, not another room type's", async () => {

@@ -6,6 +6,18 @@ import { siteHref } from '@/lib/public-site/paths'
 import type { Locale } from '@/i18n/locales'
 import type { ThemePreference } from '@/lib/theme'
 import { ThemeToggle } from '@/components/marketing/ThemeToggle'
+import type { SiteSection } from './SiteHeader'
+
+/**
+ * The hotel's header and footer data, for a page that has none of its own:
+ * the site's 404 (not-found.tsx gets no params). null when there is no site
+ * to show (unknown, unpublished): an unpublished site must not give the
+ * hotel away.
+ */
+export interface SiteHotel {
+  property: { name: string; type: string; city: string; phone: string | null; address: string | null }
+  sections: SiteSection[]
+}
 
 /**
  * The site's base path in each language (src/lib/public-site/paths.ts; the
@@ -18,12 +30,13 @@ interface SiteBase {
   switchHref: string
   /** The visitor's light / dark choice when the page was rendered. */
   theme: ThemePreference
+  hotel: SiteHotel | null
 }
 
 const SiteBaseContext = React.createContext<SiteBase | null>(null)
 
-export function SiteBaseProvider({ locale, bases, switchHref, theme, children }: SiteBase & { children: React.ReactNode }) {
-  const value = React.useMemo(() => ({ locale, bases, switchHref, theme }), [locale, bases, switchHref, theme])
+export function SiteBaseProvider({ locale, bases, switchHref, theme, hotel, children }: SiteBase & { children: React.ReactNode }) {
+  const value = React.useMemo(() => ({ locale, bases, switchHref, theme, hotel }), [locale, bases, switchHref, theme, hotel])
   return <SiteBaseContext.Provider value={value}>{children}</SiteBaseContext.Provider>
 }
 
@@ -31,6 +44,11 @@ function useSiteBase(): SiteBase {
   const site = React.useContext(SiteBaseContext)
   if (site === null) throw new Error('used outside SiteBaseProvider')
   return site
+}
+
+/** The hotel whose site this is (see SiteHotel). */
+export function useSiteHotel(): SiteHotel | null {
+  return useSiteBase().hotel
 }
 
 /** Builds links inside the hotel's site, in the current language: href('/rooms/x'), href('/search?…'). */

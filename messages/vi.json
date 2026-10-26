@@ -218,8 +218,10 @@
         "depositPaid": "Đã cọc qua PayOS",
         "atHotel": "Trả khi nhận phòng",
         "photoOf": "Ảnh phòng {name}",
-        "breakdown": "{weekday} đêm thường {weekdayPrice} · {weekend} đêm cuối tuần {weekendPrice}",
-        "weekdayOnly": "{nights} × {price}"
+        "breakdown": "{weekday, plural, =0 {} other {# đêm thường {weekdayPrice} · }}{weekend} đêm cuối tuần {weekendPrice}",
+        "weekdayOnly": "{nights} × {price}",
+        "pricesIncludeVat": "Giá đã gồm VAT {rate}%, không cộng thêm thuế, phí khi thanh toán.",
+        "pricesIncludeTaxes": "Giá đã gồm thuế, phí, không cộng thêm khi thanh toán."
       },
       "search": {
         "update": "Cập nhật kết quả",
@@ -381,6 +383,13 @@
       "reception": "Lễ tân 24/7",
       "security": "Bảo vệ",
       "cctv": "Camera an ninh"
+    },
+    "notFound": {
+      "title": "Không tìm thấy trang này",
+      "lead": "Trang bạn mở không có trên website của {hotel}. Có thể phòng đã đổi tên, không còn nhận đặt, hoặc đường dẫn bị sai.",
+      "rooms": "Xem phòng trống",
+      "home": "Về trang chủ",
+      "help": "Cần hỗ trợ? Gọi khách sạn:"
     }
   },
   "marketing": {
