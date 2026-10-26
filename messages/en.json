@@ -218,8 +218,10 @@
         "depositPaid": "Deposit paid via PayOS",
         "atHotel": "Pay at check-in",
         "photoOf": "Photo of the {name} room",
-        "breakdown": "{weekday} weeknights {weekdayPrice} · {weekend} weekend nights {weekendPrice}",
-        "weekdayOnly": "{nights} × {price}"
+        "breakdown": "{weekday, plural, =0 {} one {# weeknight {weekdayPrice} · } other {# weeknights {weekdayPrice} · }}{weekend, plural, one {# weekend night} other {# weekend nights}} {weekendPrice}",
+        "weekdayOnly": "{nights} × {price}",
+        "pricesIncludeVat": "Prices include {rate}% VAT; no taxes or fees are added when you pay.",
+        "pricesIncludeTaxes": "Prices include taxes and fees; nothing is added when you pay."
       },
       "search": {
         "update": "Update results",

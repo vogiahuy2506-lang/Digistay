@@ -22,18 +22,21 @@ interface Props {
   /** Initial dates from the link that opened the page. */
   checkIn?: string
   checkOut?: string
+  /** Initial guests from the link (the search results), within the room's limits. */
+  adults?: number
+  childGuests?: number
 }
 
 /** Sticky booking box (redesign 2c): price per night, dates, guests, running total. */
-export function BookingBox({ rates, baseOccupancy, maxAdults, maxChildren, checkIn: initialIn, checkOut: initialOut }: Props) {
+export function BookingBox({ rates, baseOccupancy, maxAdults, maxChildren, checkIn: initialIn, checkOut: initialOut, adults: initialAdults, childGuests: initialChildren }: Props) {
   const t = useTranslations('site')
   const locale = useLocale()
   const router = useRouter()
   const href = useSiteHref()
   const [checkIn, setCheckIn] = useState(initialIn || vnDay(0))
   const [checkOut, setCheckOut] = useState(initialOut || vnDay(1))
-  const [adults, setAdults] = useState(Math.min(2, Math.max(1, maxAdults)))
-  const [children, setChildren] = useState(0)
+  const [adults, setAdults] = useState(Math.max(1, Math.min(initialAdults ?? 2, maxAdults)))
+  const [children, setChildren] = useState(Math.max(0, Math.min(initialChildren ?? 0, maxChildren)))
 
   const validDates = !!checkIn && !!checkOut && checkOut > checkIn
   // The same price the booking is charged (src/lib/pricing/quote.ts).

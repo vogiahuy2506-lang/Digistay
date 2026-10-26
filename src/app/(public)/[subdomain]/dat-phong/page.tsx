@@ -108,7 +108,7 @@ export default async function BookingPage({ params, searchParams }: PageProps) {
     <>
       <BookingHeader frame={frame} />
       <main>
-        <BookingSteps current={2} />
+        <BookingSteps current={2} deposit={!!deposit} />
         {bookable ? (
           <BookingForm
             property={{ id: propertyId, name: frame.property.name, phone: frame.property.phone }}
@@ -128,6 +128,7 @@ export default async function BookingPage({ params, searchParams }: PageProps) {
             policies={policies}
             times={{ checkIn: policy?.checkInTime ?? '14:00', checkOut: policy?.checkOutTime ?? '12:00' }}
             deposit={deposit}
+            vatRate={frame.vatRate}
             backPath={back}
           />
         ) : (

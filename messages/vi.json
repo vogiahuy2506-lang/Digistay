@@ -218,8 +218,10 @@
         "depositPaid": "Đã cọc qua PayOS",
         "atHotel": "Trả khi nhận phòng",
         "photoOf": "Ảnh phòng {name}",
-        "breakdown": "{weekday} đêm thường {weekdayPrice} · {weekend} đêm cuối tuần {weekendPrice}",
-        "weekdayOnly": "{nights} × {price}"
+        "breakdown": "{weekday, plural, =0 {} other {# đêm thường {weekdayPrice} · }}{weekend} đêm cuối tuần {weekendPrice}",
+        "weekdayOnly": "{nights} × {price}",
+        "pricesIncludeVat": "Giá đã gồm VAT {rate}%, không cộng thêm thuế, phí khi thanh toán.",
+        "pricesIncludeTaxes": "Giá đã gồm thuế, phí, không cộng thêm khi thanh toán."
       },
       "search": {
         "update": "Cập nhật kết quả",

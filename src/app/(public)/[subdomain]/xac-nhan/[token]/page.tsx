@@ -42,7 +42,7 @@ export default async function ConfirmationPage({ params }: PageProps) {
     <>
       <BookingHeader frame={frame} />
       <main>
-        <BookingSteps current={4} />
+        <BookingSteps current={4} deposit={deposited} />
         <Container className="grid gap-10 pt-8 lg:grid-cols-[minmax(0,1fr)_440px] lg:gap-20 lg:pt-14">
           <div className="min-w-0">
             <span className={deposited || confirmed ? 'inline-flex items-center gap-2 bg-ok-soft px-3 py-1.5 text-[13px] font-semibold text-ok' : 'inline-flex items-center gap-2 bg-warn-soft px-3 py-1.5 text-[13px] font-semibold text-warn'}>

@@ -42,6 +42,7 @@ export function BookingForm({
   policies,
   times,
   deposit,
+  vatRate,
   backPath,
 }: {
   property: { id: string; name: string; phone: string | null }
@@ -52,6 +53,8 @@ export function BookingForm({
   policies: { title: string; text: string }[]
   times: { checkIn: string; checkOut: string }
   deposit: { percent: number; deadlineMinutes: number } | null
+  /** the hotel's VAT rate (%), included in its prices; null: none on its invoices */
+  vatRate: number | null
   backPath: string
 }) {
   const t = useTranslations('site')
@@ -260,6 +263,7 @@ export function BookingForm({
       lines={lines}
       total={quote.total}
       deposit={deposit ? { amount: depositAmount, paid: false } : null}
+      note={vatRate ? t('booking.common.pricesIncludeVat', { rate: vatRate }) : t('booking.common.pricesIncludeTaxes')}
     />
   )
 

@@ -47,12 +47,15 @@ export function SearchResults({
   checkInTime,
   checkOutTime,
   initial,
+  vatRate,
 }: {
   propertyId: string
   phone: string | null
   checkInTime: string
   checkOutTime: string
   initial: StayQuery
+  /** the hotel's VAT rate (%), included in its prices; null: none on its invoices */
+  vatRate: number | null
 }) {
   const t = useTranslations('site')
   const locale = useLocale()
@@ -192,7 +195,9 @@ export function SearchResults({
             {stayDate(query.checkIn, locale, false)} → {stayDate(query.checkOut, locale, false)} · {nightsText} · {guestsText(query.adults, query.children)}
           </p>
         </div>
-        <p className="max-w-[400px] text-[13px] leading-[1.6] text-muted lg:text-right">{t('booking.search.note')}</p>
+        <p className="max-w-[400px] text-[13px] leading-[1.6] text-muted lg:text-right">
+          {t('booking.search.note')} {vatRate ? t('booking.common.pricesIncludeVat', { rate: vatRate }) : t('booking.common.pricesIncludeTaxes')}
+        </p>
       </Container>
 
       <Container className="mt-6 flex flex-col gap-5 lg:mt-8">
@@ -315,7 +320,7 @@ export function SearchResults({
                       ))}
                     </ul>
                   )}
-                  <SiteLink path={`/rooms/${r.id}?checkIn=${query.checkIn}&checkOut=${query.checkOut}`} className="mt-auto pt-2 text-[14px] font-medium text-acc hover:underline">
+                  <SiteLink path={`/rooms/${r.id}?${queryString(query)}`} className="mt-auto pt-2 text-[14px] font-medium text-acc hover:underline">
                     {t('booking.search.details')}
                   </SiteLink>
                 </div>

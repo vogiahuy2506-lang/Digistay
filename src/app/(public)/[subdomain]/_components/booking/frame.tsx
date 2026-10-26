@@ -39,6 +39,7 @@ export async function loadBookingFrame(subdomain: string, { guestLink = false } 
       phone: true,
       address: true,
       websiteBlocks: { where: { isEnabled: true }, select: { type: true } },
+      einvoice: { select: { vatCode: true } },
     },
   })
   if (!property) return null
@@ -46,7 +47,10 @@ export async function loadBookingFrame(subdomain: string, { guestLink = false } 
   const sections = Object.entries(SECTIONS)
     .filter(([type]) => blockTypes.size === 0 || blockTypes.has(type as never))
     .map(([, s]) => s)
-  return { property, sections }
+  // Prices include VAT (src/lib/pricing/quote.ts); its rate when the hotel
+  // invoices with one (its e-invoice settings), for "Giá đã gồm VAT 8%".
+  const vatRate = property.einvoice && property.einvoice.vatCode > 0 ? property.einvoice.vatCode : null
+  return { property, sections, vatRate }
 }
 
 /** A page of this hotel's site in the visitor's language, for a server redirect (same base as [subdomain]/layout.tsx). */
@@ -58,15 +62,23 @@ export async function sitePath(subdomain: string, path: string) {
 
 export type BookingStep = 1 | 2 | 3 | 4
 
-/** 01 Chọn phòng · 02 Thông tin đặt phòng · 03 Đặt cọc · 04 Xác nhận; done steps get a ✓. */
-export function BookingSteps({ current }: { current: BookingStep }) {
+/**
+ * 01 Chọn phòng · 02 Thông tin đặt phòng · 03 Đặt cọc · 04 Xác nhận; done
+ * steps get a ✓. `deposit` false (no online deposit): no deposit step, it
+ * used to be ticked on the confirmation though nothing was paid.
+ */
+export function BookingSteps({ current, deposit = true }: { current: BookingStep; deposit?: boolean }) {
   const t = useTranslations('site.booking.steps')
-  const steps = [t('room'), t('details'), t('deposit'), t('done')]
+  const steps = [
+    { n: 1, label: t('room') },
+    { n: 2, label: t('details') },
+    { n: 3, label: t('deposit') },
+    { n: 4, label: t('done') },
+  ].filter((s) => deposit || s.n !== 3)
   return (
     <Container className="pt-6 lg:pt-9">
       <ol aria-label={t('label')} className="flex flex-wrap gap-x-8 gap-y-2 border-b border-line text-[13.5px] lg:gap-x-10 lg:text-[14px]">
-        {steps.map((label, i) => {
-          const n = (i + 1) as BookingStep
+        {steps.map(({ n, label }, i) => {
           const done = n < current
           const now = n === current
           return (
@@ -81,7 +93,7 @@ export function BookingSteps({ current }: { current: BookingStep }) {
                 !now && 'max-sm:hidden',
               )}
             >
-              <span className={cn('font-mono text-[12px] font-medium', now && 'text-acc')}>{done ? '✓' : `0${n}`}</span>
+              <span className={cn('font-mono text-[12px] font-medium', now && 'text-acc')}>{done ? '✓' : `0${i + 1}`}</span>
               {label}
             </li>
           )
