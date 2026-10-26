@@ -26,6 +26,7 @@ import { depositFor, quoteStay, ratesFrom, type PricedService } from '@/lib/pric
 import { depositUrl } from '@/lib/payments/deposit-link'
 import { NO_PRICE_MESSAGE, ROOM_RATE_INCLUDE, propertyRateDefaults } from '@/lib/pricing/rates'
 import { ROOM_TYPE_PLAN_LOCKED } from '@/lib/billing/guard'
+import { formatAddress } from '@/lib/vn-admin/address'
 import { lockRoomType, roomsTaken } from './occupancy'
 
 type Tx = Prisma.TransactionClient
@@ -108,6 +109,8 @@ const BOOKING_EMAIL_INCLUDE = {
       address: true,
       phone: true,
       city: true,
+      ward: true,
+      district: true,
       policy: { select: { checkInTime: true, checkOutTime: true } },
       workspace: { select: { slug: true, owner: { select: { email: true, name: true } } } },
     },
@@ -142,7 +145,7 @@ async function queueBookingEmails(tx: Tx, booking: BookingForEmails, deposit?: N
         guestEmail: booking.guestEmail,
         bookingCode: booking.bookingCode,
         propertyName: prop.name,
-        propertyAddress: `${prop.address}, ${prop.city}`,
+        propertyAddress: formatAddress(prop),
         propertyPhone: prop.phone,
         checkIn: booking.checkInDate.toISOString(),
         checkOut: booking.checkOutDate.toISOString(),

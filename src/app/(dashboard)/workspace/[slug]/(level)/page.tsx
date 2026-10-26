@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
 import { ArrowRight, Building2, Plus, Search, SlidersHorizontal } from 'lucide-react'
 import { apiError } from '@/lib/i18n/api-errors'
+import { addressLocality } from '@/lib/vn-admin/address'
 
 interface Property {
   id: string
@@ -23,6 +24,7 @@ interface Property {
   address: string | null
   city: string | null
   district: string | null
+  ward: string | null
   _count: { roomTypes: number }
 }
 
@@ -79,7 +81,7 @@ export default function WorkspaceDashboardPage() {
     const q = query.trim().toLowerCase()
     if (!q) return properties
     return properties.filter((property) =>
-      [property.name, property.city, property.address, property.district, property.subdomain]
+      [property.name, property.city, property.address, property.ward, property.district, property.subdomain]
         .filter(Boolean)
         .some((field) => field!.toLowerCase().includes(q))
     )
@@ -223,7 +225,8 @@ interface PropertyRowProps {
 
 /** One property: name and address on the left, counts, then the way in. */
 function PropertyRow({ property, href, labels }: PropertyRowProps) {
-  const where = [property.district, property.city, property.address].filter(Boolean).join(', ')
+  // Where first (ward, or an older row's district, and province), then the street: the row shows one line.
+  const where = [addressLocality(property), property.city, property.address].filter(Boolean).join(', ')
 
   return (
     <li className="border-b border-line">

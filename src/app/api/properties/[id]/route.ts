@@ -6,6 +6,7 @@ import { invalidatePublicSite } from '@/lib/public-site/site'
 import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
 import { lockedResponse, lockedResponseForProperty } from '@/lib/billing/guard'
 import { reconcileOverageSoon } from '@/lib/billing/overage'
+import { locationColumns, resolveLocation } from '@/lib/vn-admin/location'
 
 /** The editable fields, and the description in English. */
 const patchSchema = updatePropertySchema.extend({ translations: translationsInput(['description'], 2000) })
@@ -169,11 +170,22 @@ export async function PATCH(
       )
     }
 
-    const { translations, ...fields } = validation.data
-    const stored = translations && (await prisma.property.findUnique({ where: { id }, select: { translations: true } }))
+    const { translations, provinceCode, wardCode, city, ...fields } = validation.data
+    // One of the 34 provinces, and the ward one of its own (src/lib/vn-admin).
+    const place = resolveLocation({ provinceCode, wardCode, city })
+    if (!place.ok) {
+      return NextResponse.json({ success: false, error: place.error }, { status: 400 })
+    }
+    const stored =
+      (translations || place.location) &&
+      (await prisma.property.findUnique({ where: { id }, select: { translations: true, city: true, provinceCode: true } }))
     const property = await prisma.property.update({
       where: { id },
-      data: { ...fields, ...(translations && { translations: mergeTranslations(stored?.translations, translations) }) },
+      data: {
+        ...fields,
+        ...(place.location && locationColumns(place.location, stored)),
+        ...(translations && { translations: mergeTranslations(stored?.translations, translations) }),
+      },
       include: {
         workspace: {
           select: {

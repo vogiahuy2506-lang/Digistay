@@ -2,6 +2,7 @@ import type { PublicBlock, PublicProperty } from '../PropertySite'
 import type { SiteSection } from '../SiteHeader'
 import { Container } from '../site-ui'
 import { useTranslations } from 'next-intl'
+import { formatAddress } from '@/lib/vn-admin/address'
 
 interface Props {
   block: PublicBlock
@@ -13,7 +14,7 @@ interface Props {
 export function FooterBlock({ property, sections = [] }: Props) {
   const t = useTranslations('site')
   const year = new Date().getFullYear()
-  const address = [property.address, property.district, property.city].filter(Boolean).join(', ')
+  const address = formatAddress(property)
 
   return (
     <footer className="border-t border-line pt-14 pb-8">

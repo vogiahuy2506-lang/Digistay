@@ -10,6 +10,7 @@ import { useWorkspace } from '@/lib/hooks/use-workspace'
 import { routes } from '@/lib/utils/routes'
 import { apiError } from '@/lib/i18n/api-errors'
 import { finishSlugInput, onNameTyped, onSlugTyped } from '@/app/(dashboard)/workspaces/slug-input'
+import { ProvinceWardFields } from '@/components/address/province-ward-fields'
 
 /** createPropertySchema's limit for a subdomain. */
 const SUBDOMAIN_MAX = 50
@@ -31,8 +32,8 @@ export default function NewPropertyPage() {
     name: '',
     type: 'HOTEL',
     address: '',
-    city: '',
-    district: '',
+    provinceCode: '',
+    wardCode: '',
     phone: '',
     email: '',
     subdomain: '',
@@ -44,8 +45,8 @@ export default function NewPropertyPage() {
       name: '',
       type: 'HOTEL',
       address: '',
-      city: '',
-      district: '',
+      provinceCode: '',
+      wardCode: '',
       phone: '',
       email: '',
       subdomain: '',
@@ -150,6 +151,14 @@ export default function NewPropertyPage() {
               required
             />
 
+            <ProvinceWardFields
+              value={{ provinceCode: formData.provinceCode, wardCode: formData.wardCode }}
+              onChange={(place) => setFormData({ ...formData, ...place })}
+              required
+              wardRequired
+              className="grid grid-cols-1 md:grid-cols-2 gap-4"
+            />
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
                 label={t('form.address')}
@@ -157,22 +166,6 @@ export default function NewPropertyPage() {
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 required
-              />
-              <Input
-                label={t('form.city')}
-                placeholder={t('form.cityPlaceholder')}
-                value={formData.city}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input
-                label={t('form.district')}
-                placeholder={t('form.districtPlaceholder')}
-                value={formData.district}
-                onChange={(e) => setFormData({ ...formData, district: e.target.value })}
               />
               <Input
                 label={t('form.phone')}

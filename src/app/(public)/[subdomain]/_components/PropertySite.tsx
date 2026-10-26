@@ -36,6 +36,8 @@ export interface PublicProperty {
   description: string | null
   address: string
   city: string
+  ward: string | null
+  /** Older rows only, shown when there is no ward (src/lib/vn-admin/address.ts). */
   district: string | null
   country: string
   phone: string | null

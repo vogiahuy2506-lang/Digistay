@@ -21,10 +21,6 @@
     "subdomainHint": "Link: {subdomain}.digistay.vn",
     "address": "Địa chỉ",
     "addressPlaceholder": "VD: 123 Đường ABC",
-    "city": "Thành phố/Tỉnh",
-    "cityPlaceholder": "VD: Hà Nội",
-    "district": "Quận/Huyện (tùy chọn)",
-    "districtPlaceholder": "VD: Quận Ba Đình",
     "phone": "Số điện thoại (tùy chọn)",
     "email": "Email (tùy chọn)",
     "emailPlaceholder": "VD: info@example.com",
@@ -32,6 +28,25 @@
     "descriptionPlaceholder": "Giới thiệu ngắn về cơ sở của bạn",
     "submit": "Tạo cơ sở",
     "error": "Đã xảy ra lỗi"
+  },
+  "address": {
+    "province": "Tỉnh/Thành phố",
+    "ward": "Phường/Xã",
+    "placeholder": "Chọn hoặc gõ để tìm",
+    "wardPickProvinceFirst": "Chọn tỉnh/thành phố trước",
+    "wardLoading": "Đang tải danh sách…",
+    "wardLoadFailed": "Không tải được danh sách phường/xã.",
+    "retry": "Thử lại",
+    "noMatch": "Không tìm thấy",
+    "count": "{count} kết quả",
+    "showList": "Mở danh sách",
+    "clear": "Bỏ chọn",
+    "kind": {
+      "city": "Thành phố",
+      "province": "Tỉnh"
+    },
+    "legacy": "Đang lưu “{city}”, không có trong danh sách 34 tỉnh/thành phố hiện nay. Chọn lại để cập nhật địa chỉ.",
+    "legacyMerged": "Đang lưu “{city}”, nay thuộc {province}. Chọn lại tỉnh/thành phố và phường/xã để cập nhật địa chỉ."
   },
   "list": {
     "title": "Cơ sở kinh doanh",

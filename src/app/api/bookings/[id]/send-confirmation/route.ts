@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { formatAddress } from '@/lib/vn-admin/address'
 import { emailLocale } from '@/lib/email/i18n'
 import { appSiteUrl } from '@/lib/public-site/paths'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
@@ -76,7 +77,7 @@ export async function POST(request: NextRequest, props: RouteParams) {
       guestEmail: booking.guestEmail,
       bookingCode: booking.bookingCode,
       propertyName: booking.property.name,
-      propertyAddress: `${booking.property.address}, ${booking.property.city}`,
+      propertyAddress: formatAddress(booking.property),
       propertyPhone: booking.property.phone,
       checkIn: booking.checkInDate.toISOString(),
       checkOut: booking.checkOutDate.toISOString(),

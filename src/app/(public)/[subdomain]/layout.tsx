@@ -57,7 +57,15 @@ export default async function HotelSiteLayout({
   const hotel: SiteHotel | null =
     visible && frame
       ? {
-          property: { name: frame.name, type: frame.type, city: frame.city, phone: frame.phone, address: frame.address },
+          property: {
+            name: frame.name,
+            type: frame.type,
+            city: frame.city,
+            ward: frame.ward,
+            district: frame.district,
+            phone: frame.phone,
+            address: frame.address,
+          },
           sections: siteSections(frame.websiteBlocks.map((b) => b.type)),
         }
       : null

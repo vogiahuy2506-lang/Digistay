@@ -3,14 +3,14 @@
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 
-// Shared by Input, Textarea and Select. Phones get 16 px text so iOS does not
+// Shared by Input, Textarea, Select and Combobox. Phones get 16 px text so iOS does not
 // zoom in on focus; from `sm` up the dashboard's 13 px applies.
-const fieldBase =
+export const fieldBase =
   'w-full rounded-ctl border bg-panel px-3 text-fg text-base sm:text-small placeholder:text-muted ' +
   'transition-[border-color,box-shadow] duration-160 ease-ds focus:outline-none focus-visible:ring-2 ' +
   'disabled:cursor-not-allowed disabled:bg-plain-soft disabled:text-muted motion-reduce:transition-none'
 
-function fieldState(error?: string) {
+export function fieldState(error?: string) {
   return error
     ? 'border-err bg-err-soft/40 focus-visible:border-err focus-visible:ring-err/20'
     : 'border-line hover:border-muted focus-visible:border-acc focus-visible:ring-acc/20'
@@ -25,7 +25,7 @@ interface FieldChromeProps {
   children: React.ReactNode
 }
 
-function FieldChrome({ inputId, label, required, hint, error, children }: FieldChromeProps) {
+export function FieldChrome({ inputId, label, required, hint, error, children }: FieldChromeProps) {
   return (
     <div className="w-full">
       {label && (
@@ -53,7 +53,7 @@ function FieldChrome({ inputId, label, required, hint, error, children }: FieldC
   )
 }
 
-function describedBy(inputId: string, hint?: string, error?: string, own?: string) {
+export function describedBy(inputId: string, hint?: string, error?: string, own?: string) {
   const ids = [own, error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined].filter(Boolean)
   return ids.length ? ids.join(' ') : undefined
 }

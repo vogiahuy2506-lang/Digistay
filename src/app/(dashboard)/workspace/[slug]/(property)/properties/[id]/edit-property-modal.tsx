@@ -6,13 +6,17 @@ import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Textarea } f
 import { EnglishCopy } from '@/components/ui/english-copy'
 import { toast } from '@/components/ui/toast'
 import { apiError } from '@/lib/i18n/api-errors'
+import { ProvinceWardFields } from '@/components/address/province-ward-fields'
+import { propertyProvince } from '@/lib/vn-admin/provinces'
 
 export interface EditableProperty {
   id: string
   name: string
   address: string
   city: string
-  district: string | null
+  ward?: string | null
+  provinceCode?: string | null
+  wardCode?: string | null
   phone: string | null
   email: string | null
   description: string | null
@@ -33,18 +37,23 @@ export function EditPropertyModal({
 }) {
   const t = useTranslations('dash.property')
   const tc = useTranslations('dash.common')
+  // The saved province, by code or (older rows) by name; a city that is not
+  // one of the 34 leaves the picker empty and is kept unless one is chosen.
+  const savedProvince = propertyProvince(property)
+  const savedWardCode = savedProvince && property.provinceCode === savedProvince.code ? property.wardCode ?? '' : ''
+  const legacyCity = savedProvince ? undefined : property.city
   const initial = React.useCallback(
     () => ({
       name: property.name,
       address: property.address,
-      city: property.city,
-      district: property.district ?? '',
+      provinceCode: savedProvince?.code ?? '',
+      wardCode: savedWardCode,
       phone: property.phone ?? '',
       email: property.email ?? '',
       description: property.description ?? '',
       enDescription: property.translations?.en?.description ?? '',
     }),
-    [property]
+    [property, savedProvince, savedWardCode]
   )
   const [form, setForm] = React.useState(initial)
   const [saving, setSaving] = React.useState(false)
@@ -61,11 +70,12 @@ export function EditPropertyModal({
     e.preventDefault()
     setSaving(true)
     try {
-      const { enDescription, ...fields } = form
+      const { enDescription, provinceCode, wardCode, ...fields } = form
+      const place = provinceCode ? { provinceCode, wardCode: wardCode || null } : {}
       const res = await fetch(`/api/properties/${property.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...fields, translations: { en: { description: enDescription } } }),
+        body: JSON.stringify({ ...fields, ...place, translations: { en: { description: enDescription } } }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok || !data.success) {
@@ -90,12 +100,18 @@ export function EditPropertyModal({
         </ModalHeader>
         <ModalBody className="space-y-4">
           <Input label={t('form.name')} value={form.name} onChange={set('name')} required minLength={2} maxLength={200} />
+          <ProvinceWardFields
+            value={{ provinceCode: form.provinceCode, wardCode: form.wardCode }}
+            onChange={(place) => setForm({ ...form, ...place })}
+            required={!legacyCity}
+            // A ward once the province changes or when one was saved; an older
+            // row can keep its address as it is.
+            wardRequired={form.provinceCode !== (savedProvince?.code ?? '') || Boolean(savedWardCode)}
+            legacyCity={legacyCity}
+            savedWardName={form.wardCode && form.wardCode === savedWardCode ? property.ward ?? undefined : undefined}
+          />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label={t('form.address')} value={form.address} onChange={set('address')} required minLength={5} />
-            <Input label={t('form.city')} value={form.city} onChange={set('city')} required minLength={2} />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input label={t('form.district')} value={form.district} onChange={set('district')} />
             <Input label={t('form.phone')} type="tel" value={form.phone} onChange={set('phone')} />
           </div>
           <Input label={t('form.email')} type="email" value={form.email} onChange={set('email')} />

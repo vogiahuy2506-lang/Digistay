@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
         description: true,
         address: true,
         city: true,
+        ward: true,
         district: true,
         country: true,
         phone: true,

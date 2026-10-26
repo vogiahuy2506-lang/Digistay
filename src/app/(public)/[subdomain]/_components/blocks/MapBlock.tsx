@@ -2,6 +2,7 @@ import { blockText } from '@/lib/i18n/content'
 import type { PublicBlock, PublicProperty } from '../PropertySite'
 import { Eyebrow, Section, SectionTitle, cfgText } from '../site-ui'
 import { useLocale, useTranslations } from 'next-intl'
+import { formatAddress } from '@/lib/vn-admin/address'
 
 interface Props {
   block: PublicBlock
@@ -25,11 +26,11 @@ export function MapBlock({ block, property }: Props) {
   const typed = cfgText(cfg, 'mapAddress')
   const fullAddress =
     (typed && typed.trim().toLowerCase() !== BUILDER_DEFAULT ? typed : null) ??
-    [property.address, property.district, property.city, property.country].filter(Boolean).join(', ')
+    formatAddress(property, { country: true })
   // The default layout titles this block "Vị trí", which is already the eyebrow: show the address instead (3a).
   const custom = blockText(cfg, locale, 'title')
   const title =
-    custom && custom.toLowerCase() !== 'vị trí' ? custom : [property.address, property.city].filter(Boolean).join(', ')
+    custom && custom.toLowerCase() !== 'vị trí' ? custom : formatAddress(property)
   const lat = coordinate(cfg.mapLat) ?? property.latitude
   const lng = coordinate(cfg.mapLng) ?? property.longitude
   const zoom = Math.min(20, Math.max(3, Number(cfg.mapZoom) || 15))

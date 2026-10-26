@@ -58,6 +58,12 @@ describe('hotelJsonLd', () => {
     })
   })
 
+  it('puts the ward in the locality, before an older row\'s district', () => {
+    const address = (ward: string | null) => hotelJsonLd({ ...hotel, ward }).address
+    expect(address('Phường Sơn Trà')).toMatchObject({ addressLocality: 'Phường Sơn Trà', addressRegion: 'Đà Nẵng' })
+    expect(address(null)).toMatchObject({ addressLocality: 'Sơn Trà', addressRegion: 'Đà Nẵng' })
+  })
+
   it('leaves out what the hotel did not fill in', () => {
     const bare = hotelJsonLd({
       ...hotel,

@@ -72,6 +72,7 @@ export async function loadSiteProps(propertyId: string) {
       description: property.description,
       address: property.address,
       city: property.city,
+      ward: property.ward,
       district: property.district,
       country: property.country,
       phone: property.phone,

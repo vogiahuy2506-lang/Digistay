@@ -19,6 +19,7 @@ import { EditPropertyModal } from './edit-property-modal'
 import { apiError } from '@/lib/i18n/api-errors'
 import { PhotoUploadButton } from '@/components/ui/photo-upload'
 import { resizedImage } from '@/lib/media/image-url'
+import { formatAddress } from '@/lib/vn-admin/address'
 
 interface Property {
   id: string
@@ -27,6 +28,9 @@ interface Property {
   address: string
   city: string
   district: string | null
+  ward: string | null
+  provinceCode: string | null
+  wardCode: string | null
   phone: string | null
   email: string | null
   website: string | null
@@ -531,9 +535,7 @@ export default function PropertyDetailPage() {
                     <MapPin className="w-5 h-5 text-muted mt-0.5" />
                     <div>
                       <p className="text-sm font-medium text-fg">{t('overview.address')}</p>
-                      <p className="text-sm text-muted">
-                        {property.address}, {property.district && `${property.district}, `}{property.city}
-                      </p>
+                      <p className="text-sm text-muted">{formatAddress(property)}</p>
                     </div>
                   </div>
 
