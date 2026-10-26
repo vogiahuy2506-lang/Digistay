@@ -284,7 +284,7 @@ export default function WorkspacesPage() {
                   )}
                 </button>
               )}
-              <LanguageButton />
+              <LanguageButton compact="below-sm" />
               <AccountMenu
                 name={user?.name ?? null}
                 email={user?.email ?? null}

@@ -13,10 +13,23 @@ import { cn } from '@/lib/utils'
  * for the sidebar's footer row, where the switch would push out the
  * user's name.
  */
-export function LanguageButton({ compact }: { compact?: boolean }) {
+export function LanguageButton({ compact }: { compact?: boolean | 'below-sm' }) {
   const t = useTranslations('dash.common.shell')
   const locale = useLocale() as Locale
   const router = useRouter()
+  // 'below-sm': the one button on phones, the switch from sm up (top bars, where a phone has no room).
+  if (compact === 'below-sm') {
+    return (
+      <>
+        <span className="sm:hidden">
+          <LanguageButton compact />
+        </span>
+        <span className="hidden sm:block">
+          <LanguageButton />
+        </span>
+      </>
+    )
+  }
   if (!compact) return <LocaleToggle locale={locale} label={t('language')} />
 
   const next: Locale = locale === 'en' ? 'vi' : 'en'

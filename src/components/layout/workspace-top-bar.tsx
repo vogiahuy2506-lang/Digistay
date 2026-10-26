@@ -100,7 +100,7 @@ export function WorkspaceTopBar({ workspace, workspaces, userName, userEmail, us
               </button>
             )}
             <NotificationBell />
-            <LanguageButton />
+            <LanguageButton compact="below-sm" />
             <AccountMenu name={userName} email={userEmail} image={userImage} onSignOut={signOutEverywhere} />
           </div>
         </div>
