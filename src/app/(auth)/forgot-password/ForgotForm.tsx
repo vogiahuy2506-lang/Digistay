@@ -251,12 +251,7 @@ export function ForgotForm() {
               />
               <StrengthMeter password={pw.next} />
             </Field>
-            <Field
-              id="forgot-confirm"
-              label={t('forgot.confirm')}
-              error={tried && pwProblems.confirm}
-              hint={pw.confirm && pw.confirm === pw.next ? <span className="text-ok">{t('common.match')}</span> : undefined}
-            >
+            <Field id="forgot-confirm" label={t('forgot.confirm')} error={tried && pwProblems.confirm}>
               <PasswordInput
                 id="forgot-confirm"
                 value={pw.confirm}

@@ -724,7 +724,6 @@
       "strong": "Mạnh",
       "passwordShort": "Mật khẩu cần ít nhất 8 ký tự",
       "mismatch": "Mật khẩu nhập lại chưa khớp",
-      "match": "✓ Khớp với mật khẩu",
       "email": "Email",
       "emailInvalid": "Email chưa đúng định dạng",
       "codeIncomplete": "Nhập đủ 6 chữ số"

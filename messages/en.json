@@ -724,7 +724,6 @@
       "strong": "Strong",
       "passwordShort": "Use at least 8 characters",
       "mismatch": "The passwords don't match",
-      "match": "✓ Matches the password",
       "email": "Email",
       "emailInvalid": "This email doesn't look right",
       "codeIncomplete": "Enter all 6 digits"

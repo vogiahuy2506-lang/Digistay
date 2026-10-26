@@ -321,12 +321,7 @@ export function RegisterForm({ google }: { google: boolean }) {
             />
             <StrengthMeter password={form.password} />
           </Field>
-          <Field
-            id="reg-confirm"
-            label={t('register.confirm')}
-            error={shown.confirm}
-            hint={form.confirm && form.confirm === form.password ? <span className="text-ok">{t('common.match')}</span> : undefined}
-          >
+          <Field id="reg-confirm" label={t('register.confirm')} error={shown.confirm}>
             <PasswordInput
               id="reg-confirm"
               value={form.confirm}
