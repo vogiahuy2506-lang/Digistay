@@ -196,6 +196,12 @@
       }
     },
     "preview": "Bản xem trước: website chưa xuất bản, chỉ thành viên của khách sạn đang đăng nhập mới xem được.",
+    "versionPreview": {
+      "title": "Phiên bản lưu lúc {time}",
+      "by": "bởi {name}",
+      "hint": "Chỉ xem: website đang chạy không thay đổi.",
+      "back": "Về trình dựng website"
+    },
     "booking": {
       "steps": {
         "label": "Các bước đặt phòng",

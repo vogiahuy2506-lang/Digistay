@@ -62,14 +62,7 @@ export async function loadSiteProps(propertyId: string) {
   // The same rates a booking is charged (src/lib/pricing/quote.ts).
   const defaults = await propertyRateDefaults(prisma, propertyId)
 
-  // The default layout only for a site never laid out (no block rows), so a
-  // new property is not blank. Blocks the hotel turned off stay off, all of
-  // them included: an empty choice is not "everything" (it used to bring
-  // back the full default layout).
-  const blocks =
-    property.websiteBlocks.length > 0
-      ? property.websiteBlocks.filter((b) => b.isEnabled)
-      : defaultBlocksForProperty(property.type)
+  const blocks = siteBlocks(property.websiteBlocks, property.type)
 
   return {
     property: {
@@ -160,6 +153,17 @@ export async function loadSiteProps(propertyId: string) {
 }
 
 export type SiteProps = NonNullable<Awaited<ReturnType<typeof loadSiteProps>>>
+
+/**
+ * The blocks a site shows, from its block rows (the live ones, or a saved
+ * version's for its preview). The default layout only for a site never laid
+ * out (no block rows), so a new property is not blank. Blocks the hotel
+ * turned off stay off, all of them included: an empty choice is not
+ * "everything" (it used to bring back the full default layout).
+ */
+export function siteBlocks<T extends { isEnabled: boolean }>(rows: T[], propertyType: string) {
+  return rows.length > 0 ? rows.filter((b) => b.isEnabled) : defaultBlocksForProperty(propertyType)
+}
 
 /**
  * The site in the visitor's language (outside the cache, which holds both):

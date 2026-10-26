@@ -331,5 +331,33 @@
     "httpsSlow": "The HTTPS certificate is taking longer than usual: requested at {when} and not here yet.",
     "httpsSlowCheck": "Check that the CNAME or A record still points here as when you connected and that the domain has no other AAAA (IPv6) record, then press Try now. If it still doesn't come, contact Digistay support."
   },
-  "noAccess": "Only the owner, admins and managers can edit the hotel website."
+  "noAccess": "Only the owner, admins and managers can edit the hotel website.",
+  "versions": {
+    "open": "Version history",
+    "title": "Version history",
+    "subtitle": "Every save keeps a version (one person's saves within 2 minutes are merged into one). The latest {limit} are kept.",
+    "hint": "Restoring brings the blocks, colors, fonts and SEO back to that version. Whether the site is published and its domain stay as they are.",
+    "loading": "Loading history…",
+    "loadFailed": "Couldn't load the version history.",
+    "empty": "No versions yet. The first one is made when you save your changes.",
+    "current": "Current",
+    "unknownAuthor": "Unknown",
+    "kind": {
+      "AUTO": "Save",
+      "RESTORE": "Restore",
+      "BEFORE_RESTORE": "Before a restore",
+      "INITIAL": "Before history began"
+    },
+    "restoredFrom": "to the {time} version",
+    "view": "View",
+    "viewLabel": "View the {time} version in a new tab",
+    "restore": "Restore",
+    "restoreLabel": "Restore the {time} version",
+    "confirmTitle": "Restore the {time} version?",
+    "confirmBody": "The live site goes back to this version as soon as you confirm. The current one is kept as a version, so you can go back to it.",
+    "confirmUnsaved": "Unsaved changes in the builder will be lost.",
+    "confirm": "Restore",
+    "restored": "Restored the {time} version",
+    "restoreFailed": "Couldn't restore. Please try again."
+  }
 }

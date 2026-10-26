@@ -3,9 +3,7 @@ import { headers } from 'next/headers'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { publicTheme } from '@/components/marketing/PublicFrame'
 import { SITE_BASE_HEADER, SITE_PATH_HEADER, siteBasePath, siteHref } from '@/lib/public-site/paths'
-import { hotelAccentVariables, hotelButtonVariables, hotelHeadingVariables } from '@/lib/public-site/accent'
-import { fontStack } from '@/lib/public-site/font-stack'
-import { loadSiteFrame, siteSeoTexts } from '@/lib/public-site/site-frame'
+import { loadSiteFrame, siteFrameStyle, siteSeoTexts } from '@/lib/public-site/site-frame'
 import { loadVisibleSite } from '@/lib/public-site/visibility'
 import { OG_LOCALES } from '@/lib/seo/page-metadata'
 import { SiteBaseProvider, type SiteHotel } from './_components/site-base'
@@ -78,17 +76,7 @@ export default async function HotelSiteLayout({
   const otherLocale = locale === 'en' ? 'vi' : 'en'
   const switchHref = siteHref(bases[otherLocale], q < 0 ? page : page.slice(0, q)) + (q < 0 ? '' : page.slice(q))
 
-  const style = {
-    ...hotelAccentVariables(settings?.primaryColor),
-    ...hotelButtonVariables(settings?.buttonColor),
-    ...hotelHeadingVariables(settings?.headingColor),
-    '--site-body': fontStack(settings?.fontFamily, 'body'),
-    '--site-heading': fontStack(settings?.headingFont, 'heading'),
-    // Older blocks and the search page still read these (raw hotel colors).
-    '--brand-primary': settings?.primaryColor ?? '#A93119',
-    '--brand-font-body': 'var(--site-body)',
-    '--brand-font-heading': 'var(--site-heading)',
-  } as React.CSSProperties
+  const style = siteFrameStyle(settings)
 
   return (
     <div

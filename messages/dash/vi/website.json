@@ -331,5 +331,33 @@
     "httpsSlow": "Chứng chỉ HTTPS lâu hơn bình thường: đã yêu cầu lúc {when} mà chưa có.",
     "httpsSlowCheck": "Kiểm tra bản ghi CNAME hoặc A vẫn trỏ đúng như lúc kết nối và tên miền không có bản ghi AAAA (IPv6) nào khác, rồi bấm Thử lại ngay. Vẫn chưa được thì liên hệ hỗ trợ Digistay."
   },
-  "noAccess": "Chỉ chủ sở hữu, quản trị viên và quản lý chỉnh sửa được website khách sạn."
+  "noAccess": "Chỉ chủ sở hữu, quản trị viên và quản lý chỉnh sửa được website khách sạn.",
+  "versions": {
+    "open": "Lịch sử phiên bản",
+    "title": "Lịch sử phiên bản",
+    "subtitle": "Mỗi lần lưu giữ lại một phiên bản (các lần lưu liên tiếp của một người trong 2 phút gộp làm một). Giữ {limit} phiên bản gần nhất.",
+    "hint": "Khôi phục đưa các khối, màu, phông chữ và SEO về như phiên bản đó. Trạng thái xuất bản và tên miền giữ nguyên.",
+    "loading": "Đang tải lịch sử…",
+    "loadFailed": "Không tải được lịch sử phiên bản.",
+    "empty": "Chưa có phiên bản nào. Phiên bản đầu tiên được tạo khi bạn lưu thay đổi.",
+    "current": "Đang dùng",
+    "unknownAuthor": "Không rõ người lưu",
+    "kind": {
+      "AUTO": "Lưu",
+      "RESTORE": "Khôi phục",
+      "BEFORE_RESTORE": "Trước khi khôi phục",
+      "INITIAL": "Trước khi có lịch sử"
+    },
+    "restoredFrom": "về bản {time}",
+    "view": "Xem",
+    "viewLabel": "Xem phiên bản lúc {time} trong thẻ mới",
+    "restore": "Khôi phục",
+    "restoreLabel": "Khôi phục phiên bản lúc {time}",
+    "confirmTitle": "Khôi phục phiên bản lúc {time}?",
+    "confirmBody": "Website đang chạy trở lại như phiên bản này ngay khi bạn xác nhận. Bản hiện tại được giữ thành một phiên bản, nên bạn vẫn quay lại được.",
+    "confirmUnsaved": "Thay đổi chưa lưu trong trình dựng sẽ mất.",
+    "confirm": "Khôi phục",
+    "restored": "Đã khôi phục phiên bản lúc {time}",
+    "restoreFailed": "Không khôi phục được. Vui lòng thử lại."
+  }
 }
