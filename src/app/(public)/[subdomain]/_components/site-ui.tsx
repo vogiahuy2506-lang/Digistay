@@ -1,5 +1,6 @@
 import * as React from 'react'
 import type { useTranslations } from 'next-intl'
+import { BedDouble } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 /** The hotel site's translator (useTranslations('site') / getTranslations('site')). */
@@ -57,10 +58,12 @@ export function SectionHeader({
 }
 
 /** Where a photo would be: a calm tint with its caption, never a broken image. */
+/** Where a room type has no photo yet: a bed and "Chưa có ảnh", as small as the layout lets it be. */
 export function PhotoPlaceholder({ label, className }: { label: string; className?: string }) {
   return (
-    <div className={cn('relative bg-fg/[0.06]', className)}>
-      <span className="absolute bottom-3 left-3 bg-panel/90 px-2 py-0.5 font-mono text-[11px] text-muted">{label}</span>
+    <div className={cn('flex flex-col items-center justify-center gap-2 bg-fg/[0.05] text-muted', className)}>
+      <BedDouble className="h-6 w-6" strokeWidth={1.5} aria-hidden="true" />
+      <span className="font-mono text-[11px]">{label}</span>
     </div>
   )
 }

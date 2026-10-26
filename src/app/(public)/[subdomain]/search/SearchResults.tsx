@@ -8,7 +8,7 @@ import { nightsOf } from '@/lib/pricing/quote'
 import { cn } from '@/lib/utils'
 import { responsiveImage } from '@/lib/media/image-url'
 import { SiteLink, useSiteHref } from '../_components/site-base'
-import { Container, bedLabel } from '../_components/site-ui'
+import { Container, PhotoPlaceholder, bedLabel } from '../_components/site-ui'
 import { stayDate } from '../_components/booking/StaySummary'
 
 interface Result {
@@ -292,10 +292,13 @@ export function SearchResults({
             })
             return (
               <article key={r.id} className="grid border border-line bg-panel lg:grid-cols-[400px_minmax(0,1fr)_320px]">
-                <div className="relative aspect-[16/10] bg-plain-soft lg:aspect-auto lg:min-h-[260px]">
-                  {r.image && (
+                <div className={cn('relative bg-plain-soft lg:aspect-auto lg:min-h-[260px]', r.image ? 'aspect-[16/10]' : 'h-28 lg:h-auto')}>
+                  {r.image ? (
                     // eslint-disable-next-line @next/next/no-img-element -- hotel photos from its own storage, any size
                     <img {...responsiveImage(r.image, '(min-width: 1024px) 400px, 100vw', { fallback: 800 })} alt={t('booking.common.photoOf', { name: r.name })} className={cn('absolute inset-0 h-full w-full object-cover', sold && 'opacity-50')} />
+                  ) : (
+                    // No photo yet: a small placeholder, not a ~300px grey block on phones.
+                    <PhotoPlaceholder label={t('room.noPhoto')} className="absolute inset-0" />
                   )}
                   {sold && <span className="absolute left-3 top-3 bg-ink px-2.5 py-1 text-[12px] font-medium text-on-ink">{t('booking.search.soldBadge')}</span>}
                 </div>

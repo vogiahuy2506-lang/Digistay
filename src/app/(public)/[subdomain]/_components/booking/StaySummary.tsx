@@ -2,6 +2,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { formatVnd } from '@/lib/bookings/display'
 import { cn } from '@/lib/utils'
 import { resizedImage } from '@/lib/media/image-url'
+import { PhotoPlaceholder } from '../site-ui'
 
 const WEEKDAYS = {
   vi: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
@@ -72,10 +73,12 @@ export function StaySummary({
   return (
     <aside className={cn('overflow-hidden border border-line bg-panel', !compact && 'shadow-lift')}>
       {room && !compact && (
-        <div className="aspect-[440/200] bg-plain-soft">
-          {room.image && (
+        <div className={cn('bg-plain-soft', room.image ? 'aspect-[440/200]' : 'h-20')}>
+          {room.image ? (
             // eslint-disable-next-line @next/next/no-img-element -- hotel photos from its own storage, any size
             <img src={resizedImage(room.image, 800)} alt={t('booking.common.photoOf', { name: room.name })} className="h-full w-full object-cover" />
+          ) : (
+            <PhotoPlaceholder label={t('room.noPhoto')} className="h-full" />
           )}
         </div>
       )}
