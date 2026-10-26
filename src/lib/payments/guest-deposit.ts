@@ -346,8 +346,10 @@ async function expireManualDeposits(now: Date, summary: DepositExpirySummary) {
 
 /**
  * `manual`: a manual deposit's expiry, checked again under the booking's
- * lock (a claim may have just pushed the deadline back) and marked EXPIRED
- * with the booking.
+ * lock (a claim may have just pushed the deadline back). Its payment stays
+ * PENDING: if the guest's money turns up after all, staff still confirm it
+ * (POST /api/payments/[id]/confirm records it on the cancelled booking and
+ * says so), as a late PayOS payment is still recorded.
  */
 async function cancelUnpaidBooking(
   bookingId: string,
@@ -375,7 +377,6 @@ async function cancelUnpaidBooking(
     if (manual) {
       const current = await tx.payment.findUniqueOrThrow({ where: { id: manual.paymentId }, select: { status: true, expiresAt: true } })
       if (current.status !== 'PENDING' || !current.expiresAt || current.expiresAt > manual.now) return null
-      await tx.payment.update({ where: { id: manual.paymentId }, data: { status: 'EXPIRED' } })
     }
 
     await tx.booking.update({ where: { id: bookingId }, data: { status: 'CANCELLED' } })

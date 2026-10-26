@@ -451,6 +451,8 @@
     "percent": "Mức cọc: {percent}% tổng tiền (trang Chính sách).",
     "percentOff": "Đang không thu cọc online: đặt mức cọc ở trang Chính sách để bật.",
     "deadline": "Quá {time} chưa nhận cọc thì đơn tự huỷ.",
+    "minutes": "{count} phút",
+    "hours": "{count} giờ",
     "manualTitle": "Thủ công",
     "manualWhat": "Khách quét VietQR chuyển thẳng vào tài khoản ngân hàng hoặc ví MoMo của khách sạn, rồi bấm “Tôi đã chuyển khoản”.",
     "manualDo": "Khách sạn: kiểm tra tài khoản, tiền về thì bấm “Xác nhận đã nhận tiền” ở đơn.",

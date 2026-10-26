@@ -373,7 +373,8 @@ describe("the hotel's deposit deadline", () => {
     expect(await expireUnpaidDeposits(later(29, start))).toMatchObject({ cancelled: 0 })
     expect(await expireUnpaidDeposits(later(31, start))).toMatchObject({ checked: 1, cancelled: 1, errors: 0 })
     expect(await prisma.booking.findUniqueOrThrow({ where: { id: quiet.id } })).toMatchObject({ status: 'CANCELLED' })
-    expect(await prisma.payment.findUniqueOrThrow({ where: { id: quiet.payments[0].id } })).toMatchObject({ status: 'EXPIRED' })
+    // Its payment stays open: money that turns up late can still be recorded (below).
+    expect(await prisma.payment.findUniqueOrThrow({ where: { id: quiet.payments[0].id } })).toMatchObject({ status: 'PENDING' })
     expect(await prisma.emailOutbox.count({ where: { kind: 'deposit_expired', refId: quiet.id } })).toBe(1)
     expect(await prisma.booking.findUniqueOrThrow({ where: { id: claimed.id } })).toMatchObject({ status: 'PENDING' })
     const next = await book(property.id, room.id, 'next@example.com') // the room is free again
@@ -385,6 +386,21 @@ describe("the hotel's deposit deadline", () => {
     // Running again changes nothing.
     await expireUnpaidDeposits(later(62, start))
     expect(await prisma.emailOutbox.count({ where: { kind: 'deposit_expired' } })).toBe(3)
+  })
+
+  it('money that turns up after the booking was cancelled is still recorded by staff, the booking stays cancelled', async () => {
+    const { property, room, member } = await hotel({ deadlineMinutes: 30 })
+    const booking = await book(property.id, room.id)
+    expect(await expireUnpaidDeposits(later(31))).toMatchObject({ cancelled: 1 })
+    expect((await claim(depositToken(booking.id))).status).toBe(409) // too late to say so
+
+    signInAs(member!)
+    const res = await confirm(booking.payments[0].id)
+    expect(res.status).toBe(200)
+    expect((await res.json()).warning).toContain('Đơn này đã huỷ')
+    expect(await prisma.payment.findUniqueOrThrow({ where: { id: booking.payments[0].id } })).toMatchObject({ status: 'PAID' })
+    expect(await prisma.booking.findUniqueOrThrow({ where: { id: booking.id } })).toMatchObject({ status: 'CANCELLED' })
+    expect(await prisma.emailOutbox.count({ where: { kind: 'deposit_received' } })).toBe(0) // not "your booking is confirmed"
   })
 
   it('confirmed by staff before the deadline: never cancelled', async () => {

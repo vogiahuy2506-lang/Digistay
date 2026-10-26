@@ -98,7 +98,9 @@ export function DepositModeCard({
   // What the cards show as picked: the hotel's choice, else what applies by default.
   const picked: Mode = settings.mode ?? (settings.payosConnected ? 'PAYOS' : 'MANUAL')
   const deadline =
-    settings.deadlineMinutes >= 60 && settings.deadlineMinutes % 60 === 0 ? `${settings.deadlineMinutes / 60}h` : `${settings.deadlineMinutes}'`
+    settings.deadlineMinutes >= 60 && settings.deadlineMinutes % 60 === 0
+      ? t('hours', { count: settings.deadlineMinutes / 60 })
+      : t('minutes', { count: settings.deadlineMinutes })
 
   const option = (mode: Mode, title: string, what: string, todo: string, disabled: boolean) => {
     const selected = picked === mode

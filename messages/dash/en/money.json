@@ -451,6 +451,8 @@
     "percent": "Deposit: {percent}% of the total (Policies page).",
     "percentOff": "No online deposit now: set a deposit on the Policies page to turn it on.",
     "deadline": "Bookings without the deposit after {time} are cancelled.",
+    "minutes": "{count, plural, one {# minute} other {# minutes}}",
+    "hours": "{count, plural, one {# hour} other {# hours}}",
     "manualTitle": "Manual",
     "manualWhat": "Guests scan a VietQR into the hotel’s own bank account or MoMo wallet, then press “I have transferred”.",
     "manualDo": "The hotel checks the account and, once the money is in, presses “Confirm money received” on the booking.",
