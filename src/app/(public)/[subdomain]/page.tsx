@@ -82,6 +82,7 @@ export default async function PublicPropertyPage({ params }: PageProps) {
     phone: p.phone,
     email: p.email,
     address: p.address,
+    ward: p.ward,
     district: p.district,
     city: p.city,
     country: p.country,

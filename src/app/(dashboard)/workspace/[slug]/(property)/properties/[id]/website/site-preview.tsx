@@ -7,6 +7,7 @@ import { getIcon } from '@/lib/amenity-icons'
 import { useDashLabels } from '@/lib/i18n/dash'
 import { resizedImage } from '@/lib/media/image-url'
 import { cn } from '@/lib/utils'
+import { formatAddress } from '@/lib/vn-admin/address'
 
 /**
  * What the hotel's site shows, as GET /api/website/blocks returns it
@@ -21,6 +22,7 @@ export interface PreviewSite {
     description: string | null
     address: string
     city: string
+    ward?: string | null
     district: string | null
     country: string
     phone: string | null
@@ -294,10 +296,10 @@ export function PreviewBlock({ block, site, compact }: { block: PreviewBlockData
 
     case 'MAP': {
       const fullAddress =
-        text(cfg, 'mapAddress') ?? [property.address, property.district, property.city, property.country].filter(Boolean).join(', ')
+        text(cfg, 'mapAddress') ?? formatAddress(property, { country: true })
       // The default layout titles this block "Vị trí", which is already the eyebrow (MapBlock).
       const custom = text(cfg, 'title')
-      const title = custom && custom.toLowerCase() !== 'vị trí' ? custom : [property.address, property.city].filter(Boolean).join(', ')
+      const title = custom && custom.toLowerCase() !== 'vị trí' ? custom : formatAddress(property)
       return (
         <PreviewSection>
           <Eyebrow>{t('mapEyebrow')}</Eyebrow>
@@ -326,7 +328,7 @@ export function PreviewBlock({ block, site, compact }: { block: PreviewBlockData
     case 'CONTACT': {
       const phone = text(cfg, 'contactPhone') ?? property.phone
       const email = text(cfg, 'contactEmail') ?? property.email
-      const address = text(cfg, 'contactAddress') ?? [property.address, property.city].filter(Boolean).join(', ')
+      const address = text(cfg, 'contactAddress') ?? formatAddress(property)
       const rows = [
         phone && { icon: Phone, label: t('phone'), value: phone, href: tel(phone) },
         email && { icon: Mail, label: 'Email', value: email },
@@ -417,7 +419,7 @@ export function PreviewBlock({ block, site, compact }: { block: PreviewBlockData
     }
 
     case 'FOOTER': {
-      const address = [property.address, property.district, property.city].filter(Boolean).join(', ')
+      const address = formatAddress(property)
       return (
         <footer className="border-t border-line px-5 pt-8 pb-6 sm:px-8">
           <div className={cn('grid gap-6', wide && 'sm:grid-cols-[1.4fr_1fr]')}>

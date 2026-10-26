@@ -15,7 +15,15 @@ import type { SiteSection } from './SiteHeader'
  * hotel away.
  */
 export interface SiteHotel {
-  property: { name: string; type: string; city: string; phone: string | null; address: string | null }
+  property: {
+    name: string
+    type: string
+    city: string
+    ward: string | null
+    district: string | null
+    phone: string | null
+    address: string | null
+  }
   sections: SiteSection[]
 }
 

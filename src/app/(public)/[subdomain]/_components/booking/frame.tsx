@@ -46,6 +46,8 @@ export async function loadBookingFrame(subdomain: string, { guestLink = false } 
       name: true,
       type: true,
       city: true,
+      ward: true,
+      district: true,
       phone: true,
       address: true,
       websiteBlocks: { where: { isEnabled: true }, select: { type: true } },

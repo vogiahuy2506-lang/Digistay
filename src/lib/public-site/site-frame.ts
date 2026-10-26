@@ -20,6 +20,8 @@ export const loadSiteFrame = cache((subdomain: string) =>
       // The site's header and footer, for its 404 ([subdomain]/not-found.tsx).
       type: true,
       city: true,
+      ward: true,
+      district: true,
       phone: true,
       address: true,
       websiteBlocks: { where: { isEnabled: true }, select: { type: true } },

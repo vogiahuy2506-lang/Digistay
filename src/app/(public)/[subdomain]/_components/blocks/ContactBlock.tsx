@@ -3,6 +3,7 @@ import { Mail, MapPin, MessageCircle, Phone } from 'lucide-react'
 import type { PublicBlock, PublicProperty } from '../PropertySite'
 import { Eyebrow, Section, SectionTitle, cfgText } from '../site-ui'
 import { useLocale, useTranslations } from 'next-intl'
+import { formatAddress } from '@/lib/vn-admin/address'
 
 interface Props {
   block: PublicBlock
@@ -16,7 +17,7 @@ export function ContactBlock({ block, property }: Props) {
   const title = blockText(cfg, locale, 'contactTitle', 'title') ?? t('title')
   const phone = cfgText(cfg, 'contactPhone') ?? property.phone
   const email = cfgText(cfg, 'contactEmail') ?? property.email
-  const address = cfgText(cfg, 'contactAddress') ?? [property.address, property.city].filter(Boolean).join(', ')
+  const address = cfgText(cfg, 'contactAddress') ?? formatAddress(property)
   // Vietnamese phone numbers → zalo.me/<phone>
   const zaloLink = phone ? `https://zalo.me/${phone.replace(/[^0-9]/g, '')}` : null
 

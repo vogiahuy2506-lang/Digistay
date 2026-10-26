@@ -75,7 +75,10 @@ export interface HotelSchemaInput {
   phone?: string | null
   email?: string | null
   address?: string | null
+  ward?: string | null
+  /** Rows saved before July 2025: used when there is no ward. */
   district?: string | null
+  /** The province's name. */
   city?: string | null
   country?: string | null
   latitude?: number | null
@@ -100,14 +103,15 @@ function countryCode(country: string | null | undefined): string {
 
 export function hotelJsonLd(input: HotelSchemaInput): Json {
   const lodging = isLodging(input.type)
-  const district = text(input.district)
+  // Vietnamese addresses since July 2025: a ward (phường / xã) in a province;
+  // older rows have a district (quận / huyện) instead.
+  const locality = text(input.ward) ?? text(input.district)
   const city = text(input.city)
   const address = compact({
     '@type': 'PostalAddress',
     streetAddress: text(input.address),
-    // Vietnamese addresses: district (quận / huyện) in a city or province.
-    addressLocality: district ?? city,
-    addressRegion: district ? city : undefined,
+    addressLocality: locality ?? city,
+    addressRegion: locality ? city : undefined,
     addressCountry: countryCode(input.country),
   })
   const hasGeo = typeof input.latitude === 'number' && typeof input.longitude === 'number'
