@@ -15,6 +15,7 @@ import { apiError } from '@/lib/i18n/api-errors'
 import { METHOD_GROUPS, toCsv, type GroupBy, type MethodGroup } from '@/lib/reports/revenue'
 import type { RevenueReport } from '@/lib/reports/revenue-report'
 import { ArrowDownLeft, ArrowUpRight, CalendarCheck, Download, FileText, Wallet } from 'lucide-react'
+import { MONEY_MANAGERS, NoAccess, useHasRole } from '@/components/payment/no-access'
 
 type Period = '7' | '30' | '90' | 'thisMonth' | 'lastMonth' | 'custom'
 const PERIODS: Period[] = ['7', '30', '90', 'thisMonth', 'lastMonth', 'custom']
@@ -73,6 +74,8 @@ export default function ReportsPage() {
   const tc = useTranslations('dash.common')
   const ti = useTranslations('dash.money.invoices')
   const labels = useDashLabels()
+  // Revenue is for the owner and managers (src/components/layout/nav.ts); the API refuses the others.
+  const allowed = useHasRole(MONEY_MANAGERS)
 
   const [period, setPeriod] = React.useState<Period>('30')
   const [custom, setCustom] = React.useState(() => ({ from: shiftDay(vnToday(), -29), to: vnToday() }))
@@ -91,7 +94,7 @@ export default function ReportsPage() {
   )
 
   React.useEffect(() => {
-    if (!range.from || !range.to) return
+    if (!allowed || !range.from || !range.to) return
     let stale = false
     setIsLoading(true)
     setError('')
@@ -107,7 +110,7 @@ export default function ReportsPage() {
     return () => {
       stale = true
     }
-  }, [query, range.from, range.to, t])
+  }, [query, range.from, range.to, t, allowed])
 
   const methodLabel = (group: MethodGroup) => t(`method.${group}`)
   const cqtLabel = (code: number) =>
@@ -167,6 +170,8 @@ export default function ReportsPage() {
   const maxBucket = Math.max(1, ...(report?.series.map((s) => s.received) ?? []))
   const totalByMethod = report?.byMethod.reduce((sum, m) => sum + m.received, 0) ?? 0
   const activeRows = report?.series.filter((s) => s.received || s.refunded || s.bookings).slice().reverse() ?? []
+
+  if (!allowed) return <NoAccess title={t('title')} />
 
   return (
     <PageContainer>

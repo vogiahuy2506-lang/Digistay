@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { revenueReport } from '@/lib/reports/revenue-report'
 
 // Force dynamic rendering - required because we use auth() which calls headers()
 export const dynamic = 'force-dynamic'
@@ -8,15 +9,18 @@ export const dynamic = 'force-dynamic'
 /**
  * GET /api/reports/daily?propertyId=...&date=YYYY-MM-DD
  *
- * Returns the cash flow summary for a single day at a property:
- *   - totalIn       (sum of all PAID payments on this date)
- *   - totalOut      (sum of all REFUNDED payments on this date)
+ * The cash book (Sổ quỹ) of one Vietnam day at a property. Money follows
+ * the revenue report's rules (src/lib/reports/revenue.ts), so both reports
+ * agree on any day:
+ *   - totalIn       money received: payments whose paidAt is in the day,
+ *                   whatever happened to them later
+ *   - totalOut      money given back in the day: refunds at their refund
+ *                   time, for the amount refunded (a partial refund too)
  *   - bookings      (count of bookings created on this date)
  *   - checkIns      (bookings whose actualCheckIn fell on this date)
  *   - checkOuts     (bookings whose actualCheckOut fell on this date)
- *   - transactions  (a flat list of every PAID/REFUNDED payment that
- *                    happened on the date, plus check-in/out events,
- *                    formatted for the daily report table)
+ *   - transactions  every movement of money in the day, plus check-in/out
+ *                   events (type EVENT, no amount), for the table
  */
 export async function GET(request: NextRequest) {
   try {
@@ -73,33 +77,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const [
-      paidAgg,
-      refundedAgg,
-      bookings,
-      checkIns,
-      checkOuts,
-      payments,
-      paidByMethod,
-    ] = await Promise.all([
-      prisma.payment.aggregate({
-        where: {
-          propertyId,
-          status: 'PAID',
-          paidAt: { gte: start, lte: end },
-        },
-        _sum: { amount: true },
-        _count: true,
-      }),
-      prisma.payment.aggregate({
-        where: {
-          propertyId,
-          status: 'REFUNDED',
-          updatedAt: { gte: start, lte: end },
-        },
-        _sum: { amount: true },
-        _count: true,
-      }),
+    const [report, bookings, checkIns, checkOuts] = await Promise.all([
+      revenueReport({ propertyId, start, end, groupBy: 'day', withRows: true }),
       prisma.booking.count({
         where: {
           propertyId,
@@ -120,58 +99,30 @@ export async function GET(request: NextRequest) {
         },
         select: { id: true, bookingCode: true, guestName: true, actualCheckOut: true },
       }),
-      prisma.payment.findMany({
-        where: {
-          propertyId,
-          OR: [
-            { paidAt: { gte: start, lte: end } },
-            { status: 'REFUNDED', updatedAt: { gte: start, lte: end } },
-          ],
-        },
-        include: {
-          booking: { select: { bookingCode: true, guestName: true } },
-        },
-        orderBy: { paidAt: 'desc' },
-      }),
-      // Breakdown by payment method — only PAID payments, grouped
-      // client-side to avoid needing Prisma's groupBy raw support
-      prisma.payment.findMany({
-        where: {
-          propertyId,
-          status: 'PAID',
-          paidAt: { gte: start, lte: end },
-        },
-        select: { method: true, amount: true },
-      }),
     ])
 
-    const totalIn = paidAgg._sum.amount ?? 0
-    const totalOut = refundedAgg._sum.amount ?? 0
-    const balance = totalIn - totalOut
+    const totalIn = report.summary.received
+    const totalOut = report.summary.refunded
+    const balance = report.summary.net
+    const rows = report.rows ?? []
 
-    // Group PAID payments by method for the 3 breakdown cards
-    const byMethod: Record<
-      string,
-      { amount: number; count: number }
-    > = {}
-    for (const p of paidByMethod) {
-      const key = p.method
-      if (!byMethod[key]) {
-        byMethod[key] = { amount: 0, count: 0 }
-      }
-      byMethod[key].amount += p.amount
-      byMethod[key].count += 1
+    // Money received by payment method, for the breakdown cards
+    const byMethod = new Map<string, { amount: number; count: number }>()
+    for (const r of rows) {
+      if (r.kind !== 'IN') continue
+      const entry = byMethod.get(r.method) ?? { amount: 0, count: 0 }
+      entry.amount += r.amount
+      entry.count += 1
+      byMethod.set(r.method, entry)
     }
-    const methodBreakdown = Object.entries(byMethod).map(([key, value]) => ({
-      method: key,
-      ...value,
-    }))
+    const methodBreakdown = [...byMethod].map(([method, value]) => ({ method, ...value }))
 
     // Flatten to a unified "transaction" list for the report table. `category`
     // and `method` are codes: the page names them in the viewer's language.
     const transactions: Array<{
       id: string
-      type: 'IN' | 'OUT'
+      /** EVENT: a check-in or check-out, no money */
+      type: 'IN' | 'OUT' | 'EVENT'
       category: 'PAYMENT' | 'REFUND' | 'CHECK_IN' | 'CHECK_OUT'
       /** the booking ("MB-10206 — guest"), null for a payment without one */
       description: string | null
@@ -182,24 +133,24 @@ export async function GET(request: NextRequest) {
       createdAt: string
     }> = []
 
-    for (const p of payments) {
-      const isRefund = p.status === 'REFUNDED'
+    rows.forEach((r, i) => {
+      const isRefund = r.kind === 'REFUND'
       transactions.push({
-        id: p.id,
+        id: `${isRefund ? 'refund' : 'in'}-${i}`,
         type: isRefund ? 'OUT' : 'IN',
         category: isRefund ? 'REFUND' : 'PAYMENT',
-        description: p.booking ? `${p.booking.bookingCode} — ${p.booking.guestName}` : null,
-        amount: p.amount,
-        method: p.method,
-        createdAt: vnTime(p.paidAt ?? p.updatedAt),
+        description: `${r.bookingCode} — ${r.guestName}`,
+        amount: r.amount,
+        method: r.method,
+        createdAt: vnTime(new Date(r.at)),
       })
-    }
+    })
 
     // Append check-in / check-out events
     for (const b of checkIns) {
       transactions.push({
         id: `checkin-${b.id}`,
-        type: 'OUT', // not strictly cash flow, marked as a service event
+        type: 'EVENT',
         category: 'CHECK_IN',
         description: `${b.bookingCode} — ${b.guestName}`,
         amount: 0,
@@ -210,7 +161,7 @@ export async function GET(request: NextRequest) {
     for (const b of checkOuts) {
       transactions.push({
         id: `checkout-${b.id}`,
-        type: 'IN',
+        type: 'EVENT',
         category: 'CHECK_OUT',
         description: `${b.bookingCode} — ${b.guestName}`,
         amount: 0,

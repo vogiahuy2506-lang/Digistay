@@ -25,6 +25,8 @@ vi.mock('@/lib/db', () => ({
   prisma: {
     // GET pages and counts in the database (src/lib/api/list-params.ts).
     payment: { findMany: vi.fn(), count: vi.fn(async () => 0), groupBy: vi.fn(async () => []) },
+    // money-access.ts: may the caller see the totals?
+    workspace: { count: vi.fn(async () => 1) },
     booking: { findUnique: vi.fn() },
     $transaction: vi.fn(),
   },
@@ -36,17 +38,18 @@ import { GET, POST } from './route'
 
 const mockAuth = auth as unknown as ReturnType<typeof vi.fn>
 const mockPrisma = prisma as unknown as {
-  payment: { findMany: ReturnType<typeof vi.fn> }
+  payment: { findMany: ReturnType<typeof vi.fn>; groupBy: ReturnType<typeof vi.fn> }
+  workspace: { count: ReturnType<typeof vi.fn> }
   booking: { findUnique: ReturnType<typeof vi.fn> }
   $transaction: ReturnType<typeof vi.fn>
 }
 
+const workspacesOf = (userId: string, roles: string[]) => ({
+  OR: [{ ownerId: userId }, { members: { some: { userId, role: { in: roles } } } }],
+})
+/** Staff of the workspace list payments; a USER member does not. */
 const accessFilter = (userId: string) => ({
-  property: {
-    workspace: {
-      OR: [{ ownerId: userId }, { members: { some: { userId } } }],
-    },
-  },
+  property: { workspace: workspacesOf(userId, ['ADMIN', 'MANAGER', 'RECEPTIONIST']) },
 })
 
 function get(query = '') {
@@ -119,6 +122,28 @@ describe('GET /api/payments', () => {
       propertyId: 'prop-other',
       bookingId: 'bk-1',
     })
+  })
+
+  it('sums the cards over the workspaces the caller manages only', async () => {
+    mockAuth.mockResolvedValueOnce({ user: { id: 'user-1' } })
+    const res = await get('?propertyId=prop-1')
+    expect(mockPrisma.payment.groupBy.mock.calls[0][0].where).toEqual({
+      property: { workspace: workspacesOf('user-1', ['ADMIN', 'MANAGER']) },
+      propertyId: 'prop-1',
+    })
+    expect(mockPrisma.workspace.count.mock.calls[0][0].where).toEqual({
+      ...workspacesOf('user-1', ['ADMIN', 'MANAGER']),
+      properties: { some: { id: 'prop-1' } },
+    })
+    expect((await res.json()).stats).toMatchObject({ total: 0, paid: 0 })
+  })
+
+  it('gives no totals to a caller who may not see them (a receptionist)', async () => {
+    mockAuth.mockResolvedValueOnce({ user: { id: 'user-1' } })
+    mockPrisma.workspace.count.mockResolvedValueOnce(0)
+    const res = await get('?propertyId=prop-1')
+    expect(res.status).toBe(200)
+    expect((await res.json()).stats).toBeNull()
   })
 })
 

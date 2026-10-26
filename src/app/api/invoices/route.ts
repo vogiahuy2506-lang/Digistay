@@ -8,6 +8,7 @@ import { EinvoiceError } from '@/lib/einvoice/matbao'
 import { generateInvoiceNumber, invoiceData, invoiceInputSchema } from '@/lib/einvoice/invoices'
 import type { VatCode } from '@/lib/einvoice/vat'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
+import { managerWorkspaces, seesMoneyTotals } from '../payments/money-access'
 
 // Amounts are computed on the server from the VAT-inclusive total and the
 // property's VAT code (src/lib/einvoice/invoices.ts).
@@ -18,6 +19,8 @@ const createInvoiceSchema = z.object({ bookingId: z.string() }).and(invoiceInput
  * Filters (propertyId, status, q, startDate/endDate as yyyy-mm-dd) and the
  * search run in the database, so they cover every page. `stats` counts the
  * property's invoices whatever the filters (the cards above the list).
+ * The amount issued (`stats.issuedAmount`) is null unless the caller may
+ * see money totals: owner, ADMIN, MANAGER (payments/money-access.ts).
  */
 export async function GET(request: NextRequest) {
   try {
@@ -67,7 +70,7 @@ export async function GET(request: NextRequest) {
       }),
     }
 
-    const [invoices, total, byStatus, issued] = await Promise.all([
+    const [invoices, total, byStatus, issued, withTotals] = await Promise.all([
       prisma.invoice.findMany({
         where,
         orderBy: { createdAt: 'desc' },
@@ -105,7 +108,11 @@ export async function GET(request: NextRequest) {
       prisma.invoice.count({ where }),
       prisma.invoice.groupBy({ by: ['status'], where: scope, _count: { _all: true } }),
       // Issued money: adjustments are signed, so they count as they should.
-      prisma.invoice.aggregate({ where: { ...scope, status: 'PUBLISHED' }, _sum: { totalAmount: true } }),
+      prisma.invoice.aggregate({
+        where: { property: { workspace: managerWorkspaces(session.user.id) }, ...(propertyId && { propertyId }), status: 'PUBLISHED' },
+        _sum: { totalAmount: true },
+      }),
+      seesMoneyTotals(session.user.id, propertyId),
     ])
 
     const count = (s: string) => byStatus.find((r) => r.status === s)?._count._all ?? 0
@@ -118,7 +125,7 @@ export async function GET(request: NextRequest) {
         draft: count('DRAFT'),
         pending: count('PENDING'),
         published: count('PUBLISHED'),
-        issuedAmount: issued._sum.totalAmount ?? 0,
+        issuedAmount: withTotals ? (issued._sum.totalAmount ?? 0) : null,
       },
     })
   } catch (error) {

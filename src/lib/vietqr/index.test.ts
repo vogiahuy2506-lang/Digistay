@@ -1,46 +1,39 @@
 import { describe, it, expect } from 'vitest'
-import { buildVietQr } from './index'
+import { buildVietQr, crc16CcittFalse, toBankName } from './index'
+import { VIETQR_BANKS, bankLabel, findBank } from './banks'
 
 /**
- * Tests for the VietQR builder.
- *
- * The output is an EMVCo-compliant string. The most important thing
- * we verify here is the CRC-16/CCITT trailer, because a single
- * bad nibble will make every Vietnamese banking app reject the QR.
- * We also assert the structural fields (bank BIN, account, amount,
- * reference) are present in the right place.
+ * Tests for the VietQR builder against the NAPAS VietQR spec (EMVCo MPM):
+ * merchant account in ID 38 with GUID A000000727, the bank's 6-digit BIN
+ * and the account number, service QRIBFTTA, ASCII names, byte lengths and
+ * the CRC-16/CCITT-FALSE trailer. The expected payloads below were built by
+ * hand from the spec, with the CRC from Python's binascii.crc_hqx(…, 0xFFFF).
  */
 
-// Parse a flat EMVCo TLV payload: returns a Map of id -> value for
-// the **top-level** fields only. Sub-templates (e.g. the merchant
-// account information in ID 26, or the additional data in ID 62) are
-// returned as their raw value string — callers can recurse on them
-// if they need to pick out sub-tags.
+/** Parses EMVCo TLV fields by bytes; throws on a malformed or truncated payload. */
 function parseTlv(payload: string): Map<string, string> {
+  const bytes = new TextEncoder().encode(payload)
   const map = new Map<string, string>()
   let i = 0
-  while (i < payload.length) {
-    const id = payload.slice(i, i + 2)
-    const len = parseInt(payload.slice(i + 2, i + 4), 10)
-    if (Number.isNaN(len)) break
-    const value = payload.slice(i + 4, i + 4 + len)
-    // EMVCo forbids duplicate top-level IDs; we honour first-write
-    // so the first occurrence wins.
-    if (!map.has(id)) map.set(id, value)
+  while (i < bytes.length) {
+    const head = new TextDecoder().decode(bytes.slice(i, i + 4))
+    if (!/^\d{4}$/.test(head)) throw new Error(`bad field header at byte ${i}: ${head}`)
+    const id = head.slice(0, 2)
+    const len = Number(head.slice(2))
+    if (i + 4 + len > bytes.length) throw new Error(`field ${id} runs past the end`)
+    if (map.has(id)) throw new Error(`duplicate field ${id}`)
+    map.set(id, new TextDecoder().decode(bytes.slice(i + 4, i + 4 + len)))
     i += 4 + len
   }
   return map
 }
 
-function subTag(payload: string, id: string): string {
-  const idx = payload.indexOf(id)
-  if (idx < 0) throw new Error(`sub-tag ${id} not found`)
-  const len = parseInt(payload.slice(idx + 2, idx + 4), 10)
-  return payload.slice(idx + 4, idx + 4 + len)
+/** The merchant account (ID 38) as { guid, bin, account, service }. */
+function napasAccount(payload: string) {
+  const merchant = parseTlv(parseTlv(payload).get('38')!)
+  const beneficiary = parseTlv(merchant.get('01')!)
+  return { guid: merchant.get('00'), bin: beneficiary.get('00'), account: beneficiary.get('01'), service: merchant.get('02') }
 }
-
-// Kept around because some tests below still want the simpler "first
-// occurrence" lookup.
 
 describe('buildVietQr', () => {
   const base = {
@@ -51,134 +44,141 @@ describe('buildVietQr', () => {
     addInfo: 'BK-001',
   }
 
-  it('returns a string that ends with the CRC-16/CCITT trailer', () => {
-    const out = buildVietQr(base)
-    // The last 4 chars of a well-formed VietQR string are the CRC.
-    const crc = out.slice(-4)
-    expect(crc).toMatch(/^[0-9A-F]{4}$/)
+  it('builds the exact NAPAS payload of a dynamic transfer (Vietcombank, amount, content)', () => {
+    const out = buildVietQr({
+      bankCode: 'VCB',
+      accountNumber: '0123456789',
+      accountHolder: 'cong ty khach san demo',
+      amount: 9_240_000,
+      addInfo: 'DSMB-10220',
+      merchantName: 'Khách sạn Demo Hà Nội',
+      merchantCity: 'Hà Nội',
+    })
+    expect(out).toBe(
+      '000201' +
+        '010212' +
+        '3854' + '0010A000000727' + '0124' + '0006970436' + '01100123456789' + '0208QRIBFTTA' +
+        '52045999' +
+        '5303704' +
+        '54079240000' +
+        '5802VN' +
+        '5921KHACH SAN DEMO HA NOI' +
+        '6006HA NOI' +
+        '6214' + '0810DSMB-10220' +
+        '6304C907'
+    )
   })
 
-  it('embeds the payload format indicator (ID 00 = 01)', () => {
-    const out = buildVietQr(base)
-    expect(parseTlv(out).get('00')).toBe('01')
+  it('builds a static QR (ID 01 = 11, no ID 54) when there is no amount', () => {
+    const out = buildVietQr({ bankCode: 'VTB', accountNumber: '1234 5678 90', accountHolder: 'Nguyễn Văn Dũng', amount: 0, addInfo: '', merchantCity: 'Đà Lạt' })
+    expect(out).toBe(
+      '00020101021138540010A00000072701240006970415011012345678900208QRIBFTTA5204599953037045802VN5915NGUYEN VAN DUNG6006DA LAT630416AA'
+    )
+    const fields = parseTlv(out)
+    expect(fields.get('01')).toBe('11')
+    expect(fields.has('54')).toBe(false)
+    expect(fields.has('62')).toBe(false)
   })
 
-  it('uses dynamic QR (ID 01 = 12) so amount is honoured', () => {
+  it('names the bank by its BIN under the NAPAS GUID in ID 38, not ID 26', () => {
     const out = buildVietQr(base)
-    expect(parseTlv(out).get('01')).toBe('12')
+    expect(parseTlv(out).has('26')).toBe(false)
+    expect(napasAccount(out)).toEqual({ guid: 'A000000727', bin: '970436', account: '1234567890', service: 'QRIBFTTA' })
   })
 
-  it('uses VND (ID 53 = 704)', () => {
-    const out = buildVietQr(base)
-    expect(parseTlv(out).get('53')).toBe('704')
+  it.each([
+    ['MB', '970422'],
+    ['VTB', '970415'],
+    ['CTG', '970415'],
+    ['ICB', '970415'],
+    ['TCB', '970407'],
+    ['BIDV', '970418'],
+    ['vcb', '970436'],
+    ['970403', '970403'],
+  ])('maps bank code %s to BIN %s', (bankCode, bin) => {
+    expect(napasAccount(buildVietQr({ ...base, bankCode })).bin).toBe(bin)
   })
 
-  it('uses VN as the country code (ID 58)', () => {
-    const out = buildVietQr(base)
-    expect(parseTlv(out).get('58')).toBe('VN')
+  it('refuses a bank it has no BIN for, and an empty account number', () => {
+    expect(() => buildVietQr({ ...base, bankCode: 'XYZ' })).toThrow(/Unknown bank code/)
+    expect(() => buildVietQr({ ...base, accountNumber: ' - ' })).toThrow(/account number/)
   })
 
-  it('includes the bank BIN and account number in the merchant template (ID 26)', () => {
-    const out = buildVietQr(base)
-    const merchant = parseTlv(out).get('26')!
-    // The merchant template is a TLV sequence: 00, 01, 02, 03, 05.
-    // Each sub-tag is `id<len><value>`, so a full parse gives us the
-    // whole picture.
-    const parsed = parseTlv(merchant)
-    expect(parsed.get('00')).toBe('') // GUID — empty for non-Napas-direct
-    expect(parsed.get('01')).toBe('VCB')
-    expect(parsed.get('02')).toBe('1234567890')
-    expect(parsed.get('03')).toBe('QRIBFTTA')
-    expect(parsed.get('05')).toBe('NGUYEN VAN A') // normalised accountHolder
-  })
-
-  it('includes the amount (ID 54) when amount > 0', () => {
-    const out = buildVietQr(base)
-    expect(parseTlv(out).get('54')).toBe('100000')
-  })
-
-  it('omits ID 54 when amount is 0', () => {
-    const out = buildVietQr({ ...base, amount: 0 })
-    // Amount of 0 is rendered as the empty string, so the length is
-    // "00" but no value. We assert there's no `54<len><value>`
-    // sequence with a non-zero length.
-    const map = parseTlv(out)
-    const v = map.get('54')
-    expect(v == null || v === '').toBe(true)
+  it('keeps the payload format, currency, country, amount and transfer content', () => {
+    const fields = parseTlv(buildVietQr(base))
+    expect(fields.get('00')).toBe('01')
+    expect(fields.get('01')).toBe('12')
+    expect(fields.get('53')).toBe('704')
+    expect(fields.get('58')).toBe('VN')
+    expect(fields.get('54')).toBe('100000')
+    expect(parseTlv(fields.get('62')!).get('08')).toBe('BK-001')
   })
 
   it('rounds fractional amounts to whole VND', () => {
-    const out = buildVietQr({ ...base, amount: 12345.67 })
-    expect(parseTlv(out).get('54')).toBe('12346')
+    expect(parseTlv(buildVietQr({ ...base, amount: 12345.67 })).get('54')).toBe('12346')
   })
 
-  it('puts the transfer reference in the additional-data template (ID 62 sub-tag 08)', () => {
+  it('writes names and city as upper-case ASCII, so byte and character lengths agree', () => {
+    const out = buildVietQr({ ...base, merchantName: 'Khách sạn Đà Lạt Xinh', merchantCity: 'Đà Lạt' })
+    const fields = parseTlv(out)
+    expect(fields.get('59')).toBe('KHACH SAN DA LAT XINH')
+    expect(fields.get('60')).toBe('DA LAT')
+    expect(/^[\x20-\x7E]+$/.test(out)).toBe(true)
+  })
+
+  it('uses the account holder as the name when there is no merchant name', () => {
+    expect(parseTlv(buildVietQr({ ...base, accountHolder: 'Nguyễn Văn Á' })).get('59')).toBe('NGUYEN VAN A')
+    expect(parseTlv(buildVietQr({ ...base, accountHolder: '' })).get('59')).toBe('MERCHANT')
+  })
+
+  it('strips disallowed characters and diacritics from the transfer content', () => {
+    const add = (addInfo: string) => parseTlv(parseTlv(buildVietQr({ ...base, addInfo })).get('62')!).get('08')
+    expect(add('BK/001 (paid)!')).toBe('BK/001 paid')
+    expect(add('Đặt phòng 12')).toBe('Dat phong 12')
+  })
+
+  it('truncates the name to 25 and the transfer content to 50 characters', () => {
+    const out = buildVietQr({ ...base, merchantName: 'A'.repeat(40), addInfo: 'X'.repeat(80) })
+    expect(parseTlv(out).get('59')).toHaveLength(25)
+    expect(parseTlv(parseTlv(out).get('62')!).get('08')).toHaveLength(50)
+  })
+
+  it('ends with the CRC of everything before it, "6304" included', () => {
     const out = buildVietQr(base)
-    const add = parseTlv(out).get('62')!
-    expect(parseTlv(add).get('08')).toBe('BK-001')
+    expect(out.slice(-8, -4)).toBe('6304')
+    expect(out.slice(-4)).toBe(crc16CcittFalse(out.slice(0, -4)))
+    expect(parseTlv(out).get('63')).toBe(out.slice(-4))
   })
+})
 
-  it('strips diacritics and upper-cases the *accountHolder* (used in ID 26 sub-tag 05)', () => {
-    // The merchant name (ID 59) is taken as-is, but the account
-    // holder is normalised — this is the one the bank actually
-    // displays next to the account number.
-    const out = buildVietQr({ ...base, accountHolder: 'Nguyễn Văn Á' })
-    const merchant = parseTlv(out).get('26')!
-    expect(parseTlv(merchant).get('05')).toBe('NGUYEN VAN A')
+describe('crc16CcittFalse', () => {
+  it('gives the standard check value 29B1 for "123456789"', () => {
+    expect(crc16CcittFalse('123456789')).toBe('29B1')
   })
+})
 
-  it('keeps the merchant name (ID 59) verbatim', () => {
-    // merchantName is for the QR's own branding; banks ignore it.
-    // It is only truncated to 25 chars.
-    const out = buildVietQr({ ...base, merchantName: 'Hotel ABC' })
-    expect(parseTlv(out).get('59')).toBe('Hotel ABC')
+describe('toBankName', () => {
+  it('writes a name as banks print it', () => {
+    expect(toBankName('cong ty khach san demo')).toBe('CONG TY KHACH SAN DEMO')
+    expect(toBankName('  Công ty  Đà Lạt ')).toBe('CONG TY DA LAT')
+    expect(toBankName('Trần Thị Ánh Nguyệt')).toBe('TRAN THI ANH NGUYET')
   })
+})
 
-  it('strips disallowed characters from addInfo', () => {
-    // The actual sanitiser keeps `[A-Za-z0-9 \-_./]`. So `/` and
-    // spaces survive; only `()` and `!` are stripped.
-    const out = buildVietQr({ ...base, addInfo: 'BK/001 (paid)!' })
-    const add = parseTlv(out).get('62')!
-    expect(parseTlv(add).get('08')).toBe('BK/001 paid')
-  })
-
-  it('produces a CRC that matches an independent CRC-16/CCITT computation', () => {
-    // Independent reference implementation of CRC-16/CCITT-FALSE
-    // (poly 0x1021, init 0xFFFF, no reflection, no xorout). This is
-    // the exact spec EMVCo / Napas require.
-    function crc(input: string): string {
-      let crc = 0xffff
-      for (let i = 0; i < input.length; i++) {
-        crc ^= input.charCodeAt(i) << 8
-        for (let j = 0; j < 8; j++) {
-          if (crc & 0x8000) crc = ((crc << 1) ^ 0x1021) & 0xffff
-          else crc = (crc << 1) & 0xffff
-        }
-      }
-      return crc.toString(16).toUpperCase().padStart(4, '0')
+describe('VietQR bank list', () => {
+  it('covers the main banks with 6-digit BINs and unique codes', () => {
+    expect(VIETQR_BANKS.length).toBeGreaterThanOrEqual(40)
+    for (const bank of VIETQR_BANKS) expect(bank.bin).toMatch(/^\d{6}$/)
+    expect(new Set(VIETQR_BANKS.map((b) => b.code)).size).toBe(VIETQR_BANKS.length)
+    expect(new Set(VIETQR_BANKS.map((b) => b.bin)).size).toBe(VIETQR_BANKS.length)
+    for (const code of ['VCB', 'ICB', 'BIDV', 'VBA', 'TCB', 'MB', 'ACB', 'VPB', 'TPB', 'STB', 'HDB', 'VIB', 'SHB', 'MSB', 'OCB', 'LPB']) {
+      expect(findBank(code)?.code).toBe(code)
     }
-
-    const out = buildVietQr(base)
-    const withoutCrc = out.slice(0, -4)
-    expect(out.slice(-4)).toBe(crc(withoutCrc))
   })
 
-  it('truncates the merchant name to 25 characters', () => {
-    const long = 'A'.repeat(40)
-    const out = buildVietQr({ ...base, merchantName: long })
-    expect(parseTlv(out).get('59')!.length).toBe(25)
-  })
-
-  it('truncates the addInfo reference to 50 characters', () => {
-    const long = 'X'.repeat(80)
-    const out = buildVietQr({ ...base, addInfo: long })
-    const add = parseTlv(out).get('62')!
-    expect(parseTlv(add).get('08')!.length).toBe(50)
-  })
-
-  it('falls back to MERCHANT when both accountHolder and merchantName are empty', () => {
-    const out = buildVietQr({ ...base, accountHolder: '', merchantName: undefined })
-    const merchant = parseTlv(out).get('26')!
-    expect(parseTlv(merchant).get('05')).toBe('MERCHANT')
+  it('labels a code with the bank name, and an unknown code as itself', () => {
+    expect(bankLabel('VCB')).toBe('Vietcombank (VCB)')
+    expect(bankLabel('CTG')).toBe('VietinBank (ICB)')
+    expect(bankLabel('XYZ')).toBe('XYZ')
   })
 })

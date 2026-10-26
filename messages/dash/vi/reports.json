@@ -112,6 +112,7 @@
       "REFUND": "Hoàn tiền",
       "CHECK_IN": "Check-in",
       "CHECK_OUT": "Check-out"
-    }
+    },
+    "date": "Ngày"
   }
 }
