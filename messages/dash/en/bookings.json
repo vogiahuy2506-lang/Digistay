@@ -1,6 +1,7 @@
 {
   "list": {
     "create": "New booking",
+    "transferClaimed": "Transfer reported",
     "all": "All",
     "searchPlaceholder": "Search booking code, guest name, phone…",
     "searchLabel": "Search bookings",
@@ -69,6 +70,18 @@
       "remaining": "Balance due",
       "payments": "Payments",
       "noPayments": "No payments yet."
+    },
+    "transfer": {
+      "claimed": "Guest says they transferred at {time}",
+      "waiting": "Waiting for the guest’s deposit transfer",
+      "amountLine": "{amount} · message {code}",
+      "account": "To {account}",
+      "holdUntil": "Room held until {time}; if not confirmed by then, the booking is cancelled.",
+      "confirm": "Confirm money received",
+      "confirmTitle": "Confirm the deposit was received?",
+      "confirmText": "Only confirm once {amount} with the message {code} is in the account. The booking is confirmed and the guest gets an email.",
+      "confirmed": "Deposit recorded",
+      "confirmFailed": "Couldn’t confirm"
     },
     "vat": {
       "title": "Company invoice",

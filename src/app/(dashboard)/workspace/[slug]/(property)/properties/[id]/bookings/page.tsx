@@ -8,6 +8,7 @@ import { Header, PageContainer } from '@/components/layout'
 import {
   Alert,
   AlertDescription,
+  Badge,
   BookingStatusBadge,
   Button,
   Dropdown,
@@ -51,6 +52,8 @@ interface BookingRow {
   depositAmount: number
   paymentStatus: string
   source: string
+  /** the guest said they transferred a manual deposit (src/lib/payments/manual-deposit.ts) */
+  transferClaimedAt?: string | null
   bookingItems: { roomTypeId: string; roomTypeName: string | null; roomNumber: string | null }[]
   /** a stay that changes rooms part way (room-plan.ts) */
   roomSegments?: { roomId: string | null; roomNumber: string; roomTypeId: string; fromDate: string; toDate: string }[]
@@ -66,6 +69,13 @@ const PAGE_SIZE = 20
 const tabs = ['ALL', 'PENDING', 'CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'CANCELLED', 'NO_SHOW'] as const
 
 const toneText = { warn: 'text-warn', err: 'text-err' } as Record<string, string>
+
+/** "The guest says they transferred": reception checks the account, then confirms on the booking. */
+function ClaimBadge({ row }: { row: BookingRow }) {
+  const t = useTranslations('dash.bookings.list')
+  if (!row.transferClaimedAt || row.status !== 'PENDING') return null
+  return <Badge variant="warn">{t('transferClaimed')}</Badge>
+}
 
 function useDebounced<T>(value: T, ms: number) {
   const [debounced, setDebounced] = React.useState(value)
@@ -270,7 +280,10 @@ export default function BookingsPage() {
                       <span className="block text-body font-medium text-fg truncate">{row.guestName}</span>
                       <span className="block text-xs text-muted font-mono">{row.bookingCode}</span>
                     </span>
-                    <BookingStatusBadge status={row.status} />
+                    <span className="flex flex-col items-end gap-1">
+                      <BookingStatusBadge status={row.status} />
+                      <ClaimBadge row={row} />
+                    </span>
                   </span>
                   <span className="block mt-2 text-small text-fg">{roomText(row, t)}</span>
                   <span className="block text-small text-muted">{datesText(row, labels)}</span>
@@ -321,7 +334,10 @@ export default function BookingsPage() {
                       <PaymentText row={row} />
                     </TableCell>
                     <TableCell>
-                      <BookingStatusBadge status={row.status} />
+                      <div className="flex flex-col items-start gap-1">
+                        <BookingStatusBadge status={row.status} />
+                        <ClaimBadge row={row} />
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <div onClick={(e) => e.stopPropagation()}>

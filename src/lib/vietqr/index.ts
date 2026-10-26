@@ -20,11 +20,12 @@
  */
 import { findBank } from './banks'
 
-export { VIETQR_BANKS, findBank, bankLabel, type VietQrBank } from './banks'
+export { VIETQR_BANKS, MOMO_CODE, findBank, bankLabel, isWallet, walletPhone, type VietQrBank } from './banks'
 
 export interface VietQrInput {
-  /** The bank's code ("VCB", "MB", old "VTB"...) or its 6-digit BIN */
+  /** The bank's code ("VCB", "MB", old "VTB"...) or its 6-digit BIN; "MOMO" for a MoMo wallet */
   bankCode: string
+  /** for a wallet, its phone number */
   accountNumber: string
   accountHolder: string
   /** VND; 0 makes a static QR without an amount */

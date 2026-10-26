@@ -413,8 +413,11 @@ export interface BookingConfirmationTemplateProps {
    * The email must not tell the guest the room is booked.
    */
   awaitingConfirmation?: boolean
-  /** The hotel's online deposit: its amount, the page to pay it (dat-coc), the deadline if any. */
-  deposit?: { amount: number; url: string; deadline?: Date }
+  /**
+   * The hotel's online deposit: its amount, the page to pay it (dat-coc), the deadline if any;
+   * manual: a transfer to the hotel's account that staff confirm (manual-deposit.ts), not PayOS.
+   */
+  deposit?: { amount: number; url: string; deadline?: Date; manual?: boolean }
   /** The booking's language (Booking.locale); the links must already point to its pages. */
   locale?: EmailLocale
 }
@@ -451,7 +454,7 @@ export function bookingConfirmationTemplate(props: BookingConfirmationTemplatePr
     <h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: ${BRAND.text};">${escapeHtml(t(awaitingConfirmation ? 'titleAwaiting' : 'titleConfirmed'))}</h1>
     <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: ${BRAND.textMuted};">
       ${common.markup('helloName', { ...escaped({ name: guestName }), b: strong(`color: ${BRAND.text};`) })},<br/>
-      ${escapeHtml(awaitingConfirmation ? t('leadAwaiting', { hotel: propertyName }) : t('leadConfirmed'))}
+      ${escapeHtml(awaitingConfirmation ? t(deposit ? 'leadDeposit' : 'leadAwaiting', { hotel: propertyName }) : t('leadConfirmed'))}
     </p>
 
     <!-- Booking code banner -->
@@ -528,10 +531,10 @@ export function bookingConfirmationTemplate(props: BookingConfirmationTemplatePr
         <td style="padding: 20px; text-align: center;">
           <div style="font-size: 15px; color: ${BRAND.text}; font-weight: 600; margin-bottom: 6px;">${escapeHtml(t('depositTitle', { amount: money(deposit.amount) }))}</div>
           <div style="font-size: 13px; color: ${BRAND.textMuted}; margin-bottom: 16px;">
-            ${escapeHtml(t('depositHow', { hotel: propertyName }))}${deadline ? ` ${escapeHtml(t('depositDeadline', { deadline }))}` : ''} ${escapeHtml(t('depositIgnore'))}
+            ${escapeHtml(t(deposit.manual ? 'depositHowManual' : 'depositHow', { hotel: propertyName }))}${deadline ? ` ${escapeHtml(t('depositDeadline', { deadline }))}` : ''} ${escapeHtml(t('depositIgnore'))}
           </div>
           <a href="${escapeHtml(deposit.url)}" style="display: inline-block; background: ${BRAND.text}; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 10px; font-size: 15px; font-weight: 600;">
-            ${escapeHtml(t('depositButton'))}
+            ${escapeHtml(t(deposit.manual ? 'depositButtonManual' : 'depositButton'))}
           </a>
         </td>
       </tr>

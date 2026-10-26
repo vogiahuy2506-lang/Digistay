@@ -370,6 +370,7 @@
     "description": "Manage bank accounts to receive payments",
     "noProperty": "Property not found.",
     "add": "Add account",
+    "addMomo": "Add MoMo wallet",
     "infoTitle": "Getting paid by bank transfer",
     "infoText": "Send your account number or QR code (Download QR button) to the guest by Zalo or email. These transfers are not confirmed automatically: when the money arrives, go to Payments, open (or create) the booking's payment and press Mark as paid; the revenue then counts in your reports. To have payments confirmed automatically, connect PayOS below.",
     "empty": "No bank accounts yet",
@@ -381,6 +382,10 @@
     "accountHolder": "Account name",
     "downloadQr": "Download QR",
     "transferContent": "Transfer note",
+    "momoWallet": "MoMo wallet",
+    "walletPhone": "MoMo phone number",
+    "copyWalletPhone": "Copy phone number",
+    "depositAccount": "Used for the deposit QR",
     "form": {
       "editTitle": "Edit account",
       "addTitle": "Add bank account",
@@ -390,7 +395,13 @@
       "accountHolderPlaceholder": "Account holder's name",
       "enableQr": "Enable VietQR payments",
       "submitAdd": "Add account",
-      "accountHolderHint": "As the bank prints it: capitals, no accents"
+      "accountHolderHint": "As the bank prints it: capitals, no accents",
+      "addMomoTitle": "Add a MoMo wallet",
+      "editMomoTitle": "Edit MoMo wallet",
+      "momoPhonePlaceholder": "The phone number registered with MoMo, e.g. 0901234567",
+      "momoPhoneHint": "The QR pays into the MoMo wallet of this number (any banking app can scan it).",
+      "momoHolderPlaceholder": "The wallet holder’s name, as MoMo shows it",
+      "submitAddMomo": "Add wallet"
     },
     "toast": {
       "loadFailed": "Could not load the accounts",
@@ -406,9 +417,11 @@
       "deleteError": "Something went wrong while deleting the account",
       "copied": "Copied",
       "copyFailed": "Could not copy, please try again",
-      "qrFailed": "Could not make the QR code for this account"
+      "qrFailed": "Could not make the QR code for this account",
+      "badPhone": "The MoMo phone number is not valid (10 digits starting with 0)"
     },
-    "confirmDelete": "Are you sure you want to delete this account?"
+    "confirmDelete": "Are you sure you want to delete this account?",
+    "emptyHint": "Add a bank account or MoMo wallet so guests can transfer their deposit by VietQR."
   },
   "payos": {
     "title": "Online payments (PayOS)",
@@ -432,6 +445,25 @@
     "disconnectedToast": "PayOS disconnected",
     "disconnectFailed": "Could not disconnect",
     "confirmDisconnect": "Disconnect PayOS? Links already sent to guests will no longer confirm themselves."
+  },
+  "depositMode": {
+    "title": "How guests pay the deposit when booking online",
+    "percent": "Deposit: {percent}% of the total (Policies page).",
+    "percentOff": "No online deposit now: set a deposit on the Policies page to turn it on.",
+    "deadline": "Bookings without the deposit after {time} are cancelled.",
+    "manualTitle": "Manual",
+    "manualWhat": "Guests scan a VietQR into the hotel’s own bank account or MoMo wallet, then press “I have transferred”.",
+    "manualDo": "The hotel checks the account and, once the money is in, presses “Confirm money received” on the booking.",
+    "payosTitle": "Automatic (PayOS)",
+    "payosWhat": "Guests scan a PayOS code; the booking confirms itself when the money arrives, no statement to check.",
+    "payosDo": "The hotel creates a PayOS account and enters its keys in the PayOS card below.",
+    "chosen": "In use",
+    "needsPayos": "Connect PayOS first",
+    "account": "Account receiving deposits",
+    "noAccount": "No receiving account yet: add a bank account or MoMo wallet below. Until then guests pay no deposit and the hotel contacts them.",
+    "payosFallback": "PayOS is disconnected: guests transfer manually to the account below for now.",
+    "saved": "Deposit payment saved",
+    "saveFailed": "Couldn’t save"
   },
   "qr": {
     "scanToPay": "Scan the QR code to pay",

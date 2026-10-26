@@ -1,14 +1,18 @@
 /**
  * What the guest's own pages show (/<hotel>/dat-coc/<token> and
  * /<hotel>/xac-nhan/<token>, token from deposit-link.ts): the stay, the
- * amounts, and where the online deposit stands, with the PayOS QR to pay it.
+ * amounts, and where the online deposit stands, with the QR to pay it: the
+ * PayOS one, or the hotel's own VietQR for a manual transfer
+ * (manual-deposit.ts), with whether the guest said they transferred.
  *
  * Nothing about the guest (name, email, phone): the token is in emails,
  * and mail scanners and forwarded messages open it. Reading changes
  * nothing; a new PayOS link is only made by POST /api/public/deposits/[token].
  */
 import { prisma } from '@/lib/db'
+import { isWallet } from '@/lib/vietqr'
 import { readDepositToken } from './deposit-link'
+import { MANUAL_DEPOSIT_WHERE, metaOf, receivingName } from './manual-deposit'
 import { payosDescription } from './payos'
 
 /**
@@ -39,6 +43,10 @@ export interface DepositView {
     remaining: number
   }
   state: DepositState
+  /** payos: a PayOS link confirmed by webhook; manual: a transfer to the hotel's account that staff confirm */
+  mode: 'payos' | 'manual'
+  /** manual: when the guest said they transferred ("Tôi đã chuyển khoản"); null: not yet */
+  claimedAt: Date | null
   payment: {
     amount: number
     /** the VietQR payload PayOS made (render it as a QR code) */
@@ -48,8 +56,11 @@ export interface DepositView {
     /** the hotel's deadline: unpaid by then, the booking is cancelled */
     deadline: Date | null
   } | null
-  /** where the transfer goes, read from the QR and the hotel's PayOS connection */
-  transfer: { accountNumber: string | null; accountName: string | null; note: string } | null
+  /**
+   * where the transfer goes: read from the QR and the hotel's PayOS connection, or the
+   * manual deposit's own account (bankName: "Vietcombank", "MoMo"; wallet: account = phone)
+   */
+  transfer: { accountNumber: string | null; accountName: string | null; note: string; bankName?: string | null; wallet?: boolean } | null
   property: { name: string; phone: string | null; address: string | null; checkInTime: string; checkOutTime: string; cancellationHours: number | null }
 }
 
@@ -93,6 +104,7 @@ export async function loadDepositView(subdomain: string | null, token: string, n
       services: true,
       totalAmount: true,
       propertyId: true,
+      transferClaimedAt: true,
       property: {
         select: {
           name: true,
@@ -104,10 +116,22 @@ export async function loadDepositView(subdomain: string | null, token: string, n
       },
       bookingItems: { take: 1, select: { roomTypeId: true, basePrice: true, extraAdultPrice: true, extraChildPrice: true } },
       payments: {
-        where: { paymentGateway: 'PAYOS', metadata: { path: ['guestDeposit'], equals: true } },
+        where: { OR: [{ paymentGateway: 'PAYOS', metadata: { path: ['guestDeposit'], equals: true } }, MANUAL_DEPOSIT_WHERE] },
         orderBy: { createdAt: 'desc' },
         take: 1,
-        select: { amount: true, status: true, metadata: true, expiresAt: true, qrCodeUrl: true, checkoutUrl: true },
+        select: {
+          amount: true,
+          status: true,
+          metadata: true,
+          expiresAt: true,
+          qrCodeUrl: true,
+          checkoutUrl: true,
+          paymentGateway: true,
+          bankCode: true,
+          bankAccount: true,
+          accountHolder: true,
+          transferContent: true,
+        },
       },
     },
   })
@@ -122,6 +146,7 @@ export async function loadDepositView(subdomain: string | null, token: string, n
     : null
 
   const latest = booking.payments[0]
+  const manual = !!latest && latest.paymentGateway === null
   const meta = (latest?.metadata ?? null) as { autoCancel?: boolean; deadline?: string; payos?: { createError?: string } } | null
   const deadline = meta?.autoCancel ? (meta.deadline ? new Date(meta.deadline) : latest?.expiresAt ?? null) : null
   const paid = booking.status === 'CONFIRMED' || booking.status === 'CHECKED_IN' || booking.status === 'CHECKED_OUT' || latest?.status === 'PAID'
@@ -170,16 +195,26 @@ export async function loadDepositView(subdomain: string | null, token: string, n
       remaining: Math.max(0, booking.totalAmount - deposit),
     },
     state,
+    mode: manual ? 'manual' : 'payos',
+    claimedAt: manual ? booking.transferClaimedAt : null,
     payment: latest
       ? { amount: latest.amount, qr: linkLive ? latest.qrCodeUrl : null, checkoutUrl: linkLive ? latest.checkoutUrl : null, expiresAt: latest.expiresAt, deadline }
       : null,
-    transfer: latest
-      ? {
-          accountNumber: accountFromVietQr(latest.qrCodeUrl) ?? booking.property.payos?.accountNumber ?? null,
-          accountName: booking.property.payos?.accountName ?? null,
-          note: payosDescription(booking.bookingCode),
-        }
-      : null,
+    transfer: !latest
+      ? null
+      : manual
+        ? {
+            accountNumber: latest.bankAccount,
+            accountName: latest.accountHolder,
+            note: latest.transferContent ?? booking.bookingCode,
+            bankName: receivingName(latest.bankCode, typeof metaOf(latest.metadata).bankName === 'string' ? String(metaOf(latest.metadata).bankName) : null),
+            wallet: isWallet(latest.bankCode),
+          }
+        : {
+            accountNumber: accountFromVietQr(latest.qrCodeUrl) ?? booking.property.payos?.accountNumber ?? null,
+            accountName: booking.property.payos?.accountName ?? null,
+            note: payosDescription(booking.bookingCode),
+          },
     property: {
       name: booking.property.name,
       phone: booking.property.phone,

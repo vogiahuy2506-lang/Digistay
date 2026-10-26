@@ -270,13 +270,13 @@
     },
     "deposit": {
       "label": "Deposit for website bookings (%)",
-      "hint": "0 = no deposit, guests pay at the front desk. With a deposit, guests pay by bank transfer through PayOS as they book, the money goes straight to the hotel’s account, and the booking is confirmed automatically once it arrives.",
+      "hint": "0 = no deposit, guests pay at the front desk. With a deposit, guests pay by bank transfer as they book, straight to the hotel’s account: through PayOS (the booking confirms itself when the money arrives) or by VietQR to a bank account / MoMo wallet (the hotel confirms it). Choose how on the Bank accounts page.",
       "deadline": "Cancel the booking automatically if no deposit is paid within",
-      "deadlineHint": "If the money has not arrived in time, the booking is cancelled, the room is released and the guest gets an email. The app checks with PayOS first: if the guest has paid, the booking is confirmed. Without auto-cancel, the booking waits for the hotel to handle it.",
+      "deadlineHint": "If the money has not arrived in time, the booking is cancelled, the room is released and the guest gets an email. PayOS: the app checks with PayOS first, and a paid booking is confirmed instead. Manual transfer: when the guest presses “I have transferred”, the deadline moves 30 minutes later (once) so you can check. Without auto-cancel, the booking waits for the hotel to handle it.",
       "noAutoCancel": "No auto-cancel",
       "minutes": "{count, plural, one {# minute} other {# minutes}}",
       "hours": "{count, plural, one {# hour} other {# hours}}",
-      "payosMissing": "PayOS is not connected (Bank accounts → Online payments): guests do not pay a deposit until it is."
+      "noReceiver": "No way to take a deposit yet: add a bank account / MoMo wallet or connect PayOS (Bank accounts page). Until then guests pay no deposit."
     },
     "rules": {
       "title": "Other rules",

@@ -128,6 +128,9 @@ export function NotificationBell({ align = 'right' }: { align?: 'left' | 'right'
     if (item.type === 'deposit_paid') {
       return { title: t('depositPaid', values), detail: t('depositPaidDetail', { ...values, amount: labels.money(d.amount ?? 0) }) }
     }
+    if (item.type === 'transfer_claimed') {
+      return { title: t('transferClaimed', values), detail: t('transferClaimedDetail', { ...values, amount: labels.money(d.amount ?? 0) }) }
+    }
     return { title: t('other'), detail: '' }
   }
 

@@ -55,6 +55,8 @@ export default function PoliciesPage() {
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [error, setError] = React.useState('')
+  // Whether a deposit can be taken at all: PayOS, or an account for manual transfers (deposit-mode.ts).
+  const [depositReady, setDepositReady] = React.useState(true)
 
   React.useEffect(() => {
     if (propertyId) {
@@ -69,7 +71,13 @@ export default function PoliciesPage() {
     setIsLoading(true)
     setError('')
     try {
-      const res = await fetch(`/api/properties/${propertyId}/policy`)
+      const [res, mode] = await Promise.all([
+        fetch(`/api/properties/${propertyId}/policy`),
+        fetch(`/api/properties/${propertyId}/deposit-mode`)
+          .then((r) => r.json())
+          .catch(() => null),
+      ])
+      if (mode?.success) setDepositReady(mode.data.effectiveMode !== null)
       const data = await res.json()
       if (data.success) {
         setPolicy(data.data)
@@ -380,9 +388,9 @@ export default function PoliciesPage() {
                     </p>
                   </div>
                 )}
-                {policy.onlineDepositPercent > 0 && !policy.payosConnected && (
+                {policy.onlineDepositPercent > 0 && !depositReady && (
                   <p className="text-xs text-warn mt-1">
-                    {t('deposit.payosMissing')}
+                    {t('deposit.noReceiver')}
                   </p>
                 )}
               </div>

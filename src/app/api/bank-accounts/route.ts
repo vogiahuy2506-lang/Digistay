@@ -3,13 +3,19 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { lockedResponse } from '@/lib/billing/guard'
-import { bankAccountFields } from './fields'
+import { WALLET_PHONE_ERROR, bankAccountFields, walletAccountNumber } from './fields'
 
-const bankAccountSchema = z.object({
-  propertyId: z.string(),
-  ...bankAccountFields,
-  qrEnabled: z.boolean().default(true),
-})
+const bankAccountSchema = z
+  .object({
+    propertyId: z.string(),
+    ...bankAccountFields,
+    qrEnabled: z.boolean().default(true),
+  })
+  // A MoMo wallet is named by its phone number.
+  .superRefine((v, ctx) => {
+    if (walletAccountNumber(v.bankCode, v.accountNumber) === null) ctx.addIssue({ code: 'custom', path: ['accountNumber'], message: WALLET_PHONE_ERROR })
+  })
+  .transform((v) => ({ ...v, accountNumber: walletAccountNumber(v.bankCode, v.accountNumber) ?? v.accountNumber }))
 
 export async function GET(request: NextRequest) {
   try {

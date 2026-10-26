@@ -60,7 +60,7 @@ export interface NewBooking {
   /** the guest's hold (RoomLock id from /api/bookings/room-lock) */
   holdId?: string | null
   /** The hotel's online deposit (guest-deposit.ts): the email carries the link to pay it. */
-  deposit?: { percent: number; deadlineMinutes: number } | null
+  deposit?: { percent: number; deadlineMinutes: number; mode?: 'PAYOS' | 'MANUAL' } | null
   /** The language of the page the guest booked on: their emails follow it. Staff bookings: 'vi'. */
   locale?: Locale
 }
@@ -157,6 +157,7 @@ async function queueBookingEmails(tx: Tx, booking: BookingForEmails, deposit?: N
           deposit: {
             amount: depositFor(booking.totalAmount, deposit.percent),
             url: payUrl,
+            manual: deposit.mode === 'MANUAL',
             ...(deposit.deadlineMinutes > 0 && { deadline: new Date(Date.now() + deposit.deadlineMinutes * 60_000) }),
           },
         }),

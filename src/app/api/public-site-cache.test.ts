@@ -35,6 +35,8 @@ const EXEMPT: Record<string, string> = {
   'POST /api/website/domain/verify': 'stores the custom domain, which the site does not show',
   'POST /api/website/ssl/provision': 'stores the SSL status, which the site does not show',
   'DELETE /api/website/ssl/provision': 'clears the SSL status, which the site does not show',
+  'PUT /api/properties/[id]/deposit-mode':
+    'how guests pay the deposit: read fresh for each booking (onlineDepositOf), never from the cached site',
 }
 
 function files(dir: string, keep: (f: string) => boolean): string[] {

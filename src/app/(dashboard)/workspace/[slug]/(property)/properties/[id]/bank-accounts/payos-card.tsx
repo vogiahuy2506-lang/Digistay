@@ -23,7 +23,7 @@ const EMPTY = { clientId: '', apiKey: '', checksumKey: '' }
  * bank account and payments confirm themselves. Keys are write-only here:
  * the API never sends them back.
  */
-export function PayosCard({ propertyId }: { propertyId: string }) {
+export function PayosCard({ propertyId, onChange }: { propertyId: string; /** connected or disconnected */ onChange?: () => void }) {
   const t = useTranslations('dash.money.payos')
   const [status, setStatus] = React.useState<PayosStatus | null>(null)
   const [editing, setEditing] = React.useState(false)
@@ -59,6 +59,7 @@ export function PayosCard({ propertyId }: { propertyId: string }) {
       setEditing(false)
       setForm(EMPTY)
       toast.success(t('connectedToast'))
+      onChange?.()
     } finally {
       setBusy(false)
     }
@@ -73,6 +74,7 @@ export function PayosCard({ propertyId }: { propertyId: string }) {
       if (data.success) {
         toast.success(t('disconnectedToast'))
         await load()
+        onChange?.()
       } else {
         toast.error(apiError(data.error) || t('disconnectFailed'))
       }

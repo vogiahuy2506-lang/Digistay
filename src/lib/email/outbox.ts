@@ -46,6 +46,7 @@ type Kind =
   | 'workspace_invite'
   | 'deposit_received'
   | 'deposit_expired'
+  | 'transfer_claimed'
   | 'contact_request'
   | 'subscription_paid'
   | 'subscription_reminder'
@@ -109,6 +110,44 @@ export function queueOwnerNewBooking(data: OwnerNewBookingData, bookingId: strin
   // The guest's name and contact come from a public form: escape them for the HTML part.
   const html = escapeHtml(text).replace(/\n/g, '<br/>')
   return queueEmail('owner_new_booking', { to: { email: data.ownerEmail, name: data.ownerName }, subject, text, html }, bookingId, db)
+}
+
+export interface TransferClaimedData {
+  toEmail: string
+  toName?: string
+  bookingCode: string
+  guestName: string
+  guestPhone: string
+  propertyName: string
+  amount: number
+  /** "HH:mm dd/mm/yyyy", Vietnam time */
+  claimedAt: string
+  /** where the money should be: "Vietcombank 0123456789 (NGUYEN VAN A)" */
+  account: string
+  /** the room is held until then, in the same format; null: no deadline */
+  holdUntil: string | null
+  manageUrl: string
+}
+
+/**
+ * To the hotel's owner and front desk when a guest says they transferred
+ * a manual deposit (src/lib/payments/manual-deposit.ts). Vietnamese, like
+ * the new-booking notice.
+ */
+export function queueTransferClaimed(data: TransferClaimedData, bookingId: string, db?: Db) {
+  const amount = `${Math.round(data.amount).toLocaleString('vi-VN')} ₫`
+  const subject = `Khách báo đã chuyển khoản cọc #${data.bookingCode} - ${data.propertyName}`
+  const text = [
+    `Khách ${data.guestName} (${data.guestPhone}) báo đã chuyển khoản ${amount} tiền cọc cho đơn ${data.bookingCode} lúc ${data.claimedAt}.`,
+    `Tài khoản nhận: ${data.account}`,
+    `Nội dung chuyển khoản: ${data.bookingCode}`,
+    ...(data.holdUntil ? [`Phòng được giữ đến ${data.holdUntil}; quá hạn mà đơn chưa được xác nhận thì đơn tự huỷ.`] : []),
+    'Kiểm tra tài khoản; khi tiền về, mở đơn và bấm "Xác nhận đã nhận tiền".',
+    `Xem đơn: ${data.manageUrl}`,
+  ].join('\n')
+  // The guest's name and phone come from a public form: escape them for the HTML part.
+  const html = escapeHtml(text).replace(/\n/g, '<br/>')
+  return queueEmail('transfer_claimed', { to: { email: data.toEmail, name: data.toName }, subject, text, html }, bookingId, db)
 }
 
 export type DepositReceivedData = DepositReceivedTemplateProps & { guestEmail: string }

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { buildVietQr, crc16CcittFalse, toBankName } from './index'
-import { VIETQR_BANKS, bankLabel, findBank } from './banks'
+import { VIETQR_BANKS, bankLabel, findBank, isWallet, walletPhone } from './banks'
 
 /**
  * Tests for the VietQR builder against the NAPAS VietQR spec (EMVCo MPM):
@@ -148,6 +148,52 @@ describe('buildVietQr', () => {
     expect(out.slice(-8, -4)).toBe('6304')
     expect(out.slice(-4)).toBe(crc16CcittFalse(out.slice(0, -4)))
     expect(parseTlv(out).get('63')).toBe(out.slice(-4))
+  })
+})
+
+describe('a MoMo wallet (no payment gateway)', () => {
+  // A hotel's manual deposit into MoMo: the wallet's phone is the account number.
+  const momo = { bankCode: 'MOMO', accountNumber: '0901234567', accountHolder: 'Trần Thị Mai', amount: 541_000, addInfo: 'DSMH3K2L1ABCD', merchantCity: 'Đà Lạt' }
+
+  it('builds the exact NAPAS payload: tag 38, GUID A000000727, BIN 971025, the phone number', () => {
+    expect(buildVietQr(momo)).toBe(
+      '000201' +
+        '010212' +
+        '3854' + '0010A000000727' + '0124' + '0006971025' + '01100901234567' + '0208QRIBFTTA' +
+        '52045999' +
+        '5303704' +
+        '5406541000' +
+        '5802VN' +
+        '5912TRAN THI MAI' +
+        '6006DA LAT' +
+        '6217' + '0813DSMH3K2L1ABCD' +
+        '63043A79'
+    )
+  })
+
+  it("names MoMo's BIN under the NAPAS GUID with the wallet's phone as the account", () => {
+    const out = buildVietQr(momo)
+    expect(parseTlv(out).has('26')).toBe(false)
+    expect(napasAccount(out)).toEqual({ guid: 'A000000727', bin: '971025', account: '0901234567', service: 'QRIBFTTA' })
+    expect(napasAccount(buildVietQr({ ...momo, bankCode: 'momo' })).bin).toBe('971025')
+  })
+
+  it('carries the deposit as the amount and the booking code as the transfer content', () => {
+    const fields = parseTlv(buildVietQr(momo))
+    expect(fields.get('01')).toBe('12')
+    expect(fields.get('54')).toBe('541000')
+    expect(parseTlv(fields.get('62')!).get('08')).toBe('DSMH3K2L1ABCD')
+    expect(fields.get('59')).toBe('TRAN THI MAI')
+  })
+
+  it('is a wallet, not a bank; its account is a mobile number', () => {
+    expect(isWallet('MOMO')).toBe(true)
+    expect(isWallet('VCB')).toBe(false)
+    expect(walletPhone('0901234567')).toBe('0901234567')
+    expect(walletPhone('+84 90 123 4567')).toBe('0901234567')
+    expect(walletPhone('84-901-234-567')).toBe('0901234567')
+    expect(walletPhone('090.123.4567')).toBe('0901234567')
+    for (const bad of ['090123456', '01234567890', '0201234567', 'abc', '1234567890']) expect(walletPhone(bad)).toBeNull()
   })
 })
 

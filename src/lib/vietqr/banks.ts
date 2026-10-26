@@ -6,6 +6,12 @@
  *
  * The bank-accounts page offers this list, the API refuses any other code,
  * and src/lib/vietqr builds the QR from the BIN.
+ *
+ * MoMo is here too, as a wallet: NAPAS routes a VietQR with MoMo's BIN
+ * (971025) and the wallet's phone number as the account number to that
+ * wallet, so a hotel without a payment gateway can take deposits into MoMo
+ * (UKNOW checked on 25/09/2026 that the Vietcombank app pays such a QR).
+ * The bank list leaves wallets out; the page adds them with their own form.
  */
 export interface VietQrBank {
   code: string
@@ -13,7 +19,12 @@ export interface VietQrBank {
   /** the name customers know, saved as BankAccount.bankName */
   shortName: string
   aliases?: string[]
+  /** an e-wallet (account number = the wallet's phone number), not a bank */
+  wallet?: boolean
 }
+
+/** MoMo's code in this list: a BankAccount with this bankCode is a MoMo wallet. */
+export const MOMO_CODE = 'MOMO'
 
 export const VIETQR_BANKS: readonly VietQrBank[] = [
   { code: 'VCB', bin: '970436', shortName: 'Vietcombank' },
@@ -63,6 +74,7 @@ export const VIETQR_BANKS: readonly VietQrBank[] = [
   { code: 'CAKE', bin: '546034', shortName: 'CAKE by VPBank' },
   { code: 'UBANK', bin: '546035', shortName: 'Ubank by VPBank' },
   { code: 'TIMO', bin: '963388', shortName: 'Timo' },
+  { code: MOMO_CODE, bin: '971025', shortName: 'MoMo', wallet: true },
 ]
 
 const byCode = new Map<string, VietQrBank>()
@@ -73,6 +85,22 @@ for (const bank of VIETQR_BANKS) {
 /** The bank behind a code, an old alias or a BIN; undefined if unknown. */
 export function findBank(code: string | null | undefined): VietQrBank | undefined {
   return code ? byCode.get(code.trim().toUpperCase()) : undefined
+}
+
+/** A MoMo (or other) wallet rather than a bank account. */
+export function isWallet(code: string | null | undefined): boolean {
+  return findBank(code)?.wallet === true
+}
+
+/**
+ * A Vietnamese mobile number as a wallet's account number: "0" and nine
+ * digits, from "+84 90 123 4567", "84901234567" or "090.123.4567"; null when
+ * it is not one.
+ */
+export function walletPhone(value: string): string | null {
+  const digits = value.replace(/[\s.()+-]/g, '')
+  const local = /^84\d{9}$/.test(digits) ? `0${digits.slice(2)}` : digits
+  return /^0[35789]\d{8}$/.test(local) ? local : null
 }
 
 /** "Vietcombank (VCB)", or the code itself for a bank not in the list. */

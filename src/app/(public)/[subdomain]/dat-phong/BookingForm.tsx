@@ -52,7 +52,8 @@ export function BookingForm({
   services: Service[]
   policies: { title: string; text: string }[]
   times: { checkIn: string; checkOut: string }
-  deposit: { percent: number; deadlineMinutes: number } | null
+  /** mode MANUAL: a VietQR transfer to the hotel's account that staff confirm (manual-deposit.ts) */
+  deposit: { percent: number; deadlineMinutes: number; mode?: 'PAYOS' | 'MANUAL' } | null
   /** the hotel's VAT rate (%), included in its prices; null: none on its invoices */
   vatRate: number | null
   backPath: string
@@ -485,11 +486,13 @@ export function BookingForm({
                   <span className="h-2.5 w-2.5 rounded-full bg-ink" />
                 </span>
                 <div>
-                  <p className="text-[16px] font-semibold text-fg">{deposit ? tf('depositTitle') : tf('hotelTitle')}</p>
+                  <p className="text-[16px] font-semibold text-fg">
+                    {deposit ? tf(deposit.mode === 'MANUAL' ? 'depositTitleManual' : 'depositTitle') : tf('hotelTitle')}
+                  </p>
                   <p className="mt-1.5 max-w-[500px] text-[14px] leading-[1.6] text-fg/80">
                     {deposit ? (
                       <>
-                        {tf('depositText', { percent: deposit.percent })}
+                        {tf(deposit.mode === 'MANUAL' ? 'depositTextManual' : 'depositText', { percent: deposit.percent })}
                         {deposit.deadlineMinutes > 0 && <> {tf('depositDeadline', { minutes: deposit.deadlineMinutes })}</>}
                       </>
                     ) : (

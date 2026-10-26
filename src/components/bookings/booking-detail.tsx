@@ -59,6 +59,8 @@ export interface BookingDetailData {
   vatEmail: string | null
   source: string
   createdAt: string
+  /** the guest said they transferred a manual deposit (src/lib/payments/manual-deposit.ts) */
+  transferClaimedAt?: string | null
   bookingItems: { id: string; roomTypeId: string; roomTypeName: string | null; roomNumber: string | null; roomId?: string | null }[]
   /** A stay split between rooms, in night order (src/lib/bookings/room-plan.ts); none for one room. */
   roomSegments?: { roomId: string | null; roomNumber: string; roomTypeId: string; roomTypeName: string | null; fromDate: string; toDate: string }[]
@@ -69,7 +71,20 @@ export interface BookingDetailData {
     phone?: string | null
     policy?: { checkInTime: string | null; checkOutTime: string | null } | null
   }
-  payments: { id: string; amount: number; method: string; status: string; paidAt: string | null; createdAt: string }[]
+  payments: {
+    id: string
+    amount: number
+    method: string
+    status: string
+    paidAt: string | null
+    createdAt: string
+    paymentGateway?: string | null
+    bankCode?: string | null
+    bankAccount?: string | null
+    transferContent?: string | null
+    expiresAt?: string | null
+    metadata?: unknown
+  }[]
 }
 
 /** Loads one booking; `reload` refetches after an action. */
@@ -124,6 +139,99 @@ export function roomLabel(booking: Pick<BookingDetailData, 'bookingItems' | 'roo
   const name = item.roomTypeName ?? 'Hạng phòng đã xoá'
   const more = booking.bookingItems.length > 1 ? ` (+${booking.bookingItems.length - 1} phòng)` : ''
   return `${name}${item.roomNumber ? ` · ${item.roomNumber}` : ''}${more}`
+}
+
+/** "14:05 27/10" in Vietnam time, by hand (Intl differs between Node and browsers). */
+function hourDay(value: string): string {
+  const d = new Date(Date.parse(value) + 7 * 60 * 60 * 1000)
+  const two = (n: number) => String(n).padStart(2, '0')
+  return `${two(d.getUTCHours())}:${two(d.getUTCMinutes())} ${two(d.getUTCDate())}/${two(d.getUTCMonth() + 1)}`
+}
+
+/** The guest's manual deposit still waiting for the money, if any (manual-deposit.ts). */
+export function pendingManualDeposit(booking: Pick<BookingDetailData, 'payments' | 'status'>) {
+  if (['CANCELLED', 'NO_SHOW', 'CHECKED_OUT'].includes(booking.status)) return null
+  return (
+    booking.payments.find((p) => {
+      const meta = (p.metadata ?? {}) as { guestDeposit?: unknown; manual?: unknown }
+      return p.status === 'PENDING' && !p.paymentGateway && meta.guestDeposit === true && meta.manual === true
+    }) ?? null
+  )
+}
+
+/**
+ * A guest's manual deposit (src/lib/payments/manual-deposit.ts): what to
+ * look for in the account, when the guest said they transferred, and
+ * "Xác nhận đã nhận tiền", which records it through the usual payment
+ * confirmation (POST /api/payments/[id]/confirm): the booking is
+ * confirmed and the guest emailed there.
+ */
+function ManualDepositNotice({ booking, onChanged }: { booking: BookingDetailData; onChanged: () => void }) {
+  const role = useWorkspaceRole()
+  const t = useTranslations('dash.bookings.detail.transfer')
+  const tc = useTranslations('dash.common')
+  const labels = useDashLabels()
+  const [asking, setAsking] = React.useState(false)
+  const [saving, setSaving] = React.useState(false)
+  const payment = pendingManualDeposit(booking)
+  if (!payment) return null
+  const claimed = booking.transferClaimedAt
+  const code = payment.transferContent || booking.bookingCode
+  const meta = (payment.metadata ?? {}) as { bankName?: string; autoCancel?: boolean }
+
+  const confirm = async () => {
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/payments/${payment.id}/confirm`, { method: 'POST' })
+      const data = await res.json().catch(() => ({}))
+      if (!data.success) {
+        toast.error(t('confirmFailed'), apiError(data.error))
+        return
+      }
+      toast.success(t('confirmed'))
+      setAsking(false)
+      onChanged()
+    } catch {
+      toast.error(t('confirmFailed'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className={cn('mb-5 rounded-box border px-4 py-3.5', claimed ? 'border-warn/30 bg-warn-soft' : 'border-line bg-fg/[0.03]')}>
+      <p className={cn('text-small font-semibold', claimed ? 'text-warn' : 'text-fg')}>
+        {claimed ? t('claimed', { time: hourDay(claimed) }) : t('waiting')}
+      </p>
+      <p className="mt-1 text-small text-fg tabular-nums">{t('amountLine', { amount: labels.money(payment.amount), code })}</p>
+      {payment.bankAccount && (
+        <p className="text-small text-muted break-words">{t('account', { account: `${meta.bankName ?? payment.bankCode ?? ''} ${payment.bankAccount}`.trim() })}</p>
+      )}
+      {meta.autoCancel && payment.expiresAt && <p className="text-small text-muted">{t('holdUntil', { time: hourDay(payment.expiresAt) })}</p>}
+      {canManageBookings(role) && (
+        <Button size="sm" variant={claimed ? 'primary' : 'outline'} className="mt-3" onClick={() => setAsking(true)}>
+          <Check className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+          {t('confirm')}
+        </Button>
+      )}
+      <Modal isOpen={asking} onClose={() => !saving && setAsking(false)} size="sm">
+        <ModalHeader onClose={() => !saving && setAsking(false)}>
+          <span className="font-semibold">{t('confirmTitle')}</span>
+        </ModalHeader>
+        <ModalBody>
+          <p className="text-small text-fg">{t('confirmText', { amount: labels.money(payment.amount), code })}</p>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="ghost" onClick={() => setAsking(false)} disabled={saving}>
+            {tc('actions.cancel')}
+          </Button>
+          <Button onClick={confirm} isLoading={saving}>
+            {t('confirm')}
+          </Button>
+        </ModalFooter>
+      </Modal>
+    </div>
+  )
 }
 
 function Section({ title, aside, children }: { title: string; aside?: React.ReactNode; children: React.ReactNode }) {
@@ -184,6 +292,7 @@ export function BookingDetailContent({ booking, onChanged }: { booking: BookingD
 
   return (
     <div>
+      <ManualDepositNotice booking={booking} onChanged={onChanged} />
       <Section title={t('guest.title')}>
         <p className="text-body font-medium text-fg">{booking.guestName}</p>
         <div className="mt-2 flex items-center justify-between gap-3">

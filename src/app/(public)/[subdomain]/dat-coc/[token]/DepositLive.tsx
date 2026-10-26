@@ -5,10 +5,16 @@ import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { formatVnd } from '@/lib/bookings/display'
 import type { DepositState } from '@/lib/payments/deposit-view'
+import { apiError } from '@/lib/i18n/api-errors'
 import { cn } from '@/lib/utils'
 import { SiteLink, useSiteHref } from '../../_components/site-base'
+import { SaveQrButton } from './SaveQrButton'
 
 const POLL_MS = 4000
+/** A manual transfer waits for staff, not a webhook: no need to ask as often. */
+const POLL_MANUAL_MS = 10_000
+/** How much longer the room is held after "Tôi đã chuyển khoản" (manual-deposit.ts, CLAIM_EXTENSION_MINUTES). */
+const CLAIM_EXTENSION_MINUTES = 30
 
 function CopyButton({ value }: { value: string }) {
   const t = useTranslations('site.booking.common')
@@ -29,10 +35,18 @@ function CopyButton({ value }: { value: string }) {
  * PayOS"): countdown, the QR and transfer details, and a poll of
  * GET /api/public/deposits/[token] that moves on once PayOS reports the
  * money. "Tạo mã mới" asks POST for a new PayOS link, then re-reads the page.
+ *
+ * A manual transfer (src/lib/payments/manual-deposit.ts) shows the hotel's
+ * own VietQR and account instead, and "Tôi đã chuyển khoản", which tells the
+ * hotel (POST …/claim) and holds the room a little longer; the page moves on
+ * once staff confirm the money.
  */
 export function DepositLive({
   token,
   state,
+  mode,
+  claimedAt,
+  bookingCode,
   amount,
   qrImage,
   checkoutUrl,
@@ -44,12 +58,16 @@ export function DepositLive({
 }: {
   token: string
   state: DepositState
+  mode: 'payos' | 'manual'
+  /** manual: when the guest said they transferred */
+  claimedAt: string | null
+  bookingCode: string
   amount: number
   qrImage: string | null
   checkoutUrl: string | null
   expiresAt: string | null
   deadline: string | null
-  transfer: { accountNumber: string | null; accountName: string | null; note: string } | null
+  transfer: { accountNumber: string | null; accountName: string | null; note: string; bankName?: string | null; wallet?: boolean } | null
   hotel: { name: string; phone: string | null }
   /** false: a booking without an online deposit (cancelled by the hotel) */
   hadDeposit: boolean
@@ -62,6 +80,9 @@ export function DepositLive({
   const [now, setNow] = React.useState<number | null>(null)
   const [making, setMaking] = React.useState(false)
   const [makeFailed, setMakeFailed] = React.useState(false)
+  const [claiming, setClaiming] = React.useState(false)
+  const [claimError, setClaimError] = React.useState<string | null>(null)
+  const manual = mode === 'manual'
   const done = React.useCallback(() => router.replace(href(`/xac-nhan/${token}`)), [router, href, token])
 
   // Paid, or nothing to pay online: the confirmation is the next page.
@@ -93,12 +114,27 @@ export function DepositLive({
       if (!live || !next || next === 'pending') return
       if (next === 'paid') done()
       else router.refresh()
-    }, POLL_MS)
+    }, manual ? POLL_MANUAL_MS : POLL_MS)
     return () => {
       live = false
       clearInterval(id)
     }
-  }, [state, token, done, router])
+  }, [state, token, done, router, manual])
+
+  const claim = async () => {
+    setClaiming(true)
+    setClaimError(null)
+    try {
+      const res = await fetch(`/api/public/deposits/${encodeURIComponent(token)}/claim`, { method: 'POST' })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data.success) return router.refresh()
+      setClaimError(res.status === 429 ? t('claimTooMany') : apiError(data.error) || t('claimFailed'))
+    } catch {
+      setClaimError(t('claimFailed'))
+    } finally {
+      setClaiming(false)
+    }
+  }
 
   const makeNew = async () => {
     setMaking(true)
@@ -131,11 +167,18 @@ export function DepositLive({
 
   if (state === 'pending') {
     const rows = [
-      transfer?.accountNumber && { label: t('account'), value: transfer.accountNumber, copy: transfer.accountNumber },
-      transfer?.accountName && { label: t('accountName'), value: transfer.accountName },
+      // A manual transfer: every detail can be copied, the bank's name too (typed into a banking app).
+      manual && transfer?.bankName && { label: transfer.wallet ? t('wallet') : t('bank'), value: transfer.bankName, copy: transfer.bankName },
+      transfer?.accountNumber && {
+        label: manual && transfer.wallet ? t('walletPhone') : t('account'),
+        value: transfer.accountNumber,
+        copy: transfer.accountNumber,
+      },
+      transfer?.accountName && { label: t('accountName'), value: transfer.accountName, ...(manual && { copy: transfer.accountName }) },
       { label: t('sum'), value: money, copy: String(Math.round(amount)) },
       transfer && { label: t('content'), value: transfer.note, copy: transfer.note },
     ].filter(Boolean) as { label: string; value: string; copy?: string }[]
+    const claimedTime = claimedAt ? at(claimedAt).split(' · ')[0] : null
     return (
       <div>
         <div className="border border-line bg-panel">
@@ -157,10 +200,15 @@ export function DepositLive({
           <div className="grid gap-8 px-4 py-6 sm:px-6 sm:py-7 md:grid-cols-[minmax(0,280px)_minmax(0,1fr)] lg:px-8">
             <div>
               {qrImage && (
-                // eslint-disable-next-line @next/next/no-img-element -- a data: URL made on the server
-                <img src={qrImage} alt={t('qrAlt')} className="aspect-square w-full max-w-[280px] border border-line bg-white p-2" />
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- a data: URL made on the server */}
+                  <img src={qrImage} alt={manual ? t('qrAltManual') : t('qrAlt')} className="aspect-square w-full max-w-[280px] border border-line bg-white p-2" />
+                  <div className="mt-3">
+                    <SaveQrButton image={qrImage} fileName={`${lang === 'en' ? 'deposit' : 'dat-coc'}-${bookingCode}.png`} />
+                  </div>
+                </>
               )}
-              <p className="mt-3 text-[13px] leading-[1.55] text-muted">{t('qrHint')}</p>
+              <p className="mt-3 text-[13px] leading-[1.55] text-muted">{manual ? t('qrHintManual') : t('qrHint')}</p>
             </div>
             <div>
               <dl className="border-t border-line">
@@ -172,15 +220,43 @@ export function DepositLive({
                   </div>
                 ))}
               </dl>
-              <p className="mt-4 text-[13px] leading-[1.6] text-fg/80">{t('exact', { hotel: hotel.name })}</p>
+              <p className="mt-4 text-[13px] leading-[1.6] text-fg/80">{manual ? t('exactManual', { hotel: hotel.name }) : t('exact', { hotel: hotel.name })}</p>
             </div>
           </div>
-          <p className="flex items-start gap-3 bg-plain-soft/70 px-6 py-4 text-[14px] leading-[1.55] lg:px-8" role="status">
-            <span aria-hidden className="mt-1.5 h-2 w-2 flex-none animate-pulse rounded-full bg-acc" />
-            <span>
-              <b className="font-semibold">{t('waiting')}</b> {t('waitingText')}
-            </span>
-          </p>
+          {!manual ? (
+            <p className="flex items-start gap-3 bg-plain-soft/70 px-6 py-4 text-[14px] leading-[1.55] lg:px-8" role="status">
+              <span aria-hidden className="mt-1.5 h-2 w-2 flex-none animate-pulse rounded-full bg-acc" />
+              <span>
+                <b className="font-semibold">{t('waiting')}</b> {t('waitingText')}
+              </span>
+            </p>
+          ) : claimedTime ? (
+            <p className="flex items-start gap-3 bg-ok-soft px-6 py-4 text-[14px] leading-[1.55] text-fg lg:px-8" role="status">
+              <span aria-hidden className="mt-1.5 h-2 w-2 flex-none animate-pulse rounded-full bg-ok" />
+              <span>
+                <b className="font-semibold">{t('claimedTitle', { time: claimedTime })}</b> {t('claimedText', { hotel: hotel.name })}
+              </span>
+            </p>
+          ) : (
+            <div className="flex flex-col gap-3 bg-plain-soft/70 px-6 py-5 sm:flex-row sm:items-center sm:justify-between lg:px-8">
+              <p className="max-w-[440px] text-[14px] leading-[1.55] text-fg">
+                {ends ? t('claimTextHold', { hotel: hotel.name, minutes: CLAIM_EXTENSION_MINUTES }) : t('claimText', { hotel: hotel.name })}
+              </p>
+              <button
+                type="button"
+                onClick={claim}
+                disabled={claiming}
+                className="flex h-[48px] flex-none items-center justify-center bg-ink px-6 text-[14px] font-medium text-on-ink disabled:bg-muted"
+              >
+                {claiming ? t('claiming') : t('claim')}
+              </button>
+            </div>
+          )}
+          {claimError && (
+            <p role="alert" className="border-t border-line px-6 py-3 text-[14px] font-medium text-err lg:px-8">
+              ⚠ {claimError}
+            </p>
+          )}
         </div>
         <div className="mt-5 flex flex-wrap gap-x-6 gap-y-3 text-[14px] font-medium">
           {checkoutUrl && (

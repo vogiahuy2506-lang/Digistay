@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireSession, getWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 import { lockBooking, syncBookingPayments } from '@/lib/payments/booking-payments'
+import { queueGuestDepositReceived } from '@/lib/payments/deposit-received'
+import { sendAfterResponse } from '@/lib/email/outbox'
 import { lockedResponse } from '@/lib/billing/guard'
 
 interface RouteParams {
@@ -19,6 +21,9 @@ class PaymentNotPendingError extends Error {}
  *   click, or two staff clicking at once, matches no row the second time
  *   and gets 409.
  * - ActivityLog records who confirmed, when, and from where.
+ * - A guest's online deposit (a manual transfer the guest said they made,
+ *   src/lib/payments/manual-deposit.ts) also tells the guest and the front
+ *   desk, as the PayOS webhook does (deposit-received.ts).
  */
 export async function POST(request: NextRequest, props: RouteParams) {
   const params = await props.params
@@ -34,6 +39,7 @@ export async function POST(request: NextRequest, props: RouteParams) {
         bookingId: true,
         propertyId: true,
         amount: true,
+        metadata: true,
         property: { select: { workspaceId: true } },
       },
     })
@@ -93,8 +99,10 @@ export async function POST(request: NextRequest, props: RouteParams) {
         },
       })
 
-      return { paidAfterClosed }
+      const emailIds = await queueGuestDepositReceived(tx, payment, paidAfterClosed)
+      return { paidAfterClosed, emailIds }
     })
+    sendAfterResponse(result.emailIds)
 
     return NextResponse.json({
       success: true,

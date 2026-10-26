@@ -7,13 +7,14 @@ import QRCode from 'qrcode'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, Button, Badge, Input, Select, Modal, ModalBody, ModalFooter } from '@/components/ui'
 import { VietQR, downloadQR } from '@/components/ui/viet-qr'
-import { VIETQR_BANKS, buildVietQr, findBank, toBankName } from '@/lib/vietqr'
+import { MOMO_CODE, VIETQR_BANKS, buildVietQr, findBank, isWallet, toBankName, walletPhone } from '@/lib/vietqr'
 import { NoAccess, useHasRole } from '@/components/payment/no-access'
 import { toast } from '@/components/ui/toast'
 import { PayosCard } from './payos-card'
+import { DepositModeCard } from './deposit-mode-card'
 import {
   Building, Plus, Trash2, Edit, QrCode, Copy,
-  AlertCircle, Download
+  AlertCircle, Download, Wallet
 } from 'lucide-react'
 import { apiError } from '@/lib/i18n/api-errors'
 
@@ -29,8 +30,9 @@ interface BankAccount {
 }
 
 // Every bank VietQR knows (src/lib/vietqr/banks.ts), by name; the short
-// name is what is saved as the account's bankName.
-const bankOptions = [...VIETQR_BANKS]
+// name is what is saved as the account's bankName. Wallets (MoMo) have
+// their own form: phone number and name.
+const bankOptions = VIETQR_BANKS.filter((bank) => !bank.wallet)
   .sort((a, b) => a.shortName.localeCompare(b.shortName))
   .map((bank) => ({ value: bank.code, label: `${bank.shortName} (${bank.code})` }))
 
@@ -50,6 +52,10 @@ export default function BankAccountsPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [showModal, setShowModal] = React.useState(false)
   const [editingAccount, setEditingAccount] = React.useState<BankAccount | null>(null)
+  // Read the deposit settings again when accounts or PayOS change.
+  const [version, setVersion] = React.useState(0)
+  // The account the manual deposit QR names now (marked on its card).
+  const [depositAccountId, setDepositAccountId] = React.useState<string | null>(null)
 
   const [formData, setFormData] = React.useState({
     bankName: '',
@@ -75,6 +81,7 @@ export default function BankAccountsPage() {
       const data = await response.json()
       if (data.success) {
         setAccounts(data.data)
+        setVersion((v) => v + 1)
       } else {
         toast.error(apiError(data.error) || t('toast.loadFailed'))
         setAccounts([])
@@ -97,6 +104,11 @@ export default function BankAccountsPage() {
       toast.error(t('toast.fillAll'))
       return
     }
+    const wallet = isWallet(formData.bankCode)
+    if (wallet && !walletPhone(formData.accountNumber)) {
+      toast.error(t('toast.badPhone'))
+      return
+    }
 
     setIsSubmitting(true)
     try {
@@ -111,6 +123,7 @@ export default function BankAccountsPage() {
         body: JSON.stringify({
           propertyId,
           ...formData,
+          ...(wallet && { accountNumber: walletPhone(formData.accountNumber) }),
         }),
       })
       const data = await response.json()
@@ -145,6 +158,7 @@ export default function BankAccountsPage() {
       }
       toast.success(t('toast.deleted'))
       setAccounts(accounts.filter(a => a.id !== id))
+      setVersion((v) => v + 1)
     } catch (err) {
       console.error('Failed to delete account:', err)
       toast.error(t('toast.deleteError'))
@@ -175,6 +189,14 @@ export default function BankAccountsPage() {
       qrEnabled: true,
     })
   }
+
+  /** A MoMo wallet: VietQR names it by MoMo's BIN and the wallet's phone number. */
+  const addWallet = () => {
+    resetForm()
+    setFormData((f) => ({ ...f, bankCode: MOMO_CODE, bankName: findBank(MOMO_CODE)!.shortName }))
+    setShowModal(true)
+  }
+  const walletForm = isWallet(formData.bankCode)
 
   const copyToClipboard = async (text: string, label = t('toast.copied')) => {
     try {
@@ -232,10 +254,16 @@ export default function BankAccountsPage() {
         title={t('title')}
         description={t('description')}
         actions={
-          <Button onClick={() => { resetForm(); setShowModal(true) }}>
-            <Plus className="w-4 h-4 mr-2" />
-            {t('add')}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={addWallet}>
+              <Wallet className="w-4 h-4 mr-2" />
+              {t('addMomo')}
+            </Button>
+            <Button onClick={() => { resetForm(); setShowModal(true) }}>
+              <Plus className="w-4 h-4 mr-2" />
+              {t('add')}
+            </Button>
+          </div>
         }
       />
 
@@ -252,7 +280,14 @@ export default function BankAccountsPage() {
         </CardContent>
       </Card>
 
-      <PayosCard propertyId={propertyId} />
+      <DepositModeCard
+        propertyId={propertyId}
+        accounts={accounts}
+        version={version}
+        onLoaded={(settings) => setDepositAccountId(settings.effectiveMode === 'MANUAL' ? settings.accountId : null)}
+      />
+
+      <PayosCard propertyId={propertyId} onChange={() => setVersion((v) => v + 1)} />
 
       {/* Accounts List */}
       {isLoading ? (
@@ -263,30 +298,40 @@ export default function BankAccountsPage() {
         <Card>
           <CardContent className="p-12 text-center">
             <Building className="w-12 h-12 text-muted mx-auto mb-4" />
-            <p className="text-muted mb-4">{t('empty')}</p>
-            <Button onClick={() => { resetForm(); setShowModal(true) }}>
-              <Plus className="w-4 h-4 mr-2" />
-              {t('add')}
-            </Button>
+            <p className="text-muted mb-1">{t('empty')}</p>
+            <p className="text-sm text-muted mb-4">{t('emptyHint')}</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button variant="outline" onClick={addWallet}>
+                <Wallet className="w-4 h-4 mr-2" />
+                {t('addMomo')}
+              </Button>
+              <Button onClick={() => { resetForm(); setShowModal(true) }}>
+                <Plus className="w-4 h-4 mr-2" />
+                {t('add')}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-4">
-          {accounts.map((account) => (
+          {accounts.map((account) => {
+            const wallet = isWallet(account.bankCode)
+            return (
             <Card key={account.id}>
               <CardContent className="p-4 sm:p-6">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-4 min-w-0">
                     <div className="hidden sm:flex w-14 h-14 shrink-0 rounded-xl bg-fg/5 items-center justify-center">
-                      <Building className="w-7 h-7 text-muted" />
+                      {wallet ? <Wallet className="w-7 h-7 text-muted" /> : <Building className="w-7 h-7 text-muted" />}
                     </div>
                     <div className="min-w-0">
-                      <h3 className="text-lg font-semibold text-fg break-words">{account.bankName}</h3>
-                      <p className="text-sm text-muted">{t('bankCode', { code: findBank(account.bankCode)?.code ?? account.bankCode })}</p>
+                      <h3 className="text-lg font-semibold text-fg break-words">{wallet ? t('momoWallet') : account.bankName}</h3>
+                      {!wallet && <p className="text-sm text-muted">{t('bankCode', { code: findBank(account.bankCode)?.code ?? account.bankCode })}</p>}
                       <div className="flex flex-wrap items-center gap-2 mt-2">
                         <Badge variant={account.isActive ? 'success' : 'gray'}>
                           {account.isActive ? t('active') : t('inactive')}
                         </Badge>
+                        {account.id === depositAccountId && <Badge variant="acc">{t('depositAccount')}</Badge>}
                         {account.qrEnabled && (
                           <Badge variant="outline" className="flex items-center gap-1">
                             <QrCode className="w-3 h-3" />
@@ -309,15 +354,15 @@ export default function BankAccountsPage() {
                 <div className="mt-4 p-3 sm:p-4 bg-fg/[0.03] rounded-lg">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-muted">{t('accountNumber')}</p>
+                      <p className="text-sm text-muted">{wallet ? t('walletPhone') : t('accountNumber')}</p>
                       <div className="flex items-center gap-2">
                         <p className="font-mono text-lg font-semibold break-all">
-                          {formatAccountNumber(account.accountNumber)}
+                          {wallet ? account.accountNumber : formatAccountNumber(account.accountNumber)}
                         </p>
                         <button
                           onClick={() => copyToClipboard(account.accountNumber)}
                           className="p-1 hover:bg-fg/10 rounded"
-                          aria-label={t('copyAccountNumber')}
+                          aria-label={wallet ? t('copyWalletPhone') : t('copyAccountNumber')}
                         >
                           <Copy className="w-4 h-4 text-muted" />
                         </button>
@@ -361,7 +406,8 @@ export default function BankAccountsPage() {
                 )}
               </CardContent>
             </Card>
-          ))}
+            )
+          })}
         </div>
       )}
 
@@ -370,10 +416,11 @@ export default function BankAccountsPage() {
         showHeader
         isOpen={showModal}
         onClose={() => { if (!isSubmitting) { setShowModal(false); resetForm() } }}
-        title={editingAccount ? t('form.editTitle') : t('form.addTitle')}
+        title={walletForm ? (editingAccount ? t('form.editMomoTitle') : t('form.addMomoTitle')) : editingAccount ? t('form.editTitle') : t('form.addTitle')}
         size="sm"
       >
         <ModalBody className="space-y-4">
+          {!walletForm && (
           <Select
             label={t('form.bank')}
             required
@@ -388,13 +435,15 @@ export default function BankAccountsPage() {
             }}
             options={[{ value: '', label: t('form.chooseBank') }, ...bankOptions]}
           />
+          )}
           <Input
-            label={t('accountNumber')}
+            label={walletForm ? t('walletPhone') : t('accountNumber')}
             required
-            inputMode="numeric"
+            inputMode={walletForm ? 'tel' : 'numeric'}
             value={formData.accountNumber}
             onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
-            placeholder={t('form.accountNumberPlaceholder')}
+            placeholder={walletForm ? t('form.momoPhonePlaceholder') : t('form.accountNumberPlaceholder')}
+            hint={walletForm ? t('form.momoPhoneHint') : undefined}
           />
           <Input
             label={t('accountHolder')}
@@ -403,7 +452,7 @@ export default function BankAccountsPage() {
             // Banks print the holder in capitals without accents; the API saves it so.
             onChange={(e) => setFormData({ ...formData, accountHolder: e.target.value.toUpperCase() })}
             onBlur={() => setFormData((f) => ({ ...f, accountHolder: toBankName(f.accountHolder) }))}
-            placeholder={t('form.accountHolderPlaceholder')}
+            placeholder={walletForm ? t('form.momoHolderPlaceholder') : t('form.accountHolderPlaceholder')}
             hint={t('form.accountHolderHint')}
           />
           <div className="flex items-center gap-2">
@@ -428,7 +477,7 @@ export default function BankAccountsPage() {
             {tc('actions.cancel')}
           </Button>
           <Button onClick={handleSubmit} isLoading={isSubmitting}>
-            {editingAccount ? tc('actions.saveChanges') : t('form.submitAdd')}
+            {editingAccount ? tc('actions.saveChanges') : walletForm ? t('form.submitAddMomo') : t('form.submitAdd')}
           </Button>
         </ModalFooter>
       </Modal>

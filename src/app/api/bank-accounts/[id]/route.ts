@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
-import { bankAccountFields } from '../fields'
+import { WALLET_PHONE_ERROR, bankAccountFields, walletAccountNumber } from '../fields'
 
 const updateSchema = z.object({
   bankName: bankAccountFields.bankName.optional(),
@@ -17,7 +17,10 @@ const updateSchema = z.object({
 async function userCanManageBankAccount(
   bankAccountId: string,
   userId: string
-): Promise<{ ok: true; bankAccount: { propertyId: string } } | { ok: false; status: number; error: string }> {
+): Promise<
+  | { ok: true; bankAccount: { propertyId: string; bankCode: string; accountNumber: string } }
+  | { ok: false; status: number; error: string }
+> {
   const bankAccount = await prisma.bankAccount.findUnique({
     where: { id: bankAccountId },
     include: {
@@ -51,7 +54,10 @@ async function userCanManageBankAccount(
     return { ok: false, status: 403, error: 'Không có quyền chỉnh sửa tài khoản này' }
   }
 
-  return { ok: true, bankAccount: { propertyId: bankAccount.propertyId } }
+  return {
+    ok: true,
+    bankAccount: { propertyId: bankAccount.propertyId, bankCode: bankAccount.bankCode, accountNumber: bankAccount.accountNumber },
+  }
 }
 
 export async function PATCH(
@@ -84,9 +90,20 @@ export async function PATCH(
       )
     }
 
+    // A MoMo wallet stays named by a phone number, whichever field changed.
+    const data = validation.data
+    if (data.bankCode !== undefined || data.accountNumber !== undefined) {
+      const bankCode = data.bankCode ?? authz.bankAccount.bankCode
+      const number = walletAccountNumber(bankCode, data.accountNumber ?? authz.bankAccount.accountNumber)
+      if (number === null) {
+        return NextResponse.json({ success: false, error: WALLET_PHONE_ERROR }, { status: 400 })
+      }
+      if (data.accountNumber !== undefined) data.accountNumber = number
+    }
+
     const updated = await prisma.bankAccount.update({
       where: { id: params.id },
-      data: validation.data,
+      data,
     })
 
     return NextResponse.json({
