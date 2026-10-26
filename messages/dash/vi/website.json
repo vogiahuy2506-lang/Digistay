@@ -65,6 +65,10 @@
     "RESTAURANT_MENU": {
       "name": "Thực đơn",
       "description": "Món ăn, đồ uống kèm giá và ảnh (trang Thực đơn)"
+    },
+    "FOOTER": {
+      "name": "Chân trang",
+      "description": "Tên, địa chỉ và liên hệ của cơ sở cuối trang"
     }
   },
   "templates": {
@@ -169,47 +173,73 @@
       "moveDown": "Đưa xuống"
     },
     "servicesHint": "Khối này hiện các dịch vụ đang bật ở trang Dịch vụ. Thêm hoặc sửa dịch vụ ở đó.",
-    "menuHint": "Khối này hiện các món đang bán ở trang Thực đơn, theo nhóm. Chưa có món nào thì khối không hiện trên website."
+    "menuHint": "Khối này hiện các món đang bán ở trang Thực đơn, theo nhóm. Chưa có món nào thì khối không hiện trên website.",
+    "footerHint": "Khối này lấy tên, địa chỉ, số điện thoại và email ở trang Tổng quan của cơ sở."
   },
   "preview": {
-    "propertyName": "Khách sạn của bạn",
-    "propertyDescription": "Mô tả ngắn về cơ sở của bạn",
-    "bookNow": "Đặt phòng ngay",
-    "roomsTitle": "Các hạng phòng",
-    "roomName": "Phòng {name}",
-    "roomMeta": "2 người • 25m²",
-    "roomPrice": "{price}/đêm",
-    "amenitiesTitle": "Tiện ích nổi bật",
-    "amenities": {
-      "wifi": "Wifi miễn phí",
-      "parking": "Bãi đỗ xe",
-      "pool": "Hồ bơi",
-      "restaurant": "Nhà hàng",
-      "spa": "Spa",
-      "karaoke": "Karaoke"
-    },
+    "searchCheckIn": "Nhận phòng",
+    "searchCheckOut": "Trả phòng",
+    "searchGuests": "Khách",
+    "searchButton": "Tìm phòng",
+    "heroWelcome": "Chào mừng đến với {name}",
+    "roomsTitle": "Chọn phòng cho chuyến đi của bạn",
+    "roomsCount": "{count} hạng phòng tại {name}.",
+    "roomsEmpty": "Chưa có hạng phòng nào. Vui lòng liên hệ trực tiếp với {name}.",
+    "noPhoto": "Chưa có ảnh",
+    "perNight": "/đêm",
+    "perPerson": "/người",
+    "once": "một lần",
+    "free": "Miễn phí",
+    "area": "{area} m²",
+    "moreAmenities": "+{count} tiện ích",
+    "details": "Xem chi tiết →",
+    "bookNow": "Đặt ngay",
+    "amenitiesEyebrow": "Tiện ích",
+    "amenitiesTitle": "Mọi thứ cần cho một kỳ nghỉ nhẹ nhàng",
+    "amenitiesEmpty": "Danh sách tiện ích đang được cập nhật.",
+    "aboutEyebrow": "Giới thiệu",
     "aboutTitle": "Về chúng tôi",
-    "galleryTitle": "Thư viện hình ảnh",
-    "reviewsTitle": "Đánh giá từ khách hàng",
+    "galleryEyebrow": "Thư viện ảnh",
+    "galleryTitle": "Hình ảnh",
+    "galleryCount": "{count} ảnh",
+    "reviewsEyebrow": "Đánh giá",
+    "reviewsTitle": "Khách nói gì về chúng tôi",
+    "stars": "{rating} trên 5 sao",
     "reviews": {
       "none": "Chưa có đánh giá nào: khối này đang ẩn trên website. Bấm cấu hình để nhập đánh giá thật của khách."
     },
-    "mapTitle": "Vị trí của chúng tôi",
-    "mapNoLocation": "Chưa cài đặt vị trí",
-    "mapPreview": "Google Maps Preview",
-    "contactTitle": "Liên hệ với chúng tôi",
-    "form": {
-      "name": "Họ tên",
-      "email": "Email",
-      "message": "Nội dung",
-      "send": "Gửi liên hệ"
-    },
-    "ctaTitle": "Sẵn sàng trải nghiệm?",
-    "ctaSubtitle": "Đặt phòng ngay hôm nay!",
-    "servicesTitle": "Dịch vụ",
-    "servicesFrom": "Các dịch vụ đang bật ở trang Dịch vụ.",
+    "mapEyebrow": "Vị trí",
+    "address": "Địa chỉ",
+    "phone": "Điện thoại",
+    "contactEyebrow": "Liên hệ",
+    "contactTitle": "Liên hệ đặt phòng",
+    "contactIntro": "Liên hệ trực tiếp với khách sạn qua các kênh dưới đây.",
+    "zalo": "Nhắn tin Zalo",
+    "servicesEyebrow": "Dịch vụ",
+    "servicesTitle": "Dịch vụ thêm",
+    "menuEyebrow": "Nhà hàng",
     "menuTitle": "Thực đơn nhà hàng",
-    "menuFrom": "Các món đang bán ở trang Thực đơn, theo nhóm."
+    "moreDishes": "Và {count} món khác",
+    "ctaTitle": "Đặt phòng ngay",
+    "ctaButton": "Đặt phòng",
+    "footerContact": "Liên hệ",
+    "poweredBy": "Vận hành bởi",
+    "hidden": {
+      "about": "Khối Giới thiệu đang không hiện trên website: chưa có nội dung. Nhập trong cấu hình khối, hoặc mô tả cơ sở ở trang Tổng quan.",
+      "gallery": "Khối Thư viện ảnh đang không hiện trên website: cơ sở chưa có ảnh (Tổng quan → Hình ảnh).",
+      "services": "Khối Dịch vụ đang không hiện trên website: chưa có dịch vụ nào đang bật (trang Dịch vụ).",
+      "menu": "Khối Thực đơn đang không hiện trên website: chưa có món nào đang bán (trang Thực đơn)."
+    },
+    "sections": {
+      "rooms": "Phòng",
+      "amenities": "Tiện ích",
+      "gallery": "Hình ảnh",
+      "services": "Dịch vụ",
+      "menu": "Thực đơn",
+      "map": "Vị trí",
+      "contact": "Liên hệ"
+    },
+    "book": "Đặt phòng"
   },
   "blocks": {
     "arrange": "Sắp xếp khối",
@@ -218,7 +248,8 @@
     "empty": "Chưa có khối nào",
     "emptyHint": "Chọn template hoặc thêm khối thủ công",
     "addTitle": "Thêm khối mới",
-    "addHint": "Chọn khối để thêm vào website"
+    "addHint": "Chọn khối để thêm vào website",
+    "defaultLayout": "Website đang hiện bố cục mặc định như bên dưới. Sửa, sắp xếp rồi bấm Lưu thay đổi để dùng bố cục của riêng bạn."
   },
   "style": {
     "colors": "Màu sắc",
@@ -262,7 +293,7 @@
   },
   "canvas": {
     "dragging": "Đang kéo thả... Di chuyển khối đến vị trí mong muốn",
-    "emptyHint": "Thêm các khối từ panel bên trái hoặc chọn template để bắt đầu",
+    "emptyHint": "Thêm các khối từ panel bên trái hoặc chọn template. Lưu khi không có khối nào thì website dùng bố cục mặc định.",
     "allHidden": "Tất cả các khối đang bị ẩn"
   },
   "domain": {
@@ -272,8 +303,8 @@
     "check": "Kiểm tra & kết nối",
     "checkFailed": "Chưa kiểm tra được tên miền, vui lòng thử lại",
     "recordsTitle": "Thêm các bản ghi này tại nơi quản lý tên miền, rồi bấm Kiểm tra lại",
-    "stepPoint": "Trỏ tên miền về Digistay",
-    "stepOwn": "Xác minh bạn là chủ tên miền",
+    "stepPoint": "1. Trỏ tên miền về Digistay",
+    "stepOwn": "2. Xác minh bạn là chủ tên miền",
     "type": "Loại",
     "name": "Tên",
     "value": "Giá trị",
@@ -286,11 +317,19 @@
     "httpsOk": "Đã bật HTTPS (ổ khoá xanh)",
     "open": "Mở website",
     "httpsPending": "Đang cấp chứng chỉ HTTPS, thường dưới một phút…",
-    "httpsFailed": "Chưa cấp được chứng chỉ HTTPS. Kiểm tra bản ghi A vẫn trỏ đúng; hệ thống tự thử lại sau một giờ.",
+    "httpsFailed": "Chưa cấp được chứng chỉ HTTPS. Kiểm tra bản ghi CNAME hoặc A vẫn trỏ đúng; hệ thống tự thử lại sau một giờ.",
     "retry": "Thử lại ngay",
     "retryFailed": "Không gửi được yêu cầu, vui lòng thử lại",
     "remove": "Gỡ tên miền",
     "removeConfirm": "Gỡ tên miền {domain} khỏi website? Khách mở tên miền này sẽ không thấy website nữa.",
-    "removed": "Đã gỡ tên miền"
-  }
+    "removed": "Đã gỡ tên miền",
+    "pointCname": "Với www.… hoặc tên miền con khác: bản ghi CNAME",
+    "pointApex": "Với tên miền gốc (không có www, ví dụ khachsan.vn): bản ghi A",
+    "pointA": "Bản ghi A (cho cả www.… và tên miền gốc)",
+    "cnameLater": "Bản ghi CNAME chưa dùng được lúc này, hãy dùng bản ghi A.",
+    "pointOnlyOne": "Mỗi tên chỉ giữ một cách trỏ: xoá các bản ghi A, AAAA hoặc CNAME khác của tên đó.",
+    "httpsSlow": "Chứng chỉ HTTPS lâu hơn bình thường: đã yêu cầu lúc {when} mà chưa có.",
+    "httpsSlowCheck": "Kiểm tra bản ghi CNAME hoặc A vẫn trỏ đúng như lúc kết nối và tên miền không có bản ghi AAAA (IPv6) nào khác, rồi bấm Thử lại ngay. Vẫn chưa được thì liên hệ hỗ trợ Digistay."
+  },
+  "noAccess": "Chỉ chủ sở hữu, quản trị viên và quản lý chỉnh sửa được website khách sạn."
 }

@@ -16,20 +16,35 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * Sample content: the address is Digistay's domain; hotline and street
- * address are not decided yet, so they say so (a made-up number could be a
- * real person's).
+ * Digistay's own contact details. Only what is decided shows: the hotline
+ * and street address are not, and a row reading "Đang cập nhật" looked
+ * unfinished (a made-up number could be a real person's). Fill them in
+ * here once they exist.
  */
-const CONTACT_EMAIL = 'hello@digistay.vn'
+const CONTACT: { email: string; hotline: string | null; address: string | null } = {
+  email: 'hello@digistay.vn',
+  hotline: null,
+  address: null,
+}
 
 /** Contact page (Claude Design "Digistay Lien He"). */
 export default async function ContactPage() {
   const t = await getTranslations('marketing.contact')
-  const info = [
-    { label: t('emailLabel'), value: <a href={`mailto:${CONTACT_EMAIL}`} className="hover:underline">{CONTACT_EMAIL}</a> },
-    { label: t('hotlineLabel'), value: <span className="text-muted">{t('pending')}</span> },
-    { label: t('addressLabel'), value: <span className="text-muted">{t('pending')}</span> },
+  const info: { label: string; value: React.ReactNode }[] = [
+    { label: t('emailLabel'), value: <a href={`mailto:${CONTACT.email}`} className="hover:underline">{CONTACT.email}</a> },
   ]
+  if (CONTACT.hotline) {
+    const hotline = CONTACT.hotline
+    info.push({
+      label: t('hotlineLabel'),
+      value: (
+        <a href={`tel:${hotline.replace(/[^\d+]/g, '')}`} className="hover:underline">
+          {hotline}
+        </a>
+      ),
+    })
+  }
+  if (CONTACT.address) info.push({ label: t('addressLabel'), value: CONTACT.address })
 
   return (
     <>

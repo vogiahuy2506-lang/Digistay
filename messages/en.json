@@ -658,13 +658,13 @@
       "emailLabel": "Email",
       "hotlineLabel": "Hotline",
       "addressLabel": "Address",
-      "pending": "Coming soon",
       "form": {
         "name": "Full name",
         "hotel": "Hotel name",
         "hotelPlaceholder": "Hotel, homestay or resort",
         "email": "Email",
         "phone": "Phone number",
+        "requiredNote": "Required",
         "topic": "You need",
         "topics": {
           "sales": "Advice",

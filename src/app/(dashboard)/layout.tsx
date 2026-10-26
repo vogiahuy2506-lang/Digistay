@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { getServerSession } from 'next-auth'
@@ -8,6 +9,13 @@ import { ToastProvider } from '@/components/ui/toast'
 import { ThemeRoot } from '@/components/layout/theme-root'
 import { THEME_COOKIE, parseThemePreference } from '@/lib/theme'
 import { SessionScope } from '@/components/providers'
+
+// "<page> · Digistay" for pages with a title of their own, "Digistay" for the
+// rest: not Digistay's home page title. Workspace and property pages name the
+// page and the hotel from the client (src/components/layout/document-title.tsx).
+export const metadata: Metadata = {
+  title: { default: 'Digistay', template: '%s · Digistay' },
+}
 
 export default async function DashboardLayout({
   children,

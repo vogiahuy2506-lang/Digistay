@@ -658,13 +658,13 @@
       "emailLabel": "Email",
       "hotlineLabel": "Hotline",
       "addressLabel": "Địa chỉ",
-      "pending": "Đang cập nhật",
       "form": {
         "name": "Họ và tên",
         "hotel": "Tên khách sạn",
         "hotelPlaceholder": "Khách sạn, homestay hoặc resort",
         "email": "Email",
         "phone": "Số điện thoại",
+        "requiredNote": "Mục bắt buộc",
         "topic": "Bạn cần",
         "topics": {
           "sales": "Tư vấn",

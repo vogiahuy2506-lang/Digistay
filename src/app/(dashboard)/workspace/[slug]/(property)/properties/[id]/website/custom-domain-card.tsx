@@ -6,6 +6,7 @@ import { CheckCircle2, Copy, ExternalLink, Globe, Loader2, ShieldCheck, Triangle
 import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
 import { apiError } from '@/lib/i18n/api-errors'
+import { useDashLabels } from '@/lib/i18n/dash'
 import { sslState } from '@/lib/public-site/ssl-state'
 
 export interface DomainSettings {
@@ -24,9 +25,18 @@ interface DnsRecord {
 
 interface Records {
   cname: DnsRecord
+  /** <subdomain>.<root> resolves, so a CNAME to it works (POST /api/website/domain/verify). */
+  cnameReady?: boolean
   a: DnsRecord[]
   txt: DnsRecord
 }
+
+/**
+ * The certificate script runs every minute (RUNBOOK "Tên miền riêng của
+ * khách sạn"): a request still waiting after this long, without an error,
+ * is stuck (DNS changed, the timer not running...), not on its way.
+ */
+const SLOW_AFTER_MS = 10 * 60 * 1000
 
 /**
  * The hotel's own domain (plan item 18): type it, add the DNS records shown,
@@ -48,6 +58,7 @@ export function CustomDomainCard({
   onRemove: () => Promise<boolean>
 }) {
   const t = useTranslations('dash.website.domain')
+  const labels = useDashLabels()
   const [domain, setDomain] = React.useState('')
   const [checking, setChecking] = React.useState(false)
   const [problem, setProblem] = React.useState<string | null>(null)
@@ -55,11 +66,16 @@ export function CustomDomainCard({
   const [retrying, setRetrying] = React.useState(false)
   const attached = settings.customDomain && settings.domainVerificationStatus === 'verified' ? settings.customDomain : null
   const state = sslState({ ...settings, sslRequestedAt: settings.sslRequestedAt ?? null })
+  // The card renders on the client only (the builder loads its settings), so reading the clock here is safe.
+  const [now, setNow] = React.useState(() => Date.now())
+  const requestedAt = settings.sslRequestedAt ? Date.parse(settings.sslRequestedAt) : NaN
+  const slow = state === 'pending' && now - requestedAt > SLOW_AFTER_MS
 
   // While the certificate is on its way, ask how it is going.
   React.useEffect(() => {
     if (state !== 'pending') return
     const id = setInterval(async () => {
+      setNow(Date.now())
       const res = await fetch(`/api/website/ssl/provision?propertyId=${encodeURIComponent(propertyId)}`).catch(() => null)
       const data = await res?.json().catch(() => null)
       if (data?.success) {
@@ -110,7 +126,10 @@ export function CustomDomainCard({
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok || !data.success) toast.error(apiError(data.error) || t('retryFailed'))
-      else onChange({ sslError: null, sslRequestedAt: new Date().toISOString() })
+      else {
+        setNow(Date.now())
+        onChange({ sslError: null, sslRequestedAt: new Date().toISOString() })
+      }
     } finally {
       setRetrying(false)
     }
@@ -156,10 +175,22 @@ export function CustomDomainCard({
                     </a>
                   </li>
                 )}
-                {state === 'pending' && (
+                {state === 'pending' && !slow && (
                   <li className="flex items-start gap-2 text-muted">
                     <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
                     <span>{t('httpsPending')}</span>
+                  </li>
+                )}
+                {slow && (
+                  <li className="flex flex-wrap items-start gap-2 text-warn">
+                    <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span className="min-w-0 flex-1">
+                      {t('httpsSlow', { when: labels.dateTime(settings.sslRequestedAt!) })}
+                      <span className="mt-1 block text-muted">{t('httpsSlowCheck')}</span>
+                    </span>
+                    <Button type="button" variant="outline" size="sm" onClick={retry} isLoading={retrying}>
+                      {t('retry')}
+                    </Button>
                   </li>
                 )}
                 {state === 'failed' && (
@@ -207,20 +238,43 @@ export function CustomDomainCard({
   )
 }
 
-/** The records to add at the domain's DNS provider. A records, not the CNAME: *.digistay.vn has no address of its own yet. */
+/**
+ * The records to add at the domain's DNS provider (src/lib/custom-domain.ts):
+ * point the name at Digistay — a CNAME to the site's own <subdomain>.<root>
+ * for www.… and other subdomains, A records for a root domain (no CNAME
+ * there) — and the TXT that proves ownership. The CNAME only once the
+ * site's subdomain resolves (the API says so); until then A records for all.
+ */
 function DnsSteps({ records }: { records: Records }) {
   const t = useTranslations('dash.website.domain')
-  const rows: (DnsRecord & { step: string })[] = [
-    ...records.a.map((r) => ({ ...r, step: t('stepPoint') })),
-    { ...records.txt, step: t('stepOwn') },
-  ]
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <p className="text-sm font-medium text-fg">{t('recordsTitle')}</p>
-      <ol className="space-y-2">
-        {rows.map((r) => (
-          <li key={`${r.type}-${r.value}`} className="rounded-box border border-line p-3 text-sm">
-            <p className="mb-2 text-xs text-muted">{r.step}</p>
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-fg">{t('stepPoint')}</p>
+        {records.cnameReady && <RecordCard note={t('pointCname')} records={[records.cname]} />}
+        {records.a.length > 0 && <RecordCard note={records.cnameReady ? t('pointApex') : t('pointA')} records={records.a} />}
+        {!records.cnameReady && <p className="text-xs text-muted">{t('cnameLater')}</p>}
+        {records.a.length === 0 && <p className="text-xs text-warn">{t('noAddress')}</p>}
+        <p className="text-xs text-muted">{t('pointOnlyOne')}</p>
+      </div>
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-fg">{t('stepOwn')}</p>
+        <RecordCard records={[records.txt]} />
+      </div>
+      <p className="text-xs text-muted">{t('wait')}</p>
+    </div>
+  )
+}
+
+function RecordCard({ note, records }: { note?: string; records: DnsRecord[] }) {
+  const t = useTranslations('dash.website.domain')
+  return (
+    <div className="rounded-box border border-line p-3 text-sm">
+      {note && <p className="mb-2 text-xs text-muted">{note}</p>}
+      <ul className="space-y-3">
+        {records.map((r) => (
+          <li key={`${r.type}-${r.value}`}>
             <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
               <dt className="text-muted">{t('type')}</dt>
               <dd className="font-mono text-fg">{r.type}</dd>
@@ -241,9 +295,7 @@ function DnsSteps({ records }: { records: Records }) {
             </dl>
           </li>
         ))}
-      </ol>
-      {records.a.length === 0 && <p className="text-xs text-warn">{t('noAddress')}</p>}
-      <p className="text-xs text-muted">{t('wait')}</p>
+      </ul>
     </div>
   )
 }

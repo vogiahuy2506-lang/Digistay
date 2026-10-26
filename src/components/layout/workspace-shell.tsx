@@ -16,6 +16,7 @@ import { useTheme } from './theme-root'
 import { LanguageButton } from './language-button'
 import { NotificationBell } from './notification-bell'
 import { activeHref, primaryNav, workspaceNav, type NavItem, type WorkspaceRole } from './nav'
+import { useDocumentTitle } from './document-title'
 import { Logo } from '@/components/marketing/Logo'
 
 interface WorkspaceShellProps {
@@ -130,6 +131,30 @@ function SidebarContent({
   const main = primaryNav(slug, propertyId).filter(allowed)
   const bottom = workspaceNav(slug).filter(allowed)
   const current = activeHref(pathname, [...main, ...bottom])
+  // The tab's title: "Đặt phòng · Khách sạn Demo Hà Nội · Digistay" (both
+  // sidebars render this; the same title twice changes nothing). From every
+  // entry, not only the role's: a page opened by its URL still says what it is.
+  const every = [...primaryNav(slug, propertyId), ...workspaceNav(slug)]
+  const page = every.find((item) => item.href === activeHref(pathname, every))
+  useDocumentTitle([page && t(page.key), propertyId ? property?.name : workspace.name])
+
+  // The menu scrolls when the window is short: a fade over its last visible
+  // items says there is more below, above the account block.
+  const navRef = React.useRef<HTMLElement>(null)
+  const [more, setMore] = React.useState(false)
+  React.useEffect(() => {
+    const nav = navRef.current
+    if (!nav) return
+    const update = () => setMore(nav.scrollTop + nav.clientHeight < nav.scrollHeight - 4)
+    update()
+    nav.addEventListener('scroll', update, { passive: true })
+    const observer = new ResizeObserver(update)
+    observer.observe(nav)
+    return () => {
+      nav.removeEventListener('scroll', update)
+      observer.disconnect()
+    }
+  }, [])
 
   const renderItem = (item: NavItem) => {
     const active = item.href === current
@@ -139,7 +164,7 @@ function SidebarContent({
         href={item.href}
         aria-current={active ? 'page' : undefined}
         className={cn(
-          'flex items-center h-10 lg:h-9 px-3 rounded-ctl text-sm transition-colors duration-160',
+          'flex items-center h-10 lg:h-8 px-3 rounded-ctl text-sm transition-colors duration-160',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-acc',
           active ? 'bg-acc-soft text-acc font-medium' : 'text-fg/80 hover:text-fg hover:bg-fg/5'
         )}
@@ -151,7 +176,7 @@ function SidebarContent({
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      <div className="px-4 pt-5 pb-3 shrink-0 flex items-center justify-between">
+      <div className="px-4 pt-3 pb-2 shrink-0 flex items-center justify-between">
         <Brand slug={slug} />
         {/* On phones the top bar has it; the drawer's close button sits here. */}
         <div className="hidden lg:block">
@@ -160,7 +185,7 @@ function SidebarContent({
       </div>
 
       {/* Context switcher: the hotel being managed, or the workspace. */}
-      <div className="px-3 pb-3 shrink-0">
+      <div className="px-3 pb-2 shrink-0">
         <Dropdown
           align="left"
           className="w-full"
@@ -199,15 +224,25 @@ function SidebarContent({
         </Dropdown>
       </div>
 
-      <nav aria-label={t('main')} className="flex-1 min-h-0 overflow-y-auto px-3 pb-4">
-        <div className="space-y-0.5">{main.map(renderItem)}</div>
-        {bottom.length > 0 && (
-          <>
-            <div className="my-3 mx-3 border-t border-line" role="separator" />
-            <div className="space-y-0.5">{bottom.map(renderItem)}</div>
-          </>
+      <div className="relative flex-1 min-h-0 flex flex-col">
+        <nav ref={navRef} aria-label={t('main')} className="flex-1 min-h-0 overflow-y-auto px-3 pb-2">
+          <div className="space-y-0.5">{main.map(renderItem)}</div>
+          {bottom.length > 0 && (
+            <>
+              <div className="my-2 mx-3 border-t border-line" role="separator" />
+              <div className="space-y-0.5">{bottom.map(renderItem)}</div>
+            </>
+          )}
+        </nav>
+        {more && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 bottom-0 flex h-12 items-end justify-center bg-gradient-to-t from-page via-page/80 to-transparent pb-0.5"
+          >
+            <ChevronDown className="h-4 w-4 text-muted" />
+          </div>
         )}
-      </nav>
+      </div>
 
       <UserBlock name={userName} email={userEmail} image={userImage} role={workspace.role} />
     </div>
@@ -220,42 +255,47 @@ function UserBlock({ name, email, image, role }: { name?: string; email?: string
   const theme = useTheme()
   const dark = theme?.preference === 'dark'
   const iconButton =
-    'w-9 h-9 rounded-ctl flex items-center justify-center text-muted hover:text-fg hover:bg-fg/5 transition-colors duration-160 ' +
+    'w-8 h-8 rounded-ctl flex items-center justify-center text-muted hover:text-fg hover:bg-fg/5 transition-colors duration-160 ' +
     'focus:outline-none focus-visible:ring-2 focus-visible:ring-acc disabled:opacity-40 disabled:cursor-not-allowed'
 
+  // The name has the block's whole width; the role shares the second line with the buttons.
   return (
-    <div className="shrink-0 border-t border-line px-3 py-3 flex items-center gap-2.5">
+    <div className="shrink-0 border-t border-line px-3 py-2.5 flex items-start gap-2.5">
       <Avatar src={image} name={name || t('user')} size="sm" />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-fg truncate" title={email}>
           {name || email || t('user')}
         </p>
-        <p className="text-xs text-muted truncate">{labels.role(role)}</p>
+        <div className="flex items-center justify-between gap-1">
+          <p className="min-w-0 text-xs text-muted truncate">{labels.role(role)}</p>
+          <div className="-mr-1 flex shrink-0 items-center">
+            {theme && (
+              <button
+                type="button"
+                onClick={() => theme.setPreference(dark ? 'light' : 'dark')}
+                aria-pressed={dark}
+                aria-label={t('darkTheme')}
+                title={theme.darkAvailable ? (dark ? t('toLight') : t('toDark')) : t('noDarkHere')}
+                className={iconButton}
+              >
+                {dark ? <Sun className="w-4 h-4" aria-hidden="true" /> : <Moon className="w-4 h-4" aria-hidden="true" />}
+              </button>
+            )}
+            <LanguageButton compact />
+            {/* signOut() sends NextAuth's CSRF token; the old bare form POST had none,
+                so NextAuth ignored it and the session survived. */}
+            <button
+              type="button"
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              aria-label={t('signOut')}
+              title={t('signOut')}
+              className={cn(iconButton, 'hover:text-err hover:bg-err-soft')}
+            >
+              <LogOut className="w-4 h-4" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
       </div>
-      {theme && (
-        <button
-          type="button"
-          onClick={() => theme.setPreference(dark ? 'light' : 'dark')}
-          aria-pressed={dark}
-          aria-label={t('darkTheme')}
-          title={theme.darkAvailable ? (dark ? t('toLight') : t('toDark')) : t('noDarkHere')}
-          className={iconButton}
-        >
-          {dark ? <Sun className="w-4 h-4" aria-hidden="true" /> : <Moon className="w-4 h-4" aria-hidden="true" />}
-        </button>
-      )}
-      <LanguageButton compact />
-      {/* signOut() sends NextAuth's CSRF token; the old bare form POST had none,
-          so NextAuth ignored it and the session survived. */}
-      <button
-        type="button"
-        onClick={() => signOut({ callbackUrl: '/login' })}
-        aria-label={t('signOut')}
-        title={t('signOut')}
-        className={cn(iconButton, 'hover:text-err hover:bg-err-soft')}
-      >
-        <LogOut className="w-4 h-4" aria-hidden="true" />
-      </button>
     </div>
   )
 }

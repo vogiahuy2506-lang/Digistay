@@ -29,7 +29,8 @@ import { prisma } from '@/lib/db'
 import { createBooking, createTenant, resetDatabase } from '@/test/integration/fixtures'
 import { FAKE_PDF, FakeMatbao, type FakeMatbaoAccount } from '@/test/integration/fake-matbao'
 import { clearMatbaoTokens } from './matbao-client'
-import { PUBLISH_LEASE_MS, connectEinvoice, formatNLap, type EinvoiceSettings } from './matbao'
+import { CREDENTIALS_UNREADABLE, PUBLISH_LEASE_MS, connectEinvoice, formatNLap, type EinvoiceSettings } from './matbao'
+import { encryptSecret, secretContext } from '@/lib/security/secret-box'
 import { POST as createInvoiceRoute } from '@/app/api/invoices/route'
 import { PUT as updateInvoiceRoute } from '@/app/api/invoices/[id]/route'
 import { POST as publishRoute } from '@/app/api/invoices/[id]/publish/route'
@@ -141,6 +142,57 @@ describe('connecting a property', () => {
     await expect(connectEinvoice(property.id, { ...SETTINGS(), password: 'sai' }, owner.id)).rejects.toThrow()
     const kept = await connectEinvoice(property.id, { ...SETTINGS(), password: undefined, vatCode: 10 }, owner.id)
     expect(kept).toMatchObject({ connected: true, vatCode: 10 })
+  })
+})
+
+describe('a password the keys cannot read', () => {
+  // As after DATA_ENCRYPTION_KEYS lost the key it was saved with: bound to another row, it fails to decrypt.
+  const scramble = (propertyId: string) =>
+    prisma.propertyEinvoice.update({
+      where: { propertyId },
+      data: {
+        password: encryptSecret('mat-khau-dung', secretContext('property_einvoice', 'another-row', 'password')),
+        webhookToken: encryptSecret('token', secretContext('property_einvoice', 'another-row', 'webhookToken')),
+      },
+    })
+  const settingsOf = async (propertyId: string) => {
+    const res = await settingsRoute(req('GET'), params(propertyId))
+    return { status: res.status, body: await res.json() }
+  }
+
+  it('the settings still load, flagged with what to do', async () => {
+    const { property } = await connectedTenant()
+    await scramble(property.id)
+
+    const { status, body } = await settingsOf(property.id)
+    expect(status).toBe(200)
+    expect(body.data).toMatchObject({ connected: true, series: SERIES, credentialsUnreadable: true, credentialsError: CREDENTIALS_UNREADABLE })
+    expect(body.data).not.toHaveProperty('webhookUrl')
+  })
+
+  it('publishing says so, claims nothing and calls nobody; saving the password again fixes it', async () => {
+    const { property, booking, owner } = await connectedTenant()
+    const { body: created } = await createInvoice(booking.id)
+    await scramble(property.id)
+
+    const { res, body } = await publish(created.data.id)
+    expect(res.status).toBe(409)
+    expect(body.error).toBe(CREDENTIALS_UNREADABLE)
+    expect(fake.createCalls).toHaveLength(0)
+    expect(await prisma.invoice.findUniqueOrThrow({ where: { id: created.data.id } })).toMatchObject({
+      status: created.data.status,
+      lookupCode: null,
+      publishError: CREDENTIALS_UNREADABLE,
+    })
+
+    // Saving without a password keeps the unreadable one: refused with the same words.
+    await expect(connectEinvoice(property.id, { ...SETTINGS(), password: undefined }, owner.id)).rejects.toThrow(CREDENTIALS_UNREADABLE)
+
+    await connectEinvoice(property.id, SETTINGS(), owner.id)
+    const { body: fixed } = await settingsOf(property.id)
+    expect(fixed.data).not.toHaveProperty('credentialsUnreadable')
+    expect(fixed.data.webhookUrl).toContain(`/api/webhooks/matbao/${property.id}/`)
+    expect((await publish(created.data.id)).res.status).toBe(200)
   })
 })
 

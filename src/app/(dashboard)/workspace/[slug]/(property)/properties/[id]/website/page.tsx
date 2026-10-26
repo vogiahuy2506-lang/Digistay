@@ -3,15 +3,17 @@
 import * as React from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { useDashLabels } from '@/lib/i18n/dash'
 import { PageContainer } from '@/components/layout'
+import { NoAccess } from '@/components/layout/no-access'
+import { useTheme } from '@/components/layout/theme-root'
+import { useWorkspaceRole } from '@/components/layout/workspace-context'
 import { toast } from '@/components/ui/toast'
 import { EnglishCopy } from '@/components/ui/english-copy'
 import { CoverPicker } from './cover-picker'
 import { ReviewsEditor, type ReviewEntry } from './reviews-editor'
 import { CustomDomainCard, type DomainSettings } from './custom-domain-card'
 import { useProperty } from '@/lib/hooks/use-property'
-import { Card, CardContent, CardHeader, CardTitle, Button, Input, Badge, Tabs, TabsList, TabsTrigger, TabsContent, Alert, AlertDescription } from '@/components/ui'
+import { Card, CardContent, CardHeader, CardTitle, Button, Input, Badge, Tabs, TabsList, TabsTrigger, TabsContent, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import {
   DndContext,
   closestCenter,
@@ -32,13 +34,18 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { normalizeFont } from '@/lib/public-site/font-stack'
+import { fontStack, normalizeFont } from '@/lib/public-site/font-stack'
+import { hotelAccentVariables, hotelButtonVariables, hotelHeadingVariables } from '@/lib/public-site/accent'
+import { routes } from '@/lib/utils/routes'
+// The hotel site's font faces, for the preview (the same ones its layout loads).
+import { siteFontVariables } from '@/app/(public)/[subdomain]/fonts'
+import { PreviewBlock, PreviewHeader, type PreviewSite } from './site-preview'
 import {
   Monitor, Smartphone, Eye, Save, Globe, Palette, Type, Image,
   Plus, Trash2, GripVertical, Settings, Layout, Search, ArrowRight,
   Check, X, ChevronRight, Shield, AlertCircle, Loader2, ExternalLink, RefreshCw, Star,
   LayoutGrid, Hotel, ImageIcon, MapPin, Phone, MousePointer2, Zap, Sparkles,
-  FileText, Clock, Undo2, Redo2, Copy, Wand2, ChevronDown, ChevronUp, ConciergeBell, UtensilsCrossed
+  FileText, Clock, Undo2, Redo2, Copy, Wand2, ChevronDown, ChevronUp, ConciergeBell, UtensilsCrossed, PanelBottom
 } from 'lucide-react'
 import { apiError } from '@/lib/i18n/api-errors'
 
@@ -164,7 +171,7 @@ interface Block {
   config: BlockConfig
 }
 
-type BlockTypeKey = 'HERO' | 'ROOMS' | 'AMENITIES' | 'ABOUT' | 'GALLERY' | 'REVIEWS' | 'MAP' | 'CONTACT' | 'CTA' | 'SERVICES' | 'RESTAURANT_MENU'
+type BlockTypeKey = 'HERO' | 'ROOMS' | 'AMENITIES' | 'ABOUT' | 'GALLERY' | 'REVIEWS' | 'MAP' | 'CONTACT' | 'CTA' | 'SERVICES' | 'RESTAURANT_MENU' | 'FOOTER'
 
 interface BlockType {
   type: BlockTypeKey
@@ -302,7 +309,47 @@ const blockTypes: BlockType[] = [
     bgGradient: 'from-orange-500 to-orange-600',
     defaultConfig: {}
   },
+  {
+    // The hotel's name, address and contacts at the bottom (FooterBlock); the default layout ends with it.
+    type: 'FOOTER',
+    name: 'Footer',
+    icon: PanelBottom,
+    color: 'text-muted',
+    bgGradient: 'from-slate-500 to-slate-600',
+    defaultConfig: {}
+  },
 ]
+
+/** The builder's key for a block's title, where the default layout saved `title`. */
+const TITLE_KEYS: Partial<Record<string, keyof BlockConfig>> = {
+  ROOMS: 'roomsTitle',
+  AMENITIES: 'amenitiesTitle',
+  ABOUT: 'aboutTitle',
+  GALLERY: 'galleryTitle',
+  CONTACT: 'contactTitle',
+}
+
+/**
+ * The default layout the site shows while no block is saved
+ * (src/lib/public-site/site.ts), as builder blocks: the builder starts from
+ * what the site shows instead of an empty page. Titles move to the builder's
+ * keys (the site reads both, so it shows the same); saving makes the layout
+ * the hotel's own.
+ */
+function blocksFromDefaults(defaults: PreviewSite['defaultBlocks']): Block[] {
+  return defaults.map((block, index) => {
+    const { title, ...rest } = block.config ?? {}
+    const key = TITLE_KEYS[block.type]
+    return {
+      id: block.id,
+      type: block.type,
+      name: blockTypes.find((b) => b.type === block.type)?.name ?? block.name,
+      isEnabled: true,
+      sortOrder: index,
+      config: (key && typeof title === 'string' ? { ...rest, [key]: title } : (block.config ?? {})) as BlockConfig,
+    }
+  })
+}
 
 // Website Templates
 interface WebsiteTemplate {
@@ -575,29 +622,21 @@ function BlockConfigPanel({
   const updateEnglish = (key: BlockTextKey, value: string) => updateConfig('en', { ...config.en, [key]: value })
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-panel rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b bg-fg/[0.03]">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${bgGradient} flex items-center justify-center shadow-lg`}>
-              <BlockIcon className="w-5 h-5 text-white" />
+    // The shared dialog: role="dialog", named by its header, Esc and focus kept inside.
+    <Modal isOpen onClose={onClose} size="lg">
+        <ModalHeader onClose={onClose}>
+            <div className={`w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br ${bgGradient} flex items-center justify-center shadow-lg`}>
+              <BlockIcon className="w-5 h-5 text-white" aria-hidden="true" />
             </div>
-            <div>
-              <h3 className="font-semibold text-fg">{t('heading', { name: text.blockName(block) })}</h3>
+            <div className="min-w-0">
+              <h2 className="font-semibold text-fg">{t('heading', { name: text.blockName(block) })}</h2>
               <p className="text-xs text-muted">{text.description(block.type)}</p>
             </div>
-          </div>
-          <button aria-label={tc('actions.close')} 
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-fg/5 transition-colors"
-          >
-            <X className="w-5 h-5 text-muted" />
-          </button>
-        </div>
+        </ModalHeader>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <ModalBody className="space-y-4">
+          {block.type === 'FOOTER' && <p className="rounded-box bg-fg/[0.03] p-3 text-sm text-muted">{t('footerHint')}</p>}
+
           {/* Hero Config */}
           {block.type === 'HERO' && (
             <>
@@ -698,7 +737,7 @@ function BlockConfigPanel({
                 <select
                   value={config.amenitiesColumns || 3}
                   onChange={(e) => updateConfig('amenitiesColumns', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border border-line rounded-ctl bg-raised text-fg text-base sm:text-sm"
                 >
                   <option value={2}>{t('columnCount', { count: 2 })}</option>
                   <option value={3}>{t('columnCount', { count: 3 })}</option>
@@ -723,7 +762,7 @@ function BlockConfigPanel({
                 <textarea
                   value={config.aboutContent || ''}
                   onChange={(e) => updateConfig('aboutContent', e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border border-line rounded-ctl bg-raised text-fg text-base sm:text-sm"
                   rows={4}
                   placeholder={t('placeholders.about')}
                 />
@@ -746,7 +785,7 @@ function BlockConfigPanel({
                 <select
                   value={config.galleryColumns || 3}
                   onChange={(e) => updateConfig('galleryColumns', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border border-line rounded-ctl bg-raised text-fg text-base sm:text-sm"
                 >
                   <option value={2}>{t('columnCount', { count: 2 })}</option>
                   <option value={3}>{t('columnCount', { count: 3 })}</option>
@@ -976,14 +1015,12 @@ function BlockConfigPanel({
               ))}
             </EnglishCopy>
           )}
-        </div>
+        </ModalBody>
 
-        {/* Footer */}
-        <div className="p-4 border-t bg-fg/[0.03]">
+        <ModalFooter>
           <Button onClick={onClose} className="w-full">{tc('actions.close')}</Button>
-        </div>
-      </div>
-    </div>
+        </ModalFooter>
+    </Modal>
   )
 }
 
@@ -1045,38 +1082,28 @@ function TemplateModal({
   onClose: () => void
 }) {
   const t = useTranslations('dash.website.templates')
-  const tc = useTranslations('dash.common')
   const text = useBlockText()
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-panel rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b bg-fg/[0.03]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg">
-              <Wand2 className="w-5 h-5 text-white" />
+    <Modal isOpen onClose={onClose} size="xl">
+        <ModalHeader onClose={onClose}>
+            <div className="w-10 h-10 shrink-0 rounded-xl bg-ink flex items-center justify-center shadow-lg">
+              <Wand2 className="w-5 h-5 text-on-ink" aria-hidden="true" />
             </div>
-            <div>
-              <h3 className="font-semibold text-fg">{t('choose')}</h3>
+            <div className="min-w-0">
+              <h2 className="font-semibold text-fg">{t('choose')}</h2>
               <p className="text-xs text-muted">{t('subtitle')}</p>
             </div>
-          </div>
-          <button aria-label={tc('actions.close')} 
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-fg/5 transition-colors"
-          >
-            <X className="w-5 h-5 text-muted" />
-          </button>
-        </div>
+        </ModalHeader>
 
         {/* Templates Grid */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <ModalBody className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {websiteTemplates.map((template) => {
               const TemplateIcon = template.icon
               return (
                 <button
                   key={template.id}
+                  type="button"
                   onClick={() => onSelect(template)}
                   className="p-4 rounded-xl border-2 border-line hover:border-acc hover:bg-acc-soft/30 transition-all text-left group"
                 >
@@ -1107,16 +1134,14 @@ function TemplateModal({
               )
             })}
           </div>
-        </div>
+        </ModalBody>
 
-        {/* Footer */}
-        <div className="p-4 border-t bg-fg/[0.03]">
+        <ModalFooter className="justify-center">
           <p className="text-sm text-muted text-center">
             {t('startBlank')}
           </p>
-        </div>
-      </div>
-    </div>
+        </ModalFooter>
+    </Modal>
   )
 }
 
@@ -1213,278 +1238,20 @@ function AvailableBlockCard({
   )
 }
 
-// Preview Block Component
-function PreviewBlock({ 
-  block, 
-  propertyData,
-  index 
-}: { 
-  block: Block
-  propertyData: any
-  index: number
-}) {
-  const t = useTranslations('dash.website.preview')
-  const labels = useDashLabels()
-  const text = useBlockText()
-  const blockTypeInfo = blockTypes.find(b => b.type === block.type)
-  const BlockIcon = blockTypeInfo?.icon || Layout
-  const bgGradient = blockTypeInfo?.bgGradient || 'from-slate-400 to-slate-500'
-  const config = block.config || {}
-
-  // Default property data if not provided
-  const propertyName = propertyData?.name || t('propertyName')
-  const propertyDescription = propertyData?.description || t('propertyDescription')
-
-  const renderBlockContent = () => {
-    switch (block.type) {
-      case 'HERO':
-        return (
-          <div className="relative h-64 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl overflow-hidden">
-            {(config.backgroundImage || propertyData?.images?.[0]?.url) && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={config.backgroundImage || propertyData.images[0].url} alt="" className="absolute inset-0 h-full w-full object-cover" />
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-              <h2 className="text-2xl font-bold mb-2">{config.heroTitle || propertyName}</h2>
-              <p className="text-muted mb-4">{config.heroSubtitle || propertyDescription}</p>
-              <button className="px-6 py-2 bg-panel text-fg rounded-lg font-medium">
-                {config.heroCtaText || t('bookNow')}
-              </button>
-            </div>
-          </div>
-        )
-      
-      case 'ROOMS':
-        return (
-          <div className="p-4 bg-panel rounded-xl border border-line">
-            <h3 className="text-lg font-semibold text-fg mb-4 flex items-center gap-2">
-              <Hotel className="w-5 h-5 text-ok" />
-              {config.roomsTitle || t('roomsTitle')}
-            </h3>
-            <div className={`grid gap-3 ${config.roomsDisplay === 'list' ? 'grid-cols-1' : 'grid-cols-2'}`}>
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-fg/5 rounded-lg p-3 flex gap-3">
-                  <div className="w-16 h-16 bg-fg/10 rounded-lg flex items-center justify-center">
-                    <Hotel className="w-6 h-6 text-muted" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-fg">{t('roomName', { name: ['Deluxe', 'Suite', 'Standard'][i-1] })}</p>
-                    <p className="text-sm text-muted">{t('roomMeta')}</p>
-                    <p className="text-sm font-medium text-ok">{t('roomPrice', { price: labels.money(500000) })}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )
-      
-      case 'AMENITIES':
-        const amenities = [
-          { icon: '📶', name: t('amenities.wifi') },
-          { icon: '🅿️', name: t('amenities.parking') },
-          { icon: '🏊', name: t('amenities.pool') },
-          { icon: '🍽️', name: t('amenities.restaurant') },
-          { icon: '💆', name: t('amenities.spa') },
-          { icon: '🎤', name: t('amenities.karaoke') },
-        ]
-        const cols = config.amenitiesColumns || 3
-        return (
-          <div className="p-4 bg-panel rounded-xl border border-line">
-            <h3 className="text-lg font-semibold text-fg mb-4 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-warn" />
-              {config.amenitiesTitle || t('amenitiesTitle')}
-            </h3>
-            <div className={`grid gap-2`} style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
-              {amenities.slice(0, cols * 2).map((item, i) => (
-                <div key={i} className="flex items-center gap-2 p-2 bg-fg/[0.03] rounded-lg">
-                  <span>{item.icon}</span>
-                  <span className="text-sm text-fg">{item.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )
-      
-      case 'ABOUT':
-        return (
-          <div className="p-4 bg-panel rounded-xl border border-line">
-            <h3 className="text-lg font-semibold text-fg mb-4 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-refund" />
-              {config.aboutTitle || t('aboutTitle')}
-            </h3>
-            <p className="text-muted leading-relaxed">
-              {config.aboutContent || propertyDescription}
-            </p>
-          </div>
-        )
-      
-      case 'GALLERY':
-        return (
-          <div className="p-4 bg-panel rounded-xl border border-line">
-            <h3 className="text-lg font-semibold text-fg mb-4 flex items-center gap-2">
-              <ImageIcon className="w-5 h-5 text-refund" />
-              {config.galleryTitle || t('galleryTitle')}
-            </h3>
-            <div className={`grid gap-2`} style={{ gridTemplateColumns: `repeat(${config.galleryColumns || 3}, 1fr)` }}>
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="aspect-square bg-fg/5 rounded-lg flex items-center justify-center">
-                  <ImageIcon className="w-6 h-6 text-muted" />
-                </div>
-              ))}
-            </div>
-          </div>
-        )
-      
-      case 'REVIEWS':
-        // The hotel's own reviews, as the site shows them; none: the site hides the block.
-        const reviews = (config.reviews ?? [])
-          .filter((r) => r.name?.trim() && r.text?.trim())
-          .map((r) => ({ name: r.source ? `${r.name} · ${r.source}` : r.name, rating: r.rating, comment: r.text }))
-        if (reviews.length === 0) {
-          return (
-            <div className="p-4 bg-panel rounded-xl border border-dashed border-line text-center">
-              <Star className="w-5 h-5 text-muted mx-auto mb-2" />
-              <p className="text-sm text-muted">{t('reviews.none')}</p>
-            </div>
-          )
-        }
-        return (
-          <div className="p-4 bg-panel rounded-xl border border-line">
-            <h3 className="text-lg font-semibold text-fg mb-4 flex items-center gap-2">
-              <Star className="w-5 h-5 text-warn" />
-              {config.reviewsTitle || t('reviewsTitle')}
-            </h3>
-            <div className="space-y-3">
-              {reviews.slice(0, config.reviewsLimit || 3).map((r, i) => (
-                <div key={i} className="p-3 bg-fg/[0.03] rounded-lg">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium text-fg">{r.name}</span>
-                    <div className="flex">
-                      {[...Array(r.rating)].map((_, j) => (
-                        <Star key={j} className="w-3 h-3 text-warn fill-warn" />
-                      ))}
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted">{r.comment}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )
-      
-      case 'MAP':
-        return (
-          <div className="p-4 bg-panel rounded-xl border border-line">
-            <h3 className="text-lg font-semibold text-fg mb-4 flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-err" />
-              {t('mapTitle')}
-            </h3>
-            <div className="h-40 bg-fg/5 rounded-lg flex items-center justify-center">
-              <div className="text-center">
-                <MapPin className="w-8 h-8 text-err mx-auto mb-2" />
-                <p className="text-sm text-muted">{config.mapAddress || t('mapNoLocation')}</p>
-                <p className="text-xs text-muted mt-1">{t('mapPreview')}</p>
-              </div>
-            </div>
-          </div>
-        )
-      
-      case 'CONTACT':
-        return (
-          <div className="p-4 bg-panel rounded-xl border border-line">
-            <h3 className="text-lg font-semibold text-fg mb-4 flex items-center gap-2">
-              <Phone className="w-5 h-5 text-info" />
-              {config.contactTitle || t('contactTitle')}
-            </h3>
-            <div className="space-y-2 mb-4">
-              {config.contactPhone && (
-                <p className="text-sm text-muted flex items-center gap-2">
-                  <Phone className="w-4 h-4" /> {config.contactPhone}
-                </p>
-              )}
-              {config.contactEmail && (
-                <p className="text-sm text-muted flex items-center gap-2">
-                  <span>✉️</span> {config.contactEmail}
-                </p>
-              )}
-              {config.contactAddress && (
-                <p className="text-sm text-muted flex items-center gap-2">
-                  <MapPin className="w-4 h-4" /> {config.contactAddress}
-                </p>
-              )}
-            </div>
-            {config.contactFormEnabled !== false && (
-              <div className="space-y-2">
-                <input type="text" placeholder={t('form.name')} className="w-full px-3 py-2 border rounded-lg text-sm" disabled />
-                <input type="email" placeholder={t('form.email')} className="w-full px-3 py-2 border rounded-lg text-sm" disabled />
-                <textarea placeholder={t('form.message')} className="w-full px-3 py-2 border rounded-lg text-sm" rows={2} disabled />
-                <button className="w-full py-2 bg-ink text-on-ink rounded-lg text-sm font-medium" disabled>
-                  {t('form.send')}
-                </button>
-              </div>
-            )}
-          </div>
-        )
-      
-      case 'SERVICES':
-      case 'RESTAURANT_MENU': {
-        const menu = block.type === 'RESTAURANT_MENU'
-        const Icon = menu ? UtensilsCrossed : ConciergeBell
-        return (
-          <div className="p-4 bg-panel rounded-xl border border-line">
-            <h3 className="text-lg font-semibold text-fg mb-2 flex items-center gap-2">
-              <Icon className="w-5 h-5 text-acc" />
-              {(menu ? config.menuTitle : config.servicesTitle) || t(menu ? 'menuTitle' : 'servicesTitle')}
-            </h3>
-            <p className="text-sm text-muted">{t(menu ? 'menuFrom' : 'servicesFrom')}</p>
-          </div>
-        )
-      }
-
-      case 'CTA':
-        return (
-          <div className="p-6 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl text-white text-center">
-            <h3 className="text-xl font-bold mb-2">{config.ctaTitle || t('ctaTitle')}</h3>
-            <p className="text-indigo-100 mb-4">{config.ctaSubtitle || t('ctaSubtitle')}</p>
-            <button className="px-6 py-2 bg-panel text-info rounded-lg font-medium">
-              {config.ctaButtonText || t('bookNow')}
-            </button>
-          </div>
-        )
-      
-      default:
-        return (
-          <div className="p-6 bg-fg/5 rounded-xl text-center">
-            <div className={`w-14 h-14 rounded-2xl mx-auto mb-3 bg-gradient-to-br ${bgGradient} flex items-center justify-center`}>
-              <BlockIcon className="w-7 h-7 text-white" />
-            </div>
-            <p className="font-semibold text-fg">{text.blockName(block)}</p>
-          </div>
-        )
-    }
-  }
-
-  return (
-    <div className="relative group">
-      {renderBlockContent()}
-      <div className="absolute -top-2 -right-2">
-        <Badge className="bg-ink text-on-ink text-xs shadow-lg">
-          #{index + 1}
-        </Badge>
-      </div>
-    </div>
-  )
-}
-
 // Main Component
 export default function WebsiteBuilderPage() {
   const router = useRouter()
   const params = useParams()
   const propertyId = params.id as string
+  const slug = params.slug as string
   const { property } = useProperty()
   const t = useTranslations('dash.website')
   const tc = useTranslations('dash.common')
+  const tn = useTranslations('dash.common.nav')
+  const theme = useTheme()
+  // Owners, ADMIN and MANAGER (the blocks and settings APIs refuse anyone else; the sidebar hides it).
+  const role = useWorkspaceRole()
+  const canEdit = role === null || role === 'ADMIN' || role === 'MANAGER'
 
   const [settings, setSettings] = React.useState<WebsiteSettings | null>(null)
   const [blocks, setBlocks] = React.useState<Block[]>([])
@@ -1498,6 +1265,10 @@ export default function WebsiteBuilderPage() {
   const [previewBlocks, setPreviewBlocks] = React.useState<Block[]>([])
   const [showTemplateModal, setShowTemplateModal] = React.useState(false)
   const [propertyData, setPropertyData] = React.useState<any>(null)
+  // What the site shows (real rooms, prices, photos...), for the preview.
+  const [site, setSite] = React.useState<PreviewSite | null>(null)
+  // No layout saved yet: the blocks are the default layout the site shows.
+  const [usingDefaults, setUsingDefaults] = React.useState(false)
   
   // Undo/Redo state
   const [history, setHistory] = React.useState<Block[][]>([])
@@ -1522,8 +1293,12 @@ export default function WebsiteBuilderPage() {
 
   // Load data
   React.useEffect(() => {
+    if (!canEdit) {
+      setIsLoading(false)
+      return
+    }
     fetchWebsiteData()
-  }, [propertyId])
+  }, [propertyId, canEdit])
 
   const fetchWebsiteData = async () => {
     try {
@@ -1539,7 +1314,15 @@ export default function WebsiteBuilderPage() {
       const blocksData = await blocksResponse.json()
       
       if (blocksData.success) {
-        setBlocks(blocksData.data.blocks || [])
+        const saved: Block[] = blocksData.data.blocks || []
+        const preview: PreviewSite | null = blocksData.data.site ?? null
+        setSite(preview)
+        if (saved.length === 0 && preview?.defaultBlocks.length) {
+          setBlocks(blocksFromDefaults(preview.defaultBlocks))
+          setUsingDefaults(true)
+        } else {
+          setBlocks(saved)
+        }
         if (blocksData.data.settings) {
           setSettings(blocksData.data.settings)
         }
@@ -1607,6 +1390,7 @@ export default function WebsiteBuilderPage() {
         return false
       }
       if (next) setSettings(next)
+      setUsingDefaults(false)
       toast.success(successMessage)
       return true
     } catch (err) {
@@ -1713,6 +1497,33 @@ export default function WebsiteBuilderPage() {
   const activeBlock = activeId ? (previewBlocks.length > 0 ? previewBlocks.find(b => b.id === activeId) : blocks.find(b => b.id === activeId)) : null
   const selectedBlock = selectedBlockId ? blocks.find(b => b.id === selectedBlockId) : null
 
+  // The preview is the hotel's site: its own look (data-surface="site"), its
+  // colors and fonts as chosen in the Style tab, light or dark as the site
+  // shows it to this viewer (the same ds-theme choice as the dashboard).
+  const siteTheme = theme?.preference === 'dark' && theme.darkAvailable ? 'dark' : 'light'
+  const siteStyle = React.useMemo(
+    () =>
+      ({
+        ...hotelAccentVariables(settings?.primaryColor),
+        ...hotelButtonVariables(settings?.buttonColor),
+        ...hotelHeadingVariables(settings?.headingColor),
+        '--site-body': fontStack(settings?.fontFamily, 'body'),
+        '--site-heading': fontStack(settings?.headingFont, 'heading'),
+      }) as React.CSSProperties,
+    [settings?.primaryColor, settings?.buttonColor, settings?.headingColor, settings?.fontFamily, settings?.headingFont]
+  )
+  // Where guests open it: the verified custom domain, else <subdomain>.digistay.vn (the sidebar's address).
+  const customDomain = settings?.customDomain && settings.domainVerificationStatus === 'verified' ? settings.customDomain : null
+  const siteAddress = customDomain ?? (property ? `${property.subdomain}.digistay.vn` : '')
+
+  if (!canEdit) {
+    return (
+      <PageContainer>
+        <NoAccess hint={t('noAccess')} backHref={routes.property(slug, propertyId)} backLabel={tn('overview')} />
+      </PageContainer>
+    )
+  }
+
   if (isLoading) {
     return (
       <PageContainer>
@@ -1731,7 +1542,7 @@ export default function WebsiteBuilderPage() {
           <Button 
             variant="ghost" 
             size="sm"
-            onClick={() => router.push(`/properties/${propertyId}`)}
+            onClick={() => router.push(routes.property(slug, propertyId))}
             className="gap-2"
           >
             <ChevronRight className="w-4 h-4 rotate-180" />
@@ -1889,6 +1700,9 @@ export default function WebsiteBuilderPage() {
                       {t('blocks.count', { count: blocks.length })}
                     </Badge>
                   </div>
+                  {usingDefaults && (
+                    <p className="mb-3 rounded-box bg-info-soft px-3 py-2 text-xs text-info">{t('blocks.defaultLayout')}</p>
+                  )}
 
                   {blocks.length === 0 ? (
                     <div className="text-center py-10 bg-info-soft/40 rounded-xl border-2 border-dashed border-info/30">
@@ -2022,7 +1836,7 @@ export default function WebsiteBuilderPage() {
                     <select
                       value={normalizeFont(settings?.fontFamily, 'body')}
                       onChange={(e) => setSettings({ ...settings!, fontFamily: e.target.value })}
-                      className="w-full mt-1 px-3 py-2 border rounded-lg"
+                      className="w-full mt-1 px-3 py-2 border border-line rounded-ctl bg-raised text-fg text-base sm:text-sm"
                     >
                       {bodyFonts.map((font) => (
                         <option key={font.value} value={font.value}>{`${font.value} - ${t(`style.fontTraits.${font.trait}`)}`}</option>
@@ -2034,7 +1848,7 @@ export default function WebsiteBuilderPage() {
                     <select
                       value={normalizeFont(settings?.headingFont, 'heading')}
                       onChange={(e) => setSettings({ ...settings!, headingFont: e.target.value })}
-                      className="w-full mt-1 px-3 py-2 border rounded-lg"
+                      className="w-full mt-1 px-3 py-2 border border-line rounded-ctl bg-raised text-fg text-base sm:text-sm"
                     >
                       {headingFonts.map((font) => (
                         <option key={font.value} value={font.value}>{`${font.value} - ${t(`style.fontTraits.${font.trait}`)}`}</option>
@@ -2064,7 +1878,7 @@ export default function WebsiteBuilderPage() {
                       value={settings?.metaDescription || ''}
                       onChange={(e) => setSettings({ ...settings!, metaDescription: e.target.value })}
                       placeholder={t('settings.metaDescriptionPlaceholder')}
-                      className="w-full mt-1 px-3 py-2 border rounded-lg"
+                      className="w-full mt-1 px-3 py-2 border border-line rounded-ctl bg-raised text-fg text-base sm:text-sm"
                       rows={3}
                     />
                   </div>
@@ -2132,34 +1946,38 @@ export default function WebsiteBuilderPage() {
         {/* Preview Area */}
         <div className="xl:col-span-3">
           <Card className="overflow-hidden shadow-lg border-line">
-            {/* The hotel website is light-only, so its preview stays light in the dark dashboard. */}
-            <div data-theme="light" className={`bg-fg/5 border-b border-line p-4 ${previewMode === 'mobile' ? 'max-w-[420px] mx-auto' : ''}`}>
-              {/* Browser Chrome */}
+            <div className={`bg-fg/5 border-b border-line p-4 ${previewMode === 'mobile' ? 'max-w-[420px] mx-auto' : ''}`}>
+              {/* Browser Chrome (the dashboard's colors) */}
               <div className="bg-panel rounded-t-xl shadow-sm border border-line overflow-hidden">
-                {/* Traffic Lights */}
                 <div className="bg-fg/5 px-4 py-2.5 flex items-center gap-3 border-b border-line">
-                  <div className="flex gap-1.5">
+                  <div className="flex gap-1.5" aria-hidden="true">
                     <div className="w-3 h-3 rounded-full bg-err"></div>
                     <div className="w-3 h-3 rounded-full bg-warn"></div>
                     <div className="w-3 h-3 rounded-full bg-ok"></div>
                   </div>
-                  <div className="flex-1 bg-fg/[0.03] rounded-lg px-4 py-1.5 text-sm text-muted flex items-center gap-2">
-                    <Globe className="w-3.5 h-3.5" />
-                    {settings?.customDomain || `${propertyId.slice(0, 8)}...digistay.vn`}
-                    {settings?.sslEnabled && <Shield className="w-3.5 h-3.5 text-ok" />}
+                  <div className="flex-1 min-w-0 bg-fg/[0.03] rounded-lg px-4 py-1.5 text-sm text-muted flex items-center gap-2">
+                    <Globe className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    <span className="truncate">{siteAddress}</span>
+                    {customDomain && settings?.sslEnabled && <Shield className="w-3.5 h-3.5 shrink-0 text-ok" aria-hidden="true" />}
                   </div>
                 </div>
-                
-                {/* Website Preview Content */}
-                <div className={`min-h-[600px] bg-panel ${previewMode === 'mobile' ? 'max-h-[700px] overflow-y-auto' : ''}`}>
+
+                {/* Website Preview Content: the hotel's site */}
+                <div
+                  data-surface="site"
+                  data-theme={siteTheme}
+                  data-site-heading={settings?.headingColor ? '' : undefined}
+                  style={siteStyle}
+                  className={`${siteFontVariables} min-h-[600px] bg-page text-fg font-site-body ${previewMode === 'mobile' ? 'max-h-[700px] overflow-y-auto' : ''}`}
+                >
                   {/* Dragging indicator */}
                   {isDragging && (
-                    <div className="sticky top-0 z-50 bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-4 py-2 text-sm font-medium flex items-center gap-2 shadow-lg">
-                      <div className="w-2 h-2 rounded-full bg-panel animate-pulse"></div>
+                    <div className="sticky top-0 z-50 bg-ink text-on-ink px-4 py-2 text-sm font-medium flex items-center gap-2 shadow-lg">
+                      <div className="w-2 h-2 rounded-full bg-on-ink animate-pulse"></div>
                       {t('canvas.dragging')}
                     </div>
                   )}
-                  
+
                   {previewBlocks.length === 0 && !isDragging ? (
                     <div className="flex flex-col items-center justify-center h-full py-20 text-center px-6">
                       <div className="w-20 h-20 rounded-2xl bg-fg/5 flex items-center justify-center mb-4">
@@ -2175,30 +1993,36 @@ export default function WebsiteBuilderPage() {
                       </Button>
                     </div>
                   ) : (
-                    <div className="space-y-4 p-4">
-                      {(isDragging ? previewBlocks : blocks).filter(b => b.isEnabled).map((block, index) => {
+                    <div>
+                      {site && (
+                        <PreviewHeader
+                          site={site}
+                          types={blocks.filter((b) => b.isEnabled).map((b) => b.type)}
+                          compact={previewMode === 'mobile'}
+                        />
+                      )}
+                      {site && (isDragging ? previewBlocks : blocks).filter(b => b.isEnabled).map((block, index) => {
                         const isBeingDragged = isDragging && activeId === block.id
-                        
+
                         return (
-                          <div 
-                            key={block.id} 
+                          <div
+                            key={block.id}
                             className={`
-                              rounded-xl border-2 transition-all duration-300
-                              ${isBeingDragged 
-                                ? 'border-info/30 bg-info-soft scale-95 opacity-50' 
-                                : 'border-transparent hover:border-line hover:bg-fg/[0.03]'
+                              relative border-2 transition-all duration-300
+                              ${isBeingDragged
+                                ? 'border-info/40 bg-info-soft opacity-50'
+                                : 'border-transparent hover:border-acc/40'
                               }
                             `}
                           >
-                            <PreviewBlock 
-                              block={block} 
-                              propertyData={propertyData}
-                              index={index}
-                            />
+                            <PreviewBlock block={block} site={site} compact={previewMode === 'mobile'} />
+                            <span className="absolute right-2 top-2 rounded-ctl bg-fg/70 px-1.5 py-0.5 text-[11px] font-medium text-page shadow" aria-hidden="true">
+                              #{index + 1}
+                            </span>
                           </div>
                         )
                       })}
-                      
+
                       {(isDragging ? previewBlocks : blocks).filter(b => b.isEnabled).length === 0 && (
                         <div className="text-center py-12">
                           <p className="text-muted">{t('canvas.allHidden')}</p>

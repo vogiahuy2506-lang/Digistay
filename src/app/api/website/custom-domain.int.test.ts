@@ -130,6 +130,22 @@ describe('POST /api/website/domain/verify', () => {
     expect(await settingsOf(a.property.id)).toEqual({ customDomain: HOST, domainVerificationStatus: 'verified' })
   })
 
+  it("offers the CNAME (www) only once the site's own subdomain resolves; A records for the root domain", async () => {
+    const a = await createTenant()
+    signInAs(a.owner)
+
+    dns({})
+    const before = (await (await verifyAs(a.property.id)).json()).data.records
+    expect(before.cnameReady).toBe(false)
+    expect(before.a).toEqual([{ type: 'A', name: HOST, value: OUR_IP }])
+
+    dns({ a: { [`${a.property.subdomain}.${ROOT}`]: [OUR_IP] } })
+    const after = (await (await verifyAs(a.property.id)).json()).data.records
+    expect(after.cnameReady).toBe(true)
+    expect(after.cname).toEqual({ type: 'CNAME', name: HOST, value: `${a.property.subdomain}.${ROOT}` })
+    expect(await settingsOf(a.property.id)).toBeNull()
+  })
+
   it('a domain another site holds answers 409 and stays with that site', async () => {
     // Hotel A left it attached and its DNS still points at Digistay; B controls
     // the domain now and has its own records right.

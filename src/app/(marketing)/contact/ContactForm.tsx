@@ -108,6 +108,9 @@ export function ContactForm() {
 
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-5">
+      <p className="text-[13px] text-muted">
+        <span aria-hidden className="text-err">*</span> {t('form.requiredNote')}
+      </p>
       {(state === 'failed' || state === 'tooMany') && (
         <p role="alert" className="rounded-ctl border border-err/30 bg-err-soft px-4 py-3 text-[14px] leading-[1.55] text-fg">
           <b className="font-semibold text-err">⚠ {t('errors.failTitle')}</b>{' '}
@@ -122,12 +125,16 @@ export function ContactForm() {
 
       <div className="grid gap-5 sm:grid-cols-2 sm:gap-x-5 sm:gap-y-[18px]">
         <label className="flex flex-col gap-2">
-          <span className="text-[14px] font-medium">{t('form.name')}</span>
+          <span className="text-[14px] font-medium">
+            {t('form.name')}
+            <Required />
+          </span>
           <input
             value={values.name}
             onChange={set('name')}
             disabled={busy}
             autoComplete="name"
+            aria-required="true"
             aria-invalid={errors.includes('name')}
             aria-describedby={described('name')}
             className={input(errors.includes('name'))}
@@ -146,7 +153,10 @@ export function ContactForm() {
           />
         </label>
         <label className="flex flex-col gap-2">
-          <span className="text-[14px] font-medium">{t('form.email')}</span>
+          <span className="text-[14px] font-medium">
+            {t('form.email')}
+            <Required />
+          </span>
           <input
             type="email"
             inputMode="email"
@@ -154,6 +164,7 @@ export function ContactForm() {
             onChange={set('email')}
             disabled={busy}
             autoComplete="email"
+            aria-required="true"
             aria-invalid={errors.includes('email')}
             aria-describedby={described('email')}
             className={input(errors.includes('email'))}
@@ -161,7 +172,10 @@ export function ContactForm() {
           {error('email')}
         </label>
         <label className="flex flex-col gap-2">
-          <span className="text-[14px] font-medium">{t('form.phone')}</span>
+          <span className="text-[14px] font-medium">
+            {t('form.phone')}
+            <Required />
+          </span>
           <input
             type="tel"
             inputMode="tel"
@@ -169,6 +183,7 @@ export function ContactForm() {
             onChange={set('phone')}
             disabled={busy}
             autoComplete="tel"
+            aria-required="true"
             aria-invalid={errors.includes('phone')}
             aria-describedby={described('phone')}
             className={input(errors.includes('phone'))}
@@ -210,13 +225,17 @@ export function ContactForm() {
       </fieldset>
 
       <label className="flex flex-col gap-2">
-        <span className="text-[14px] font-medium">{t('form.message')}</span>
+        <span className="text-[14px] font-medium">
+          {t('form.message')}
+          <Required />
+        </span>
         <textarea
           value={values.message}
           onChange={set('message')}
           disabled={busy}
           rows={5}
           placeholder={t(`form.hints.${values.topic}`)}
+          aria-required="true"
           aria-invalid={errors.includes('message')}
           aria-describedby={described('message')}
           className={cn(input(errors.includes('message')), 'h-auto min-h-[150px] resize-y py-3 leading-[1.6]')}
@@ -225,7 +244,7 @@ export function ContactForm() {
       </label>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-        <button type="submit" disabled={busy} className={cn(inkButton, 'h-[52px] px-7 text-[15px] disabled:bg-muted')}>
+        <button type="submit" disabled={busy} className={cn(inkButton, 'h-[52px] shrink-0 whitespace-nowrap px-7 text-[15px] disabled:bg-muted')}>
           {busy ? t('form.sending') : state === 'failed' || state === 'tooMany' ? t('form.retry') : t('form.submit')}
         </button>
         <p className="text-[13px] leading-[1.55] text-muted">
@@ -239,5 +258,14 @@ export function ContactForm() {
         </p>
       </div>
     </form>
+  )
+}
+
+/** The mark of a field the form cannot be sent without (the input says so with aria-required). */
+function Required() {
+  return (
+    <span aria-hidden className="ml-0.5 text-err">
+      *
+    </span>
   )
 }
