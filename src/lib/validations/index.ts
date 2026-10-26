@@ -81,13 +81,24 @@ export const inviteMemberSchema = z.object({
 // Property Validations
 export const propertyTypeEnum = z.enum(['HOTEL', 'HOMESTAY', 'RESORT', 'RESTAURANT', 'VILLA', 'MOTEL', 'OTHER'])
 
+/**
+ * A property's province and ward (src/lib/vn-admin/location.ts): codes from
+ * the pickers, or a province's name. The ward's name and `district` (gone
+ * since July 2025) are not taken from the client.
+ */
+const propertyLocationFields = {
+  provinceCode: z.string().max(10).optional(),
+  wardCode: z.string().max(10).nullable().optional(),
+  city: z.string().max(100).optional(),
+}
+
 export const createPropertySchema = z.object({
   name: z.string().min(2, 'Tên cơ sở phải có ít nhất 2 ký tự').max(200, 'Tên cơ sở không được quá 200 ký tự'),
   type: propertyTypeEnum,
   address: z.string().min(5, 'Địa chỉ phải có ít nhất 5 ký tự'),
-  city: z.string().min(2, 'Thành phố phải có ít nhất 2 ký tự'),
-  district: z.string().optional(),
-  ward: z.string().optional(),
+  // Province and ward: checked against the official lists by resolveLocation
+  // (src/lib/vn-admin/location.ts), which also needs one of these two.
+  ...propertyLocationFields,
   country: z.string().default('Vietnam'),
   postalCode: z.string().optional(),
   phone: z.string().optional(),
@@ -107,9 +118,7 @@ export const updatePropertySchema = z.object({
   name: z.string().min(2, 'Tên cơ sở phải có ít nhất 2 ký tự').max(200, 'Tên cơ sở không được quá 200 ký tự').optional(),
   type: propertyTypeEnum.optional(),
   address: z.string().min(5, 'Địa chỉ phải có ít nhất 5 ký tự').optional(),
-  city: z.string().min(2, 'Thành phố phải có ít nhất 2 ký tự').optional(),
-  district: z.string().optional(),
-  ward: z.string().optional(),
+  ...propertyLocationFields,
   country: z.string().optional(),
   postalCode: z.string().optional(),
   phone: z.string().optional(),

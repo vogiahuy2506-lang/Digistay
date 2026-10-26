@@ -295,9 +295,15 @@ model Property {
   
   // Address
   address     String
+  /// The province's name (one of the 34 since July 2025, src/lib/vn-admin; older rows may hold an earlier one).
   city        String
+  /// Quận / huyện of rows saved before July 2025, when that level was abolished; no longer written by the forms.
   district    String?
+  /// The ward's name with its type ("Phường Ba Đình"), from the official list.
   ward        String?
+  /// Official codes of the province ("01") and ward ("00004"), to select them again in the pickers.
+  provinceCode String?
+  wardCode     String?
   country     String   @default("Vietnam")
   postalCode  String?
   latitude    Float?

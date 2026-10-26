@@ -5,6 +5,7 @@ import { createPropertySchema } from '@/lib/validations'
 import { generateSlug, generateSubdomain } from '@/lib/utils'
 import { planResponse } from '@/lib/billing/guard'
 import { getWorkspaceRole } from '@/lib/auth/rbac'
+import { locationColumns, resolveLocation } from '@/lib/vn-admin/location'
 
 // Check if user has access to workspace
 async function checkWorkspaceAccess(workspaceId: string, userId: string) {
@@ -147,7 +148,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { name, subdomain, ...rest } = validation.data
+    const { name, subdomain, provinceCode, wardCode, city, ...rest } = validation.data
+    // One of the 34 provinces, and the ward one of its own (src/lib/vn-admin).
+    const place = resolveLocation({ provinceCode, wardCode, city })
+    if (!place.ok || !place.location) {
+      return NextResponse.json(
+        { success: false, error: place.ok ? 'Vui lòng chọn tỉnh/thành phố' : place.error },
+        { status: 400 }
+      )
+    }
 
     // Generate slug and check uniqueness
     const slug = generateSlug(name)
@@ -178,6 +187,7 @@ export async function POST(request: NextRequest) {
     const property = await prisma.property.create({
       data: {
         ...rest,
+        ...locationColumns(place.location),
         name,
         slug,
         subdomain,
