@@ -8,6 +8,7 @@ import { WorkspaceRoles } from '@/lib/auth/rbac'
 import { lockBooking, syncBookingPayments, CLOSED_BOOKING_STATUSES } from '@/lib/payments/booking-payments'
 import { PayosError, createPayosLink, newOrderCode } from '@/lib/payments/payos'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
+import { managerWorkspaces, seesMoneyTotals, staffWorkspaces } from './money-access'
 
 // PAYOS: a VietQR link from the property's own PayOS account, confirmed
 // automatically by webhook (src/lib/payments/payos.ts).
@@ -26,8 +27,10 @@ class PaymentRequestError extends Error {
 /**
  * GET /api/payments — one page of the caller's payments, newest first.
  * Filters (propertyId, bookingId, status, method, q, startDate/endDate as
- * yyyy-mm-dd) run in the database. `stats` sums the property's (or the
- * booking's) payments by status whatever the other filters.
+ * yyyy-mm-dd) run in the database. Staff only (a USER member does not work
+ * payments). `stats` sums the property's (or the booking's) payments by
+ * status whatever the other filters; it is null unless the caller may see
+ * money totals (owner, ADMIN, MANAGER: money-access.ts).
  */
 export async function GET(request: NextRequest) {
   try {
@@ -50,20 +53,19 @@ export async function GET(request: NextRequest) {
     const q = searchParam(searchParams)
     const { page, limit, skip } = pageParams(searchParams)
 
-    // Always restrict to properties in workspaces the user owns or belongs
-    // to. Without this, any account could list every property's payments.
-    // A propertyId/bookingId from another tenant just yields an empty list.
+    // Always restrict to properties in workspaces the user owns or works in
+    // as staff. Without this, any account could list every property's
+    // payments. A propertyId/bookingId from another tenant just yields an
+    // empty list.
+    const narrow = { ...(propertyId && { propertyId }), ...(bookingId && { bookingId }) }
     const scope: Prisma.PaymentWhereInput = {
-      property: {
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id } } },
-          ],
-        },
-      },
-      ...(propertyId && { propertyId }),
-      ...(bookingId && { bookingId }),
+      property: { workspace: staffWorkspaces(session.user.id) },
+      ...narrow,
+    }
+    // Totals only over the workspaces the caller manages.
+    const totalsScope: Prisma.PaymentWhereInput = {
+      property: { workspace: managerWorkspaces(session.user.id) },
+      ...narrow,
     }
     const contains = (value: string) => ({ contains: value, mode: 'insensitive' as const })
     const where: Prisma.PaymentWhereInput = {
@@ -82,7 +84,7 @@ export async function GET(request: NextRequest) {
       }),
     }
 
-    const [payments, total, byStatus] = await Promise.all([
+    const [payments, total, byStatus, withTotals] = await Promise.all([
       prisma.payment.findMany({
         where,
         orderBy: { createdAt: 'desc' },
@@ -105,7 +107,8 @@ export async function GET(request: NextRequest) {
         },
       }),
       prisma.payment.count({ where }),
-      prisma.payment.groupBy({ by: ['status'], where: scope, _count: { _all: true }, _sum: { amount: true } }),
+      prisma.payment.groupBy({ by: ['status'], where: totalsScope, _count: { _all: true }, _sum: { amount: true } }),
+      seesMoneyTotals(session.user.id, propertyId),
     ])
 
     const of = (...statuses: string[]) => {
@@ -117,16 +120,18 @@ export async function GET(request: NextRequest) {
       success: true,
       data: payments,
       pagination: paginationOf(page, limit, total),
-      stats: {
-        total: byStatus.reduce((n, r) => n + (r._sum.amount ?? 0), 0),
-        count: byStatus.reduce((n, r) => n + r._count._all, 0),
-        pending: pending.amount,
-        paid: paid.amount,
-        failed: failed.amount,
-        pendingCount: pending.count,
-        paidCount: paid.count,
-        failedCount: failed.count,
-      },
+      stats: withTotals
+        ? {
+            total: byStatus.reduce((n, r) => n + (r._sum.amount ?? 0), 0),
+            count: byStatus.reduce((n, r) => n + r._count._all, 0),
+            pending: pending.amount,
+            paid: paid.amount,
+            failed: failed.amount,
+            pendingCount: pending.count,
+            paidCount: paid.count,
+            failedCount: failed.count,
+          }
+        : null,
     })
   } catch (error) {
     console.error('Get payments error:', error)

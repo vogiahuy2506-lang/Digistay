@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { getWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -8,7 +9,9 @@ interface RouteParams {
 
 /**
  * GET /api/workspaces/[id]/stats
- * Get workspace-level statistics including all properties.
+ * Get workspace-level statistics including all properties. Revenue
+ * (monthlyRevenue, totalRevenue, byProperty[].revenue) is left out unless
+ * the caller is the owner, an ADMIN or a MANAGER, who see the reports.
  */
 export async function GET(request: NextRequest, props: RouteParams) {
   const params = await props.params
@@ -21,19 +24,11 @@ export async function GET(request: NextRequest, props: RouteParams) {
     }
 
     // Check workspace access
-    const workspace = await prisma.workspace.findFirst({
-      where: {
-        id,
-        OR: [
-          { ownerId: session.user.id },
-          { members: { some: { userId: session.user.id } } },
-        ],
-      },
-    })
-
-    if (!workspace) {
+    const role = await getWorkspaceRole(id, session.user.id)
+    if (!role) {
       return NextResponse.json({ success: false, error: 'Không có quyền truy cập' }, { status: 403 })
     }
+    const seesRevenue = (WorkspaceRoles.ADMINS_AND_MANAGERS as readonly string[]).includes(role)
 
     // Get all properties in workspace
     const properties = await prisma.property.findMany({
@@ -135,7 +130,7 @@ export async function GET(request: NextRequest, props: RouteParams) {
         name: p.name,
         type: p.type,
         totalBookings: pBookings.length,
-        revenue: pRevenue,
+        ...(seesRevenue && { revenue: pRevenue }),
         totalRooms: pRooms,
         isActive: p.isActive,
       }
@@ -152,8 +147,7 @@ export async function GET(request: NextRequest, props: RouteParams) {
         pendingBookings,
         confirmedBookings,
         checkedInBookings,
-        monthlyRevenue,
-        totalRevenue,
+        ...(seesRevenue && { monthlyRevenue, totalRevenue }),
         memberCount,
         // Today's numbers
         todayBookings: todayBookings.length,
