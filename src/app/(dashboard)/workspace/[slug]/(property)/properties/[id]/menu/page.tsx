@@ -136,7 +136,7 @@ export default function MenuPage() {
 
   return (
     <PageContainer>
-      <div className="max-w-5xl mx-auto">
+      <div>
         <Header title={t('title')} description={t('description')} actions={items && items.length > 0 ? addButton : undefined} />
         {!canEdit && role && <p className="mb-4 text-small text-muted">{t('readOnly')}</p>}
 

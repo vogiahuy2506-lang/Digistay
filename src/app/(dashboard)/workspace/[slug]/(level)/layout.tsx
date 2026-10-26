@@ -14,7 +14,8 @@ import { cn } from '@/lib/utils'
  * workspace switcher next to the logo and the bell, and its frame, so header
  * and content line up like on /workspaces and /profile. No sidebar: that
  * belongs to a single property, where there is a menu worth showing.
- * A page that is one form wraps its title and card in `mx-auto max-w-3xl`.
+ * Pages fill the frame (header and content line up); a form page puts
+ * something useful beside its form on wide screens rather than narrowing.
  */
 export default async function WorkspaceLevelLayout({
   children,

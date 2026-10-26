@@ -80,7 +80,16 @@
   "new": {
     "title": "Tạo cơ sở mới",
     "description": "Thêm cơ sở kinh doanh vào workspace {workspace}",
-    "phonePlaceholder": "VD: 024 1234 5678"
+    "phonePlaceholder": "VD: 024 1234 5678",
+    "next": {
+      "title": "Sau khi tạo cơ sở",
+      "rooms": "Thêm hạng phòng và giá",
+      "roomsText": "Số phòng, sức chứa, giá theo đêm, ảnh phòng.",
+      "payments": "Chọn cách nhận tiền cọc",
+      "paymentsText": "Chuyển khoản theo mã VietQR, hoặc tự động qua PayOS.",
+      "website": "Thiết kế và xuất bản website",
+      "websiteText": "Khách tìm phòng và đặt trực tiếp trên website của bạn."
+    }
   },
   "detail": {
     "notFound": "Không tìm thấy cơ sở",

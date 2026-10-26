@@ -80,7 +80,16 @@
   "new": {
     "title": "Create a property",
     "description": "Add a property to the {workspace} workspace",
-    "phonePlaceholder": "e.g. 024 1234 5678"
+    "phonePlaceholder": "e.g. 024 1234 5678",
+    "next": {
+      "title": "After creating the property",
+      "rooms": "Add room types and prices",
+      "roomsText": "Rooms, capacity, nightly prices, photos.",
+      "payments": "Choose how deposits are paid",
+      "paymentsText": "Bank transfer by VietQR, or automatically through PayOS.",
+      "website": "Design and publish the website",
+      "websiteText": "Guests find rooms and book directly on your website."
+    }
   },
   "detail": {
     "notFound": "Property not found",

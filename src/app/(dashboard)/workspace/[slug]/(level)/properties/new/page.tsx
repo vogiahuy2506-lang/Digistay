@@ -4,7 +4,7 @@ import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { TitleBlock } from '@/components/layout'
 import { Card, CardContent, Button, Modal, ModalFooter, Input, Select, Textarea, Loading } from '@/components/ui'
-import { Building2, ArrowLeft } from 'lucide-react'
+import { Building2, ArrowLeft, BedDouble, Landmark, Globe } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useWorkspace } from '@/lib/hooks/use-workspace'
 import { routes } from '@/lib/utils/routes'
@@ -98,15 +98,16 @@ export default function NewPropertyPage() {
     )
   }
 
-  // One form: the title and the card share a centred column (layout.tsx).
+  // The site header's frame (layout.tsx): the form, and beside it on wide
+  // screens what comes after creating the property.
   return (
-    <div className="mx-auto max-w-3xl">
+    <div>
       <TitleBlock
         title={t('new.title')}
         lead={t('new.description', { workspace: workspace.name })}
       />
 
-      <div className="mt-9">
+      <div className="mt-9 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-10">
         <Card>
           <CardContent className="p-6">
           <form onSubmit={handleCreate} className="space-y-4">
@@ -208,6 +209,31 @@ export default function NewPropertyPage() {
           </form>
           </CardContent>
         </Card>
+
+        <aside className="rounded-box border border-line bg-panel p-5">
+          <h2 className="text-sm font-semibold text-fg">{t('new.next.title')}</h2>
+          <ol className="mt-4 space-y-4 text-sm">
+            {(
+              [
+                ['rooms', BedDouble],
+                ['payments', Landmark],
+                ['website', Globe],
+              ] as const
+            ).map(([key, Icon], i) => (
+              <li key={key} className="flex gap-3">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-fg/5 text-muted">
+                  <Icon className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <span>
+                  <span className="block font-medium text-fg">
+                    {i + 1}. {t(`new.next.${key}`)}
+                  </span>
+                  <span className="block text-muted">{t(`new.next.${key}Text`)}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </aside>
       </div>
     </div>
   )

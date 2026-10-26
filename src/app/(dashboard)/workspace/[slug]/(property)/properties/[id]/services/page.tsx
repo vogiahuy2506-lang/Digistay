@@ -246,7 +246,7 @@ export default function ServicesPage() {
   if (!propertyId) {
     return (
       <PageContainer>
-        <div className="max-w-5xl mx-auto py-16 text-center">
+        <div className="py-16 text-center">
           <p className="text-muted">{t('noProperty')}</p>
         </div>
       </PageContainer>
@@ -255,7 +255,7 @@ export default function ServicesPage() {
 
   return (
     <PageContainer>
-      <div className="max-w-5xl mx-auto space-y-8">
+      <div className="space-y-8">
         <Header title={t('title')} description={t('description')} />
 
         {/* Amenities Section */}

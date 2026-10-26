@@ -199,9 +199,15 @@ export default function WorkspaceSettingsPage() {
     return <Loading className="py-24" />
   }
 
-  // Forms: the title, tabs and cards share a centred column (layout.tsx).
+  // The site header's frame (layout.tsx), like the other workspace pages: the
+  // tabs down the left on wide screens, the chosen tab's cards on the right.
+  const tabClass = (tab: string) =>
+    cn(
+      'flex shrink-0 items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition lg:w-full lg:px-3',
+      activeTab === tab ? 'bg-panel text-acc shadow-sm' : 'text-muted hover:text-fg'
+    )
   return (
-    <div className="mx-auto max-w-3xl">
+    <div>
       <TitleBlock
         title={t('settings.title')}
         lead={t('settings.description', { name: workspace.name })}
@@ -232,46 +238,28 @@ export default function WorkspaceSettingsPage() {
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="flex items-center gap-2 mt-8 mb-6 bg-fg/5 p-1 rounded-lg w-fit max-w-full overflow-x-auto">
-        <button
-          onClick={() => setActiveTab('general')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-            activeTab === 'general'
-              ? 'bg-panel text-acc shadow-sm'
-              : 'text-muted hover:text-fg'
-          }`}
-        >
-          <Settings className="w-4 h-4 inline mr-2" />
+      <div className="mt-8 grid gap-6 lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-10">
+      {/* Tabs: a row on phones, a column beside the cards from lg */}
+      <div className="flex h-fit w-fit max-w-full gap-2 overflow-x-auto rounded-lg bg-fg/5 p-1 lg:w-full lg:flex-col lg:gap-1">
+        <button type="button" aria-pressed={activeTab === 'general'} onClick={() => setActiveTab('general')} className={tabClass('general')}>
+          <Settings className="w-4 h-4" aria-hidden="true" />
           {t('settings.tabs.general')}
         </button>
-        <button
-          onClick={() => setActiveTab('notifications')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-            activeTab === 'notifications'
-              ? 'bg-panel text-acc shadow-sm'
-              : 'text-muted hover:text-fg'
-          }`}
-        >
-          <Bell className="w-4 h-4 inline mr-2" />
+        <button type="button" aria-pressed={activeTab === 'notifications'} onClick={() => setActiveTab('notifications')} className={tabClass('notifications')}>
+          <Bell className="w-4 h-4" aria-hidden="true" />
           {t('settings.tabs.notifications')}
         </button>
-        <button
-          onClick={() => setActiveTab('security')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-            activeTab === 'security'
-              ? 'bg-panel text-acc shadow-sm'
-              : 'text-muted hover:text-fg'
-          }`}
-        >
-          <Shield className="w-4 h-4 inline mr-2" />
+        <button type="button" aria-pressed={activeTab === 'security'} onClick={() => setActiveTab('security')} className={tabClass('security')}>
+          <Shield className="w-4 h-4" aria-hidden="true" />
           {t('settings.tabs.security')}
         </button>
       </div>
 
+      <div className="min-w-0">
       {/* General Settings */}
       {activeTab === 'general' && (
         <div className="space-y-6">
+          <div className="grid gap-6 xl:grid-cols-2 xl:items-start">
           {/* Basic Info */}
           <Card>
             <CardHeader>
@@ -366,6 +354,8 @@ export default function WorkspaceSettingsPage() {
             </CardContent>
           </Card>
 
+          </div>
+
           {/* Save Button */}
           <div className="flex justify-end">
             <Button onClick={handleSave} isLoading={isSaving}>
@@ -456,6 +446,8 @@ export default function WorkspaceSettingsPage() {
           <DeleteWorkspaceZone workspaceId={workspace.id} workspaceName={workspace.name} />
         </div>
       )}
+      </div>
+      </div>
     </div>
   )
 }
