@@ -263,9 +263,10 @@ function UserBlock({ name, email, image, role }: { name?: string; email?: string
     <div className="shrink-0 border-t border-line px-3 py-2.5 flex items-start gap-2.5">
       <Avatar src={image} name={name || t('user')} size="sm" />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-fg truncate" title={email}>
+        {/* The name leads to the profile (/profile): nothing else in the dashboard does. */}
+        <Link href={routes.profile()} className="block text-sm font-medium text-fg truncate rounded-ctl hover:underline underline-offset-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc" title={email}>
           {name || email || t('user')}
-        </p>
+        </Link>
         <div className="flex items-center justify-between gap-1">
           <p className="min-w-0 text-xs text-muted truncate">{labels.role(role)}</p>
           <div className="-mr-1 flex shrink-0 items-center">

@@ -9,7 +9,7 @@ import { Avatar, Dropdown, DropdownDivider, DropdownItem } from '@/components/ui
 import { useTheme } from '@/components/layout/theme-root'
 import { cn } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
-import { ChevronDown, LogOut, Moon, Sun } from 'lucide-react'
+import { ChevronDown, LogOut, Moon, Sun, UserRound } from 'lucide-react'
 import type { WorkspaceRole } from './nav'
 import { LanguageButton } from './language-button'
 import { NotificationBell } from './notification-bell'
@@ -121,6 +121,7 @@ function AccountMenu({
   onSignOut: () => void
 }) {
   const t = useTranslations('workspaces')
+  const router = useRouter()
   const [open, setOpen] = React.useState(false)
   const initial = name ? name.trim().charAt(0).toUpperCase() : (email?.charAt(0) ?? '?').toUpperCase()
 
@@ -142,6 +143,10 @@ function AccountMenu({
         </button>
       }
     >
+      <DropdownItem onClick={() => router.push(routes.profile())} icon={<UserRound className="w-4 h-4" />}>
+        {t('account.profile')}
+      </DropdownItem>
+      <DropdownDivider />
       <DropdownItem onClick={onSignOut} danger icon={<LogOut className="w-4 h-4" />}>
         {t('account.signOut')}
       </DropdownItem>
