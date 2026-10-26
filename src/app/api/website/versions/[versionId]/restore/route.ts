@@ -36,7 +36,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       where: {
         id: body.data.propertyId,
         workspace: {
-          OR: [{ ownerId: session.user.id }, { members: { some: { userId: session.user.id } } }],
+          OR: [{ ownerId: session.user.id }, { members: { some: { userId: session.user.id, planLockedAt: null } } }],
         },
       },
       select: { id: true, workspaceId: true },

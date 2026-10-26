@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       where: {
         id: propertyId,
         workspace: {
-          OR: [{ ownerId: session.user.id }, { members: { some: { userId: session.user.id } } }],
+          OR: [{ ownerId: session.user.id }, { members: { some: { userId: session.user.id, planLockedAt: null } } }],
         },
       },
       select: { id: true, workspaceId: true },
