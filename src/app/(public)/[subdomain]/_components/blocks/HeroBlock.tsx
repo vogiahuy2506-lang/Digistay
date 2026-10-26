@@ -1,5 +1,6 @@
 import { blockText } from '@/lib/i18n/content'
 import { responsiveImage } from '@/lib/media/image-url'
+import { middleOut, photoKey } from '@/lib/public-site/hero-photos'
 import { SearchBar } from '../SearchBar'
 import type { PublicBlock, PublicImage, PublicProperty } from '../PropertySite'
 import { Container, Eyebrow, propertyTypeLabel, cfgText } from '../site-ui'
@@ -34,12 +35,19 @@ export function HeroBlock({ block, property, images, hasMap }: Props) {
     blockText(cfg, locale, 'heroSubtitle', 'subtitle') ?? property.description ?? t('blocks.hero.welcome', { name: property.name })
   const showSearchBar = cfg.showSearchBar !== false
 
+  // The cover chosen in the builder first (the middle of the wide strip, the
+  // first on phones), then the property's cover and photos, each photo once.
   const urls = [cfgText(cfg, 'backgroundImage'), property.coverImage, ...images.map((i) => i.url)].filter(
     (u): u is string => !!u
   )
-  const photos: Photo[] = Array.from(new Set(urls))
+  const keys = urls.map(photoKey)
+  const photos: Photo[] = urls
+    .filter((_, i) => keys.indexOf(keys[i]) === i)
     .slice(0, 7)
-    .map((url, i) => ({ url, alt: images.find((img) => img.url === url)?.alt ?? t('blocks.hero.photoAlt', { name: property.name, n: i + 1 }) }))
+    .map((url, i) => ({
+      url,
+      alt: images.find((img) => photoKey(img.url) === photoKey(url))?.alt ?? t('blocks.hero.photoAlt', { name: property.name, n: i + 1 }),
+    }))
 
   return (
     <section id="booking" className="scroll-mt-20 pt-12 sm:pt-20 pb-16 sm:pb-24">
@@ -86,12 +94,14 @@ const FROM_LG = '(min-width: 1024px)'
 
 function PhotoStrip({ photos }: { photos: Photo[] }) {
   const t = useTranslations('site.blocks.hero')
-  const center = (photos.length - 1) / 2
+  // An odd number of cards, so the cover is the middle one, not beside the middle.
+  const wide = middleOut(photos.length > 2 && photos.length % 2 === 0 ? photos.slice(0, -1) : photos)
+  const center = (wide.length - 1) / 2
   return (
     <div className="mt-10 sm:mt-14">
       {/* Wide screens: cards turned toward the middle, like the inside of a curve. */}
       <div className="hidden lg:flex justify-center gap-4 overflow-hidden [perspective:1600px] px-4" aria-hidden="false">
-        {photos.map((photo, i) => {
+        {wide.map((photo, i) => {
           const d = i - center
           return (
             // `contents`: the <img> stays the flex item.
