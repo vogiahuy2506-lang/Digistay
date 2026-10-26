@@ -4,6 +4,9 @@
  *
  * 1. Auto-issue, for hotels that turned it on: a booking fully paid since
  *    then, with no invoice at all, gets one for its total, issued at once.
+ *    Normally right after the payment is recorded (issue-now.ts calls
+ *    autoIssueBooking after the response); this run is the fallback for
+ *    what that missed (a crash, a payment recorded outside a request).
  *    The law dates the invoice at payment when the money comes before the
  *    service (a deposit does not count), hence "fully paid". The buyer is
  *    the company the guest entered when booking (vatCompany...), otherwise
@@ -16,6 +19,7 @@
  *    staff.
  * 3. Invoice emails that are due (delivery.ts).
  */
+import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { lockBooking } from '@/lib/payments/booking-payments'
 import { EinvoiceError, PUBLISH_LEASE_MS, publishInvoice } from './matbao'
@@ -100,35 +104,81 @@ async function publishQuietly(invoiceId: string, now: Date) {
   }
 }
 
+/** Hotels with auto-issue on, their account checked. */
+const AUTO_ISSUE_ON = {
+  autoIssue: true,
+  autoIssueSince: { not: null },
+  verifiedAt: { not: null },
+} satisfies Prisma.PropertyEinvoiceWhereInput
+
+type AutoIssueConfig = { propertyId: string; autoIssueSince: Date | null; vatCode: number }
+const CONFIG_SELECT = { propertyId: true, autoIssueSince: true, vatCode: true } as const
+
+/** The bookings due an automatic invoice: one rule for the job and for issuing at once. */
+function dueForAutoIssue(config: AutoIssueConfig): Prisma.BookingWhereInput {
+  return {
+    propertyId: config.propertyId,
+    paymentStatus: 'PAID',
+    status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+    invoices: { none: {} },
+    // Fully paid since auto-issue was turned on.
+    payments: { some: { status: 'PAID', paidAt: { gte: config.autoIssueSince! } } },
+  }
+}
+
+/**
+ * Creates the booking's automatic invoice and issues it. null when another
+ * run got there first (createAutoInvoice decides under the booking's lock).
+ */
+async function issueAutoInvoice(bookingId: string, config: AutoIssueConfig, now: Date) {
+  const created = await createAutoInvoice(bookingId, config.propertyId, config.vatCode as VatCode)
+  if (!created) return null
+  const invoiceId = created.invoice.id
+  if (!created.publishable) return { invoiceId, outcome: 'needsStaff' as const }
+  return { invoiceId, outcome: (await publishQuietly(invoiceId, now)) ? ('published' as const) : ('failed' as const) }
+}
+
 export async function autoIssuePaidBookings(now = new Date()) {
   const summary = { created: 0, published: 0, needsStaff: 0 }
-  const configs = await prisma.propertyEinvoice.findMany({
-    where: { autoIssue: true, autoIssueSince: { not: null }, verifiedAt: { not: null } },
-    select: { propertyId: true, autoIssueSince: true, vatCode: true },
-  })
+  const configs = await prisma.propertyEinvoice.findMany({ where: AUTO_ISSUE_ON, select: CONFIG_SELECT })
   for (const config of configs) {
     const bookings = await prisma.booking.findMany({
-      where: {
-        propertyId: config.propertyId,
-        paymentStatus: 'PAID',
-        status: { notIn: ['CANCELLED', 'NO_SHOW'] },
-        invoices: { none: {} },
-        // Fully paid since auto-issue was turned on.
-        payments: { some: { status: 'PAID', paidAt: { gte: config.autoIssueSince! } } },
-      },
+      where: dueForAutoIssue(config),
       orderBy: { updatedAt: 'asc' },
       take: BATCH,
       select: { id: true },
     })
     for (const { id } of bookings) {
-      const created = await createAutoInvoice(id, config.propertyId, config.vatCode as VatCode)
-      if (!created) continue
+      const issued = await issueAutoInvoice(id, config, now)
+      if (!issued) continue
       summary.created++
-      if (!created.publishable) summary.needsStaff++
-      else if (await publishQuietly(created.invoice.id, now)) summary.published++
+      if (issued.outcome === 'needsStaff') summary.needsStaff++
+      else if (issued.outcome === 'published') summary.published++
     }
   }
   return summary
+}
+
+/**
+ * One booking's automatic invoice, right away: called after the response
+ * that recorded the payment making it fully paid (issue-now.ts), so the
+ * guest does not wait for the next run (up to 10 minutes). Same rule as the
+ * job, and the same claims (the booking's lock, PUBLISHING, MaTraCuu 304),
+ * so the two never issue twice. Then the email, as the job would send it.
+ */
+export async function autoIssueBooking(bookingId: string, now = new Date()) {
+  const booking = await prisma.booking.findUnique({ where: { id: bookingId }, select: { propertyId: true } })
+  if (!booking) return null
+  const config = await prisma.propertyEinvoice.findFirst({
+    where: { propertyId: booking.propertyId, ...AUTO_ISSUE_ON },
+    select: CONFIG_SELECT,
+  })
+  if (!config) return null
+  if ((await prisma.booking.count({ where: { id: bookingId, ...dueForAutoIssue(config) } })) === 0) return null
+  const issued = await issueAutoInvoice(bookingId, config, now)
+  // Already after the response: send it now rather than wait for the job.
+  if (issued?.outcome === 'published') await sendInvoiceEmailFor(issued.invoiceId)
+  return issued
 }
 
 /** Automatic invoices left uncertain (or never tried, after a crash). */
