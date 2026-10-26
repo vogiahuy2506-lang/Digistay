@@ -3,12 +3,13 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
+import { bankAccountFields } from '../fields'
 
 const updateSchema = z.object({
-  bankName: z.string().min(2).optional(),
-  bankCode: z.string().min(2).optional(),
-  accountNumber: z.string().min(6).optional(),
-  accountHolder: z.string().min(2).optional(),
+  bankName: bankAccountFields.bankName.optional(),
+  bankCode: bankAccountFields.bankCode.optional(),
+  accountNumber: bankAccountFields.accountNumber.optional(),
+  accountHolder: bankAccountFields.accountHolder.optional(),
   qrEnabled: z.boolean().optional(),
   isActive: z.boolean().optional(),
 })
