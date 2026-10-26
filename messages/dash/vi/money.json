@@ -334,8 +334,11 @@
     "intro": "Phát hành hoá đơn GTGT dưới mã số thuế của khách sạn, qua tài khoản Mắt Bão của khách sạn. Chưa kết nối thì bạn vẫn xuất hoá đơn trên phần mềm hoá đơn đang dùng; đặt phòng và doanh thu vẫn ghi nhận bình thường.",
     "connect": "Kết nối",
     "disconnect": "Ngắt kết nối",
-    "autoIssue": "Tự xuất hoá đơn khi đơn đã thanh toán đủ",
-    "autoIssueHint": "Áp dụng cho đơn thanh toán đủ từ lúc bật. Tiền cọc chưa đủ thì chưa xuất. Thông tin công ty không hợp lệ thì hoá đơn chờ nhân viên sửa.",
+    "issueMode": "Phát hành hoá đơn",
+    "modeManual": "Thủ công: lễ tân/kế toán bấm Phát hành trên từng đơn",
+    "modeManualHint": "Không hoá đơn nào tự phát hành. Tạo hoá đơn cho đơn đặt phòng rồi bấm Phát hành khi đã kiểm tra.",
+    "modeAuto": "Tự động: phát hành ngay khi đơn được thanh toán đủ",
+    "modeAutoHint": "Ngay khi đơn trả đủ tiền (PayOS, chuyển khoản đã xác nhận, tiền mặt), một hoá đơn bằng tổng tiền đơn được phát hành. Áp dụng cho đơn thanh toán đủ từ lúc chọn; tiền cọc chưa đủ thì chưa xuất; thông tin công ty không hợp lệ thì hoá đơn chờ nhân viên sửa.",
     "emailInvoices": "Gửi hoá đơn (PDF) qua email cho người mua sau khi phát hành",
     "webhookHint": "Để nhận trạng thái từ cơ quan thuế (đã cấp mã / bị từ chối), gửi địa chỉ này cho bộ phận hỗ trợ Mắt Bão. Địa chỉ có mã bí mật: không chia sẻ nơi khác.",
     "copyAddress": "Sao chép địa chỉ",
@@ -358,7 +361,7 @@
       "save": "Không lưu được"
     },
     "confirm": {
-      "autoIssue": "Tự xuất hoá đơn: từ bây giờ, mỗi đơn đặt phòng được thanh toán đủ sẽ tự được phát hành một hoá đơn bằng tổng tiền đơn{note}. Người mua là công ty khách nhập khi đặt phòng, không có thì là khách. Đơn đã có hoá đơn thì không xuất thêm. Bật?",
+      "autoIssue": "Phát hành tự động: từ bây giờ, mỗi đơn đặt phòng được thanh toán đủ sẽ được phát hành ngay một hoá đơn bằng tổng tiền đơn{note}. Người mua là công ty khách nhập khi đặt phòng, không có thì là khách. Đơn đã có hoá đơn thì không xuất thêm. Chọn cách này?",
       "autoIssueProduction": "(môi trường CHÍNH THỨC: hoá đơn thật)",
       "disconnect": "Ngắt kết nối Mắt Bão? Hoá đơn đã phát hành vẫn còn trên Mắt Bão; hoá đơn mới sẽ không phát hành được."
     },

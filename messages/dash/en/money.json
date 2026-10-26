@@ -334,8 +334,11 @@
     "intro": "Issue VAT invoices under the hotel's tax ID, through the hotel's Mắt Bão account. Until it is connected, keep issuing invoices in the invoicing software you already use; bookings and revenue are still recorded as usual.",
     "connect": "Connect",
     "disconnect": "Disconnect",
-    "autoIssue": "Issue the invoice automatically once a booking is fully paid",
-    "autoIssueHint": "Applies to bookings fully paid after you turn it on. Nothing is issued while only part is paid. If the company details are invalid, the invoice waits for staff to fix them.",
+    "issueMode": "Issuing invoices",
+    "modeManual": "Manual: front desk or accounting presses Issue on each booking",
+    "modeManualHint": "Nothing is issued by itself. Create the invoice for a booking, then press Issue once it has been checked.",
+    "modeAuto": "Automatic: issued as soon as a booking is fully paid",
+    "modeAutoHint": "As soon as a booking is paid in full (PayOS, a confirmed transfer, cash), an invoice for the booking total is issued. Applies to bookings fully paid after you choose it; nothing is issued while only part is paid; if the company details are invalid, the invoice waits for staff to fix them.",
     "emailInvoices": "Email the invoice (PDF) to the buyer after it is issued",
     "webhookHint": "To get the tax office's status (code issued / rejected), send this address to Mắt Bão support. It contains a secret code: do not share it anywhere else.",
     "copyAddress": "Copy address",
@@ -358,7 +361,7 @@
       "save": "Could not save"
     },
     "confirm": {
-      "autoIssue": "Automatic invoices: from now on, every booking that is paid in full gets an invoice issued by itself for the booking total{note}. The buyer is the company the guest entered when booking, otherwise the guest. Bookings that already have an invoice get no second one. Turn it on?",
+      "autoIssue": "Automatic invoices: from now on, every booking that is paid in full gets an invoice issued right away for the booking total{note}. The buyer is the company the guest entered when booking, otherwise the guest. Bookings that already have an invoice get no second one. Choose this?",
       "autoIssueProduction": "(LIVE environment: real invoices)",
       "disconnect": "Disconnect Mắt Bão? Issued invoices stay on Mắt Bão; new invoices can no longer be issued."
     },

@@ -210,21 +210,36 @@ export function EinvoiceCard({
         </div>
 
         {status.connected && !editing && (
-          <div className="border-t pt-3 space-y-2 text-sm">
-            <label className="flex items-start gap-2">
-              <input
-                type="checkbox"
-                className="mt-0.5"
-                checked={Boolean(status.autoIssue)}
-                onChange={(e) => setOption('autoIssue', e.target.checked)}
-              />
-              <span>
-                <span className="font-medium text-fg">{t('autoIssue')}</span>
-                <span className="block text-xs text-muted">
-                  {t('autoIssueHint')}
-                </span>
-              </span>
-            </label>
+          <div className="border-t pt-3 space-y-3 text-sm">
+            {/* The autoIssue flag as the choice it is for the hotel: who issues, and when. */}
+            <fieldset>
+              <legend className="font-medium text-fg">{t('issueMode')}</legend>
+              <div className="mt-2 grid gap-2 md:grid-cols-2">
+                {([false, true] as const).map((auto) => {
+                  const checked = Boolean(status.autoIssue) === auto
+                  return (
+                    <label
+                      key={String(auto)}
+                      className={`flex items-start gap-2.5 rounded-ctl border p-3 cursor-pointer ${
+                        checked ? 'border-ink bg-fg/[0.03]' : 'border-line hover:border-fg/30'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name={`einvoice-issue-mode-${propertyId}`}
+                        className="mt-0.5 w-4 h-4 shrink-0"
+                        checked={checked}
+                        onChange={() => setOption('autoIssue', auto)}
+                      />
+                      <span className="min-w-0">
+                        <span className="font-medium text-fg">{auto ? t('modeAuto') : t('modeManual')}</span>
+                        <span className="block text-xs text-muted mt-0.5">{auto ? t('modeAutoHint') : t('modeManualHint')}</span>
+                      </span>
+                    </label>
+                  )
+                })}
+              </div>
+            </fieldset>
             <label className="flex items-start gap-2">
               <input
                 type="checkbox"
