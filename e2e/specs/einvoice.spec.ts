@@ -38,7 +38,8 @@ test('connect, issue + email, adjust down, auto-issue on full payment', async ({
   // 3. An invoice for the 2,160,000 ₫ stay, published: emailed with its PDF.
   await page.getByRole('button', { name: 'Tạo hóa đơn' }).first().click()
   await page.waitForFunction((id) => !!document.querySelector(`option[value="${id}"]`), ids().invoiceBooking)
-  await page.getByLabel('Đơn đặt phòng').selectOption(ids().invoiceBooking)
+  // The select, not the "…trên từng đơn đặt phòng" auto-issue choice behind the dialog.
+  await page.getByRole('combobox', { name: 'Đơn đặt phòng' }).selectOption(ids().invoiceBooking)
   await page.getByLabel('Tên công ty').fill('Công ty TNHH Du Lịch Sen')
   await page.getByLabel(/^Mã số thuế\*?$/).fill('0309876543')
   await page.getByLabel('Địa chỉ công ty').fill('12 Lê Lợi, Quận 1, TP.HCM')
