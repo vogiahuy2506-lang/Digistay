@@ -2,8 +2,8 @@
 
 import * as React from 'react'
 import { useParams } from 'next/navigation'
-import { PageContainer } from '@/components/layout'
-import { Button, Badge, Input, Textarea } from '@/components/ui'
+import { Header, PageContainer } from '@/components/layout'
+import { Button, Badge, Input, Modal, ModalBody, ModalFooter, ModalHeader, Textarea } from '@/components/ui'
 import { EnglishCopy } from '@/components/ui/english-copy'
 import { getIcon } from '@/lib/amenity-icons'
 import { amenityName } from '@/lib/i18n/amenities'
@@ -11,7 +11,7 @@ import { toast } from '@/components/ui/toast'
 import { useTranslations } from 'next-intl'
 import { useDashLabels } from '@/lib/i18n/dash'
 import {
-  Plus, Trash2, Edit, Save, ConciergeBell, X, Search,
+  Plus, Trash2, Edit, Save, ConciergeBell, Search,
 } from 'lucide-react'
 import { apiError } from '@/lib/i18n/api-errors'
 
@@ -256,32 +256,27 @@ export default function ServicesPage() {
   return (
     <PageContainer>
       <div className="max-w-5xl mx-auto space-y-8">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-semibold text-fg">{t('title')}</h1>
-          <p className="text-sm text-muted mt-1">
-            {t('description')}
-          </p>
-        </div>
+        <Header title={t('title')} description={t('description')} />
 
         {/* Amenities Section */}
-        <section className="bg-panel rounded-xl border border-line p-6">
-          <div className="flex items-center justify-between mb-5">
-            <div>
+        <section className="bg-panel rounded-xl border border-line p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+            <div className="min-w-0">
               <h2 className="text-lg font-medium text-fg">{t('amenities.title')}</h2>
               <p className="text-sm text-muted mt-0.5">
                 {selectedCount > 0 ? t('amenities.selected', { count: selectedCount }) : t('amenities.choose')}
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+              <div className="relative flex-1 sm:flex-none">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" aria-hidden="true" />
                 <input
-                  type="text"
+                  type="search"
+                  aria-label={t('amenities.search')}
                   placeholder={t('amenities.search')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 pr-4 py-2 text-sm border border-line rounded-lg focus:outline-none focus:border-muted w-56"
+                  className="pl-9 pr-4 py-2 text-base sm:text-sm bg-panel text-fg border border-line rounded-lg focus:outline-none focus:border-muted w-full sm:w-56"
                 />
               </div>
               <Button
@@ -296,7 +291,7 @@ export default function ServicesPage() {
           </div>
 
           {isLoading ? (
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {[1, 2, 3, 4, 5, 6].map(i => (
                 <div key={i} className="h-14 bg-fg/5 rounded-lg animate-pulse" />
               ))}
@@ -347,9 +342,9 @@ export default function ServicesPage() {
         </section>
 
         {/* Services Section */}
-        <section className="bg-panel rounded-xl border border-line p-6">
-          <div className="flex items-center justify-between mb-5">
-            <div>
+        <section className="bg-panel rounded-xl border border-line p-4 sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+            <div className="min-w-0">
               <h2 className="text-lg font-medium text-fg">{t('list.title')}</h2>
               <p className="text-sm text-muted mt-0.5">
                 {services.length > 0 ? t('list.count', { count: services.length }) : t('list.empty')}
@@ -390,14 +385,14 @@ export default function ServicesPage() {
                 return (
                   <div
                     key={service.id}
-                    className="flex items-center gap-4 py-4 first:pt-0 last:pb-0"
+                    className="flex flex-wrap sm:flex-nowrap items-center gap-x-4 gap-y-1 py-4 first:pt-0 last:pb-0"
                   >
-                    <div className="w-10 h-10 bg-fg/5 rounded-lg flex items-center justify-center shrink-0">
+                    <div className="hidden sm:flex w-10 h-10 bg-fg/5 rounded-lg items-center justify-center shrink-0">
                       <ConciergeBell className="w-5 h-5 text-muted" />
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 basis-full sm:basis-auto">
                       <div className="flex items-center gap-2">
-                        <span className={`font-medium ${service.isActive ? 'text-fg' : 'text-muted'}`}>
+                        <span className={`font-medium break-words ${service.isActive ? 'text-fg' : 'text-muted'}`}>
                           {service.name}
                         </span>
                         {!service.isActive && (
@@ -410,7 +405,7 @@ export default function ServicesPage() {
                         {service.priceType === 'PER_PERSON' && ` · ${service.perPerson ? t('priceType.PER_PERSON') : t('list.perUse')}`}
                       </p>
                     </div>
-                    <span className="text-base font-semibold text-fg tabular-nums">
+                    <span className="text-base font-semibold text-fg tabular-nums whitespace-nowrap mr-auto sm:mr-0">
                       {formatPrice(service.price, service.priceType, service.perPerson)}
                     </span>
                     <div className="flex items-center gap-1">
@@ -435,146 +430,135 @@ export default function ServicesPage() {
         </section>
       </div>
 
-      {/* Service Modal */}
-      {showServiceModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-panel rounded-xl shadow-xl w-full max-w-md max-h-full flex flex-col">
-            <div className="flex items-center justify-between p-5 border-b border-line">
-              <div>
-                <h2 className="text-lg font-semibold text-fg">
-                  {editingService ? t('modal.editTitle') : t('modal.newTitle')}
-                </h2>
-                <p className="text-sm text-muted mt-0.5">
-                  {editingService ? t('modal.editSubtitle') : t('modal.newSubtitle')}
-                </p>
-              </div>
-              <button aria-label={tc('actions.close')}
-                onClick={() => { setShowServiceModal(false); resetServiceForm() }}
-                className="p-2 text-muted hover:text-muted hover:bg-fg/5 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      {/* Service dialog: the shared Modal (role="dialog", Esc and focus handling); it was a hand-made overlay. */}
+      <Modal
+        isOpen={showServiceModal}
+        onClose={() => { setShowServiceModal(false); resetServiceForm() }}
+        size="sm"
+      >
+        <ModalHeader onClose={() => { setShowServiceModal(false); resetServiceForm() }}>
+          <span className="block min-w-0">
+            <span className="block font-semibold">{editingService ? t('modal.editTitle') : t('modal.newTitle')}</span>
+            <span className="block text-sm font-normal text-muted mt-0.5">
+              {editingService ? t('modal.editSubtitle') : t('modal.newSubtitle')}
+            </span>
+          </span>
+        </ModalHeader>
+        <ModalBody className="space-y-4">
+          <Input
+            label={t('modal.name')}
+            value={serviceForm.name}
+            onChange={(e) => setServiceForm({ ...serviceForm, name: e.target.value })}
+            placeholder={t('modal.namePlaceholder')}
+          />
 
-            <div className="p-5 space-y-4 overflow-y-auto min-h-0">
-              <div>
-                <label className="block text-sm font-medium text-fg mb-1.5">
-                  {t('modal.name')}
-                </label>
-                <Input
-                  value={serviceForm.name}
-                  onChange={(e) => setServiceForm({ ...serviceForm, name: e.target.value })}
-                  placeholder={t('modal.namePlaceholder')}
-                />
-              </div>
+          <Textarea
+            label={t('modal.description')}
+            value={serviceForm.description}
+            onChange={(e) => setServiceForm({ ...serviceForm, description: e.target.value })}
+            placeholder={t('modal.descriptionPlaceholder')}
+            rows={2}
+          />
 
-              <Textarea
-                label={t('modal.description')}
-                value={serviceForm.description}
-                onChange={(e) => setServiceForm({ ...serviceForm, description: e.target.value })}
-                placeholder={t('modal.descriptionPlaceholder')}
-                rows={2}
-              />
+          <EnglishCopy filled={Boolean(serviceForm.en.name || serviceForm.en.description)}>
+            <Input
+              label={t('modal.name')}
+              value={serviceForm.en.name}
+              onChange={(e) => setServiceForm({ ...serviceForm, en: { ...serviceForm.en, name: e.target.value } })}
+              placeholder={serviceForm.name}
+            />
+            <Textarea
+              label={t('modal.description')}
+              value={serviceForm.en.description}
+              onChange={(e) => setServiceForm({ ...serviceForm, en: { ...serviceForm.en, description: e.target.value } })}
+              placeholder={serviceForm.description}
+              rows={2}
+            />
+          </EnglishCopy>
 
-              <EnglishCopy filled={Boolean(serviceForm.en.name || serviceForm.en.description)}>
-                <Input
-                  label={t('modal.name')}
-                  value={serviceForm.en.name}
-                  onChange={(e) => setServiceForm({ ...serviceForm, en: { ...serviceForm.en, name: e.target.value } })}
-                  placeholder={serviceForm.name}
-                />
-                <Textarea
-                  label={t('modal.description')}
-                  value={serviceForm.en.description}
-                  onChange={(e) => setServiceForm({ ...serviceForm, en: { ...serviceForm.en, description: e.target.value } })}
-                  placeholder={serviceForm.description}
-                  rows={2}
-                />
-              </EnglishCopy>
-
-              <div>
-                <label className="block text-sm font-medium text-fg mb-1.5">{t('modal.category')}</label>
-                <div className="flex flex-wrap gap-2">
-                  {SERVICE_CATEGORIES.map(cat => (
-                    <button
-                      key={cat}
-                      onClick={() => setServiceForm({ ...serviceForm, category: cat })}
-                      className={`
-                        px-3 py-1.5 rounded-md text-sm font-medium transition-colors
-                        ${serviceForm.category === cat
-                          ? 'bg-info text-on-ink'
-                          : 'bg-fg/5 text-muted hover:bg-fg/10'
-                        }
-                      `}
-                    >
-                      {t(`serviceCategory.${cat}`)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-fg mb-1.5">{t('modal.priceType')}</label>
-                  <select
-                    value={serviceForm.priceType}
-                    onChange={(e) =>
-                      setServiceForm({
-                        ...serviceForm,
-                        priceType: e.target.value as typeof serviceForm.priceType,
-                      })
+          <div role="group" aria-label={t('modal.category')}>
+            <p className="block text-sm font-medium text-fg mb-1.5">{t('modal.category')}</p>
+            <div className="flex flex-wrap gap-2">
+              {SERVICE_CATEGORIES.map(cat => (
+                <button
+                  key={cat}
+                  type="button"
+                  aria-pressed={serviceForm.category === cat}
+                  onClick={() => setServiceForm({ ...serviceForm, category: cat })}
+                  className={`
+                    px-3 py-1.5 rounded-md text-sm font-medium transition-colors
+                    ${serviceForm.category === cat
+                      ? 'bg-info text-on-ink'
+                      : 'bg-fg/5 text-muted hover:bg-fg/10'
                     }
-                    className="w-full px-3 py-2 text-sm border border-line rounded-lg focus:outline-none focus:border-muted bg-panel"
-                  >
-                    <option value="FIXED">{t('priceType.FIXED')}</option>
-                    <option value="PER_NIGHT">{t('priceType.PER_NIGHT')}</option>
-                    <option value="PER_PERSON">{t('priceType.PER_PERSON')}</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-fg mb-1.5">{t('modal.price')}</label>
-                  <Input
-                    type="number"
-                    value={serviceForm.price}
-                    onChange={(e) =>
-                      setServiceForm({ ...serviceForm, price: parseInt(e.target.value) || 0 })
-                    }
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-
-              {serviceForm.priceType === 'PER_PERSON' && (
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={serviceForm.perPerson}
-                    onChange={(e) => setServiceForm({ ...serviceForm, perPerson: e.target.checked })}
-                    className="w-4 h-4 rounded border-line text-info"
-                  />
-                  <span className="text-sm text-fg">{t('modal.perPerson')}</span>
-                </label>
-              )}
-            </div>
-
-            <div className="flex items-center justify-end gap-3 p-5 border-t border-line bg-fg/[0.03] rounded-b-xl">
-              <Button
-                variant="ghost"
-                onClick={() => { setShowServiceModal(false); resetServiceForm() }}
-                disabled={isSubmitting}
-              >
-                {tc('actions.cancel')}
-              </Button>
-              <Button
-                onClick={handleSubmitService}
-                isLoading={isSubmitting}
-              >
-                {editingService ? tc('actions.saveChanges') : t('modal.create')}
-              </Button>
+                  `}
+                >
+                  {t(`serviceCategory.${cat}`)}
+                </button>
+              ))}
             </div>
           </div>
-        </div>
-      )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="service-price-type" className="block text-sm font-medium text-fg mb-1.5">{t('modal.priceType')}</label>
+              <select
+                id="service-price-type"
+                value={serviceForm.priceType}
+                onChange={(e) =>
+                  setServiceForm({
+                    ...serviceForm,
+                    priceType: e.target.value as typeof serviceForm.priceType,
+                  })
+                }
+                className="w-full h-10 px-3 text-base sm:text-sm text-fg border border-line rounded-lg focus:outline-none focus:border-muted bg-panel"
+              >
+                <option value="FIXED">{t('priceType.FIXED')}</option>
+                <option value="PER_NIGHT">{t('priceType.PER_NIGHT')}</option>
+                <option value="PER_PERSON">{t('priceType.PER_PERSON')}</option>
+              </select>
+            </div>
+            <div>
+              <Input
+                label={t('modal.price')}
+                type="number"
+                value={serviceForm.price}
+                onChange={(e) =>
+                  setServiceForm({ ...serviceForm, price: parseInt(e.target.value) || 0 })
+                }
+                placeholder="0"
+              />
+            </div>
+          </div>
+
+          {serviceForm.priceType === 'PER_PERSON' && (
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={serviceForm.perPerson}
+                onChange={(e) => setServiceForm({ ...serviceForm, perPerson: e.target.checked })}
+                className="w-4 h-4 rounded border-line text-info"
+              />
+              <span className="text-sm text-fg">{t('modal.perPerson')}</span>
+            </label>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            variant="ghost"
+            onClick={() => { setShowServiceModal(false); resetServiceForm() }}
+            disabled={isSubmitting}
+          >
+            {tc('actions.cancel')}
+          </Button>
+          <Button
+            onClick={handleSubmitService}
+            isLoading={isSubmitting}
+          >
+            {editingService ? tc('actions.saveChanges') : t('modal.create')}
+          </Button>
+        </ModalFooter>
+      </Modal>
     </PageContainer>
   )
 }
