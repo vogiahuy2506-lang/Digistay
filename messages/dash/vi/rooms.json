@@ -1,13 +1,13 @@
 {
   "rooms": {
     "header": {
-      "title": "Hạng Phòng & Kho Phòng",
+      "title": "Hạng phòng & kho phòng",
       "description": "Quản lý hạng phòng, sức chứa và hình ảnh",
-      "add": "Thêm Hạng Phòng Mới"
+      "add": "Thêm hạng phòng"
     },
     "tabs": {
-      "rooms": "Hạng Phòng",
-      "maintenance": "Bảo Trì",
+      "rooms": "Hạng phòng",
+      "maintenance": "Bảo trì",
       "list": "Danh sách phòng"
     },
     "bedType": {
@@ -15,29 +15,34 @@
       "DOUBLE": "Giường đôi",
       "TWIN": "Hai giường đơn",
       "TRIPLE": "Ba giường",
-      "QUADRUPLE": "Bốn giường"
+      "QUADRUPLE": "Bốn giường",
+      "KING": "Giường King",
+      "QUEEN": "Giường Queen",
+      "SUITE": "Giường suite",
+      "BUNK": "Giường tầng"
     },
     "banner": {
       "summary": "{types} hạng phòng • {rooms} phòng",
       "totalRooms": "Tổng số phòng",
-      "roomTypes": "Hạng phòng",
-      "available": "Đang trống"
+      "roomTypes": "Hạng phòng"
     },
     "list": {
       "selectProperty": "Vui lòng chọn cơ sở để xem hạng phòng",
       "empty": "Chưa có hạng phòng nào",
-      "addFirst": "Thêm Hạng Phòng Đầu Tiên"
+      "addFirst": "Thêm hạng phòng đầu tiên"
     },
     "card": {
       "photos": "{count} ảnh lưu trữ",
       "perNight": "/đêm",
-      "inventory": "KHO PHÒNG",
-      "roomCount": "{count} Phòng",
-      "area": "DIỆN TÍCH",
-      "capacity": "SỨC CHỨA",
-      "capacityValue": "{adults}L • {children}TE",
-      "amenities": "Tiện ích đặc quyền:",
-      "inactive": "Không hoạt động"
+      "inventory": "Kho phòng",
+      "roomCount": "{count} phòng",
+      "area": "Diện tích",
+      "capacity": "Sức chứa",
+      "amenities": "Tiện ích:",
+      "inactive": "Không hoạt động",
+      "capacityGuests": "{count} khách",
+      "capacityDetail": "{adults} NL · {children} TE",
+      "capacityTitle": "Tối đa {count} khách: {adults} người lớn, {children} trẻ em; giá gồm {base} khách"
     },
     "form": {
       "name": "Tên hạng phòng",
@@ -47,19 +52,29 @@
       "bedType": "Loại giường",
       "area": "Diện tích (m²)",
       "totalRooms": "Số phòng",
-      "baseOccupancy": "Số khách tối thiểu",
+      "baseOccupancy": "Số khách đã gồm trong giá",
       "maxOccupancy": "Số khách tối đa",
       "weekdayPrice": "Giá ngày thường (VND)",
       "weekendPrice": "Giá cuối tuần (VND)",
-      "totalRoomsListed": "Tính theo danh sách phòng (tab Danh sách phòng)"
+      "totalRoomsListed": "Tính theo danh sách phòng (tab Danh sách phòng)",
+      "maxAdults": "Người lớn tối đa",
+      "maxChildren": "Trẻ em tối đa",
+      "capacity": "Sức chứa",
+      "capacityHint": "Khách vượt số đã gồm trong giá trả phụ thu theo Bảng giá. Website chỉ nhận số người lớn, trẻ em trong giới hạn này.",
+      "problem": {
+        "range": "Kiểm tra lại các số: người lớn 1–10, trẻ em 0–10, số khách 1–20, số phòng từ 1.",
+        "baseOverMax": "Số khách đã gồm trong giá không được lớn hơn số khách tối đa.",
+        "adultsOverMax": "Người lớn tối đa không được lớn hơn số khách tối đa.",
+        "maxOverAdultsAndChildren": "Số khách tối đa lớn hơn người lớn + trẻ em tối đa: tăng người lớn hoặc trẻ em tối đa, hoặc giảm số khách tối đa."
+      }
     },
     "create": {
-      "submit": "Tạo Hạng Phòng",
+      "submit": "Tạo hạng phòng",
       "failed": "Không thể tạo hạng phòng"
     },
     "edit": {
-      "title": "Chỉnh Sửa Hạng Phòng",
-      "submit": "Lưu Thay Đổi",
+      "title": "Chỉnh sửa hạng phòng",
+      "submit": "Lưu thay đổi",
       "failed": "Không thể cập nhật hạng phòng"
     },
     "delete": {
@@ -68,11 +83,11 @@
     },
     "error": "Đã xảy ra lỗi",
     "maintenance": {
-      "title": "Lịch Bảo Trì",
+      "title": "Lịch bảo trì",
       "description": "Quản lý lịch bảo trì sửa chữa phòng",
-      "add": "Thêm Lịch Bảo Trì",
+      "add": "Thêm lịch bảo trì",
       "empty": "Chưa có lịch bảo trì nào",
-      "addFirst": "Thêm Lịch Bảo Trì Đầu Tiên",
+      "addFirst": "Thêm lịch bảo trì đầu tiên",
       "fillAll": "Vui lòng điền đầy đủ thông tin",
       "created": "Đã tạo lịch bảo trì",
       "createFailed": "Lỗi khi tạo lịch bảo trì",
@@ -88,7 +103,7 @@
         "notes": "Ghi chú thêm",
         "notesPlaceholder": "Thông tin chi tiết...",
         "warning": "Phòng sẽ bị khóa không cho đặt trong khoảng thời gian bảo trì",
-        "submit": "Tạo Lịch Bảo Trì",
+        "submit": "Tạo lịch bảo trì",
         "room": "Phòng",
         "anyRoom": "Một phòng bất kỳ của hạng"
       },
@@ -116,7 +131,11 @@
       "confirmDelete": "Xoá phòng {number}? Các đơn đã trả phòng vẫn giữ số phòng.",
       "deleted": "Đã xoá phòng {number}",
       "deleteFailed": "Chưa xoá được phòng",
-      "saveFailed": "Chưa lưu được phòng"
+      "saveFailed": "Chưa lưu được phòng",
+      "shrinkTitle": "Giảm số phòng của {type}?",
+      "shrinkBody": "{type} đang tính {current} phòng. Từ khi có danh sách, số phòng của hạng bằng số phòng trong danh sách: thêm {count} phòng thì hạng chỉ còn {count} phòng để bán (ít hơn {fewer} phòng).",
+      "shrinkHint": "Muốn giữ {current} phòng thì liệt kê đủ cả {current} số phòng (ví dụ 101-110, 201-210).",
+      "shrinkConfirm": "Vẫn thêm {count} phòng"
     },
     "photos": {
       "title": "Ảnh của loại phòng",

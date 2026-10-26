@@ -80,7 +80,7 @@ export function RoomTypePhotos({
                   onClick={() => run(photo.id, () => send({ method: 'PATCH', body: JSON.stringify({ imageId: photo.id }) }))}
                   aria-label={t('makeMain')}
                   title={t('makeMain')}
-                  className="absolute left-1 top-1 rounded bg-panel/90 p-1 text-fg transition-opacity hover:bg-panel sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
+                  className="absolute left-1 top-1 rounded bg-panel/90 p-1 text-fg transition-opacity hover:bg-panel [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 focus:opacity-100"
                 >
                   <Star className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
@@ -93,7 +93,8 @@ export function RoomTypePhotos({
                 }}
                 aria-label={t('delete')}
                 title={t('delete')}
-                className="absolute right-1 top-1 rounded bg-err p-1 text-on-err transition-opacity sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
+                // Hidden until hover where there is hover; on touch screens always there, but quiet (it was a red block over every photo).
+                className="absolute right-1 top-1 rounded bg-panel/90 p-1 text-err transition-opacity hover:bg-err hover:text-on-err [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 focus:opacity-100"
               >
                 <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
               </button>

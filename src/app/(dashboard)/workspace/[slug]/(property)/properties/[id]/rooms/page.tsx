@@ -3,7 +3,8 @@
 import * as React from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
-import { Card, CardContent, Button, Badge, Modal, ModalBody, ModalFooter, Input, Select, Textarea, Dropdown, DropdownItem, DropdownDivider } from '@/components/ui'
+import { Card, CardContent, Button, Badge, Modal, ModalBody, ModalFooter, Input, Select, Textarea, Tabs, TabsList, TabsTrigger } from '@/components/ui'
+import { toast } from '@/components/ui/toast'
 import {
   Plus, Bed, Edit, Image, BedDouble, Wrench, X, AlertCircle, DoorOpen,
 } from 'lucide-react'
@@ -17,6 +18,7 @@ import { EnglishCopy } from '@/components/ui/english-copy'
 import { getIcon } from '@/lib/amenity-icons'
 import { amenityName } from '@/lib/i18n/amenities'
 import { apiError } from '@/lib/i18n/api-errors'
+import { capacityProblem, type CapacityProblem } from '@/lib/bookings/capacity'
 
 interface RoomType {
   id: string
@@ -60,8 +62,8 @@ interface Property {
   subdomain: string
 }
 
-// Labels: messages dash.rooms.rooms.bedType.*
-const BED_TYPES = ['SINGLE', 'DOUBLE', 'TWIN', 'TRIPLE', 'QUADRUPLE'] as const
+// Labels: messages dash.rooms.rooms.bedType.* (every BedType: Deluxe and Suite showed no bed before)
+const BED_TYPES = ['SINGLE', 'DOUBLE', 'TWIN', 'TRIPLE', 'QUADRUPLE', 'KING', 'QUEEN', 'SUITE', 'BUNK'] as const
 type BedType = (typeof BED_TYPES)[number]
 
 export default function RoomTypesPage() {
@@ -115,11 +117,12 @@ export default function RoomTypesPage() {
     en: { name: '', description: '' },
     area: '',
     bedType: 'DOUBLE',
+    // A double room: 2 adults and a child at most, the price covering 2 (capacity.ts).
     maxAdults: '2',
-    maxChildren: '0',
+    maxChildren: '1',
     totalRooms: '1',
     baseOccupancy: '2',
-    maxOccupancy: '4',
+    maxOccupancy: '3',
     weekdayPrice: '',
     weekendPrice: '',
   })
@@ -199,7 +202,7 @@ export default function RoomTypesPage() {
 
   const handleCreateMaintenance = async () => {
     if (!maintenanceForm.roomTypeId || !maintenanceForm.startDate || !maintenanceForm.endDate) {
-      alert(t('maintenance.fillAll'))
+      toast.error(t('maintenance.fillAll'))
       return
     }
     setIsSaving(true)
@@ -225,13 +228,13 @@ export default function RoomTypesPage() {
           notes: '',
         })
         fetchMaintenanceLocks()
-        alert(t('maintenance.created'))
+        toast.success(t('maintenance.created'))
       } else {
-        alert(apiError(data.error) || t('maintenance.createFailed'))
+        toast.error(t('maintenance.createFailed'), apiError(data.error))
       }
     } catch (err) {
       console.error('Failed to create maintenance lock:', err)
-      alert(t('error'))
+      toast.error(t('error'))
     } finally {
       setIsSaving(false)
     }
@@ -246,11 +249,11 @@ export default function RoomTypesPage() {
       if (data.success) {
         fetchMaintenanceLocks()
       } else {
-        alert(apiError(data.error) || t('maintenance.deleteFailed'))
+        toast.error(t('maintenance.deleteFailed'), apiError(data.error))
       }
     } catch (err) {
       console.error('Failed to delete maintenance lock:', err)
-      alert(t('error'))
+      toast.error(t('error'))
     } finally {
       setIsDeletingMaintenance(null)
     }
@@ -273,7 +276,28 @@ export default function RoomTypesPage() {
     }
   }
 
+  const listedType = !!selectedRoomType && roomsOf(selectedRoomType.id).length > 0
+  // The ranges of the API schema (src/app/api/room-types) and a capacity that
+  // hangs together (src/lib/bookings/capacity.ts).
+  const formProblem = ((): CapacityProblem | 'range' | null => {
+    const whole = (value: string, min: number, max: number) =>
+      value.trim() !== '' && Number.isInteger(Number(value)) && Number(value) >= min && Number(value) <= max
+    const { maxAdults, maxChildren, baseOccupancy, maxOccupancy, totalRooms } = formData
+    // A listed type's count follows its rooms (the field is locked, and may be 0 when all are stopped).
+    const countChecked = !(isEditModalOpen && listedType)
+    if (!whole(maxAdults, 1, 10) || !whole(maxChildren, 0, 10) || !whole(baseOccupancy, 1, 10) || !whole(maxOccupancy, 1, 20) || (countChecked && !whole(totalRooms, 1, 10_000))) {
+      return 'range'
+    }
+    return capacityProblem({
+      baseOccupancy: Number(baseOccupancy),
+      maxOccupancy: Number(maxOccupancy),
+      maxAdults: Number(maxAdults),
+      maxChildren: Number(maxChildren),
+    })
+  })()
+
   const handleCreate = async () => {
+    if (formProblem) return
     setIsSaving(true)
     try {
       const res = await fetch('/api/room-types', {
@@ -287,24 +311,26 @@ export default function RoomTypesPage() {
         resetForm()
         fetchRoomTypes()
       } else {
-        alert(apiError(data.error) || t('create.failed'))
+        toast.error(t('create.failed'), apiError(data.error))
       }
     } catch (err) {
       console.error('Failed to create room type:', err)
-      alert(t('error'))
+      toast.error(t('error'))
     } finally {
       setIsSaving(false)
     }
   }
 
   const handleUpdate = async () => {
-    if (!selectedRoomType) return
+    if (!selectedRoomType || formProblem) return
     setIsSaving(true)
     try {
+      // A listed type's count is the rooms' (the API refuses to set it).
+      const { totalRooms, ...rest } = requestBody()
       const res = await fetch(`/api/room-types/${selectedRoomType.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody()),
+        body: JSON.stringify(listedType ? rest : { ...rest, totalRooms }),
       })
       const data = await res.json()
       if (data.success) {
@@ -313,11 +339,11 @@ export default function RoomTypesPage() {
         resetForm()
         fetchRoomTypes()
       } else {
-        alert(apiError(data.error) || t('edit.failed'))
+        toast.error(t('edit.failed'), apiError(data.error))
       }
     } catch (err) {
       console.error('Failed to update room type:', err)
-      alert(t('error'))
+      toast.error(t('error'))
     } finally {
       setIsSaving(false)
     }
@@ -331,11 +357,11 @@ export default function RoomTypesPage() {
       if (data.success) {
         fetchRoomTypes()
       } else {
-        alert(apiError(data.error) || t('delete.failed'))
+        toast.error(t('delete.failed'), apiError(data.error))
       }
     } catch (err) {
       console.error('Failed to delete room type:', err)
-      alert(t('error'))
+      toast.error(t('error'))
     }
   }
 
@@ -366,14 +392,62 @@ export default function RoomTypesPage() {
       area: '',
       bedType: 'DOUBLE',
       maxAdults: '2',
-      maxChildren: '0',
+      maxChildren: '1',
       totalRooms: '1',
       baseOccupancy: '2',
-      maxOccupancy: '4',
+      maxOccupancy: '3',
       weekdayPrice: '',
       weekendPrice: '',
     })
   }
+
+  // Capacity, in both dialogs: what the hotel site checks guests against.
+  const capacityFieldset = (
+    <fieldset className="space-y-3 rounded-box border border-line p-3">
+      <legend className="px-1 text-small font-medium text-fg">{t('form.capacity')}</legend>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Input
+          label={t('form.maxOccupancy')}
+          type="number"
+          value={formData.maxOccupancy}
+          onChange={(e) => setFormData({ ...formData, maxOccupancy: e.target.value })}
+          min="1"
+          max="20"
+        />
+        <Input
+          label={t('form.baseOccupancy')}
+          type="number"
+          value={formData.baseOccupancy}
+          onChange={(e) => setFormData({ ...formData, baseOccupancy: e.target.value })}
+          min="1"
+          max="10"
+        />
+        <Input
+          label={t('form.maxAdults')}
+          type="number"
+          value={formData.maxAdults}
+          onChange={(e) => setFormData({ ...formData, maxAdults: e.target.value })}
+          min="1"
+          max="10"
+        />
+        <Input
+          label={t('form.maxChildren')}
+          type="number"
+          value={formData.maxChildren}
+          onChange={(e) => setFormData({ ...formData, maxChildren: e.target.value })}
+          min="0"
+          max="10"
+        />
+      </div>
+      {formProblem ? (
+        <p className="text-small text-err" role="alert">
+          {t(`form.problem.${formProblem}`)}
+        </p>
+      ) : (
+        <p className="text-small text-muted">{t('form.capacityHint')}</p>
+      )}
+    </fieldset>
+  )
 
   return (
     <div>
@@ -382,16 +456,15 @@ export default function RoomTypesPage() {
           title={t('header.title')}
           description={t('header.description')}
           actions={
-            <div className="flex items-center gap-3">
-              <Select
-                value={selectedProperty}
-                onChange={(e) => setSelectedProperty(e.target.value)}
-                className="w-64"
-              >
-                {properties.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </Select>
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Sized here: the Select's own wrapper is full width. */}
+              <div className="w-full sm:w-64">
+                <Select value={selectedProperty} onChange={(e) => setSelectedProperty(e.target.value)}>
+                  {properties.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </Select>
+              </div>
               <Button onClick={() => setIsCreateModalOpen(true)} disabled={!selectedProperty}>
                 <Plus className="w-4 h-4 mr-2" />
                 {t('header.add')}
@@ -400,45 +473,29 @@ export default function RoomTypesPage() {
           }
         />
 
-        {/* Tabs */}
-        <div className="flex items-center gap-4 mb-6">
-          <button
-            onClick={() => setActiveTab('rooms')}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              activeTab === 'rooms'
-                ? 'bg-ink text-on-ink'
-                : 'bg-fg/5 text-muted hover:bg-fg/10'
-            }`}
-          >
-            <Bed className="w-4 h-4 inline mr-2" />
-            {t('tabs.rooms')}
-          </button>
-          <button
-            onClick={() => setActiveTab('list')}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              activeTab === 'list'
-                ? 'bg-ink text-on-ink'
-                : 'bg-fg/5 text-muted hover:bg-fg/10'
-            }`}
-          >
-            <DoorOpen className="w-4 h-4 inline mr-2" />
-            {t('tabs.list')}
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('maintenance')
-              if (selectedProperty) fetchMaintenanceLocks()
-            }}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              activeTab === 'maintenance'
-                ? 'bg-ink text-on-ink'
-                : 'bg-fg/5 text-muted hover:bg-fg/10'
-            }`}
-          >
-            <Wrench className="w-4 h-4 inline mr-2" />
-            {t('tabs.maintenance')}
-          </button>
-        </div>
+        {/* Tabs: the shared underline tabs, which scroll sideways on a phone instead of wrapping. */}
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => {
+            setActiveTab(value as typeof activeTab)
+            if (value === 'maintenance' && selectedProperty) fetchMaintenanceLocks()
+          }}
+        >
+          <TabsList variant="underline" className="mb-6">
+            <TabsTrigger value="rooms">
+              <Bed className="w-4 h-4 inline mr-2" aria-hidden="true" />
+              {t('tabs.rooms')}
+            </TabsTrigger>
+            <TabsTrigger value="list">
+              <DoorOpen className="w-4 h-4 inline mr-2" aria-hidden="true" />
+              {t('tabs.list')}
+            </TabsTrigger>
+            <TabsTrigger value="maintenance">
+              <Wrench className="w-4 h-4 inline mr-2" aria-hidden="true" />
+              {t('tabs.maintenance')}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         {/* Room list Tab */}
         {activeTab === 'list' && selectedProperty && (
@@ -454,7 +511,7 @@ export default function RoomTypesPage() {
         {/* Maintenance Tab */}
         {activeTab === 'maintenance' && (
           <div>
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
               <div>
                 <h3 className="text-lg font-semibold">{t('maintenance.title')}</h3>
                 <p className="text-sm text-muted">{t('maintenance.description')}</p>
@@ -485,9 +542,9 @@ export default function RoomTypesPage() {
                 {maintenanceLocks.map((lock) => (
                   <Card key={lock.id}>
                     <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-lg bg-warn-soft flex items-center justify-center">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-4">
+                          <div className="w-12 h-12 shrink-0 rounded-lg bg-warn-soft flex items-center justify-center">
                             <Wrench className="w-6 h-6 text-warn" />
                           </div>
                           <div>
@@ -525,34 +582,29 @@ export default function RoomTypesPage() {
         {/* Rooms Tab */}
         {activeTab === 'rooms' && (
           <>
-        {/* Property Info Banner */}
+        {/* Summary: the inventory per type. (The "available" figure summed a stale column and could exceed the hotel's rooms.) */}
         {selectedPropertyData && (
-          <div className="mb-6 p-4 rounded-xl bg-panel border border-line shadow-sm flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-ink/10 flex items-center justify-center">
-                <Bed className="w-6 h-6 text-acc" />
+          <div className="mb-6 p-4 rounded-xl bg-panel border border-line shadow-sm flex flex-wrap items-center justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-4">
+              <div className="w-12 h-12 shrink-0 rounded-lg bg-ink/10 flex items-center justify-center">
+                <Bed className="w-6 h-6 text-acc" aria-hidden="true" />
               </div>
-              <div>
-                <p className="text-sm text-muted">{selectedPropertyData.name}</p>
+              <div className="min-w-0">
+                <p className="text-sm text-muted truncate">{selectedPropertyData.name}</p>
                 <p className="font-semibold text-fg">{t('banner.summary', { types: roomTypes.length, rooms: roomTypes.reduce((sum, rt) => sum + rt.totalRooms, 0) })}</p>
               </div>
             </div>
-            <div className="flex items-center gap-6 text-sm">
+            <dl className="flex items-center gap-6 text-sm">
               <div className="text-center">
-                <p className="text-muted">{t('banner.totalRooms')}</p>
-                <p className="font-bold text-fg">{roomTypes.reduce((sum, rt) => sum + rt.totalRooms, 0)}</p>
+                <dt className="text-muted whitespace-nowrap">{t('banner.totalRooms')}</dt>
+                <dd className="font-bold text-fg">{roomTypes.reduce((sum, rt) => sum + rt.totalRooms, 0)}</dd>
               </div>
-              <div className="w-px h-8 bg-fg/10" />
+              <div className="w-px h-8 bg-fg/10" aria-hidden="true" />
               <div className="text-center">
-                <p className="text-muted">{t('banner.roomTypes')}</p>
-                <p className="font-bold text-fg">{roomTypes.length}</p>
+                <dt className="text-muted whitespace-nowrap">{t('banner.roomTypes')}</dt>
+                <dd className="font-bold text-fg">{roomTypes.length}</dd>
               </div>
-              <div className="w-px h-8 bg-fg/10" />
-              <div className="text-center">
-                <p className="text-muted">{t('banner.available')}</p>
-                <p className="font-bold text-ok">{roomTypes.reduce((sum, rt) => sum + rt.availableRooms, 0)}</p>
-              </div>
-            </div>
+            </dl>
           </div>
         )}
 
@@ -613,11 +665,6 @@ export default function RoomTypesPage() {
                     <span>{t('card.photos', { count: roomType.images.length })}</span>
                   </div>
                   
-                  {/* Room Type ID */}
-                  <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-panel/90 text-xs font-mono text-fg">
-                    ID: {roomType.slug?.toUpperCase().slice(0, 6) || roomType.id.slice(0, 6)}
-                  </div>
-                  
                   {/* Edit Button */}
                   <div className="absolute top-3 left-3">
                     <Button 
@@ -636,7 +683,7 @@ export default function RoomTypesPage() {
                 <CardContent className="p-4 space-y-3">
                   {/* Name & Price */}
                   <div className="flex items-start justify-between">
-                    <div>
+                    <div className="min-w-0">
                       <h4 className="font-semibold text-fg text-base">{roomType.name}</h4>
                       {roomType.description && (
                         <p className="text-sm text-muted mt-0.5 line-clamp-1">{roomType.description}</p>
@@ -658,17 +705,25 @@ export default function RoomTypesPage() {
                     </div>
                     <div>
                       <p className="text-[10px] text-muted uppercase font-semibold tracking-wide">{t('card.area')}</p>
-                      <p className="font-bold text-fg">{roomType.area || '—'} m²</p>
+                      <p className="font-bold text-fg">{roomType.area ? `${roomType.area} m²` : '—'}</p>
                     </div>
-                    <div>
+                    <div
+                      title={t('card.capacityTitle', {
+                        count: roomType.maxOccupancy,
+                        adults: roomType.maxAdults,
+                        children: roomType.maxChildren,
+                        base: roomType.baseOccupancy,
+                      })}
+                    >
                       <p className="text-[10px] text-muted uppercase font-semibold tracking-wide">{t('card.capacity')}</p>
-                      <p className="font-bold text-fg">{t('card.capacityValue', { adults: roomType.baseOccupancy, children: roomType.maxOccupancy - roomType.baseOccupancy })}</p>
+                      <p className="font-bold text-fg">{t('card.capacityGuests', { count: roomType.maxOccupancy })}</p>
+                      <p className="text-[11px] text-muted">{t('card.capacityDetail', { adults: roomType.maxAdults, children: roomType.maxChildren })}</p>
                     </div>
                   </div>
                   
                   {/* Bed Type */}
                   <div className="flex items-center gap-2 text-sm text-muted">
-                    {roomType.bedType === 'DOUBLE' || roomType.bedType === 'QUADRUPLE' ? (
+                    {roomType.bedType !== 'SINGLE' && roomType.bedType !== 'TWIN' && roomType.bedType !== 'BUNK' ? (
                       <BedDouble className="w-4 h-4 text-acc" />
                     ) : (
                       <Bed className="w-4 h-4 text-acc" />
@@ -747,7 +802,7 @@ export default function RoomTypesPage() {
               rows={3}
             />
           </EnglishCopy>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
               label={t('form.bedType')}
               value={formData.bedType}
@@ -765,32 +820,18 @@ export default function RoomTypesPage() {
               placeholder="25"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label={t('form.totalRooms')}
               type="number"
               value={formData.totalRooms}
               onChange={(e) => setFormData({ ...formData, totalRooms: e.target.value })}
               min="1"
-            />
-            <Input
-              label={t('form.baseOccupancy')}
-              type="number"
-              value={formData.baseOccupancy}
-              onChange={(e) => setFormData({ ...formData, baseOccupancy: e.target.value })}
-              min="1"
+              max="10000"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label={t('form.maxOccupancy')}
-              type="number"
-              value={formData.maxOccupancy}
-              onChange={(e) => setFormData({ ...formData, maxOccupancy: e.target.value })}
-              min="1"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+          {capacityFieldset}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label={t('form.weekdayPrice')}
               type="number"
@@ -811,7 +852,7 @@ export default function RoomTypesPage() {
           <Button variant="secondary" onClick={() => setIsCreateModalOpen(false)}>
             {tc('actions.cancel')}
           </Button>
-          <Button onClick={handleCreate} disabled={isSaving || !formData.name}>
+          <Button onClick={handleCreate} disabled={isSaving || !formData.name || !!formProblem}>
             {isSaving ? tc('actions.saving') : t('create.submit')}
           </Button>
         </ModalFooter>
@@ -859,7 +900,7 @@ export default function RoomTypesPage() {
               rows={3}
             />
           </EnglishCopy>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
               label={t('form.bedType')}
               value={formData.bedType}
@@ -876,34 +917,20 @@ export default function RoomTypesPage() {
               onChange={(e) => setFormData({ ...formData, area: e.target.value })}
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label={t('form.totalRooms')}
               type="number"
               value={formData.totalRooms}
               onChange={(e) => setFormData({ ...formData, totalRooms: e.target.value })}
               min="1"
+              max="10000"
               disabled={!!selectedRoomType && roomsOf(selectedRoomType.id).length > 0}
               hint={selectedRoomType && roomsOf(selectedRoomType.id).length > 0 ? t('form.totalRoomsListed') : undefined}
             />
-            <Input
-              label={t('form.baseOccupancy')}
-              type="number"
-              value={formData.baseOccupancy}
-              onChange={(e) => setFormData({ ...formData, baseOccupancy: e.target.value })}
-              min="1"
-            />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label={t('form.maxOccupancy')}
-              type="number"
-              value={formData.maxOccupancy}
-              onChange={(e) => setFormData({ ...formData, maxOccupancy: e.target.value })}
-              min="1"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+          {capacityFieldset}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label={t('form.weekdayPrice')}
               type="number"
@@ -922,7 +949,7 @@ export default function RoomTypesPage() {
           <Button variant="secondary" onClick={() => setIsEditModalOpen(false)}>
             {tc('actions.cancel')}
           </Button>
-          <Button onClick={handleUpdate} disabled={isSaving || !formData.name}>
+          <Button onClick={handleUpdate} disabled={isSaving || !formData.name || !!formProblem}>
             {isSaving ? tc('actions.saving') : t('edit.submit')}
           </Button>
         </ModalFooter>

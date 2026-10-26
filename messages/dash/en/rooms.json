@@ -15,13 +15,16 @@
       "DOUBLE": "Double bed",
       "TWIN": "Twin beds",
       "TRIPLE": "Three beds",
-      "QUADRUPLE": "Four beds"
+      "QUADRUPLE": "Four beds",
+      "KING": "King bed",
+      "QUEEN": "Queen bed",
+      "SUITE": "Suite bed",
+      "BUNK": "Bunk beds"
     },
     "banner": {
       "summary": "{types, plural, one {# room type} other {# room types}} • {rooms, plural, one {# room} other {# rooms}}",
       "totalRooms": "Total rooms",
-      "roomTypes": "Room types",
-      "available": "Available"
+      "roomTypes": "Room types"
     },
     "list": {
       "selectProperty": "Choose a property to see its room types",
@@ -35,9 +38,11 @@
       "roomCount": "{count, plural, one {# room} other {# rooms}}",
       "area": "Area",
       "capacity": "Capacity",
-      "capacityValue": "{adults}A • {children}C",
       "amenities": "Amenities:",
-      "inactive": "Inactive"
+      "inactive": "Inactive",
+      "capacityGuests": "{count, plural, one {# guest} other {# guests}}",
+      "capacityDetail": "{adults} A · {children} C",
+      "capacityTitle": "Up to {count} guests: {adults} adults, {children} children; the price covers {base}"
     },
     "form": {
       "name": "Room type name",
@@ -47,11 +52,21 @@
       "bedType": "Bed type",
       "area": "Area (m²)",
       "totalRooms": "Number of rooms",
-      "baseOccupancy": "Minimum guests",
+      "baseOccupancy": "Guests included in the price",
       "maxOccupancy": "Maximum guests",
       "weekdayPrice": "Weekday price (VND)",
       "weekendPrice": "Weekend price (VND)",
-      "totalRoomsListed": "Counted from the room list (Room list tab)"
+      "totalRoomsListed": "Counted from the room list (Room list tab)",
+      "maxAdults": "Maximum adults",
+      "maxChildren": "Maximum children",
+      "capacity": "Capacity",
+      "capacityHint": "Guests above those included pay the surcharge from the rate plan. The website only takes adults and children within these limits.",
+      "problem": {
+        "range": "Check the numbers: adults 1–10, children 0–10, guests 1–20, rooms from 1.",
+        "baseOverMax": "Guests included in the price cannot be more than the maximum guests.",
+        "adultsOverMax": "Maximum adults cannot be more than the maximum guests.",
+        "maxOverAdultsAndChildren": "Maximum guests is more than maximum adults + children: raise the adults or children, or lower the maximum guests."
+      }
     },
     "create": {
       "submit": "Create room type",
@@ -116,7 +131,11 @@
       "confirmDelete": "Delete room {number}? Checked-out bookings keep its number.",
       "deleted": "Room {number} deleted",
       "deleteFailed": "Could not delete the room",
-      "saveFailed": "Could not save the room"
+      "saveFailed": "Could not save the room",
+      "shrinkTitle": "Fewer rooms for {type}?",
+      "shrinkBody": "{type} counts {current} rooms. Once it has a list, its number of rooms is the rooms on the list: adding {count, plural, one {# room} other {# rooms}} leaves {count} to sell ({fewer} fewer).",
+      "shrinkHint": "To keep {current} rooms, list all {current} room numbers (e.g. 101-110, 201-210).",
+      "shrinkConfirm": "Add {count, plural, one {# room} other {# rooms}} anyway"
     },
     "photos": {
       "title": "Room type photos",

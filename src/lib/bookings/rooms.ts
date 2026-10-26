@@ -30,6 +30,7 @@
 import type { Prisma } from '@prisma/client'
 import { lockBooking } from '@/lib/payments/booking-payments'
 import { ACTIVE_BOOKING_STATUSES, lockRoomType, roomsTaken } from './occupancy'
+import { normalizeRoomNumber } from './room-numbers'
 import { isDay, nightStart, nightsOutsideType, planNumbers, roomPlan, spansWithin, vnDay, withNightsIn, type RoomSpan } from './room-plan'
 
 type Tx = Prisma.TransactionClient
@@ -52,8 +53,8 @@ type Taken = { booking: { bookingCode: string; checkInDate: Date; checkOutDate: 
 export const roomConflictMessage = (number: string, taken: Taken) =>
   `Phòng ${number} đã có đơn ${taken.booking.bookingCode} (${day(taken.booking.checkInDate)} – ${day(taken.booking.checkOutDate)})`
 
-/** How room numbers are kept: trimmed, upper case ("a101" and "A101" are one room). */
-export const normalizeRoomNumber = (value: string) => value.trim().toUpperCase()
+// Pure, so the room list form can count what it will add (room-numbers.ts).
+export { normalizeRoomNumber, parseRoomNumbers } from './room-numbers'
 
 /** Until the transaction ends, nobody else gives out this room number. */
 async function lockRoomNumber(tx: Tx, propertyId: string, number: string) {
@@ -101,27 +102,6 @@ async function stayInRoom(
   ])
   if (whole) return whole
   return part && { booking: { bookingCode: part.booking.bookingCode, checkInDate: part.fromDate, checkOutDate: part.toDate } }
-}
-
-/** "101-105, 201, 202" → ["101", ..., "105", "201", "202"]; null when unreadable or over `max`. */
-export function parseRoomNumbers(input: string, max = 200): string[] | null {
-  const out: string[] = []
-  for (const part of input.split(/[,;\n]+/).map((p) => p.trim()).filter(Boolean)) {
-    const range = part.match(/^([A-Za-z]*)(\d+)\s*-\s*\1?(\d+)$/)
-    if (range) {
-      const [, prefix, from, to] = range
-      const a = Number(from)
-      const b = Number(to)
-      if (b < a || b - a >= max) return null
-      for (let n = a; n <= b; n++) out.push(normalizeRoomNumber(`${prefix}${String(n).padStart(from.length, '0')}`))
-    } else if (/^[\p{L}\p{N}][\p{L}\p{N} .\-/]{0,19}$/u.test(part)) {
-      out.push(normalizeRoomNumber(part))
-    } else {
-      return null
-    }
-    if (out.length > max) return null
-  }
-  return out.length ? [...new Set(out)] : null
 }
 
 /**
