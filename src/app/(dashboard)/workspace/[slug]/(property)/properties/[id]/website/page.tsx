@@ -263,7 +263,8 @@ const blockTypes: BlockType[] = [
     color: 'text-err', 
     bgGradient: 'from-red-500 to-red-600',
     defaultConfig: {
-      mapAddress: 'Hà Nội, Việt Nam',
+      // Empty: the site then shows the property's own address (or coordinates).
+      mapAddress: '',
       mapZoom: 15
     }
   },

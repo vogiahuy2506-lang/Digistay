@@ -851,9 +851,10 @@ gắn mới phải thêm TXT mới. Kiểm thất bại (kể cả DNS lỗi t�
 
 **Phục vụ và HTTPS (tự động):**
 - Khách sạn nhập tên miền ở **Website khách sạn → Cài đặt → Tên miền riêng**, thêm các bản ghi
-  được hướng dẫn rồi bấm Kiểm tra. Giao diện chỉ hướng dẫn bản ghi **A** (về IP của `digistay.vn`) +
-  TXT: CNAME tới `<subdomain>.digistay.vn` chỉ chạy khi `*.digistay.vn` đã có DNS (mục
-  "Subdomain cho site khách sạn" ở trên).
+  được hướng dẫn rồi bấm Kiểm tra. Giao diện hướng dẫn bản ghi **A** (về IP của `digistay.vn`) cho
+  tên miền gốc + TXT, và **CNAME** cho `www.` tới `<subdomain>.digistay.vn` — CNAME chỉ được đưa ra khi
+  `<subdomain>.digistay.vn` đã phân giải được (`records.cnameReady`), tức `*.digistay.vn` đã có DNS (mục
+  "Subdomain cho site khách sạn" ở trên); trước đó CNAME qua được bước kiểm nhưng không dẫn tới đâu.
 - Xác minh xong, app phục vụ site trên tên miền đó: `src/middleware.ts` hỏi
   `/api/public/site-host` tên miền thuộc site nào (nhớ 60 giây), như với subdomain.
 - Chứng chỉ: xác minh xong là vào hàng đợi (`sslRequestedAt`). Timer `digistay-custom-domains` chạy

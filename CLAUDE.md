@@ -335,7 +335,8 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
   mọi trang quản lý của workspace và khách sạn, hồ sơ và `/admin/system` (Thanh toán, Hóa đơn và
   `/admin/system` chuyển sau cùng, trên bản đã có PayOS / Mắt Bão).
   Trang quản lý mới phải dùng màu vai trò rồi thêm vào đó. Phần xem trước website
-  khách sạn (trình dựng website) giữ `data-theme="light"`.
+  khách sạn (trình dựng website, `website/site-preview.tsx`) dùng `data-surface="site"` và sáng/tối như
+  chính website; khung quanh nó theo giao diện của trang quản lý.
 - Phiếu in / HTML tự ghép (`document.write`, email): mọi giá trị từ khách phải qua `escapeHtml`
   (`src/lib/bookings/display.ts`) — tên khách đến từ form đặt phòng công khai.
 - Thứ tự làm: (1) token màu + font — xong (`feat/ui-tokens`); (2) thành phần dùng chung — xong
@@ -364,7 +365,7 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
   của website) và màu tiêu đề (`headingColor`, tiêu đề `font-site`) tự chỉnh cho đọc được ở hai theme
   (`hotelButtonVariables` / `hotelHeadingVariables`, `src/lib/public-site/accent.ts`); khối Dịch vụ và
   Thực đơn lấy dữ liệu từ trang Dịch vụ / Thực đơn, không có gì thì không hiện.
-- Tên miền riêng: xác minh ở `/api/website/domain/verify` (A + TXT); middleware phục vụ site trên tên
+- Tên miền riêng: xác minh ở `/api/website/domain/verify` (A hoặc CNAME cho www + TXT); middleware phục vụ site trên tên
   miền đó qua `/api/public/site-host` (`src/lib/public-site/custom-host.ts`); chứng chỉ HTTPS do
   `docker/certbot/custom-domains.sh` trên VPS cấp mỗi phút (`/api/internal/custom-domains`), nginx
   `custom-domains.conf` chọn theo SNI. RUNBOOK "Tên miền riêng của khách sạn".
