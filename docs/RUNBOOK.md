@@ -500,6 +500,8 @@ trong container app (cần header `CRON_SECRET`; nginx không mở `/api/interna
 - `/api/internal/einvoice-jobs`: tự xuất hoá đơn cho đơn đã trả đủ (khách sạn nào bật), phát hành
   lại hoá đơn tự động chưa rõ kết quả, và gửi email hoá đơn còn chờ (xem "Hoá đơn tự động và
   email" bên dưới).
+- `/api/internal/purge-deleted`: xoá hẳn cơ sở / workspace đã bị xoá quá 30 ngày (xem "Xoá cơ sở
+  và workspace" bên dưới).
 
 ### Cài đặt một lần
 
@@ -561,7 +563,7 @@ hoặc 24 giờ (cảnh báo) tới khi hết; có mục mới thì gửi ngay.
 
 | Cảnh báo | Mức | Xử lý |
 |---|---|---|
-| Job `payos-reconcile` / `einvoice-jobs` / `backup` lỗi hoặc chạy dở quá 1 giờ | cảnh báo (backup: nghiêm trọng) | `journalctl -u digistay-reconcile` hoặc `-u digistay-backup`; log app |
+| Job `payos-reconcile` / `einvoice-jobs` / `purge-deleted` / `backup` lỗi hoặc chạy dở quá 1 giờ | cảnh báo (backup: nghiêm trọng) | `journalctl -u digistay-reconcile` hoặc `-u digistay-backup`; log app (`[deletion] purge of …`) |
 | Chưa có / quá 30 giờ không có backup hằng ngày | nghiêm trọng | "Backup & khôi phục" |
 | Backup chỉ nằm trên VPS | cảnh báo | đặt `BACKUP_GCS_BUCKET` |
 | Hoá đơn điện tử kẹt (`PUBLISHING` > 10 phút, chưa rõ kết quả > 1 giờ) | nghiêm trọng | mở hoá đơn, bấm phát hành lại (Mắt Bão trả 304, không xuất trùng) |
@@ -590,6 +592,30 @@ mã hoá): gửi ngay sau request, lỗi thì job `email-outbox` thử lại sau
 ```bash
 docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c \
   "SELECT job, status, \"startedAt\", error FROM job_runs ORDER BY \"startedAt\" DESC LIMIT 20"'
+```
+
+---
+
+## Xoá cơ sở và workspace (khôi phục trong 30 ngày)
+
+Chủ sở hữu workspace xoá một cơ sở (thẻ "Vùng nguy hiểm" ở trang cơ sở) hoặc cả workspace (Cài đặt
+→ Bảo mật), sau khi gõ đúng tên. Không xoá được khi còn khách đang ở hoặc đơn sắp tới chưa huỷ (và,
+với workspace, khi đang có link thanh toán gói chưa hết hạn). Khoá gói không chặn việc xoá.
+
+- Xoá là **xoá mềm** (`deletedAt`): mọi truy vấn qua `prisma` bỏ qua cơ sở / workspace đã xoá và mọi
+  thứ của chúng (`src/lib/db/soft-delete.ts`), nên chúng biến mất ngay khỏi bảng điều khiển, website,
+  tên miền riêng, quyền truy cập và các job. Subdomain, slug và tên miền riêng vẫn bị giữ.
+- 30 ngày khôi phục: "Đã xoá gần đây" ở trang chủ workspace (cơ sở) và `/workspaces` (workspace).
+  Khôi phục cơ sở phải còn chỗ trong gói (số cơ sở, số phòng). Gói của workspace không bị đụng tới:
+  thời gian còn lại không hoàn tiền, khôi phục thì ngày hết hạn giữ nguyên.
+- Sau 30 ngày, job `purge-deleted` (cùng lượt 10 phút) xoá hẳn: đơn, thanh toán, hoá đơn, hạng phòng,
+  ảnh, website… Ảnh trên Cloudinary không bị xoá. Hoá đơn điện tử đã phát hành vẫn còn ở Mắt Bão.
+
+Những gì đang chờ bị xoá hẳn (cột `deletedAt` + 30 ngày là lúc job xoá):
+
+```bash
+docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c \
+  "SELECT id, name, \"deletedAt\" FROM properties WHERE \"deletedAt\" IS NOT NULL ORDER BY \"deletedAt\""'
 ```
 
 ---
