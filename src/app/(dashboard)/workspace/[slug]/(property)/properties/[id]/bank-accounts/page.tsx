@@ -5,9 +5,10 @@ import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import QRCode from 'qrcode'
 import { Header, PageContainer } from '@/components/layout'
-import { Card, CardContent, Button, Badge, Input } from '@/components/ui'
+import { Card, CardContent, Button, Badge, Input, Select, Modal, ModalBody, ModalFooter } from '@/components/ui'
 import { VietQR, downloadQR } from '@/components/ui/viet-qr'
-import { buildVietQr } from '@/lib/vietqr'
+import { VIETQR_BANKS, buildVietQr, findBank, toBankName } from '@/lib/vietqr'
+import { NoAccess, useHasRole } from '@/components/payment/no-access'
 import { toast } from '@/components/ui/toast'
 import { PayosCard } from './payos-card'
 import {
@@ -27,25 +28,22 @@ interface BankAccount {
   isActive: boolean
 }
 
-// `name` is what is saved as the account's bankName (data); MB's label is translated.
-const bankList = [
-  { code: 'MB', name: 'Ngân hàng Quân đội (MB Bank)' },
-  { code: 'VCB', name: 'Vietcombank' },
-  { code: 'VTB', name: 'VietinBank' },
-  { code: 'BIDV', name: 'BIDV' },
-  { code: 'TPB', name: 'TPBank' },
-  { code: 'ACB', name: 'ACB' },
-  { code: 'VPB', name: 'VPBank' },
-  { code: 'TCB', name: 'Techcombank' },
-  { code: 'STB', name: 'Sacombank' },
-  { code: 'CTG', name: 'VietinBank' },
-]
+// Every bank VietQR knows (src/lib/vietqr/banks.ts), by name; the short
+// name is what is saved as the account's bankName.
+const bankOptions = [...VIETQR_BANKS]
+  .sort((a, b) => a.shortName.localeCompare(b.shortName))
+  .map((bank) => ({ value: bank.code, label: `${bank.shortName} (${bank.code})` }))
+
+/** The transfer content of the account's own QR (no booking). */
+const qrContent = (account: { accountNumber: string }) => `DIGISTAY-${account.accountNumber}`
 
 export default function BankAccountsPage() {
   const t = useTranslations('dash.money.bank')
   const tc = useTranslations('dash.common')
   const params = useParams<{ slug: string; id: string }>()
   const propertyId = params.id
+  // Where guests' transfers go: the owner and ADMINs only, like the API.
+  const allowed = useHasRole(['ADMIN'])
 
   const [accounts, setAccounts] = React.useState<BankAccount[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
@@ -62,13 +60,13 @@ export default function BankAccountsPage() {
   })
 
   React.useEffect(() => {
-    if (propertyId) {
+    if (propertyId && allowed) {
       fetchAccounts()
     } else {
       setIsLoading(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [propertyId])
+  }, [propertyId, allowed])
 
   const fetchAccounts = async () => {
     setIsLoading(true)
@@ -155,11 +153,13 @@ export default function BankAccountsPage() {
 
   const handleEdit = (account: BankAccount) => {
     setEditingAccount(account)
+    const bank = findBank(account.bankCode)
     setFormData({
-      bankName: account.bankName,
-      bankCode: account.bankCode,
+      bankName: bank?.shortName ?? account.bankName,
+      // An old code ("VTB") shows as its bank in the list.
+      bankCode: bank?.code ?? account.bankCode,
       accountNumber: account.accountNumber,
-      accountHolder: account.accountHolder,
+      accountHolder: toBankName(account.accountHolder),
       qrEnabled: account.qrEnabled,
     })
     setShowModal(true)
@@ -191,15 +191,23 @@ export default function BankAccountsPage() {
 
   // Build a real VietQR string using the canonical EMVCo implementation
   // (CRC-16/CCITT, full TLV tags) so that bank apps can parse it.
-  const buildVietQRPreview = (account: BankAccount) => {
-    return buildVietQr({
-      bankCode: account.bankCode,
-      accountNumber: account.accountNumber,
-      accountHolder: account.accountHolder,
-      amount: 0,
-      addInfo: `DIGISTAY-${account.accountNumber}`,
-    })
+  const downloadAccountQr = async (account: BankAccount) => {
+    try {
+      const qrData = buildVietQr({
+        bankCode: account.bankCode,
+        accountNumber: account.accountNumber,
+        accountHolder: account.accountHolder,
+        amount: 0,
+        addInfo: qrContent(account),
+      })
+      downloadQR(await QRCode.toDataURL(qrData, { width: 300, margin: 2 }))
+    } catch (err) {
+      console.error('Failed to build the QR:', err)
+      toast.error(t('toast.qrFailed'))
+    }
   }
+
+  if (!allowed) return <NoAccess title={t('title')} />
 
   if (!propertyId) {
     return (
@@ -234,7 +242,7 @@ export default function BankAccountsPage() {
       {/* Info Banner */}
       <Card className="mb-6 bg-info-soft border-info/30">
         <CardContent className="p-4 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-info mt-0.5" />
+          <AlertCircle className="w-5 h-5 shrink-0 text-info mt-0.5" />
           <div>
             <p className="font-medium text-info">{t('infoTitle')}</p>
             <p className="text-sm text-info">
@@ -266,16 +274,16 @@ export default function BankAccountsPage() {
         <div className="space-y-4">
           {accounts.map((account) => (
             <Card key={account.id}>
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-fg/5 flex items-center justify-center">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-4 min-w-0">
+                    <div className="hidden sm:flex w-14 h-14 shrink-0 rounded-xl bg-fg/5 items-center justify-center">
                       <Building className="w-7 h-7 text-muted" />
                     </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-fg">{account.bankName}</h3>
-                      <p className="text-sm text-muted">{t('bankCode', { code: account.bankCode })}</p>
-                      <div className="flex items-center gap-2 mt-2">
+                    <div className="min-w-0">
+                      <h3 className="text-lg font-semibold text-fg break-words">{account.bankName}</h3>
+                      <p className="text-sm text-muted">{t('bankCode', { code: findBank(account.bankCode)?.code ?? account.bankCode })}</p>
+                      <div className="flex flex-wrap items-center gap-2 mt-2">
                         <Badge variant={account.isActive ? 'success' : 'gray'}>
                           {account.isActive ? t('active') : t('inactive')}
                         </Badge>
@@ -288,7 +296,7 @@ export default function BankAccountsPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <Button aria-label={tc('actions.edit')} variant="outline" size="sm" onClick={() => handleEdit(account)}>
                       <Edit className="w-4 h-4" />
                     </Button>
@@ -298,12 +306,12 @@ export default function BankAccountsPage() {
                   </div>
                 </div>
 
-                <div className="mt-4 p-4 bg-fg/[0.03] rounded-lg">
+                <div className="mt-4 p-3 sm:p-4 bg-fg/[0.03] rounded-lg">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-muted">{t('accountNumber')}</p>
                       <div className="flex items-center gap-2">
-                        <p className="font-mono text-lg font-semibold">
+                        <p className="font-mono text-lg font-semibold break-all">
                           {formatAccountNumber(account.accountNumber)}
                         </p>
                         <button
@@ -317,38 +325,36 @@ export default function BankAccountsPage() {
                     </div>
                     <div>
                       <p className="text-sm text-muted">{t('accountHolder')}</p>
-                      <p className="font-semibold">{account.accountHolder}</p>
+                      <p className="font-semibold break-words">{toBankName(account.accountHolder)}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* QR Preview */}
                 {account.qrEnabled && (
-                  <div className="mt-4 flex items-center gap-4">
+                  <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-4">
                     <div className="flex flex-col items-center gap-2">
                       <VietQR
                         bankCode={account.bankCode}
                         accountNumber={account.accountNumber}
                         accountHolder={account.accountHolder}
+                        description={qrContent(account)}
                         size={120}
                       />
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => {
-                          const qrData = buildVietQRPreview(account)
-                          QRCode.toDataURL(qrData, { width: 300, margin: 2 }).then(downloadQR)
-                        }}
+                        onClick={() => downloadAccountQr(account)}
                         className="text-xs"
                       >
                         <Download className="w-3 h-3 mr-1" />
                         {t('downloadQr')}
                       </Button>
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-sm text-muted">{t('transferContent')}</p>
-                      <p className="font-mono text-sm bg-fg/5 px-2 py-1 rounded mt-1">
-                        DIGISTAY - {account.accountNumber}
+                      <p className="font-mono text-sm bg-fg/5 px-2 py-1 rounded mt-1 break-all">
+                        {qrContent(account)}
                       </p>
                     </div>
                   </div>
@@ -360,87 +366,72 @@ export default function BankAccountsPage() {
       )}
 
       {/* Add/Edit Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-panel rounded-xl max-w-md w-full">
-            <div className="p-6 border-b border-line">
-              <h2 className="text-xl font-semibold">
-                {editingAccount ? t('form.editTitle') : t('form.addTitle')}
-              </h2>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-fg mb-1">
-                  {t('form.bank')} <span className="text-err">*</span>
-                </label>
-                <select
-                  value={formData.bankCode}
-                  onChange={(e) => {
-                    const bank = bankList.find(b => b.code === e.target.value)
-                    setFormData({
-                      ...formData,
-                      bankCode: e.target.value,
-                      bankName: bank?.name || '',
-                    })
-                  }}
-                  className="w-full px-3 py-2 border rounded-lg focus-visible:ring-2 focus-visible:ring-acc focus-visible:border-acc"
-                >
-                  <option value="">{t('form.chooseBank')}</option>
-                  {bankList.map((bank) => (
-                    <option key={bank.code} value={bank.code}>
-                      {bank.code === 'MB' ? t('form.mbBank') : bank.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-fg mb-1">
-                  {t('accountNumber')} <span className="text-err">*</span>
-                </label>
-                <Input
-                  value={formData.accountNumber}
-                  onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
-                  placeholder={t('form.accountNumberPlaceholder')}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-fg mb-1">
-                  {t('accountHolder')} <span className="text-err">*</span>
-                </label>
-                <Input
-                  value={formData.accountHolder}
-                  onChange={(e) => setFormData({ ...formData, accountHolder: e.target.value })}
-                  placeholder={t('form.accountHolderPlaceholder')}
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="qrEnabled"
-                  checked={formData.qrEnabled}
-                  onChange={(e) => setFormData({ ...formData, qrEnabled: e.target.checked })}
-                  className="w-4 h-4"
-                />
-                <label htmlFor="qrEnabled" className="text-sm text-fg">
-                  {t('form.enableQr')}
-                </label>
-              </div>
-            </div>
-            <div className="p-6 border-t border-line flex justify-end gap-3">
-              <Button
-                variant="outline"
-                onClick={() => { setShowModal(false); resetForm() }}
-                disabled={isSubmitting}
-              >
-                {tc('actions.cancel')}
-              </Button>
-              <Button onClick={handleSubmit} isLoading={isSubmitting}>
-                {editingAccount ? tc('actions.saveChanges') : t('form.submitAdd')}
-              </Button>
-            </div>
+      <Modal
+        showHeader
+        isOpen={showModal}
+        onClose={() => { if (!isSubmitting) { setShowModal(false); resetForm() } }}
+        title={editingAccount ? t('form.editTitle') : t('form.addTitle')}
+        size="sm"
+      >
+        <ModalBody className="space-y-4">
+          <Select
+            label={t('form.bank')}
+            required
+            value={formData.bankCode}
+            onChange={(e) => {
+              const bank = findBank(e.target.value)
+              setFormData({
+                ...formData,
+                bankCode: e.target.value,
+                bankName: bank?.shortName || '',
+              })
+            }}
+            options={[{ value: '', label: t('form.chooseBank') }, ...bankOptions]}
+          />
+          <Input
+            label={t('accountNumber')}
+            required
+            inputMode="numeric"
+            value={formData.accountNumber}
+            onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
+            placeholder={t('form.accountNumberPlaceholder')}
+          />
+          <Input
+            label={t('accountHolder')}
+            required
+            value={formData.accountHolder}
+            // Banks print the holder in capitals without accents; the API saves it so.
+            onChange={(e) => setFormData({ ...formData, accountHolder: e.target.value.toUpperCase() })}
+            onBlur={() => setFormData((f) => ({ ...f, accountHolder: toBankName(f.accountHolder) }))}
+            placeholder={t('form.accountHolderPlaceholder')}
+            hint={t('form.accountHolderHint')}
+          />
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="qrEnabled"
+              checked={formData.qrEnabled}
+              onChange={(e) => setFormData({ ...formData, qrEnabled: e.target.checked })}
+              className="w-4 h-4"
+            />
+            <label htmlFor="qrEnabled" className="text-sm text-fg">
+              {t('form.enableQr')}
+            </label>
           </div>
-        </div>
-      )}
+        </ModalBody>
+        <ModalFooter className="sm:justify-end">
+          <Button
+            variant="outline"
+            onClick={() => { setShowModal(false); resetForm() }}
+            disabled={isSubmitting}
+          >
+            {tc('actions.cancel')}
+          </Button>
+          <Button onClick={handleSubmit} isLoading={isSubmitting}>
+            {editingAccount ? tc('actions.saveChanges') : t('form.submitAdd')}
+          </Button>
+        </ModalFooter>
+      </Modal>
     </PageContainer>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, Button, Badge, Input, Textarea, Select, Modal, ModalFooter } from '@/components/ui'
 import { 
@@ -21,6 +22,9 @@ import {
   type InvoiceFormValue,
 } from './invoice-form'
 import { apiError } from '@/lib/i18n/api-errors'
+import { toast } from '@/components/ui/toast'
+import { BookingPicker, type PickedBooking } from '@/components/payment/booking-picker'
+import { MONEY_MANAGERS, NoAccess, useHasRole } from '@/components/payment/no-access'
 
 interface Invoice {
   id: string
@@ -81,14 +85,6 @@ interface Property {
   name: string
 }
 
-interface Booking {
-  id: string
-  bookingCode: string
-  guestName: string
-  guestEmail?: string | null
-  totalAmount: number
-}
-
 type InvoiceStatusKey = 'DRAFT' | 'PENDING' | 'PUBLISHING' | 'PUBLISHED' | 'CANCELLED' | 'REPLACED'
 
 // Labels: messages dash.money.invoices.status.
@@ -113,6 +109,9 @@ export default function InvoicesPage() {
   const t = useTranslations('dash.money.invoices')
   const tc = useTranslations('dash.common')
   const labels = useDashLabels()
+  const { id: routePropertyId } = useParams<{ slug: string; id: string }>()
+  // The menu gives invoices to the owner and managers (src/components/layout/nav.ts).
+  const allowed = useHasRole(MONEY_MANAGERS)
   const cqtLabel = (code: number) =>
     (CQT_CODES as readonly string[]).includes(String(code))
       ? t(`cqt.${String(code) as CqtCode}`)
@@ -120,7 +119,6 @@ export default function InvoicesPage() {
   const [invoices, setInvoices] = React.useState<Invoice[]>([])
   const [filteredInvoices, setFilteredInvoices] = React.useState<Invoice[]>([])
   const [properties, setProperties] = React.useState<Property[]>([])
-  const [bookings, setBookings] = React.useState<Booking[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [isCreating, setIsCreating] = React.useState(false)
   const [isEditing, setIsEditing] = React.useState(false)
@@ -164,8 +162,9 @@ export default function InvoicesPage() {
   })
 
   React.useEffect(() => {
-    fetchProperties()
-  }, [])
+    if (allowed) fetchProperties()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allowed])
 
   React.useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery.trim()), 300)
@@ -188,7 +187,9 @@ export default function InvoicesPage() {
       const data = await res.json()
       if (data.success && data.data.length > 0) {
         setProperties(data.data)
-        setSelectedProperty(data.data[0].id)
+        // This page's hotel, not the first one of every workspace.
+        const own = data.data.find((p: Property) => p.id === routePropertyId)
+        setSelectedProperty((own ?? data.data[0]).id)
       } else {
         setIsLoading(false)
       }
@@ -217,7 +218,7 @@ export default function InvoicesPage() {
           draftCount: data.stats.draft,
           pendingCount: data.stats.pending,
           publishedCount: data.stats.published,
-          totalAmount: data.stats.issuedAmount,
+          totalAmount: data.stats.issuedAmount ?? 0,
         })
         return data.data
       }
@@ -227,18 +228,6 @@ export default function InvoicesPage() {
       setIsLoading(false)
     }
     return []
-  }
-
-  const fetchBookings = async (propertyId: string) => {
-    try {
-      const res = await fetch(`/api/bookings?propertyId=${propertyId}`)
-      const data = await res.json()
-      if (data.success) {
-        setBookings(data.data)
-      }
-    } catch (err) {
-      console.error('Failed to fetch bookings:', err)
-    }
   }
 
   const formatPrice = labels.money
@@ -262,9 +251,6 @@ export default function InvoicesPage() {
 
   const handleOpenCreateModal = () => {
     resetForm()
-    if (selectedProperty) {
-      fetchBookings(selectedProperty)
-    }
     setIsCreating(true)
   }
 
@@ -287,18 +273,19 @@ export default function InvoicesPage() {
     setIsEditing(true)
   }
 
-  const handleSelectBooking = (bookingId: string) => {
-    const booking = bookings.find((b) => b.id === bookingId)
-    if (booking) {
-      // The booking total includes VAT: it is the invoice total.
-      setFormData({
-        ...formData,
-        bookingId,
-        totalAmount: booking.totalAmount.toString(),
-        customerName: formData.customerName || booking.guestName,
-        customerEmail: formData.customerEmail || booking.guestEmail || '',
-      })
+  const handleSelectBooking = (booking: PickedBooking | null) => {
+    if (!booking) {
+      setFormData({ ...formData, bookingId: '' })
+      return
     }
+    // The booking total includes VAT: it is the invoice total.
+    setFormData({
+      ...formData,
+      bookingId: booking.id,
+      totalAmount: booking.totalAmount.toString(),
+      customerName: formData.customerName || booking.guestName,
+      customerEmail: formData.customerEmail || booking.guestEmail || '',
+    })
   }
 
   const validateForm = () => {
@@ -403,10 +390,10 @@ export default function InvoicesPage() {
         }
         setSelectedInvoice(null)
       } else {
-        alert(apiError(data.error) || t('errors.generic'))
+        toast.error(apiError(data.error) || t('errors.generic'))
       }
     } catch (err) {
-      alert(t('errors.generic'))
+      toast.error(t('errors.generic'))
     }
   }
 
@@ -424,10 +411,10 @@ export default function InvoicesPage() {
       if (data.success) {
         setSelectedInvoice((current) => (current && current.id === invoiceId ? { ...current, ...data.data } : current))
       } else {
-        alert(apiError(data.error) || t('errors.generic'))
+        toast.error(apiError(data.error) || t('errors.generic'))
       }
     } catch (err) {
-      alert(t('errors.generic'))
+      toast.error(t('errors.generic'))
     } finally {
       setIsSubmitting(false)
       // Also shows the reason a failed attempt left on the invoice.
@@ -449,7 +436,7 @@ export default function InvoicesPage() {
     const res = await fetch(`/api/invoices/${invoice.id}/replace`, { method: 'POST' })
     const data = await res.json().catch(() => ({}))
     if (!data.success) {
-      alert(apiError(data.error) || t('errors.generic'))
+      toast.error(apiError(data.error) || t('errors.generic'))
       return
     }
     setSelectedInvoice(null)
@@ -499,10 +486,10 @@ export default function InvoicesPage() {
     try {
       const res = await fetch(`/api/invoices/${invoice.id}/email`, { method: 'POST' })
       const data = await res.json().catch(() => ({}))
-      if (!data.success) alert(apiError(data.error) || t('errors.emailFailed'))
+      if (!data.success) toast.error(apiError(data.error) || t('errors.emailFailed'))
       if (data.data) setSelectedInvoice((current) => (current && current.id === invoice.id ? { ...current, ...data.data } : current))
     } catch (err) {
-      alert(t('errors.generic'))
+      toast.error(t('errors.generic'))
     } finally {
       setIsSubmitting(false)
       if (selectedProperty) fetchInvoices(selectedProperty)
@@ -523,10 +510,10 @@ export default function InvoicesPage() {
           fetchInvoices(selectedProperty)
         }
       } else {
-        alert(apiError(data.error) || t('errors.generic'))
+        toast.error(apiError(data.error) || t('errors.generic'))
       }
     } catch (err) {
-      alert(t('errors.generic'))
+      toast.error(t('errors.generic'))
     }
   }
 
@@ -535,6 +522,8 @@ export default function InvoicesPage() {
     setCopiedId(id)
     setTimeout(() => setCopiedId(null), 2000)
   }
+
+  if (!allowed) return <NoAccess title={t('header.title')} />
 
   return (
     <div>
@@ -564,7 +553,7 @@ export default function InvoicesPage() {
 
         {selectedProperty && <EinvoiceCard key={selectedProperty} propertyId={selectedProperty} onStatus={setEinvoice} />}
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4 mb-6">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -572,7 +561,7 @@ export default function InvoicesPage() {
                   <p className="text-sm text-muted">{t('stats.total')}</p>
                   <p className="text-2xl font-bold text-fg">{stats.totalInvoices}</p>
                 </div>
-                <div className="w-12 h-12 bg-info-soft rounded-full flex items-center justify-center">
+                <div className="hidden sm:flex shrink-0 w-12 h-12 bg-info-soft rounded-full items-center justify-center">
                   <FileText className="w-6 h-6 text-info" />
                 </div>
               </div>
@@ -585,7 +574,7 @@ export default function InvoicesPage() {
                   <p className="text-sm text-muted">{t('stats.draft')}</p>
                   <p className="text-2xl font-bold text-muted">{stats.draftCount}</p>
                 </div>
-                <div className="w-12 h-12 bg-fg/5 rounded-full flex items-center justify-center">
+                <div className="hidden sm:flex shrink-0 w-12 h-12 bg-fg/5 rounded-full items-center justify-center">
                   <FileText className="w-6 h-6 text-muted" />
                 </div>
               </div>
@@ -598,7 +587,7 @@ export default function InvoicesPage() {
                   <p className="text-sm text-muted">{t('stats.pending')}</p>
                   <p className="text-2xl font-bold text-warn">{stats.pendingCount}</p>
                 </div>
-                <div className="w-12 h-12 bg-warn-soft rounded-full flex items-center justify-center">
+                <div className="hidden sm:flex shrink-0 w-12 h-12 bg-warn-soft rounded-full items-center justify-center">
                   <Clock className="w-6 h-6 text-warn" />
                 </div>
               </div>
@@ -611,20 +600,20 @@ export default function InvoicesPage() {
                   <p className="text-sm text-muted">{t('stats.published')}</p>
                   <p className="text-2xl font-bold text-ok">{stats.publishedCount}</p>
                 </div>
-                <div className="w-12 h-12 bg-ok-soft rounded-full flex items-center justify-center">
+                <div className="hidden sm:flex shrink-0 w-12 h-12 bg-ok-soft rounded-full items-center justify-center">
                   <CheckCircle className="w-6 h-6 text-ok" />
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="col-span-2 md:col-span-1">
             <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
                   <p className="text-sm text-muted">{t('stats.publishedAmount')}</p>
-                  <p className="text-xl font-bold text-fg">{formatPrice(stats.totalAmount)}</p>
+                  <p className="text-xl font-bold text-fg whitespace-nowrap">{formatPrice(stats.totalAmount)}</p>
                 </div>
-                <div className="w-12 h-12 bg-acc-soft rounded-full flex items-center justify-center">
+                <div className="hidden sm:flex shrink-0 w-12 h-12 bg-acc-soft rounded-full items-center justify-center">
                   <Building className="w-6 h-6 text-acc" />
                 </div>
               </div>
@@ -684,30 +673,79 @@ export default function InvoicesPage() {
                 </Button>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-fg/[0.03] border-b">
+              <>
+              {/* Phone and tablet: one block per invoice */}
+              <ul className="lg:hidden divide-y divide-line">
+                {filteredInvoices.map((invoice) => {
+                  const status = statusKey(invoice.status)
+                  const statusInfo = invoiceStatusConfig[status]
+                  const StatusIcon = statusInfo.icon
+                  const buyer = invoice.companyName || invoice.customerName
+                  const editable = invoice.status === 'DRAFT' || invoice.status === 'PENDING'
+                  return (
+                    <li key={invoice.id} className="px-4 py-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-mono text-sm font-medium">{invoice.invoiceNumber}</p>
+                          <p className="font-medium text-fg truncate" title={buyer}>{buyer}</p>
+                          <p className="text-xs text-muted truncate">
+                            {[invoice.booking?.bookingCode, invoice.taxCode, format(new Date(invoice.createdAt), 'dd/MM/yyyy')].filter(Boolean).join(' · ')}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="font-semibold whitespace-nowrap">{formatPrice(invoice.totalAmount)}</p>
+                          <Badge className={`mt-1 whitespace-nowrap ${statusInfo.bgColor} ${statusInfo.color}`}>
+                            <StatusIcon className="w-3 h-3 mr-1" />
+                            {t(`status.${status}`)}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex items-center justify-end gap-1">
+                        <Button aria-label={tc('actions.details')} size="sm" variant="ghost" onClick={() => handleViewInvoice(invoice)}>
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        {editable && !invoice.adjustsInvoice && (
+                          <Button aria-label={tc('actions.edit')} size="sm" variant="ghost" onClick={() => handleOpenEditModal(invoice)}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {editable && (
+                          <Button aria-label={tc('actions.delete')} size="sm" variant="ghost" onClick={() => handleDeleteInvoice(invoice.id)}>
+                            <Trash2 className="w-4 h-4 text-err" />
+                          </Button>
+                        )}
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+              {/* Wide screens; a narrow window scrolls the table sideways with the actions pinned on the right */}
+              <div className="hidden lg:block overflow-x-auto">
+                <table className="w-full min-w-[48rem]">
+                  <thead className="border-b border-line">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">{t('columns.code')}</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">{t('columns.booking')}</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">{t('columns.company')}</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">{t('columns.taxCode')}</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">{t('columns.total')}</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">{t('columns.status')}</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-muted uppercase">{t('columns.createdAt')}</th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-muted uppercase">{t('columns.actions')}</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-muted uppercase whitespace-nowrap">{t('columns.code')}</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-muted uppercase whitespace-nowrap">{t('columns.booking')}</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-muted uppercase whitespace-nowrap">{t('columns.company')}</th>
+                      <th className="hidden 2xl:table-cell px-3 py-3 text-left text-xs font-medium text-muted uppercase whitespace-nowrap">{t('columns.taxCode')}</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-muted uppercase whitespace-nowrap">{t('columns.total')}</th>
+                      <th className="px-3 py-3 text-left text-xs font-medium text-muted uppercase whitespace-nowrap">{t('columns.status')}</th>
+                      <th className="hidden 2xl:table-cell px-3 py-3 text-left text-xs font-medium text-muted uppercase whitespace-nowrap">{t('columns.createdAt')}</th>
+                      <th className="sticky right-0 bg-panel px-3 py-3 text-right text-xs font-medium text-muted uppercase whitespace-nowrap">{t('columns.actions')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y">
+                  <tbody className="divide-y divide-line">
                     {filteredInvoices.map((invoice) => {
                       const status = statusKey(invoice.status)
                       const statusInfo = invoiceStatusConfig[status]
                       const StatusIcon = statusInfo.icon
-                      
+                      const created = format(new Date(invoice.createdAt), 'dd/MM/yyyy')
+                      const buyer = invoice.companyName || invoice.customerName
+
                       return (
                         <tr key={invoice.id} className="hover:bg-fg/[0.03]">
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
+                          <td className="px-3 py-3">
+                            <div className="flex items-center gap-2 whitespace-nowrap">
                               <span className="font-mono text-sm font-medium">{invoice.invoiceNumber}</span>
                               {invoice.autoIssued && (
                                 <Badge className="bg-info-soft text-info">
@@ -717,6 +755,7 @@ export default function InvoicesPage() {
                               <button
                                 onClick={() => handleCopyToClipboard(invoice.invoiceNumber, invoice.id)}
                                 className="p-1 hover:bg-fg/5 rounded"
+                                aria-label={tc('actions.copy')}
                               >
                                 {copiedId === invoice.id ? (
                                   <Check className="w-3 h-3 text-ok" />
@@ -725,41 +764,46 @@ export default function InvoicesPage() {
                                 )}
                               </button>
                             </div>
+                            <span className="2xl:hidden block text-xs text-muted">{created}</span>
                           </td>
-                          <td className="px-4 py-3">
-                            <span className="font-medium">{invoice.booking?.bookingCode}</span>
+                          <td className="px-3 py-3">
+                            <span className="font-medium whitespace-nowrap">{invoice.booking?.bookingCode}</span>
                           </td>
-                          <td className="px-4 py-3">
-                            <div>
-                              <span className="font-medium">{invoice.companyName}</span>
-                              <span className="block text-xs text-muted">{invoice.customerName}</span>
+                          <td className="px-3 py-3">
+                            {/* One line each, cut with the full text on hover: long company names used to stack word by word. */}
+                            <div className="min-w-[10rem] max-w-[14rem] xl:max-w-[18rem] 2xl:max-w-[22rem]">
+                              <span className="block truncate font-medium" title={buyer}>{buyer}</span>
+                              {invoice.companyName && invoice.customerName && (
+                                <span className="block truncate text-xs text-muted" title={invoice.customerName}>{invoice.customerName}</span>
+                              )}
+                              {invoice.taxCode && (
+                                <span className="2xl:hidden block truncate font-mono text-xs text-muted">{invoice.taxCode}</span>
+                              )}
                             </div>
                           </td>
-                          <td className="px-4 py-3">
-                            <span className="font-mono text-sm">{invoice.taxCode}</span>
+                          <td className="hidden 2xl:table-cell px-3 py-3">
+                            <span className="font-mono text-sm whitespace-nowrap">{invoice.taxCode}</span>
                           </td>
-                          <td className="px-4 py-3">
-                            <span className="font-semibold">{formatPrice(invoice.totalAmount)}</span>
+                          <td className="px-3 py-3">
+                            <span className="font-semibold whitespace-nowrap">{formatPrice(invoice.totalAmount)}</span>
                             {invoice.adjustsInvoice && (
-                              <span className="block text-xs text-info">
+                              <span className="block text-xs text-info whitespace-nowrap">
                                 {t(invoice.totalAmount < 0 ? 'list.adjustsDown' : 'list.adjustsUp', {
                                   number: invoice.adjustsInvoice.einvoiceNumber ?? '',
                                 })}
                               </span>
                             )}
                           </td>
-                          <td className="px-4 py-3">
-                            <Badge className={`${statusInfo.bgColor} ${statusInfo.color}`}>
+                          <td className="px-3 py-3">
+                            <Badge className={`whitespace-nowrap ${statusInfo.bgColor} ${statusInfo.color}`}>
                               <StatusIcon className="w-3 h-3 mr-1" />
                               {t(`status.${status}`)}
                             </Badge>
                           </td>
-                          <td className="px-4 py-3">
-                            <span className="text-sm text-muted">
-                              {format(new Date(invoice.createdAt), 'dd/MM/yyyy')}
-                            </span>
+                          <td className="hidden 2xl:table-cell px-3 py-3">
+                            <span className="text-sm text-muted whitespace-nowrap">{created}</span>
                           </td>
-                          <td className="px-4 py-3 text-right">
+                          <td className="sticky right-0 bg-panel px-2 py-3 text-right">
                             <div className="flex items-center justify-end gap-1">
                               <Button aria-label={tc('actions.details')} size="sm" variant="ghost" onClick={() => handleViewInvoice(invoice)}>
                                 <Eye className="w-4 h-4" />
@@ -784,6 +828,7 @@ export default function InvoicesPage() {
                   </tbody>
                 </table>
               </div>
+              </>
             )}
             {pagination.totalPages > 1 && (
               <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted">
@@ -823,15 +868,12 @@ export default function InvoicesPage() {
         ) : (
           <>
             <div className="space-y-4 p-6 overflow-y-auto">
-              <Select
+              <BookingPicker
+                propertyId={selectedProperty}
                 label={t('createModal.booking')}
                 required
                 value={formData.bookingId}
-                onChange={(e) => handleSelectBooking(e.target.value)}
-                options={[
-                  { value: '', label: t('createModal.chooseBooking') },
-                  ...bookings.map((b) => ({ value: b.id, label: `${b.bookingCode} - ${b.guestName}` })),
-                ]}
+                onChange={handleSelectBooking}
               />
 
               {!einvoice?.connected && (

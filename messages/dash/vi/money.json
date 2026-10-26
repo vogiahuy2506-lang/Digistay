@@ -17,7 +17,9 @@
       "clear": "Xóa",
       "search": "Mã GD, tên khách...",
       "status": "Trạng thái",
-      "method": "Phương thức"
+      "method": "Phương thức",
+      "from": "Từ ngày",
+      "to": "Đến ngày"
     },
     "list": {
       "title": "Danh sách thanh toán",
@@ -25,7 +27,8 @@
       "empty": "Chưa có thanh toán nào",
       "emptyHint": "Tạo thanh toán mới để bắt đầu",
       "copy": "Sao chép",
-      "fee": "Phí: {amount}"
+      "fee": "Phí: {amount}",
+      "refunded": "Đã hoàn {amount}"
     },
     "columns": {
       "code": "Mã GD",
@@ -50,7 +53,8 @@
       "REFUNDED": "Đã hoàn tiền",
       "CANCELLED": "Đã huỷ",
       "PROCESSING": "Đang xử lý",
-      "PARTIAL": "Thanh toán một phần"
+      "PARTIAL": "Thanh toán một phần",
+      "PARTIALLY_REFUNDED": "Đã hoàn một phần"
     },
     "methodOptions": {
       "BANK_TRANSFER": "Chuyển khoản ngân hàng",
@@ -119,7 +123,9 @@
       "paidAt": "Lúc {time} ngày {date}",
       "cancelLink": "Huỷ link",
       "checkNow": "Kiểm tra ngay",
-      "markPaid": "Xác nhận đã thanh toán"
+      "markPaid": "Xác nhận đã thanh toán",
+      "refunded": "Đã hoàn lại cho khách {amount}.",
+      "refundedAt": "Đã hoàn lại cho khách {amount} lúc {date}."
     }
   },
   "invoices": {
@@ -379,11 +385,11 @@
       "addTitle": "Thêm tài khoản ngân hàng",
       "bank": "Ngân hàng",
       "chooseBank": "Chọn ngân hàng",
-      "mbBank": "Ngân hàng Quân đội (MB Bank)",
       "accountNumberPlaceholder": "Nhập số tài khoản",
       "accountHolderPlaceholder": "Tên chủ tài khoản",
       "enableQr": "Bật thanh toán VietQR",
-      "submitAdd": "Thêm tài khoản"
+      "submitAdd": "Thêm tài khoản",
+      "accountHolderHint": "Như ngân hàng in: chữ in hoa, không dấu"
     },
     "toast": {
       "loadFailed": "Không thể tải danh sách tài khoản",
@@ -398,7 +404,8 @@
       "deleted": "Đã xóa tài khoản",
       "deleteError": "Đã xảy ra lỗi khi xóa tài khoản",
       "copied": "Đã copy",
-      "copyFailed": "Không thể copy, vui lòng thử lại"
+      "copyFailed": "Không thể copy, vui lòng thử lại",
+      "qrFailed": "Không tạo được mã QR cho tài khoản này"
     },
     "confirmDelete": "Bạn có chắc chắn muốn xóa tài khoản này?"
   },
@@ -437,5 +444,19 @@
     "expires": "Hết hạn",
     "autoConfirm": "Hệ thống tự động xác nhận khoản thanh toán trong vài giây sau khi chuyển khoản thành công.",
     "placeholder": "QR sẽ hiển thị ở đây"
+  },
+  "access": {
+    "hint": "Trang này dành cho vai trò khác. Hỏi chủ khách sạn hoặc quản lý nếu bạn cần dùng."
+  },
+  "bookingPicker": {
+    "search": "Tìm theo mã đơn, tên khách hoặc SĐT",
+    "choose": "Chọn đơn đặt phòng",
+    "loading": "Đang tải đơn…",
+    "error": "Không tải được danh sách đơn",
+    "none": "Không tìm thấy đơn nào",
+    "found": "{count} đơn khớp",
+    "latest": "Đang hiện {count} đơn mới nhất; gõ để tìm đơn cũ hơn.",
+    "balance": "còn {amount}",
+    "paidInFull": "đã trả đủ"
   }
 }

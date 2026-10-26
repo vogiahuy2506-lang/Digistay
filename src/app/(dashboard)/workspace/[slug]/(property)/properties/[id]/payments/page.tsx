@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, Button, Badge, Input, Select, Modal, ModalFooter } from '@/components/ui'
 import { 
@@ -14,6 +15,10 @@ import QRCode from 'qrcode'
 import { useTranslations } from 'next-intl'
 import { useDashLabels } from '@/lib/i18n/dash'
 import { apiError } from '@/lib/i18n/api-errors'
+import { toast } from '@/components/ui/toast'
+import { bankLabel, toBankName } from '@/lib/vietqr'
+import { BookingPicker, bookingBalance } from '@/components/payment/booking-picker'
+import { MONEY_MANAGERS, NoAccess, useHasRole } from '@/components/payment/no-access'
 
 interface Payment {
   id: string
@@ -33,7 +38,12 @@ interface Payment {
   paymentGateway: string | null
   checkoutUrl: string | null
   qrCodeUrl: string | null
-  metadata: { payos?: { amountMismatch?: number; paidAfter?: string } } | null
+  metadata: {
+    payos?: { amountMismatch?: number; paidAfter?: string }
+    /** written by the booking cancel route; a partial refund leaves the payment PROCESSING */
+    refundedAmount?: number
+    refundedAt?: string
+  } | null
   booking: {
     id: string
     bookingCode: string
@@ -48,12 +58,6 @@ interface Payment {
 interface Property {
   id: string
   name: string
-}
-
-interface Booking {
-  id: string
-  bookingCode: string
-  guestName: string
 }
 
 // Labels: messages dash.money.payments.methodOptions / methods / status.
@@ -82,8 +86,10 @@ const paymentMethodIcons: Record<string, any> = {
 }
 
 type PaymentStatusKey = 'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED' | 'REFUNDED' | 'CANCELLED' | 'PROCESSING' | 'PARTIAL'
+/** Shown, not stored: a PROCESSING payment the cancel route gave part of back. */
+type DisplayStatusKey = PaymentStatusKey | 'PARTIALLY_REFUNDED'
 
-const paymentStatusConfig: Record<PaymentStatusKey, { color: string; bgColor: string; borderColor: string; icon: any }> = {
+const paymentStatusConfig: Record<DisplayStatusKey, { color: string; bgColor: string; borderColor: string; icon: any }> = {
   PENDING: { color: 'text-warn', bgColor: 'bg-warn-soft', borderColor: 'border-warn/30', icon: Clock },
   PAID: { color: 'text-ok', bgColor: 'bg-ok-soft', borderColor: 'border-ok/30', icon: CheckCircle },
   FAILED: { color: 'text-err', bgColor: 'bg-err-soft', borderColor: 'border-err/30', icon: XCircle },
@@ -93,23 +99,46 @@ const paymentStatusConfig: Record<PaymentStatusKey, { color: string; bgColor: st
   CANCELLED: { color: 'text-plain', bgColor: 'bg-plain-soft', borderColor: 'border-line', icon: XCircle },
   PROCESSING: { color: 'text-info', bgColor: 'bg-info-soft', borderColor: 'border-info/30', icon: Clock },
   PARTIAL: { color: 'text-info', bgColor: 'bg-info-soft', borderColor: 'border-info/30', icon: Clock },
+  PARTIALLY_REFUNDED: { color: 'text-refund', bgColor: 'bg-refund-soft', borderColor: 'border-refund/30', icon: RefreshCw },
 }
-const PAYMENT_STATUSES = Object.keys(paymentStatusConfig) as PaymentStatusKey[]
+/** The statuses the filter offers (stored ones). */
+const PAYMENT_STATUSES: PaymentStatusKey[] = ['PENDING', 'PAID', 'FAILED', 'EXPIRED', 'REFUNDED', 'CANCELLED', 'PROCESSING', 'PARTIAL']
+/** What was given back of a payment, 0 if nothing. */
+const refundedOf = (p: Payment) => (typeof p.metadata?.refundedAmount === 'number' ? p.metadata.refundedAmount : 0)
 /** A status this page knows, else PENDING (as the rows did before). */
-const statusKey = (status: string): PaymentStatusKey =>
-  status in paymentStatusConfig ? (status as PaymentStatusKey) : 'PENDING'
+const statusKey = (p: Payment): DisplayStatusKey =>
+  p.status === 'PROCESSING' && refundedOf(p) > 0
+    ? 'PARTIALLY_REFUNDED'
+    : p.status in paymentStatusConfig
+      ? (p.status as PaymentStatusKey)
+      : 'PENDING'
+
+type PaymentStats = {
+  total: number
+  count: number
+  pending: number
+  paid: number
+  failed: number
+  pendingCount: number
+  paidCount: number
+  failedCount: number
+}
 
 export default function PaymentsPage() {
   const t = useTranslations('dash.money.payments')
   const tc = useTranslations('dash.common')
   const labels = useDashLabels()
+  const { id: routePropertyId } = useParams<{ slug: string; id: string }>()
+  // Payments are worked by staff (menu: src/components/layout/nav.ts); the
+  // money totals are for the owner and managers only.
+  const allowed = useHasRole(['ADMIN', 'MANAGER', 'RECEPTIONIST'])
+  const seesTotals = useHasRole(MONEY_MANAGERS)
   const methodOptions = PAYMENT_METHODS.map((value) => ({ value, label: t(`methodOptions.${value}`) }))
   // Offered first when the property has connected its PayOS account (Part 5).
   const payosOption = { value: 'PAYOS', label: t('methodOptions.PAYOS') }
   const [payments, setPayments] = React.useState<Payment[]>([])
   const [filteredPayments, setFilteredPayments] = React.useState<Payment[]>([])
   const [properties, setProperties] = React.useState<Property[]>([])
-  const [bookings, setBookings] = React.useState<Booking[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [isCreating, setIsCreating] = React.useState(false)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
@@ -139,21 +168,13 @@ export default function PaymentsPage() {
   const [payosConnected, setPayosConnected] = React.useState(false)
   const [payosBusy, setPayosBusy] = React.useState(false)
 
-  // Stats
-  const [stats, setStats] = React.useState({
-    total: 0,
-    count: 0,
-    pending: 0,
-    paid: 0,
-    failed: 0,
-    pendingCount: 0,
-    paidCount: 0,
-    failedCount: 0,
-  })
+  // Stats: null when the API gives none (not a manager)
+  const [stats, setStats] = React.useState<PaymentStats | null>(null)
 
   React.useEffect(() => {
-    fetchProperties()
-  }, [])
+    if (allowed) fetchProperties()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allowed])
 
   React.useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery.trim()), 300)
@@ -176,7 +197,9 @@ export default function PaymentsPage() {
       const data = await res.json()
       if (data.success && data.data.length > 0) {
         setProperties(data.data)
-        setSelectedProperty(data.data[0].id)
+        // This page's hotel, not the first one of every workspace.
+        const own = data.data.find((p: Property) => p.id === routePropertyId)
+        setSelectedProperty((own ?? data.data[0]).id)
       } else {
         setIsLoading(false)
       }
@@ -244,10 +267,10 @@ export default function PaymentsPage() {
       const res = await fetch(`/api/payments/${paymentId}/${action}`, { method: 'POST' })
       const data = await res.json()
       if (!data.success) {
-        alert(apiError(data.error) || t('errors.generic'))
+        toast.error(apiError(data.error) || t('errors.generic'))
         return
       }
-      if (action === 'sync' && data.data.status === 'PENDING') alert(t('payosNotPaid'))
+      if (action === 'sync' && data.data.status === 'PENDING') toast.info(t('payosNotPaid'))
       const list = await fetchPayments(selectedProperty, { syncPayos: false })
       setSelectedPayment(list.find((p) => p.id === paymentId) ?? null)
     } finally {
@@ -255,20 +278,12 @@ export default function PaymentsPage() {
     }
   }
 
-  const fetchBookings = async (propertyId: string) => {
-    try {
-      const res = await fetch(`/api/bookings?propertyId=${propertyId}`)
-      const data = await res.json()
-      if (data.success) {
-        setBookings(data.data)
-      }
-    } catch (err) {
-      console.error('Failed to fetch bookings:', err)
-    }
-  }
-
 
   const formatPrice = labels.money
+  const methodLabel = (p: Payment) =>
+    p.paymentGateway === 'PAYOS' ? 'PayOS' : isPaymentMethod(p.method) ? t(`methods.${p.method}`) : p.method
+  const methodIcon = (p: Payment) =>
+    p.paymentGateway === 'PAYOS' ? QrCode : (paymentMethodIcons[p.method] ?? CreditCard)
 
   const handleRefresh = () => {
     if (selectedProperty) {
@@ -278,13 +293,9 @@ export default function PaymentsPage() {
 
   const handlePropertyChange = (propertyId: string) => {
     setSelectedProperty(propertyId)
-    fetchBookings(propertyId)
   }
 
   const handleOpenCreateModal = async () => {
-    if (selectedProperty) {
-      fetchBookings(selectedProperty)
-    }
     const connected = selectedProperty ? await fetchPayosStatus(selectedProperty) : false
     setCreateForm({ bookingId: '', method: connected ? 'PAYOS' : 'QR_VIETQR', amount: '' })
     setCreateError('')
@@ -362,19 +373,21 @@ export default function PaymentsPage() {
       const data = await res.json()
       if (data.success) {
         if (data.warning) {
-          alert(data.warning)
+          toast.warning(apiError(data.warning) || data.warning)
         }
         if (selectedProperty) {
           fetchPayments(selectedProperty)
         }
         setSelectedPayment(null)
       } else {
-        alert(apiError(data.error) || t('errors.generic'))
+        toast.error(apiError(data.error) || t('errors.generic'))
       }
     } catch (err) {
-      alert(t('errors.generic'))
+      toast.error(t('errors.generic'))
     }
   }
+
+  if (!allowed) return <NoAccess title={t('header.title')} />
 
   return (
     <div>
@@ -402,73 +415,15 @@ export default function PaymentsPage() {
           }
         />
 
-        {/* Stats Cards - CRM Style */}
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
-          {/* Total Card */}
-          <div className="bg-panel rounded-xl p-4 shadow-sm border border-line hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-fg/5 flex items-center justify-center shrink-0">
-                <TrendingUp className="w-5 h-5 text-fg" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-muted truncate">{t('stats.total')}</p>
-                <p className="text-lg font-bold text-fg truncate">{formatPrice(stats.total)}</p>
-              </div>
-            </div>
-            <p className="text-xs text-muted mt-2">{t('stats.transactions', { count: stats.count })}</p>
+        {/* Money totals: owner and managers only (the API sends none to others) */}
+        {seesTotals && stats && (
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
+            <StatCard label={t('stats.total')} amount={formatPrice(stats.total)} count={t('stats.transactions', { count: stats.count })} icon={TrendingUp} />
+            <StatCard tone="ok" label={t('stats.paid')} amount={formatPrice(stats.paid)} count={t('stats.transactions', { count: stats.paidCount })} icon={CheckCircle} countIcon={ArrowUpRight} />
+            <StatCard tone="warn" label={t('stats.pending')} amount={formatPrice(stats.pending)} count={t('stats.transactions', { count: stats.pendingCount })} icon={Clock} countIcon={Wallet} />
+            <StatCard tone="err" label={t('stats.failed')} amount={formatPrice(stats.failed)} count={t('stats.transactions', { count: stats.failedCount })} icon={XCircle} countIcon={AlertTriangle} />
           </div>
-
-          {/* Paid Card */}
-          <div className="bg-panel rounded-xl p-4 shadow-sm border border-ok/30 hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-ok-soft flex items-center justify-center shrink-0">
-                <CheckCircle className="w-5 h-5 text-ok" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-ok truncate">{t('stats.paid')}</p>
-                <p className="text-lg font-bold text-ok truncate">{formatPrice(stats.paid)}</p>
-              </div>
-            </div>
-            <p className="text-xs text-ok mt-2 flex items-center gap-1">
-              <ArrowUpRight className="w-3 h-3" />
-              {t('stats.transactions', { count: stats.paidCount })}
-            </p>
-          </div>
-
-          {/* Pending Card */}
-          <div className="bg-panel rounded-xl p-4 shadow-sm border border-warn/30 hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-warn-soft flex items-center justify-center shrink-0">
-                <Clock className="w-5 h-5 text-warn" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-warn truncate">{t('stats.pending')}</p>
-                <p className="text-lg font-bold text-warn truncate">{formatPrice(stats.pending)}</p>
-              </div>
-            </div>
-            <p className="text-xs text-warn mt-2 flex items-center gap-1">
-              <Wallet className="w-3 h-3" />
-              {t('stats.transactions', { count: stats.pendingCount })}
-            </p>
-          </div>
-
-          {/* Failed Card */}
-          <div className="bg-panel rounded-xl p-4 shadow-sm border border-err/30 hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-err-soft flex items-center justify-center shrink-0">
-                <XCircle className="w-5 h-5 text-err" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-err truncate">{t('stats.failed')}</p>
-                <p className="text-lg font-bold text-err truncate">{formatPrice(stats.failed)}</p>
-              </div>
-            </div>
-            <p className="text-xs text-err mt-2 flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3" />
-              {t('stats.transactions', { count: stats.failedCount })}
-            </p>
-          </div>
-        </div>
+        )}
 
         {/* Filters - CRM Style */}
         <div className="bg-panel rounded-xl p-4 shadow-sm border border-line mb-6">
@@ -496,10 +451,11 @@ export default function PaymentsPage() {
             )}
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-            <div className="lg:col-span-2 relative">
+            <div className="col-span-2 relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted" />
               <input
                 type="text"
+                aria-label={t('filters.search')}
                 placeholder={t('filters.search')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -507,6 +463,7 @@ export default function PaymentsPage() {
               />
             </div>
             <select
+              aria-label={t('filters.status')}
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-3 py-2 text-sm bg-fg/[0.03] border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-acc/20 focus:border-acc transition appearance-none cursor-pointer"
@@ -517,6 +474,7 @@ export default function PaymentsPage() {
               ))}
             </select>
             <select
+              aria-label={t('filters.method')}
               value={methodFilter}
               onChange={(e) => setMethodFilter(e.target.value)}
               className="px-3 py-2 text-sm bg-fg/[0.03] border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-acc/20 focus:border-acc transition appearance-none cursor-pointer"
@@ -528,12 +486,14 @@ export default function PaymentsPage() {
             </select>
             <input
               type="date"
+              aria-label={t('filters.from')}
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
               className="px-3 py-2 text-sm bg-fg/[0.03] border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-acc/20 focus:border-acc transition"
             />
             <input
               type="date"
+              aria-label={t('filters.to')}
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
               className="px-3 py-2 text-sm bg-fg/[0.03] border border-line rounded-lg focus:outline-none focus:ring-2 focus:ring-acc/20 focus:border-acc transition"
@@ -578,100 +538,144 @@ export default function PaymentsPage() {
               </Button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-fg/[0.03] border-b border-line">
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">{t('columns.code')}</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">{t('columns.booking')}</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">{t('columns.guest')}</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">{t('columns.amount')}</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">{t('columns.method')}</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">{t('columns.status')}</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">{t('columns.date')}</th>
-                    <th className="px-4 py-2.5 text-right text-xs font-semibold text-muted uppercase tracking-wider">{t('columns.actions')}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {filteredPayments.map((payment, index) => {
-                    const status = statusKey(payment.status)
-                    const statusInfo = paymentStatusConfig[status]
-                    const methodInfo = payment.paymentGateway === 'PAYOS'
-                      ? { label: 'PayOS', icon: QrCode }
-                      : isPaymentMethod(payment.method)
-                        ? { label: t(`methods.${payment.method}`), icon: paymentMethodIcons[payment.method] }
-                        : { label: payment.method, icon: CreditCard }
-                    const MethodIcon = methodInfo.icon
-                    const StatusIcon = statusInfo.icon
-                    
-                    return (
-                      <tr key={payment.id} className={`hover:bg-fg/5 transition-colors ${index % 2 === 0 ? 'bg-panel' : 'bg-fg/[0.03]'}`}>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs font-medium text-fg bg-fg/5 px-2 py-1 rounded-lg">
-                              {payment.id.slice(-8).toUpperCase()}
-                            </span>
-                            <button
-                              onClick={() => handleCopyToClipboard(payment.id, payment.id)}
-                              className="p-1 hover:bg-fg/10 rounded transition"
-                              title={t('list.copy')}
-                            >
-                              {copiedId === payment.id ? (
-                                <Check className="w-3 h-3 text-ok" />
-                              ) : (
-                                <Copy className="w-3 h-3 text-muted" />
-                              )}
-                            </button>
+            <>
+              {/* Phone: one block per payment, amount and status always in view */}
+              <ul className="md:hidden divide-y divide-line">
+                {filteredPayments.map((payment) => {
+                  const status = statusKey(payment)
+                  const statusInfo = paymentStatusConfig[status]
+                  const StatusIcon = statusInfo.icon
+                  return (
+                    <li key={payment.id}>
+                      <button
+                        type="button"
+                        onClick={() => handleViewPayment(payment)}
+                        className="w-full text-left px-4 py-3 hover:bg-fg/5 focus:outline-none focus-visible:bg-fg/5"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-fg">{payment.booking?.bookingCode}</p>
+                            <p className="text-sm text-muted truncate">{payment.booking?.guestName}</p>
                           </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-sm font-medium text-fg">{payment.booking?.bookingCode}</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full bg-acc-soft text-acc font-semibold text-xs flex items-center justify-center">
-                              {payment.booking?.guestName?.charAt(0)?.toUpperCase() || 'G'}
-                            </div>
-                            <span className="text-sm text-fg">{payment.booking?.guestName}</span>
+                          <div className="text-right shrink-0">
+                            <p className="text-sm font-semibold text-fg whitespace-nowrap">{formatPrice(payment.amount)}</p>
+                            {refundedOf(payment) > 0 && (
+                              <p className="text-xs text-refund whitespace-nowrap">{t('list.refunded', { amount: formatPrice(refundedOf(payment)) })}</p>
+                            )}
                           </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-sm font-semibold text-fg">{formatPrice(payment.amount)}</span>
-                          {payment.fee > 0 && (
-                            <span className="block text-xs text-muted">{t('list.fee', { amount: formatPrice(payment.fee) })}</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-6 h-6 rounded bg-fg/5 flex items-center justify-center">
-                              <MethodIcon className="w-3 h-3 text-muted" />
-                            </div>
-                            <span className="text-xs text-muted">{methodInfo.label}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${statusInfo.bgColor} ${statusInfo.color}`}>
+                        </div>
+                        <div className="mt-1.5 flex items-center justify-between gap-3">
+                          <span className="text-xs text-muted truncate">
+                            {methodLabel(payment)} · {format(new Date(payment.createdAt), 'dd/MM/yyyy')}
+                          </span>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${statusInfo.bgColor} ${statusInfo.color}`}>
                             <StatusIcon className="w-3 h-3" />
                             {t(`status.${status}`)}
                           </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-sm text-muted">
-                            {format(new Date(payment.createdAt), 'dd/MM/yyyy')}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <Button aria-label={tc('actions.details')} size="sm" variant="ghost" onClick={() => handleViewPayment(payment)} className="gap-1.5 text-muted hover:text-acc">
-                            <Eye className="w-4 h-4" />
-                            <span className="hidden sm:inline">{tc('actions.details')}</span>
-                          </Button>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+                        </div>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+              {/* Tablet and up; the payment code, method and date get their own columns from xl */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-fg/[0.03] border-b border-line">
+                      <th className="hidden xl:table-cell px-3 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">{t('columns.code')}</th>
+                      <th className="px-3 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">{t('columns.booking')}</th>
+                      <th className="px-3 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">{t('columns.guest')}</th>
+                      <th className="px-3 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">{t('columns.amount')}</th>
+                      <th className="hidden xl:table-cell px-3 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">{t('columns.method')}</th>
+                      <th className="px-3 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">{t('columns.status')}</th>
+                      <th className="hidden xl:table-cell px-3 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider">{t('columns.date')}</th>
+                      <th className="px-3 py-2.5 text-right text-xs font-semibold text-muted uppercase tracking-wider">{t('columns.actions')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line">
+                    {filteredPayments.map((payment, index) => {
+                      const status = statusKey(payment)
+                      const statusInfo = paymentStatusConfig[status]
+                      const MethodIcon = methodIcon(payment)
+                      const StatusIcon = statusInfo.icon
+                      const date = format(new Date(payment.createdAt), 'dd/MM/yyyy')
+
+                      return (
+                        <tr key={payment.id} className={`hover:bg-fg/5 transition-colors ${index % 2 === 0 ? 'bg-panel' : 'bg-fg/[0.03]'}`}>
+                          <td className="hidden xl:table-cell px-3 py-3">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-xs font-medium text-fg bg-fg/5 px-2 py-1 rounded-lg">
+                                {payment.id.slice(-8).toUpperCase()}
+                              </span>
+                              <button
+                                onClick={() => handleCopyToClipboard(payment.id, payment.id)}
+                                className="p-1 hover:bg-fg/10 rounded transition"
+                                title={t('list.copy')}
+                                aria-label={t('list.copy')}
+                              >
+                                {copiedId === payment.id ? (
+                                  <Check className="w-3 h-3 text-ok" />
+                                ) : (
+                                  <Copy className="w-3 h-3 text-muted" />
+                                )}
+                              </button>
+                            </div>
+                          </td>
+                          <td className="px-3 py-3">
+                            <span className="text-sm font-medium text-fg whitespace-nowrap">{payment.booking?.bookingCode}</span>
+                            <span className="xl:hidden block text-xs text-muted whitespace-nowrap">{date}</span>
+                          </td>
+                          <td className="px-3 py-3">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="w-7 h-7 shrink-0 rounded-full bg-acc-soft text-acc font-semibold text-xs flex items-center justify-center">
+                                {payment.booking?.guestName?.charAt(0)?.toUpperCase() || 'G'}
+                              </div>
+                              <span className="text-sm text-fg truncate max-w-[11rem] xl:max-w-[14rem]" title={payment.booking?.guestName}>
+                                {payment.booking?.guestName}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-3 py-3">
+                            <span className="text-sm font-semibold text-fg whitespace-nowrap">{formatPrice(payment.amount)}</span>
+                            {refundedOf(payment) > 0 && (
+                              <span className="block text-xs text-refund whitespace-nowrap">{t('list.refunded', { amount: formatPrice(refundedOf(payment)) })}</span>
+                            )}
+                            {payment.fee > 0 && (
+                              <span className="block text-xs text-muted whitespace-nowrap">{t('list.fee', { amount: formatPrice(payment.fee) })}</span>
+                            )}
+                            <span className="xl:hidden block text-xs text-muted whitespace-nowrap">{methodLabel(payment)}</span>
+                          </td>
+                          <td className="hidden xl:table-cell px-3 py-3">
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-6 h-6 shrink-0 rounded bg-fg/5 flex items-center justify-center">
+                                <MethodIcon className="w-3 h-3 text-muted" />
+                              </div>
+                              <span className="text-xs text-muted whitespace-nowrap">{methodLabel(payment)}</span>
+                            </div>
+                          </td>
+                          <td className="px-3 py-3">
+                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${statusInfo.bgColor} ${statusInfo.color}`}>
+                              <StatusIcon className="w-3 h-3" />
+                              {t(`status.${status}`)}
+                            </span>
+                          </td>
+                          <td className="hidden xl:table-cell px-3 py-3">
+                            <span className="text-sm text-muted whitespace-nowrap">{date}</span>
+                          </td>
+                          <td className="px-3 py-3 text-right">
+                            <Button aria-label={tc('actions.details')} size="sm" variant="ghost" onClick={() => handleViewPayment(payment)} className="gap-1.5 text-muted hover:text-acc">
+                              <Eye className="w-4 h-4" />
+                              <span className="hidden xl:inline">{tc('actions.details')}</span>
+                            </Button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
           {pagination.totalPages > 1 && (
             <div className="flex items-center justify-between border-t border-line px-4 py-3 text-sm text-muted">
@@ -709,15 +713,17 @@ export default function PaymentsPage() {
         ) : (
           <>
             <div className="space-y-5 p-6 overflow-y-auto">
-              <Select
+              <BookingPicker
+                propertyId={selectedProperty}
                 label={t('createModal.booking')}
                 required
+                forPayment
                 value={createForm.bookingId}
-                onChange={(e) => setCreateForm({ ...createForm, bookingId: e.target.value })}
-                options={[
-                  { value: '', label: t('createModal.chooseBooking') },
-                  ...bookings.map((b) => ({ value: b.id, label: `${b.bookingCode} - ${b.guestName}` })),
-                ]}
+                onChange={(booking) => {
+                  // What is still owed is the usual amount; staff can change it.
+                  const due = booking ? bookingBalance(booking) : 0
+                  setCreateForm({ ...createForm, bookingId: booking?.id ?? '', amount: due > 0 ? String(due) : '' })
+                }}
               />
 
               <Select
@@ -796,9 +802,9 @@ export default function PaymentsPage() {
                     {t('detail.createdAt', { date: format(new Date(selectedPayment.createdAt), 'dd/MM/yyyy HH:mm') })}
                   </p>
                 </div>
-                <span className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border ${paymentStatusConfig[statusKey(selectedPayment.status)].bgColor} ${paymentStatusConfig[statusKey(selectedPayment.status)].color} ${paymentStatusConfig[statusKey(selectedPayment.status)].borderColor}`}>
-                  {React.createElement(paymentStatusConfig[statusKey(selectedPayment.status)].icon, { className: 'w-4 h-4' })}
-                  {t(`status.${statusKey(selectedPayment.status)}`)}
+                <span className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border ${paymentStatusConfig[statusKey(selectedPayment)].bgColor} ${paymentStatusConfig[statusKey(selectedPayment)].color} ${paymentStatusConfig[statusKey(selectedPayment)].borderColor}`}>
+                  {React.createElement(paymentStatusConfig[statusKey(selectedPayment)].icon, { className: 'w-4 h-4' })}
+                  {t(`status.${statusKey(selectedPayment)}`)}
                 </span>
               </div>
 
@@ -892,7 +898,7 @@ export default function PaymentsPage() {
                   <div className="p-4 space-y-3">
                     <div className="flex justify-between items-center py-2 border-b border-line">
                       <span className="text-muted">{t('detail.bank')}</span>
-                      <span className="font-semibold text-fg">{selectedPayment.bankCode || 'N/A'}</span>
+                      <span className="font-semibold text-fg text-right">{selectedPayment.bankCode ? bankLabel(selectedPayment.bankCode) : 'N/A'}</span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-line">
                       <span className="text-muted">{t('detail.accountNumber')}</span>
@@ -914,7 +920,7 @@ export default function PaymentsPage() {
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-line">
                       <span className="text-muted">{t('detail.accountName')}</span>
-                      <span className="font-semibold text-fg">{selectedPayment.accountHolder || 'N/A'}</span>
+                      <span className="font-semibold text-fg text-right">{selectedPayment.accountHolder ? toBankName(selectedPayment.accountHolder) : 'N/A'}</span>
                     </div>
                     <div className="flex justify-between items-center py-3 bg-acc-soft -mx-4 -mb-4 px-4 mt-2">
                       <span className="text-acc font-medium">{t('detail.transferContent')}</span>
@@ -966,6 +972,18 @@ export default function PaymentsPage() {
                 </div>
               )}
 
+              {/* Given back when the booking was cancelled */}
+              {refundedOf(selectedPayment) > 0 && (
+                <div className="p-3 rounded-xl bg-refund-soft border border-refund/30 text-sm text-refund">
+                  {selectedPayment.metadata?.refundedAt
+                    ? t('detail.refundedAt', {
+                        amount: formatPrice(refundedOf(selectedPayment)),
+                        date: labels.dateTime(selectedPayment.metadata.refundedAt),
+                      })
+                    : t('detail.refunded', { amount: formatPrice(refundedOf(selectedPayment)) })}
+                </div>
+              )}
+
               {/* Paid Info */}
               {selectedPayment.paidAt && (
                 <div className="bg-ok-soft rounded-2xl p-5 text-center border border-ok/30">
@@ -1007,6 +1025,49 @@ export default function PaymentsPage() {
           </>
         )}
       </Modal>
+    </div>
+  )
+}
+
+const STAT_TONES = {
+  ok: { border: 'border-ok/30', chip: 'bg-ok-soft', text: 'text-ok' },
+  warn: { border: 'border-warn/30', chip: 'bg-warn-soft', text: 'text-warn' },
+  err: { border: 'border-err/30', chip: 'bg-err-soft', text: 'text-err' },
+} as const
+
+/** One money card; on a phone the icon gives its room to the amount, which never gets cut. */
+function StatCard({
+  tone,
+  label,
+  amount,
+  count,
+  icon: Icon,
+  countIcon: CountIcon,
+}: {
+  tone?: keyof typeof STAT_TONES
+  label: string
+  amount: string
+  count: string
+  icon: React.ComponentType<{ className?: string }>
+  countIcon?: React.ComponentType<{ className?: string }>
+}) {
+  const c = tone ? STAT_TONES[tone] : { border: 'border-line', chip: 'bg-fg/5', text: 'text-fg' }
+  const small = tone ? c.text : 'text-muted'
+  return (
+    <div className={`bg-panel rounded-xl p-3 sm:p-4 shadow-sm border ${c.border}`}>
+      <div className="flex items-center gap-3">
+        <div className={`hidden sm:flex w-10 h-10 rounded-xl ${c.chip} items-center justify-center shrink-0`}>
+          <Icon className={`w-5 h-5 ${c.text}`} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className={`text-xs font-medium leading-tight ${small}`}>{label}</p>
+          <p className={`text-base sm:text-lg font-bold whitespace-nowrap ${c.text}`}>{amount}</p>
+        </div>
+      </div>
+      <p className={`text-xs mt-2 flex items-center gap-1 ${small}`}>
+        {CountIcon && <CountIcon className="w-3 h-3" />}
+        {count}
+      </p>
     </div>
   )
 }
