@@ -168,7 +168,9 @@ export default function BookingsPage() {
   const newBookingHref = routes.propertyBookingNew(params.slug, propertyId)
 
   return (
-    <PageContainer className="max-w-none">
+    // Wider than the other pages for the table, but capped: on a 2560 px
+    // screen the columns drifted a whole screen apart.
+    <PageContainer className="max-w-[1600px]">
       <Header
         eyebrow={labels.longDate(new Date())}
         title={tc('nav.bookings')}

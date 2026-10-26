@@ -17,6 +17,7 @@ import { Building2, LogOut, Moon, Sun, UserRound } from 'lucide-react'
  * leads back to the workspaces, the theme and language buttons, and the
  * account menu. No workspace is open here, so there is no switcher.
  * The name comes from the session (SessionScope in the dashboard layout).
+ * Full width, like the workspace level's bar (workspace-top-bar.tsx).
  */
 export function AccountTopBar() {
   const t = useTranslations('workspaces')
@@ -34,7 +35,7 @@ export function AccountTopBar() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-page/90 backdrop-blur">
-      <div className="mx-auto w-full max-w-5xl px-5 sm:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex h-14 items-center justify-between gap-3">
           <Link
             href={routes.workspaces()}

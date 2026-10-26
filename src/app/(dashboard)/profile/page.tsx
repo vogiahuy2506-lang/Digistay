@@ -732,7 +732,11 @@ export default function ProfilePage() {
   )
 }
 
-/** The page's column, as wide as the top bar's (layout.tsx), so their edges line up. */
+/**
+ * The page's column: centred, with the top bar's side padding. Narrower than
+ * the workspace lists (max-w-7xl): it is a form, and its widest tab is the
+ * avatar card next to the details.
+ */
 function PageShell({ children }: { children: React.ReactNode }) {
-  return <div className="mx-auto w-full max-w-5xl px-5 sm:px-8 py-8 sm:py-10">{children}</div>
+  return <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 py-8 sm:py-10">{children}</div>
 }

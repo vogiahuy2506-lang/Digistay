@@ -274,7 +274,7 @@ export default function WorkspacesPage() {
       {/* One slim bar: brand, then the account menu. No marketing header. */}
       <AccountTopBar />
 
-      <main className="flex-1 w-full max-w-5xl mx-auto px-5 sm:px-8 py-10 sm:py-14">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
           <div className="max-w-xl">
             <h1 className="font-serif text-[30px] leading-[1.15] tracking-[-0.02em] text-fg sm:text-[38px]">

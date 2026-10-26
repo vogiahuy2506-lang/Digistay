@@ -26,7 +26,8 @@ interface WorkspaceTopBarProps {
 /**
  * The bar on top of the workspace level pages, the same shape as the one on
  * /workspaces: the brand, the workspace being shown, and the account menu.
- * Below `lg` the workspace switcher collapses into the brand line.
+ * It spans the window with the property pages' side padding (PageContainer),
+ * the brand at the left edge and the controls at the right, however wide.
  */
 export function WorkspaceTopBar({ workspace, workspaces, userName, userEmail, userImage }: WorkspaceTopBarProps) {
   const t = useTranslations('workspaces')
@@ -41,7 +42,7 @@ export function WorkspaceTopBar({ workspace, workspaces, userName, userEmail, us
 
   return (
     <header className="sticky top-0 z-30 [&:has([data-bell-open])]:z-[45] border-b border-line bg-page/90 backdrop-blur">
-      <div className="mx-auto w-full max-w-5xl px-5 sm:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex h-14 items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <Link
