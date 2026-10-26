@@ -763,7 +763,8 @@
       "resetNow": "Reset password",
       "verifyNow": "Enter the email code",
       "sendingCode": "Sending code…",
-      "verified": "Your email is verified. Sign in to continue."
+      "verified": "Your email is verified. Sign in to continue.",
+      "googleFailed": "Signing in with Google didn't work. Try again later, or sign in with your username and password."
     },
     "twoFactor": {
       "step": "Step 2 of 2 · Two-step sign-in",

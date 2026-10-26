@@ -763,7 +763,8 @@
       "resetNow": "Đặt lại mật khẩu",
       "verifyNow": "Nhập mã xác thực email",
       "sendingCode": "Đang gửi mã…",
-      "verified": "Email đã được xác thực. Đăng nhập để tiếp tục."
+      "verified": "Email đã được xác thực. Đăng nhập để tiếp tục.",
+      "googleFailed": "Không đăng nhập được bằng Google. Hãy thử lại sau, hoặc đăng nhập bằng tên đăng nhập và mật khẩu."
     },
     "twoFactor": {
       "step": "Bước 2 / 2 · Bảo mật hai lớp",

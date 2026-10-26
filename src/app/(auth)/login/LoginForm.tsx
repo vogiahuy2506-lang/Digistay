@@ -14,6 +14,9 @@ import { CodeInput, Field, GoogleButton, Notice, PasswordInput, authTitle, descr
 
 type Problem = 'invalid' | 'tooMany' | 'locked' | 'unverified' | 'other'
 
+/** A clean URL for next-auth's callbackUrl (the page itself navigates after signing in). */
+const AFTER_SIGN_IN = '/workspaces'
+
 /**
  * Sign-in (Claude Design "Digistay Dang Nhap"): username or email and
  * password, or Google; then, for accounts with two-factor on, the code from
@@ -34,20 +37,23 @@ export function LoginForm({ google }: { google: boolean }) {
   // Back from verifying the email on the sign-up page (?verified=1).
   const [verified, setVerified] = React.useState(false)
 
-  // Google sign-in with two-factor on lands here with ?twoFactor=<challenge>.
-  // Read it once and drop it from the address bar and history.
+  // Google sign-in with two-factor on lands here with ?twoFactor=<challenge>,
+  // a failed one with ?error=<next-auth code>. Read them once and drop them
+  // from the address bar and history.
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     setNext(afterLogin(params.get('callbackUrl')))
     setVerified(params.get('verified') === '1')
     const fromGoogle = params.get(TWO_FACTOR_QUERY)
-    if (fromGoogle) {
-      setChallenge(fromGoogle)
+    if (fromGoogle) setChallenge(fromGoogle)
+    if (params.get('error')) setProblem({ kind: 'other', text: t('login.googleFailed') })
+    if (fromGoogle || params.has('error')) {
       params.delete(TWO_FACTOR_QUERY)
+      params.delete('error')
       const rest = params.toString()
       window.history.replaceState(null, '', `${window.location.pathname}${rest ? `?${rest}` : ''}`)
     }
-  }, [])
+  }, [t])
 
   const goToApp = () => {
     router.push(next)
@@ -63,7 +69,10 @@ export function LoginForm({ google }: { google: boolean }) {
     setBusy(true)
     setProblem(null)
     try {
-      const result = await signIn('credentials', { username: form.username, password: form.password, redirect: false })
+      // callbackUrl: next-auth reads `error` back from the URL it returns, which
+      // defaults to this page's: after a failed Google attempt (?error=OAuthSignin)
+      // a successful password sign-in came back as that error.
+      const result = await signIn('credentials', { username: form.username, password: form.password, redirect: false, callbackUrl: AFTER_SIGN_IN })
       if (result?.error?.startsWith(TWO_FACTOR_REQUIRED)) {
         setChallenge(result.error.slice(TWO_FACTOR_REQUIRED.length))
         setBusy(false)
@@ -233,7 +242,7 @@ function TwoFactor({ challenge, onSuccess, onCancel }: { challenge: string; onSu
     setBusy(true)
     setError('')
     try {
-      const result = await signIn(TWO_FACTOR_PROVIDER, { challenge, code, redirect: false })
+      const result = await signIn(TWO_FACTOR_PROVIDER, { challenge, code, redirect: false, callbackUrl: AFTER_SIGN_IN })
       if (result?.error) {
         setError(result.error === 'CredentialsSignin' ? message(TWO_FACTOR_ERRORS.invalidCode) : message(result.error))
         setCode('')
