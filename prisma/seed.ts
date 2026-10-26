@@ -194,8 +194,11 @@ async function main() {
       subdomain: 'khach-san-demo',
       type: 'HOTEL',
       address: '123 Đường Lê Lợi',
+      // Province and ward as the address pickers save them (src/lib/vn-admin).
       city: 'Hà Nội',
-      district: 'Quận Hoàn Kiếm',
+      ward: 'Phường Hoàn Kiếm',
+      provinceCode: '01',
+      wardCode: '00070',
       country: 'Vietnam',
       phone: '024 1234 5678',
       email: 'info@demo-hotel.vn',
