@@ -70,6 +70,8 @@ const PUBLIC_HANDLERS: Record<string, string> = {
   'POST /api/payments/webhook': 'disabled: always 404; gateways use /api/webhooks/<gateway>/...',
   'POST /api/webhooks/matbao/[propertyId]/[token]':
     'Mắt Bão tax-office status; the per-property secret token in the URL is the credential (unsigned callbacks); per-IP limit',
+  'POST /api/webhooks/matbao/digistay/[token]':
+    "Mắt Bão tax-office status for plan invoices on Digistay's own account; the secret in the URL (DIGISTAY_MATBAO_WEBHOOK_SECRET) is the credential; per-IP limit",
   'POST /api/webhooks/payos/[propertyId]':
     "PayOS notifications; the HMAC signature, checked with that property's checksum key, is the credential; per-IP limit",
   'POST /api/webhooks/payos/digistay':

@@ -31,11 +31,34 @@ interface Status {
   jobs: JobRow[]
   queues: { outbox: Record<string, number>; invoiceEmails: Record<string, number> }
   recentRuns: { id: string; job: string; status: string; startedAt: string; durationMs: number | null; error: string | null }[]
+  planInvoices: PlanInvoice[]
+}
+/** A plan payment's e-invoice (src/lib/billing/einvoice.ts). */
+interface PlanInvoice {
+  id: string
+  workspace: string
+  orderCode: string
+  plan: string
+  billing: string
+  amount: number
+  buyerType: string
+  buyer: string | null
+  status: 'PENDING' | 'ISSUING' | 'ISSUED' | 'FAILED'
+  environment: string | null
+  einvoiceNumber: string | null
+  attempts: number
+  nextAttemptAt: string | null
+  error: string | null
+  emailStatus: string | null
+  emailError: string | null
+  cqtStatus: number | null
+  createdAt: string
 }
 
 // Job names (messages: system.jobs.names) and email queue states (system.queues.status).
 const JOB_KEYS = {
   'payos-reconcile': 'payosReconcile',
+  'subscription-jobs': 'subscriptionJobs',
   'einvoice-jobs': 'einvoiceJobs',
   'email-outbox': 'emailOutbox',
   'ops-alerts': 'opsAlerts',
@@ -95,6 +118,20 @@ export default function SystemPage() {
     const timer = setInterval(load, 60_000)
     return () => clearInterval(timer)
   }, [load])
+
+  const [actionMessage, setActionMessage] = React.useState('')
+  /** Retry a failed plan invoice, or email an issued one again (POST /api/admin/plan-invoices/[id]). */
+  const act = async (id: string, action: 'retry' | 'resend') => {
+    setActionMessage(t('planInvoices.working'))
+    const res = await fetch(`/api/admin/plan-invoices/${id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action }),
+    }).catch(() => null)
+    const data = await res?.json().catch(() => null)
+    setActionMessage(data?.success ? t('planInvoices.done') : `${t('planInvoices.failed')} ${data?.error ?? ''}`)
+    await load()
+  }
 
   const dateTime = React.useMemo(
     () =>
@@ -189,6 +226,67 @@ export default function SystemPage() {
                 ))}
               </ul>
             )}
+          </Section>
+
+          <Section title={t('planInvoices.title')}>
+            {status.planInvoices.length === 0 ? (
+              <p className="text-sm text-muted">{t('planInvoices.empty')}</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="text-left text-xs uppercase text-muted">
+                    <tr>
+                      <th className="py-2 pr-4">{t('planInvoices.when')}</th>
+                      <th className="py-2 pr-4">{t('planInvoices.workspace')}</th>
+                      <th className="py-2 pr-4">{t('planInvoices.buyer')}</th>
+                      <th className="py-2 pr-4">{t('planInvoices.status')}</th>
+                      <th className="py-2 pr-4">{t('planInvoices.email')}</th>
+                      <th className="py-2" />
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line">
+                    {status.planInvoices.map((i) => (
+                      <tr key={i.id} className="align-top">
+                        <td className="py-2 pr-4 tabular-nums">{time(i.createdAt)}</td>
+                        <td className="py-2 pr-4 text-fg">
+                          {i.workspace}
+                          <span className="block text-xs text-muted">
+                            {i.plan} · {i.billing} · {i.amount.toLocaleString('vi-VN')} ₫ · #{i.orderCode}
+                          </span>
+                        </td>
+                        <td className="py-2 pr-4">{i.buyer ?? t(`planInvoices.buyerTypes.${i.buyerType === 'personal' || i.buyerType === 'company' ? i.buyerType : 'none'}`)}</td>
+                        <td className="py-2 pr-4">
+                          <Pill tone={i.status === 'ISSUED' ? (i.cqtStatus === 6 ? 'bad' : 'ok') : i.status === 'FAILED' ? 'bad' : 'warn'}>
+                            {i.status === 'ISSUED' && i.einvoiceNumber ? t('planInvoices.issued', { number: i.einvoiceNumber }) : i.status}
+                          </Pill>
+                          {i.environment === 'DEMO' && <span className="ml-1 text-xs text-muted">DEMO</span>}
+                          {i.cqtStatus === 6 && <p className="mt-1 text-xs text-err">{t('planInvoices.cqtRefused')}</p>}
+                          {i.error && i.status !== 'ISSUED' && <p className="mt-1 max-w-xs break-words text-xs text-err">{i.error}</p>}
+                          {i.status === 'FAILED' && i.nextAttemptAt && <p className="mt-1 text-xs text-muted">{t('planInvoices.nextTry', { time: time(i.nextAttemptAt) })}</p>}
+                        </td>
+                        <td className="py-2 pr-4">
+                          {i.emailStatus ? <Pill tone={i.emailStatus === 'SENT' ? 'ok' : i.emailStatus === 'FAILED' ? 'bad' : 'muted'}>{queueLabel(i.emailStatus)}</Pill> : '—'}
+                          {i.emailError && i.emailStatus === 'FAILED' && <p className="mt-1 max-w-xs break-words text-xs text-err">{i.emailError}</p>}
+                        </td>
+                        <td className="py-2 text-right">
+                          {i.status === 'FAILED' && (
+                            <button type="button" className="rounded-md border border-line px-2.5 py-1 text-xs font-medium text-fg hover:bg-fg/5" onClick={() => act(i.id, 'retry')}>
+                              {t('planInvoices.retry')}
+                            </button>
+                          )}
+                          {i.status === 'ISSUED' && i.buyerType !== 'none' && (
+                            <button type="button" className="rounded-md border border-line px-2.5 py-1 text-xs font-medium text-fg hover:bg-fg/5" onClick={() => act(i.id, 'resend')}>
+                              {t('planInvoices.resend')}
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {actionMessage && <p className="mt-3 text-sm text-fg">{actionMessage}</p>}
           </Section>
 
           <Section title={t('jobs.title')}>

@@ -1,13 +1,14 @@
 /**
  * What the system page (/admin/system, SUPER_ADMIN only) shows: health,
- * the scheduled jobs, current problems (the ops alert rules, live), and the
- * email queues.
+ * the scheduled jobs, current problems (the ops alert rules, live), the
+ * email queues, and the latest plan e-invoices (src/lib/billing/einvoice.ts)
+ * with what can be done about them.
  */
 import { prisma } from '@/lib/db'
 import { missingMigrations, redisState } from './health-checks'
 import { alertRecipients, findProblems } from './alerts'
 
-export const SYSTEM_JOBS = ['payos-reconcile', 'einvoice-jobs', 'email-outbox', 'ops-alerts', 'backup'] as const
+export const SYSTEM_JOBS = ['payos-reconcile', 'subscription-jobs', 'einvoice-jobs', 'email-outbox', 'ops-alerts', 'backup'] as const
 const DAY = 24 * 60 * 60 * 1000
 
 /** Users whose platform role allows the system page (read from the DB, not the token). */
@@ -44,13 +45,18 @@ export async function systemStatus(now = new Date()) {
     })
   )
 
-  const [problems, alerts, recipients, outbox, invoiceEmails, recentRuns] = await Promise.all([
+  const [problems, alerts, recipients, outbox, invoiceEmails, recentRuns, planInvoices] = await Promise.all([
     findProblems(now),
     prisma.alertState.findMany({ orderBy: [{ resolvedAt: { sort: 'desc', nulls: 'first' } }, { firstSeenAt: 'desc' }], take: 30 }),
     alertRecipients(),
     prisma.emailOutbox.groupBy({ by: ['status'], _count: { _all: true } }),
     prisma.invoice.groupBy({ by: ['emailStatus'], where: { emailStatus: { not: null } }, _count: { _all: true } }),
     prisma.jobRun.findMany({ orderBy: { startedAt: 'desc' }, take: 30 }),
+    prisma.subscriptionInvoice.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+      include: { payment: { select: { orderCode: true, plan: true, billing: true, workspace: { select: { name: true } } } } },
+    }),
   ])
 
   return {
@@ -68,6 +74,26 @@ export async function systemStatus(now = new Date()) {
       outbox: countBy(outbox),
       invoiceEmails: countBy(invoiceEmails.map((r) => ({ status: r.emailStatus, _count: r._count }))),
     },
+    planInvoices: planInvoices.map((i) => ({
+      id: i.id,
+      workspace: i.payment.workspace.name,
+      orderCode: i.payment.orderCode,
+      plan: i.payment.plan,
+      billing: i.payment.billing,
+      amount: i.amount,
+      buyerType: i.buyerType,
+      buyer: i.companyName ?? i.buyerName,
+      status: i.status,
+      environment: i.environment,
+      einvoiceNumber: i.einvoiceNumber,
+      attempts: i.attempts,
+      nextAttemptAt: i.nextAttemptAt,
+      error: i.error,
+      emailStatus: i.emailStatus,
+      emailError: i.emailError,
+      cqtStatus: i.cqtStatus,
+      createdAt: i.createdAt,
+    })),
     recentRuns: recentRuns.map((r) => ({
       id: r.id,
       job: r.job,

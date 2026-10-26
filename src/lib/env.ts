@@ -54,6 +54,15 @@ const schema = z.object({
   DIGISTAY_PAYOS_CLIENT_ID: z.string().optional(),
   DIGISTAY_PAYOS_API_KEY: z.string().optional(),
   DIGISTAY_PAYOS_CHECKSUM_KEY: z.string().optional(),
+  // Digistay's own Mắt Bão account, for plan payments' e-invoices (src/lib/billing/einvoice.ts)
+  DIGISTAY_MATBAO_ENV: z.string().optional(),
+  DIGISTAY_MATBAO_TAX_CODE: z.string().optional(),
+  DIGISTAY_MATBAO_USERNAME: z.string().optional(),
+  DIGISTAY_MATBAO_PASSWORD: z.string().optional(),
+  DIGISTAY_MATBAO_TEMPLATE: z.string().optional(),
+  DIGISTAY_MATBAO_SERIES: z.string().optional(),
+  DIGISTAY_MATBAO_VAT: z.string().optional(),
+  DIGISTAY_MATBAO_WEBHOOK_SECRET: z.string().optional(),
 
   // Email — optional; without RESEND_API_KEY the mailer just logs to
   // the console and reports sent=false to the caller.

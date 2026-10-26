@@ -190,7 +190,8 @@
         "einvoiceJobs": "Hoá đơn điện tử",
         "emailOutbox": "Hàng đợi email",
         "opsAlerts": "Cảnh báo vận hành",
-        "backup": "Backup database"
+        "backup": "Backup database",
+        "subscriptionJobs": "Gói: nhắc hạn & hoá đơn"
       }
     },
     "queues": {
@@ -216,6 +217,28 @@
       "active": "Đang có",
       "times": "từ {first} · gửi gần nhất {last}",
       "timesResolved": "từ {first} · gửi gần nhất {last} · hết lúc {resolved}"
+    },
+    "planInvoices": {
+      "title": "Hoá đơn gói (Digistay xuất)",
+      "empty": "Chưa có hoá đơn gói nào. Hoá đơn được xuất khi Digistay đã cài tài khoản Mắt Bão (DIGISTAY_MATBAO_*) và có khoản mua gói.",
+      "when": "Lúc tạo",
+      "workspace": "Workspace",
+      "buyer": "Người mua",
+      "status": "Trạng thái",
+      "email": "Email",
+      "buyerTypes": {
+        "none": "Không lấy hoá đơn",
+        "personal": "Cá nhân",
+        "company": "Công ty"
+      },
+      "issued": "Số {number}",
+      "cqtRefused": "Cơ quan thuế từ chối: cần lập hoá đơn thay thế trên cổng Mắt Bão.",
+      "nextTry": "Tự thử lại lúc {time}",
+      "retry": "Phát hành lại",
+      "resend": "Gửi lại email",
+      "working": "Đang xử lý…",
+      "done": "Xong.",
+      "failed": "Không thành công:"
     }
   },
   "error": {

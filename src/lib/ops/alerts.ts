@@ -148,6 +148,39 @@ async function einvoiceEmailGaveUp(now: Date): Promise<Finding[]> {
   ]
 }
 
+/** Plan e-invoices (src/lib/billing/einvoice.ts) that will not settle by themselves. */
+async function planInvoiceProblems(now: Date): Promise<Finding[]> {
+  const rows = await prisma.subscriptionInvoice.findMany({
+    where: {
+      OR: [
+        // Refused by Mắt Bão, or out of retries: someone must retry it (/admin/system).
+        { status: 'FAILED', nextAttemptAt: null },
+        // Waiting much longer than the jobs take.
+        { status: { in: ['PENDING', 'ISSUING'] }, updatedAt: { lt: new Date(now.getTime() - HOUR) } },
+        { emailStatus: 'FAILED', emailNextAt: null },
+        // The tax office refused it.
+        { cqtStatus: 6 },
+      ],
+      createdAt: { gt: new Date(now.getTime() - 30 * 24 * HOUR) },
+    },
+    take: 50,
+    select: { id: true, status: true, error: true, emailStatus: true, emailError: true, cqtStatus: true, lookupCode: true, payment: { select: { workspace: { select: { name: true } } } } },
+  })
+  if (rows.length === 0) return []
+  return [
+    {
+      key: 'plan_invoice_problems',
+      severity: 'critical',
+      title: `${rows.length} hoá đơn gói cần xử lý`,
+      lines: rows.map((i) => {
+        const what = i.cqtStatus === 6 ? 'CQT từ chối' : i.status !== 'ISSUED' ? `${i.status}: ${i.error ?? ''}` : `email: ${i.emailError ?? ''}`
+        return `${i.payment.workspace.name} · ${i.lookupCode} · ${what}`
+      }),
+      fingerprint: fingerprintOf(rows.map((i) => i.id)),
+    },
+  ]
+}
+
 async function outboxGaveUp(now: Date): Promise<Finding[]> {
   const failed = await prisma.emailOutbox.findMany({
     where: { status: 'FAILED', nextAt: null, updatedAt: { gt: new Date(now.getTime() - 7 * 24 * HOUR) } },
@@ -221,7 +254,15 @@ async function payosFlags(now: Date): Promise<Finding[]> {
 }
 
 export async function findProblems(now = new Date()): Promise<Finding[]> {
-  const groups = await Promise.all([jobFailures(now), backupStale(now), einvoiceStuck(now), einvoiceEmailGaveUp(now), outboxGaveUp(now), payosFlags(now)])
+  const groups = await Promise.all([
+    jobFailures(now),
+    backupStale(now),
+    einvoiceStuck(now),
+    einvoiceEmailGaveUp(now),
+    planInvoiceProblems(now),
+    outboxGaveUp(now),
+    payosFlags(now),
+  ])
   return groups.flat().map((f) => ({ ...f, lines: f.lines.slice(0, MAX_LINES).concat(f.lines.length > MAX_LINES ? [`… và ${f.lines.length - MAX_LINES} mục khác`] : []) }))
 }
 

@@ -190,7 +190,8 @@
         "einvoiceJobs": "E-invoices",
         "emailOutbox": "Email queue",
         "opsAlerts": "Ops alerts",
-        "backup": "Database backup"
+        "backup": "Database backup",
+        "subscriptionJobs": "Plans: reminders & invoices"
       }
     },
     "queues": {
@@ -216,6 +217,28 @@
       "active": "Active",
       "times": "since {first} · last sent {last}",
       "timesResolved": "since {first} · last sent {last} · resolved {resolved}"
+    },
+    "planInvoices": {
+      "title": "Plan invoices (issued by Digistay)",
+      "empty": "No plan invoices yet. They are issued once Digistay has its Mắt Bão account set (DIGISTAY_MATBAO_*) and a plan is bought.",
+      "when": "Created",
+      "workspace": "Workspace",
+      "buyer": "Buyer",
+      "status": "Status",
+      "email": "Email",
+      "buyerTypes": {
+        "none": "No invoice wanted",
+        "personal": "Individual",
+        "company": "Company"
+      },
+      "issued": "No. {number}",
+      "cqtRefused": "Refused by the tax office: make a replacement invoice on the Mắt Bão portal.",
+      "nextTry": "Retries by itself at {time}",
+      "retry": "Issue again",
+      "resend": "Resend email",
+      "working": "Working…",
+      "done": "Done.",
+      "failed": "Did not work:"
     }
   },
   "error": {

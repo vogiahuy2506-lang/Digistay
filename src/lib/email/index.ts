@@ -111,9 +111,10 @@ function getFromAddress(): string {
 /** For the outbox (outbox.ts), which renders first and sends later. */
 export function sendRendered(
   to: EmailRecipient,
-  message: { subject: string; text: string; html: string }
+  message: { subject: string; text: string; html: string },
+  attachments: EmailAttachment[] = []
 ): Promise<SendResult> {
-  return send(to, message.subject, message.text, message.html)
+  return send(to, message.subject, message.text, message.html, attachments)
 }
 
 // Every caller passes (subject, text, html): the parameters used to be

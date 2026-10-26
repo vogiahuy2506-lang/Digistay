@@ -754,11 +754,19 @@ bước 3.
 
 Khách sạn mua gói ở **Gói & thanh toán** (`/workspace/<slug>/billing`): mã VietQR trên chính trang đó,
 tiền vào **tài khoản PayOS của Digistay** (khác với PayOS của từng khách sạn). Code: `src/lib/billing`.
-Quy tắc (chốt 26/10/2026): workspace mới dùng thử 14 ngày gói Growth; mỗi lần thanh toán bắt đầu kỳ
-mới từ ngày trả (phần còn lại của kỳ cũ không cộng dồn); hết hạn 7 ngày thì workspace chỉ còn xem và
-website ngừng nhận đặt phòng online cho tới khi trả tiền. Giá và giới hạn: `src/lib/marketing/plans.ts`
-(đang là **giá test** 2.000/5.000/10.000 ₫ một tháng). Job `subscription-jobs` gửi email nhắc trước
-7 ngày, 1 ngày, khi hết hạn và khi khoá; `payos-reconcile` bắt các khoản webhook bỏ sót.
+Quy tắc (chốt 26–27/10/2026, giống Founder AI, `src/lib/billing/period.ts` `planChange`): workspace mới
+dùng thử 14 ngày gói Growth; không tính chênh lệch, không hoàn tiền.
+- **Nâng gói** (gói đắt hơn, hoặc tháng → năm): hiệu lực ngay, kỳ mới từ lúc trả, ngày còn lại của
+  gói cũ bỏ (trang hỏi xác nhận, nói rõ số ngày).
+- **Hạ gói**: trả trước, gói mới bắt đầu đúng ngày gói hiện tại hết hạn (`Subscription.next*`); một
+  lệnh hẹn một lúc; năm → tháng bị chặn khi gói năm còn ≥ 30 ngày.
+- **Gia hạn cùng gói**: mở trong 7 ngày cuối (gói năm: 30 ngày), kỳ mới nối tiếp ngày hết hạn.
+- Hết hạn 7 ngày thì workspace chỉ còn xem và website ngừng nhận đặt phòng online cho tới khi trả tiền.
+
+Giá và giới hạn: `src/lib/marketing/plans.ts` (đang là **giá test** 2.000/5.000/10.000 ₫ một tháng).
+Job `subscription-jobs` (10 phút/lần) bật gói đã hẹn khi tới ngày, gửi email nhắc trước 30 ngày (gói
+năm), 7 ngày, 1 ngày, khi hết hạn và khi khoá, và xuất/gửi lại hoá đơn gói; `payos-reconcile` bắt các
+khoản webhook bỏ sót.
 
 **Cài trên VPS (một lần).** Trong PayOS, tạo một **kênh thanh toán riêng** cho Digistay (không dùng
 lại kênh của app khác: bước đăng ký webhook dưới đây sẽ thay webhook của kênh đó). Khối lệnh hỏi 3
@@ -788,6 +796,56 @@ curl -fsS https://digistay.vn/api/health; echo
 Kết quả đúng: `{"success":true,"data":{"webhookUrl":"https://digistay.vn/api/webhooks/payos/digistay",...}}`.
 Thử bằng tiền thật: vào Gói & thanh toán của một workspace, chọn Starter theo tháng (2.000 ₫), quét QR;
 trong vài giây trang báo "Đã kích hoạt" và email biên nhận gửi tới chủ workspace.
+
+### Hoá đơn gói (Mắt Bão của Digistay)
+
+Mỗi khoản mua gói có một hoá đơn điện tử do **Digistay** xuất, đứng tên MST của Digistay, qua tài
+khoản Mắt Bão của Digistay (khác với Mắt Bão của từng khách sạn). Code: `src/lib/billing/einvoice.ts`,
+cách làm như Founder AI:
+- Khi mua, người trả chọn **Không lấy hoá đơn** (vẫn xuất, ghi "Bán cho người tiêu dùng", không gửi
+  email), **Cá nhân** (họ tên + CCCD) hoặc **Công ty** (MST tự điền tên, địa chỉ). Bước này chỉ hiện khi
+  đã cài tài khoản dưới đây.
+- Tiền về → tạo hoá đơn trong cùng giao dịch, xuất ngay sau khi trả lời PayOS; lỗi tạm thì
+  `subscription-jobs` thử lại (2, 10, 30 phút…); Mắt Bão từ chối thì chờ người xử lý ở `/admin/system`
+  (mục "Hoá đơn gói": Phát hành lại / Gửi lại email) và có cảnh báo vận hành.
+- MaTraCuu = `DSG` + mã đơn PayOS, nên thử lại sau khi timeout không xuất trùng (Mắt Bão trả 304).
+- Thuế suất `DIGISTAY_MATBAO_VAT` (mặc định `-1` = không chịu thuế, KCT); giá đã gồm thuế, không cộng
+  thêm. Đổi thuế suất là quyết định của kế toán.
+- File PDF gửi tới email người trả tiền (Cá nhân/Công ty); chủ workspace tải lại ở Lịch sử thanh toán.
+
+**Cài trên VPS (một lần).** Cần tài khoản Mắt Bão HĐĐT của Digistay, mẫu số và ký hiệu hoá đơn năm
+nay. Thử trước với `DEMO` (không tạo hoá đơn thật), bán thật thì chạy lại khối này với `PRODUCTION`.
+Khối lệnh hỏi từng giá trị, tạo secret cho webhook, ghi vào `.env.production` (giữ bản sao), khởi động
+lại app và in `set`/`MISSING` cùng địa chỉ webhook để gửi bộ phận hỗ trợ Mắt Bão:
+
+```bash
+{
+cd /opt/digistay
+read -r -p "Môi trường Mắt Bão (DEMO hoặc PRODUCTION): " ME
+read -r -p "MST của Digistay: " MT
+read -r -p "Tên đăng nhập Mắt Bão: " MU
+read -r -s -p "Mật khẩu Mắt Bão: " MP; echo
+read -r -p "Mẫu số hoá đơn (thường là 1): " MK
+read -r -p "Ký hiệu hoá đơn (vd C26TDG): " MS
+MW=$(openssl rand -hex 24)
+sudo cp -p .env.production ".env.production.bak-$(date +%Y%m%d%H%M%S)"
+( umask 077
+  sudo grep -vE '^DIGISTAY_MATBAO_(ENV|TAX_CODE|USERNAME|PASSWORD|TEMPLATE|SERIES|VAT|WEBHOOK_SECRET)=' .env.production > /tmp/digistay-env.new
+  printf 'DIGISTAY_MATBAO_ENV=%s\nDIGISTAY_MATBAO_TAX_CODE=%s\nDIGISTAY_MATBAO_USERNAME=%s\nDIGISTAY_MATBAO_PASSWORD=%s\nDIGISTAY_MATBAO_TEMPLATE=%s\nDIGISTAY_MATBAO_SERIES=%s\nDIGISTAY_MATBAO_VAT=-1\nDIGISTAY_MATBAO_WEBHOOK_SECRET=%s\n' "$ME" "$MT" "$MU" "$MP" "$MK" "$MS" "$MW" >> /tmp/digistay-env.new
+  sudo sh -c 'cat /tmp/digistay-env.new > /opt/digistay/.env.production'
+  rm -f /tmp/digistay-env.new )
+unset ME MT MU MP MK MS
+sudo docker compose up -d --no-deps --no-build --force-recreate app
+sleep 25
+sudo docker compose exec -T app node -e 'for (const k of ["DIGISTAY_MATBAO_ENV","DIGISTAY_MATBAO_TAX_CODE","DIGISTAY_MATBAO_USERNAME","DIGISTAY_MATBAO_PASSWORD","DIGISTAY_MATBAO_SERIES","DIGISTAY_MATBAO_WEBHOOK_SECRET"]) { const v = process.env[k] || ""; console.log(k, v && v.indexOf("PASTE_") === -1 ? "set" : "MISSING") }'
+echo "Webhook gửi Mắt Bão: https://digistay.vn/api/webhooks/matbao/digistay/$MW"
+unset MW
+curl -fsS https://digistay.vn/api/health; echo
+}
+```
+
+Thử: mua Starter theo tháng, chọn **Công ty** với một MST thật; sau vài giây Lịch sử thanh toán có
+"Số …" (bấm để xem PDF), email kèm PDF tới người trả, và `/admin/system` → "Hoá đơn gói" ghi ISSUED.
 
 ---
 

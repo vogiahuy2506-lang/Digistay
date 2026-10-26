@@ -390,8 +390,9 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
 - Trang của chính Digistay (`src/app/(marketing)`: trang chủ, bảng giá, liên hệ, điều khoản, bảo
   mật) theo Claude Design "Digistay Gioi Thieu" / "Bang Gia" / "Lien He": đầu và chân trang ở
   `src/components/marketing`, nút VI | EN (`LocaleToggle`) ghi cookie `NEXT_LOCALE`. Tên gói, giá,
-  giới hạn là **nội dung mẫu** (Digistay chưa ra mắt) trong `src/lib/marketing/plans.ts`; app chưa
-  có gói và không chặn theo giới hạn nào. Form liên hệ gửi email cho `CONTACT_EMAILS` (không có thì
+  giới hạn ở `src/lib/marketing/plans.ts` (đang là giá test) và là gói thật: mua ở Gói & thanh toán
+  (`src/lib/billing`: PayOS của Digistay, quy tắc nâng/hạ/gia hạn trong `period.ts` `planChange`,
+  hoá đơn gói qua Mắt Bão của Digistay trong `einvoice.ts`; RUNBOOK "Bán gói"). Form liên hệ gửi email cho `CONTACT_EMAILS` (không có thì
   `ALERT_EMAILS`) qua outbox; không có ai nhận thì báo chưa gửi được, không giả vờ đã nhận.
 - Đăng nhập / đăng ký / quên mật khẩu / lời mời / 404 / trang lỗi theo Claude Design "Dang Nhap",
   "Dang Ky", "Quen Mat Khau", "Loi Moi", "Loi". Lỗi từ `/api/auth` vẫn là câu tiếng Việt cố định:
