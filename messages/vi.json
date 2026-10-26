@@ -924,6 +924,16 @@
       "title": "Không có workspace nào khớp",
       "text": "Thử từ khoá khác, hoặc tạo một workspace mới."
     },
+    "emptyOwned": {
+      "title": "Bạn chưa sở hữu workspace nào",
+      "text": "Tạo một workspace cho cơ sở hoặc chuỗi của bạn, rồi thêm cơ sở và mời nhân viên vào."
+    },
+    "emptyInvited": {
+      "title": "Không có lời mời nào",
+      "text": "Khi có người mời bạn vào workspace của họ, lời mời sẽ hiện ở trang này.",
+      "pendingTitle": "Bạn chưa vào workspace nào được mời",
+      "pending": "{count} lời mời đang chờ bạn ở bên dưới: chấp nhận để vào workspace đó."
+    },
     "invitations": {
       "title": "Lời mời cộng tác",
       "pending": "{count} lời mời chờ xử lý",
@@ -947,7 +957,7 @@
       "name": "Tên workspace",
       "namePlaceholder": "VD: An Nam Boutique Hotel",
       "shortName": "Tên rút gọn",
-      "shortNameHint": "Địa chỉ website: {slug}.digistay.vn — dùng chữ thường, không dấu, không khoảng trắng.",
+      "shortNameHint": "Địa chỉ trang quản lý: …/workspace/{slug} — chữ thường, không dấu, không khoảng trắng. Không đổi được sau khi tạo.",
       "shortNameEdit": "Đổi tên rút gọn",
       "businessType": "Mô hình lưu trú",
       "businessTypes": {
@@ -961,7 +971,7 @@
       "logoHint": "PNG, JPG hoặc WebP. Ảnh vuông khoảng 512×512 px là đẹp nhất.",
       "logoAlt": "Logo workspace",
       "description": "Mô tả",
-      "descriptionPlaceholder": "Ghi chú nội bộ về cơ sở này",
+      "descriptionPlaceholder": "Ghi chú nội bộ về workspace này",
       "currency": "Tiền tệ",
       "timezone": "Múi giờ vận hành",
       "cancel": "Huỷ",
@@ -991,8 +1001,9 @@
     "title": "Cơ sở của bạn",
     "lead": "Mỗi cơ sở là một khách sạn riêng: phòng, đặt phòng và website.",
     "customize": "Tuỳ chỉnh",
-    "customizeLabel": "Tuỳ chỉnh cơ sở này: thành viên và thông tin chung",
+    "customizeLabel": "Tuỳ chỉnh workspace này: thành viên và thông tin chung",
     "members": "Thành viên",
+    "addProperty": "Thêm cơ sở",
     "search": "Tìm cơ sở",
     "searchPlaceholder": "Tìm theo tên, thành phố hoặc địa chỉ",
     "active": "Hoạt động",

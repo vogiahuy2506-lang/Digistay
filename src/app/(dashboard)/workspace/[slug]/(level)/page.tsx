@@ -9,7 +9,7 @@ import { useWorkspace } from '@/lib/hooks/use-workspace'
 import { useWorkspaceRole } from '@/components/layout/workspace-context'
 import { cn } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
-import { ArrowRight, Building2, Search, SlidersHorizontal } from 'lucide-react'
+import { ArrowRight, Building2, Plus, Search, SlidersHorizontal } from 'lucide-react'
 import { apiError } from '@/lib/i18n/api-errors'
 
 interface Property {
@@ -36,6 +36,8 @@ export default function WorkspaceDashboardPage() {
   const params = useParams<{ slug: string }>()
   const slug = params.slug
   const { workspace, loading: wsLoading } = useWorkspace()
+  // Owners, admins and managers add properties (a chain grows one at a time).
+  const canAddProperty = role === 'ADMIN' || role === 'MANAGER'
 
   const [properties, setProperties] = React.useState<Property[]>([])
   const [loading, setLoading] = React.useState(true)
@@ -140,8 +142,24 @@ export default function WorkspaceDashboardPage() {
         </Alert>
       ) : null}
 
-      {/* One field, right-aligned above the list, the way /workspaces does it. */}
-      <div className="mt-9 flex justify-end">
+      {/* Above the list: adding a property on the left, the search on the right. */}
+      <div className="mt-9 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {canAddProperty && properties.length > 0 ? (
+          <Link
+            href={routes.newProperty(slug)}
+            className={cn(
+              'self-start sm:self-auto inline-flex items-center rounded-ctl bg-ink text-on-ink hover:bg-ink/90 h-11 sm:h-9 px-4',
+              'text-small font-medium whitespace-nowrap transition-colors duration-160',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-acc focus-visible:ring-offset-2 focus-visible:ring-offset-page'
+            )}
+          >
+            <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />
+            {t('addProperty')}
+          </Link>
+        ) : (
+          // Keeps the search on the right.
+          <span aria-hidden="true" className="hidden sm:block" />
+        )}
         <div className="sm:w-64">
           <Input
             type="search"
@@ -164,7 +182,7 @@ export default function WorkspaceDashboardPage() {
           <p className="mt-1.5 text-small text-muted">
             {properties.length === 0 ? t('empty.text') : t('noMatch.text')}
           </p>
-          {properties.length === 0 && (
+          {properties.length === 0 && canAddProperty && (
             <Link href={routes.newProperty(slug)} className="inline-block mt-6">
               <Button>
                 <Building2 className="w-4 h-4 mr-1.5" aria-hidden="true" />

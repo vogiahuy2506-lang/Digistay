@@ -3,7 +3,6 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { signOut } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
 import {
   Alert,
@@ -25,15 +24,15 @@ import {
   Textarea,
   toast,
 } from '@/components/ui'
-import { useTheme } from '@/components/layout/theme-root'
-import { cn, generateSlug } from '@/lib/utils'
-import { LanguageButton } from '@/components/layout/language-button'
+import { cn } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
-import { ArrowRight, Building2, LogOut, Moon, MoreVertical, Pencil, Plus, Search, Sun, Trash2, Users } from 'lucide-react'
+import { ArrowRight, Building2, MoreVertical, Pencil, Plus, Search, Trash2, Users } from 'lucide-react'
 import { apiError } from '@/lib/i18n/api-errors'
 import { uploadPhoto } from '@/lib/media/upload-client'
 import { useUploadProblemText } from '@/components/ui/photo-upload'
-import { Logo } from '@/components/marketing/Logo'
+import { AccountTopBar } from './account-top-bar'
+import { BUSINESS_TYPES, CURRENCIES, TIMEZONES, type BusinessType, workspaceSettingsOf } from './options'
+import { finishSlugInput, onNameTyped, onSlugTyped, slugFromName } from './slug-input'
 
 interface Workspace {
   id: string
@@ -42,6 +41,7 @@ interface Workspace {
   description: string | null
   logo: string | null
   ownerId: string
+  settings?: unknown
   members?: { userId: string; role: string }[]
   _count: { properties: number; members: number }
 }
@@ -64,21 +64,14 @@ interface Invitation {
   sender: { id: string; name: string | null; email: string }
 }
 
-type BusinessType = 'boutique_hotel' | 'resort' | 'homestay'
-
-const businessTypes: BusinessType[] = ['boutique_hotel', 'resort', 'homestay']
-
-// Labels: messages workspaces.form.currencies.* and .timezones.*
-const currencies = ['VND', 'USD', 'EUR'] as const
-const timezones = [
-  { value: 'GMT+07:00', key: 'gmt7' },
-  { value: 'GMT+08:00', key: 'gmt8' },
-  { value: 'GMT+09:00', key: 'gmt9' },
-] as const
+/** createWorkspaceSchema's limit for the short name. */
+const SLUG_MAX = 100
 
 const emptyForm = {
   name: '',
   slug: '',
+  /** The short name was typed by hand: it no longer follows the name. */
+  slugEdited: false,
   description: '',
   logo: null as string | null,
   businessType: 'boutique_hotel' as BusinessType,
@@ -90,7 +83,6 @@ export default function WorkspacesPage() {
   const t = useTranslations('workspaces')
   const router = useRouter()
   const searchParams = useSearchParams()
-  const theme = useTheme()
 
   const [workspaces, setWorkspaces] = React.useState<Workspace[]>([])
   const [user, setUser] = React.useState<CurrentUser | null>(null)
@@ -142,7 +134,7 @@ export default function WorkspacesPage() {
     setForm({
       ...emptyForm,
       name,
-      slug: generateSlug(name),
+      slug: slugFromName(name, SLUG_MAX),
       businessType: scale === '1-5' ? 'homestay' : scale === '20+' ? 'resort' : 'boutique_hotel',
     })
     setEditing(null)
@@ -176,11 +168,11 @@ export default function WorkspacesPage() {
     setForm({
       name: ws.name,
       slug: ws.slug,
+      slugEdited: true,
       description: ws.description ?? '',
       logo: ws.logo,
-      businessType: 'boutique_hotel',
-      currency: 'VND',
-      timezone: 'GMT+07:00',
+      // What the workspace has saved, not the defaults of a new one.
+      ...workspaceSettingsOf(ws.settings),
     })
     setFormError('')
     setEditing(ws)
@@ -198,11 +190,25 @@ export default function WorkspacesPage() {
     if (!form.name.trim()) return
     setSaving(true)
     setFormError('')
+    // Only what the API takes: the short name is set once, at creation (it is
+    // in every address of the workspace); no logo is null when editing (removes
+    // it) and left out when creating.
+    const shared = {
+      name: form.name.trim(),
+      description: form.description,
+      businessType: form.businessType,
+      currency: form.currency,
+      timezone: form.timezone,
+    }
+    const slug = finishSlugInput(form.slug)
+    const body = editing
+      ? { ...shared, logo: form.logo }
+      : { ...shared, ...(slug && { slug }), ...(form.logo && { logo: form.logo }) }
     try {
       const res = await fetch(editing ? `/api/workspaces/${editing.id}` : '/api/workspaces', {
         method: editing ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(body),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -250,51 +256,23 @@ export default function WorkspacesPage() {
     await Promise.all([fetchInvitations(), fetchWorkspaces()])
   }
 
-  const signOutEverywhere = async () => {
-    sessionStorage.setItem('justSignedOut', 'true')
-    await signOut({ callbackUrl: '/' })
-  }
+  // An empty tab says why it is empty: nothing matches the search, or nothing
+  // of that kind exists yet (the invitations waiting are listed below).
+  const emptyText = (() => {
+    if (workspaces.length === 0) return { title: t('empty.title'), text: t('empty.text') }
+    if (query.trim()) return { title: t('noMatch.title'), text: t('noMatch.text') }
+    if (tab === 'invited') {
+      return invitations.length > 0
+        ? { title: t('emptyInvited.pendingTitle'), text: t('emptyInvited.pending', { count: invitations.length }) }
+        : { title: t('emptyInvited.title'), text: t('emptyInvited.text') }
+    }
+    return { title: t('emptyOwned.title'), text: t('emptyOwned.text') }
+  })()
 
   return (
     <div className="min-h-screen flex flex-col">
       {/* One slim bar: brand, then the account menu. No marketing header. */}
-      <header className="sticky top-0 z-30 border-b border-line bg-page/90 backdrop-blur">
-        <div className="mx-auto w-full max-w-5xl px-5 sm:px-8">
-          <div className="flex h-14 items-center justify-between gap-3">
-            <Link
-              href={routes.workspaces()}
-              className="inline-flex shrink-0 items-center rounded-ctl focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
-            >
-              <Logo size="sm" />
-            </Link>
-
-            <div className="flex items-center gap-1">
-              {theme && (
-                <button
-                  type="button"
-                  onClick={() => theme.setPreference(theme.preference === 'dark' ? 'light' : 'dark')}
-                  aria-pressed={theme.preference === 'dark'}
-                  aria-label={t(theme.preference === 'dark' ? 'account.light' : 'account.dark')}
-                  className="w-9 h-9 rounded-ctl flex items-center justify-center text-muted hover:text-fg hover:bg-fg/5 transition-colors duration-160 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
-                >
-                  {theme.preference === 'dark' ? (
-                    <Sun className="w-4 h-4" aria-hidden="true" />
-                  ) : (
-                    <Moon className="w-4 h-4" aria-hidden="true" />
-                  )}
-                </button>
-              )}
-              <LanguageButton compact="below-sm" />
-              <AccountMenu
-                name={user?.name ?? null}
-                email={user?.email ?? null}
-                signOutLabel={t('account.signOut')}
-                onSignOut={signOutEverywhere}
-              />
-            </div>
-          </div>
-        </div>
-      </header>
+      <AccountTopBar />
 
       <main className="flex-1 w-full max-w-5xl mx-auto px-5 sm:px-8 py-10 sm:py-14">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
@@ -324,6 +302,10 @@ export default function WorkspacesPage() {
               <TabsTrigger value="invited">
                 {t('filter.invited')}
                 <Count value={invited.length} />
+                {/* Invitations not answered yet are listed below the workspaces. */}
+                {invitations.length > 0 && (
+                  <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-acc align-middle" aria-hidden="true" />
+                )}
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -344,11 +326,9 @@ export default function WorkspacesPage() {
           <Loading className="py-20" text={t('searchPlaceholder')} />
         ) : visible.length === 0 ? (
           <div className="mt-6 rounded-box border border-line bg-panel px-6 py-16 text-center">
-            <p className="text-body text-fg">{workspaces.length === 0 ? t('empty.title') : t('noMatch.title')}</p>
-            <p className="mt-1.5 text-small text-muted">
-              {workspaces.length === 0 ? t('empty.text') : t('noMatch.text')}
-            </p>
-            {workspaces.length === 0 && (
+            <p className="text-body text-fg">{emptyText.title}</p>
+            <p className="mt-1.5 text-small text-muted">{emptyText.text}</p>
+            {(workspaces.length === 0 || (tab === 'owned' && !query.trim())) && (
               <Button className="mt-6" onClick={openCreate}>
                 <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />
                 {t('empty.action')}
@@ -537,43 +517,6 @@ function WorkspaceRow({ workspace, isOwner, role, labels, roleLabel, onEdit, onR
   )
 }
 
-function AccountMenu({
-  name,
-  email,
-  signOutLabel,
-  onSignOut,
-}: {
-  name: string | null
-  email: string | null
-  signOutLabel: string
-  onSignOut: () => void
-}) {
-  const t = useTranslations('workspaces')
-  const trigger = (
-    <button
-      type="button"
-      aria-haspopup="menu"
-      className="flex items-center gap-2 rounded-ctl h-9 px-1.5 max-w-[220px] hover:bg-fg/5 transition-colors duration-160 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
-    >
-      <span
-        aria-hidden="true"
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-plain-soft text-[11px] font-semibold text-fg"
-      >
-        {name ? name.trim().charAt(0).toUpperCase() : (email?.charAt(0) ?? '?').toUpperCase()}
-      </span>
-      <span className="truncate text-small text-fg">{name || email}</span>
-    </button>
-  )
-
-  return (
-    <Dropdown align="right" trigger={trigger}>
-      <DropdownItem onClick={onSignOut} danger icon={<LogOut className="w-4 h-4" />}>
-        {signOutLabel}
-      </DropdownItem>
-    </Dropdown>
-  )
-}
-
 interface WorkspaceFormModalProps {
   open: boolean
   editing: Workspace | null
@@ -632,44 +575,47 @@ function WorkspaceFormModal({
               onFormChange({
                 ...form,
                 name: e.target.value,
-                // The slug follows the name until it is edited by hand.
-                slug: form.slug || generateSlug(e.target.value),
+                // The short name follows the name until it is edited by hand.
+                ...onNameTyped(e.target.value, form, SLUG_MAX),
               })
             }
           />
 
-          {/* The slug is shown as the "short name": it is the part of the address
-              guests see, and the label stays in the user's language. */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between gap-3">
-              <label htmlFor="workspace-slug" className="block text-small font-medium text-fg">
-                {t('form.shortName')}
-              </label>
-              <button
-                type="button"
-                onClick={() => {
-                  slugInput.current?.focus()
-                  slugInput.current?.select()
-                }}
-                className="text-small text-acc hover:underline rounded-ctl focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
-              >
-                {t('form.shortNameEdit')}
-              </button>
+          {/* The slug is shown as the "short name", in the user's language. It is
+              set once: PATCH /api/workspaces/[id] does not change it. */}
+          {!editing && (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between gap-3">
+                <label htmlFor="workspace-slug" className="block text-small font-medium text-fg">
+                  {t('form.shortName')}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    slugInput.current?.focus()
+                    slugInput.current?.select()
+                  }}
+                  className="text-small text-acc hover:underline rounded-ctl focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
+                >
+                  {t('form.shortNameEdit')}
+                </button>
+              </div>
+              <Input
+                id="workspace-slug"
+                ref={slugInput}
+                value={form.slug}
+                placeholder="an-nam-boutique"
+                onChange={(e) => onFormChange({ ...form, ...onSlugTyped(e.target.value, SLUG_MAX) })}
+                onBlur={() => onFormChange({ ...form, slug: finishSlugInput(form.slug) })}
+                hint={t('form.shortNameHint', { slug: form.slug || '…' })}
+              />
             </div>
-            <Input
-              id="workspace-slug"
-              ref={slugInput}
-              value={form.slug}
-              placeholder="an-nam-boutique"
-              onChange={(e) => onFormChange({ ...form, slug: generateSlug(e.target.value) })}
-              hint={t('form.shortNameHint', { slug: form.slug || '…' })}
-            />
-          </div>
+          )}
 
           <fieldset className="space-y-2">
             <legend className="text-small font-medium text-fg mb-2">{t('form.businessType')}</legend>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {businessTypes.map((value) => (
+              {BUSINESS_TYPES.map((value) => (
                 <label
                   key={value}
                   className={cn(
@@ -764,13 +710,13 @@ function WorkspaceFormModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
               label={t('form.currency')}
-              options={currencies.map((value) => ({ value, label: t(`form.currencies.${value}`) }))}
+              options={CURRENCIES.map((value) => ({ value, label: t(`form.currencies.${value}`) }))}
               value={form.currency}
               onChange={(e) => onFormChange({ ...form, currency: e.target.value })}
             />
             <Select
               label={t('form.timezone')}
-              options={timezones.map(({ value, key }) => ({ value, label: t(`form.timezones.${key}`) }))}
+              options={TIMEZONES.map(({ value, key }) => ({ value, label: t(`form.timezones.${key}`) }))}
               value={form.timezone}
               onChange={(e) => onFormChange({ ...form, timezone: e.target.value })}
             />
