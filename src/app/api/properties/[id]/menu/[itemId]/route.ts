@@ -9,7 +9,7 @@ type Props = { params: Promise<{ id: string; itemId: string }> }
 
 const notFound = () => NextResponse.json({ success: false, error: 'Không tìm thấy món' }, { status: 404 })
 
-/** PATCH — change a dish: any of POST's fields. Owner, admins and managers. */
+/** PATCH — change a dish: any of POST's fields. services_manage. */
 export async function PATCH(request: NextRequest, props: Props) {
   const { id, itemId } = await props.params
   const session = await requireSession()
@@ -36,7 +36,7 @@ export async function PATCH(request: NextRequest, props: Props) {
   }
 }
 
-/** DELETE — remove a dish from the menu. Owner, admins and managers. */
+/** DELETE — remove a dish from the menu. services_manage. */
 export async function DELETE(_request: NextRequest, props: Props) {
   const { id, itemId } = await props.params
   const session = await requireSession()

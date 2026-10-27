@@ -2,44 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { checkAccess, propertyScope } from '@/lib/auth/access'
 import { updateWorkspaceSchema, validationMessage } from '@/lib/validations'
 import { lockedResponse } from '@/lib/billing/guard'
 import { guestsBooked, liveWorkspaceForOwner, lockRoomTypes, openPlanPayment } from '@/lib/deletion/deletion'
 import { purgeAt, sameName } from '@/lib/deletion/rules'
-
-// Helper function to check workspace access
-async function checkWorkspaceAccess(workspaceId: string, userId: string) {
-  const workspace = await prisma.workspace.findFirst({
-    where: {
-      id: workspaceId,
-      OR: [
-        { ownerId: userId },
-        { members: { some: { userId, planLockedAt: null } } },
-      ],
-    },
-    include: {
-      owner: { select: { id: true } },
-      members: { where: { userId, planLockedAt: null }, select: { role: true } },
-    },
-  })
-
-  if (!workspace) {
-    return { hasAccess: false, isAdmin: false, isOwner: false, isManager: false }
-  }
-
-  const isOwner = workspace.ownerId === userId
-  const memberRole = workspace.members[0]?.role
-  
-  // ADMIN = chủ sở hữu (toàn quyền)
-  // MANAGER = quản lý (quản lý property, members)
-  // RECEPTIONIST = lễ tân (hạn chế)
-  // USER = người dùng thường (xem)
-  const isAdmin = isOwner || memberRole === 'ADMIN'
-  const isManager = memberRole === 'MANAGER' || isAdmin
-  const isReceptionist = memberRole === 'RECEPTIONIST' || isManager
-
-  return { hasAccess: true, isAdmin, isOwner, isManager, isReceptionist }
-}
 
 export async function GET(
   request: NextRequest,
@@ -57,13 +24,12 @@ export async function GET(
       )
     }
 
-    const access = await checkWorkspaceAccess(id, session.user.id)
-    if (!access.hasAccess) {
-      return NextResponse.json(
-        { success: false, error: 'Bạn không có quyền truy cập workspace này' },
-        { status: 403 }
-      )
-    }
+    const granted = await checkAccess(session.user.id, id, null)
+    if (!granted.ok) return granted.response
+    const { access } = granted
+    // The member list is for who manages members; the properties those the caller reaches.
+    const seesMembers = access.permissions.has('members_manage')
+    const { workspaceId: _workspaceId, ...reachable } = propertyScope(access)
 
     const workspace = await prisma.workspace.findUnique({
       where: { id },
@@ -76,7 +42,7 @@ export async function GET(
             image: true,
           },
         },
-        members: {
+        members: seesMembers && {
           include: {
             user: {
               select: {
@@ -89,6 +55,7 @@ export async function GET(
           },
         },
         properties: {
+          where: reachable,
           select: {
             id: true,
             name: true,
@@ -138,8 +105,9 @@ export async function PATCH(
       )
     }
 
-    const access = await checkWorkspaceAccess(id, session.user.id)
-    if (!access.isAdmin) {
+    const granted = await checkAccess(session.user.id, id, null)
+    if (!granted.ok) return granted.response
+    if (!granted.access.permissions.has('workspace_settings')) {
       return NextResponse.json(
         { success: false, error: 'Bạn không có quyền chỉnh sửa workspace này' },
         { status: 403 }

@@ -3,7 +3,7 @@ import type { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { NO_PERMISSION, can, checkPropertyAccess } from '@/lib/auth/access'
 import { lockedResponse } from '@/lib/billing/guard'
 import { invalidatePublicSite } from '@/lib/public-site/site'
 import { parseSiteSnapshot, recordSiteVersion, snapshotSettingsData } from '@/lib/public-site/versions'
@@ -32,21 +32,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ success: false, error: 'Dữ liệu không hợp lệ' }, { status: 400 })
     }
 
-    const property = await prisma.property.findFirst({
-      where: {
-        id: body.data.propertyId,
-        workspace: {
-          OR: [{ ownerId: session.user.id }, { members: { some: { userId: session.user.id, planLockedAt: null } } }],
-        },
-      },
-      select: { id: true, workspaceId: true },
-    })
-    if (!property) {
+    const access = await checkPropertyAccess(session.user.id, body.data.propertyId, null)
+    if (!access.ok) {
       return NextResponse.json({ success: false, error: 'Không có quyền chỉnh sửa' }, { status: 403 })
     }
-    // Whoever may save the site may restore it (owners, ADMIN, MANAGER).
-    const access = await requireWorkspaceRole(property.workspaceId, WorkspaceRoles.ADMINS_AND_MANAGERS)
-    if (!access.ok) return access.response
+    // Whoever may save the site may restore it (website_manage).
+    const property = access.property
+    if (!can(access.access, 'website_manage', property.id)) {
+      return NextResponse.json({ success: false, error: NO_PERMISSION }, { status: 403 })
+    }
     const locked = await lockedResponse(property.workspaceId)
     if (locked) return locked
 

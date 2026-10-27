@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/db'
-import { getWorkspaceRole, requireSession, WorkspaceRoles } from '@/lib/auth/rbac'
+import { requireSession } from '@/lib/auth/rbac'
+import { checkPropertyAccess } from '@/lib/auth/access'
 import { RoomError, assignRoomTx } from '@/lib/bookings/rooms'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
 
@@ -21,13 +22,11 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
   const sess = await requireSession()
   if (!sess.ok) return sess.response
   const userId = sess.session.user.id
-  const booking = await prisma.booking.findUnique({ where: { id }, select: { id: true, propertyId: true, bookingCode: true, property: { select: { workspaceId: true } } } })
-  // Outsiders get the same 404 as a missing booking; members without the role 403.
-  const role = booking ? await getWorkspaceRole(booking.property.workspaceId, userId) : null
-  if (!booking || !role) return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
-  if (!(WorkspaceRoles.STAFF_AND_UP as readonly string[]).includes(role)) {
-    return NextResponse.json({ success: false, error: 'Bạn không có quyền thực hiện hành động này' }, { status: 403 })
-  }
+  const booking = await prisma.booking.findUnique({ where: { id }, select: { id: true, propertyId: true, bookingCode: true } })
+  // Outsiders get the same 404 as a missing booking; members without the permission 403.
+  if (!booking) return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
+  const access = await checkPropertyAccess(userId, booking.propertyId, 'bookings_edit', 'Không tìm thấy đơn đặt phòng')
+  if (!access.ok) return access.response
   const locked = await lockedResponseForProperty(booking.propertyId)
   if (locked) return locked
 

@@ -16,12 +16,13 @@ export async function GET() {
       )
     }
 
-    // Get workspaces where user is owner or member
+    // Get workspaces where user is owner or member (locked ones too, see below)
+    const userId = session.user.id
     const workspaces = await prisma.workspace.findMany({
       where: {
         OR: [
-          { ownerId: session.user.id },
-          { members: { some: { userId: session.user.id } } },
+          { ownerId: userId },
+          { members: { some: { userId } } },
         ],
       },
       include: {
@@ -33,7 +34,10 @@ export async function GET() {
             image: true,
           },
         },
+        // Only the caller's own membership: who else works there is for
+        // the members page (members_manage).
         members: {
+          where: { userId },
           include: {
             user: {
               select: {
@@ -56,12 +60,18 @@ export async function GET() {
     })
 
     // A member locked for being over the plan (src/lib/billing/overage.ts)
-    // still sees the workspace in their list, flagged and without its
-    // people, so the page can say why they cannot open it.
-    const userId = session.user.id
+    // or by an admin still sees the workspace in their list, flagged, so the
+    // page can say why they cannot open it (and offer to leave).
     const data = workspaces.map((workspace) => {
-      const planLocked = workspace.ownerId !== userId && workspace.members.some((m) => m.userId === userId && m.planLockedAt)
-      return planLocked ? { ...workspace, planLocked, members: workspace.members.filter((m) => m.userId === userId) } : { ...workspace, planLocked }
+      const own = workspace.members[0]
+      const isOwner = workspace.ownerId === userId
+      return {
+        ...workspace,
+        role: isOwner ? 'ADMIN' : own?.role ?? 'USER',
+        isOwner,
+        planLocked: !isOwner && !!own?.planLockedAt,
+        disabled: !isOwner && !!own?.disabledAt,
+      }
     })
 
     return NextResponse.json({

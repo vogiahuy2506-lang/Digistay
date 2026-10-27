@@ -5,6 +5,8 @@ import { z } from 'zod'
 import { invalidatePublicSite } from '@/lib/public-site/site'
 import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
+import { accessibleProperties } from '@/lib/auth/access'
+import type { Permission } from '@/lib/auth/permissions'
 
 const serviceSchema = z.object({
   propertyId: z.string(),
@@ -18,17 +20,10 @@ const serviceSchema = z.object({
   translations: translationsInput(['name', 'description']),
 })
 
-async function userOwnsProperty(propertyId: string, userId: string) {
+/** The property, if the caller reaches it with `permission` (null: any access). */
+async function reachableProperty(propertyId: string, userId: string, permission: Permission | null) {
   return prisma.property.findFirst({
-    where: {
-      id: propertyId,
-      workspace: {
-        OR: [
-          { ownerId: userId },
-          { members: { some: { userId, role: { in: ['ADMIN', 'MANAGER'] }, planLockedAt: null } } },
-        ],
-      },
-    },
+    where: { id: propertyId, ...accessibleProperties(userId, permission) },
     select: { id: true },
   })
 }
@@ -46,7 +41,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Thiếu propertyId' }, { status: 400 })
     }
 
-    const ok = await userOwnsProperty(propertyId, session.user.id)
+    const ok = await reachableProperty(propertyId, session.user.id, null)
     if (!ok) {
       return NextResponse.json({ success: false, error: 'Không có quyền truy cập' }, { status: 403 })
     }
@@ -79,7 +74,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const ok = await userOwnsProperty(validation.data.propertyId, session.user.id)
+    const ok = await reachableProperty(validation.data.propertyId, session.user.id, 'services_manage')
     if (!ok) {
       return NextResponse.json({ success: false, error: 'Không có quyền thêm dịch vụ' }, { status: 403 })
     }

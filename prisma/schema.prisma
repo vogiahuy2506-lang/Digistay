@@ -18,38 +18,38 @@ model User {
   id            String    @id @default(cuid())
   email         String    @unique
   emailVerified DateTime?
-  name          String?   // Họ và tên đầy đủ
-  username      String?   @unique  // Tên đăng nhập
+  name          String? // Họ và tên đầy đủ
+  username      String?   @unique // Tên đăng nhập
   image         String?
   password      String?
   role          UserRole  @default(USER)
-  
+
   // OAuth providers
-  accounts      Account[]
-  sessions      Session[]
-  
+  accounts Account[]
+  sessions Session[]
+
   // User profile
-  phone         String?
-  address       String?
-  dateOfBirth   DateTime?
-  avatar        String?
-  bio           String?
-  
+  phone       String?
+  address     String?
+  dateOfBirth DateTime?
+  avatar      String?
+  bio         String?
+
   // Relations
-  ownedWorkspaces  Workspace[]       @relation("WorkspaceOwner")
-  workspaceMembers WorkspaceMember[]
-  invitations      Invitation[]      @relation("InvitationRecipient")
-  createdInvitations Invitation[]   @relation("InvitationSender")
-  
+  ownedWorkspaces    Workspace[]       @relation("WorkspaceOwner")
+  workspaceMembers   WorkspaceMember[]
+  invitations        Invitation[]      @relation("InvitationRecipient")
+  createdInvitations Invitation[]      @relation("InvitationSender")
+
   // Booking relations
-  createdBookings  Booking[]
-  notifications    Notification[]
+  createdBookings Booking[]
+  notifications   Notification[]
 
   // Optional two-factor sign-in (src/lib/auth/two-factor.ts)
-  twoFactor        UserTwoFactor?
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  twoFactor UserTwoFactor?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("users")
 }
@@ -126,20 +126,20 @@ model VerificationToken {
 // ============================================
 
 model Workspace {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   name        String
-  slug        String   @unique
+  slug        String  @unique
   description String?
   logo        String?
-  domain      String?  // Custom domain if any
-  
+  domain      String? // Custom domain if any
+
   // Owner of the workspace
-  ownerId     String
-  owner       User     @relation("WorkspaceOwner", fields: [ownerId], references: [id])
-  
+  ownerId String
+  owner   User   @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+
   // Settings
-  settings    Json?    @default("{}")
-  
+  settings Json? @default("{}")
+
   // Relations
   members     WorkspaceMember[]
   properties  Property[]
@@ -154,9 +154,9 @@ model Workspace {
   deletedAt   DateTime?
   /// Who deleted it (a user id, no foreign key, like activity_logs.userId).
   deletedById String?
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([deletedAt])
   @@map("workspaces")
@@ -184,27 +184,27 @@ enum SubscriptionPaymentStatus {
 /// is chained to periodEnd, a downgrade is scheduled for periodEnd in next*).
 /// Past periodEnd: 7 days of grace, then the workspace is read-only.
 model Subscription {
-  workspaceId String         @id
-  workspace   Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId    String         @id
+  workspace      Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   /// starter | growth | business (src/lib/marketing/plans.ts)
-  plan        String
+  plan           String
   /// null while on the trial
-  billing     BillingPeriod?
-  trial       Boolean        @default(true)
-  periodStart DateTime
-  periodEnd   DateTime
+  billing        BillingPeriod?
+  trial          Boolean        @default(true)
+  periodStart    DateTime
+  periodEnd      DateTime
   /// Reminder emails already sent for this period, e.g. {"soon7": "2026-…"}
-  reminders   Json?
+  reminders      Json?
   /// A paid downgrade waiting for periodEnd: then plan/billing become these
   /// and the period runs from periodEnd to nextPeriodEnd.
-  nextPlan      String?
-  nextBilling   BillingPeriod?
-  nextPeriodEnd DateTime?
-  nextPaymentId String?
+  nextPlan       String?
+  nextBilling    BillingPeriod?
+  nextPeriodEnd  DateTime?
+  nextPaymentId  String?
   /// When the workspace went over its plan's limits (src/lib/billing/overage.ts): 7 days later the excess is locked
   overLimitSince DateTime?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
   @@index([periodEnd])
   @@map("subscriptions")
@@ -212,34 +212,34 @@ model Subscription {
 
 /// One attempt to buy a plan: a PayOS link on Digistay's own account.
 model SubscriptionPayment {
-  id          String                    @id @default(cuid())
-  workspaceId String
-  workspace   Workspace                 @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  plan        String
-  billing     BillingPeriod
+  id           String                    @id @default(cuid())
+  workspaceId  String
+  workspace    Workspace                 @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  plan         String
+  billing      BillingPeriod
   /// VND, before VAT
-  amount      Int
-  status      SubscriptionPaymentStatus @default(PENDING)
-  orderCode   String                    @unique
-  checkoutUrl String?
+  amount       Int
+  status       SubscriptionPaymentStatus @default(PENDING)
+  orderCode    String                    @unique
+  checkoutUrl  String?
   /// VietQR payload from PayOS, drawn on our own page
-  qrCode      String?
-  expiresAt   DateTime?
-  paidAt      DateTime?
-  reference   String?
+  qrCode       String?
+  expiresAt    DateTime?
+  paidAt       DateTime?
+  reference    String?
   /// The period this payment pays for (set when paid; in the future for a
   /// renewal or a scheduled downgrade)
-  periodStart DateTime?
-  periodEnd   DateTime?
+  periodStart  DateTime?
+  periodEnd    DateTime?
   /// How it was applied when paid: new | renew | upgrade | downgrade (period.ts planChange)
-  change      String?
-  createdById String?
+  change       String?
+  createdById  String?
   /// Who the e-invoice is for, chosen at checkout (src/lib/billing/einvoice.ts):
   /// {type: none | personal | company, name, idNumber, companyName, taxCode, address, phone}
   invoiceBuyer Json?
-  invoice     SubscriptionInvoice?
-  createdAt   DateTime                  @default(now())
-  updatedAt   DateTime                  @updatedAt
+  invoice      SubscriptionInvoice?
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
 
   @@index([workspaceId, createdAt])
   @@index([status, createdAt])
@@ -307,27 +307,51 @@ model SubscriptionInvoice {
 }
 
 model WorkspaceMember {
-  id          String          @id @default(cuid())
+  id          String        @id @default(cuid())
   workspaceId String
   userId      String
-  role        WorkspaceRole   @default(USER)
-  
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  joinedAt    DateTime  @default(now())
+  role        WorkspaceRole @default(USER)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  joinedAt     DateTime  @default(now())
   /// Locked because the workspace is over its plan's staff limit (src/lib/billing/overage.ts): no access until unlocked
   planLockedAt DateTime?
-  
+  /// Locked by an admin (PATCH /api/workspaces/[id]/members/[memberId]): no access, no staff seat, until unlocked
+  disabledAt   DateTime?
+
+  /// What the member may do (src/lib/auth/permissions.ts): exactly these when
+  /// customPermissions, else the role's preset (so a preset that gains a
+  /// permission gives it to everyone on it).
+  permissions       String[]         @default([])
+  customPermissions Boolean          @default(false)
+  /// false: only the properties in `properties`; true: every one, also those created later
+  allProperties     Boolean          @default(true)
+  properties        MemberProperty[]
+
   @@unique([workspaceId, userId])
   @@map("workspace_members")
 }
 
+/// A property a member limited to some (WorkspaceMember.allProperties false) may work on.
+model MemberProperty {
+  memberId   String
+  propertyId String
+  member     WorkspaceMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  property   Property        @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@id([memberId, propertyId])
+  @@index([propertyId])
+  @@map("member_properties")
+}
+
+/// A preset of permissions (src/lib/auth/permissions.ts ROLE_PRESETS), shown as the member's job.
 enum WorkspaceRole {
-  ADMIN      // Chủ sở hữu - Toàn quyền, xóa workspace
-  MANAGER    // Quản lý - Quản lý property, members (không xóa được workspace)
-  RECEPTIONIST // Lễ tân - Nhân viên lễ tân
-  USER       // Người dùng - Tài khoản thường
+  ADMIN // Quản trị: every permission
+  MANAGER // Quản lý: runs the hotels, not the plan or the workspace settings
+  RECEPTIONIST // Lễ tân: bookings, payments, invoices, cash book
+  USER // Nhân viên: sees and creates bookings
 }
 
 // ============================================
@@ -335,25 +359,31 @@ enum WorkspaceRole {
 // ============================================
 
 model Invitation {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   email       String
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  
-  role        WorkspaceRole @default(USER)
-  token       String   @unique
-  
-  senderId    String
-  sender      User     @relation("InvitationSender", fields: [senderId], references: [id])
-  
+
+  role              WorkspaceRole @default(USER)
+  /// The access the member gets on accepting, as on WorkspaceMember
+  permissions       String[]      @default([])
+  customPermissions Boolean       @default(false)
+  allProperties     Boolean       @default(true)
+  /// Ids of the workspace's properties (no foreign key: one deleted meanwhile is skipped on accepting)
+  propertyIds       String[]      @default([])
+  token             String        @unique
+
+  senderId String
+  sender   User   @relation("InvitationSender", fields: [senderId], references: [id])
+
   recipientId String?
-  recipient   User?    @relation("InvitationRecipient", fields: [recipientId], references: [id])
-  
-  status      InvitationStatus @default(PENDING)
-  expiresAt   DateTime
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  recipient   User?   @relation("InvitationRecipient", fields: [recipientId], references: [id])
+
+  status    InvitationStatus @default(PENDING)
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("invitations")
 }
@@ -363,6 +393,8 @@ enum InvitationStatus {
   ACCEPTED
   DECLINED
   EXPIRED
+  /// Cancelled by an admin before it was answered
+  REVOKED
 }
 
 // ============================================
@@ -370,75 +402,77 @@ enum InvitationStatus {
 // ============================================
 
 model Property {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  
-  name        String
-  slug        String   @unique
-  type        PropertyType
-  
+
+  name String
+  slug String       @unique
+  type PropertyType
+
   // Address
-  address     String
+  address      String
   /// The province's name (one of the 34 since July 2025, src/lib/vn-admin; older rows may hold an earlier one).
-  city        String
+  city         String
   /// Quận / huyện of rows saved before July 2025, when that level was abolished; no longer written by the forms.
-  district    String?
+  district     String?
   /// The ward's name with its type ("Phường Ba Đình"), from the official list.
-  ward        String?
+  ward         String?
   /// Official codes of the province ("01") and ward ("00004"), to select them again in the pickers.
   provinceCode String?
   wardCode     String?
-  country     String   @default("Vietnam")
-  postalCode  String?
-  latitude    Float?
-  longitude   Float?
-  
+  country      String  @default("Vietnam")
+  postalCode   String?
+  latitude     Float?
+  longitude    Float?
+
   // Contact
-  phone       String?
-  email       String?
-  website     String?
-  
+  phone   String?
+  email   String?
+  website String?
+
   // Branding
-  logo        String?
-  coverImage  String?
-  description String?  @db.Text
+  logo         String?
+  coverImage   String?
+  description  String? @db.Text
   /// The hotel's own texts in English: { en: { name?, description?, ... } }. Empty: the Vietnamese shows (src/lib/i18n/content.ts).
   translations Json?
-  
+
   // Subdomain
-  subdomain   String   @unique
-  isActive    Boolean  @default(true)
-  
+  subdomain String  @unique
+  isActive  Boolean @default(true)
+
   // Relations
-  roomTypes   RoomType[]
-  rooms       Room[]
-  amenities   PropertyAmenity[]
-  images      PropertyImage[]
-  pricing     PricingConfig[]
-  bookings    Booking[]
-  payments    Payment[]
-  invoices    Invoice[]
-  websiteBlocks WebsiteBlock[]
-  websiteSettings WebsiteSettings?
-  siteVersions  SiteVersion[]
-  bankAccounts   BankAccount[]
-  payos          PropertyPayos?
+  roomTypes        RoomType[]
+  rooms            Room[]
+  amenities        PropertyAmenity[]
+  images           PropertyImage[]
+  pricing          PricingConfig[]
+  bookings         Booking[]
+  payments         Payment[]
+  invoices         Invoice[]
+  websiteBlocks    WebsiteBlock[]
+  websiteSettings  WebsiteSettings?
+  siteVersions     SiteVersion[]
+  bankAccounts     BankAccount[]
+  payos            PropertyPayos?
   /// How a guest pays the online deposit (Policy.onlineDepositPercent): MANUAL, a VietQR to
   /// depositAccount that staff confirm; PAYOS, the hotel's PayOS, confirmed by webhook. null: PAYOS
   /// when PayOS is connected, else MANUAL (src/lib/payments/deposit-mode.ts).
   depositMode      DepositPaymentMode?
   /// The receiving account (bank or MoMo wallet) the manual QR names; null: the oldest active one.
   depositAccountId String?
-  depositAccount   BankAccount? @relation("DepositAccount", fields: [depositAccountId], references: [id], onDelete: SetNull)
-  einvoice       PropertyEinvoice?
-  roomLocks      RoomLock[]
-  extraServices   ExtraService[]
-  menuItems       MenuItem[]
-  dailyRevenues   DailyRevenue[]
-  policy      Policy?
+  depositAccount   BankAccount?        @relation("DepositAccount", fields: [depositAccountId], references: [id], onDelete: SetNull)
+  einvoice         PropertyEinvoice?
+  roomLocks        RoomLock[]
+  extraServices    ExtraService[]
+  menuItems        MenuItem[]
+  dailyRevenues    DailyRevenue[]
+  policy           Policy?
+  /// Members limited to some properties who may work on this one
+  memberAccess     MemberProperty[]
   /// Locked because the workspace is over its plan's limits (src/lib/billing/overage.ts): read-only, no online booking
-  planLockedAt DateTime?
+  planLockedAt     DateTime?
 
   /// Deleted by the workspace owner (src/lib/deletion): hidden everywhere at
   /// once, restorable for 30 days, then the purge job removes it for good.
@@ -446,9 +480,9 @@ model Property {
   deletedAt   DateTime?
   /// Who deleted it (a user id, no foreign key, like activity_logs.userId).
   deletedById String?
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([deletedAt])
   @@map("properties")
@@ -469,40 +503,40 @@ enum PropertyType {
 // ============================================
 
 model RoomType {
-  id          String   @id @default(cuid())
-  propertyId  String
-  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  roomLocks   RoomLock[]
-  rooms       Room[]
+  id         String     @id @default(cuid())
+  propertyId String
+  property   Property   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  roomLocks  RoomLock[]
+  rooms      Room[]
 
-  name        String
-  slug        String
-  
+  name String
+  slug String
+
   // Room details
-  description String?  @db.Text
+  description    String? @db.Text
   /// The hotel's own texts in English: { en: { name?, description?, ... } }. Empty: the Vietnamese shows (src/lib/i18n/content.ts).
-  translations Json?
-  area        Float?   // Diện tích (m2)
-  bedType     BedType
-  maxAdults   Int      @default(2)
-  maxChildren Int      @default(0)
-  totalRooms  Int      @default(1)
-  availableRooms Int   @default(1)
-  
+  translations   Json?
+  area           Float? // Diện tích (m2)
+  bedType        BedType
+  maxAdults      Int     @default(2)
+  maxChildren    Int     @default(0)
+  totalRooms     Int     @default(1)
+  availableRooms Int     @default(1)
+
   // Base occupancy
-  baseOccupancy Int    @default(2)
-  maxOccupancy  Int    @default(4)
-  
+  baseOccupancy Int @default(2)
+  maxOccupancy  Int @default(4)
+
   // Relations
-  images      RoomTypeImage[]
-  pricing     RoomTypePricing[]
-  amenities   RoomTypeAmenity[]
-  
-  isActive    Boolean  @default(true)
+  images    RoomTypeImage[]
+  pricing   RoomTypePricing[]
+  amenities RoomTypeAmenity[]
+
+  isActive     Boolean   @default(true)
   /// Locked because the workspace is over its plan's room limit (src/lib/billing/overage.ts): no new bookings into it
   planLockedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@unique([propertyId, slug])
   @@map("room_types")
@@ -525,51 +559,51 @@ enum BedType {
 // ============================================
 
 model PricingConfig {
-  id          String   @id @default(cuid())
-  propertyId  String
-  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  
-  name        String   @default("Standard")
-  
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  name String @default("Standard")
+
   // Base prices
-  weekdayPrice    Float   // Giá ngày thường
-  weekendPrice    Float   // Giá cuối tuần
-  
+  weekdayPrice Float // Giá ngày thường
+  weekendPrice Float // Giá cuối tuần
+
   // Extra charges
-  extraAdultPrice Float   @default(0)  // Phụ thu người lớn thêm
-  extraChildPrice Float   @default(0)  // Phụ thu trẻ em thêm
-  
+  extraAdultPrice Float @default(0) // Phụ thu người lớn thêm
+  extraChildPrice Float @default(0) // Phụ thu trẻ em thêm
+
   // Hourly pricing (for motels)
-  hourlyPrice     Float?
-  minHours        Int?
-  
+  hourlyPrice Float?
+  minHours    Int?
+
   // Active
-  isActive    Boolean  @default(true)
-  
+  isActive Boolean @default(true)
+
   // Relations
   roomTypePrices RoomTypePricing[]
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("pricing_configs")
 }
 
 model RoomTypePricing {
-  id          String   @id @default(cuid())
-  roomTypeId  String
-  pricingId   String
-  
-  roomType    RoomType     @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
-  pricing     PricingConfig @relation(fields: [pricingId], references: [id], onDelete: Cascade)
-  
+  id         String @id @default(cuid())
+  roomTypeId String
+  pricingId  String
+
+  roomType RoomType      @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  pricing  PricingConfig @relation(fields: [pricingId], references: [id], onDelete: Cascade)
+
   weekdayPrice    Float
   weekendPrice    Float
-  extraAdultPrice Float   @default(0)
-  extraChildPrice Float   @default(0)
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  extraAdultPrice Float @default(0)
+  extraChildPrice Float @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("room_type_pricing")
 }
@@ -579,40 +613,40 @@ model RoomTypePricing {
 // ============================================
 
 model Amenity {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  icon        String?
-  category    String   @default("general")
-  
-  properties  PropertyAmenity[]
-  roomTypes   RoomTypeAmenity[]
-  
-  createdAt   DateTime @default(now())
+  id       String  @id @default(cuid())
+  name     String
+  slug     String  @unique
+  icon     String?
+  category String  @default("general")
+
+  properties PropertyAmenity[]
+  roomTypes  RoomTypeAmenity[]
+
+  createdAt DateTime @default(now())
 
   @@map("amenities")
 }
 
 model PropertyAmenity {
-  id          String   @id @default(cuid())
-  propertyId  String
-  amenityId   String
-  
-  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  amenity     Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
-  
+  id         String @id @default(cuid())
+  propertyId String
+  amenityId  String
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  amenity  Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
   @@unique([propertyId, amenityId])
   @@map("property_amenities")
 }
 
 model RoomTypeAmenity {
-  id          String   @id @default(cuid())
-  roomTypeId  String
-  amenityId   String
-  
-  roomType    RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
-  amenity     Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
-  
+  id         String @id @default(cuid())
+  roomTypeId String
+  amenityId  String
+
+  roomType RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  amenity  Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
   @@unique([roomTypeId, amenityId])
   @@map("room_type_amenities")
 }
@@ -622,40 +656,40 @@ model RoomTypeAmenity {
 // ============================================
 
 model PropertyImage {
-  id          String   @id @default(cuid())
-  propertyId  String
-  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  
-  url         String
-  thumbnail   String?
-  alt         String?
-  category    String?  // lobby, pool, restaurant, etc.
-  
-  width       Int?
-  height      Int?
-  size        Int?
-  
-  isPrimary   Boolean  @default(false)
-  sortOrder   Int      @default(0)
-  
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  url       String
+  thumbnail String?
+  alt       String?
+  category  String? // lobby, pool, restaurant, etc.
+
+  width  Int?
+  height Int?
+  size   Int?
+
+  isPrimary Boolean @default(false)
+  sortOrder Int     @default(0)
+
+  createdAt DateTime @default(now())
 
   @@map("property_images")
 }
 
 model RoomTypeImage {
-  id          String   @id @default(cuid())
-  roomTypeId  String
-  roomType    RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
-  
-  url         String
-  thumbnail   String?
-  alt         String?
-  
-  isPrimary   Boolean  @default(false)
-  sortOrder   Int      @default(0)
-  
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  roomTypeId String
+  roomType   RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+
+  url       String
+  thumbnail String?
+  alt       String?
+
+  isPrimary Boolean @default(false)
+  sortOrder Int     @default(0)
+
+  createdAt DateTime @default(now())
 
   @@map("room_type_images")
 }
@@ -665,48 +699,48 @@ model RoomTypeImage {
 // ============================================
 
 model Policy {
-  id          String   @id @default(cuid())
-  propertyId  String   @unique
-  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  
+  id         String   @id @default(cuid())
+  propertyId String   @unique
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
   // Check-in/Check-out
-  checkInTime     String  @default("14:00")
-  checkOutTime    String  @default("12:00")
+  checkInTime       String @default("14:00")
+  checkOutTime      String @default("12:00")
   /// Late check-out tiers [{ until: "HH:mm" | null, percent }] (src/lib/bookings/late-checkout.ts);
   /// null = the default (30% until 15:00, 50% until 18:00, then 100%), [] = no late fee.
   lateCheckoutTiers Json?
-  
+
   // Cancellation
-  cancellationHours Int?   // Số giờ trước check-in để hủy miễn phí
-  cancellationPolicy String? @db.Text
+  cancellationHours       Int? // Số giờ trước check-in để hủy miễn phí
+  cancellationPolicy      String? @db.Text
   /// Refund suggested for a cancellation inside that window, in % of what
   /// was paid; 0 = nothing (src/lib/bookings/cancel-refund.ts).
-  lateCancelRefundPercent Int @default(0)
+  lateCancelRefundPercent Int     @default(0)
 
   /// Deposit a guest pays through PayOS when booking on the hotel's site,
   /// in % of the total; 0 = none. Needs a connected PayOS account.
-  onlineDepositPercent Int @default(0)
+  onlineDepositPercent   Int @default(0)
   /// Minutes a guest has to pay that deposit before the booking is
   /// cancelled by the scheduled job; 0 = never (the hotel decides).
   depositDeadlineMinutes Int @default(0)
-  
+
   // Children policy
   childrenAllowed Boolean @default(true)
-  minChildAge      Int     @default(0)
-  
+  minChildAge     Int     @default(0)
+
   // Pet policy
-  petsAllowed      Boolean @default(false)
-  
+  petsAllowed Boolean @default(false)
+
   // Smoking policy
-  smokingAllowed   Boolean @default(false)
-  
+  smokingAllowed Boolean @default(false)
+
   // Other rules
-  additionalRules  String? @db.Text
+  additionalRules String? @db.Text
   /// The hotel's own texts in English: { en: { name?, description?, ... } }. Empty: the Vietnamese shows (src/lib/i18n/content.ts).
-  translations Json?
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  translations    Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("policies")
 }
@@ -716,95 +750,95 @@ model Policy {
 // ============================================
 
 model WebsiteBlock {
-  id          String   @id @default(cuid())
-  propertyId  String
-  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  
-  type        BlockType
-  name        String
-  
-  // Block content/settings
-  config      Json     @default("{}")
-  
-  // Visibility
-  isEnabled   Boolean  @default(true)
-  
-  // Order
-  sortOrder   Int      @default(0)
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
-  @@map("website_blocks")
+  type BlockType
+  name String
+
+  // Block content/settings
+  config Json @default("{}")
+
+  // Visibility
+  isEnabled Boolean @default(true)
+
+  // Order
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([propertyId])
+  @@map("website_blocks")
 }
 
 enum BlockType {
-  HERO              // Banner chính + Search
-  ROOMS             // Danh sách phòng
-  AMENITIES         // Tiện ích
-  ABOUT             // Giới thiệu
-  GALLERY           // Thư viện ảnh
-  REVIEWS           // Đánh giá khách hàng
-  MAP               // Bản đồ
-  CONTACT           // Liên hệ
-  FOOTER            // Footer
-  RESTAURANT_MENU   // Menu nhà hàng
-  SERVICES          // Dịch vụ
-  CTA               // Call to action
+  HERO // Banner chính + Search
+  ROOMS // Danh sách phòng
+  AMENITIES // Tiện ích
+  ABOUT // Giới thiệu
+  GALLERY // Thư viện ảnh
+  REVIEWS // Đánh giá khách hàng
+  MAP // Bản đồ
+  CONTACT // Liên hệ
+  FOOTER // Footer
+  RESTAURANT_MENU // Menu nhà hàng
+  SERVICES // Dịch vụ
+  CTA // Call to action
 }
 
 model WebsiteSettings {
-  id          String   @id @default(cuid())
-  propertyId  String   @unique
-  
+  id         String @id @default(cuid())
+  propertyId String @unique
+
   // Branding
-  primaryColor     String  @default("#3B82F6")
-  secondaryColor   String  @default("#10B981")
-  accentColor      String  @default("#F59E0B")
+  primaryColor   String  @default("#3B82F6")
+  secondaryColor String  @default("#10B981")
+  accentColor    String  @default("#F59E0B")
   /// Buttons, outlines and the CTA band on the site (#rrggbb); null: Digistay's ink.
-  buttonColor      String?
+  buttonColor    String?
   /// Page and section titles on the site (#rrggbb); null: the text color.
-  headingColor     String?
-  fontFamily       String  @default("Inter")
-  headingFont      String  @default("Playfair Display")
-  
+  headingColor   String?
+  fontFamily     String  @default("Inter")
+  headingFont    String  @default("Playfair Display")
+
   // Layout
-  layout        String  @default("modern")  // modern, classic, minimal
+  layout         String @default("modern") // modern, classic, minimal
   containerWidth String @default("1280px")
-  
+
   // SEO
   metaTitle       String?
-  metaDescription  String?
+  metaDescription String?
   /// The hotel's own texts in English: { en: { name?, description?, ... } }. Empty: the Vietnamese shows (src/lib/i18n/content.ts).
-  translations Json?
+  translations    Json?
   metaKeywords    String?
-  
+
   // Custom domain
-  customDomain    String?  @unique // lowercase ASCII; set only by /api/website/domain/verify
-  domainVerificationStatus String?  // pending, verified, mismatch, not_found, a_record, dns_error
-  domainVerifiedAt DateTime?
-  
+  customDomain             String?   @unique // lowercase ASCII; set only by /api/website/domain/verify
+  domainVerificationStatus String? // pending, verified, mismatch, not_found, a_record, dns_error
+  domainVerifiedAt         DateTime?
+
   // SSL
-  sslEnabled      Boolean @default(false)
-  sslVerifiedAt   DateTime?
-  sslProvider     String?  // letsencrypt, cloudflare, digistay-auto-ssl
+  sslEnabled       Boolean   @default(false)
+  sslVerifiedAt    DateTime?
+  sslProvider      String? // letsencrypt, cloudflare, digistay-auto-ssl
   sslCertificateId String?
   /// Asked for a certificate (domain verified, or "Thử lại"); docker/certbot/custom-domains.sh picks it up.
-  sslRequestedAt  DateTime?
+  sslRequestedAt   DateTime?
   /// The last issuance attempt, and why it failed (null: issued or not tried yet).
-  sslCheckedAt    DateTime?
-  sslError        String?
-  
+  sslCheckedAt     DateTime?
+  sslError         String?
+
   // Published status
-  isPublished     Boolean @default(false)
-  publishedAt     DateTime?
-  
+  isPublished Boolean   @default(false)
+  publishedAt DateTime?
+
   // Relations
-  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("website_settings")
 }
@@ -814,31 +848,31 @@ model WebsiteSettings {
 /// saves by the same person within 2 minutes update the newest one; the
 /// newest 50 per property are kept. Restoring puts one back.
 model SiteVersion {
-  id          String   @id @default(cuid())
-  propertyId  String
-  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
-  kind        SiteVersionKind @default(AUTO)
+  kind           SiteVersionKind @default(AUTO)
   /// { v: 1, blocks: [{ type, name, config, isEnabled }], settings: {...} } (SiteSnapshot)
-  snapshot    Json
+  snapshot       Json
   /// Who saved it (a user id, no foreign key, like activity_logs.userId); null for INITIAL.
-  createdById String?
+  createdById    String?
   /// RESTORE: the version put back (no foreign key: it may have been pruned since).
   restoredFromId String?
 
-  createdAt   DateTime @default(now())
+  createdAt DateTime @default(now())
   /// The last save merged into it (AUTO), else createdAt.
-  updatedAt   DateTime @updatedAt
+  updatedAt DateTime @updatedAt
 
   @@index([propertyId, createdAt])
   @@map("site_versions")
 }
 
 enum SiteVersionKind {
-  AUTO            // a save in the builder
-  RESTORE         // the site after a restore
-  BEFORE_RESTORE  // the site just before a restore, so it can be undone
-  INITIAL         // the site as it was before its first versioned save
+  AUTO // a save in the builder
+  RESTORE // the site after a restore
+  BEFORE_RESTORE // the site just before a restore, so it can be undone
+  INITIAL // the site as it was before its first versioned save
 }
 
 // ============================================
@@ -846,133 +880,133 @@ enum SiteVersionKind {
 // ============================================
 
 model Booking {
-  id              String   @id @default(cuid())
-  bookingCode     String   @unique
-  
-  propertyId      String
-  property        Property @relation(fields: [propertyId], references: [id])
-  
+  id          String @id @default(cuid())
+  bookingCode String @unique
+
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id])
+
   // Guest info
-  guestName       String
-  guestEmail      String
-  guestPhone      String
-  guestNote       String?
-  
+  guestName  String
+  guestEmail String
+  guestPhone String
+  guestNote  String?
+
   // Booking details
-  checkInDate     DateTime
-  checkOutDate    DateTime
-  numAdults       Int      @default(1)
-  numChildren     Int      @default(0)
-  
+  checkInDate  DateTime
+  checkOutDate DateTime
+  numAdults    Int      @default(1)
+  numChildren  Int      @default(0)
+
   // Status
-  status          BookingStatus @default(PENDING)
-  
+  status BookingStatus @default(PENDING)
+
   // Pricing
-  subtotal        Float    // Tổng tiền phòng
-  extraCharges    Float    @default(0)  // Phụ phí
+  subtotal      Float // Tổng tiền phòng
+  extraCharges  Float @default(0) // Phụ phí
   /// The extra services chosen when booking, as charged (in extraCharges):
   /// [{ serviceId, name, quantity, amount }] (src/lib/pricing/quote.ts)
-  services        Json?
-  discount        Float    @default(0)  // Giảm giá
-  totalAmount     Float    // Tổng cộng
-  depositAmount   Float    @default(0)  // Tiền cọc đã thanh toán
-  
+  services      Json?
+  discount      Float @default(0) // Giảm giá
+  totalAmount   Float // Tổng cộng
+  depositAmount Float @default(0) // Tiền cọc đã thanh toán
+
   // Payment
-  paymentMethod   PaymentMethod?
-  paymentStatus   PaymentStatus @default(PENDING)
-  paymentDueDate  DateTime?
-  
+  paymentMethod  PaymentMethod?
+  paymentStatus  PaymentStatus  @default(PENDING)
+  paymentDueDate DateTime?
+
   // VAT Invoice
-  vatCompany      String?
-  vatTaxCode      String?
-  vatAddress      String?
-  vatEmail        String?
-  
+  vatCompany String?
+  vatTaxCode String?
+  vatAddress String?
+  vatEmail   String?
+
   // Check-in/out
-  actualCheckIn   DateTime?
-  actualCheckOut  DateTime?
-  checkedInBy     String?
-  checkedOutBy    String?
-  
+  actualCheckIn  DateTime?
+  actualCheckOut DateTime?
+  checkedInBy    String?
+  checkedOutBy   String?
+
   // Source
-  source          BookingSource @default(DIRECT)
-  referralCode    String?
-  
+  source       BookingSource @default(DIRECT)
+  referralCode String?
+
   // Staff who created (for walk-in)
-  createdById     String?
-  createdBy       User?    @relation(fields: [createdById], references: [id])
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id])
 
   /// The guest's language, 'vi' | 'en': the page they booked on (staff bookings: 'vi').
   /// Their emails follow it (src/lib/email/i18n.ts).
-  locale          String   @default("vi")
+  locale            String    @default("vi")
   /// The guest pressed "Tôi đã chuyển khoản" on the manual deposit page
   /// (src/lib/payments/manual-deposit.ts): set once, staff are told then.
   transferClaimedAt DateTime?
-  
-  // Relations
-  bookingItems    BookingItem[]
-  roomSegments    BookingRoomSegment[]
-  roomLocks       RoomLock[]
-  payments        Payment[]
-  invoices        Invoice[]
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
 
-  @@map("bookings")
+  // Relations
+  bookingItems BookingItem[]
+  roomSegments BookingRoomSegment[]
+  roomLocks    RoomLock[]
+  payments     Payment[]
+  invoices     Invoice[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([propertyId])
   @@index([bookingCode])
   @@index([status])
   @@index([checkInDate])
+  @@map("bookings")
 }
 
 enum BookingStatus {
-  PENDING           // Chờ thanh toán
-  CONFIRMED         // Đã xác nhận
-  CHECKED_IN        // Đã nhận phòng
-  CHECKED_OUT       // Đã trả phòng
-  CANCELLED         // Đã hủy
-  NO_SHOW           // Không đến
+  PENDING // Chờ thanh toán
+  CONFIRMED // Đã xác nhận
+  CHECKED_IN // Đã nhận phòng
+  CHECKED_OUT // Đã trả phòng
+  CANCELLED // Đã hủy
+  NO_SHOW // Không đến
 }
 
 enum BookingSource {
-  DIRECT            // Đặt trực tiếp trên web
-  WALK_IN           // Đặng tại quầy
-  PHONE             // Đặt qua điện thoại
-  OTA               // OTA (Traveloka, Booking.com...)
-  AGENT             // Đại lý
+  DIRECT // Đặt trực tiếp trên web
+  WALK_IN // Đặng tại quầy
+  PHONE // Đặt qua điện thoại
+  OTA // OTA (Traveloka, Booking.com...)
+  AGENT // Đại lý
 }
 
 model BookingItem {
-  id              String   @id @default(cuid())
-  bookingId       String
-  booking        Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  
-  roomTypeId     String
-  
+  id        String  @id @default(cuid())
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  roomTypeId String
+
   // Room number (assigned later); roomId once the hotel lists its rooms
   // (src/lib/bookings/rooms.ts), the number then copied from the room
-  roomNumber     String?
-  roomId         String?
-  room           Room?    @relation(fields: [roomId], references: [id], onDelete: SetNull)
-  
-  // Dates
-  checkInDate    DateTime
-  checkOutDate   DateTime
-  
-  // Pricing for this item
-  basePrice      Float
-  extraAdultPrice Float   @default(0)
-  extraChildPrice Float   @default(0)
-  totalPrice     Float
-  
-  // Extra services
-  extraServices  Json?    @default("[]")
-  
-  createdAt      DateTime @default(now())
+  roomNumber String?
+  roomId     String?
+  room       Room?   @relation(fields: [roomId], references: [id], onDelete: SetNull)
 
-  @@map("booking_items")
+  // Dates
+  checkInDate  DateTime
+  checkOutDate DateTime
+
+  // Pricing for this item
+  basePrice       Float
+  extraAdultPrice Float @default(0)
+  extraChildPrice Float @default(0)
+  totalPrice      Float
+
+  // Extra services
+  extraServices Json? @default("[]")
+
+  createdAt DateTime @default(now())
+
   @@index([bookingId])
+  @@map("booking_items")
 }
 
 /// One numbered room of the hotel (task 25 / 27, src/lib/bookings/rooms.ts).
@@ -983,20 +1017,20 @@ model BookingItem {
 /// to end, neighbours in different rooms, and its BookingItem keeps the first
 /// night's room and type, so readers that show one room still read one.
 model BookingRoomSegment {
-  id          String   @id @default(cuid())
-  bookingId   String
-  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  bookingId  String
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   /// null once the room is deleted (past stays only); the number stays
-  roomId      String?
-  room        Room?    @relation(fields: [roomId], references: [id], onDelete: SetNull)
-  roomNumber  String
+  roomId     String?
+  room       Room?    @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  roomNumber String
   /// the room's type on these nights: inventory counts it there (occupancy.ts)
-  roomTypeId  String
+  roomTypeId String
   /// night boundaries, at the booking's check-in time of day
-  fromDate    DateTime
-  toDate      DateTime
+  fromDate   DateTime
+  toDate     DateTime
 
-  createdAt   DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([bookingId])
   @@index([roomId])
@@ -1005,21 +1039,21 @@ model BookingRoomSegment {
 }
 
 model Room {
-  id          String   @id @default(cuid())
-  propertyId  String
-  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  roomTypeId  String
-  roomType    RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  id           String               @id @default(cuid())
+  propertyId   String
+  property     Property             @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  roomTypeId   String
+  roomType     RoomType             @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
   /// "101", "A12": unique in the hotel
-  number      String
-  floor       Int?
-  isActive    Boolean  @default(true)
+  number       String
+  floor        Int?
+  isActive     Boolean              @default(true)
   bookingItems BookingItem[]
   roomSegments BookingRoomSegment[]
-  roomLocks   RoomLock[]
+  roomLocks    RoomLock[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([propertyId, number])
   @@index([roomTypeId])
@@ -1027,46 +1061,46 @@ model Room {
 }
 
 model RoomLock {
-  id              String   @id @default(cuid())
-  bookingId       String?
-  booking         Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  id        String   @id @default(cuid())
+  bookingId String?
+  booking   Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
 
-  propertyId      String
-  property        Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
-  roomTypeId      String
-  roomType        RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  roomTypeId String
+  roomType   RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
   /// one room under maintenance (rooms.ts); null: any room of the type
-  roomId          String?
-  room            Room?    @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  
+  roomId     String?
+  room       Room?    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
   // Lock period
-  lockStart       DateTime
-  lockEnd         DateTime
-  
+  lockStart DateTime
+  lockEnd   DateTime
+
   // Lock type
-  type            RoomLockType @default(HOLD)
-  
+  type RoomLockType @default(HOLD)
+
   // Who/what locked
-  sessionId       String?
-  customerInfo    String?
-  
-  expiresAt       DateTime?  // Lock expires at this time (null for maintenance locks)
-  notes           String?
+  sessionId    String?
+  customerInfo String?
 
-  createdAt       DateTime @default(now())
+  expiresAt DateTime? // Lock expires at this time (null for maintenance locks)
+  notes     String?
 
-  @@map("room_locks")
+  createdAt DateTime @default(now())
+
   @@index([propertyId])
   @@index([roomTypeId])
   @@index([lockStart, lockEnd])
+  @@map("room_locks")
 }
 
 enum RoomLockType {
-  HOLD             // Giữ tạm thời (khi đặt)
-  BOOKED           // Đã đặt thành công
-  MAINTENANCE     // Bảo trì
-  BLOCKED          // Chặn thủ công
+  HOLD // Giữ tạm thời (khi đặt)
+  BOOKED // Đã đặt thành công
+  MAINTENANCE // Bảo trì
+  BLOCKED // Chặn thủ công
 }
 
 // ============================================
@@ -1074,55 +1108,55 @@ enum RoomLockType {
 // ============================================
 
 model ExtraService {
-  id          String   @id @default(cuid())
-  propertyId  String
-  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  
-  name        String
-  description String?
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  name         String
+  description  String?
   /// The hotel's own texts in English: { en: { name?, description?, ... } }. Empty: the Vietnamese shows (src/lib/i18n/content.ts).
   translations Json?
   /// laundry | transport | food | entertainment | other (the services page's groups)
-  category    String?
-  
-  // Pricing
-  priceType   PriceType @default(FIXED)
-  price       Float
-  
-  // Per person/per room
-  perPerson   Boolean @default(false)
-  
-  isActive    Boolean @default(true)
-  
-  createdAt   DateTime @default(now())
+  category     String?
 
-  @@map("extra_services")
+  // Pricing
+  priceType PriceType @default(FIXED)
+  price     Float
+
+  // Per person/per room
+  perPerson Boolean @default(false)
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
   @@index([propertyId])
+  @@map("extra_services")
 }
 
 /// A dish or drink on the hotel's restaurant menu (dashboard "Thực đơn", the
 /// site's RESTAURANT_MENU block). Groups come from `category`, the hotel's own text.
 model MenuItem {
-  id          String   @id @default(cuid())
-  propertyId  String
-  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
-  name        String
-  description String?
+  name         String
+  description  String?
   /// VND, VAT included like every price the hotel shows
-  price       Float
+  price        Float
   /// http(s) URL or a path of our upload route (src/lib/menu/menu.ts isMenuImageUrl)
-  imageUrl    String?
+  imageUrl     String?
   /// "Món chính", "Đồ uống"...: free text; items with the same text form a group
-  category    String?
+  category     String?
   /// The hotel's own texts in English: { en: { name?, description?, category? } }. Empty: the Vietnamese shows (src/lib/i18n/content.ts).
   translations Json?
   /// Off: kept in the dashboard, hidden on the site
-  isAvailable Boolean  @default(true)
-  sortOrder   Int      @default(0)
+  isAvailable  Boolean @default(true)
+  sortOrder    Int     @default(0)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([propertyId])
   @@map("menu_items")
@@ -1133,83 +1167,83 @@ model MenuItem {
 // ============================================
 
 model Payment {
-  id              String   @id @default(cuid())
-  bookingId       String
-  booking         Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  
+  id        String  @id @default(cuid())
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
   // Property reference
-  property        Property @relation(fields: [propertyId], references: [id])
-  propertyId       String
-  
+  property   Property @relation(fields: [propertyId], references: [id])
+  propertyId String
+
   // Amount
-  amount          Float
-  fee             Float    @default(0)
-  netAmount       Float
-  
+  amount    Float
+  fee       Float @default(0)
+  netAmount Float
+
   // Method
-  method          PaymentMethod
-  
+  method PaymentMethod
+
   // Status
-  status          PaymentStatus @default(PENDING)
-  
+  status PaymentStatus @default(PENDING)
+
   // Bank transfer
   bankCode        String?
   bankAccount     String?
   accountHolder   String?
   transferContent String?
-  
+
   // QR Code
-  qrCodeUrl       String?
-  qrExpiresAt     DateTime?
-  
+  qrCodeUrl   String?
+  qrExpiresAt DateTime?
+
   // Transaction reference
-  transactionId   String?   // Từ cổng thanh toán
-  paymentGateway  PaymentGateway?
+  transactionId    String? // Từ cổng thanh toán
+  paymentGateway   PaymentGateway?
   /// PayOS orderCode (16 digits, kept as text so payments stay JSON-safe),
   /// unique across all properties (src/lib/payments/payos.ts)
-  gatewayOrderCode String?  @unique
+  gatewayOrderCode String?         @unique
   /// PayOS checkout page for the guest
-  checkoutUrl     String?
-  
-  // Timestamps
-  paidAt          DateTime?
-  expiresAt       DateTime?
-  
-  // Metadata
-  metadata        Json?
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  checkoutUrl      String?
 
-  @@map("payments")
+  // Timestamps
+  paidAt    DateTime?
+  expiresAt DateTime?
+
+  // Metadata
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([bookingId])
   @@index([status])
+  @@map("payments")
 }
 
 enum PaymentMethod {
-  BANK_TRANSFER    // Chuyển khoản
-  QR_VIETQR       // VietQR
-  CARD            // Thẻ ATM
-  CREDIT_CARD     // Thẻ tín dụng
-  E_WALLET        // Ví điện tử
-  CASH            // Tiền mặt
+  BANK_TRANSFER // Chuyển khoản
+  QR_VIETQR // VietQR
+  CARD // Thẻ ATM
+  CREDIT_CARD // Thẻ tín dụng
+  E_WALLET // Ví điện tử
+  CASH // Tiền mặt
 }
 
 enum PaymentStatus {
-  PENDING         // Chờ thanh toán
-  PROCESSING      // Đang xử lý
-  PAID            // Đã thanh toán
-  PARTIAL         // Thanh toán một phần
-  FAILED          // Thất bại
-  REFUNDED        // Đã hoàn tiền
-  CANCELLED       // Đã hủy
-  EXPIRED         // Hết hạn
+  PENDING // Chờ thanh toán
+  PROCESSING // Đang xử lý
+  PAID // Đã thanh toán
+  PARTIAL // Thanh toán một phần
+  FAILED // Thất bại
+  REFUNDED // Đã hoàn tiền
+  CANCELLED // Đã hủy
+  EXPIRED // Hết hạn
 }
 
 /// How guests pay the online deposit (Property.depositMode)
 enum DepositPaymentMode {
   MANUAL // VietQR to the hotel's own account or MoMo wallet; staff confirm the money
-  PAYOS  // the hotel's PayOS; the webhook confirms it
+  PAYOS // the hotel's PayOS; the webhook confirms it
 }
 
 enum PaymentGateway {
@@ -1226,9 +1260,9 @@ enum PaymentGateway {
 }
 
 enum PriceType {
-  FIXED           // Giá cố định
-  PER_NIGHT       // Theo đêm
-  PER_PERSON      // Theo người
+  FIXED // Giá cố định
+  PER_NIGHT // Theo đêm
+  PER_PERSON // Theo người
 }
 
 // ============================================
@@ -1236,29 +1270,29 @@ enum PriceType {
 // ============================================
 
 model BankAccount {
-  id              String   @id @default(cuid())
-  propertyId      String
-  property        Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  
-  bankName        String
-  bankCode        String   // VietQR bank code
-  accountNumber   String
-  accountHolder   String
-  
-  // QR settings
-  qrEnabled       Boolean @default(true)
-  
-  // Status
-  isActive        Boolean @default(true)
-  isVerified      Boolean @default(false)
-  /// the property whose manual deposit QR names this account (Property.depositAccountId)
-  depositFor      Property[] @relation("DepositAccount")
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
-  @@map("bank_accounts")
+  bankName      String
+  bankCode      String // VietQR bank code
+  accountNumber String
+  accountHolder String
+
+  // QR settings
+  qrEnabled Boolean @default(true)
+
+  // Status
+  isActive   Boolean    @default(true)
+  isVerified Boolean    @default(false)
+  /// the property whose manual deposit QR names this account (Property.depositAccountId)
+  depositFor Property[] @relation("DepositAccount")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([propertyId])
+  @@map("bank_accounts")
 }
 
 /// The property's own PayOS account (Part 5): guests pay straight into the
@@ -1331,67 +1365,67 @@ model PropertyEinvoice {
 // ============================================
 
 model Invoice {
-  id              String   @id @default(cuid())
-  bookingId       String
-  booking         Booking  @relation(fields: [bookingId], references: [id])
-  
+  id        String  @id @default(cuid())
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id])
+
   // Property reference
-  property        Property @relation(fields: [propertyId], references: [id])
-  propertyId      String
-  
-  invoiceNumber   String   @unique
-  invoiceCode     String?  // Mã hóa đơn từ cổng
-  
+  property   Property @relation(fields: [propertyId], references: [id])
+  propertyId String
+
+  invoiceNumber String  @unique
+  invoiceCode   String? // Mã hóa đơn từ cổng
+
   // Company info
-  companyName     String
-  companyAddress  String
-  taxCode         String
-  companyEmail    String?
-  
+  companyName    String
+  companyAddress String
+  taxCode        String
+  companyEmail   String?
+
   // Customer
   customerName    String
   customerEmail   String
   customerAddress String?
-  
+
   /// company | personal | consumer (khách lẻ không lấy hoá đơn)
-  buyerType       String   @default("company")
+  buyerType String @default("company")
 
   // Totals: totalAmount is what the guest pays (VAT included); subtotal
   // and taxAmount are split from it (src/lib/einvoice/vat.ts)
-  subtotal        Float
-  taxRate         Float    @default(0.1)
+  subtotal    Float
+  taxRate     Float @default(0.1)
   /// Mắt Bão TSuat at creation (10, 8, 5, 0, -1 KCT, -2 KKKNT)
-  vatCode         Int?
-  taxAmount       Float
-  totalAmount     Float
-  
+  vatCode     Int?
+  taxAmount   Float
+  totalAmount Float
+
   // Status
-  status          InvoiceStatus @default(DRAFT)
-  
+  status InvoiceStatus @default(DRAFT)
+
   // Electronic invoice
-  invoicePattern  String?  // 01GTKT
-  invoiceSeries   String?  // NC
-  fiscalCode      String?  // Mã số thuế
-  
+  invoicePattern String? // 01GTKT
+  invoiceSeries  String? // NC
+  fiscalCode     String? // Mã số thuế
+
   // E-invoice provider
   eInvoiceProvider EInvoiceProvider?
-  
+
   // Published info
-  publishedAt     DateTime?
-  xmlUrl          String?
-  pdfUrl          String?
+  publishedAt    DateTime?
+  xmlUrl         String?
+  pdfUrl         String?
   /// Mắt Bão MaTraCuu: fixed per invoice, so publishing again never
   /// issues a second one (src/lib/einvoice/matbao.ts)
-  lookupCode      String?  @unique
+  lookupCode     String?   @unique
   /// Số hoá đơn assigned by Mắt Bão
-  einvoiceNumber  String?
+  einvoiceNumber String?
   /// Why the last publish attempt failed (shown to staff)
-  publishError    String?
+  publishError   String?
   /// Tax office status from Mắt Bão's webhook (MaTTHDon: 4 code issued,
   /// 6 refused...), its note and the tax office code (MCCQT)
-  cqtStatus       Int?
-  cqtNote         String?
-  cqtCode         String?
+  cqtStatus      Int?
+  cqtNote        String?
+  cqtCode        String?
 
   /// Replacement invoice (TCHDon 1): the issued invoice this one replaces;
   /// that one becomes REPLACED once this is issued
@@ -1402,39 +1436,39 @@ model Invoice {
   /// Adjustment invoice (TCHDon 2 increase, 3 decrease): the issued invoice
   /// it adjusts. totalAmount is the signed difference, negative for a
   /// decrease; the adjusted invoice stays PUBLISHED (adjustment.ts)
-  adjustsInvoiceId  String?
-  adjustsInvoice    Invoice?  @relation("InvoiceAdjustment", fields: [adjustsInvoiceId], references: [id])
-  adjustments       Invoice[] @relation("InvoiceAdjustment")
+  adjustsInvoiceId String?
+  adjustsInvoice   Invoice?  @relation("InvoiceAdjustment", fields: [adjustsInvoiceId], references: [id])
+  adjustments      Invoice[] @relation("InvoiceAdjustment")
 
   /// created by the auto-issue job (jobs.ts), not by staff
-  autoIssued      Boolean   @default(false)
+  autoIssued    Boolean   @default(false)
   /// Email to the buyer once issued (delivery.ts): PENDING, SENDING, SENT,
   /// FAILED (tried again at emailNextAt while it is set), SKIPPED
-  emailStatus     String?
-  emailAttempts   Int       @default(0)
+  emailStatus   String?
+  emailAttempts Int       @default(0)
   /// next attempt; while SENDING, when the claim expires
-  emailNextAt     DateTime?
-  emailedAt       DateTime?
-  emailError      String?
-  
-  // Metadata
-  metadata        Json?
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  emailNextAt   DateTime?
+  emailedAt     DateTime?
+  emailError    String?
 
-  @@map("invoices")
+  // Metadata
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([bookingId])
   @@index([invoiceNumber])
+  @@map("invoices")
 }
 
 enum InvoiceStatus {
-  DRAFT           // Nháp
-  PENDING         // Chờ phát hành
-  PUBLISHING      // Đang gửi sang nhà cung cấp
-  PUBLISHED       // Đã phát hành
-  CANCELLED       // Đã hủy
-  REPLACED        // Thay thế
+  DRAFT // Nháp
+  PENDING // Chờ phát hành
+  PUBLISHING // Đang gửi sang nhà cung cấp
+  PUBLISHED // Đã phát hành
+  CANCELLED // Đã hủy
+  REPLACED // Thay thế
 }
 
 enum EInvoiceProvider {
@@ -1451,40 +1485,40 @@ enum EInvoiceProvider {
 // ============================================
 
 model DailyRevenue {
-  id          String   @id @default(cuid())
-  propertyId  String
-  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  
-  date        DateTime @db.Date
-  
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  date DateTime @db.Date
+
   // Room revenue
-  roomRevenue     Float @default(0)
-  extraRevenue    Float @default(0)
-  totalRevenue   Float @default(0)
-  
+  roomRevenue  Float @default(0)
+  extraRevenue Float @default(0)
+  totalRevenue Float @default(0)
+
   // Bookings
   totalBookings      Int @default(0)
-  confirmedBookings   Int @default(0)
+  confirmedBookings  Int @default(0)
   checkedInBookings  Int @default(0)
   checkedOutBookings Int @default(0)
   cancelledBookings  Int @default(0)
-  
+
   // Room stats
-  totalRooms      Int @default(0)
-  occupiedRooms   Int @default(0)
-  avgOccupancy    Float @default(0)
-  
+  totalRooms    Int   @default(0)
+  occupiedRooms Int   @default(0)
+  avgOccupancy  Float @default(0)
+
   // Payment breakdown
-  cashRevenue     Float @default(0)
-  bankRevenue     Float @default(0)
-  qrRevenue       Float @default(0)
-  cardRevenue     Float @default(0)
-  
-  createdAt       DateTime @default(now())
+  cashRevenue Float @default(0)
+  bankRevenue Float @default(0)
+  qrRevenue   Float @default(0)
+  cardRevenue Float @default(0)
+
+  createdAt DateTime @default(now())
 
   @@unique([propertyId, date])
-  @@map("daily_revenues")
   @@index([propertyId])
+  @@map("daily_revenues")
 }
 
 // ============================================
@@ -1492,27 +1526,27 @@ model DailyRevenue {
 // ============================================
 
 model ActivityLog {
-  id          String   @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   userId      String?
   workspaceId String?
   propertyId  String?
-  
-  action      String
-  entityType  String
-  entityId    String
-  changes     Json?
-  metadata    Json?
-  
-  ipAddress   String?
-  userAgent   String?
-  
-  createdAt   DateTime @default(now())
 
-  @@map("activity_logs")
+  action     String
+  entityType String
+  entityId   String
+  changes    Json?
+  metadata   Json?
+
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
   @@index([workspaceId])
   @@index([propertyId])
   @@index([userId])
+  @@map("activity_logs")
 }
 
 /// One run of a scheduled job (src/lib/ops/job-runs.ts): the jobs under

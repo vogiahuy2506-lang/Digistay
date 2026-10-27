@@ -1,0 +1,226 @@
+{
+  "title": "Members",
+  "lead": "Invite staff and choose what they can do, and at which properties.",
+  "invite": "Invite staff",
+  "seats": "{used}/{limit} staff accounts of the plan in use",
+  "seatsFull": "All staff accounts of the plan are in use. Upgrade the plan to invite more.",
+  "upgrade": "Upgrade plan",
+  "tabs": {
+    "members": "Members",
+    "invitations": "Invitations",
+    "activity": "Activity"
+  },
+  "owner": "Owner",
+  "ownerAccess": "Full access, every property",
+  "you": "You",
+  "noName": "No name yet",
+  "custom": "Custom",
+  "allProperties": "All properties",
+  "someProperties": "{count, plural, one {# property} other {# properties}}",
+  "noProperty": "No property yet",
+  "permissionCount": "{count}/{total} permissions",
+  "columns": {
+    "person": "Person",
+    "role": "Role",
+    "properties": "Properties",
+    "status": "Status"
+  },
+  "status": {
+    "active": "Active",
+    "disabled": "Suspended",
+    "planLocked": "Locked (over plan)"
+  },
+  "planLockedNote": "Cannot open the workspace: over the plan's staff limit.",
+  "disabledNote": "Since {date}",
+  "joined": "Joined {date}",
+  "actions": {
+    "edit": "Permissions",
+    "lock": "Suspend account",
+    "unlock": "Restore",
+    "remove": "Remove from workspace",
+    "menu": "Actions for {name}"
+  },
+  "empty": {
+    "title": "No staff yet",
+    "text": "Invite front desk, managers… by email. They get a link to join, even without an account.",
+    "action": "Invite your first staff member"
+  },
+  "confirmRemove": {
+    "title": "Remove {name} from the workspace?",
+    "text": "They lose access right away. To come back they need a new invitation. The activity log is kept.",
+    "confirm": "Remove member"
+  },
+  "confirmLock": {
+    "title": "Suspend {name}?",
+    "text": "They cannot open the workspace until you restore them, and they do not count against the plan's staff. Their permissions and data are kept.",
+    "confirm": "Suspend account"
+  },
+  "toast": {
+    "updated": "Saved {name}'s permissions",
+    "locked": "Suspended {name}",
+    "unlocked": "Restored {name}",
+    "removed": "Removed {name} from the workspace",
+    "invited": "Invitation sent to {email}",
+    "resent": "Invitation sent again to {email}",
+    "revoked": "Cancelled the invitation to {email}",
+    "failed": "Could not do that"
+  },
+  "invitations": {
+    "empty": "No invitations sent yet.",
+    "status": {
+      "PENDING": "Pending",
+      "ACCEPTED": "Joined",
+      "DECLINED": "Declined",
+      "EXPIRED": "Expired",
+      "REVOKED": "Cancelled"
+    },
+    "sent": "Invited by {name} · {date}",
+    "expires": "Valid until {date}",
+    "resend": "Resend",
+    "revoke": "Cancel invitation",
+    "confirmRevoke": {
+      "title": "Cancel the invitation to {email}?",
+      "text": "The link in the email will stop working. You can invite them again later.",
+      "confirm": "Cancel invitation"
+    }
+  },
+  "activity": {
+    "empty": "Nothing has happened to members yet.",
+    "someone": "Someone",
+    "MEMBER_INVITED": "<b>{actor}</b> invited <b>{subject}</b>",
+    "INVITE_RESENT": "<b>{actor}</b> resent the invitation to <b>{subject}</b>",
+    "INVITE_REVOKED": "<b>{actor}</b> cancelled the invitation to <b>{subject}</b>",
+    "INVITE_ACCEPTED": "<b>{subject}</b> accepted the invitation and joined",
+    "INVITE_DECLINED": "<b>{subject}</b> declined the invitation",
+    "MEMBER_UPDATED": "<b>{actor}</b> changed <b>{subject}</b>'s permissions",
+    "MEMBER_LOCKED": "<b>{actor}</b> suspended <b>{subject}</b>",
+    "MEMBER_UNLOCKED": "<b>{actor}</b> restored <b>{subject}</b>",
+    "MEMBER_REMOVED": "<b>{actor}</b> removed <b>{subject}</b> from the workspace",
+    "MEMBER_LEFT": "<b>{subject}</b> left the workspace",
+    "role": "Role: {from} → {to}",
+    "added": "Added: {list}",
+    "removed": "Removed: {list}",
+    "properties": "Properties: {from} → {to}",
+    "all": "all"
+  },
+  "editor": {
+    "inviteTitle": "Invite staff",
+    "editTitle": "Permissions: {name}",
+    "email": "Email",
+    "emailPlaceholder": "staff@yourhotel.com",
+    "emailHint": "No Digistay account needed: they click the link in the email and set a password.",
+    "role": "Role",
+    "roleHint": "Each role comes with a set of permissions. Tick more or fewer below if needed.",
+    "permissions": "What they can do",
+    "presetNote": "Using the {role} role's permissions.",
+    "customNote": "Their own permissions (changed from {role}).",
+    "resetPreset": "Use the {role} role's permissions again",
+    "notYours": "You don't have this permission, so you can't give it",
+    "requires": "Needs “{perm}”",
+    "properties": "Which properties",
+    "propertiesAll": "All properties, including ones created later",
+    "propertiesSome": "Only the selected properties",
+    "propertiesNote": "Workspace permissions don't depend on properties.",
+    "noPermissions": "This person has no permissions: they can open the workspace but do nothing.",
+    "pickProperty": "Choose at least one property.",
+    "send": "Send invitation",
+    "save": "Save permissions",
+    "cancel": "Cancel"
+  },
+  "groups": {
+    "bookings": "Bookings & front desk",
+    "money": "Payments & invoices",
+    "property": "Property setup",
+    "workspace": "Workspace"
+  },
+  "perm": {
+    "bookings_view": {
+      "label": "See bookings",
+      "hint": "List, month calendar, room plan"
+    },
+    "bookings_create": {
+      "label": "Create bookings",
+      "hint": "Walk-in and phone guests"
+    },
+    "bookings_edit": {
+      "label": "Handle bookings",
+      "hint": "Edit, check in, check out, extend, move rooms"
+    },
+    "bookings_cancel": {
+      "label": "Cancel bookings",
+      "hint": "Including deposit refunds"
+    },
+    "bookings_delete": {
+      "label": "Delete bookings",
+      "hint": "Remove them for good"
+    },
+    "rooms_status": {
+      "label": "Report room maintenance",
+      "hint": "Close / reopen a room for a while"
+    },
+    "payments_manage": {
+      "label": "Take payments",
+      "hint": "Record and confirm payments and transfers"
+    },
+    "invoices_manage": {
+      "label": "E-invoices",
+      "hint": "Draft, issue, adjust and send invoices"
+    },
+    "cashbook_view": {
+      "label": "Cash book",
+      "hint": "The day's money in and out"
+    },
+    "revenue_view": {
+      "label": "See revenue",
+      "hint": "Reports and money totals"
+    },
+    "rooms_manage": {
+      "label": "Manage rooms",
+      "hint": "Add, edit, delete rooms"
+    },
+    "room_types_manage": {
+      "label": "Room types & rates",
+      "hint": "Room types, photos, price lists"
+    },
+    "services_manage": {
+      "label": "Services & menu",
+      "hint": "Extra services, food and drinks"
+    },
+    "property_edit": {
+      "label": "Property details",
+      "hint": "Name, address, photos, amenities, policies"
+    },
+    "website_manage": {
+      "label": "Website",
+      "hint": "Design, publish, domain"
+    },
+    "payment_settings": {
+      "label": "Payment settings",
+      "hint": "Bank, PayOS, e-invoices, deposits"
+    },
+    "properties_create": {
+      "label": "Create properties",
+      "hint": "Open another hotel or homestay"
+    },
+    "members_manage": {
+      "label": "Manage staff",
+      "hint": "Invite, set permissions, suspend, remove"
+    },
+    "billing_manage": {
+      "label": "Plan & billing",
+      "hint": "Buy, renew, change the plan"
+    },
+    "workspace_settings": {
+      "label": "Workspace settings",
+      "hint": "Name, logo, notifications"
+    }
+  },
+  "roleHints": {
+    "ADMIN": "Every permission except deleting the workspace",
+    "MANAGER": "Runs the hotels; not the plan or settings",
+    "RECEPTIONIST": "Bookings, payments, invoices, cash book",
+    "USER": "Sees and creates bookings"
+  },
+  "planLockedShort": "Over the plan’s staff limit",
+  "disabledHint": "Cannot open the workspace and does not count against the plan’s staff until restored."
+}

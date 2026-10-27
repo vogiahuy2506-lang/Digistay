@@ -1,4 +1,5 @@
 import { routes } from '@/lib/utils/routes'
+import type { Permission } from '@/lib/auth/permissions'
 
 export type WorkspaceRole = 'ADMIN' | 'MANAGER' | 'RECEPTIONIST' | 'USER'
 
@@ -28,55 +29,52 @@ export type NavGroup = (typeof NAV_GROUPS)[number]
 export interface NavItem {
   key: NavKey
   href: string
-  roles: WorkspaceRole[]
+  /** Shown to who has one of these (src/lib/auth/permissions.ts); null: anyone in the workspace. */
+  can: Permission[] | null
   group: NavGroup
   /** Other pages of this entry, by path: they light it up and title the tab with it. */
   also?: string[]
 }
-
-const everyone: WorkspaceRole[] = ['ADMIN', 'MANAGER', 'RECEPTIONIST', 'USER']
-const staff: WorkspaceRole[] = ['ADMIN', 'MANAGER', 'RECEPTIONIST']
-const managers: WorkspaceRole[] = ['ADMIN', 'MANAGER']
 
 /** Main menu: the property's pages when inside one, else the workspace's. */
 export function primaryNav(slug: string, propertyId?: string): NavItem[] {
   if (!propertyId) {
     // The workspace home lists the properties, so there is no second
     // "Cơ sở" entry to walk to.
-    return [{ key: 'properties', href: routes.workspace(slug), roles: everyone, group: 'main' }]
+    return [{ key: 'properties', href: routes.workspace(slug), can: null, group: 'main' }]
   }
   const id = propertyId
   // Grouped like the work: the day at the desk, what the hotel sells, the money.
   return [
-    { key: 'overview', href: routes.property(slug, id), roles: everyone, group: 'main' },
+    { key: 'overview', href: routes.property(slug, id), can: null, group: 'main' },
     // One entry for the bookings and their calendar: the pages switch between the list,
     // the month and the room plan (src/components/bookings/bookings-views.tsx).
     {
       key: 'bookings',
       href: routes.propertyBookings(slug, id),
       also: [routes.propertyCalendar(slug, id)],
-      roles: everyone,
+      can: ['bookings_view'],
       group: 'operations',
     },
-    { key: 'rooms', href: routes.propertyRooms(slug, id), roles: staff, group: 'property' },
-    { key: 'services', href: routes.propertyServices(slug, id), roles: managers, group: 'property' },
-    { key: 'menu', href: routes.propertyMenu(slug, id), roles: managers, group: 'property' },
-    { key: 'policies', href: routes.propertyPolicies(slug, id), roles: managers, group: 'property' },
-    { key: 'website', href: routes.propertyWebsite(slug, id), roles: managers, group: 'property' },
-    { key: 'payments', href: routes.propertyPayments(slug, id), roles: staff, group: 'finance' },
-    { key: 'invoices', href: routes.propertyInvoices(slug, id), roles: managers, group: 'finance' },
-    { key: 'cashbook', href: routes.propertyDailyReport(slug, id), roles: ['ADMIN', 'RECEPTIONIST'], group: 'finance' },
-    { key: 'reports', href: routes.propertyReports(slug, id), roles: managers, group: 'finance' },
-    { key: 'bankAccounts', href: routes.propertyBankAccounts(slug, id), roles: ['ADMIN'], group: 'finance' },
+    { key: 'rooms', href: routes.propertyRooms(slug, id), can: ['rooms_manage', 'rooms_status'], group: 'property' },
+    { key: 'services', href: routes.propertyServices(slug, id), can: ['services_manage'], group: 'property' },
+    { key: 'menu', href: routes.propertyMenu(slug, id), can: ['services_manage'], group: 'property' },
+    { key: 'policies', href: routes.propertyPolicies(slug, id), can: ['property_edit'], group: 'property' },
+    { key: 'website', href: routes.propertyWebsite(slug, id), can: ['website_manage'], group: 'property' },
+    { key: 'payments', href: routes.propertyPayments(slug, id), can: ['payments_manage'], group: 'finance' },
+    { key: 'invoices', href: routes.propertyInvoices(slug, id), can: ['invoices_manage'], group: 'finance' },
+    { key: 'cashbook', href: routes.propertyDailyReport(slug, id), can: ['cashbook_view'], group: 'finance' },
+    { key: 'reports', href: routes.propertyReports(slug, id), can: ['revenue_view'], group: 'finance' },
+    { key: 'bankAccounts', href: routes.propertyBankAccounts(slug, id), can: ['payment_settings'], group: 'finance' },
   ]
 }
 
 /** Workspace-wide links under the divider. */
 export function workspaceNav(slug: string): NavItem[] {
   return [
-    { key: 'members', href: routes.members(slug), roles: managers, group: 'workspace' },
-    { key: 'billing', href: routes.billing(slug), roles: ['ADMIN'], group: 'workspace' },
-    { key: 'settings', href: routes.settings(slug), roles: ['ADMIN'], group: 'workspace' },
+    { key: 'members', href: routes.members(slug), can: ['members_manage'], group: 'workspace' },
+    { key: 'billing', href: routes.billing(slug), can: ['billing_manage'], group: 'workspace' },
+    { key: 'settings', href: routes.settings(slug), can: ['workspace_settings'], group: 'workspace' },
   ]
 }
 
@@ -100,7 +98,7 @@ export function activeHref(pathname: string, items: NavItem[]): string | undefin
 
 /** Vietnamese role names, for code without a translator; pages use useDashLabels().role. */
 export const roleLabels: Record<WorkspaceRole, string> = {
-  ADMIN: 'Chủ sở hữu',
+  ADMIN: 'Quản trị',
   MANAGER: 'Quản lý',
   RECEPTIONIST: 'Lễ tân',
   USER: 'Nhân viên',

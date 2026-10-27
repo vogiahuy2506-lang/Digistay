@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Trash2 } from 'lucide-react'
 import { Button, Card, CardContent, CardHeader, CardTitle, toast } from '@/components/ui'
-import { useWorkspaceRole } from '@/components/layout/workspace-context'
+import { useWorkspaceAccess } from '@/components/layout/workspace-context'
 import { apiError } from '@/lib/i18n/api-errors'
 import { routes } from '@/lib/utils/routes'
 import { ConfirmDeleteDialog } from './confirm-delete-dialog'
@@ -27,7 +27,7 @@ interface PropertyDeletionInfo {
 export function DeletePropertyZone({ propertyId, slug }: { propertyId: string; slug: string }) {
   const t = useTranslations('dash.deletion')
   const router = useRouter()
-  const role = useWorkspaceRole()
+  const isOwner = useWorkspaceAccess()?.isOwner ?? false
   const [info, setInfo] = React.useState<PropertyDeletionInfo | null>(null)
   const [open, setOpen] = React.useState(false)
   const [loading, setLoading] = React.useState(false)
@@ -39,9 +39,9 @@ export function DeletePropertyZone({ propertyId, slug }: { propertyId: string; s
     return res.ok && data?.success ? (data.data as PropertyDeletionInfo) : null
   }, [propertyId])
 
-  // Owners count as ADMIN in the role; the answer tells the owner apart.
+  // The owner alone deletes a property.
   React.useEffect(() => {
-    if (role !== 'ADMIN') return
+    if (!isOwner) return
     let cancelled = false
     load()
       .then((found) => {
@@ -51,7 +51,7 @@ export function DeletePropertyZone({ propertyId, slug }: { propertyId: string; s
     return () => {
       cancelled = true
     }
-  }, [role, load])
+  }, [isOwner, load])
 
   // Counted again on opening: bookings may have changed since the page loaded.
   const openDialog = async () => {

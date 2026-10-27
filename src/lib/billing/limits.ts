@@ -10,7 +10,8 @@
  *
  * What is locked for being over the plan (src/lib/billing/overage.ts) does
  * not count: a locked property (and its rooms), a locked room type's rooms,
- * a locked member.
+ * a locked member. Nor does a member an admin locked (disabledAt): unlocking
+ * them takes a seat again.
  */
 import type { Prisma, PrismaClient } from '@prisma/client'
 import { prisma } from '@/lib/db'
@@ -44,7 +45,7 @@ export async function workspaceUsage(workspaceId: string, db: Db = prisma, now =
       where: { isActive: true, planLockedAt: null, property: { workspaceId, planLockedAt: null } },
       _sum: { totalRooms: true },
     }),
-    db.workspaceMember.findMany({ where: { workspaceId, planLockedAt: null }, select: { userId: true } }),
+    db.workspaceMember.findMany({ where: { workspaceId, planLockedAt: null, disabledAt: null }, select: { userId: true } }),
     db.invitation.count({ where: { workspaceId, status: 'PENDING', expiresAt: { gt: now } } }),
     db.invoice.count({ where: { property: { workspaceId }, publishedAt: { gte: start, lt: end } } }),
   ])

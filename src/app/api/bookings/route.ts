@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { sendAfterResponse } from '@/lib/email/outbox'
 import { BookingError, createBooking } from '@/lib/bookings/create-booking'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
+import { accessibleProperties, checkPropertyAccess } from '@/lib/auth/access'
 
 const MAX_LIMIT = 100
 
@@ -74,36 +75,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Bộ lọc không hợp lệ' }, { status: 400 })
     }
 
-    // Always restrict to properties in workspaces the user owns or belongs
-    // to. Without this, a call without propertyId returned every property's
+    // Always restrict to the properties whose bookings the user may see.
+    // Without this, a call without propertyId returned every property's
     // bookings. Another tenant's workspaceId just yields an empty list.
     const where: any = {
       property: {
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, planLockedAt: null } } },
-          ],
-        },
+        ...accessibleProperties(session.user.id, 'bookings_view'),
         ...(workspaceId && { workspaceId }),
       },
     }
 
     if (propertyId) {
-      // Check access to property
-      const property = await prisma.property.findFirst({
-        where: {
-          id: propertyId,
-          workspace: {
-            OR: [
-              { ownerId: session.user.id },
-              { members: { some: { userId: session.user.id, planLockedAt: null } } },
-            ],
-          },
-        },
-      })
-
-      if (!property) {
+      const access = await checkPropertyAccess(session.user.id, propertyId, 'bookings_view')
+      if (!access.ok) {
         return NextResponse.json({ success: false, error: 'Không có quyền truy cập' }, { status: 403 })
       }
 
@@ -224,24 +208,10 @@ export async function POST(request: NextRequest) {
 
     const data = validation.data
 
-    // Only members of the property's workspace.
-    const property = await prisma.property.findFirst({
-      where: {
-        id: data.propertyId,
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, planLockedAt: null } } },
-          ],
-        },
-      },
-      select: { id: true, workspaceId: true },
-    })
-
-    if (!property) {
-      return NextResponse.json({ success: false, error: 'Không tìm thấy cơ sở' }, { status: 404 })
-    }
-    const locked = await lockedResponseForProperty(property.id)
+    // Only members who may book at this property; others get its 404.
+    const access = await checkPropertyAccess(session.user.id, data.propertyId, 'bookings_create')
+    if (!access.ok) return access.response
+    const locked = await lockedResponseForProperty(access.property.id)
     if (locked) return locked
 
     const checkIn = new Date(data.checkInDate)

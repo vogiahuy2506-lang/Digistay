@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { requireSession, getWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { requireSession } from '@/lib/auth/rbac'
+import { can, checkAccess } from '@/lib/auth/access'
 import { sendInvoiceEmailFor } from '@/lib/einvoice/delivery'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 /**
  * POST /api/invoices/[id]/email — send the issued invoice to the buyer now
- * (again), PDF attached (src/lib/einvoice/delivery.ts). Staff only.
+ * (again), PDF attached (src/lib/einvoice/delivery.ts). invoices_manage.
  */
 export async function POST(_request: NextRequest, props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params
@@ -17,9 +18,13 @@ export async function POST(_request: NextRequest, props: { params: Promise<{ id:
     where: { id },
     select: { status: true, propertyId: true, property: { select: { workspaceId: true } } },
   })
-  const role = invoice ? await getWorkspaceRole(invoice.property.workspaceId, sess.session.user.id) : null
-  if (!invoice || !role) return NextResponse.json({ success: false, error: 'Không tìm thấy hóa đơn' }, { status: 404 })
-  if (!(WorkspaceRoles.STAFF_AND_UP as readonly string[]).includes(role)) {
+  if (!invoice) return NextResponse.json({ success: false, error: 'Không tìm thấy hóa đơn' }, { status: 404 })
+  const granted = await checkAccess(sess.session.user.id, invoice.property.workspaceId, null, {
+    propertyId: invoice.propertyId,
+    notFound: 'Không tìm thấy hóa đơn',
+  })
+  if (!granted.ok) return granted.response
+  if (!can(granted.access, 'invoices_manage', invoice.propertyId)) {
     return NextResponse.json({ success: false, error: 'Không có quyền gửi hoá đơn' }, { status: 403 })
   }
   const locked = await lockedResponseForProperty(invoice.propertyId)

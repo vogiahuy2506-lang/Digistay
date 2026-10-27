@@ -4,11 +4,11 @@ import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { PaymentMethod, PaymentStatus, type Prisma } from '@prisma/client'
 import { badParam, dayParam, enumParam, pageParams, paginationOf, searchParam } from '@/lib/api/list-params'
-import { WorkspaceRoles } from '@/lib/auth/rbac'
+import { accessibleProperties, checkAccess } from '@/lib/auth/access'
 import { lockBooking, syncBookingPayments, CLOSED_BOOKING_STATUSES } from '@/lib/payments/booking-payments'
 import { PayosError, createPayosLink, newOrderCode } from '@/lib/payments/payos'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
-import { managerWorkspaces, seesMoneyTotals, staffWorkspaces } from './money-access'
+import { seesMoneyTotals } from './money-access'
 
 // PAYOS: a VietQR link from the property's own PayOS account, confirmed
 // automatically by webhook (src/lib/payments/payos.ts).
@@ -27,10 +27,10 @@ class PaymentRequestError extends Error {
 /**
  * GET /api/payments — one page of the caller's payments, newest first.
  * Filters (propertyId, bookingId, status, method, q, startDate/endDate as
- * yyyy-mm-dd) run in the database. Staff only (a USER member does not work
- * payments). `stats` sums the property's (or the booking's) payments by
- * status whatever the other filters; it is null unless the caller may see
- * money totals (owner, ADMIN, MANAGER: money-access.ts).
+ * yyyy-mm-dd) run in the database. Only properties where the caller may
+ * work payments (payments_manage). `stats` sums the property's (or the
+ * booking's) payments by status whatever the other filters; it is null
+ * unless the caller may see money totals (revenue_view: money-access.ts).
  */
 export async function GET(request: NextRequest) {
   try {
@@ -53,18 +53,17 @@ export async function GET(request: NextRequest) {
     const q = searchParam(searchParams)
     const { page, limit, skip } = pageParams(searchParams)
 
-    // Always restrict to properties in workspaces the user owns or works in
-    // as staff. Without this, any account could list every property's
-    // payments. A propertyId/bookingId from another tenant just yields an
-    // empty list.
+    // Always restrict to the properties where the caller works payments.
+    // Without this, any account could list every property's payments. A
+    // propertyId/bookingId they do not reach just yields an empty list.
     const narrow = { ...(propertyId && { propertyId }), ...(bookingId && { bookingId }) }
     const scope: Prisma.PaymentWhereInput = {
-      property: { workspace: staffWorkspaces(session.user.id) },
+      property: accessibleProperties(session.user.id, 'payments_manage'),
       ...narrow,
     }
-    // Totals only over the workspaces the caller manages.
+    // Totals only over the properties whose revenue the caller sees.
     const totalsScope: Prisma.PaymentWhereInput = {
-      property: { workspace: managerWorkspaces(session.user.id) },
+      property: accessibleProperties(session.user.id, 'revenue_view'),
       ...narrow,
     }
     const contains = (value: string) => ({ contains: value, mode: 'insensitive' as const })
@@ -169,18 +168,10 @@ export async function POST(request: NextRequest) {
             city: true,
             subdomain: true,
             payos: { select: { webhookConfirmedAt: true } },
+            workspaceId: true,
             bankAccounts: {
               where: { isActive: true, qrEnabled: true },
               take: 1,
-            },
-            workspace: {
-              select: {
-                ownerId: true,
-                members: {
-                  where: { userId: session.user.id, planLockedAt: null },
-                  select: { role: true },
-                },
-              },
             },
           },
         },
@@ -191,16 +182,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
     }
 
-    // Check access
-    const workspace = booking.property.workspace
-    const isOwner = workspace.ownerId === session.user.id
-    const memberRole = workspace.members[0]?.role
-    const isMember = isOwner || memberRole != null
-    const isStaff =
-      isOwner || (memberRole != null && (WorkspaceRoles.STAFF_AND_UP as readonly string[]).includes(memberRole))
+    // Check access: staff who work payments at this property, or the
+    // booking's own guest.
+    const staffAccess = await checkAccess(session.user.id, booking.property.workspaceId, 'payments_manage', {
+      propertyId: booking.propertyId,
+    })
+    const isStaff = staffAccess.ok
     const isGuest = booking.guestEmail === session.user.email
 
-    if (!isMember && !isGuest) {
+    if (!isStaff && !isGuest) {
       return NextResponse.json({ success: false, error: 'Không có quyền tạo thanh toán' }, { status: 403 })
     }
     const locked = await lockedResponseForProperty(booking.propertyId)

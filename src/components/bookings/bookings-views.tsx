@@ -4,7 +4,7 @@ import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { CalendarDays, LayoutList, Rows3 } from 'lucide-react'
-import { canManageBookings, useWorkspaceRole } from '@/components/layout/workspace-context'
+import { useCan } from '@/components/layout/workspace-context'
 import { cn } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
 
@@ -28,8 +28,8 @@ const VIEWS: { value: BookingsView; icon: typeof LayoutList }[] = [
  * list and of the calendar: one menu entry ("Đặt phòng", nav.ts), three ways
  * to look at the bookings. The list is /bookings, the other two
  * /calendar?view=…; the calendar passes `onCalendarView` to switch in place.
- * The calendar is for staff (it was theirs in the menu): a USER has the list
- * alone, so no switcher.
+ * Whoever sees the bookings (bookings_view) sees all three; nobody else
+ * reaches these pages.
  */
 export function BookingsViews({
   slug,
@@ -45,9 +45,8 @@ export function BookingsViews({
   className?: string
 }) {
   const t = useTranslations('dash.bookings.views')
-  const role = useWorkspaceRole()
   const router = useRouter()
-  const staff = canManageBookings(role)
+  const canView = useCan('bookings_view')
 
   const hrefOf = React.useCallback(
     (view: BookingsView) =>
@@ -56,10 +55,10 @@ export function BookingsViews({
   )
   // The other page is one click away: have it ready.
   React.useEffect(() => {
-    if (staff) router.prefetch(hrefOf(current === 'list' ? 'month' : 'list'))
-  }, [staff, current, hrefOf, router])
+    if (canView) router.prefetch(hrefOf(current === 'list' ? 'month' : 'list'))
+  }, [canView, current, hrefOf, router])
 
-  if (!staff) return null
+  if (!canView) return null
 
   const choose = (view: BookingsView) => {
     if (view === current) return

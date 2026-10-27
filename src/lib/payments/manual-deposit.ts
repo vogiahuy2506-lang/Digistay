@@ -22,6 +22,7 @@
  */
 import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
+import { usersWithPermission } from '@/lib/auth/access'
 import { queueTransferClaimed } from '@/lib/email/outbox'
 import { notifyTransferClaimed } from '@/lib/notifications'
 import { buildVietQr, findBank, isWallet } from '@/lib/vietqr'
@@ -180,14 +181,7 @@ export async function claimTransfer(bookingId: string, now = new Date()): Promis
           select: {
             name: true,
             isActive: true,
-            workspace: {
-              select: {
-                slug: true,
-                owner: { select: { email: true, name: true } },
-                // The front desk, as for the bell (notifications.ts).
-                members: { where: { role: { in: ['ADMIN', 'MANAGER', 'RECEPTIONIST'] } }, select: { user: { select: { email: true, name: true } } } },
-              },
-            },
+            workspace: { select: { slug: true } },
           },
         },
         payments: {
@@ -243,10 +237,12 @@ export async function claimTransfer(bookingId: string, now = new Date()): Promis
       claimedAt: now,
     })
 
-    // The owner and the front desk, each once.
+    // The owner and who works payments at this property, each once.
     const workspace = booking.property.workspace
+    const userIds = await usersWithPermission(tx, booking.propertyId, 'payments_manage')
+    const users = await tx.user.findMany({ where: { id: { in: userIds } }, select: { id: true, email: true, name: true } })
     const people = new Map<string, string | undefined>()
-    for (const person of [workspace.owner, ...workspace.members.map((m) => m.user)]) {
+    for (const person of userIds.map((id) => users.find((u) => u.id === id))) {
       if (person?.email && !people.has(person.email.toLowerCase())) people.set(person.email.toLowerCase(), person.name ?? undefined)
     }
     const site = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXTAUTH_URL ?? 'http://localhost:3000'

@@ -26,7 +26,7 @@
 import { BlockType, Prisma, type SiteVersionKind } from '@prisma/client'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
-import { WorkspaceRoles, getWorkspaceRole } from '@/lib/auth/rbac'
+import { checkPropertyAccess } from '@/lib/auth/access'
 import { prisma } from '@/lib/db'
 
 export const SITE_VERSION_LIMIT = 50
@@ -220,10 +220,9 @@ export async function recordSiteVersion(
 }
 
 /**
- * A version to preview on the hotel's site: only for a signed-in owner,
- * ADMIN or MANAGER of its workspace (who may edit the site), and only one of
- * this site's versions. null otherwise (the page answers 404, giving nothing
- * away).
+ * A version to preview on the hotel's site: only for a signed-in user with
+ * website_manage on it (who may edit the site), and only one of this site's
+ * versions. null otherwise (the page answers 404, giving nothing away).
  */
 export async function loadSiteVersionPreview(subdomain: string, versionId: string) {
   const userId = (await auth())?.user?.id
@@ -233,8 +232,7 @@ export async function loadSiteVersionPreview(subdomain: string, versionId: strin
     select: { id: true, type: true, workspaceId: true, workspace: { select: { slug: true } } },
   })
   if (!property) return null
-  const role = await getWorkspaceRole(property.workspaceId, userId)
-  if (!role || !(WorkspaceRoles.ADMINS_AND_MANAGERS as readonly string[]).includes(role)) return null
+  if (!(await checkPropertyAccess(userId, property.id, 'website_manage')).ok) return null
   const version = await prisma.siteVersion.findFirst({ where: { id: versionId, propertyId: property.id } })
   if (!version) return null
   const author = version.createdById

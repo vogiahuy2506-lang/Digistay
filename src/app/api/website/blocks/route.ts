@@ -5,7 +5,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { invalidatePublicSite, loadSiteProps } from '@/lib/public-site/site'
 import { keepSiteBaseline, recordSiteVersion } from '@/lib/public-site/versions'
-import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { NO_PERMISSION, accessibleProperties, can, checkPropertyAccess } from '@/lib/auth/access'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 export async function GET(request: NextRequest) {
@@ -24,15 +24,7 @@ export async function GET(request: NextRequest) {
 
     // Check property access
     const property = await prisma.property.findFirst({
-      where: {
-        id: propertyId,
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, planLockedAt: null } } },
-          ],
-        },
-      },
+      where: { id: propertyId, ...accessibleProperties(session.user.id) },
     })
 
     if (!property) {
@@ -121,27 +113,17 @@ export async function PUT(request: NextRequest) {
     const { blocks } = validation.data
 
     // Check property access
-    const property = await prisma.property.findFirst({
-      where: {
-        id: validation.data.propertyId,
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, planLockedAt: null } } },
-          ],
-        },
-      },
-      select: { id: true, workspaceId: true },
-    })
-
-    if (!property) {
+    const granted = await checkPropertyAccess(session.user.id, validation.data.propertyId, null)
+    if (!granted.ok) {
       return NextResponse.json({ success: false, error: 'Không có quyền chỉnh sửa' }, { status: 403 })
     }
-    // Owners, ADMIN and MANAGER edit the site, like the custom domain and SSL
-    // routes and the sidebar (receptionists and USER never see the builder).
-    // Publishing decides whether guests see the site and can book.
-    const access = await requireWorkspaceRole(property.workspaceId, WorkspaceRoles.ADMINS_AND_MANAGERS)
-    if (!access.ok) return access.response
+    // Who has website_manage edits the site, like the custom domain and SSL
+    // routes and the sidebar. Publishing decides whether guests see the site
+    // and can book.
+    const property = granted.property
+    if (!can(granted.access, 'website_manage', property.id)) {
+      return NextResponse.json({ success: false, error: NO_PERMISSION }, { status: 403 })
+    }
     const locked = await lockedResponseForProperty(property.id)
     if (locked) return locked
 

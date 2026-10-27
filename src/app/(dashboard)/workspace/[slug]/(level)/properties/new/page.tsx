@@ -11,6 +11,8 @@ import { routes } from '@/lib/utils/routes'
 import { apiError } from '@/lib/i18n/api-errors'
 import { finishSlugInput, onNameTyped, onSlugTyped } from '@/app/(dashboard)/workspaces/slug-input'
 import { ProvinceWardFields } from '@/components/address/province-ward-fields'
+import { NoAccess } from '@/components/payment/no-access'
+import { useCan } from '@/components/layout/workspace-context'
 
 /** createPropertySchema's limit for a subdomain. */
 const SUBDOMAIN_MAX = 50
@@ -24,6 +26,7 @@ export default function NewPropertyPage() {
   const tw = useTranslations('dash.workspace')
   const propertyTypes = PROPERTY_TYPES.map((value) => ({ value, label: t(`types.${value}`) }))
   const { workspace, loading: wsLoading } = useWorkspace()
+  const allowed = useCan('properties_create')
   const [isCreating, setIsCreating] = React.useState(false)
   const [error, setError] = React.useState('')
   // The subdomain follows the name until it is typed by hand.
@@ -85,6 +88,7 @@ export default function NewPropertyPage() {
     }
   }
 
+  if (!allowed) return <NoAccess title={t('new.title')} inPage />
   if (wsLoading) {
     return <Loading className="py-24" />
   }

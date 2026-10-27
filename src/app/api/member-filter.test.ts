@@ -1,10 +1,11 @@
 /**
  * A member locked because the workspace is over its plan's staff limit
- * (WorkspaceMember.planLockedAt, src/lib/billing/overage.ts) has no access
- * to the workspace. rbac.ts handles it; code that checks membership in its
- * own query must add `planLockedAt: null` next to the userId, or the
- * locked member still gets in. This reads the source, like
- * route-policy.test.ts, so a new query that forgets fails here.
+ * (WorkspaceMember.planLockedAt, src/lib/billing/overage.ts) or by an admin
+ * (disabledAt) has no access to the workspace. src/lib/auth/access.ts
+ * handles it; code that checks membership in its own query must add
+ * `planLockedAt: null, disabledAt: null` next to the userId, or the locked
+ * member still gets in. This reads the source, like route-policy.test.ts,
+ * so a new query that forgets fails here.
  */
 import { describe, it, expect } from 'vitest'
 import { readdirSync, readFileSync, statSync } from 'fs'
@@ -15,7 +16,7 @@ const SRC = path.join(process.cwd(), 'src')
 /** Files that read locked memberships on purpose. */
 const EXEMPT: Record<string, string> = {
   'src/app/api/workspaces/route.ts': 'lists the workspaces where the caller is locked, to say so',
-  'src/lib/auth/rbac.ts': 'getWorkspaceRoleBySlug reads planLockedAt to tell a locked member apart',
+  'src/lib/auth/access.ts': 'the access checks themselves (they do filter both locks)',
 }
 
 function files(dir: string): string[] {
@@ -30,19 +31,19 @@ function files(dir: string): string[] {
 const MEMBER_FILTER = /members:\s*\{\s*(?:some|where):\s*\{([^{}\n]*(?:\{[^{}\n]*\}[^{}\n]*)*)\}/g
 
 describe('membership checks', () => {
-  it('leave out members locked for being over the plan', () => {
+  it('leave out members locked for being over the plan or by an admin', () => {
     const missing: string[] = []
     for (const file of files(SRC)) {
       const rel = path.relative(process.cwd(), file).split(path.sep).join('/')
       if (EXEMPT[rel]) continue
       const source = readFileSync(file, 'utf8')
       for (const m of source.matchAll(MEMBER_FILTER)) {
-        if (/\buserId\b/.test(m[1]) && !m[1].includes('planLockedAt')) {
+        if (/\buserId\b/.test(m[1]) && !(m[1].includes('planLockedAt') && m[1].includes('disabledAt'))) {
           missing.push(`${rel}:${source.slice(0, m.index).split('\n').length}`)
         }
       }
     }
-    expect(missing, 'add planLockedAt: null to the membership condition (or list the file in EXEMPT with a reason)').toEqual([])
+    expect(missing, 'add planLockedAt: null, disabledAt: null to the membership condition (or list the file in EXEMPT with a reason)').toEqual([])
   })
 
   it('every exemption still exists', () => {

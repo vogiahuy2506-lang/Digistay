@@ -5,19 +5,12 @@ import { createRoomTypeSchema, updateRoomTypeSchema } from '@/lib/validations'
 import { generateSlug } from '@/lib/utils'
 import { invalidatePublicSite } from '@/lib/public-site/site'
 import { planResponseForProperty } from '@/lib/billing/guard'
+import { accessibleProperties } from '@/lib/auth/access'
 
-// Check if user has admin access to property's workspace
-async function checkPropertyAdmin(propertyId: string, userId: string) {
+// The property, if the caller may manage its room types there
+async function roomTypesProperty(propertyId: string, userId: string) {
   const property = await prisma.property.findFirst({
-    where: {
-      id: propertyId,
-      workspace: {
-        OR: [
-          { ownerId: userId },
-          { members: { some: { userId, role: 'ADMIN', planLockedAt: null } } },
-        ],
-      },
-    },
+    where: { id: propertyId, ...accessibleProperties(userId, 'room_types_manage') },
     select: {
       id: true,
       workspaceId: true,
@@ -44,15 +37,7 @@ export async function GET(
     }
 
     const property = await prisma.property.findFirst({
-      where: {
-        id,
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, planLockedAt: null } } },
-          ],
-        },
-      },
+      where: { id, ...accessibleProperties(session.user.id) },
       select: { id: true },
     })
 
@@ -110,7 +95,7 @@ export async function POST(
       )
     }
 
-    const property = await checkPropertyAdmin(id, session.user.id)
+    const property = await roomTypesProperty(id, session.user.id)
     if (!property) {
       return NextResponse.json(
         { success: false, error: 'Bạn không có quyền tạo hạng phòng' },

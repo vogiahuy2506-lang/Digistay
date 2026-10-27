@@ -2,7 +2,7 @@
  * Route helpers for workspace + property-scoped URLs.
  *
  * New URL structure:
- *   /workspace-picker/[slug]                       → workspace home (list properties)
+ *   /workspace/[slug]                              → workspace home (list properties)
  *   /workspace/[slug]/properties                   → list properties
  *   /workspace/[slug]/properties/new               → create property
  *   /workspace/[slug]/properties/[id]              → property detail (manage)

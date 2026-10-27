@@ -1,0 +1,226 @@
+{
+  "title": "Thành viên",
+  "lead": "Mời nhân viên, chọn họ được làm gì và làm ở cơ sở nào.",
+  "invite": "Mời nhân viên",
+  "seats": "Đã dùng {used}/{limit} tài khoản nhân viên của gói",
+  "seatsFull": "Đã dùng hết số nhân viên của gói. Nâng cấp gói để mời thêm.",
+  "upgrade": "Nâng cấp gói",
+  "tabs": {
+    "members": "Thành viên",
+    "invitations": "Lời mời",
+    "activity": "Nhật ký"
+  },
+  "owner": "Chủ sở hữu",
+  "ownerAccess": "Toàn quyền, mọi cơ sở",
+  "you": "Bạn",
+  "noName": "Chưa đặt tên",
+  "custom": "Tuỳ chỉnh",
+  "allProperties": "Tất cả cơ sở",
+  "someProperties": "{count, plural, other {# cơ sở}}",
+  "noProperty": "Chưa có cơ sở nào",
+  "permissionCount": "{count}/{total} quyền",
+  "columns": {
+    "person": "Người",
+    "role": "Vai trò",
+    "properties": "Cơ sở",
+    "status": "Trạng thái"
+  },
+  "status": {
+    "active": "Đang làm",
+    "disabled": "Đã khoá",
+    "planLocked": "Khoá do vượt gói"
+  },
+  "planLockedNote": "Không vào được workspace vì vượt số nhân viên của gói.",
+  "disabledNote": "Khoá từ {date}",
+  "joined": "Tham gia {date}",
+  "actions": {
+    "edit": "Phân quyền",
+    "lock": "Khoá tài khoản",
+    "unlock": "Mở khoá",
+    "remove": "Xoá khỏi workspace",
+    "menu": "Thao tác với {name}"
+  },
+  "empty": {
+    "title": "Chưa có nhân viên nào",
+    "text": "Mời lễ tân, quản lý… qua email. Họ nhận một đường link để vào workspace, chưa có tài khoản cũng được.",
+    "action": "Mời nhân viên đầu tiên"
+  },
+  "confirmRemove": {
+    "title": "Xoá {name} khỏi workspace?",
+    "text": "Họ mất quyền vào workspace ngay. Muốn quay lại, họ cần được mời lại. Nhật ký thao tác vẫn giữ nguyên.",
+    "confirm": "Xoá thành viên"
+  },
+  "confirmLock": {
+    "title": "Khoá {name}?",
+    "text": "Họ không vào được workspace cho đến khi bạn mở khoá, và không tính vào số nhân viên của gói. Quyền và dữ liệu của họ giữ nguyên.",
+    "confirm": "Khoá tài khoản"
+  },
+  "toast": {
+    "updated": "Đã lưu quyền của {name}",
+    "locked": "Đã khoá {name}",
+    "unlocked": "Đã mở khoá {name}",
+    "removed": "Đã xoá {name} khỏi workspace",
+    "invited": "Đã gửi lời mời đến {email}",
+    "resent": "Đã gửi lại lời mời đến {email}",
+    "revoked": "Đã huỷ lời mời gửi {email}",
+    "failed": "Không thực hiện được"
+  },
+  "invitations": {
+    "empty": "Chưa gửi lời mời nào.",
+    "status": {
+      "PENDING": "Đang chờ",
+      "ACCEPTED": "Đã tham gia",
+      "DECLINED": "Đã từ chối",
+      "EXPIRED": "Hết hạn",
+      "REVOKED": "Đã huỷ"
+    },
+    "sent": "{name} mời · {date}",
+    "expires": "Hạn đến {date}",
+    "resend": "Gửi lại",
+    "revoke": "Huỷ lời mời",
+    "confirmRevoke": {
+      "title": "Huỷ lời mời gửi {email}?",
+      "text": "Đường link trong email sẽ không dùng được nữa. Bạn có thể mời lại sau.",
+      "confirm": "Huỷ lời mời"
+    }
+  },
+  "activity": {
+    "empty": "Chưa có thao tác nào với thành viên.",
+    "someone": "Ai đó",
+    "MEMBER_INVITED": "<b>{actor}</b> mời <b>{subject}</b>",
+    "INVITE_RESENT": "<b>{actor}</b> gửi lại lời mời cho <b>{subject}</b>",
+    "INVITE_REVOKED": "<b>{actor}</b> huỷ lời mời gửi <b>{subject}</b>",
+    "INVITE_ACCEPTED": "<b>{subject}</b> nhận lời mời và tham gia workspace",
+    "INVITE_DECLINED": "<b>{subject}</b> từ chối lời mời",
+    "MEMBER_UPDATED": "<b>{actor}</b> đổi quyền của <b>{subject}</b>",
+    "MEMBER_LOCKED": "<b>{actor}</b> khoá <b>{subject}</b>",
+    "MEMBER_UNLOCKED": "<b>{actor}</b> mở khoá <b>{subject}</b>",
+    "MEMBER_REMOVED": "<b>{actor}</b> xoá <b>{subject}</b> khỏi workspace",
+    "MEMBER_LEFT": "<b>{subject}</b> rời workspace",
+    "role": "Vai trò: {from} → {to}",
+    "added": "Thêm: {list}",
+    "removed": "Bớt: {list}",
+    "properties": "Cơ sở: {from} → {to}",
+    "all": "tất cả"
+  },
+  "editor": {
+    "inviteTitle": "Mời nhân viên",
+    "editTitle": "Phân quyền: {name}",
+    "email": "Email",
+    "emailPlaceholder": "nhanvien@khachsan.vn",
+    "emailHint": "Chưa có tài khoản Digistay cũng được: họ bấm link trong email, đặt mật khẩu là vào.",
+    "role": "Vai trò",
+    "roleHint": "Mỗi vai trò có sẵn một bộ quyền. Tick thêm hoặc bớt bên dưới nếu cần.",
+    "permissions": "Được làm gì",
+    "presetNote": "Đang dùng bộ quyền của vai trò {role}.",
+    "customNote": "Bộ quyền riêng của người này (đã chỉnh từ {role}).",
+    "resetPreset": "Dùng lại bộ quyền của {role}",
+    "notYours": "Bạn không có quyền này nên không cấp được",
+    "requires": "Cần có “{perm}”",
+    "properties": "Làm ở cơ sở nào",
+    "propertiesAll": "Tất cả cơ sở, kể cả cơ sở tạo sau này",
+    "propertiesSome": "Chỉ những cơ sở được chọn",
+    "propertiesNote": "Các quyền của nhóm Workspace không phụ thuộc cơ sở.",
+    "noPermissions": "Người này chưa có quyền nào: vào được workspace nhưng không làm được gì.",
+    "pickProperty": "Chọn ít nhất một cơ sở.",
+    "send": "Gửi lời mời",
+    "save": "Lưu quyền",
+    "cancel": "Huỷ"
+  },
+  "groups": {
+    "bookings": "Đặt phòng & lễ tân",
+    "money": "Thu tiền & hoá đơn",
+    "property": "Thiết lập cơ sở",
+    "workspace": "Workspace"
+  },
+  "perm": {
+    "bookings_view": {
+      "label": "Xem đặt phòng",
+      "hint": "Danh sách, lịch tháng, sơ đồ phòng"
+    },
+    "bookings_create": {
+      "label": "Tạo đặt phòng",
+      "hint": "Khách tại quầy, qua điện thoại"
+    },
+    "bookings_edit": {
+      "label": "Xử lý đặt phòng",
+      "hint": "Sửa, nhận phòng, trả phòng, gia hạn, đổi phòng"
+    },
+    "bookings_cancel": {
+      "label": "Huỷ đặt phòng",
+      "hint": "Kể cả hoàn tiền cọc"
+    },
+    "bookings_delete": {
+      "label": "Xoá đặt phòng",
+      "hint": "Xoá hẳn khỏi hệ thống"
+    },
+    "rooms_status": {
+      "label": "Báo phòng bảo trì",
+      "hint": "Tạm khoá / mở lại phòng"
+    },
+    "payments_manage": {
+      "label": "Thu tiền",
+      "hint": "Ghi nhận và xác nhận thanh toán, chuyển khoản"
+    },
+    "invoices_manage": {
+      "label": "Hoá đơn điện tử",
+      "hint": "Lập, phát hành, điều chỉnh, gửi hoá đơn"
+    },
+    "cashbook_view": {
+      "label": "Sổ quỹ",
+      "hint": "Thu chi trong ngày"
+    },
+    "revenue_view": {
+      "label": "Xem doanh thu",
+      "hint": "Báo cáo và các số tổng tiền"
+    },
+    "rooms_manage": {
+      "label": "Quản lý phòng",
+      "hint": "Thêm, sửa, xoá phòng"
+    },
+    "room_types_manage": {
+      "label": "Hạng phòng & giá",
+      "hint": "Hạng phòng, ảnh phòng, bảng giá"
+    },
+    "services_manage": {
+      "label": "Dịch vụ & thực đơn",
+      "hint": "Dịch vụ thêm, món ăn, đồ uống"
+    },
+    "property_edit": {
+      "label": "Thông tin cơ sở",
+      "hint": "Tên, địa chỉ, ảnh, tiện nghi, chính sách"
+    },
+    "website_manage": {
+      "label": "Website",
+      "hint": "Thiết kế, xuất bản, tên miền"
+    },
+    "payment_settings": {
+      "label": "Cài đặt nhận tiền",
+      "hint": "Ngân hàng, PayOS, hoá đơn điện tử, đặt cọc"
+    },
+    "properties_create": {
+      "label": "Tạo cơ sở mới",
+      "hint": "Mở thêm khách sạn, homestay"
+    },
+    "members_manage": {
+      "label": "Quản lý nhân viên",
+      "hint": "Mời, phân quyền, khoá, xoá"
+    },
+    "billing_manage": {
+      "label": "Gói & thanh toán",
+      "hint": "Mua, gia hạn, đổi gói"
+    },
+    "workspace_settings": {
+      "label": "Cài đặt workspace",
+      "hint": "Tên, logo, thông báo"
+    }
+  },
+  "roleHints": {
+    "ADMIN": "Mọi quyền, trừ xoá workspace",
+    "MANAGER": "Vận hành khách sạn, không đụng gói và cài đặt",
+    "RECEPTIONIST": "Đặt phòng, thu tiền, hoá đơn, sổ quỹ",
+    "USER": "Xem và tạo đặt phòng"
+  },
+  "planLockedShort": "Vượt số nhân viên của gói",
+  "disabledHint": "Không vào được workspace và không tính vào số nhân viên của gói cho tới khi mở khoá."
+}

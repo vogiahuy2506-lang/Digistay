@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { NO_PERMISSION, can, checkPropertyAccess } from '@/lib/auth/access'
 import { SITE_VERSION_LIMIT } from '@/lib/public-site/versions'
 
 /**
@@ -21,21 +21,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Thiếu propertyId' }, { status: 400 })
     }
 
-    const property = await prisma.property.findFirst({
-      where: {
-        id: propertyId,
-        workspace: {
-          OR: [{ ownerId: session.user.id }, { members: { some: { userId: session.user.id, planLockedAt: null } } }],
-        },
-      },
-      select: { id: true, workspaceId: true },
-    })
-    if (!property) {
+    const access = await checkPropertyAccess(session.user.id, propertyId, null)
+    if (!access.ok) {
       return NextResponse.json({ success: false, error: 'Không có quyền truy cập' }, { status: 403 })
     }
-    // The same people as the builder's save: owners, ADMIN and MANAGER.
-    const access = await requireWorkspaceRole(property.workspaceId, WorkspaceRoles.ADMINS_AND_MANAGERS)
-    if (!access.ok) return access.response
+    // The same people as the builder's save: website_manage.
+    const property = access.property
+    if (!can(access.access, 'website_manage', property.id)) {
+      return NextResponse.json({ success: false, error: NO_PERMISSION }, { status: 403 })
+    }
 
     const versions = await prisma.siteVersion.findMany({
       where: { propertyId: property.id },

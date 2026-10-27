@@ -1,8 +1,8 @@
 /**
  * Who sees a hotel's site (src/lib/public-site/visibility.ts) against real
  * Postgres: guests only once it is published; before that only signed-in
- * members of its workspace, as a preview. The site's pages and
- * GET /api/properties/public follow the same rule.
+ * members of its workspace who work at that hotel, as a preview. The site's
+ * pages and GET /api/properties/public follow the same rule.
  */
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest'
 import { NextRequest } from 'next/server'
@@ -11,7 +11,7 @@ const session = vi.hoisted(() => ({ current: null as unknown }))
 vi.mock('@/lib/auth', () => ({ auth: vi.fn(async () => session.current) }))
 
 import { prisma } from '@/lib/db'
-import { createTenant, createUser, publishSite, resetDatabase } from '@/test/integration/fixtures'
+import { addMemberProperty, createProperty, createTenant, createUser, publishSite, resetDatabase } from '@/test/integration/fixtures'
 import { loadVisibleSite } from './visibility'
 import { GET as publicProperty } from '@/app/api/properties/public/route'
 
@@ -44,6 +44,25 @@ describe('hotel site visibility', () => {
       expect(await loadVisibleSite(sub)).toEqual({ propertyId: property.id, preview: true })
       expect(await apiStatus(sub)).toBe(200)
     }
+  })
+
+  it('a member limited to some hotels previews only theirs', async () => {
+    const { workspace, property, member } = await createTenant({ memberRole: 'MANAGER', memberLimited: true })
+    const other = await createProperty(workspace.id)
+    await addMemberProperty(workspace.id, member!.id, other.id)
+    signInAs(member!)
+
+    expect(await loadVisibleSite(property.subdomain!)).toBeNull()
+    expect(await apiStatus(property.subdomain!)).toBe(404)
+    expect(await loadVisibleSite(other.subdomain!)).toEqual({ propertyId: other.id, preview: true })
+    expect(await apiStatus(other.subdomain!)).toBe(200)
+
+    // Locked by an admin: no preview at all.
+    await prisma.workspaceMember.update({
+      where: { workspaceId_userId: { workspaceId: workspace.id, userId: member!.id } },
+      data: { disabledAt: new Date() },
+    })
+    expect(await loadVisibleSite(other.subdomain!)).toBeNull()
   })
 
   it('a published site is public; unpublishing or deactivating hides it at once', async () => {

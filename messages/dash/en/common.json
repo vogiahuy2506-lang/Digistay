@@ -63,7 +63,8 @@
     "other": "Notification"
   },
   "roles": {
-    "ADMIN": "Owner",
+    "OWNER": "Owner",
+    "ADMIN": "Admin",
     "MANAGER": "Manager",
     "RECEPTIONIST": "Front desk",
     "USER": "Staff"

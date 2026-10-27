@@ -4,19 +4,12 @@ import { auth } from '@/lib/auth'
 import { createPricingSchema, updatePricingSchema } from '@/lib/validations'
 import { invalidatePublicSite } from '@/lib/public-site/site'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
+import { accessibleProperties } from '@/lib/auth/access'
 
-// Check if user has admin access to property's workspace
-async function checkPropertyAdmin(propertyId: string, userId: string) {
+// The property, if the caller may manage its room types and prices there
+async function propertyForPricing(propertyId: string, userId: string) {
   const property = await prisma.property.findFirst({
-    where: {
-      id: propertyId,
-      workspace: {
-        OR: [
-          { ownerId: userId },
-          { members: { some: { userId, role: 'ADMIN', planLockedAt: null } } },
-        ],
-      },
-    },
+    where: { id: propertyId, ...accessibleProperties(userId, 'room_types_manage') },
     select: {
       id: true,
       workspaceId: true,
@@ -43,15 +36,7 @@ export async function GET(
     }
 
     const property = await prisma.property.findFirst({
-      where: {
-        id,
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, planLockedAt: null } } },
-          ],
-        },
-      },
+      where: { id, ...accessibleProperties(session.user.id) },
       select: { id: true },
     })
 
@@ -96,7 +81,7 @@ export async function POST(
       )
     }
 
-    const property = await checkPropertyAdmin(id, session.user.id)
+    const property = await propertyForPricing(id, session.user.id)
     if (!property) {
       return NextResponse.json(
         { success: false, error: 'Bạn không có quyền tạo bảng giá' },
@@ -182,14 +167,7 @@ export async function PATCH(
       where: {
         id: pricingId,
         propertyId: id,
-        property: {
-          workspace: {
-            OR: [
-              { ownerId: session.user.id },
-              { members: { some: { userId: session.user.id, role: 'ADMIN', planLockedAt: null } } },
-            ],
-          },
-        },
+        property: accessibleProperties(session.user.id, 'room_types_manage'),
       },
       include: {
         property: {
@@ -281,14 +259,7 @@ export async function DELETE(
       where: {
         id: pricingId,
         propertyId: id,
-        property: {
-          workspace: {
-            OR: [
-              { ownerId: session.user.id },
-              { members: { some: { userId: session.user.id, role: 'ADMIN', planLockedAt: null } } },
-            ],
-          },
-        },
+        property: accessibleProperties(session.user.id, 'room_types_manage'),
       },
       include: {
         property: {

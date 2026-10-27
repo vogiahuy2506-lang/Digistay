@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { requireAccess } from '@/lib/auth/access'
 import { getSubscriptionInvoicePdf, platformEinvoiceConfigured } from '@/lib/billing/einvoice'
 import { MatbaoError } from '@/lib/einvoice/matbao-client'
 
@@ -11,7 +11,7 @@ import { MatbaoError } from '@/lib/einvoice/matbao-client'
  */
 export async function GET(_request: NextRequest, props: { params: Promise<{ id: string; paymentId: string }> }) {
   const { id, paymentId } = await props.params
-  const access = await requireWorkspaceRole(id, WorkspaceRoles.ADMINS)
+  const access = await requireAccess(id, 'billing_manage')
   if (!access.ok) return access.response
 
   const invoice = await prisma.subscriptionInvoice.findFirst({ where: { paymentId, workspaceId: id } })

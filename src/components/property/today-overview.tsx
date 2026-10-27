@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { Bed, BedDouble, Bell, CheckCircle, Clock, DoorOpen, ListChecks, PieChart, Receipt, Users, type LucideIcon } from 'lucide-react'
 import { Button, PaymentStatusBadge } from '@/components/ui'
-import { useWorkspaceRole } from '@/components/layout/workspace-context'
+import { useCan } from '@/components/layout/workspace-context'
 import {
   arrivalsOn,
   departuresOn,
@@ -49,7 +49,7 @@ export function TodayOverview({ slug, propertyId }: { slug: string; propertyId: 
   const t = useTranslations('dash.property.today')
   const tc = useTranslations('dash.common')
   const labels = useDashLabels()
-  const role = useWorkspaceRole()
+  const seesRevenue = useCan('revenue_view')
   const intlLocale = labels.locale === 'en' ? 'en-GB' : 'vi-VN'
   const headingId = React.useId()
 
@@ -101,9 +101,9 @@ export function TodayOverview({ slug, propertyId }: { slug: string; propertyId: 
       monthBookings: monthArrivals(bookings, today.getFullYear(), today.getMonth()),
       tonight: nightOccupancy(bookings, today),
       // Owner and managers (reports are theirs, nav.ts), and only when the API sent the amounts.
-      showRevenue: (role === 'ADMIN' || role === 'MANAGER') && bookings.every((b) => typeof b.totalAmount === 'number'),
+      showRevenue: seesRevenue && bookings.every((b) => typeof b.totalAmount === 'number'),
     }
-  }, [data, role])
+  }, [data, seesRevenue])
 
   return (
     <section aria-labelledby={headingId} aria-busy={!figures && !failed} className="mb-6">

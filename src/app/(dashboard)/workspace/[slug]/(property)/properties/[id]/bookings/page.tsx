@@ -32,7 +32,7 @@ import {
 } from '@/components/ui'
 import { BookingActions, BookingDetailContent, useBooking } from '@/components/bookings/booking-detail'
 import { BookingsViews } from '@/components/bookings/bookings-views'
-import { canManageBookings, useWorkspaceRole } from '@/components/layout/workspace-context'
+import { useCan } from '@/components/layout/workspace-context'
 import { paymentStatusMeta } from '@/lib/booking-status'
 import { bookingSources, nightsBetween } from '@/lib/bookings/display'
 import { useDashLabels } from '@/lib/i18n/dash'
@@ -111,7 +111,7 @@ export default function BookingsPage() {
   const router = useRouter()
   const params = useParams<{ slug: string; id: string }>()
   const propertyId = params.id
-  const role = useWorkspaceRole()
+  const canCreate = useCan('bookings_create')
   const t = useTranslations('dash.bookings')
   const tc = useTranslations('dash.common')
   const labels = useDashLabels()
@@ -186,7 +186,7 @@ export default function BookingsPage() {
         eyebrow={labels.longDate(new Date())}
         title={tc('nav.bookings')}
         actions={
-          canManageBookings(role) && (
+          canCreate && (
             <Button onClick={() => router.push(newBookingHref)}>
               <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />
               {t('list.create')}
@@ -262,7 +262,7 @@ export default function BookingsPage() {
           ) : (
             <>
               <p className="text-body text-fg">{t('list.empty')}</p>
-              {canManageBookings(role) && (
+              {canCreate && (
                 <Button className="mt-4" onClick={() => router.push(newBookingHref)}>
                   {t('list.createFirst')}
                 </Button>

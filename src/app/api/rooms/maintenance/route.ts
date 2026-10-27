@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { lockRoomType, roomsTaken } from '@/lib/bookings/occupancy'
 import { roomConflictMessage, roomTakenBy } from '@/lib/bookings/rooms'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
+import { can, checkPropertyAccess } from '@/lib/auth/access'
 
 const maintenanceSchema = z.object({
   propertyId: z.string(),
@@ -37,19 +38,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Check access
-    const property = await prisma.property.findFirst({
-      where: {
-        id: propertyId,
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, planLockedAt: null } } },
-          ],
-        },
-      },
-    })
-
-    if (!property) {
+    const access = await checkPropertyAccess(session.user.id, propertyId, 'bookings_view')
+    if (!access.ok) {
       return NextResponse.json({ success: false, error: 'Không có quyền truy cập' }, { status: 403 })
     }
 
@@ -115,21 +105,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Check access
-    const property = await prisma.property.findFirst({
-      where: {
-        id: propertyId,
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, planLockedAt: null } } },
-          ],
-        },
-      },
-    })
-
-    if (!property) {
+    const access = await checkPropertyAccess(session.user.id, propertyId, 'rooms_status')
+    if (!access.ok) {
       return NextResponse.json({ success: false, error: 'Không có quyền truy cập' }, { status: 403 })
     }
+    const property = access.property
     const locked = await lockedResponseForProperty(property.id)
     if (locked) return locked
 
@@ -246,37 +226,14 @@ export async function DELETE(request: NextRequest) {
     // Check access via the lock's own property (its room type's property can
     // differ on rows written before room types were checked), and only for
     // maintenance blocks: holds and booked nights are not deleted here.
-    const lock = await prisma.roomLock.findFirst({
-      where: { id: lockId, type: 'MAINTENANCE' },
-      include: {
-        property: {
-          select: {
-            id: true,
-            workspace: {
-              select: {
-                ownerId: true,
-                members: {
-                  where: { userId: session.user.id, planLockedAt: null },
-                  select: { role: true },
-                },
-              },
-            },
-          },
-        },
-      },
-    })
-
-    const workspace = lock?.property.workspace
-    if (!lock || !workspace || (workspace.ownerId !== session.user.id && workspace.members.length === 0)) {
+    const lock = await prisma.roomLock.findFirst({ where: { id: lockId, type: 'MAINTENANCE' } })
+    if (!lock) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy lịch bảo trì' }, { status: 404 })
     }
+    const access = await checkPropertyAccess(session.user.id, lock.propertyId, null, 'Không tìm thấy lịch bảo trì')
+    if (!access.ok) return access.response
 
-    const isOwner = workspace.ownerId === session.user.id
-    const isStaff = workspace.members.some(m =>
-      ['ADMIN', 'MANAGER', 'RECEPTIONIST'].includes(m.role)
-    )
-
-    if (!isOwner && !isStaff) {
+    if (!can(access.access, 'rooms_status', lock.propertyId)) {
       return NextResponse.json({ success: false, error: 'Không có quyền xóa lịch bảo trì' }, { status: 403 })
     }
     const locked = await lockedResponseForProperty(lock.propertyId)

@@ -1,6 +1,6 @@
 /**
  * /api/payments
- * - GET must always be scoped to the caller's workspaces.
+ * - GET must always be scoped to the caller's properties (payments_manage).
  * - POST: guests cannot create CASH (CASH confirms money on creation); the
  *   amount is checked against what is still owed, inside a transaction
  *   with the booking row locked.
@@ -26,7 +26,9 @@ vi.mock('@/lib/db', () => ({
     // GET pages and counts in the database (src/lib/api/list-params.ts).
     payment: { findMany: vi.fn(), count: vi.fn(async () => 0), groupBy: vi.fn(async () => []) },
     // money-access.ts: may the caller see the totals?
-    workspace: { count: vi.fn(async () => 1) },
+    property: { count: vi.fn(async () => 1) },
+    // access.ts: the caller's membership of the booking's workspace.
+    workspace: { findUnique: vi.fn() },
     booking: { findUnique: vi.fn() },
     $transaction: vi.fn(),
   },
@@ -34,22 +36,21 @@ vi.mock('@/lib/db', () => ({
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { accessibleProperties } from '@/lib/auth/access'
 import { GET, POST } from './route'
 
 const mockAuth = auth as unknown as ReturnType<typeof vi.fn>
 const mockPrisma = prisma as unknown as {
   payment: { findMany: ReturnType<typeof vi.fn>; groupBy: ReturnType<typeof vi.fn> }
-  workspace: { count: ReturnType<typeof vi.fn> }
+  property: { count: ReturnType<typeof vi.fn> }
+  workspace: { findUnique: ReturnType<typeof vi.fn> }
   booking: { findUnique: ReturnType<typeof vi.fn> }
   $transaction: ReturnType<typeof vi.fn>
 }
 
-const workspacesOf = (userId: string, roles: string[]) => ({
-  OR: [{ ownerId: userId }, { members: { some: { userId, role: { in: roles }, planLockedAt: null } } }],
-})
-/** Staff of the workspace list payments; a USER member does not. */
+/** Who may work payments (payments_manage) lists them; a USER member does not. */
 const accessFilter = (userId: string) => ({
-  property: { workspace: workspacesOf(userId, ['ADMIN', 'MANAGER', 'RECEPTIONIST']) },
+  property: accessibleProperties(userId, 'payments_manage'),
 })
 
 function get(query = '') {
@@ -66,8 +67,14 @@ function post(body: Record<string, unknown>) {
   )
 }
 
-/** Booking bk-1 in ws-1 (owner: owner-1), guest guest@example.com. */
+/** Booking bk-1 in ws-1 (owner: owner-1), guest guest@example.com; the caller a member with `memberRole` (null: none). */
 function bookingSeenBy(memberRole: string | null) {
+  mockPrisma.workspace.findUnique.mockResolvedValue({
+    ownerId: 'owner-1',
+    members: memberRole
+      ? [{ role: memberRole, permissions: [], customPermissions: false, allProperties: true, properties: [] }]
+      : [],
+  })
   return {
     id: 'bk-1',
     bookingCode: 'DSABC123',
@@ -78,11 +85,8 @@ function bookingSeenBy(memberRole: string | null) {
       id: 'prop-1',
       name: 'Hotel A',
       city: 'Da Lat',
+      workspaceId: 'ws-1',
       bankAccounts: [],
-      workspace: {
-        ownerId: 'owner-1',
-        members: memberRole ? [{ role: memberRole }] : [],
-      },
     },
   }
 }
@@ -124,23 +128,22 @@ describe('GET /api/payments', () => {
     })
   })
 
-  it('sums the cards over the workspaces the caller manages only', async () => {
+  it('sums the cards over the properties whose revenue the caller sees only', async () => {
     mockAuth.mockResolvedValueOnce({ user: { id: 'user-1' } })
     const res = await get('?propertyId=prop-1')
     expect(mockPrisma.payment.groupBy.mock.calls[0][0].where).toEqual({
-      property: { workspace: workspacesOf('user-1', ['ADMIN', 'MANAGER']) },
+      property: accessibleProperties('user-1', 'revenue_view'),
       propertyId: 'prop-1',
     })
-    expect(mockPrisma.workspace.count.mock.calls[0][0].where).toEqual({
-      ...workspacesOf('user-1', ['ADMIN', 'MANAGER']),
-      properties: { some: { id: 'prop-1' } },
+    expect(mockPrisma.property.count.mock.calls[0][0].where).toEqual({
+      AND: [accessibleProperties('user-1', 'revenue_view'), { id: 'prop-1' }],
     })
     expect((await res.json()).stats).toMatchObject({ total: 0, paid: 0 })
   })
 
   it('gives no totals to a caller who may not see them (a receptionist)', async () => {
     mockAuth.mockResolvedValueOnce({ user: { id: 'user-1' } })
-    mockPrisma.workspace.count.mockResolvedValueOnce(0)
+    mockPrisma.property.count.mockResolvedValueOnce(0)
     const res = await get('?propertyId=prop-1')
     expect(res.status).toBe(200)
     expect((await res.json()).stats).toBeNull()
@@ -167,6 +170,14 @@ describe('POST /api/payments — access', () => {
     mockAuth.mockResolvedValue({ user: { id: 'user-1', email: 'u@example.com' } })
     mockPrisma.booking.findUnique.mockResolvedValue(bookingSeenBy('USER'))
     const res = await post({ bookingId: 'bk-1', method: 'CASH', amount: 1000000 })
+    expect(res.status).toBe(403)
+    expect(mockPrisma.$transaction).not.toHaveBeenCalled()
+  })
+
+  it('member who does not work payments (USER) creating a bank transfer → 403', async () => {
+    mockAuth.mockResolvedValue({ user: { id: 'user-1', email: 'u@example.com' } })
+    mockPrisma.booking.findUnique.mockResolvedValue(bookingSeenBy('USER'))
+    const res = await post({ bookingId: 'bk-1', method: 'BANK_TRANSFER', amount: 500000 })
     expect(res.status).toBe(403)
     expect(mockPrisma.$transaction).not.toHaveBeenCalled()
   })

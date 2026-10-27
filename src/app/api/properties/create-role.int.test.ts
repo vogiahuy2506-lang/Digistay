@@ -1,4 +1,4 @@
-/** Who may add a property to a workspace: owners, admins and managers, not receptionists or staff. */
+/** Who may add a property to a workspace: properties_create (the owner, the admin and manager presets), not receptionists or staff. */
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest'
 import { NextRequest } from 'next/server'
 

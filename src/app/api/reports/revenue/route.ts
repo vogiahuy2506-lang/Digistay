@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { badParam, dayParam, enumParam } from '@/lib/api/list-params'
 import { METHOD_GROUPS } from '@/lib/reports/revenue'
 import { revenueReport } from '@/lib/reports/revenue-report'
+import { accessibleProperties } from '@/lib/auth/access'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,18 +33,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Thiếu propertyId' }, { status: 400 })
     }
 
-    // Owner, ADMIN or MANAGER: revenue, and the guests behind each payment.
-    // The sidebar shows this report to those roles only.
+    // revenue_view: revenue, and the guests behind each payment.
     const property = await prisma.property.findFirst({
-      where: {
-        id: propertyId,
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER'] }, planLockedAt: null } } },
-          ],
-        },
-      },
+      where: { id: propertyId, ...accessibleProperties(session.user.id, 'revenue_view') },
       select: { id: true },
     })
 

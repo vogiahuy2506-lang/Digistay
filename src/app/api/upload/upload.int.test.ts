@@ -16,7 +16,7 @@ import { POST as upload } from './route'
 import { PATCH as avatar } from '../users/me/avatar/route'
 import { POST as addPropertyImage } from '../properties/[id]/images/route'
 import { POST as addRoomPhoto, PATCH as mainRoomPhoto, DELETE as deleteRoomPhoto } from '../properties/[id]/room-types/[roomTypeId]/images/route'
-import { createRoomType, createTenant, createUser, resetDatabase } from '@/test/integration/fixtures'
+import { addMemberProperty, createProperty, createRoomType, createTenant, createUser, resetDatabase } from '@/test/integration/fixtures'
 
 const mockAuth = auth as unknown as ReturnType<typeof vi.fn>
 const signInAs = (user: { id: string; email: string | null }) => mockAuth.mockResolvedValue({ user: { id: user.id, email: user.email } })
@@ -89,11 +89,16 @@ describe('POST /api/upload', () => {
     expect(uploads[0].form.get('folder')).toBe(`digistay/${workspace.id}/${property.id}`)
   })
 
-  it('lets managers upload; not receptionists, nor anyone outside the workspace', async () => {
+  it("lets managers upload a property's photos and admins the logo; not receptionists, nor anyone outside the workspace", async () => {
     const manager = await createTenant({ memberRole: 'MANAGER' })
     signInAs(manager.member!)
     expect((await upload(json('/api/upload', 'POST', { base64: PNG, propertyId: manager.property.id }))).status).toBe(200)
-    expect((await upload(json('/api/upload', 'POST', { base64: PNG, workspaceId: manager.workspace.id }))).status).toBe(200)
+    // The logo is the workspace's settings: not a manager's.
+    expect((await upload(json('/api/upload', 'POST', { base64: PNG, workspaceId: manager.workspace.id }))).status).toBe(403)
+
+    const admin = await createTenant({ memberRole: 'ADMIN' })
+    signInAs(admin.member!)
+    expect((await upload(json('/api/upload', 'POST', { base64: PNG, workspaceId: admin.workspace.id }))).status).toBe(200)
 
     const receptionist = await createTenant({ memberRole: 'RECEPTIONIST' })
     signInAs(receptionist.member!)
@@ -107,6 +112,20 @@ describe('POST /api/upload', () => {
 
     mockAuth.mockResolvedValue(null)
     expect((await upload(json('/api/upload', 'POST', { base64: PNG }))).status).toBe(401)
+  })
+
+  it('a ticked permission that edits something with photos lets one upload, only at the properties one works on', async () => {
+    const menuOnly = await createTenant({ memberRole: 'USER', memberPermissions: ['services_manage'], memberLimited: true })
+    await addMemberProperty(menuOnly.workspace.id, menuOnly.member!.id, menuOnly.property.id)
+    const other = await createProperty(menuOnly.workspace.id)
+    signInAs(menuOnly.member!)
+    expect((await upload(json('/api/upload', 'POST', { base64: PNG, propertyId: menuOnly.property.id }))).status).toBe(200)
+    expect((await upload(json('/api/upload', 'POST', { base64: PNG, propertyId: other.id }))).status).toBe(404)
+
+    const frontDesk = await createTenant({ memberRole: 'USER', memberPermissions: ['bookings_view', 'bookings_edit', 'rooms_status'] })
+    signInAs(frontDesk.member!)
+    expect((await upload(json('/api/upload', 'POST', { base64: PNG, propertyId: frontDesk.property.id }))).status).toBe(403)
+    expect(uploads).toHaveLength(1)
   })
 
   it("with no property or workspace, the user's own folder (a new workspace's logo)", async () => {
@@ -183,12 +202,18 @@ describe("a room type's photos", () => {
     expect((await addRoomPhoto(json(base, 'POST', { url: 'data:image/png;base64,AAAA' }), p)).status).toBe(400)
   })
 
-  it('owner and admins only; never another property’s room type', async () => {
+  it('who manages room types only (managers, not receptionists); never another property’s room type', async () => {
     const tenant = await createTenant({ memberRole: 'MANAGER' })
     const roomType = await createRoomType(tenant.property.id)
     const base = `/api/properties/${tenant.property.id}/room-types/${roomType.id}/images`
     signInAs(tenant.member!)
-    expect((await addRoomPhoto(json(base, 'POST', { url: 'https://images.example.com/r.jpg' }), params({ id: tenant.property.id, roomTypeId: roomType.id }))).status).toBe(403)
+    expect((await addRoomPhoto(json(base, 'POST', { url: 'https://images.example.com/r.jpg' }), params({ id: tenant.property.id, roomTypeId: roomType.id }))).status).toBe(200)
+    await prisma.roomTypeImage.deleteMany()
+
+    const desk = await createTenant({ memberRole: 'RECEPTIONIST' })
+    const deskRoomType = await createRoomType(desk.property.id)
+    signInAs(desk.member!)
+    expect((await addRoomPhoto(json(base, 'POST', { url: 'https://images.example.com/r.jpg' }), params({ id: desk.property.id, roomTypeId: deskRoomType.id }))).status).toBe(403)
 
     const other = await createTenant()
     signInAs(other.owner)

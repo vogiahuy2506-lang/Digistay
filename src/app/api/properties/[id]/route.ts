@@ -9,40 +9,10 @@ import { reconcileOverageSoon } from '@/lib/billing/overage'
 import { locationColumns, resolveLocation } from '@/lib/vn-admin/location'
 import { guestsBooked, livePropertyForOwner, lockRoomTypes } from '@/lib/deletion/deletion'
 import { purgeAt, sameName } from '@/lib/deletion/rules'
+import { can, checkPropertyAccess } from '@/lib/auth/access'
 
 /** The editable fields, and the description in English. */
 const patchSchema = updatePropertySchema.extend({ translations: translationsInput(['description'], 2000) })
-
-// Check if user has access to property's workspace
-async function checkPropertyAccess(propertyId: string, userId: string) {
-  const property = await prisma.property.findFirst({
-    where: {
-      id: propertyId,
-      workspace: {
-        OR: [
-          { ownerId: userId },
-          { members: { some: { userId, planLockedAt: null } } },
-        ],
-      },
-    },
-    include: {
-      workspace: {
-        select: {
-          ownerId: true,
-          members: { where: { userId, planLockedAt: null }, select: { role: true } },
-        },
-      },
-    },
-  })
-
-  if (!property) return { hasAccess: false, isAdmin: false }
-
-  const isOwner = property.workspace.ownerId === userId
-  const memberRole = property.workspace.members[0]?.role
-  const isAdmin = isOwner || memberRole === 'ADMIN'
-
-  return { hasAccess: true, isAdmin, property }
-}
 
 export async function GET(
   request: NextRequest,
@@ -60,13 +30,9 @@ export async function GET(
       )
     }
 
-    const access = await checkPropertyAccess(id, session.user.id)
-    if (!access.hasAccess) {
-      return NextResponse.json(
-        { success: false, error: 'Bạn không có quyền truy cập cơ sở này' },
-        { status: 403 }
-      )
-    }
+    // Anyone who reaches the property; to others it does not exist.
+    const access = await checkPropertyAccess(session.user.id, id, null, 'Không tìm thấy cơ sở')
+    if (!access.ok) return access.response
 
     const property = await prisma.property.findUnique({
       where: { id },
@@ -151,8 +117,9 @@ export async function PATCH(
       )
     }
 
-    const access = await checkPropertyAccess(id, session.user.id)
-    if (!access.isAdmin) {
+    const access = await checkPropertyAccess(session.user.id, id, null, 'Không tìm thấy cơ sở')
+    if (!access.ok) return access.response
+    if (!can(access.access, 'property_edit', id)) {
       return NextResponse.json(
         { success: false, error: 'Bạn không có quyền chỉnh sửa cơ sở này' },
         { status: 403 }

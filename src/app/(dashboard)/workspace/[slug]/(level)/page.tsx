@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Alert, AlertDescription, Button, Input, Loading } from '@/components/ui'
 import { useWorkspace } from '@/lib/hooks/use-workspace'
-import { useWorkspaceRole } from '@/components/layout/workspace-context'
+import { useCan, useWorkspaceAccess } from '@/components/layout/workspace-context'
 import { TitleBlock } from '@/components/layout'
 import { cn } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
@@ -38,12 +38,12 @@ interface Property {
 export default function WorkspaceDashboardPage() {
   const t = useTranslations('workspaceHome')
   const tb = useTranslations('dash.billing')
-  const role = useWorkspaceRole()
+  const access = useWorkspaceAccess()
   const params = useParams<{ slug: string }>()
   const slug = params.slug
   const { workspace, loading: wsLoading } = useWorkspace()
-  // Owners, admins and managers add properties (a chain grows one at a time).
-  const canAddProperty = role === 'ADMIN' || role === 'MANAGER'
+  // Who has properties_create adds properties (a chain grows one at a time).
+  const canAddProperty = useCan('properties_create')
 
   const [properties, setProperties] = React.useState<Property[]>([])
   const [loading, setLoading] = React.useState(true)
@@ -173,7 +173,7 @@ export default function WorkspaceDashboardPage() {
       )}
 
       {/* Properties deleted in the last 30 days, for the owner (who alone gets the list). */}
-      {role === 'ADMIN' && workspace && <RecentlyDeleted kind="property" workspaceId={workspace.id} slug={slug} />}
+      {access?.isOwner && workspace && <RecentlyDeleted kind="property" workspaceId={workspace.id} slug={slug} />}
     </>
   )
 }

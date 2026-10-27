@@ -63,7 +63,8 @@
     "other": "Thông báo"
   },
   "roles": {
-    "ADMIN": "Chủ sở hữu",
+    "OWNER": "Chủ sở hữu",
+    "ADMIN": "Quản trị",
     "MANAGER": "Quản lý",
     "RECEPTIONIST": "Lễ tân",
     "USER": "Nhân viên"

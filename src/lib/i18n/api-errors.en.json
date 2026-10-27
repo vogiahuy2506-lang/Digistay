@@ -678,5 +678,19 @@
   "Địa chỉ phải có ít nhất 5 ký tự": "Address must be at least 5 characters",
   "Định dạng hình ảnh không hợp lệ": "Invalid image format",
   "Đổi mật khẩu thành công. Vui lòng đăng nhập lại.": "Password changed. Please sign in again.",
-  "Ảnh món phải là liên kết http(s) hoặc ảnh đã tải lên": "The dish photo must be an http(s) link or an uploaded image"
+  "Ảnh món phải là liên kết http(s) hoặc ảnh đã tải lên": "The dish photo must be an http(s) link or an uploaded image",
+  "Email này đã có tài khoản. Đăng nhập để chấp nhận lời mời.": "This email already has an account. Sign in to accept the invitation.",
+  "Đã gửi lại lời mời đến {0}": "Invitation sent again to {0}",
+  "Đã huỷ lời mời": "Invitation cancelled",
+  "Đã xảy ra lỗi khi huỷ lời mời": "Something went wrong while cancelling the invitation",
+  "Không có gì thay đổi": "Nothing changed",
+  "Đã khoá thành viên": "Member suspended",
+  "Đã mở khoá thành viên": "Member restored",
+  "Đã xảy ra lỗi khi tải nhật ký": "Something went wrong while loading the activity log",
+  "Chọn ít nhất một cơ sở cho thành viên này": "Choose at least one property for this member",
+  "Có cơ sở không thuộc workspace này": "Some properties are not in this workspace",
+  "Bạn không thể cấp quyền mà chính bạn không có": "You can't give a permission you don't have yourself",
+  "Bạn chỉ có thể giao những cơ sở bạn đang được làm việc": "You can only assign properties you work at yourself",
+  "Bạn không thể thay đổi thành viên có quyền mà bạn không có": "You can't change a member who has permissions you don't have",
+  "Bạn không thể tự thay đổi quyền của chính mình": "You can't change your own permissions"
 }

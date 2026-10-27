@@ -19,7 +19,7 @@ import {
   Textarea,
   toast,
 } from '@/components/ui'
-import { canManageBookings, useWorkspaceRole } from '@/components/layout/workspace-context'
+import { useCan } from '@/components/layout/workspace-context'
 import { CheckOutDialog } from './check-out-dialog'
 import { CancelDialog } from './cancel-dialog'
 import { CheckInDialog } from './check-in-dialog'
@@ -167,7 +167,7 @@ export function pendingManualDeposit(booking: Pick<BookingDetailData, 'payments'
  * confirmed and the guest emailed there.
  */
 function ManualDepositNotice({ booking, onChanged }: { booking: BookingDetailData; onChanged: () => void }) {
-  const role = useWorkspaceRole()
+  const canConfirm = useCan('payments_manage')
   const t = useTranslations('dash.bookings.detail.transfer')
   const tc = useTranslations('dash.common')
   const labels = useDashLabels()
@@ -208,7 +208,7 @@ function ManualDepositNotice({ booking, onChanged }: { booking: BookingDetailDat
         <p className="text-small text-muted break-words">{t('account', { account: `${meta.bankName ?? payment.bankCode ?? ''} ${payment.bankAccount}`.trim() })}</p>
       )}
       {meta.autoCancel && payment.expiresAt && <p className="text-small text-muted">{t('holdUntil', { time: hourDay(payment.expiresAt) })}</p>}
-      {canManageBookings(role) && (
+      {canConfirm && (
         <Button size="sm" variant={claimed ? 'primary' : 'outline'} className="mt-3" onClick={() => setAsking(true)}>
           <Check className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
           {t('confirm')}
@@ -265,7 +265,7 @@ function MoneyRow({ label, value, strong, tone }: { label: string; value: string
 }
 
 export function BookingDetailContent({ booking, onChanged }: { booking: BookingDetailData; onChanged: () => void }) {
-  const role = useWorkspaceRole()
+  const editable = useCan('bookings_edit')
   const t = useTranslations('dash.bookings.detail')
   const tb = useTranslations('dash.bookings')
   const labels = useDashLabels()
@@ -273,7 +273,6 @@ export function BookingDetailContent({ booking, onChanged }: { booking: BookingD
   const remaining = remainingAmount(booking)
   const checkInTime = booking.property.policy?.checkInTime || '14:00'
   const checkOutTime = booking.property.policy?.checkOutTime || '12:00'
-  const editable = canManageBookings(role)
   const parts = booking.roomSegments ?? []
   const typeNames = parts.length > 1 ? [...new Set(parts.map((p) => p.roomTypeName ?? tb('room.deletedType')))].join(' → ') : null
   // "From the night of D": nights strictly inside the stay, from tonight on (Vietnam), in a listed room.
@@ -763,8 +762,8 @@ export function BookingActions({
   onChanged: () => void
   openPageHref?: string
 }) {
-  const role = useWorkspaceRole()
-  const canManage = canManageBookings(role)
+  const canManage = useCan('bookings_edit')
+  const mayCancel = useCan('bookings_cancel')
   const t = useTranslations('dash.bookings')
   const tc = useTranslations('dash.common')
   const labels = useDashLabels()
@@ -891,8 +890,8 @@ export function BookingActions({
           <DropdownItem onClick={() => window.location.assign(openPageHref)}>{t('actions.openFullPage')}</DropdownItem>
         )}
         {/* Dropdown clones each direct child, so no fragments here. */}
-        {canManage && canCancel && <DropdownDivider />}
-        {canManage && canCancel && (
+        {mayCancel && canCancel && <DropdownDivider />}
+        {mayCancel && canCancel && (
           <DropdownItem danger onClick={() => setDialog('cancel')}>
             {t('actions.cancelBooking')}
           </DropdownItem>

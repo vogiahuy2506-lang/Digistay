@@ -57,6 +57,7 @@ const NAV_ICONS: Record<NavKey, LucideIcon> = {
   settings: Settings,
 }
 import { useDocumentTitle } from './document-title'
+import { accessCan, useWorkspaceAccess } from './workspace-context'
 import { Logo } from '@/components/marketing/Logo'
 
 interface WorkspaceShellProps {
@@ -196,13 +197,15 @@ function SidebarContent({
   const params = useParams<{ slug: string; id?: string }>()
   const slug = params.slug ?? workspace.slug
 
-  const allowed = (item: NavItem) => item.roles.includes(workspace.role)
+  const access = useWorkspaceAccess()
+  // The menu of the property shown: a member limited to some properties sees its entries there only.
+  const allowed = (item: NavItem) => !item.can || item.can.some((p) => accessCan(access, p, propertyId))
   const main = primaryNav(slug, propertyId).filter(allowed)
   const bottom = workspaceNav(slug).filter(allowed)
   const current = activeHref(pathname, [...main, ...bottom])
   // The tab's title: "Đặt phòng · Khách sạn Demo Hà Nội · Digistay" (both
   // sidebars render this; the same title twice changes nothing). From every
-  // entry, not only the role's: a page opened by its URL still says what it is.
+  // entry, not only the allowed ones: a page opened by its URL still says what it is.
   const every = [...primaryNav(slug, propertyId), ...workspaceNav(slug)]
   const page = every.find((item) => item.href === activeHref(pathname, every))
   // A property's page names the property; the workspace's own pages the workspace.
@@ -281,7 +284,7 @@ function SidebarContent({
                     ? property
                       ? `${property.subdomain}.digistay.vn`
                       : ''
-                    : labels.role(workspace.role)}
+                    : labels.role(access?.isOwner ? 'OWNER' : workspace.role)}
                 </span>
               </span>
               <ChevronDown className="w-4 h-4 text-muted shrink-0" aria-hidden="true" />
@@ -329,7 +332,7 @@ function SidebarContent({
         )}
       </div>
 
-      <UserBlock name={userName} email={userEmail} image={userImage} role={workspace.role} />
+      <UserBlock name={userName} email={userEmail} image={userImage} role={access?.isOwner ? 'OWNER' : workspace.role} />
     </div>
   )
 }
@@ -338,7 +341,7 @@ function SidebarContent({
  * The foot of the sidebar: the user, whose row opens the account menu
  * (profile, theme, language, sign out) upwards.
  */
-function UserBlock({ name, email, image, role }: { name?: string; email?: string; image?: string; role: WorkspaceRole }) {
+function UserBlock({ name, email, image, role }: { name?: string; email?: string; image?: string; role: WorkspaceRole | 'OWNER' }) {
   const labels = useDashLabels()
 
   return (

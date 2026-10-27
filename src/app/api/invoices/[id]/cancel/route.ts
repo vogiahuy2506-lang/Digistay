@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
+import { checkAccess } from '@/lib/auth/access'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -20,37 +21,18 @@ export async function POST(request: NextRequest, props: RouteParams) {
     // Get invoice
     const invoice = await prisma.invoice.findUnique({
       where: { id },
-      include: {
-        booking: {
-          include: {
-            property: {
-              select: {
-                workspace: {
-                  select: {
-                    ownerId: true,
-                    // Staff only, like publishing (STAFF_AND_UP)
-                    members: {
-                      where: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER', 'RECEPTIONIST'] }, planLockedAt: null },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
+      include: { property: { select: { workspaceId: true } } },
     })
 
     if (!invoice) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy hóa đơn' }, { status: 404 })
     }
 
-    // Check access
-    const workspace = invoice.booking.property.workspace
-    const isOwner = workspace.ownerId === session.user.id
-    const isStaff = workspace.members.length > 0
-
-    if (!isOwner && !isStaff) {
+    // Check access: invoices_manage, like publishing
+    const access = await checkAccess(session.user.id, invoice.property.workspaceId, 'invoices_manage', {
+      propertyId: invoice.propertyId,
+    })
+    if (!access.ok) {
       return NextResponse.json({ success: false, error: 'Không có quyền hủy hóa đơn' }, { status: 403 })
     }
     const locked = await lockedResponseForProperty(invoice.propertyId)

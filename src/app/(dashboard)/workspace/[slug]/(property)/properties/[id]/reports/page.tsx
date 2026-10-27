@@ -15,7 +15,8 @@ import { apiError } from '@/lib/i18n/api-errors'
 import { METHOD_GROUPS, toCsv, type GroupBy, type MethodGroup } from '@/lib/reports/revenue'
 import type { RevenueReport } from '@/lib/reports/revenue-report'
 import { ArrowDownLeft, ArrowUpRight, CalendarCheck, Download, FileText, Wallet } from 'lucide-react'
-import { MONEY_MANAGERS, NoAccess, useHasRole } from '@/components/payment/no-access'
+import { NoAccess } from '@/components/payment/no-access'
+import { useCan } from '@/components/layout/workspace-context'
 
 type Period = '7' | '30' | '90' | 'thisMonth' | 'lastMonth' | 'custom'
 const PERIODS: Period[] = ['7', '30', '90', 'thisMonth', 'lastMonth', 'custom']
@@ -75,7 +76,7 @@ export default function ReportsPage() {
   const ti = useTranslations('dash.money.invoices')
   const labels = useDashLabels()
   // Revenue is for the owner and managers (src/components/layout/nav.ts); the API refuses the others.
-  const allowed = useHasRole(MONEY_MANAGERS)
+  const allowed = useCan('revenue_view')
 
   const [period, setPeriod] = React.useState<Period>('30')
   const [custom, setCustom] = React.useState(() => ({ from: shiftDay(vnToday(), -29), to: vnToday() }))

@@ -24,7 +24,7 @@ export async function GET(_request: NextRequest, props: Props) {
   return NextResponse.json({ success: true, data: sortMenuItems(items) })
 }
 
-/** POST { name, price, category?, description?, imageUrl?, isAvailable?, translations? } — a new dish, last in the menu. Owner, admins and managers. */
+/** POST { name, price, category?, description?, imageUrl?, isAvailable?, translations? } — a new dish, last in the menu. services_manage. */
 export async function POST(request: NextRequest, props: Props) {
   const { id } = await props.params
   const session = await requireSession()
@@ -67,7 +67,7 @@ const orderSchema = z.object({
  * PUT { order: [itemId, ...] } — the whole menu in its new order (the
  * dashboard's move up / down): sortOrder becomes each id's place. Every item
  * of the hotel, each once; a list made before someone else added or deleted
- * a dish is refused rather than half applied. Owner, admins and managers.
+ * a dish is refused rather than half applied. services_manage.
  */
 export async function PUT(request: NextRequest, props: Props) {
   const { id } = await props.params

@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth'
 import { lateCheckoutFee } from '@/lib/bookings/late-checkout'
 import { lockBooking, syncBookingPayments } from '@/lib/payments/booking-payments'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
+import { can, checkPropertyAccess } from '@/lib/auth/access'
 
 /**
  * Check-out. The late fee is a suggestion (src/lib/bookings/late-checkout.ts):
@@ -34,38 +35,17 @@ type Session = { user: { id: string } }
 
 /** The booking if the caller may check it out; otherwise the error response. */
 async function bookingForStaff(id: string, session: Session) {
-  const booking = await prisma.booking.findUnique({
-    where: { id },
-    include: {
-      property: {
-        select: {
-          workspace: {
-            select: {
-              ownerId: true,
-              members: {
-                where: { userId: session.user.id, planLockedAt: null },
-                select: { role: true },
-              },
-            },
-          },
-        },
-      },
-    },
-  })
-
-  // Outside the workspace: 404, so booking ids cannot be probed.
-  const workspace = booking?.property.workspace
-  const isOwner = workspace?.ownerId === session.user.id
-  if (!booking || !workspace || (!isOwner && workspace.members.length === 0)) {
+  const booking = await prisma.booking.findUnique({ where: { id } })
+  if (!booking) {
     return { error: NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 }) }
   }
 
-  // Check reception access
-  const isStaff = workspace.members.some(m =>
-    ['ADMIN', 'MANAGER', 'RECEPTIONIST'].includes(m.role)
-  )
+  // Outside the workspace or the property: 404, so booking ids cannot be probed.
+  const access = await checkPropertyAccess(session.user.id, booking.propertyId, null, 'Không tìm thấy đơn đặt phòng')
+  if (!access.ok) return { error: access.response }
 
-  if (!isOwner && !isStaff) {
+  // Check reception access
+  if (!can(access.access, 'bookings_edit', booking.propertyId)) {
     return { error: NextResponse.json({ success: false, error: 'Không có quyền check-out' }, { status: 403 }) }
   }
   return { booking }

@@ -18,6 +18,8 @@ import { useUploadProblemText } from '@/components/ui/photo-upload'
 import { apiError } from '@/lib/i18n/api-errors'
 import { BUSINESS_TYPES, CURRENCIES, TIMEZONES, type BusinessType, workspaceSettingsOf } from '@/app/(dashboard)/workspaces/options'
 import { DeleteWorkspaceZone } from '@/components/deletion/delete-workspace-dialog'
+import { NoAccess } from '@/components/payment/no-access'
+import { useCan } from '@/components/layout/workspace-context'
 
 interface WorkspaceSettings {
   id: string
@@ -57,6 +59,7 @@ export default function WorkspaceSettingsPage() {
   const timezones = TIMEZONES.map(({ value, key }) => ({ value, label: tw(`form.timezones.${key}`) }))
   const businessTypes = BUSINESS_TYPES.map((value) => ({ value, label: tw(`form.businessTypes.${value}`) }))
   const { workspace, loading: wsLoading } = useWorkspace()
+  const allowed = useCan('workspace_settings')
   const [settings, setSettings] = React.useState<WorkspaceSettings | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
@@ -177,6 +180,7 @@ export default function WorkspaceSettingsPage() {
     }
   }
 
+  if (!allowed) return <NoAccess title={t('settings.title')} inPage />
   if (wsLoading) {
     return <Loading className="py-24" />
   }

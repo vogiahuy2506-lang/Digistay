@@ -4,23 +4,8 @@ import { auth } from '@/lib/auth'
 import { createPropertySchema } from '@/lib/validations'
 import { generateSlug, generateSubdomain } from '@/lib/utils'
 import { planResponse } from '@/lib/billing/guard'
-import { getWorkspaceRole } from '@/lib/auth/rbac'
+import { accessibleProperties, checkAccess, propertyScope } from '@/lib/auth/access'
 import { locationColumns, resolveLocation } from '@/lib/vn-admin/location'
-
-// Check if user has access to workspace
-async function checkWorkspaceAccess(workspaceId: string, userId: string) {
-  const workspace = await prisma.workspace.findFirst({
-    where: {
-      id: workspaceId,
-      OR: [
-        { ownerId: userId },
-        { members: { some: { userId, planLockedAt: null } } },
-      ],
-    },
-  })
-
-  return !!workspace
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -35,29 +20,13 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Build where clause based on whether workspaceId is provided
-    const whereClause: any = {}
+    // The properties the caller reaches (a member limited to some sees only
+    // those), in one workspace or in all of theirs.
+    let whereClause = accessibleProperties(session.user.id)
     if (workspaceId) {
-      const hasAccess = await checkWorkspaceAccess(workspaceId, session.user.id)
-      if (!hasAccess) {
-        return NextResponse.json(
-          { success: false, error: 'Bạn không có quyền truy cập workspace này' },
-          { status: 403 }
-        )
-      }
-      whereClause.workspaceId = workspaceId
-    } else {
-      // Get all workspaces user has access to
-      const userWorkspaces = await prisma.workspace.findMany({
-        where: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, planLockedAt: null } } },
-          ],
-        },
-        select: { id: true },
-      })
-      whereClause.workspaceId = { in: userWorkspaces.map(ws => ws.id) }
+      const granted = await checkAccess(session.user.id, workspaceId, null)
+      if (!granted.ok) return granted.response
+      whereClause = propertyScope(granted.access)
     }
 
     const properties = await prisma.property.findMany({
@@ -125,10 +94,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Owners, admins and managers add properties; receptionists and staff
-    // only work in the ones they have (the "Thêm cơ sở" button follows this).
-    const role = await getWorkspaceRole(workspaceId, session.user.id)
-    if (role !== 'ADMIN' && role !== 'MANAGER') {
+    // Who has properties_create (the "Thêm cơ sở" button follows this).
+    const granted = await checkAccess(session.user.id, workspaceId, 'properties_create')
+    if (!granted.ok) {
       return NextResponse.json(
         { success: false, error: 'Bạn không có quyền tạo cơ sở trong workspace này' },
         { status: 403 }
@@ -193,6 +161,12 @@ export async function POST(request: NextRequest) {
         slug,
         subdomain,
         workspaceId,
+        // A member limited to some properties works on the one they created.
+        ...(granted.access.propertyIds !== null && {
+          memberAccess: {
+            create: { member: { connect: { workspaceId_userId: { workspaceId, userId: session.user.id } } } },
+          },
+        }),
       },
       include: {
         workspace: {

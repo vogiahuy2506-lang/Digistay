@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { bedTypeEnum } from '@/lib/validations'
 import { generateSlug } from '@/lib/utils'
 import { hardCapacityProblem } from '@/lib/bookings/capacity'
+import { accessibleProperties } from '@/lib/auth/access'
 
 // GET /api/room-types - Get all room types for a property
 export async function GET(request: NextRequest) {
@@ -27,15 +28,7 @@ export async function GET(request: NextRequest) {
 
     // Verify user has access to this property
     const property = await prisma.property.findFirst({
-      where: {
-        id: propertyId,
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, planLockedAt: null } } },
-          ],
-        },
-      },
+      where: { id: propertyId, ...accessibleProperties(session.user.id) },
     })
 
     if (!property) {
@@ -129,15 +122,7 @@ export async function POST(request: NextRequest) {
 
     // Verify user has access to this property
     const property = await prisma.property.findFirst({
-      where: {
-        id: propertyId,
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER'] }, planLockedAt: null } } },
-          ],
-        },
-      },
+      where: { id: propertyId, ...accessibleProperties(session.user.id, 'room_types_manage') },
     })
 
     if (!property) {

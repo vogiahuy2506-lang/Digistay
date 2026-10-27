@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/db'
-import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { requireAccess } from '@/lib/auth/access'
 import { depositSettingsOf } from '@/lib/payments/deposit-mode'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
 
@@ -25,20 +25,21 @@ const NOT_FOUND = () => NextResponse.json({ success: false, error: 'Không tìm 
 /**
  * GET — how guests pay the online deposit (src/lib/payments/deposit-mode.ts):
  * the hotel's choice, what applies now, and the account the manual QR names.
- * Any member: the policy page shows whether a deposit can be taken.
+ * Anyone on the property: the policy page shows whether a deposit can be taken.
  */
 export async function GET(_request: NextRequest, props: Props) {
   const { id } = await props.params
   const workspaceId = await workspaceOf(id)
   if (!workspaceId) return NOT_FOUND()
-  const access = await requireWorkspaceRole(workspaceId, WorkspaceRoles.ALL_MEMBERS)
+  const access = await requireAccess(workspaceId, null, { propertyId: id })
   if (!access.ok) return access.response
   return NextResponse.json({ success: true, data: await depositSettingsOf(id) })
 }
 
 /**
- * PUT { mode?: 'MANUAL' | 'PAYOS', accountId?: string | null } — owner/ADMIN
- * only, like PayOS and bank accounts: it decides where guests' money goes.
+ * PUT { mode?: 'MANUAL' | 'PAYOS', accountId?: string | null } —
+ * payment_settings only, like PayOS and bank accounts: it decides where
+ * guests' money goes.
  * PAYOS needs a connected PayOS; the account must be one of this hotel's,
  * active, with QR.
  */
@@ -46,7 +47,7 @@ export async function PUT(request: NextRequest, props: Props) {
   const { id } = await props.params
   const workspaceId = await workspaceOf(id)
   if (!workspaceId) return NOT_FOUND()
-  const access = await requireWorkspaceRole(workspaceId, WorkspaceRoles.ADMINS)
+  const access = await requireAccess(workspaceId, 'payment_settings', { propertyId: id })
   if (!access.ok) return access.response
   const locked = await lockedResponseForProperty(id)
   if (locked) return locked

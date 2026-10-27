@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { ArrowDown, ArrowUp, ImageIcon, Pencil, Plus, Trash2, Upload, UtensilsCrossed } from 'lucide-react'
 import { Header, PageContainer } from '@/components/layout'
-import { useWorkspaceRole } from '@/components/layout/workspace-context'
+import { useCan } from '@/components/layout/workspace-context'
 import { Badge, Button, Input, Modal, ModalBody, ModalFooter, Textarea } from '@/components/ui'
 import { EnglishCopy } from '@/components/ui/english-copy'
 import { toast } from '@/components/ui/toast'
@@ -61,8 +61,7 @@ export default function MenuPage() {
   const t = useTranslations('dash.menu')
   const tc = useTranslations('dash.common')
   const labels = useDashLabels()
-  const role = useWorkspaceRole()
-  const canEdit = role === 'ADMIN' || role === 'MANAGER'
+  const canEdit = useCan('services_manage')
   const { id: propertyId } = useParams<{ slug: string; id: string }>()
 
   const [items, setItems] = React.useState<MenuItem[] | null>(null)
@@ -138,7 +137,7 @@ export default function MenuPage() {
     <PageContainer>
       <div>
         <Header title={t('title')} description={t('description')} actions={items && items.length > 0 ? addButton : undefined} />
-        {!canEdit && role && <p className="mb-4 text-small text-muted">{t('readOnly')}</p>}
+        {!canEdit && <p className="mb-4 text-small text-muted">{t('readOnly')}</p>}
 
         {items === null ? (
           loadFailed ? (

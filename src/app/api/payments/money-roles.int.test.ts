@@ -1,7 +1,8 @@
 /**
- * Who sees a hotel's money (QA F04): staff work the payments, but revenue
- * and money totals are for the owner, ADMIN and MANAGER only; a USER member
- * sees neither. Bank accounts are saved as banks print them (QA F02/F27).
+ * Who sees a hotel's money (QA F04), by the role presets: staff work the
+ * payments and invoices, but revenue and money totals are for the owner,
+ * ADMIN and MANAGER only (revenue_view); a USER member sees neither.
+ * Custom permission sets: permissions.int.test.ts. Bank accounts are saved as banks print them (QA F02/F27).
  * Against real Postgres.
  */
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest'
@@ -101,19 +102,23 @@ describe('GET /api/payments', () => {
 })
 
 describe('GET /api/invoices', () => {
-  it('gives the amount issued to the owner and managers only', async () => {
+  it('gives the amount issued to the owner and managers only, the list to staff only', async () => {
     const { property, staff } = await hotel()
     const path = `/api/invoices?propertyId=${property.id}`
 
     signInAs(staff.MANAGER)
     expect((await get(listInvoices, path)).body.stats).toMatchObject({ published: 1, issuedAmount: 1_000_000 })
 
-    for (const user of [staff.RECEPTIONIST, staff.USER]) {
-      signInAs(user)
-      const res = await get(listInvoices, path)
-      expect(res.body.data).toHaveLength(1)
-      expect(res.body.stats).toMatchObject({ published: 1, issuedAmount: null })
-    }
+    signInAs(staff.RECEPTIONIST)
+    const desk = await get(listInvoices, path)
+    expect(desk.body.data).toHaveLength(1)
+    expect(desk.body.stats).toMatchObject({ published: 1, issuedAmount: null })
+
+    // A USER member does not issue invoices (invoices_manage).
+    signInAs(staff.USER)
+    const user = await get(listInvoices, path)
+    expect(user.body.data).toEqual([])
+    expect(user.body.stats).toMatchObject({ total: 0, issuedAmount: null })
   })
 })
 

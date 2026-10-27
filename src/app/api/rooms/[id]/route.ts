@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
-import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { requireSession } from '@/lib/auth/rbac'
+import { checkPropertyAccess } from '@/lib/auth/access'
 import { ACTIVE_BOOKING_STATUSES } from '@/lib/bookings/occupancy'
 import { RoomError, countRooms, normalizeRoomNumber, peakTaken } from '@/lib/bookings/rooms'
 import { invalidatePublicSite } from '@/lib/public-site/site'
@@ -54,10 +55,12 @@ const updateSchema = z.object({
 /** PATCH { number?, floor?, isActive? } — rename, change floor, stop or resume using a room. */
 export async function PATCH(request: NextRequest, props: Props) {
   const { id } = await props.params
+  const sess = await requireSession()
+  if (!sess.ok) return sess.response
   const room = await roomOf(id)
   if (!room) return NOT_FOUND()
-  // Owner, admins and managers change the hotel's rooms.
-  const access = await requireWorkspaceRole(room.property.workspaceId, WorkspaceRoles.ADMINS_AND_MANAGERS)
+  // Those who manage the hotel's rooms; outsiders get the 404 of a missing room.
+  const access = await checkPropertyAccess(sess.session.user.id, room.propertyId, 'rooms_manage', 'Không tìm thấy phòng')
   if (!access.ok) return access.response
   const userId = access.userId
 
@@ -114,10 +117,12 @@ export async function PATCH(request: NextRequest, props: Props) {
 /** DELETE — removes a room no current stay is in; past stays keep its number as text. */
 export async function DELETE(_request: NextRequest, props: Props) {
   const { id } = await props.params
+  const sess = await requireSession()
+  if (!sess.ok) return sess.response
   const room = await roomOf(id)
   if (!room) return NOT_FOUND()
-  // Owner, admins and managers change the hotel's rooms.
-  const access = await requireWorkspaceRole(room.property.workspaceId, WorkspaceRoles.ADMINS_AND_MANAGERS)
+  // Those who manage the hotel's rooms; outsiders get the 404 of a missing room.
+  const access = await checkPropertyAccess(sess.session.user.id, room.propertyId, 'rooms_manage', 'Không tìm thấy phòng')
   if (!access.ok) return access.response
   const locked = await lockedResponseForProperty(room.propertyId)
   if (locked) return locked

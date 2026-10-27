@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { activeHref, primaryNav, workspaceNav } from './nav'
+import { ROLE_PRESETS, type Role } from '@/lib/auth/permissions'
 
 const items = [...primaryNav('demo', 'p1'), ...workspaceNav('demo')]
 const P = '/workspace/demo/properties/p1'
@@ -31,8 +32,8 @@ describe('dashboard menu', () => {
 
   it('prefers the longer path, whether an href or an extra one', () => {
     const nested = [
-      { key: 'overview' as const, href: '/a', also: ['/a/b/c'], roles: [], group: 'main' as const },
-      { key: 'bookings' as const, href: '/a/b', roles: [], group: 'main' as const },
+      { key: 'overview' as const, href: '/a', also: ['/a/b/c'], can: null, group: 'main' as const },
+      { key: 'bookings' as const, href: '/a/b', can: null, group: 'main' as const },
     ]
     expect(activeHref('/a/b', nested)).toBe('/a/b')
     expect(activeHref('/a/b/c/d', nested)).toBe('/a')
@@ -44,13 +45,15 @@ describe('dashboard menu', () => {
     expect(primaryNav('demo').map((i) => i.key)).toEqual(['properties'])
   })
 
-  it('hides bank accounts and settings from everyone but the owner', () => {
-    const forRole = (role: 'ADMIN' | 'MANAGER' | 'RECEPTIONIST' | 'USER') =>
-      items.filter((i) => i.roles.includes(role)).map((i) => i.key)
+  it("shows each role's preset its entries: bank accounts, plan and settings to admins only", () => {
+    const forRole = (role: Role) =>
+      items.filter((i) => !i.can || i.can.some((p) => ROLE_PRESETS[role].includes(p))).map((i) => i.key)
     expect(forRole('MANAGER')).not.toContain('bankAccounts')
     expect(forRole('MANAGER')).not.toContain('settings')
-    expect(forRole('ADMIN')).toEqual(expect.arrayContaining(['bankAccounts', 'settings']))
-    expect(forRole('USER')).toEqual(['overview', 'bookings'])
+    expect(forRole('MANAGER')).toEqual(expect.arrayContaining(['members', 'cashbook', 'reports']))
+    expect(forRole('ADMIN')).toEqual(expect.arrayContaining(['bankAccounts', 'billing', 'settings']))
+    expect(forRole('RECEPTIONIST')).toEqual(['overview', 'bookings', 'rooms', 'payments', 'invoices', 'cashbook'])
+    expect(forRole('USER')).toEqual(['overview', 'bookings', 'rooms'])
   })
 
   it('lights up "Cơ sở" on the workspace home', () => {

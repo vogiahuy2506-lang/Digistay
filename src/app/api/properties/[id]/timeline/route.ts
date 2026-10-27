@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { requireSession } from '@/lib/auth/rbac'
+import { checkPropertyAccess } from '@/lib/auth/access'
 import { dayParam } from '@/lib/api/list-params'
 import { roomPlan } from '@/lib/bookings/room-plan'
 import { ROOM_SEGMENT_SELECT } from '@/lib/bookings/room-type-names'
@@ -14,7 +15,7 @@ const MAX_DAYS = 62
  * GET /api/properties/[id]/timeline?from=yyyy-mm-dd&days=14 — the room
  * timeline (task 25): every room type with its rooms, the stays touching
  * those Vietnam days (cancelled and no-shows left out) with the room they
- * are in, and maintenance / blocks. Front desk and up.
+ * are in, and maintenance / blocks. Those who see the hotel's bookings.
  *
  * A stay split between rooms (src/lib/bookings/rooms.ts) comes once per part
  * in the window: `from` / `to` are the part's nights, `checkIn` / `checkOut`
@@ -22,9 +23,9 @@ const MAX_DAYS = 62
  */
 export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params
-  const property = await prisma.property.findUnique({ where: { id }, select: { workspaceId: true } })
-  if (!property) return NextResponse.json({ success: false, error: 'Không tìm thấy khách sạn' }, { status: 404 })
-  const access = await requireWorkspaceRole(property.workspaceId, WorkspaceRoles.STAFF_AND_UP)
+  const sess = await requireSession()
+  if (!sess.ok) return sess.response
+  const access = await checkPropertyAccess(sess.session.user.id, id, 'bookings_view', 'Không tìm thấy khách sạn')
   if (!access.ok) return access.response
 
   const { searchParams } = new URL(request.url)

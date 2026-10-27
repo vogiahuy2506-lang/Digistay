@@ -14,7 +14,7 @@ vi.mock('next/server', async (original) => ({ ...(await original<typeof import('
 
 import { auth } from '@/lib/auth'
 import { prisma, prismaWithDeleted } from '@/lib/db'
-import { getWorkspaceRole } from '@/lib/auth/rbac'
+import { getAccess } from '@/lib/auth/access'
 import { createBooking, createRoomType, createTenant, createUser, publishSite, resetDatabase } from '@/test/integration/fixtures'
 import { DELETE as deleteProperty, GET as getProperty } from '@/app/api/properties/[id]/route'
 import { GET as listProperties, POST as createProperty } from '@/app/api/properties/route'
@@ -421,7 +421,7 @@ describe('deleting a workspace', () => {
       signInAs(user)
       expect((await (await listWorkspaces()).json()).data).toEqual([])
       expect([403, 404]).toContain((await getWorkspace(req('/x', 'GET'), params(workspace.id))).status)
-      expect(await getWorkspaceRole(workspace.id, user.id)).toBeNull()
+      expect(await getAccess(workspace.id, user.id)).toBeNull()
       expect([403, 404]).toContain((await getProperty(req('/x', 'GET'), params(property.id))).status)
     }
     expect(await loadVisibleSite(property.subdomain)).toBeNull()
@@ -441,7 +441,7 @@ describe('deleting a workspace', () => {
     expect((await restoreWorkspace(req('/x', 'POST'), params(workspace.id))).status).toBe(200)
     signInAs(member!)
     expect((await (await listWorkspaces()).json()).data.map((w: { id: string }) => w.id)).toEqual([workspace.id])
-    expect(await getWorkspaceRole(workspace.id, member!.id)).toBe('MANAGER')
+    expect((await getAccess(workspace.id, member!.id))?.role).toBe('MANAGER')
     expect(await prisma.subscription.findUniqueOrThrow({ where: { workspaceId: workspace.id } })).toMatchObject({ plan: 'growth', periodEnd })
   })
 

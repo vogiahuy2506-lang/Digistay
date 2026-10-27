@@ -1,7 +1,8 @@
 /**
- * The hotel's restaurant menu API against real Postgres: the owner, ADMIN and
- * MANAGER add, change, reorder and delete dishes; every member reads them;
- * nobody outside the workspace learns the menu exists. The site loads the
+ * The hotel's restaurant menu API against real Postgres: who manages the
+ * hotel's services (the owner, ADMIN, MANAGER, or services_manage ticked)
+ * adds, changes, reorders and deletes dishes; every member who works at the
+ * hotel reads them; nobody else learns the menu exists. The site loads the
  * dishes on sale, in menu order, in the visitor's language.
  */
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest'
@@ -13,7 +14,7 @@ vi.mock('@/lib/auth', () => ({ auth: vi.fn() }))
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { loadSiteProps, localizeSiteProps } from '@/lib/public-site/site'
-import { createTenant, createUser, resetDatabase } from '@/test/integration/fixtures'
+import { addMemberProperty, createProperty, createTenant, createUser, resetDatabase } from '@/test/integration/fixtures'
 import { GET, POST, PUT } from './route'
 import { DELETE, PATCH } from './[itemId]/route'
 
@@ -132,6 +133,33 @@ describe('restaurant menu API', () => {
       { name: 'Phở bò', price: 50_000, sortOrder: 0 },
       { name: 'Trà đá', price: 50_000, sortOrder: 1 },
     ])
+  })
+
+  it('services_manage ticked changes the menu; a set without it only reads', async () => {
+    const cook = await createTenant({ memberRole: 'USER', memberPermissions: ['services_manage'] })
+    signInAs(cook.member!)
+    expect((await add(cook.property.id, { name: 'Cơm tấm', price: 45_000 })).status).toBe(200)
+
+    const editor = await createTenant({ memberRole: 'USER', memberPermissions: ['property_edit', 'room_types_manage', 'website_manage'] })
+    await dish(editor.property.id, 'Phở bò')
+    signInAs(editor.member!)
+    expect((await list(editor.property.id)).status).toBe(200)
+    expect((await add(editor.property.id, { name: 'Cơm tấm', price: 45_000 })).status).toBe(403)
+    expect(await prisma.menuItem.count({ where: { propertyId: editor.property.id } })).toBe(1)
+  })
+
+  it('a member limited to another hotel of the workspace is told nothing exists', async () => {
+    const { workspace, property, member } = await createTenant({ memberRole: 'MANAGER', memberLimited: true })
+    const other = await createProperty(workspace.id)
+    await addMemberProperty(workspace.id, member!.id, other.id)
+    const pho = await dish(property.id, 'Phở bò')
+    signInAs(member!)
+
+    expect((await list(property.id)).status).toBe(404)
+    expect((await add(property.id, { name: 'Cơm tấm', price: 1 })).status).toBe(404)
+    expect((await change(property.id, pho.id, { price: 1 })).status).toBe(404)
+    expect((await list(other.id)).status).toBe(200)
+    expect(await prisma.menuItem.findMany({ select: { name: true, price: true } })).toEqual([{ name: 'Phở bò', price: 50_000 }])
   })
 
   it('another workspace can neither read nor change the menu, and is told nothing exists', async () => {

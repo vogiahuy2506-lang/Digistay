@@ -5,7 +5,7 @@ import { auth } from '@/lib/auth'
 import { normalizeHostname } from '@/lib/custom-domain'
 import { invalidatePublicSite } from '@/lib/public-site/site'
 import { keepSiteBaseline, recordSiteVersion } from '@/lib/public-site/versions'
-import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { NO_PERMISSION, accessibleProperties, can, checkPropertyAccess } from '@/lib/auth/access'
 import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
 
@@ -44,15 +44,8 @@ export async function GET(request: NextRequest) {
 
     // Check property access
     const property = await prisma.property.findFirst({
-      where: {
-        id: propertyId,
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, planLockedAt: null } } },
-          ],
-        },
-      },
+      where: { id: propertyId, ...accessibleProperties(session.user.id) },
+      select: { id: true },
     })
 
     if (!property) {
@@ -104,29 +97,19 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check property access
-    const property = await prisma.property.findFirst({
-      where: {
-        id: body.data.propertyId,
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, planLockedAt: null } } },
-          ],
-        },
-      },
-    })
-
-    if (!property) {
+    const granted = await checkPropertyAccess(session.user.id, body.data.propertyId, null)
+    if (!granted.ok) {
       return NextResponse.json({ success: false, error: 'Không có quyền chỉnh sửa' }, { status: 403 })
     }
-    // Owners, ADMIN and MANAGER edit the site, like the custom domain and SSL
-    // routes and the sidebar (receptionists and USER never see the builder).
-    // Publishing decides whether guests see the site and can book.
-    const access = await requireWorkspaceRole(property.workspaceId, WorkspaceRoles.ADMINS_AND_MANAGERS)
-    if (!access.ok) return access.response
-    const locked = await lockedResponseForProperty(property.id)
+    // Who has website_manage edits the site, like the custom domain and SSL
+    // routes and the sidebar. Publishing decides whether guests see the site
+    // and can book.
+    const propertyId = granted.property.id
+    if (!can(granted.access, 'website_manage', propertyId)) {
+      return NextResponse.json({ success: false, error: NO_PERMISSION }, { status: 403 })
+    }
+    const locked = await lockedResponseForProperty(propertyId)
     if (locked) return locked
-    const propertyId = property.id
 
     // The form sends the domain back unchanged, or empty to remove it. A new
     // domain is attached only by /api/website/domain/verify, after the DNS

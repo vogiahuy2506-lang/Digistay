@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/db'
-import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { requireAccess } from '@/lib/auth/access'
 import { PayosError, connectPayos, disconnectPayos, getPayosStatus } from '@/lib/payments/payos'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
 
@@ -20,26 +20,26 @@ async function workspaceOf(propertyId: string) {
 
 const NOT_FOUND = () => NextResponse.json({ success: false, error: 'Không tìm thấy khách sạn' }, { status: 404 })
 
-/** GET — connection status (never the keys). Staff see it to offer PayOS. */
+/** GET — connection status (never the keys). Anyone on the property sees it, to offer PayOS. */
 export async function GET(_request: NextRequest, props: Props) {
   const { id } = await props.params
   const workspaceId = await workspaceOf(id)
   if (!workspaceId) return NOT_FOUND()
-  const access = await requireWorkspaceRole(workspaceId, WorkspaceRoles.ALL_MEMBERS)
+  const access = await requireAccess(workspaceId, null, { propertyId: id })
   if (!access.ok) return access.response
   return NextResponse.json({ success: true, data: await getPayosStatus(id) })
 }
 
 /**
  * PUT { clientId, apiKey, checksumKey } — connect (or replace) the
- * property's PayOS account. Owner/ADMIN only: it decides where guests'
- * money goes.
+ * property's PayOS account. payment_settings only: it decides where
+ * guests' money goes.
  */
 export async function PUT(request: NextRequest, props: Props) {
   const { id } = await props.params
   const workspaceId = await workspaceOf(id)
   if (!workspaceId) return NOT_FOUND()
-  const access = await requireWorkspaceRole(workspaceId, WorkspaceRoles.ADMINS)
+  const access = await requireAccess(workspaceId, 'payment_settings', { propertyId: id })
   if (!access.ok) return access.response
   const locked = await lockedResponseForProperty(id)
   if (locked) return locked
@@ -68,7 +68,7 @@ export async function DELETE(_request: NextRequest, props: Props) {
   const { id } = await props.params
   const workspaceId = await workspaceOf(id)
   if (!workspaceId) return NOT_FOUND()
-  const access = await requireWorkspaceRole(workspaceId, WorkspaceRoles.ADMINS)
+  const access = await requireAccess(workspaceId, 'payment_settings', { propertyId: id })
   if (!access.ok) return access.response
   const locked = await lockedResponseForProperty(id)
   if (locked) return locked

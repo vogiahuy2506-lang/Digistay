@@ -84,8 +84,9 @@ async function loadHoldings(db: Tx | typeof prisma, workspaceId: string, now: Da
     where: { property: { workspaceId } },
     select: { id: true, name: true, propertyId: true, createdAt: true, planLockedAt: true, isActive: true, totalRooms: true },
   })
+  // A member an admin locked takes no seat (src/lib/billing/limits.ts).
   const members = await db.workspaceMember.findMany({
-    where: { workspaceId, userId: { not: ownerId } },
+    where: { workspaceId, userId: { not: ownerId }, disabledAt: null },
     select: { userId: true, joinedAt: true, planLockedAt: true, user: { select: { name: true, email: true } } },
   })
   const invitations = await db.invitation.findMany({
@@ -117,8 +118,8 @@ async function applyLocks(tx: Tx, workspaceId: string, plan: LockPlan, at: Date)
     await tx.roomType.updateMany({ where: { id: { in: plan.roomTypes }, property: { workspaceId }, planLockedAt: null }, data: { planLockedAt: at } })
   }
   if (plan.invitations.length) {
-    // An invitation has no "revoked" status: EXPIRED is what an invitation
-    // that can no longer be accepted gets (api/invitations/[token]).
+    // EXPIRED, not REVOKED (an admin cancelling it): to the invitee it ran
+    // out, as one past its date does (api/invitations/[token]).
     await tx.invitation.updateMany({ where: { id: { in: plan.invitations }, workspaceId, status: 'PENDING' }, data: { status: 'EXPIRED' } })
   }
   if (plan.members.length) {

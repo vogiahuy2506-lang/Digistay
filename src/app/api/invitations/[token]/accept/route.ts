@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { InvitationAnsweredError, joinFromInvitation } from '@/lib/members/invitations'
 
 /**
  * POST /api/invitations/[token]/accept
  *
  * Accept an invitation by token. The session email must match the
  * invitation's email. On success, the user is added as a member of the
- * workspace with the invitation's role and the invitation is marked
- * ACCEPTED.
+ * workspace with the invitation's access (role, permissions, properties)
+ * and the invitation is marked ACCEPTED. An invitee without an account
+ * signs up and accepts in one go: POST ../register.
  */
 export async function POST(
   _request: NextRequest,
@@ -29,7 +31,7 @@ export async function POST(
     const invitation = await prisma.invitation.findUnique({
       where: { token },
       include: {
-        workspace: { select: { id: true, name: true } },
+        workspace: { select: { id: true, name: true, slug: true } },
       },
     })
 
@@ -68,43 +70,25 @@ export async function POST(
       )
     }
 
-    // Add user to workspace, then mark invitation as accepted. Wrapped in
-    // a transaction so we don't end up with a half-accepted invite.
-    const workspaceId = invitation.workspaceId
-    await prisma.$transaction([
-      prisma.workspaceMember.upsert({
-        where: {
-          workspaceId_userId: {
-            workspaceId,
-            userId: session.user.id,
-          },
-        },
-        update: { role: invitation.role },
-        create: {
-          workspaceId,
-          userId: session.user.id,
-          role: invitation.role,
-        },
-      }),
-      prisma.invitation.update({
-        where: { id: invitation.id },
-        data: {
-          status: 'ACCEPTED',
-          recipientId: session.user.id,
-        },
-      }),
-    ])
+    // The membership with the access the admin chose, and the invitation
+    // accepted, together: never a half-accepted invite.
+    const userId = session.user.id
+    const user = { id: userId, email: session.user.email, name: session.user.name ?? null }
+    await prisma.$transaction((tx) => joinFromInvitation(tx, invitation, user))
 
     return NextResponse.json({
       success: true,
       data: {
-        workspaceId,
-        workspaceSlug: invitation.workspace.id,
+        workspaceId: invitation.workspaceId,
+        workspaceSlug: invitation.workspace.slug,
         workspaceName: invitation.workspace.name,
       },
       message: 'Chấp nhận lời mời thành công',
     })
   } catch (error) {
+    if (error instanceof InvitationAnsweredError) {
+      return NextResponse.json({ success: false, error: 'Lời mời đã được xử lý' }, { status: 400 })
+    }
     console.error('Accept invitation error:', error)
     return NextResponse.json(
       { success: false, error: 'Đã xảy ra lỗi khi chấp nhận lời mời' },

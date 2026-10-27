@@ -10,19 +10,21 @@ import { invoiceLookupUrl } from '@/lib/einvoice/lookup-link'
 import { isLocale } from '@/i18n/locales'
 import type { VatCode } from '@/lib/einvoice/vat'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
-import { managerWorkspaces, seesMoneyTotals } from '../payments/money-access'
+import { accessibleProperties, checkAccess } from '@/lib/auth/access'
+import { seesMoneyTotals } from '../payments/money-access'
 
 // Amounts are computed on the server from the VAT-inclusive total and the
 // property's VAT code (src/lib/einvoice/invoices.ts).
 const createInvoiceSchema = z.object({ bookingId: z.string() }).and(invoiceInputSchema)
 
 /**
- * GET /api/invoices — one page of the caller's invoices, newest first.
+ * GET /api/invoices — one page of the caller's invoices, newest first:
+ * those of the properties where they may issue invoices (invoices_manage).
  * Filters (propertyId, status, q, startDate/endDate as yyyy-mm-dd) and the
  * search run in the database, so they cover every page. `stats` counts the
  * property's invoices whatever the filters (the cards above the list).
  * The amount issued (`stats.issuedAmount`) is null unless the caller may
- * see money totals: owner, ADMIN, MANAGER (payments/money-access.ts).
+ * see money totals (revenue_view: payments/money-access.ts).
  */
 export async function GET(request: NextRequest) {
   try {
@@ -42,17 +44,10 @@ export async function GET(request: NextRequest) {
     const q = searchParam(searchParams)
     const { page, limit, skip } = pageParams(searchParams)
 
-    // Always the caller's workspaces; propertyId only narrows it (without
+    // Always the caller's properties; propertyId only narrows it (without
     // it, this once listed every hotel's invoices).
     const scope: Prisma.InvoiceWhereInput = {
-      property: {
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, planLockedAt: null } } },
-          ],
-        },
-      },
+      property: accessibleProperties(session.user.id, 'invoices_manage'),
       ...(propertyId && { propertyId }),
     }
     const contains = (value: string) => ({ contains: value, mode: 'insensitive' as const })
@@ -113,7 +108,7 @@ export async function GET(request: NextRequest) {
       prisma.invoice.groupBy({ by: ['status'], where: scope, _count: { _all: true } }),
       // Issued money: adjustments are signed, so they count as they should.
       prisma.invoice.aggregate({
-        where: { property: { workspace: managerWorkspaces(session.user.id) }, ...(propertyId && { propertyId }), status: 'PUBLISHED' },
+        where: { property: accessibleProperties(session.user.id, 'revenue_view'), ...(propertyId && { propertyId }), status: 'PUBLISHED' },
         _sum: { totalAmount: true },
       }),
       seesMoneyTotals(session.user.id, propertyId),
@@ -170,16 +165,8 @@ export async function POST(request: NextRequest) {
       include: {
         property: {
           select: {
+            workspaceId: true,
             einvoice: { select: { vatCode: true, verifiedAt: true } },
-            workspace: {
-              select: {
-                ownerId: true,
-                // Staff only, like publishing (STAFF_AND_UP)
-                members: {
-                  where: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER', 'RECEPTIONIST'] }, planLockedAt: null },
-                },
-              },
-            },
           },
         },
       },
@@ -189,13 +176,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
     }
 
-    // Check access. Guests are not let in: a draft of theirs also stopped
-    // auto-issue for the booking, and no guest-facing page calls this.
-    const workspace = booking.property.workspace
-    const isOwner = workspace.ownerId === session.user.id
-    const isStaff = workspace.members.length > 0
-
-    if (!isOwner && !isStaff) {
+    // Check access (invoices_manage, like publishing). Guests are not let
+    // in: a draft of theirs also stopped auto-issue for the booking, and no
+    // guest-facing page calls this.
+    const access = await checkAccess(session.user.id, booking.property.workspaceId, 'invoices_manage', {
+      propertyId: booking.propertyId,
+    })
+    if (!access.ok) {
       return NextResponse.json({ success: false, error: 'Không có quyền tạo hóa đơn' }, { status: 403 })
     }
     const locked = await lockedResponseForProperty(booking.propertyId)

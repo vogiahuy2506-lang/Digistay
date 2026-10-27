@@ -18,7 +18,8 @@ import { apiError } from '@/lib/i18n/api-errors'
 import { toast } from '@/components/ui/toast'
 import { bankLabel, toBankName } from '@/lib/vietqr'
 import { BookingPicker, bookingBalance } from '@/components/payment/booking-picker'
-import { MONEY_MANAGERS, NoAccess, useHasRole } from '@/components/payment/no-access'
+import { NoAccess } from '@/components/payment/no-access'
+import { useCan } from '@/components/layout/workspace-context'
 import { toCsv } from '@/lib/reports/revenue'
 import { MAX_PAGE_SIZE } from '@/lib/api/list-params'
 
@@ -140,8 +141,8 @@ export default function PaymentsPage() {
   const { id: routePropertyId } = useParams<{ slug: string; id: string }>()
   // Payments are worked by staff (menu: src/components/layout/nav.ts); the
   // money totals are for the owner and managers only.
-  const allowed = useHasRole(['ADMIN', 'MANAGER', 'RECEPTIONIST'])
-  const seesTotals = useHasRole(MONEY_MANAGERS)
+  const allowed = useCan('payments_manage')
+  const seesTotals = useCan('revenue_view')
   const methodOptions = PAYMENT_METHODS.map((value) => ({ value, label: t(`methodOptions.${value}`) }))
   // Offered first when the property has connected its PayOS account (Part 5).
   const payosOption = { value: 'PAYOS', label: t('methodOptions.PAYOS') }

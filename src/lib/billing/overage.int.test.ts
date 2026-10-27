@@ -34,7 +34,7 @@ vi.mock('next/server', async (original) => ({ ...(await original<typeof import('
 import { prisma } from '@/lib/db'
 import { createBooking, createRoomType, createTenant, createUser, publishSite, resetDatabase } from '@/test/integration/fixtures'
 import { decryptSecret, secretContext } from '@/lib/security/secret-box'
-import { getWorkspaceRole, requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { getAccess, requireAccess } from '@/lib/auth/access'
 import { PROPERTY_PLAN_LOCKED, ROOM_TYPE_NOT_BOOKABLE, ROOM_TYPE_PLAN_LOCKED, ONLINE_BOOKING_PAUSED } from './guard'
 import { workspaceUsage } from './limits'
 import { overageView, reconcileOverage } from './overage'
@@ -332,11 +332,11 @@ describe('what a lock means', () => {
     const w = await lockedWorkspace()
     const lockedUser = w.members[3]
     const openUser = w.members[0]
-    expect(await getWorkspaceRole(w.workspace.id, lockedUser.id)).toBeNull()
-    expect(await getWorkspaceRole(w.workspace.id, openUser.id)).toBe('RECEPTIONIST')
+    expect((await getAccess(w.workspace.id, lockedUser.id))?.role ?? null).toBeNull()
+    expect((await getAccess(w.workspace.id, openUser.id))?.role).toBe('RECEPTIONIST')
 
     signInAs(lockedUser)
-    expect((await requireWorkspaceRole(w.workspace.id, WorkspaceRoles.ALL_MEMBERS)).ok).toBe(false)
+    expect((await requireAccess(w.workspace.id, null)).ok).toBe(false)
     await createBooking(w.first.id)
     const list = await call(listBookings(get(`/api/bookings?propertyId=${w.first.id}`)))
     expect(list.body.data ?? []).toHaveLength(0)
@@ -351,7 +351,7 @@ describe('what a lock means', () => {
 
     await onPlan(w.workspace.id, 'growth')
     await reconcileOverage(w.workspace.id)
-    expect(await getWorkspaceRole(w.workspace.id, lockedUser.id)).toBe('RECEPTIONIST')
+    expect((await getAccess(w.workspace.id, lockedUser.id))?.role ?? null).toBe('RECEPTIONIST')
   })
 })
 

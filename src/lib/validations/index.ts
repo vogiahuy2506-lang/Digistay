@@ -74,11 +74,7 @@ export const updateWorkspaceSchema = z.object({
   newBookingEmail: z.boolean().optional(),
 })
 
-// Invitation Validations
-export const inviteMemberSchema = z.object({
-  email: z.string().email('Email không hợp lệ'),
-  role: z.enum(['ADMIN', 'MANAGER', 'RECEPTIONIST', 'USER']),
-})
+// Invitation validations: src/lib/members/grant.ts (inviteMemberSchema)
 
 // Property Validations
 export const propertyTypeEnum = z.enum(['HOTEL', 'HOMESTAY', 'RESORT', 'RESTAURANT', 'VILLA', 'MOTEL', 'OTHER'])
@@ -233,7 +229,6 @@ export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>
 export type CreateWorkspaceInput = z.infer<typeof createWorkspaceSchema>
 export type UpdateWorkspaceInput = z.infer<typeof updateWorkspaceSchema>
-export type InviteMemberInput = z.infer<typeof inviteMemberSchema>
 export type CreatePropertyInput = z.infer<typeof createPropertySchema>
 export type UpdatePropertyInput = z.infer<typeof updatePropertySchema>
 export type CreateRoomTypeInput = z.infer<typeof createRoomTypeSchema>

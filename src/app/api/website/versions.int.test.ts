@@ -16,7 +16,7 @@ vi.mock('next/cache', () => ({ revalidateTag: vi.fn(), unstable_cache: (fn: unkn
 import { revalidateTag } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { createTenant, createUser, resetDatabase } from '@/test/integration/fixtures'
+import { addMemberProperty, createProperty, createTenant, createUser, resetDatabase } from '@/test/integration/fixtures'
 import { publicSiteTag } from '@/lib/public-site/site'
 import { MERGE_WINDOW_MS, SITE_VERSION_LIMIT, loadSiteVersionPreview, parseSiteSnapshot } from '@/lib/public-site/versions'
 import { PUT as putBlocks } from './blocks/route'
@@ -352,6 +352,30 @@ describe('who may see and restore versions', () => {
     expect(preview?.snapshot.blocks.map((b) => b.name)).toEqual(BLOCKS_A.map((b) => b.name))
     expect(preview?.version).toMatchObject({ id: versionA.id, by: 'Test User' })
     expect((await restore(property.id, versionA.id)).status).toBe(200)
+  })
+
+  it('website_manage ticked lists and restores; a member limited to another hotel gets 403 and no preview', async () => {
+    const { owner, workspace, property, member } = await createTenant({
+      memberRole: 'USER',
+      memberPermissions: ['website_manage'],
+      memberLimited: true,
+    })
+    const other = await createProperty(workspace.id)
+    await addMemberProperty(workspace.id, member!.id, other.id)
+    signInAs(owner)
+    await saveBlocks(property.id, BLOCKS_A)
+    await saveBlocks(other.id, BLOCKS_B)
+    const [version] = await versionsOf(property.id)
+    const [otherVersion] = await versionsOf(other.id)
+
+    signInAs(member!)
+    expect((await list(property.id)).status).toBe(403)
+    expect((await restore(property.id, version.id)).status).toBe(403)
+    expect(await loadSiteVersionPreview(property.subdomain, version.id)).toBeNull()
+
+    expect((await list(other.id)).body.data.versions).toHaveLength(1)
+    expect(await loadSiteVersionPreview(other.subdomain, otherVersion.id)).not.toBeNull()
+    expect((await restore(other.id, otherVersion.id)).status).toBe(200)
   })
 
   it('nobody signed in gets 401 and no preview', async () => {

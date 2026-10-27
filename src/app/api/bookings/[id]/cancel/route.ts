@@ -6,6 +6,7 @@ import { suggestRefund } from '@/lib/bookings/cancel-refund'
 import { lockBooking } from '@/lib/payments/booking-payments'
 import { z } from 'zod'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
+import { can, checkPropertyAccess } from '@/lib/auth/access'
 
 /**
  * Cancel a booking and give money back. The refund is a suggestion from
@@ -37,35 +38,17 @@ type Session = { user: { id: string } }
 
 /** The booking if the caller may cancel it; otherwise the error response. */
 async function bookingForStaff(id: string, session: Session) {
-  const booking = await prisma.booking.findUnique({
-    where: { id },
-    include: {
-      property: {
-        select: {
-          workspace: {
-            select: {
-              ownerId: true,
-              members: {
-                where: { userId: session.user.id, planLockedAt: null },
-                select: { role: true },
-              },
-            },
-          },
-        },
-      },
-    },
-  })
-
-  // Outside the workspace: 404, so booking ids cannot be probed.
-  const workspace = booking?.property.workspace
-  const isOwner = workspace?.ownerId === session.user.id
-  if (!booking || !workspace || (!isOwner && workspace.members.length === 0)) {
+  const booking = await prisma.booking.findUnique({ where: { id } })
+  if (!booking) {
     return { error: NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 }) }
   }
 
+  // Outside the workspace or the property: 404, so booking ids cannot be probed.
+  const access = await checkPropertyAccess(session.user.id, booking.propertyId, null, 'Không tìm thấy đơn đặt phòng')
+  if (!access.ok) return { error: access.response }
+
   // Staff only: guests used to be let in and could choose their own refund.
-  const isStaff = workspace.members.some((m) => ['ADMIN', 'MANAGER', 'RECEPTIONIST'].includes(m.role))
-  if (!isOwner && !isStaff) {
+  if (!can(access.access, 'bookings_cancel', booking.propertyId)) {
     return { error: NextResponse.json({ success: false, error: 'Không có quyền hủy đơn' }, { status: 403 }) }
   }
   return { booking }

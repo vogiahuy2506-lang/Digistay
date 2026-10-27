@@ -4,25 +4,26 @@
  * they announce, one row per recipient; the bell (notification-bell.tsx)
  * reads them through /api/notifications every half minute.
  *
- * - booking_new: a guest booked on the hotel's site → the owner, admins,
- *   managers and receptionists; staff made one → the owner and admins, not
+ * Recipients: the owner and the members with a permission at the property
+ * (usersWithPermission in src/lib/auth/access.ts).
+ * - booking_new: a guest booked on the hotel's site → bookings_edit (the
+ *   front desk); staff made one → workspace_settings (the admins), not
  *   whoever made it.
  * - deposit_paid: a guest's online deposit came in (PayOS, or staff
- *   confirmed a manual transfer) → the owner, admins, managers and
- *   receptionists.
+ *   confirmed a manual transfer) → payments_manage.
  * - transfer_claimed: a guest says they transferred a manual deposit
- *   (manual-deposit.ts) → the same people, to check the account.
+ *   (manual-deposit.ts) → payments_manage, to check the account.
  *
  * Stored as a type and data, so each reader sees it in their own language.
  */
-import type { Prisma, WorkspaceRole } from '@prisma/client'
+import type { Prisma } from '@prisma/client'
+import { usersWithPermission } from '@/lib/auth/access'
+import type { Permission } from '@/lib/auth/permissions'
 
 type Tx = Prisma.TransactionClient
 
 export const NOTIFICATION_TYPES = ['booking_new', 'deposit_paid', 'transfer_claimed'] as const
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number]
-
-const FRONT_DESK: WorkspaceRole[] = ['ADMIN', 'MANAGER', 'RECEPTIONIST']
 
 async function notify(
   tx: Tx,
@@ -30,7 +31,7 @@ async function notify(
     propertyId: string
     bookingId: string
     type: NotificationType
-    roles: WorkspaceRole[]
+    permission: Permission
     exceptUserId?: string | null
     data: Prisma.JsonObject
   }
@@ -40,10 +41,10 @@ async function notify(
     select: {
       name: true,
       workspaceId: true,
-      workspace: { select: { slug: true, ownerId: true, members: { where: { role: { in: input.roles }, planLockedAt: null }, select: { userId: true } } } },
+      workspace: { select: { slug: true } },
     },
   })
-  const recipients = new Set([property.workspace.ownerId, ...property.workspace.members.map((m) => m.userId)])
+  const recipients = new Set(await usersWithPermission(tx, input.propertyId, input.permission))
   if (input.exceptUserId) recipients.delete(input.exceptUserId)
   if (recipients.size === 0) return 0
   const link = `/workspace/${property.workspace.slug}/properties/${input.propertyId}/bookings/${input.bookingId}`
@@ -78,7 +79,7 @@ export function notifyNewBooking(
     propertyId: booking.propertyId,
     bookingId: booking.id,
     type: 'booking_new',
-    roles: fromWebsite ? FRONT_DESK : ['ADMIN'],
+    permission: fromWebsite ? 'bookings_edit' : 'workspace_settings',
     exceptUserId: booking.createdById,
     data: {
       bookingCode: booking.bookingCode,
@@ -100,7 +101,7 @@ export async function notifyDepositPaid(tx: Tx, payment: { bookingId: string; am
     propertyId: booking.propertyId,
     bookingId: booking.id,
     type: 'deposit_paid',
-    roles: FRONT_DESK,
+    permission: 'payments_manage',
     data: { bookingCode: booking.bookingCode, guestName: booking.guestName, amount: payment.amount },
   })
 }
@@ -114,7 +115,7 @@ export function notifyTransferClaimed(
     propertyId: claim.propertyId,
     bookingId: claim.bookingId,
     type: 'transfer_claimed',
-    roles: FRONT_DESK,
+    permission: 'payments_manage',
     data: { bookingCode: claim.bookingCode, guestName: claim.guestName, amount: claim.amount, claimedAt: claim.claimedAt.toISOString() },
   })
 }

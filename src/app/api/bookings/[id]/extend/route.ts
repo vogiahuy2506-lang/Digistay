@@ -8,6 +8,7 @@ import { auth } from '@/lib/auth'
 import { lockBooking, syncBookingPayments } from '@/lib/payments/booking-payments'
 import { z } from 'zod'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
+import { can, checkPropertyAccess } from '@/lib/auth/access'
 
 const extendSchema = z.object({
   newCheckOutDate: z.string(),
@@ -57,15 +58,6 @@ export async function POST(request: NextRequest, props: RouteParams) {
           select: {
             id: true,
             name: true,
-            workspace: {
-              select: {
-                ownerId: true,
-                members: {
-                  where: { userId: session.user.id, planLockedAt: null },
-                  select: { role: true },
-                },
-              },
-            },
           },
         },
         roomLocks: true,
@@ -81,16 +73,9 @@ export async function POST(request: NextRequest, props: RouteParams) {
     // nights paid. No guest-facing page calls this route.
     // Outsiders get the 404 of a missing booking; the booking's own guest
     // (who knows it exists) the 403 below.
-    const workspace = booking.property.workspace
-    const isOwner = workspace.ownerId === session.user.id
-    if (!isOwner && workspace.members.length === 0 && booking.guestEmail !== session.user.email) {
-      return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
-    }
-    const isStaff = workspace.members.some(m =>
-      ['ADMIN', 'MANAGER', 'RECEPTIONIST'].includes(m.role)
-    )
-
-    if (!isOwner && !isStaff) {
+    const access = await checkPropertyAccess(session.user.id, booking.propertyId, null, 'Không tìm thấy đơn đặt phòng')
+    if (!access.ok && booking.guestEmail !== session.user.email) return access.response
+    if (!access.ok || !can(access.access, 'bookings_edit', booking.propertyId)) {
       return NextResponse.json({ success: false, error: 'Không có quyền gia hạn đặt phòng' }, { status: 403 })
     }
     const locked = await lockedResponseForProperty(booking.propertyId)

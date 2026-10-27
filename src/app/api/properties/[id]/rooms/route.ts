@@ -1,26 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/db'
-import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { requireSession } from '@/lib/auth/rbac'
+import { checkPropertyAccess } from '@/lib/auth/access'
 import { RoomError, countRooms, parseRoomNumbers, peakTaken } from '@/lib/bookings/rooms'
 import { invalidatePublicSite } from '@/lib/public-site/site'
 import { planResponseForProperty } from '@/lib/billing/guard'
 
 type Props = { params: Promise<{ id: string }> }
 
-const NOT_FOUND = () => NextResponse.json({ success: false, error: 'Không tìm thấy khách sạn' }, { status: 404 })
+// An unknown property, or one the caller does not reach, is a 404.
+const NOT_FOUND = 'Không tìm thấy khách sạn'
 
-async function workspaceOf(propertyId: string) {
-  const property = await prisma.property.findUnique({ where: { id: propertyId }, select: { workspaceId: true } })
-  return property?.workspaceId ?? null
-}
-
-/** GET — the hotel's rooms by room type (src/lib/bookings/rooms.ts). Staff. */
+/** GET — the hotel's rooms by room type (src/lib/bookings/rooms.ts). Anyone working at the hotel. */
 export async function GET(_request: NextRequest, props: Props) {
   const { id } = await props.params
-  const workspaceId = await workspaceOf(id)
-  if (!workspaceId) return NOT_FOUND()
-  const access = await requireWorkspaceRole(workspaceId, WorkspaceRoles.STAFF_AND_UP)
+  const sess = await requireSession()
+  if (!sess.ok) return sess.response
+  const access = await checkPropertyAccess(sess.session.user.id, id, null, NOT_FOUND)
   if (!access.ok) return access.response
 
   const roomTypes = await prisma.roomType.findMany({
@@ -45,14 +42,16 @@ const createSchema = z.object({
 /**
  * POST { roomTypeId, numbers: "101-110, 201", floor? } — adds rooms to a
  * type. Its inventory becomes its active rooms, which must still hold every
- * future night already sold. Owner, admins and managers.
+ * future night already sold. Those who manage the hotel's rooms.
  */
 export async function POST(request: NextRequest, props: Props) {
   const { id } = await props.params
-  const workspaceId = await workspaceOf(id)
-  if (!workspaceId) return NOT_FOUND()
-  const access = await requireWorkspaceRole(workspaceId, WorkspaceRoles.ADMINS_AND_MANAGERS)
+  const sess = await requireSession()
+  if (!sess.ok) return sess.response
+  const access = await checkPropertyAccess(sess.session.user.id, id, 'rooms_manage', NOT_FOUND)
   if (!access.ok) return access.response
+  const { userId } = access
+  const { workspaceId } = access.property
 
   const parsed = createSchema.safeParse(await request.json().catch(() => null))
   if (!parsed.success) return NextResponse.json({ success: false, error: parsed.error.errors[0].message }, { status: 400 })
@@ -96,7 +95,7 @@ export async function POST(request: NextRequest, props: Props) {
       await tx.roomType.update({ where: { id: roomType.id }, data: { totalRooms: active } })
       await tx.activityLog.create({
         data: {
-          userId: access.userId,
+          userId,
           workspaceId,
           propertyId: id,
           action: 'CREATE',

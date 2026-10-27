@@ -10,6 +10,7 @@ import { lockedResponseForProperty, planResponseForProperty } from '@/lib/billin
 import { reconcileOverageSoon } from '@/lib/billing/overage'
 import { roomTypeDelta } from '@/lib/billing/limits'
 import { hardCapacityProblem } from '@/lib/bookings/capacity'
+import { checkPropertyAccess } from '@/lib/auth/access'
 
 const updateRoomTypeSchema = z.object({
   name: z.string().min(1).optional(),
@@ -53,19 +54,6 @@ export async function GET(request: NextRequest, props: RouteParams) {
     const roomType = await prisma.roomType.findUnique({
       where: { id: params.id },
       include: {
-        property: {
-          select: {
-            workspace: {
-              select: {
-                ownerId: true,
-                members: {
-                  where: { userId: session.user.id, planLockedAt: null },
-                  select: { role: true },
-                },
-              },
-            },
-          },
-        },
         images: true,
         amenities: { include: { amenity: true } },
         pricing: {
@@ -80,12 +68,9 @@ export async function GET(request: NextRequest, props: RouteParams) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy hạng phòng' }, { status: 404 })
     }
 
-    // Check access
-    const workspace = roomType.property.workspace
-    const isOwner = workspace.ownerId === session.user.id
-    const isStaff = workspace.members.length > 0
-
-    if (!isOwner && !isStaff) {
+    // Anyone who reaches its property
+    const access = await checkPropertyAccess(session.user.id, roomType.propertyId, null)
+    if (!access.ok) {
       return NextResponse.json({ success: false, error: 'Không có quyền truy cập' }, { status: 403 })
     }
 
@@ -109,20 +94,7 @@ export async function PUT(request: NextRequest, props: RouteParams) {
       where: { id: params.id },
       include: {
         pricing: { orderBy: { createdAt: 'desc' }, take: 1 },
-        property: {
-          select: {
-            workspaceId: true,
-            workspace: {
-              select: {
-                ownerId: true,
-                members: {
-                  where: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER'] }, planLockedAt: null },
-                  select: { role: true },
-                },
-              },
-            },
-          },
-        },
+        property: { select: { workspaceId: true } },
       },
     })
 
@@ -130,12 +102,8 @@ export async function PUT(request: NextRequest, props: RouteParams) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy hạng phòng' }, { status: 404 })
     }
 
-    // Check access
-    const workspace = roomType.property.workspace
-    const isOwner = workspace.ownerId === session.user.id
-    const isManager = workspace.members.length > 0
-
-    if (!isOwner && !isManager) {
+    const access = await checkPropertyAccess(session.user.id, roomType.propertyId, 'room_types_manage')
+    if (!access.ok) {
       return NextResponse.json({ success: false, error: 'Không có quyền chỉnh sửa' }, { status: 403 })
     }
 
@@ -273,34 +241,15 @@ export async function DELETE(request: NextRequest, props: RouteParams) {
 
     const roomType = await prisma.roomType.findUnique({
       where: { id: params.id },
-      include: {
-        property: {
-          select: {
-            workspaceId: true,
-            workspace: {
-              select: {
-                ownerId: true,
-                members: {
-                  where: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER'] }, planLockedAt: null },
-                  select: { role: true },
-                },
-              },
-            },
-          },
-        },
-      },
+      include: { property: { select: { workspaceId: true } } },
     })
 
     if (!roomType) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy hạng phòng' }, { status: 404 })
     }
 
-    // Check access
-    const workspace = roomType.property.workspace
-    const isOwner = workspace.ownerId === session.user.id
-    const isManager = workspace.members.length > 0
-
-    if (!isOwner && !isManager) {
+    const access = await checkPropertyAccess(session.user.id, roomType.propertyId, 'room_types_manage')
+    if (!access.ok) {
       return NextResponse.json({ success: false, error: 'Không có quyền xóa' }, { status: 403 })
     }
     const locked = await lockedResponseForProperty(roomType.propertyId)

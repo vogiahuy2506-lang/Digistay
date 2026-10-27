@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { accessibleWorkspaces } from '@/lib/auth/access'
 import { MarketingHeader } from '@/components/marketing/MarketingHeader'
 import { frame, inkButton, lineButton } from '@/components/marketing/styles'
 import { isPlanId } from '@/lib/marketing/plans'
@@ -14,7 +15,7 @@ export const metadata: Metadata = { robots: { index: false } }
 /**
  * /billing/start?plan=…&billing=MONTH|YEAR — where "Đăng ký gói này" on the
  * pricing page leads. Signed out: sign up first, then back here. One
- * workspace the visitor owns or administers: straight to its plan page with
+ * workspace whose plan the visitor may buy (billing_manage): straight to its plan page with
  * the plan picked (it opens the QR). Several: choose one. None: create one.
  */
 export default async function BillingStartPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
@@ -28,7 +29,7 @@ export default async function BillingStartPage({ searchParams }: { searchParams:
   if (!userId) redirect(`/register?callbackUrl=${encodeURIComponent(`/billing/start?${query}`)}`)
 
   const workspaces = await prisma.workspace.findMany({
-    where: { OR: [{ ownerId: userId }, { members: { some: { userId, role: 'ADMIN', planLockedAt: null } } }] },
+    where: accessibleWorkspaces(userId, 'billing_manage'),
     select: { name: true, slug: true },
     orderBy: { createdAt: 'asc' },
   })

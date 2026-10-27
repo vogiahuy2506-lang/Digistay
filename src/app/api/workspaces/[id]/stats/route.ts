@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { getWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { checkAccess, propertyScope } from '@/lib/auth/access'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -9,9 +9,10 @@ interface RouteParams {
 
 /**
  * GET /api/workspaces/[id]/stats
- * Get workspace-level statistics including all properties. Revenue
- * (monthlyRevenue, totalRevenue, byProperty[].revenue) is left out unless
- * the caller is the owner, an ADMIN or a MANAGER, who see the reports.
+ * Get workspace-level statistics over the properties the caller reaches
+ * (a member limited to some sees those only). Revenue (monthlyRevenue,
+ * totalRevenue, byProperty[].revenue) is left out unless the caller may
+ * see revenue (revenue_view), as for the reports.
  */
 export async function GET(request: NextRequest, props: RouteParams) {
   const params = await props.params
@@ -24,15 +25,17 @@ export async function GET(request: NextRequest, props: RouteParams) {
     }
 
     // Check workspace access
-    const role = await getWorkspaceRole(id, session.user.id)
-    if (!role) {
+    const granted = await checkAccess(session.user.id, id, null)
+    if (!granted.ok) {
       return NextResponse.json({ success: false, error: 'Không có quyền truy cập' }, { status: 403 })
     }
-    const seesRevenue = (WorkspaceRoles.ADMINS_AND_MANAGERS as readonly string[]).includes(role)
+    const { access } = granted
+    const seesRevenue = access.permissions.has('revenue_view')
+    const reached = propertyScope(access)
 
-    // Get all properties in workspace
+    // The workspace's properties the caller reaches
     const properties = await prisma.property.findMany({
-      where: { workspaceId: id },
+      where: reached,
       select: {
         id: true,
         name: true,
@@ -53,7 +56,7 @@ export async function GET(request: NextRequest, props: RouteParams) {
 
     const bookings = await prisma.booking.findMany({
       where: {
-        property: { workspaceId: id },
+        property: reached,
         createdAt: { gte: thirtyDaysAgo },
       },
       select: {
@@ -101,7 +104,7 @@ export async function GET(request: NextRequest, props: RouteParams) {
 
     const todayCheckIns = await prisma.booking.count({
       where: {
-        property: { workspaceId: id },
+        property: reached,
         status: 'CHECKED_IN',
         actualCheckIn: { gte: today, lt: tomorrow },
       },
@@ -109,7 +112,7 @@ export async function GET(request: NextRequest, props: RouteParams) {
 
     const todayCheckOuts = await prisma.booking.count({
       where: {
-        property: { workspaceId: id },
+        property: reached,
         status: 'CHECKED_OUT',
         actualCheckOut: { gte: today, lt: tomorrow },
       },

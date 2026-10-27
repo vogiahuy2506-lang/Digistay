@@ -24,7 +24,8 @@ import {
 import { apiError } from '@/lib/i18n/api-errors'
 import { toast } from '@/components/ui/toast'
 import { BookingPicker, type PickedBooking } from '@/components/payment/booking-picker'
-import { MONEY_MANAGERS, NoAccess, useHasRole } from '@/components/payment/no-access'
+import { NoAccess } from '@/components/payment/no-access'
+import { useCan } from '@/components/layout/workspace-context'
 
 interface Invoice {
   id: string
@@ -113,7 +114,7 @@ export default function InvoicesPage() {
   const labels = useDashLabels()
   const { id: routePropertyId } = useParams<{ slug: string; id: string }>()
   // The menu gives invoices to the owner and managers (src/components/layout/nav.ts).
-  const allowed = useHasRole(MONEY_MANAGERS)
+  const allowed = useCan('invoices_manage')
   const cqtLabel = (code: number) =>
     (CQT_CODES as readonly string[]).includes(String(code))
       ? t(`cqt.${String(code) as CqtCode}`)

@@ -1,6 +1,6 @@
 /**
- * GET /api/bookings must always be scoped to the caller's workspaces,
- * including when no propertyId is passed.
+ * GET /api/bookings must always be scoped to the properties whose bookings
+ * the caller may see, including when no propertyId is passed.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
@@ -9,28 +9,32 @@ vi.mock('@/lib/auth', () => ({
   auth: vi.fn(),
 }))
 
+vi.mock('@/lib/auth/access', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/auth/access')>()),
+  checkPropertyAccess: vi.fn(),
+}))
+
 vi.mock('@/lib/db', () => ({
   prisma: {
-    property: { findFirst: vi.fn() },
     booking: { findMany: vi.fn(), count: vi.fn(), groupBy: vi.fn() },
     roomType: { findMany: vi.fn() },
   },
 }))
 
 import { auth } from '@/lib/auth'
+import { accessibleProperties, checkPropertyAccess } from '@/lib/auth/access'
 import { prisma } from '@/lib/db'
 import { GET } from './route'
 
 const mockAuth = auth as unknown as ReturnType<typeof vi.fn>
+const mockAccess = vi.mocked(checkPropertyAccess)
 const mockPrisma = prisma as unknown as {
-  property: { findFirst: ReturnType<typeof vi.fn> }
   booking: { findMany: ReturnType<typeof vi.fn>; count: ReturnType<typeof vi.fn>; groupBy: ReturnType<typeof vi.fn> }
   roomType: { findMany: ReturnType<typeof vi.fn> }
 }
 
-const workspaceAccess = (userId: string) => ({
-  OR: [{ ownerId: userId }, { members: { some: { userId, planLockedAt: null } } }],
-})
+const granted = { ok: true, userId: 'user-1', property: { id: 'prop-1', workspaceId: 'ws-1' } } as never
+const denied = { ok: false, response: new Response(null, { status: 404 }) } as never
 
 function get(query = '') {
   return GET(new NextRequest(`http://localhost/api/bookings${query}`))
@@ -53,10 +57,10 @@ describe('GET /api/bookings', () => {
     expect(mockPrisma.booking.findMany).not.toHaveBeenCalled()
   })
 
-  it('without params, lists and counts only bookings in the caller\'s workspaces', async () => {
+  it('without params, lists and counts only bookings of properties the caller may see', async () => {
     const res = await get()
     expect(res.status).toBe(200)
-    const expected = { property: { workspace: workspaceAccess('user-1') } }
+    const expected = { property: accessibleProperties('user-1', 'bookings_view') }
     expect(mockPrisma.booking.findMany.mock.calls[0][0].where).toEqual(expected)
     expect(mockPrisma.booking.count.mock.calls[0][0].where).toEqual(expected)
   })
@@ -64,22 +68,23 @@ describe('GET /api/bookings', () => {
   it('adds workspaceId (dashboard) on top of the access filter', async () => {
     await get('?workspaceId=ws-9&limit=5')
     expect(mockPrisma.booking.findMany.mock.calls[0][0].where).toEqual({
-      property: { workspace: workspaceAccess('user-1'), workspaceId: 'ws-9' },
+      property: { ...accessibleProperties('user-1', 'bookings_view'), workspaceId: 'ws-9' },
     })
   })
 
   it('returns 403 for a propertyId the caller cannot access, without querying bookings', async () => {
-    mockPrisma.property.findFirst.mockResolvedValue(null)
+    mockAccess.mockResolvedValue(denied)
     const res = await get('?propertyId=prop-other')
     expect(res.status).toBe(403)
+    expect(mockAccess).toHaveBeenCalledWith('user-1', 'prop-other', 'bookings_view')
     expect(mockPrisma.booking.findMany).not.toHaveBeenCalled()
   })
 
   it('filters by an accessible propertyId while keeping the access filter', async () => {
-    mockPrisma.property.findFirst.mockResolvedValue({ id: 'prop-1' })
+    mockAccess.mockResolvedValue(granted)
     await get('?propertyId=prop-1&status=CONFIRMED')
     expect(mockPrisma.booking.findMany.mock.calls[0][0].where).toEqual({
-      property: { workspace: workspaceAccess('user-1') },
+      property: accessibleProperties('user-1', 'bookings_view'),
       propertyId: 'prop-1',
       status: 'CONFIRMED',
     })
@@ -98,7 +103,7 @@ describe('GET /api/bookings', () => {
   it('searches code, name and phone in the database, inside the access filter', async () => {
     await get('?q=%20MB-10%20')
     const where = mockPrisma.booking.findMany.mock.calls[0][0].where
-    expect(where.property).toEqual({ workspace: workspaceAccess('user-1') })
+    expect(where.property).toEqual(accessibleProperties('user-1', 'bookings_view'))
     expect(where.OR).toEqual([
       { bookingCode: { contains: 'MB-10', mode: 'insensitive' } },
       { guestName: { contains: 'MB-10', mode: 'insensitive' } },
@@ -114,14 +119,14 @@ describe('GET /api/bookings', () => {
   })
 
   it('counts per status only when asked, with every filter but the status', async () => {
-    mockPrisma.property.findFirst.mockResolvedValue({ id: 'prop-1' })
+    mockAccess.mockResolvedValue(granted)
     mockPrisma.booking.groupBy.mockResolvedValue([
       { status: 'PENDING', _count: { _all: 2 } },
       { status: 'CHECKED_IN', _count: { _all: 1 } },
     ])
     const body = await (await get('?propertyId=prop-1&status=PENDING&source=OTA&counts=1')).json()
     expect(mockPrisma.booking.groupBy.mock.calls[0][0].where).toEqual({
-      property: { workspace: workspaceAccess('user-1') },
+      property: accessibleProperties('user-1', 'bookings_view'),
       propertyId: 'prop-1',
       source: 'OTA',
     })

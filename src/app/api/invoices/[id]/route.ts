@@ -5,6 +5,7 @@ import { EinvoiceError } from '@/lib/einvoice/matbao'
 import { assertEditable, invoiceData, invoiceInputSchema } from '@/lib/einvoice/invoices'
 import { isVatCode, type VatCode } from '@/lib/einvoice/vat'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
+import { checkAccess, checkPropertyAccess } from '@/lib/auth/access'
 
 // The whole buyer and amount, as when creating; amounts are recomputed on
 // the server. Provider, template and series come from the property.
@@ -24,19 +25,10 @@ export async function GET(request: NextRequest, props: RouteParams) {
       return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
     }
 
-    // Another hotel's invoice answers 404, the same as a missing one.
-    const invoice = await prisma.invoice.findFirst({
-      where: {
-        id,
-        property: {
-          workspace: {
-            OR: [
-              { ownerId: session.user.id },
-              { members: { some: { userId: session.user.id, planLockedAt: null } } },
-            ],
-          },
-        },
-      },
+    // Another hotel's invoice answers 404, the same as a missing one. An
+    // invoice is part of its booking's record: bookings_view.
+    const invoice = await prisma.invoice.findUnique({
+      where: { id },
       include: {
         booking: {
           select: {
@@ -59,6 +51,8 @@ export async function GET(request: NextRequest, props: RouteParams) {
     if (!invoice) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy hóa đơn' }, { status: 404 })
     }
+    const access = await checkPropertyAccess(session.user.id, invoice.propertyId, 'bookings_view', 'Không tìm thấy hóa đơn')
+    if (!access.ok) return access.response
 
     return NextResponse.json({ success: true, data: invoice })
   } catch (error) {
@@ -82,23 +76,8 @@ export async function PUT(request: NextRequest, props: RouteParams) {
     const invoice = await prisma.invoice.findUnique({
       where: { id },
       include: {
-        booking: {
-          include: {
-            property: {
-              select: {
-                workspace: {
-                  select: {
-                    ownerId: true,
-                    // Staff only, like publishing (STAFF_AND_UP)
-                    members: {
-                      where: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER', 'RECEPTIONIST'] }, planLockedAt: null },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
+        booking: { select: { id: true, totalAmount: true } },
+        property: { select: { workspaceId: true } },
       },
     })
 
@@ -106,12 +85,11 @@ export async function PUT(request: NextRequest, props: RouteParams) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy hóa đơn' }, { status: 404 })
     }
 
-    // Check access
-    const workspace = invoice.booking.property.workspace
-    const isOwner = workspace.ownerId === session.user.id
-    const isStaff = workspace.members.length > 0
-
-    if (!isOwner && !isStaff) {
+    // Check access: invoices_manage, like publishing
+    const access = await checkAccess(session.user.id, invoice.property.workspaceId, 'invoices_manage', {
+      propertyId: invoice.propertyId,
+    })
+    if (!access.ok) {
       return NextResponse.json({ success: false, error: 'Không có quyền chỉnh sửa hóa đơn' }, { status: 403 })
     }
     const locked = await lockedResponseForProperty(invoice.propertyId)
@@ -192,37 +170,18 @@ export async function DELETE(request: NextRequest, props: RouteParams) {
     // Get invoice
     const invoice = await prisma.invoice.findUnique({
       where: { id },
-      include: {
-        booking: {
-          include: {
-            property: {
-              select: {
-                workspace: {
-                  select: {
-                    ownerId: true,
-                    // Staff only, like publishing (STAFF_AND_UP)
-                    members: {
-                      where: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER', 'RECEPTIONIST'] }, planLockedAt: null },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
+      include: { property: { select: { workspaceId: true } } },
     })
 
     if (!invoice) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy hóa đơn' }, { status: 404 })
     }
 
-    // Check access
-    const workspace = invoice.booking.property.workspace
-    const isOwner = workspace.ownerId === session.user.id
-    const isStaff = workspace.members.length > 0
-
-    if (!isOwner && !isStaff) {
+    // Check access: invoices_manage, like publishing
+    const access = await checkAccess(session.user.id, invoice.property.workspaceId, 'invoices_manage', {
+      propertyId: invoice.propertyId,
+    })
+    if (!access.ok) {
       return NextResponse.json({ success: false, error: 'Không có quyền xóa hóa đơn' }, { status: 403 })
     }
     const locked = await lockedResponseForProperty(invoice.propertyId)

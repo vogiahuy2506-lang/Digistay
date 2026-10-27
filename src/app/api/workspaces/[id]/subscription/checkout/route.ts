@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/db'
-import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { requireAccess } from '@/lib/auth/access'
 import { PLAN_IDS } from '@/lib/marketing/plans'
 import { BillingError, createCheckout } from '@/lib/billing/checkout'
 import { invoiceBuyerSchema, platformEinvoiceConfigured } from '@/lib/billing/einvoice'
@@ -18,7 +18,7 @@ const schema = z.object({ plan: z.enum(PLAN_IDS), billing: z.enum(['MONTH', 'YEA
  */
 export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params
-  const access = await requireWorkspaceRole(id, WorkspaceRoles.ADMINS)
+  const access = await requireAccess(id, 'billing_manage')
   if (!access.ok) return access.response
 
   const parsed = schema.safeParse(await request.json().catch(() => null))

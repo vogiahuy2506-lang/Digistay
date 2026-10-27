@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { invalidatePublicSite } from '@/lib/public-site/site'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
+import { accessibleProperties } from '@/lib/auth/access'
 
 const assignSchema = z.object({
   propertyId: z.string(),
@@ -23,15 +24,7 @@ export async function GET(
     }
 
     const property = await prisma.property.findFirst({
-      where: {
-        id: params.id,
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, planLockedAt: null } } },
-          ],
-        },
-      },
+      where: { id: params.id, ...accessibleProperties(session.user.id) },
       select: { id: true },
     })
     if (!property) {
@@ -80,15 +73,7 @@ export async function PUT(
     }
 
     const property = await prisma.property.findFirst({
-      where: {
-        id: params.id,
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER'] }, planLockedAt: null } } },
-          ],
-        },
-      },
+      where: { id: params.id, ...accessibleProperties(session.user.id, 'property_edit') },
       select: { id: true },
     })
     if (!property) {

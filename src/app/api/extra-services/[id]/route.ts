@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { invalidatePublicSite } from '@/lib/public-site/site'
 import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
 import { lockedResponse } from '@/lib/billing/guard'
+import { checkPropertyAccess } from '@/lib/auth/access'
 
 const updateSchema = z.object({
   name: z.string().min(2).optional(),
@@ -20,27 +21,11 @@ const updateSchema = z.object({
 async function userCanManageService(serviceId: string, userId: string) {
   const service = await prisma.extraService.findUnique({
     where: { id: serviceId },
-    include: {
-      property: {
-        include: {
-          workspace: {
-            select: {
-              ownerId: true,
-              members: {
-                where: { userId, role: { in: ['ADMIN', 'MANAGER'] }, planLockedAt: null },
-                select: { id: true },
-              },
-            },
-          },
-        },
-      },
-    },
+    include: { property: { select: { workspaceId: true } } },
   })
   if (!service) return { ok: false as const, status: 404, error: 'Không tìm thấy dịch vụ' }
-  const ws = service.property.workspace
-  if (ws.ownerId !== userId && ws.members.length === 0) {
-    return { ok: false as const, status: 403, error: 'Không có quyền' }
-  }
+  const access = await checkPropertyAccess(userId, service.propertyId, 'services_manage')
+  if (!access.ok) return { ok: false as const, status: 403, error: 'Không có quyền' }
   return { ok: true as const, service }
 }
 

@@ -1,6 +1,6 @@
 import { loadWorkspaceShell } from '@/lib/auth/workspace-shell-data'
 import { WorkspaceShell } from '@/components/layout/workspace-shell'
-import { WorkspaceRoleProvider } from '@/components/layout/workspace-role-provider'
+import { WorkspaceAccessProvider } from '@/components/layout/workspace-access-provider'
 import { PlanBanner } from '@/components/layout/plan-banner'
 
 /**
@@ -20,16 +20,20 @@ export default async function WorkspaceLayout({
   const { slug } = await params
   const data = await loadWorkspaceShell(slug)
 
+  const { role, isOwner, customPermissions, permissions, propertyIds } = data.workspace
+
   return (
-    <WorkspaceShell
-      workspace={data.workspace}
-      workspaces={data.workspaces}
-      userName={data.userName}
-      userEmail={data.userEmail}
-      userImage={data.userImage}
-    >
-      <PlanBanner plan={data.plan} slug={data.workspace.slug} role={data.workspace.role} />
-      <WorkspaceRoleProvider role={data.workspace.role}>{children}</WorkspaceRoleProvider>
-    </WorkspaceShell>
+    <WorkspaceAccessProvider value={{ role, isOwner, customPermissions, permissions, propertyIds }}>
+      <WorkspaceShell
+        workspace={data.workspace}
+        workspaces={data.workspaces}
+        userName={data.userName}
+        userEmail={data.userEmail}
+        userImage={data.userImage}
+      >
+        <PlanBanner plan={data.plan} slug={data.workspace.slug} canBuy={permissions.includes('billing_manage')} />
+        {children}
+      </WorkspaceShell>
+    </WorkspaceAccessProvider>
   )
 }

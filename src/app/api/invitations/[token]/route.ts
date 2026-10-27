@@ -65,13 +65,32 @@ export async function GET(
       })
     }
 
+    // Whether to offer "sign in" or "set a password" (POST ./register), and
+    // which properties a limited invitation gives.
+    const open = invitation.status === 'PENDING' && !isExpired
+    const [account, properties] = open
+      ? await Promise.all([
+          prisma.user.findFirst({ where: { email: { equals: invitation.email, mode: 'insensitive' } }, select: { id: true } }),
+          invitation.allProperties
+            ? []
+            : prisma.property.findMany({
+                where: { workspaceId: invitation.workspaceId, id: { in: invitation.propertyIds } },
+                select: { name: true },
+                orderBy: { createdAt: 'asc' },
+              }),
+        ])
+      : [null, []]
+
     return NextResponse.json({
       success: true,
       data: {
         id: invitation.id,
         email: invitation.email,
         role: invitation.role,
-        status: isExpired ? 'EXPIRED' : invitation.status,
+        customPermissions: invitation.customPermissions,
+        properties: invitation.allProperties ? null : properties.map((p) => p.name),
+        hasAccount: !!account,
+        status: isExpired && invitation.status === 'PENDING' ? 'EXPIRED' : invitation.status,
         expiresAt: invitation.expiresAt.toISOString(),
         workspace: invitation.workspace,
         sender: invitation.sender,

@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { NO_PERMISSION, accessibleProperties, can, checkPropertyAccess } from '@/lib/auth/access'
 import { certificateRequest } from '@/lib/public-site/custom-domains'
 import { sslState } from '@/lib/public-site/ssl-state'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
-
-const memberOf = (userId: string) => ({
-  workspace: { OR: [{ ownerId: userId }, { members: { some: { userId, planLockedAt: null } } }] },
-})
 
 /**
  * POST /api/website/ssl/provision — ask (again) for the HTTPS certificate of
@@ -34,31 +30,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Check property access
-    const property = await prisma.property.findFirst({
-      where: {
-        id: propertyId,
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, planLockedAt: null } } },
-          ],
-        },
-      },
-      include: {
-        websiteSettings: true,
-      },
-    })
-
-    if (!property) {
+    const access = await checkPropertyAccess(session.user.id, propertyId, null)
+    if (!access.ok) {
       return NextResponse.json({ success: false, error: 'Không có quyền truy cập' }, { status: 403 })
     }
-
-    const access = await requireWorkspaceRole(property.workspaceId, WorkspaceRoles.ADMINS_AND_MANAGERS)
-    if (!access.ok) return access.response
+    if (!can(access.access, 'website_manage', propertyId)) {
+      return NextResponse.json({ success: false, error: NO_PERMISSION }, { status: 403 })
+    }
+    const property = access.property
     const locked = await lockedResponseForProperty(property.id)
     if (locked) return locked
 
-    const settings = property.websiteSettings
+    const settings = await prisma.websiteSettings.findUnique({ where: { propertyId: property.id } })
 
     if (!settings?.customDomain) {
       return NextResponse.json({ 
@@ -122,7 +105,7 @@ export async function GET(request: NextRequest) {
 
     // Only for a property the caller belongs to (any id used to answer)
     const settings = await prisma.websiteSettings.findFirst({
-      where: { propertyId, property: memberOf(session.user.id) },
+      where: { propertyId, property: accessibleProperties(session.user.id) },
     })
 
     if (!settings) {
@@ -178,24 +161,14 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check property access
-    const property = await prisma.property.findFirst({
-      where: {
-        id: propertyId,
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, planLockedAt: null } } },
-          ],
-        },
-      },
-    })
-
-    if (!property) {
+    const access = await checkPropertyAccess(session.user.id, propertyId, null)
+    if (!access.ok) {
       return NextResponse.json({ success: false, error: 'Không có quyền truy cập' }, { status: 403 })
     }
-
-    const access = await requireWorkspaceRole(property.workspaceId, WorkspaceRoles.ADMINS_AND_MANAGERS)
-    if (!access.ok) return access.response
+    if (!can(access.access, 'website_manage', propertyId)) {
+      return NextResponse.json({ success: false, error: NO_PERMISSION }, { status: 403 })
+    }
+    const property = access.property
     const locked = await lockedResponseForProperty(property.id)
     if (locked) return locked
 

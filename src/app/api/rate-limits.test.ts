@@ -38,13 +38,32 @@ const h = vi.hoisted(() => {
 
 vi.mock('@/lib/db/redis', () => ({ redis: h.redis }))
 vi.mock('@/lib/auth', () => ({ auth: vi.fn() }))
-vi.mock('@/lib/db', () => ({
-  prisma: {
+vi.mock('@/lib/db', () => {
+  const prisma = {
     user: { findFirst: vi.fn(), findUnique: vi.fn(), update: vi.fn(), updateMany: vi.fn(), create: vi.fn() },
-    workspace: { create: vi.fn(), findFirst: vi.fn() },
+    workspace: { create: vi.fn(), findFirst: vi.fn(), findUnique: vi.fn() },
     workspaceMember: { findFirst: vi.fn() },
-    invitation: { findFirst: vi.fn(), create: vi.fn() },
-  },
+    property: { findMany: vi.fn(async () => []) },
+    invitation: { findFirst: vi.fn(), create: vi.fn(), updateMany: vi.fn() },
+    activityLog: { create: vi.fn() },
+    // A transaction runs on the same mocks.
+    $transaction: vi.fn(async (run: (tx: unknown) => unknown) => run(prisma)),
+  }
+  return { prisma }
+})
+// Who may invite (src/lib/auth/access.ts) is not what this file tests: the caller owns the workspace.
+vi.mock('@/lib/auth/access', () => ({
+  checkAccess: vi.fn(async (userId: string) => ({
+    ok: true,
+    userId,
+    access: { workspaceId: 'ws', userId, isOwner: true, role: 'ADMIN', customPermissions: false, permissions: new Set(), propertyIds: null },
+  })),
+  requireAccess: vi.fn(),
+}))
+vi.mock('@/lib/members/invitations', () => ({
+  INVITE_DAYS: 7,
+  inviteExpiry: () => new Date(Date.now() + 7 * 86_400_000),
+  sendInvitationEmail: vi.fn(async () => undefined),
 }))
 // The plan's staff limit (src/lib/billing) is not what this file tests.
 vi.mock('@/lib/billing/guard', () => ({
@@ -83,9 +102,9 @@ import { issueResetToken } from '@/lib/auth/otp'
 
 const db = prisma as unknown as {
   user: Record<'findFirst' | 'findUnique' | 'update' | 'updateMany' | 'create', ReturnType<typeof vi.fn>>
-  workspace: Record<'create' | 'findFirst', ReturnType<typeof vi.fn>>
+  workspace: Record<'create' | 'findFirst' | 'findUnique', ReturnType<typeof vi.fn>>
   workspaceMember: { findFirst: ReturnType<typeof vi.fn> }
-  invitation: Record<'findFirst' | 'create', ReturnType<typeof vi.fn>>
+  invitation: Record<'findFirst' | 'create' | 'updateMany', ReturnType<typeof vi.fn>>
 }
 const mockAuth = auth as unknown as ReturnType<typeof vi.fn>
 
@@ -229,6 +248,7 @@ describe("mail to any address through Digistay's server", () => {
 
   it('31st invitation from one user within an hour gets 429 before anything is written', async () => {
     db.workspace.findFirst.mockResolvedValue({ id: 'ws' })
+    db.workspace.findUnique.mockResolvedValue({ ownerId: 'me' })
     db.workspaceMember.findFirst.mockResolvedValue(null)
     db.invitation.findFirst.mockResolvedValue(null)
     db.invitation.create.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({

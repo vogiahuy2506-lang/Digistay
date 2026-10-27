@@ -5,6 +5,7 @@ import { formatAddress } from '@/lib/vn-admin/address'
 import { emailLocale } from '@/lib/email/i18n'
 import { appSiteUrl } from '@/lib/public-site/paths'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
+import { checkPropertyAccess } from '@/lib/auth/access'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -28,22 +29,7 @@ export async function POST(request: NextRequest, props: RouteParams) {
       where: { id },
       include: {
         bookingItems: true,
-        property: {
-          include: {
-            workspace: {
-              select: {
-                ownerId: true,
-                owner: {
-                  select: { email: true, name: true },
-                },
-                members: {
-                  where: { userId: session.user.id, planLockedAt: null },
-                  select: { role: true },
-                },
-              },
-            },
-          },
-        },
+        property: true,
       },
     })
 
@@ -51,15 +37,12 @@ export async function POST(request: NextRequest, props: RouteParams) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
     }
 
-    // Check access
-    const workspace = booking.property.workspace
-    const isOwner = workspace.ownerId === session.user.id
-    const isStaff = workspace.members.length > 0
+    // Staff who may work on the booking, or its own guest. Outsiders get the
+    // 404 of a missing booking (no hint the id exists).
     const isGuest = booking.guestEmail === session.user.email
-
-    // Outsiders get the 404 of a missing booking (no hint the id exists).
-    if (!isOwner && !isStaff && !isGuest) {
-      return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
+    if (!isGuest) {
+      const access = await checkPropertyAccess(session.user.id, booking.propertyId, 'bookings_edit', 'Không tìm thấy đơn đặt phòng')
+      if (!access.ok) return access.response
     }
     const locked = await lockedResponseForProperty(booking.propertyId)
     if (locked) return locked

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { requireAccess } from '@/lib/auth/access'
 import { PLANS, PLAN_IDS, YEARLY_MONTHS } from '@/lib/marketing/plans'
 import { workspacePlan } from '@/lib/billing/subscription'
 import { workspaceUsage } from '@/lib/billing/limits'
@@ -20,7 +20,7 @@ import { overageView } from '@/lib/billing/overage'
  */
 export async function GET(_request: NextRequest, props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params
-  const access = await requireWorkspaceRole(id, WorkspaceRoles.ADMINS)
+  const access = await requireAccess(id, 'billing_manage')
   if (!access.ok) return access.response
 
   const einvoice = platformEinvoiceConfigured()

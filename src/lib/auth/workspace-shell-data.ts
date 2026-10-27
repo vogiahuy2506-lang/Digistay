@@ -2,7 +2,8 @@ import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { getWorkspaceRoleBySlug } from '@/lib/auth/rbac'
+import { accessibleWorkspaces, getAccess } from '@/lib/auth/access'
+import type { Permission } from '@/lib/auth/permissions'
 import type { WorkspaceRole } from '@/components/layout/nav'
 import { workspacePlan } from '@/lib/billing/subscription'
 import type { SubscriptionStateName } from '@/lib/billing/period'
@@ -13,7 +14,14 @@ export interface WorkspaceShellData {
     id: string
     name: string
     slug: string
+    /** The caller's role (their job title); the owner's is ADMIN. */
     role: WorkspaceRole
+    isOwner: boolean
+    /** Whether their permissions are their own ticked set rather than the role's. */
+    customPermissions: boolean
+    permissions: Permission[]
+    /** The properties they may work on; null: every one. */
+    propertyIds: string[] | null
   }
   workspaces: { id: string; name: string; slug: string; role: WorkspaceRole }[]
   userName?: string
@@ -42,36 +50,26 @@ export async function loadWorkspaceShell(slug: string): Promise<WorkspaceShellDa
     redirect('/login')
   }
 
-  const resolution = await getWorkspaceRoleBySlug(slug, session.user.id)
-  if (!resolution || !resolution.role) {
-    // Not a member (or the workspace does not exist): the list of workspaces
-    // is where they belong.
-    redirect('/workspaces')
-  }
-  const { workspaceId, role } = resolution
-
   const workspace = await prisma.workspace.findUnique({
-    where: { id: workspaceId },
-    select: { id: true, name: true, slug: true, ownerId: true },
+    where: { slug },
+    select: { id: true, name: true, slug: true },
   })
-  if (!workspace) {
+  // Not a member, locked out, or no such workspace: the list of workspaces
+  // is where they belong (and says why when they are locked).
+  const access = workspace ? await getAccess(workspace.id, session.user.id) : null
+  if (!workspace || !access) {
     redirect('/workspaces')
   }
 
   const userWorkspaces = await prisma.workspace.findMany({
-    where: {
-      OR: [
-        { ownerId: session.user.id },
-        { members: { some: { userId: session.user.id, planLockedAt: null } } },
-      ],
-    },
+    where: accessibleWorkspaces(session.user.id),
     select: {
       id: true,
       name: true,
       slug: true,
       ownerId: true,
       members: {
-        where: { userId: session.user.id, planLockedAt: null },
+        where: { userId: session.user.id, planLockedAt: null, disabledAt: null },
         select: { role: true },
         take: 1,
       },
@@ -92,7 +90,16 @@ export async function loadWorkspaceShell(slug: string): Promise<WorkspaceShellDa
       periodEnd: plan.subscription.periodEnd.toISOString(),
       overage,
     },
-    workspace: { id: workspace.id, name: workspace.name, slug: workspace.slug, role },
+    workspace: {
+      id: workspace.id,
+      name: workspace.name,
+      slug: workspace.slug,
+      role: access.role,
+      isOwner: access.isOwner,
+      customPermissions: access.customPermissions,
+      permissions: [...access.permissions],
+      propertyIds: access.propertyIds && [...access.propertyIds],
+    },
     workspaces: userWorkspaces.map((w) => ({
       id: w.id,
       name: w.name,

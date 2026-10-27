@@ -1,7 +1,7 @@
 /**
  * POST /api/payments/[id]/confirm — staff confirm a bank transfer was received.
  *
- * Uses the real rbac helpers (requireSession/getWorkspaceRole) and mocks only
+ * Uses the real access helpers (requireSession, src/lib/auth/access.ts) and mocks only
  * NextAuth and Prisma. $transaction runs its callback against a fake `tx`.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -63,7 +63,7 @@ function signInAs(userId: string, role: string | null) {
   mockAuth.mockResolvedValue({ user: { id: userId } })
   mockPrisma.workspace.findUnique.mockResolvedValue({
     ownerId: 'owner-1',
-    members: role ? [{ role }] : [],
+    members: role ? [{ role, permissions: [], customPermissions: false, allProperties: true, properties: [] }] : [],
   })
 }
 

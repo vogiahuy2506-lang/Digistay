@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
+import { accessibleProperties } from '@/lib/auth/access'
 import { WALLET_PHONE_ERROR, bankAccountFields, walletAccountNumber } from './fields'
 
 const bankAccountSchema = z
@@ -27,16 +28,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
     }
 
-    // Always the caller's workspaces; propertyId only narrows it.
+    // Always the caller's properties; propertyId only narrows it.
     const where: any = {
-      property: {
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, planLockedAt: null } } },
-          ],
-        },
-      },
+      property: accessibleProperties(session.user.id),
     }
     if (propertyId) {
       where.propertyId = propertyId
@@ -73,17 +67,10 @@ export async function POST(request: NextRequest) {
 
     const { propertyId, ...bankData } = validation.data
 
-    // Check property access
+    // Check property access: payment_settings, the account decides where
+    // guests' QR transfers go.
     const property = await prisma.property.findFirst({
-      where: {
-        id: propertyId,
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, role: 'ADMIN', planLockedAt: null } } },
-          ],
-        },
-      },
+      where: { id: propertyId, ...accessibleProperties(session.user.id, 'payment_settings') },
     })
 
     if (!property) {

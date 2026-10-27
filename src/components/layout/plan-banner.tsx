@@ -17,14 +17,14 @@ function vnDate(iso: string) {
 /**
  * One line above every dashboard page about the Digistay plan: the last
  * days of a trial or plan, the grace after it ended, and the read-only lock
- * (src/lib/billing). Owners and admins get the way to pay; others are told
- * to ask the owner. Nothing shows the rest of the time.
+ * (src/lib/billing). Who may buy the plan (billing_manage) gets the way to
+ * pay; others are told to ask the owner. Nothing shows the rest of the time.
  *
  * A second line when the workspace uses more than its plan allows
  * (src/lib/billing/overage.ts): during the 7-day grace what is over and
  * when the excess locks; after that what is locked.
  */
-export async function PlanBanner({ plan, slug, role }: { plan: WorkspaceShellData['plan']; slug: string; role: string }) {
+export async function PlanBanner({ plan, slug, canBuy }: { plan: WorkspaceShellData['plan']; slug: string; canBuy: boolean }) {
   const t = await getTranslations('dash.billing.banner')
   const show = plan.state === 'grace' || plan.state === 'locked' || plan.daysLeft <= SHOW_WITHIN_DAYS
   const name = plan.planId.charAt(0).toUpperCase() + plan.planId.slice(1)
@@ -43,7 +43,7 @@ export async function PlanBanner({ plan, slug, role }: { plan: WorkspaceShellDat
         <div role={plan.state === 'locked' ? 'alert' : 'status'} className={cn('border-b border-line/60 px-5 py-2.5 text-small sm:px-8', tone)}>
           <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
             <span>{text}</span>
-            {role === 'ADMIN' ? (
+            {canBuy ? (
               <Link href={routes.billing(slug)} className="font-semibold underline underline-offset-4">
                 {plan.trial && plan.state === 'trial' ? t('choose') : t('renew')}
               </Link>
@@ -53,12 +53,12 @@ export async function PlanBanner({ plan, slug, role }: { plan: WorkspaceShellDat
           </div>
         </div>
       )}
-      <OverageLine overage={plan.overage} slug={slug} role={role} />
+      <OverageLine overage={plan.overage} slug={slug} canBuy={canBuy} />
     </>
   )
 }
 
-async function OverageLine({ overage, slug, role }: { overage: WorkspaceShellData['plan']['overage']; slug: string; role: string }) {
+async function OverageLine({ overage, slug, canBuy }: { overage: WorkspaceShellData['plan']['overage']; slug: string; canBuy: boolean }) {
   if (!overage) return null
   const t = await getTranslations('dash.billing.banner')
   const locked = (['properties', 'roomTypes', 'members'] as const)
@@ -79,7 +79,7 @@ async function OverageLine({ overage, slug, role }: { overage: WorkspaceShellDat
           </span>
         )}
         {locked.length > 0 && <span>{t('overLocked', { what: locked.join(', ') })}</span>}
-        {role === 'ADMIN' ? (
+        {canBuy ? (
           <Link href={routes.billing(slug)} className="font-semibold underline underline-offset-4">
             {t('viewPlan')}
           </Link>

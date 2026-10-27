@@ -9,7 +9,7 @@
  */
 import type { Prisma } from '@prisma/client'
 import { prisma, prismaWithDeleted } from '@/lib/db'
-import { getWorkspaceRole } from '@/lib/auth/rbac'
+import { getAccess } from '@/lib/auth/access'
 import { guestsBookedWhere, purgeAt, restoreDaysLeft } from './rules'
 
 type Tx = Prisma.TransactionClient
@@ -18,7 +18,7 @@ export type OwnerLookup<T> = { ok: true; row: T } | { ok: false; status: 403 | 4
 
 const refuse = async (workspaceId: string, userId: string): Promise<{ ok: false; status: 403 | 404 }> => ({
   ok: false,
-  status: (await getWorkspaceRole(workspaceId, userId)) ? 403 : 404,
+  status: (await getAccess(workspaceId, userId)) ? 403 : 404,
 })
 
 const propertyFields = { id: true, name: true, subdomain: true, workspaceId: true, deletedAt: true, workspace: { select: { ownerId: true } } } as const

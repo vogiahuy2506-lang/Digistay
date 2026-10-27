@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { requireSession, getWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { requireSession } from '@/lib/auth/rbac'
+import { can, checkAccess } from '@/lib/auth/access'
 import { lockBooking, syncBookingPayments } from '@/lib/payments/booking-payments'
 import { queueGuestDepositReceived } from '@/lib/payments/deposit-received'
 import { sendAfterResponse } from '@/lib/email/outbox'
@@ -17,7 +18,7 @@ class PaymentNotPendingError extends Error {}
  * POST /api/payments/[id]/confirm
  * Staff confirm that a PENDING bank transfer has been received.
  *
- * - Only owner/ADMIN/MANAGER/RECEPTIONIST of the property's workspace.
+ * - Only who may work payments at the property (payments_manage).
  * - PENDING → PAID via a conditional update inside a transaction: a double
  *   click, or two staff clicking at once, matches no row the second time
  *   and gets 409.
@@ -45,13 +46,17 @@ export async function POST(request: NextRequest, props: RouteParams) {
       },
     })
 
-    // Outsiders get the same 404 as a missing payment, so payment ids of
-    // other properties cannot be probed.
-    const role = payment ? await getWorkspaceRole(payment.property.workspaceId, userId) : null
-    if (!payment || !role) {
+    // Outsiders (and members not on this property) get the same 404 as a
+    // missing payment, so payment ids of other properties cannot be probed.
+    if (!payment) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy thanh toán' }, { status: 404 })
     }
-    if (!(WorkspaceRoles.STAFF_AND_UP as readonly string[]).includes(role)) {
+    const granted = await checkAccess(userId, payment.property.workspaceId, null, {
+      propertyId: payment.propertyId,
+      notFound: 'Không tìm thấy thanh toán',
+    })
+    if (!granted.ok) return granted.response
+    if (!can(granted.access, 'payments_manage', payment.propertyId)) {
       return NextResponse.json(
         { success: false, error: 'Bạn không có quyền xác nhận thanh toán' },
         { status: 403 }
@@ -93,7 +98,7 @@ export async function POST(request: NextRequest, props: RouteParams) {
             bookingId: payment.bookingId,
             amount: payment.amount,
             confirmedAt: paidAt.toISOString(),
-            role,
+            role: granted.access.role,
             ...(paidAfterClosed && { paidAfterClosed: true, bookingStatus: booking.status }),
           },
           ipAddress,

@@ -1,266 +1,85 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { WorkspaceRole } from '@prisma/client'
-import { z } from 'zod'
 import { prisma } from '@/lib/db'
-import { auth } from '@/lib/auth'
-import { lockedResponse } from '@/lib/billing/guard'
-import { reconcileOverageSoon } from '@/lib/billing/overage'
-
-const roleChangeSchema = z.object({
-  memberId: z.string().min(1),
-  role: z.nativeEnum(WorkspaceRole),
-})
+import { requireAccess } from '@/lib/auth/access'
+import { effectivePermissions } from '@/lib/auth/permissions'
+import { memberProblem } from '@/lib/members/grant'
+import { workspacePlan } from '@/lib/billing/subscription'
+import { workspaceUsage } from '@/lib/billing/limits'
 
 /**
- * The membership row, only if it belongs to this workspace. Member ids reach
- * every member through GET /api/workspaces, so an admin of any workspace
- * (anyone can create one) must not be able to act on another's rows.
+ * GET — the members page (members_manage): the owner and every member with
+ * their access, the workspace's properties to choose from, the staff seats
+ * of the plan, and what the caller may change.
  */
-function memberOf(workspaceId: string, memberId: string) {
-  return prisma.workspaceMember.findFirst({
-    where: { id: memberId, workspaceId },
-    select: { id: true, userId: true },
-  })
-}
-
-// Check if user is workspace admin or owner
-async function checkWorkspaceAdmin(workspaceId: string, userId: string) {
-  const workspace = await prisma.workspace.findFirst({
-    where: {
-      id: workspaceId,
-      OR: [
-        { ownerId: userId },
-        { members: { some: { userId, role: 'ADMIN', planLockedAt: null } } },
-      ],
-    },
-  })
-
-  return !!workspace
-}
-
-export async function GET(
-  request: NextRequest,
-  props: { params: Promise<{ id: string }> }
-) {
-  const params = await props.params
+export async function GET(_request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const { id } = await props.params
   try {
-    const session = await auth()
-    const { id } = params
+    const granted = await requireAccess(id, 'members_manage')
+    if (!granted.ok) return granted.response
+    const { access } = granted
 
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Vui lòng đăng nhập' },
-        { status: 401 }
-      )
-    }
-
-    const access = await checkWorkspaceAdmin(id, session.user.id)
-    if (!access) {
-      return NextResponse.json(
-        { success: false, error: 'Bạn không có quyền xem danh sách thành viên' },
-        { status: 403 }
-      )
-    }
-
-    const members = await prisma.workspaceMember.findMany({
-      where: { workspaceId: id },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
+    const [workspace, members, properties, plan, usage] = await Promise.all([
+      prisma.workspace.findUnique({
+        where: { id },
+        select: { owner: { select: { id: true, name: true, email: true, image: true } }, createdAt: true },
+      }),
+      prisma.workspaceMember.findMany({
+        where: { workspaceId: id },
+        include: {
+          user: { select: { id: true, name: true, email: true, image: true } },
+          properties: { select: { propertyId: true } },
         },
-      },
-      orderBy: { joinedAt: 'asc' },
-    })
+        orderBy: { joinedAt: 'asc' },
+      }),
+      prisma.property.findMany({ where: { workspaceId: id }, select: { id: true, name: true }, orderBy: { createdAt: 'asc' } }),
+      workspacePlan(id),
+      workspaceUsage(id),
+    ])
+    if (!workspace) {
+      return NextResponse.json({ success: false, error: 'Không tìm thấy workspace' }, { status: 404 })
+    }
 
-    // Get workspace owner
-    const workspace = await prisma.workspace.findUnique({
-      where: { id },
-      select: { ownerId: true },
-    })
-
-    const membersWithOwnerStatus = members.map((member) => ({
-      ...member,
-      isOwner: member.userId === workspace?.ownerId,
-    }))
+    const owner = workspace.owner
+    const rows = members
+      .filter((m) => m.userId !== owner.id)
+      .map((m) => {
+        const propertyIds = m.properties.map((p) => p.propertyId)
+        return {
+          id: m.id,
+          user: m.user,
+          role: m.role,
+          customPermissions: m.customPermissions,
+          permissions: effectivePermissions(m),
+          allProperties: m.allProperties,
+          propertyIds,
+          joinedAt: m.joinedAt.toISOString(),
+          disabledAt: m.disabledAt?.toISOString() ?? null,
+          planLockedAt: m.planLockedAt?.toISOString() ?? null,
+          isOwner: false,
+          isSelf: m.userId === access.userId,
+          // Why the caller may not change them, if so (the page greys the actions out).
+          locked: memberProblem(access, { ...m, propertyIds }),
+        }
+      })
 
     return NextResponse.json({
       success: true,
-      data: membersWithOwnerStatus,
+      data: {
+        owner: { ...owner, joinedAt: workspace.createdAt.toISOString(), isSelf: owner.id === access.userId },
+        members: rows,
+        properties,
+        seats: { used: usage.staff, limit: plan.plan.staff },
+        me: {
+          isOwner: access.isOwner,
+          permissions: [...access.permissions],
+          propertyIds: access.propertyIds,
+        },
+      },
     })
   } catch (error) {
     console.error('Get members error:', error)
     return NextResponse.json(
       { success: false, error: 'Đã xảy ra lỗi khi lấy danh sách thành viên' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function PATCH(
-  request: NextRequest,
-  props: { params: Promise<{ id: string }> }
-) {
-  const params = await props.params
-  try {
-    const session = await auth()
-    const { id } = params
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Vui lòng đăng nhập' },
-        { status: 401 }
-      )
-    }
-
-    const isAdmin = await checkWorkspaceAdmin(id, session.user.id)
-    if (!isAdmin) {
-      return NextResponse.json(
-        { success: false, error: 'Bạn không có quyền thay đổi quyền thành viên' },
-        { status: 403 }
-      )
-    }
-    const locked = await lockedResponse(id)
-    if (locked) return locked
-
-    const validation = roleChangeSchema.safeParse(await request.json().catch(() => null))
-    if (!validation.success) {
-      return NextResponse.json(
-        { success: false, error: 'Vui lòng cung cấp đầy đủ thông tin' },
-        { status: 400 }
-      )
-    }
-    const { role } = validation.data
-
-    const member = await memberOf(id, validation.data.memberId)
-    if (!member) {
-      return NextResponse.json(
-        { success: false, error: 'Không tìm thấy thành viên' },
-        { status: 404 }
-      )
-    }
-
-    // Cannot change owner role
-    const workspace = await prisma.workspace.findUnique({
-      where: { id },
-      select: { ownerId: true },
-    })
-
-    if (workspace?.ownerId === member.userId) {
-      return NextResponse.json(
-        { success: false, error: 'Không thể thay đổi quyền của chủ sở hữu' },
-        { status: 400 }
-      )
-    }
-
-    await prisma.workspaceMember.update({
-      where: { id: member.id },
-      data: { role },
-    })
-
-    return NextResponse.json({
-      success: true,
-      message: 'Cập nhật quyền thành viên thành công',
-    })
-  } catch (error) {
-    console.error('Update member role error:', error)
-    return NextResponse.json(
-      { success: false, error: 'Đã xảy ra lỗi khi cập nhật quyền' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function DELETE(
-  request: NextRequest,
-  props: { params: Promise<{ id: string }> }
-) {
-  const params = await props.params
-  try {
-    const session = await auth()
-    const { id } = params
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Vui lòng đăng nhập' },
-        { status: 401 }
-      )
-    }
-
-    const isAdmin = await checkWorkspaceAdmin(id, session.user.id)
-    if (!isAdmin) {
-      return NextResponse.json(
-        { success: false, error: 'Bạn không có quyền xóa thành viên' },
-        { status: 403 }
-      )
-    }
-    const locked = await lockedResponse(id)
-    if (locked) return locked
-
-    const { searchParams } = new URL(request.url)
-    const memberId = searchParams.get('memberId')
-
-    if (!memberId) {
-      return NextResponse.json(
-        { success: false, error: 'Vui lòng cung cấp ID thành viên' },
-        { status: 400 }
-      )
-    }
-
-    // Cannot remove owner
-    const workspace = await prisma.workspace.findUnique({
-      where: { id },
-      select: { ownerId: true },
-    })
-
-    const member = await memberOf(id, memberId)
-    if (!member) {
-      return NextResponse.json(
-        { success: false, error: 'Không tìm thấy thành viên' },
-        { status: 404 }
-      )
-    }
-
-    if (workspace?.ownerId === member.userId) {
-      return NextResponse.json(
-        { success: false, error: 'Không thể xóa chủ sở hữu khỏi workspace' },
-        { status: 400 }
-      )
-    }
-
-    // Cannot remove yourself if you're not the owner
-    if (member.userId === session.user.id) {
-      const isOwner = workspace?.ownerId === session.user.id
-      if (!isOwner) {
-        // Allow user to leave workspace
-        await prisma.workspaceMember.delete({
-          where: { id: member.id },
-        })
-        return NextResponse.json({
-          success: true,
-          message: 'Bạn đã rời khỏi workspace',
-        })
-      }
-    }
-
-    await prisma.workspaceMember.delete({
-      where: { id: member.id },
-    })
-    // A seat is free: a member locked for being over the plan may come back.
-    reconcileOverageSoon(id)
-
-    return NextResponse.json({
-      success: true,
-      message: 'Đã xóa thành viên khỏi workspace',
-    })
-  } catch (error) {
-    console.error('Remove member error:', error)
-    return NextResponse.json(
-      { success: false, error: 'Đã xảy ra lỗi khi xóa thành viên' },
       { status: 500 }
     )
   }

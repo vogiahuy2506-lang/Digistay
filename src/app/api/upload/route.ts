@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
-import { getWorkspaceRole, requireSession, WorkspaceRoles } from '@/lib/auth/rbac'
+import { requireSession } from '@/lib/auth/rbac'
+import { can, checkAccess, checkPropertyAccess } from '@/lib/auth/access'
+import type { Permission } from '@/lib/auth/permissions'
 import { uploadImage, UploadError } from '@/lib/cloudinary'
 import { parseImageDataUrl } from '@/lib/media/upload-input'
 import { LIMITS } from '@/lib/security/limits'
@@ -13,13 +14,17 @@ import { lockedResponse, lockedResponseForProperty } from '@/lib/billing/guard'
  * where it belongs (a property or room photo, a dish, the logo), through that
  * thing's own API and its own permission check.
  *
- * For a property or a workspace: its owner, admins and managers (they are
- * the ones who edit photos, the menu and the logo). With neither: the user's
- * own folder (the logo of a workspace being created). A limited number per
+ * For a property: who edits something with photos there (PROPERTY_UPLOADERS:
+ * the property, room types, the menu, the site). For a workspace: who edits
+ * its settings (the logo). With neither: the user's own folder (the logo of
+ * a workspace being created). A limited number per
  * hour: each upload uses the shared Cloudinary account's storage. The folder
  * is decided here — digistay/<workspace>/<property>, digistay/users/<user> —
  * never by the browser. Not for a locked workspace (src/lib/billing).
  */
+/** Any one of these on the property lets the caller upload its photos. */
+const PROPERTY_UPLOADERS: Permission[] = ['property_edit', 'room_types_manage', 'services_manage', 'website_manage']
+
 export async function POST(request: NextRequest) {
   const session = await requireSession()
   if (!session.ok) return session.response
@@ -31,17 +36,16 @@ export async function POST(request: NextRequest) {
 
   let folder: string
   if (propertyId) {
-    const property = await prisma.property.findUnique({ where: { id: propertyId }, select: { workspaceId: true } })
-    const role = property ? await getWorkspaceRole(property.workspaceId, userId) : null
-    if (!property || !role) return NextResponse.json({ success: false, error: 'Không tìm thấy khách sạn' }, { status: 404 })
-    if (!(WorkspaceRoles.ADMINS_AND_MANAGERS as readonly string[]).includes(role)) return forbidden()
+    const granted = await checkPropertyAccess(userId, propertyId, null, 'Không tìm thấy khách sạn')
+    if (!granted.ok) return granted.response
+    if (!PROPERTY_UPLOADERS.some((permission) => can(granted.access, permission, propertyId))) return forbidden()
     const locked = await lockedResponseForProperty(propertyId)
     if (locked) return locked
-    folder = `digistay/${property.workspaceId}/${propertyId}`
+    folder = `digistay/${granted.property.workspaceId}/${propertyId}`
   } else if (workspaceId) {
-    const role = await getWorkspaceRole(workspaceId, userId)
-    if (!role) return NextResponse.json({ success: false, error: 'Không tìm thấy workspace' }, { status: 404 })
-    if (!(WorkspaceRoles.ADMINS_AND_MANAGERS as readonly string[]).includes(role)) return forbidden()
+    const granted = await checkAccess(userId, workspaceId, null, { notFound: 'Không tìm thấy workspace' })
+    if (!granted.ok) return granted.response
+    if (!can(granted.access, 'workspace_settings')) return forbidden()
     const locked = await lockedResponse(workspaceId)
     if (locked) return locked
     folder = `digistay/${workspaceId}`

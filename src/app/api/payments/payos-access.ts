@@ -1,13 +1,14 @@
 /**
  * Shared by POST /api/payments/[id]/sync and /cancel (which check the
- * session themselves): staff of the payment's property only; outsiders get
- * the same 404 as a missing payment. With `refuseWhenLocked` (cancel), a
- * locked workspace gets 402 (src/lib/billing); sync stays open: it records
- * money PayOS already received.
+ * session themselves): who may work payments at the payment's property
+ * (payments_manage) only; outsiders get the same 404 as a missing payment.
+ * With `refuseWhenLocked` (cancel), a locked workspace gets 402
+ * (src/lib/billing); sync stays open: it records money PayOS already
+ * received.
  */
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { can, checkAccess } from '@/lib/auth/access'
 import { PayosError } from '@/lib/payments/payos'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
 
@@ -21,11 +22,15 @@ export async function payosPaymentAction(
     where: { id: paymentId },
     select: { id: true, propertyId: true, property: { select: { workspaceId: true } } },
   })
-  const role = payment ? await getWorkspaceRole(payment.property.workspaceId, userId) : null
-  if (!payment || !role) {
+  if (!payment) {
     return NextResponse.json({ success: false, error: 'Không tìm thấy thanh toán' }, { status: 404 })
   }
-  if (!(WorkspaceRoles.STAFF_AND_UP as readonly string[]).includes(role)) {
+  const granted = await checkAccess(userId, payment.property.workspaceId, null, {
+    propertyId: payment.propertyId,
+    notFound: 'Không tìm thấy thanh toán',
+  })
+  if (!granted.ok) return granted.response
+  if (!can(granted.access, 'payments_manage', payment.propertyId)) {
     return NextResponse.json({ success: false, error: 'Bạn không có quyền với khoản thanh toán này' }, { status: 403 })
   }
   if (options.refuseWhenLocked) {

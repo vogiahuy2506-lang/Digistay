@@ -951,11 +951,27 @@
       "askResend": "Ask for a new invitation",
       "switchAccount": "Sign out and use another email",
       "roles": {
-        "ADMIN": "Owner",
+        "ADMIN": "Admin",
         "MANAGER": "Manager",
         "RECEPTIONIST": "Front desk",
         "USER": "Staff"
-      }
+      },
+      "revokedChip": "Cancelled",
+      "revokedTitle": "This invitation was cancelled",
+      "revokedLead": "The sender cancelled it. Ask them for a new one if needed.",
+      "joinLead": "You don't have a Digistay account yet: choose a name and password below to join as {role}.",
+      "joinAs": "New account for <b>{email}</b>",
+      "name": "Full name",
+      "password": "Password",
+      "passwordHint": "At least 8 characters. Next time, sign in with this email and password.",
+      "nameShort": "Name must be at least 2 characters",
+      "passwordShort": "Password must be at least 8 characters",
+      "join": "Create account and join",
+      "joining": "Creating your account…",
+      "haveAccount": "Already have an account? <link>Sign in</link>",
+      "customRole": "{role} (custom permissions)",
+      "properties": "Works at",
+      "openWorkspace": "Open {workspace}"
     },
     "notFound": {
       "code": "Error 404",
@@ -986,7 +1002,7 @@
     "members": "{count} members",
     "owner": "Owner",
     "roles": {
-      "ADMIN": "Owner",
+      "ADMIN": "Admin",
       "MANAGER": "Manager",
       "RECEPTIONIST": "Front desk",
       "USER": "Staff"
@@ -1062,11 +1078,19 @@
     "actions": {
       "edit": "Edit",
       "delete": "Delete workspace",
-      "deleteConfirm": "Delete “{name}”? Every property and member will be lost for good."
+      "deleteConfirm": "Delete “{name}”? Every property and member will be lost for good.",
+      "leave": "Leave workspace"
     },
     "current": "Current",
     "planLocked": "Locked",
-    "planLockedNote": "Your account in this workspace is locked because the workspace uses more than its plan allows. Contact the workspace owner."
+    "planLockedNote": "Your account in this workspace is locked because the workspace uses more than its plan allows. Contact the workspace owner.",
+    "disabledNote": "An admin has suspended your account in this workspace. Contact the workspace owner to have it restored.",
+    "leave": {
+      "title": "Leave “{name}”?",
+      "text": "You will no longer be able to open this workspace. To come back, you need a new invitation.",
+      "confirm": "Leave workspace",
+      "done": "You left {name}"
+    }
   },
   "workspaceHome": {
     "title": "Your properties",

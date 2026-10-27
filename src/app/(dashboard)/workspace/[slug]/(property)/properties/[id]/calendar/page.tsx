@@ -6,7 +6,7 @@ import { Button, Modal, ModalBody } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
 import { Header, PageContainer } from '@/components/layout'
 import { NoAccess } from '@/components/layout/no-access'
-import { canManageBookings, useWorkspaceRole } from '@/components/layout/workspace-context'
+import { useCan } from '@/components/layout/workspace-context'
 import {
   Calendar as CalendarIcon, ChevronLeft, ChevronRight,
   Plus, DoorOpen, Receipt,
@@ -113,7 +113,7 @@ export default function CalendarPage() {
   const propertyId = params.id
   const { property } = useProperty()
   // The calendar is for staff (bookings-views.tsx); a USER has the list.
-  const role = useWorkspaceRole()
+  const canView = useCan('bookings_view')
   const t = useTranslations('dash.calendar')
   const tc = useTranslations('dash.common')
   const labels = useDashLabels()
@@ -601,8 +601,8 @@ export default function CalendarPage() {
 
   const ctl = 'h-9 sm:h-8 px-3 rounded-ctl border border-line bg-panel text-fg hover:bg-fg/[0.03] text-xs font-semibold transition-colors inline-flex items-center gap-1.5'
 
-  // Opened by its address by a USER (the menu and the switcher only show it to staff).
-  if (!canManageBookings(role)) {
+  // Opened by its address without bookings_view (the menu does not show it then).
+  if (!canView) {
     return (
       <PageContainer>
         <NoAccess backHref={routes.propertyBookings(params.slug, propertyId)} backLabel={tc('nav.bookings')} />

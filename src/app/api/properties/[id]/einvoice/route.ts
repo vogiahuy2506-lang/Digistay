@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/db'
-import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { can, requireAccess } from '@/lib/auth/access'
 import { EinvoiceError, connectEinvoice, disconnectEinvoice, getEinvoiceStatus } from '@/lib/einvoice/matbao'
 import { isVatCode } from '@/lib/einvoice/vat'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
@@ -30,18 +30,18 @@ export async function GET(_request: NextRequest, props: Props) {
   const { id } = await props.params
   const workspaceId = await workspaceOf(id)
   if (!workspaceId) return NOT_FOUND()
-  const access = await requireWorkspaceRole(workspaceId, WorkspaceRoles.ALL_MEMBERS)
-  if (!access.ok) return access.response
-  const includeWebhookUrl = access.role === 'ADMIN'
+  const granted = await requireAccess(workspaceId, null, { propertyId: id })
+  if (!granted.ok) return granted.response
+  const includeWebhookUrl = can(granted.access, 'payment_settings', id)
   return NextResponse.json({ success: true, data: await getEinvoiceStatus(id, { includeWebhookUrl }) })
 }
 
-/** PUT — save and check the account. Owner/ADMIN: invoices go out under the hotel's tax code. */
+/** PUT — save and check the account. payment_settings: invoices go out under the hotel's tax code. */
 export async function PUT(request: NextRequest, props: Props) {
   const { id } = await props.params
   const workspaceId = await workspaceOf(id)
   if (!workspaceId) return NOT_FOUND()
-  const access = await requireWorkspaceRole(workspaceId, WorkspaceRoles.ADMINS)
+  const access = await requireAccess(workspaceId, 'payment_settings', { propertyId: id })
   if (!access.ok) return access.response
   const locked = await lockedResponseForProperty(id)
   if (locked) return locked
@@ -84,14 +84,14 @@ const optionsSchema = z
 
 /**
  * PATCH — auto-issue and invoice emails (src/lib/einvoice/jobs.ts,
- * delivery.ts). Owner/ADMIN: auto-issue puts legal invoices out without
+ * delivery.ts). payment_settings: auto-issue puts legal invoices out without
  * anyone pressing a button. Turning it on applies to bookings paid from now.
  */
 export async function PATCH(request: NextRequest, props: Props) {
   const { id } = await props.params
   const workspaceId = await workspaceOf(id)
   if (!workspaceId) return NOT_FOUND()
-  const access = await requireWorkspaceRole(workspaceId, WorkspaceRoles.ADMINS)
+  const access = await requireAccess(workspaceId, 'payment_settings', { propertyId: id })
   if (!access.ok) return access.response
   const locked = await lockedResponseForProperty(id)
   if (locked) return locked
@@ -135,7 +135,7 @@ export async function DELETE(_request: NextRequest, props: Props) {
   const { id } = await props.params
   const workspaceId = await workspaceOf(id)
   if (!workspaceId) return NOT_FOUND()
-  const access = await requireWorkspaceRole(workspaceId, WorkspaceRoles.ADMINS)
+  const access = await requireAccess(workspaceId, 'payment_settings', { propertyId: id })
   if (!access.ok) return access.response
   const locked = await lockedResponseForProperty(id)
   if (locked) return locked

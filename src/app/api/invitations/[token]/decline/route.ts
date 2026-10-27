@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { logMemberActivity } from '@/lib/members/activity'
 
 /**
  * POST /api/invitations/[token]/decline
@@ -49,12 +50,23 @@ export async function POST(
       )
     }
 
-    await prisma.invitation.update({
-      where: { id: invitation.id },
-      data: {
-        status: 'DECLINED',
-        recipientId: session.user.id,
-      },
+    const userId = session.user.id
+    await prisma.$transaction(async (tx) => {
+      await tx.invitation.update({
+        where: { id: invitation.id },
+        data: {
+          status: 'DECLINED',
+          recipientId: userId,
+        },
+      })
+      await logMemberActivity(tx, {
+        workspaceId: invitation.workspaceId,
+        actorId: userId,
+        action: 'INVITE_DECLINED',
+        entityType: 'INVITATION',
+        entityId: invitation.id,
+        subject: { email: invitation.email, name: session.user.name },
+      })
     })
 
     return NextResponse.json({

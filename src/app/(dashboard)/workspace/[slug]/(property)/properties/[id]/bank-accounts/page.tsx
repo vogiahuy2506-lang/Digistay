@@ -8,7 +8,8 @@ import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, Button, Badge, Input, Select, Modal, ModalBody, ModalFooter } from '@/components/ui'
 import { VietQR, downloadQR } from '@/components/ui/viet-qr'
 import { MOMO_CODE, VIETQR_BANKS, buildVietQr, findBank, isWallet, toBankName, walletPhone } from '@/lib/vietqr'
-import { NoAccess, useHasRole } from '@/components/payment/no-access'
+import { NoAccess } from '@/components/payment/no-access'
+import { useCan } from '@/components/layout/workspace-context'
 import { toast } from '@/components/ui/toast'
 import { PayosCard } from './payos-card'
 import { DepositModeCard } from './deposit-mode-card'
@@ -45,7 +46,7 @@ export default function BankAccountsPage() {
   const params = useParams<{ slug: string; id: string }>()
   const propertyId = params.id
   // Where guests' transfers go: the owner and ADMINs only, like the API.
-  const allowed = useHasRole(['ADMIN'])
+  const allowed = useCan('payment_settings')
 
   const [accounts, setAccounts] = React.useState<BankAccount[]>([])
   const [isLoading, setIsLoading] = React.useState(true)

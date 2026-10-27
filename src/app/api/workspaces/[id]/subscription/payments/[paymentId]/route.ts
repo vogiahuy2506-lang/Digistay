@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { requireAccess } from '@/lib/auth/access'
 import { BillingError, syncSubscriptionPayment } from '@/lib/billing/checkout'
 import { paymentView } from '@/lib/billing/view'
 
@@ -11,7 +11,7 @@ import { paymentView } from '@/lib/billing/view'
  */
 export async function GET(request: NextRequest, props: { params: Promise<{ id: string; paymentId: string }> }) {
   const { id, paymentId } = await props.params
-  const access = await requireWorkspaceRole(id, WorkspaceRoles.ADMINS)
+  const access = await requireAccess(id, 'billing_manage')
   if (!access.ok) return access.response
 
   const payment = await prisma.subscriptionPayment.findFirst({ where: { id: paymentId, workspaceId: id }, select: { id: true, status: true } })

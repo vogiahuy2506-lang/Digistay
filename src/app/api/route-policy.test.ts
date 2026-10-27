@@ -24,7 +24,8 @@ import ts from 'typescript'
 
 const API_DIR = path.join(__dirname)
 const HTTP_METHODS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'])
-const AUTH_HELPERS = new Set(['auth', 'getServerSession', 'requireSession', 'requireWorkspaceRole'])
+/** Calls that require a signed-in caller (requireAccess / requirePropertyAccess: src/lib/auth/access.ts). */
+const AUTH_HELPERS = new Set(['auth', 'getServerSession', 'requireSession', 'requireAccess', 'requirePropertyAccess'])
 
 /** Reviewed public handlers. Key: "METHOD /api/path". Keep the reason specific. */
 const PUBLIC_HANDLERS: Record<string, string> = {
@@ -61,6 +62,8 @@ const PUBLIC_HANDLERS: Record<string, string> = {
   'POST /api/internal/platform-payos/confirm-webhook':
     "one-off setup of Digistay's PayOS webhook (RUNBOOK): checkCronSecret, and nginx does not route /api/internal/",
   'GET /api/invitations/[token]': 'invitation preview; the unguessable token in the URL is the credential',
+  'POST /api/invitations/[token]/register':
+    'an invitee without an account sets a password; the emailed token proves the address, rate-limited per IP, refused when the email has an account',
   'POST /api/public/bookings':
     'guests book on the hotel site: rate-limited per IP and per email, PENDING, never a payment (create-booking.ts)',
   'POST /api/public/contact': 'contact form on the marketing site; emails the Digistay team only, per-IP limit',
@@ -227,7 +230,7 @@ describe('API route policy', () => {
       .map((h) => (h.callsAuth === null ? `${h.key} (export not analyzable)` : h.key))
     expect(
       unreviewed,
-      'Add an auth check (auth()/requireSession()/requireWorkspaceRole()) or, if the handler must be public, ' +
+      'Add an auth check (auth()/requireSession()/requireAccess()) or, if the handler must be public, ' +
         'list it in PUBLIC_HANDLERS in src/app/api/route-policy.test.ts with a specific reason.'
     ).toEqual([])
   })

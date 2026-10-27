@@ -13,6 +13,8 @@ import { isPlanId, type Plan, type PlanId } from '@/lib/marketing/plans'
 import type { PaymentView } from '@/lib/billing/view'
 import { PurchaseDialog } from './purchase-dialog'
 import { planName, vnDate, type Billing, type BillingData, type ChangeKind, type ChangeView, type LimitKey, type State } from './types'
+import { NoAccess } from '@/components/payment/no-access'
+import { useCan } from '@/components/layout/workspace-context'
 
 const STATE_TONE: Record<State, 'success' | 'warning' | 'danger' | 'secondary'> = {
   trial: 'secondary',
@@ -34,6 +36,7 @@ export default function BillingPage() {
   const locale = useLocale() === 'en' ? 'en' : 'vi'
   const search = useSearchParams()
   const { workspace, loading: wsLoading } = useWorkspace()
+  const allowed = useCan('billing_manage')
   const workspaceId = workspace?.id
 
   const [data, setData] = React.useState<BillingData | null>(null)
@@ -66,6 +69,7 @@ export default function BillingPage() {
     if (!data.changes[plan][billing].blocked) setBuying({ plan, billing })
   }, [data, billing])
 
+  if (!allowed) return <NoAccess title={t('title')} inPage />
   if (wsLoading || (!data && !error)) return <Loading className="py-24" />
   if (!data) {
     return (

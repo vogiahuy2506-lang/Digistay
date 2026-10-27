@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
+import { checkAccess } from '@/lib/auth/access'
 import { WALLET_PHONE_ERROR, bankAccountFields, walletAccountNumber } from '../fields'
 
 const updateSchema = z.object({
@@ -23,34 +24,19 @@ async function userCanManageBankAccount(
 > {
   const bankAccount = await prisma.bankAccount.findUnique({
     where: { id: bankAccountId },
-    include: {
-      property: {
-        include: {
-          workspace: {
-            select: {
-              ownerId: true,
-              // ADMIN only, like creating an account and PayOS: the account
-              // number decides where guests' QR transfers go.
-              members: {
-                where: { userId, role: 'ADMIN', planLockedAt: null },
-                select: { id: true },
-              },
-            },
-          },
-        },
-      },
-    },
+    include: { property: { select: { workspaceId: true } } },
   })
 
   if (!bankAccount) {
     return { ok: false, status: 404, error: 'Không tìm thấy tài khoản' }
   }
 
-  const workspace = bankAccount.property.workspace
-  const isOwner = workspace.ownerId === userId
-  const isAdmin = workspace.members.length > 0
-
-  if (!isOwner && !isAdmin) {
+  // payment_settings, like creating an account and PayOS: the account
+  // number decides where guests' QR transfers go.
+  const access = await checkAccess(userId, bankAccount.property.workspaceId, 'payment_settings', {
+    propertyId: bankAccount.propertyId,
+  })
+  if (!access.ok) {
     return { ok: false, status: 403, error: 'Không có quyền chỉnh sửa tài khoản này' }
   }
 

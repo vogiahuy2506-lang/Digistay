@@ -6,20 +6,14 @@ import { invalidatePublicSite } from '@/lib/public-site/site'
 import { lockedResponseForProperty, planResponseForProperty } from '@/lib/billing/guard'
 import { reconcileOverageSoon } from '@/lib/billing/overage'
 import { roomTypeDelta } from '@/lib/billing/limits'
+import { accessibleProperties } from '@/lib/auth/access'
 
-// Check if user has admin access
-async function checkRoomTypeAdmin(roomTypeId: string, userId: string) {
+// The room type, if the caller may manage room types at its property
+async function manageableRoomType(roomTypeId: string, userId: string) {
   const roomType = await prisma.roomType.findFirst({
     where: {
       id: roomTypeId,
-      property: {
-        workspace: {
-          OR: [
-            { ownerId: userId },
-            { members: { some: { userId, role: 'ADMIN', planLockedAt: null } } },
-          ],
-        },
-      },
+      property: accessibleProperties(userId, 'room_types_manage'),
     },
     include: {
       property: {
@@ -53,14 +47,7 @@ export async function GET(
     const roomType = await prisma.roomType.findFirst({
       where: {
         id: roomTypeId,
-        property: {
-          workspace: {
-            OR: [
-              { ownerId: session.user.id },
-              { members: { some: { userId: session.user.id, planLockedAt: null } } },
-            ],
-          },
-        },
+        property: accessibleProperties(session.user.id),
       },
       include: {
         images: {
@@ -113,7 +100,7 @@ export async function PATCH(
       )
     }
 
-    const roomType = await checkRoomTypeAdmin(roomTypeId, session.user.id)
+    const roomType = await manageableRoomType(roomTypeId, session.user.id)
     if (!roomType) {
       return NextResponse.json(
         { success: false, error: 'Bạn không có quyền chỉnh sửa hạng phòng này' },
@@ -242,7 +229,7 @@ export async function DELETE(
       )
     }
 
-    const roomType = await checkRoomTypeAdmin(roomTypeId, session.user.id)
+    const roomType = await manageableRoomType(roomTypeId, session.user.id)
     if (!roomType) {
       return NextResponse.json(
         { success: false, error: 'Bạn không có quyền xóa hạng phòng này' },

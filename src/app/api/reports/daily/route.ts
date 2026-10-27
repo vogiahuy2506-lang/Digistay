@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { revenueReport } from '@/lib/reports/revenue-report'
+import { accessibleProperties } from '@/lib/auth/access'
 
 // Force dynamic rendering - required because we use auth() which calls headers()
 export const dynamic = 'force-dynamic'
@@ -42,22 +43,10 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Access control: owner, or staff (the front-desk book is the
-    // receptionist's own report); not plain USER members.
+    // Access control: the cash book (cashbook_view), the front desk's own
+    // report in the presets.
     const property = await prisma.property.findFirst({
-      where: {
-        id: propertyId,
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            {
-              members: {
-                some: { userId: session.user.id, role: { in: ['ADMIN', 'MANAGER', 'RECEPTIONIST'] }, planLockedAt: null },
-              },
-            },
-          ],
-        },
-      },
+      where: { id: propertyId, ...accessibleProperties(session.user.id, 'cashbook_view') },
       select: { id: true, name: true },
     })
     if (!property) {

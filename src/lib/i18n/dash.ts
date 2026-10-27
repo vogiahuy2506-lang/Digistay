@@ -10,7 +10,8 @@ const has = (record: object, key: string) => Object.prototype.hasOwnProperty.cal
 
 const SOURCES = ['DIRECT', 'WALK_IN', 'PHONE', 'OTA', 'AGENT'] as const
 const METHODS = ['BANK_TRANSFER', 'QR_VIETQR', 'CARD', 'CREDIT_CARD', 'E_WALLET', 'CASH'] as const
-const ROLES = ['ADMIN', 'MANAGER', 'RECEPTIONIST', 'USER'] as const
+/** A member's role, or OWNER for the workspace's owner. */
+const ROLES = ['OWNER', 'ADMIN', 'MANAGER', 'RECEPTIONIST', 'USER'] as const
 
 /**
  * The dashboard's shared words in the page's language (messages/dash/<locale>/
@@ -54,6 +55,11 @@ export function useDashLabels() {
       longDate: (value: string | Date) => {
         const d = vn(value)
         return `${t(`weekdays.${String(d.getUTCDay()) as '0'}`)}, ${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`
+      },
+      /** "19/10/2026" */
+      date: (value: string | Date) => {
+        const d = vn(value)
+        return `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`
       },
       /** "19/10/2026 21:40" */
       dateTime: (value: string | Date) => {

@@ -4,6 +4,7 @@
  */
 import type { BookingStatus, WorkspaceRole } from '@prisma/client'
 import { prisma } from '@/lib/db'
+import type { Permission } from '@/lib/auth/permissions'
 
 let seq = 0
 function uid() {
@@ -37,9 +38,13 @@ export function createUser(email = `u-${uid()}@example.com`) {
 
 /**
  * A workspace with one property and its owner, plus (optionally) a second
- * user who is a member with `memberRole`.
+ * user who is a member with `memberRole`: with its preset, or with exactly
+ * `memberPermissions` ticked; on every property, or (`memberLimited`) on
+ * none until given some with addMemberProperty.
  */
-export async function createTenant(opts: { memberRole?: WorkspaceRole } = {}) {
+export async function createTenant(
+  opts: { memberRole?: WorkspaceRole; memberPermissions?: Permission[]; memberLimited?: boolean } = {}
+) {
   const id = uid()
   const owner = await createUser()
   const workspace = await prisma.workspace.create({
@@ -61,10 +66,38 @@ export async function createTenant(opts: { memberRole?: WorkspaceRole } = {}) {
   if (opts.memberRole) {
     member = await createUser()
     await prisma.workspaceMember.create({
-      data: { workspaceId: workspace.id, userId: member.id, role: opts.memberRole },
+      data: {
+        workspaceId: workspace.id,
+        userId: member.id,
+        role: opts.memberRole,
+        ...(opts.memberPermissions && { customPermissions: true, permissions: opts.memberPermissions }),
+        ...(opts.memberLimited && { allProperties: false }),
+      },
     })
   }
   return { owner, workspace, property, member }
+}
+
+/** Another property in the tenant's workspace. */
+export function createProperty(workspaceId: string) {
+  const id = uid()
+  return prisma.property.create({
+    data: {
+      workspaceId,
+      name: `Hotel ${id}`,
+      slug: `hotel-${id}`,
+      type: 'HOTEL',
+      address: '1 Test Street',
+      city: 'Da Lat',
+      subdomain: `h-${id}`,
+    },
+  })
+}
+
+/** Lets a member limited to some properties (createTenant memberLimited) work on this one. */
+export async function addMemberProperty(workspaceId: string, userId: string, propertyId: string) {
+  const member = await prisma.workspaceMember.findUniqueOrThrow({ where: { workspaceId_userId: { workspaceId, userId } } })
+  return prisma.memberProperty.create({ data: { memberId: member.id, propertyId } })
 }
 
 export function createBooking(

@@ -6,6 +6,9 @@ import { RoomError, assignRoomTx, normalizeRoomNumber, roomConflictMessage, type
 import { lockBooking } from '@/lib/payments/booking-payments'
 import { z } from 'zod'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
+import { can, checkPropertyAccess } from '@/lib/auth/access'
+
+const NOT_FOUND = 'Không tìm thấy đơn đặt phòng'
 
 const updateBookingSchema = z.object({
   guestName: z.string().min(2).optional(),
@@ -43,10 +46,6 @@ export async function GET(
                 owner: {
                   select: { email: true, name: true },
                 },
-                members: {
-                  where: { userId: session.user.id, planLockedAt: null },
-                  select: { role: true },
-                },
               },
             },
             policy: {
@@ -67,19 +66,16 @@ export async function GET(
     })
 
     if (!booking) {
-      return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
+      return NextResponse.json({ success: false, error: NOT_FOUND }, { status: 404 })
     }
 
-    // Check access
-    const workspace = booking.property.workspace
-    const isOwner = workspace.ownerId === session.user.id
-    const isMember = workspace.members.length > 0
-    const isGuest = booking.guestEmail === session.user.email
-
+    // Staff who may see the hotel's bookings, or the booking's own guest.
     // Outsiders get the same 404 as a missing booking (CLAUDE.md, API rule 3):
     // a 403 told them the id exists.
-    if (!isOwner && !isMember && !isGuest) {
-      return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
+    const isGuest = booking.guestEmail === session.user.email
+    if (!isGuest) {
+      const access = await checkPropertyAccess(session.user.id, booking.propertyId, 'bookings_view', NOT_FOUND)
+      if (!access.ok) return access.response
     }
 
     const [data] = await withRoomTypeNames([booking])
@@ -103,38 +99,16 @@ export async function PATCH(
       return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
     }
 
-    const booking = await prisma.booking.findUnique({
-      where: { id },
-      include: {
-        property: {
-          select: {
-            workspace: {
-              select: {
-                ownerId: true,
-                members: {
-                  where: { userId: session.user.id, planLockedAt: null },
-                  select: { role: true },
-                },
-              },
-            },
-          },
-        },
-      },
-    })
+    const booking = await prisma.booking.findUnique({ where: { id } })
 
     if (!booking) {
-      return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
+      return NextResponse.json({ success: false, error: NOT_FOUND }, { status: 404 })
     }
 
-    // Check admin access; outsiders get the 404 of a missing booking.
-    const workspace = booking.property.workspace
-    const isOwner = workspace.ownerId === session.user.id
-    if (!isOwner && workspace.members.length === 0) {
-      return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
-    }
-    const isAdmin = workspace.members.some(m => ['ADMIN', 'MANAGER', 'RECEPTIONIST'].includes(m.role))
-
-    if (!isOwner && !isAdmin) {
+    // Outsiders get the 404 of a missing booking.
+    const access = await checkPropertyAccess(session.user.id, booking.propertyId, null, NOT_FOUND)
+    if (!access.ok) return access.response
+    if (!can(access.access, 'bookings_edit', booking.propertyId)) {
       return NextResponse.json({ success: false, error: 'Không có quyền chỉnh sửa' }, { status: 403 })
     }
     const locked = await lockedResponseForProperty(booking.propertyId)
@@ -245,38 +219,16 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
     }
 
-    const booking = await prisma.booking.findUnique({
-      where: { id },
-      include: {
-        property: {
-          select: {
-            workspace: {
-              select: {
-                ownerId: true,
-                members: {
-                  where: { userId: session.user.id, planLockedAt: null },
-                  select: { role: true },
-                },
-              },
-            },
-          },
-        },
-      },
-    })
+    const booking = await prisma.booking.findUnique({ where: { id } })
 
     if (!booking) {
-      return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
+      return NextResponse.json({ success: false, error: NOT_FOUND }, { status: 404 })
     }
 
-    // Check admin access; outsiders get the 404 of a missing booking.
-    const workspace = booking.property.workspace
-    const isOwner = workspace.ownerId === session.user.id
-    if (!isOwner && workspace.members.length === 0) {
-      return NextResponse.json({ success: false, error: 'Không tìm thấy đơn đặt phòng' }, { status: 404 })
-    }
-    const isAdmin = workspace.members.some(m => ['ADMIN', 'MANAGER'].includes(m.role))
-
-    if (!isOwner && !isAdmin) {
+    // Outsiders get the 404 of a missing booking.
+    const access = await checkPropertyAccess(session.user.id, booking.propertyId, null, NOT_FOUND)
+    if (!access.ok) return access.response
+    if (!can(access.access, 'bookings_delete', booking.propertyId)) {
       return NextResponse.json({ success: false, error: 'Không có quyền xóa' }, { status: 403 })
     }
     const locked = await lockedResponseForProperty(booking.propertyId)

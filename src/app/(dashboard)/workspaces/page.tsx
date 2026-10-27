@@ -26,13 +26,14 @@ import {
 } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
-import { ArrowRight, Building2, MoreVertical, Pencil, Plus, Search, Trash2, Users } from 'lucide-react'
+import { ArrowRight, Building2, LogOut, MoreVertical, Pencil, Plus, Search, Trash2, Users } from 'lucide-react'
 import { apiError } from '@/lib/i18n/api-errors'
 import { uploadPhoto } from '@/lib/media/upload-client'
 import { useUploadProblemText } from '@/components/ui/photo-upload'
 import { BUSINESS_TYPES, CURRENCIES, TIMEZONES, type BusinessType, workspaceSettingsOf } from './options'
 import { finishSlugInput, onNameTyped, onSlugTyped, slugFromName } from './slug-input'
 import { DeleteWorkspaceDialog } from '@/components/deletion/delete-workspace-dialog'
+import { isRole } from '@/lib/auth/permissions'
 import { RecentlyDeleted } from '@/components/deletion/recently-deleted'
 
 interface Workspace {
@@ -43,10 +44,13 @@ interface Workspace {
   logo: string | null
   ownerId: string
   settings?: unknown
-  members?: { userId: string; role: string }[]
+  /** The caller's own membership only (GET /api/workspaces). */
+  members?: { id: string; userId: string; role: string }[]
   _count: { properties: number; members: number }
   /** The caller is a member locked for being over the plan (src/lib/billing/overage.ts). */
   planLocked?: boolean
+  /** The caller is a member an admin locked. */
+  disabled?: boolean
 }
 
 interface CurrentUser {
@@ -101,6 +105,8 @@ export default function WorkspacesPage() {
   const [createOpen, setCreateOpen] = React.useState(false)
   /** The workspace in the delete dialog (src/lib/deletion); bumping deletedVersion reloads "Đã xoá gần đây". */
   const [deleting, setDeleting] = React.useState<Workspace | null>(null)
+  const [leaving, setLeaving] = React.useState<Workspace | null>(null)
+  const [leaveBusy, setLeaveBusy] = React.useState(false)
   const [deletedVersion, setDeletedVersion] = React.useState(0)
 
   const fetchWorkspaces = React.useCallback(async () => {
@@ -245,6 +251,26 @@ export default function WorkspacesPage() {
     setDeletedVersion((v) => v + 1)
   }
 
+  // A member leaves: their own membership row goes (DELETE …/members/[memberId]).
+  const leave = async () => {
+    const own = leaving?.members?.find((m) => m.userId === user?.id)
+    if (!leaving || !own) return
+    setLeaveBusy(true)
+    try {
+      const res = await fetch(`/api/workspaces/${leaving.id}/members/${own.id}`, { method: 'DELETE' })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        toast.error(apiError(data.error) || t('form.failed'))
+        return
+      }
+      toast.success(t('leave.done', { name: leaving.name }))
+      setLeaving(null)
+      await fetchWorkspaces()
+    } finally {
+      setLeaveBusy(false)
+    }
+  }
+
   const answerInvitation = async (invitation: Invitation, accept: boolean) => {
     // The token endpoint, so this page and /invitations/[token] share one path.
     const res = await fetch(`/api/invitations/${invitation.token}/${accept ? 'accept' : 'decline'}`, {
@@ -353,14 +379,13 @@ export default function WorkspacesPage() {
                   remove: t('actions.delete'),
                   planLocked: t('planLocked'),
                   planLockedNote: t('planLockedNote'),
+                  disabledNote: t('disabledNote'),
+                  leave: t('actions.leave'),
                 }}
-                roleLabel={(role) =>
-                  role === 'ADMIN' || role === 'MANAGER' || role === 'RECEPTIONIST' || role === 'USER'
-                    ? t(`roles.${role}`)
-                    : role
-                }
+                roleLabel={(role) => (isRole(role) ? t(`roles.${role}`) : role)}
                 onEdit={() => openEdit(ws)}
                 onRemove={() => remove(ws)}
+                onLeave={() => setLeaving(ws)}
               />
             ))}
           </ul>
@@ -381,13 +406,7 @@ export default function WorkspacesPage() {
                     <p className="text-body font-medium text-fg truncate">{invitation.workspace.name}</p>
                     <p className="mt-0.5 text-small text-muted">
                       {t('invitations.proposedRole', {
-                        role:
-                          invitation.role === 'ADMIN' ||
-                          invitation.role === 'MANAGER' ||
-                          invitation.role === 'RECEPTIONIST' ||
-                          invitation.role === 'USER'
-                            ? t(`roles.${invitation.role}`)
-                            : invitation.role,
+                        role: isRole(invitation.role) ? t(`roles.${invitation.role}`) : invitation.role,
                       })}
                     </p>
                     <p className="mt-0.5 text-small text-muted truncate">
@@ -413,6 +432,23 @@ export default function WorkspacesPage() {
         {/* The owner's workspaces deleted in the last 30 days, to restore. */}
         <RecentlyDeleted kind="workspace" reloadKey={deletedVersion} />
       </div>
+
+      <Modal isOpen={leaving !== null} onClose={() => setLeaving(null)} size="sm" title={t('leave.title', { name: leaving?.name ?? '' })}>
+        <ModalHeader onClose={() => setLeaving(null)}>
+          <h2 className="text-lg font-semibold text-fg">{t('leave.title', { name: leaving?.name ?? '' })}</h2>
+        </ModalHeader>
+        <ModalBody>
+          <p className="text-body text-fg/80">{t('leave.text')}</p>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="outline" onClick={() => setLeaving(null)}>
+            {t('form.cancel')}
+          </Button>
+          <Button variant="danger" onClick={leave} isLoading={leaveBusy}>
+            {t('leave.confirm')}
+          </Button>
+        </ModalFooter>
+      </Modal>
 
       <DeleteWorkspaceDialog
         workspaceId={deleting?.id ?? null}
@@ -453,14 +489,19 @@ interface WorkspaceRowProps {
     remove: string
     planLocked: string
     planLockedNote: string
+    disabledNote: string
+    leave: string
   }
   roleLabel: (role: string) => string
   onEdit: () => void
   onRemove: () => void
+  onLeave: () => void
 }
 
 /** One row: name and slug on the left, counts, then the way in. */
-function WorkspaceRow({ workspace, isOwner, role, labels, roleLabel, onEdit, onRemove }: WorkspaceRowProps) {
+function WorkspaceRow({ workspace, isOwner, role, labels, roleLabel, onEdit, onRemove, onLeave }: WorkspaceRowProps) {
+  // Locked out (over the plan, or by an admin): listed, not openable.
+  const locked = workspace.planLocked || workspace.disabled
   const menuTrigger = (
     <button
       type="button"
@@ -478,7 +519,7 @@ function WorkspaceRow({ workspace, isOwner, role, labels, roleLabel, onEdit, onR
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2.5 min-w-0">
             <Building2 className="w-4 h-4 text-muted shrink-0" aria-hidden="true" />
-            {workspace.planLocked ? (
+            {locked ? (
               <span className="text-body font-medium text-muted truncate">{workspace.name}</span>
             ) : (
               <Link
@@ -491,12 +532,12 @@ function WorkspaceRow({ workspace, isOwner, role, labels, roleLabel, onEdit, onR
             <span className="shrink-0 rounded-sm bg-plain-soft px-1.5 py-0.5 text-[11px] text-plain">
               {isOwner ? labels.owner : role ? roleLabel(role) : ''}
             </span>
-            {workspace.planLocked && (
+            {locked && (
               <span className="shrink-0 rounded-sm bg-err-soft px-1.5 py-0.5 text-[11px] text-err">{labels.planLocked}</span>
             )}
           </div>
-          {workspace.planLocked ? (
-            <p className="mt-1 text-small text-err">{labels.planLockedNote}</p>
+          {locked ? (
+            <p className="mt-1 text-small text-err">{workspace.disabled ? labels.disabledNote : labels.planLockedNote}</p>
           ) : workspace.description && (
             <p className="mt-1 text-small text-muted line-clamp-1">{workspace.description}</p>
           )}
@@ -510,7 +551,7 @@ function WorkspaceRow({ workspace, isOwner, role, labels, roleLabel, onEdit, onR
           </p>
         </div>
 
-        {isOwner && (
+        {isOwner ? (
           <Dropdown
             align="right"
             trigger={menuTrigger}
@@ -524,9 +565,15 @@ function WorkspaceRow({ workspace, isOwner, role, labels, roleLabel, onEdit, onR
               {labels.remove}
             </DropdownItem>
           </Dropdown>
+        ) : (
+          <Dropdown align="right" trigger={menuTrigger} className="min-w-[180px]">
+            <DropdownItem onClick={onLeave} danger icon={<LogOut className="w-4 h-4" />}>
+              {labels.leave}
+            </DropdownItem>
+          </Dropdown>
         )}
 
-        {!workspace.planLocked && (
+        {!locked && (
           <Link
             href={routes.workspace(workspace.slug)}
             className={cn(

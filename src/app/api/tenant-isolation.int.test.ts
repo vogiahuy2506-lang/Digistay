@@ -38,7 +38,7 @@ vi.mock('@/lib/auth', () => ({ auth: vi.fn() }))
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { PUT as putBlocks } from './website/blocks/route'
-import { PATCH as patchMember, DELETE as deleteMember } from './workspaces/[id]/members/route'
+import { PATCH as patchMember, DELETE as deleteMember } from './workspaces/[id]/members/[memberId]/route'
 import { GET as listInvoices } from './invoices/route'
 import { GET as getInvoice } from './invoices/[id]/route'
 import { GET as listBankAccounts } from './bank-accounts/route'
@@ -46,7 +46,15 @@ import { POST as lockRoom, DELETE as releaseLock } from './bookings/room-lock/ro
 import { POST as createMaintenance, DELETE as deleteMaintenance } from './rooms/maintenance/route'
 import { GET as availableRooms } from './rooms/available/route'
 import { POST as createAmenity } from './amenities/route'
-import { createBooking, createRoomType, createTenant, createUser, resetDatabase } from '@/test/integration/fixtures'
+import {
+  addMemberProperty,
+  createBooking,
+  createProperty,
+  createRoomType,
+  createTenant,
+  createUser,
+  resetDatabase,
+} from '@/test/integration/fixtures'
 
 const mockAuth = auth as unknown as ReturnType<typeof vi.fn>
 
@@ -215,7 +223,7 @@ describe('PUT /api/website/blocks', () => {
   })
 })
 
-describe('PATCH/DELETE /api/workspaces/[id]/members', () => {
+describe('PATCH/DELETE /api/workspaces/[id]/members/[memberId]', () => {
   const membershipOf = (workspaceId: string, userId: string) =>
     prisma.workspaceMember.findUniqueOrThrow({ where: { workspaceId_userId: { workspaceId, userId } } })
 
@@ -228,11 +236,12 @@ describe('PATCH/DELETE /api/workspaces/[id]/members', () => {
     signInAs(a.member!)
 
     const res = await patchMember(
-      req(`/api/workspaces/${own.id}/members`, 'PATCH', { memberId: membership.id, role: 'ADMIN' }),
-      params({ id: own.id })
+      req(`/api/workspaces/${own.id}/members/${membership.id}`, 'PATCH', { role: 'ADMIN' }),
+      params({ id: own.id, memberId: membership.id })
     )
 
     expect(res.status).toBe(404)
+    expect((await res.json()).error).toBe('Không tìm thấy thành viên')
     expect((await membershipOf(a.workspace.id, a.member!.id)).role).toBe('USER')
   })
 
@@ -242,11 +251,12 @@ describe('PATCH/DELETE /api/workspaces/[id]/members', () => {
     signInAs(b.owner)
 
     const res = await deleteMember(
-      req(`/api/workspaces/${b.workspace.id}/members?memberId=${membership.id}`, 'DELETE'),
-      params({ id: b.workspace.id })
+      req(`/api/workspaces/${b.workspace.id}/members/${membership.id}`, 'DELETE'),
+      params({ id: b.workspace.id, memberId: membership.id })
     )
 
     expect(res.status).toBe(404)
+    expect((await res.json()).error).toBe('Không tìm thấy thành viên')
     expect(await prisma.workspaceMember.count({ where: { id: membership.id } })).toBe(1)
   })
 
@@ -256,8 +266,8 @@ describe('PATCH/DELETE /api/workspaces/[id]/members', () => {
     signInAs(a.owner)
 
     const res = await patchMember(
-      req(`/api/workspaces/${a.workspace.id}/members`, 'PATCH', { memberId: membership.id, role: 'OWNER' }),
-      params({ id: a.workspace.id })
+      req(`/api/workspaces/${a.workspace.id}/members/${membership.id}`, 'PATCH', { role: 'OWNER' }),
+      params({ id: a.workspace.id, memberId: membership.id })
     )
 
     expect(res.status).toBe(400)
@@ -270,15 +280,15 @@ describe('PATCH/DELETE /api/workspaces/[id]/members', () => {
     signInAs(a.owner)
 
     const patched = await patchMember(
-      req(`/api/workspaces/${a.workspace.id}/members`, 'PATCH', { memberId: membership.id, role: 'MANAGER' }),
-      params({ id: a.workspace.id })
+      req(`/api/workspaces/${a.workspace.id}/members/${membership.id}`, 'PATCH', { role: 'MANAGER' }),
+      params({ id: a.workspace.id, memberId: membership.id })
     )
     expect(patched.status).toBe(200)
     expect((await membershipOf(a.workspace.id, a.member!.id)).role).toBe('MANAGER')
 
     const removed = await deleteMember(
-      req(`/api/workspaces/${a.workspace.id}/members?memberId=${membership.id}`, 'DELETE'),
-      params({ id: a.workspace.id })
+      req(`/api/workspaces/${a.workspace.id}/members/${membership.id}`, 'DELETE'),
+      params({ id: a.workspace.id, memberId: membership.id })
     )
     expect(removed.status).toBe(200)
     expect(await prisma.workspaceMember.count({ where: { id: membership.id } })).toBe(0)
@@ -295,8 +305,14 @@ describe('GET /api/invoices and /api/invoices/[id]', () => {
     expect(await ids(await listInvoices(req('/api/invoices')))).toEqual([invoiceB.id])
     expect(await ids(await listInvoices(req(`/api/invoices?propertyId=${a.property.id}`)))).toEqual([])
 
-    signInAs(a.member!)
+    // A's staff who issue invoices (invoices_manage: a receptionist) see A's;
+    // its USER member, without it, none.
+    const receptionist = await createUser()
+    await prisma.workspaceMember.create({ data: { workspaceId: a.workspace.id, userId: receptionist.id, role: 'RECEPTIONIST' } })
+    signInAs(receptionist)
     expect(await ids(await listInvoices(req('/api/invoices')))).toEqual([invoiceA.id])
+    signInAs(a.member!)
+    expect(await ids(await listInvoices(req('/api/invoices')))).toEqual([])
 
     signInAs(await createUser())
     expect(await ids(await listInvoices(req('/api/invoices')))).toEqual([])
@@ -333,6 +349,32 @@ describe('GET /api/bank-accounts', () => {
 
     signInAs(a.member!)
     expect(await ids(await listBankAccounts(req('/api/bank-accounts')))).toEqual([accountA.id])
+  })
+})
+
+describe('a member limited to one hotel of the workspace', () => {
+  it("lists only that hotel's invoices and bank accounts, and cannot change the other's website", async () => {
+    const { workspace, property: a, member } = await createTenant({ memberRole: 'MANAGER', memberLimited: true })
+    await addMemberProperty(workspace.id, member!.id, a.id)
+    const b = await createProperty(workspace.id)
+    const invoiceA = await createInvoice(await createBooking(a.id))
+    await createInvoice(await createBooking(b.id))
+    const account = (propertyId: string) =>
+      prisma.bankAccount.create({
+        data: { propertyId, bankName: 'VCB', bankCode: 'VCB', accountNumber: '0123456789', accountHolder: 'NGUYEN VAN A' },
+      })
+    const accountA = await account(a.id)
+    await account(b.id)
+    await prisma.websiteBlock.create({ data: { propertyId: b.id, type: 'HERO', name: 'Hero' } })
+    signInAs(member!)
+
+    expect(await ids(await listInvoices(req('/api/invoices')))).toEqual([invoiceA.id])
+    expect(await ids(await listInvoices(req(`/api/invoices?propertyId=${b.id}`)))).toEqual([])
+    expect(await ids(await listBankAccounts(req('/api/bank-accounts')))).toEqual([accountA.id])
+
+    const res = await putBlocks(req('/api/website/blocks', 'PUT', { propertyId: b.id, blocks: [] }))
+    expect(res.status).toBe(403)
+    expect(await prisma.websiteBlock.count({ where: { propertyId: b.id } })).toBe(1)
   })
 })
 

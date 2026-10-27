@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { requireSession, getWorkspaceRole } from '@/lib/auth/rbac'
+import { requireSession } from '@/lib/auth/rbac'
+import { checkAccess } from '@/lib/auth/access'
 import { EinvoiceError, getInvoicePdf } from '@/lib/einvoice/matbao'
 
 /**
  * GET /api/invoices/[id]/pdf — the issued invoice's PDF, fetched from Mắt
- * Bão with the property's account. Members of the property's workspace.
+ * Bão with the property's account. Who sees the property's bookings
+ * (bookings_view): an invoice is part of its booking's record.
  */
 export async function GET(_request: NextRequest, props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params
@@ -14,12 +16,16 @@ export async function GET(_request: NextRequest, props: { params: Promise<{ id: 
 
   const invoice = await prisma.invoice.findUnique({
     where: { id },
-    select: { property: { select: { workspaceId: true } } },
+    select: { propertyId: true, property: { select: { workspaceId: true } } },
   })
-  const role = invoice ? await getWorkspaceRole(invoice.property.workspaceId, sess.session.user.id) : null
-  if (!invoice || !role) {
+  if (!invoice) {
     return NextResponse.json({ success: false, error: 'Không tìm thấy hóa đơn' }, { status: 404 })
   }
+  const granted = await checkAccess(sess.session.user.id, invoice.property.workspaceId, 'bookings_view', {
+    propertyId: invoice.propertyId,
+    notFound: 'Không tìm thấy hóa đơn',
+  })
+  if (!granted.ok) return granted.response
 
   try {
     const { pdf, filename } = await getInvoicePdf(id)

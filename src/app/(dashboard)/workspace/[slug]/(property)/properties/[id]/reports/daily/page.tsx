@@ -12,7 +12,8 @@ import {
   Printer, Download, ArrowUpRight, ArrowDownRight
 } from 'lucide-react'
 import { apiError } from '@/lib/i18n/api-errors'
-import { NoAccess, useHasRole } from '@/components/payment/no-access'
+import { NoAccess } from '@/components/payment/no-access'
+import { useCan } from '@/components/layout/workspace-context'
 
 interface DailyTransaction {
   id: string
@@ -69,7 +70,7 @@ export default function DailyReportPage() {
   const tc = useTranslations('dash.common')
   const labels = useDashLabels()
   // The API serves the cash book to staff (the menu lists it for the owner and the front desk).
-  const allowed = useHasRole(['ADMIN', 'MANAGER', 'RECEPTIONIST'])
+  const allowed = useCan('cashbook_view')
 
   const [selectedDate, setSelectedDate] = React.useState(vnToday)
   const [summary, setSummary] = React.useState<DailySummary | null>(null)

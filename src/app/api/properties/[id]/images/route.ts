@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { uploadImageSchema } from '@/lib/validations'
 import { invalidatePublicSite } from '@/lib/public-site/site'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
+import { accessibleProperties } from '@/lib/auth/access'
 
 export async function GET(
   request: NextRequest,
@@ -22,15 +23,7 @@ export async function GET(
     }
 
     const property = await prisma.property.findFirst({
-      where: {
-        id,
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, planLockedAt: null } } },
-          ],
-        },
-      },
+      where: { id, ...accessibleProperties(session.user.id) },
       select: { id: true },
     })
 
@@ -78,17 +71,8 @@ export async function POST(
       )
     }
 
-    // Verify admin access
     const property = await prisma.property.findFirst({
-      where: {
-        id,
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, role: 'ADMIN', planLockedAt: null } } },
-          ],
-        },
-      },
+      where: { id, ...accessibleProperties(session.user.id, 'property_edit') },
       include: {
         workspace: {
           select: { id: true },
@@ -183,19 +167,11 @@ export async function DELETE(
       )
     }
 
-    // Verify admin access
     const property = await prisma.propertyImage.findFirst({
       where: {
         id: imageId,
         propertyId: id,
-        property: {
-          workspace: {
-            OR: [
-              { ownerId: session.user.id },
-              { members: { some: { userId: session.user.id, role: 'ADMIN', planLockedAt: null } } },
-            ],
-          },
-        },
+        property: accessibleProperties(session.user.id, 'property_edit'),
       },
       include: {
         property: {

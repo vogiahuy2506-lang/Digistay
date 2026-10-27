@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { requireSession, getWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { requireSession } from '@/lib/auth/rbac'
+import { can, checkAccess } from '@/lib/auth/access'
 import { EinvoiceError } from '@/lib/einvoice/matbao'
 import { createReplacementDraft } from '@/lib/einvoice/replacement'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
 
 /**
  * POST /api/invoices/[id]/replace — a draft replacement for an issued
- * invoice (src/lib/einvoice/replacement.ts). Staff only, like publishing.
+ * invoice (src/lib/einvoice/replacement.ts). invoices_manage, like publishing.
  */
 export async function POST(_request: NextRequest, props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params
@@ -15,9 +16,13 @@ export async function POST(_request: NextRequest, props: { params: Promise<{ id:
   if (!sess.ok) return sess.response
 
   const invoice = await prisma.invoice.findUnique({ where: { id }, select: { propertyId: true, property: { select: { workspaceId: true } } } })
-  const role = invoice ? await getWorkspaceRole(invoice.property.workspaceId, sess.session.user.id) : null
-  if (!invoice || !role) return NextResponse.json({ success: false, error: 'Không tìm thấy hóa đơn' }, { status: 404 })
-  if (!(WorkspaceRoles.STAFF_AND_UP as readonly string[]).includes(role)) {
+  if (!invoice) return NextResponse.json({ success: false, error: 'Không tìm thấy hóa đơn' }, { status: 404 })
+  const granted = await checkAccess(sess.session.user.id, invoice.property.workspaceId, null, {
+    propertyId: invoice.propertyId,
+    notFound: 'Không tìm thấy hóa đơn',
+  })
+  if (!granted.ok) return granted.response
+  if (!can(granted.access, 'invoices_manage', invoice.propertyId)) {
     return NextResponse.json({ success: false, error: 'Không có quyền lập hoá đơn thay thế' }, { status: 403 })
   }
   const locked = await lockedResponseForProperty(invoice.propertyId)

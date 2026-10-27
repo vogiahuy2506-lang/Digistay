@@ -69,6 +69,12 @@ DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54329/digistay_test" npm 
   (server) hoặc `React.use(params)` (client component).
 - Multi-tenant: `Workspace` (chủ `ownerId` + `WorkspaceMember` vai trò ADMIN / MANAGER /
   RECEPTIONIST / USER) → nhiều `Property` (khách sạn) → `Booking`, `Payment`...
+- Nhân viên như UKNOW (trang Thành viên, `src/lib/members`): mời qua email kèm quyền và cơ sở
+  (`Invitation` lưu sẵn), người chưa có tài khoản đặt mật khẩu ngay từ link
+  (`POST /api/invitations/[token]/register`); gửi lại / huỷ lời mời (REVOKED); khoá / mở
+  (`disabledAt`, không tính chỗ của gói); rời workspace (xoá dòng của chính mình). Không ai cấp hơn
+  quyền mình có (`src/lib/members/grant.ts`). Mọi thao tác ghi `activity_logs` (entityType MEMBER /
+  INVITATION), tab Nhật ký đọc lại.
 - **Xoá cơ sở / workspace là xoá mềm** (`deletedAt`, khôi phục 30 ngày, rồi job `purge-deleted` xoá
   hẳn; `src/lib/deletion`). `prisma` (`src/lib/db`) có extension `src/lib/db/soft-delete.ts`: mọi
   lệnh **đọc** tự bỏ cơ sở / workspace đã xoá và mọi bản ghi thuộc chúng (đơn, thanh toán, hoá đơn,
@@ -96,16 +102,24 @@ DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54329/digistay_test" npm 
 Rút ra từ các lỗ hổng đã sửa (webhook giả, PUT không đăng nhập, API trả dữ liệu của mọi khách
 sạn, đặt lại mật khẩu chỉ cần email, email trong phiên do client tự đặt).
 
-1. Mọi route gọi `auth()` hoặc `requireSession()` trước khi đọc DB, trừ route công khai có chủ
-   đích. `src/app/api/route-policy.test.ts` bắt buộc điều này: handler nào không gọi hàm kiểm
-   tra đăng nhập phải nằm trong `PUBLIC_HANDLERS` kèm lý do, nếu không CI đỏ. Thêm route công
-   khai mới = thêm một dòng ở đó để người review thấy.
-2. Truy vấn danh sách luôn lọc theo workspace của người dùng:
-   `property: { workspace: { OR: [{ ownerId: userId }, { members: { some: { userId } } }] } }`.
-   `propertyId` / `bookingId` từ client chỉ được *cộng thêm* vào điều kiện, không thay thế nó.
-3. Truy vấn theo id: lấy workspace của bản ghi rồi `getWorkspaceRole` (`src/lib/auth/rbac.ts`).
-   Người ngoài workspace → 404 (không lộ id có tồn tại); thiếu vai trò → 403.
-4. Thao tác chạm tiền (xác nhận thanh toán, ghi tiền mặt): chỉ `WorkspaceRoles.STAFF_AND_UP`.
+1. Mọi route gọi `auth()`, `requireSession()` hoặc `requireAccess()` / `requirePropertyAccess()`
+   trước khi đọc DB, trừ route công khai có chủ đích. `src/app/api/route-policy.test.ts` bắt buộc
+   điều này: handler nào không gọi hàm kiểm tra đăng nhập phải nằm trong `PUBLIC_HANDLERS` kèm lý
+   do, nếu không CI đỏ. Thêm route công khai mới = thêm một dòng ở đó để người review thấy.
+2. Phân quyền theo **quyền**, không theo vai trò (như UKNOW): `src/lib/auth/permissions.ts` là
+   danh mục 20 quyền; vai trò (ADMIN/MANAGER/RECEPTIONIST/USER) chỉ là bộ quyền mẫu, admin có thể
+   tick bộ riêng cho từng người (`customPermissions`) và giới hạn họ ở vài cơ sở
+   (`allProperties` + `MemberProperty`). Mọi kiểm tra đi qua `src/lib/auth/access.ts`
+   (`requireAccess`, `requirePropertyAccess`, `checkPropertyAccess`, `can`) ở server và `useCan()`
+   ở dashboard. Không viết `role === 'ADMIN'` hay `role: { in: [...] }`:
+   `src/app/api/access-checks.test.ts` bắt. Thành viên bị khoá (`disabledAt`, do admin) hay khoá do
+   vượt gói (`planLockedAt`) không có quyền gì (`member-filter.test.ts`).
+3. Truy vấn danh sách lọc bằng `accessibleProperties(userId, quyền)` (mọi workspace, đúng cơ sở
+   được giao). `propertyId` / `bookingId` từ client chỉ được *cộng thêm* vào điều kiện, không thay
+   thế nó. Truy vấn theo id: lấy `propertyId` của bản ghi rồi `checkPropertyAccess(userId,
+   propertyId, quyền, thông báo 404)`. Người ngoài (hoặc thành viên không được giao cơ sở đó) → 404
+   (không lộ id có tồn tại); thiếu quyền → 403.
+4. Thao tác chạm tiền (xác nhận thanh toán, ghi tiền mặt): quyền `payments_manage`.
    Đổi trạng thái bằng `updateMany` có điều kiện trạng thái cũ, trong `prisma.$transaction`,
    khoá dòng booking (`SELECT ... FOR UPDATE`), và ghi `activityLog`.
 5. Webhook thanh toán đang **tắt** (`/api/payments/webhook` trả 404) cho tới Phần 5. Không bật

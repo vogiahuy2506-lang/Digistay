@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl'
 import { PageContainer } from '@/components/layout'
 import { NoAccess } from '@/components/layout/no-access'
 import { useTheme } from '@/components/layout/theme-root'
-import { useWorkspaceRole } from '@/components/layout/workspace-context'
+import { useCan } from '@/components/layout/workspace-context'
 import { toast } from '@/components/ui/toast'
 import { EnglishCopy } from '@/components/ui/english-copy'
 import { CoverPicker } from './cover-picker'
@@ -1252,8 +1252,7 @@ export default function WebsiteBuilderPage() {
   const tn = useTranslations('dash.common.nav')
   const theme = useTheme()
   // Owners, ADMIN and MANAGER (the blocks and settings APIs refuse anyone else; the sidebar hides it).
-  const role = useWorkspaceRole()
-  const canEdit = role === null || role === 'ADMIN' || role === 'MANAGER'
+  const canEdit = useCan('website_manage')
 
   const [settings, setSettings] = React.useState<WebsiteSettings | null>(null)
   const [blocks, setBlocks] = React.useState<Block[]>([])

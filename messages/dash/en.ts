@@ -16,6 +16,7 @@ import ui from './en/ui.json'
 import menu from './en/menu.json'
 import billing from './en/billing.json'
 import deletion from './en/deletion.json'
+import members from './en/members.json'
 
-const dash = { common, bookings, calendar, property, rooms, menu, money, reports, website, workspace, account, ui, billing, deletion }
+const dash = { common, bookings, calendar, property, rooms, menu, money, reports, website, workspace, account, ui, billing, deletion, members }
 export default dash

@@ -1,8 +1,8 @@
 /**
  * Every /api/bookings/[id] route answers someone outside the booking's
  * workspace with the 404 of a missing booking (CLAUDE.md, API rule 3): a
- * 403 for a real id told them it exists. Members without the role still get
- * 403. Against real Postgres.
+ * 403 for a real id told them it exists. Members without the permission
+ * still get 403. Against real Postgres.
  */
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest'
 import { NextRequest } from 'next/server'
@@ -77,12 +77,20 @@ describe('/api/bookings/[id]/* for someone outside the workspace', () => {
   })
 })
 
-describe('/api/bookings/[id]/* for a member without the role', () => {
+describe('/api/bookings/[id]/* for a member without the permission', () => {
+  // USER's preset: bookings_view, bookings_create, rooms_status.
   it.each([
     ['POST check-in', checkInRoute.POST, 'POST'],
     ['PATCH /api/bookings/[id]', bookingRoute.PATCH, 'PATCH', { guestNote: 'x' }],
+    ['DELETE /api/bookings/[id]', bookingRoute.DELETE, 'DELETE'],
+    ['GET check-out', checkOutRoute.GET, 'GET'],
+    ['POST check-out', checkOutRoute.POST, 'POST', {}],
+    ['GET cancel', cancelRoute.GET, 'GET'],
+    ['POST cancel', cancelRoute.POST, 'POST', {}],
+    ['POST extend', extendRoute.POST, 'POST', { newCheckOutDate: '2026-11-05' }],
     ['POST room', roomRoute.POST, 'POST', { roomId: null }],
     ['POST no-show', noShowRoute.POST, 'POST'],
+    ['POST send-confirmation', sendConfirmationRoute.POST, 'POST'],
   ] as [string, Handler, string, object?][])('%s: 403', async (_name, handler, method, body) => {
     const { property, member } = await createTenant({ memberRole: 'USER' })
     const booking = await createBooking(property.id, { status: 'CONFIRMED' })

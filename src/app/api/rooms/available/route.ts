@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { ACTIVE_BOOKING_STATUSES } from '@/lib/bookings/occupancy'
 import { auth } from '@/lib/auth'
+import { checkPropertyAccess } from '@/lib/auth/access'
 import { z } from 'zod'
 
 /**
@@ -50,20 +51,13 @@ export async function GET(request: NextRequest) {
 
     const { propertyId, roomTypeId, checkIn, checkOut } = query.data
 
-    // The room type, only if it is this property's and the caller is a member
+    // Members who may see the property's bookings; others get the 404.
+    const access = await checkPropertyAccess(session.user.id, propertyId, 'bookings_view', 'Không tìm thấy hạng phòng')
+    if (!access.ok) return access.response
+
+    // The room type, only if it is this property's
     const roomType = await prisma.roomType.findFirst({
-      where: {
-        id: roomTypeId,
-        property: {
-          id: propertyId,
-          workspace: {
-            OR: [
-              { ownerId: session.user.id },
-              { members: { some: { userId: session.user.id, planLockedAt: null } } },
-            ],
-          },
-        },
-      },
+      where: { id: roomTypeId, propertyId },
       select: {
         id: true,
         name: true,

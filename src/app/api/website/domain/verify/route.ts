@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import { prisma, prismaWithDeleted } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { requireWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { checkPropertyAccess } from '@/lib/auth/access'
 import { rootDomain } from '@/lib/subdomains'
 import {
   checkOwnership,
@@ -40,16 +40,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Thiếu propertyId hoặc domain' }, { status: 400 })
     }
 
-    const property = await prisma.property.findFirst({
-      where: {
-        id: body.data.propertyId,
-        workspace: {
-          OR: [
-            { ownerId: session.user.id },
-            { members: { some: { userId: session.user.id, planLockedAt: null } } },
-          ],
-        },
-      },
+    // The domain decides where the hotel's brand traffic goes: website_manage.
+    const access = await checkPropertyAccess(session.user.id, body.data.propertyId, 'website_manage', 'Không tìm thấy cơ sở')
+    if (!access.ok) return access.response
+    const property = await prisma.property.findUniqueOrThrow({
+      where: { id: access.property.id },
       select: {
         id: true,
         subdomain: true,
@@ -57,13 +52,6 @@ export async function POST(request: NextRequest) {
         websiteSettings: { select: { customDomain: true, domainVerificationStatus: true, sslEnabled: true } },
       },
     })
-    if (!property) {
-      return NextResponse.json({ success: false, error: 'Không tìm thấy cơ sở' }, { status: 404 })
-    }
-
-    // The domain decides where the hotel's brand traffic goes.
-    const access = await requireWorkspaceRole(property.workspaceId, WorkspaceRoles.ADMINS_AND_MANAGERS)
-    if (!access.ok) return access.response
     const locked = await lockedResponseForProperty(property.id)
     if (locked) return locked
 

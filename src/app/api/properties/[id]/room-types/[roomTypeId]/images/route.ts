@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/db'
-import { getWorkspaceRole, requireSession } from '@/lib/auth/rbac'
+import { requireSession } from '@/lib/auth/rbac'
+import { checkPropertyAccess } from '@/lib/auth/access'
 import { isStoredImageUrl } from '@/lib/media/image-url'
 import { invalidatePublicSite } from '@/lib/public-site/site'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
@@ -9,7 +10,7 @@ import { lockedResponseForProperty } from '@/lib/billing/guard'
 /**
  * A room type's own photos (RoomTypeImage): the hotel site's room cards and
  * room page show them, the main one first (src/lib/public-site/site.ts).
- * Who edits room types edits their photos: the owner and admins; not while
+ * Who edits room types edits their photos (room_types_manage); not while
  * the workspace is locked (src/lib/billing).
  */
 
@@ -22,13 +23,10 @@ const ORDER = [{ isPrimary: 'desc' as const }, { sortOrder: 'asc' as const }, { 
 const fail = (status: number, error: string) => NextResponse.json({ success: false, error }, { status })
 
 async function access(propertyId: string, roomTypeId: string, userId: string) {
-  const roomType = await prisma.roomType.findFirst({
-    where: { id: roomTypeId, propertyId },
-    select: { id: true, property: { select: { workspaceId: true } } },
-  })
-  const role = roomType ? await getWorkspaceRole(roomType.property.workspaceId, userId) : null
-  if (!roomType || !role) return { ok: false as const, response: fail(404, 'Không tìm thấy loại phòng') }
-  if (role !== 'ADMIN') return { ok: false as const, response: fail(403, 'Bạn không có quyền thực hiện hành động này') }
+  const roomType = await prisma.roomType.findFirst({ where: { id: roomTypeId, propertyId }, select: { id: true } })
+  if (!roomType) return { ok: false as const, response: fail(404, 'Không tìm thấy loại phòng') }
+  const granted = await checkPropertyAccess(userId, propertyId, 'room_types_manage', 'Không tìm thấy loại phòng')
+  if (!granted.ok) return granted
   const locked = await lockedResponseForProperty(propertyId)
   if (locked) return { ok: false as const, response: locked }
   return { ok: true as const }

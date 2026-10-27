@@ -6,6 +6,8 @@ import { z } from 'zod'
 import { isValidTiers } from '@/lib/bookings/late-checkout'
 import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
+import { accessibleProperties } from '@/lib/auth/access'
+import type { Permission } from '@/lib/auth/permissions'
 
 const policySchema = z.object({
   checkInTime: z
@@ -40,17 +42,10 @@ const policySchema = z.object({
   translations: translationsInput(['cancellationPolicy', 'additionalRules'], 2000),
 })
 
-async function userCanEditProperty(propertyId: string, userId: string) {
+/** The property, if the caller reaches it with `permission` (null: any access). */
+async function reachableProperty(propertyId: string, userId: string, permission: Permission | null) {
   return prisma.property.findFirst({
-    where: {
-      id: propertyId,
-      workspace: {
-        OR: [
-          { ownerId: userId },
-          { members: { some: { userId, role: { in: ['ADMIN', 'MANAGER'] }, planLockedAt: null } } },
-        ],
-      },
-    },
+    where: { id: propertyId, ...accessibleProperties(userId, permission) },
     select: { id: true },
   })
 }
@@ -69,7 +64,7 @@ export async function GET(
       )
     }
 
-    const ok = await userCanEditProperty(params.id, session.user.id)
+    const ok = await reachableProperty(params.id, session.user.id, null)
     if (!ok) {
       return NextResponse.json({ success: false, error: 'Không có quyền' }, { status: 403 })
     }
@@ -111,7 +106,7 @@ export async function PATCH(
       )
     }
 
-    const ok = await userCanEditProperty(params.id, session.user.id)
+    const ok = await reachableProperty(params.id, session.user.id, 'property_edit')
     if (!ok) {
       return NextResponse.json(
         { success: false, error: 'Không có quyền chỉnh sửa' },

@@ -2,10 +2,8 @@
  * Shared by the restaurant menu routes (route.ts, [itemId]/route.ts): who
  * may read or change a hotel's menu, and a dish's fields.
  */
-import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { prisma } from '@/lib/db'
-import { getWorkspaceRole, WorkspaceRoles } from '@/lib/auth/rbac'
+import { checkPropertyAccess } from '@/lib/auth/access'
 import { translationsInput } from '@/lib/i18n/translations-input'
 import { isMenuImageUrl } from '@/lib/menu/menu'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
@@ -13,21 +11,15 @@ import { lockedResponseForProperty } from '@/lib/billing/guard'
 /** A hotel's menu stays a menu, not a store: more than this is refused. */
 export const MAX_MENU_ITEMS = 500
 
-const fail = (status: number, error: string) => ({ ok: false as const, response: NextResponse.json({ success: false, error }, { status }) })
-
 /**
- * Every member of the hotel's workspace reads the menu; the owner, ADMIN and
- * MANAGER change it (as the services they sit next to). Someone outside the
- * workspace gets 404: the hotel's id is not confirmed to exist. A change
- * while the workspace is locked gets 402 (src/lib/billing).
+ * Everyone who reaches the hotel reads the menu; who manages its services
+ * (services_manage) changes it. Someone who does not reach the hotel gets
+ * 404: its id is not confirmed to exist. A change while the workspace is
+ * locked gets 402 (src/lib/billing).
  */
 export async function menuAccess(propertyId: string, userId: string, write: boolean) {
-  const property = await prisma.property.findUnique({ where: { id: propertyId }, select: { workspaceId: true } })
-  const role = property ? await getWorkspaceRole(property.workspaceId, userId) : null
-  if (!property || !role) return fail(404, 'Không tìm thấy khách sạn')
-  if (write && !(WorkspaceRoles.ADMINS_AND_MANAGERS as readonly string[]).includes(role)) {
-    return fail(403, 'Bạn không có quyền thực hiện hành động này')
-  }
+  const access = await checkPropertyAccess(userId, propertyId, write ? 'services_manage' : null, 'Không tìm thấy khách sạn')
+  if (!access.ok) return access
   if (write) {
     const locked = await lockedResponseForProperty(propertyId)
     if (locked) return { ok: false as const, response: locked }

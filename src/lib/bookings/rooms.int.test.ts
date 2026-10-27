@@ -369,7 +369,7 @@ describe('maintenance of one room', () => {
 })
 
 describe('the timeline', () => {
-  it("shows the hotel's rooms, stays with their room, and maintenance; front desk only", async () => {
+  it("shows the hotel's rooms, stays with their room, and maintenance; to those who see its bookings", async () => {
     const { owner, property, workspace } = await createTenant()
     signInAs(owner)
     const type = await createRoomType(property.id, { totalRooms: 9 })
@@ -384,10 +384,16 @@ describe('the timeline', () => {
     expect(body.data.stays).toHaveLength(1)
     expect(body.data.stays[0]).toMatchObject({ bookingCode: a.bookingCode, roomNumber: '502' })
 
+    // USER's preset sees bookings; a set without bookings_view does not.
     const member = await createUser()
     await prisma.workspaceMember.create({ data: { workspaceId: workspace.id, userId: member.id, role: 'USER' } })
     signInAs(member)
+    expect((await get()).status).toBe(200)
+    await prisma.workspaceMember.updateMany({ where: { userId: member.id }, data: { customPermissions: true, permissions: ['rooms_status'] } })
     expect((await get()).status).toBe(403)
+    // A member limited to other properties: the 404 of a missing hotel.
+    await prisma.workspaceMember.updateMany({ where: { userId: member.id }, data: { customPermissions: false, allProperties: false } })
+    expect((await get()).status).toBe(404)
   })
 })
 
