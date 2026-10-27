@@ -1,4 +1,6 @@
+import { cookies } from 'next/headers'
 import { loadWorkspaceShell } from '@/lib/auth/workspace-shell-data'
+import { SIDEBAR_COOKIE, parseSidebarPref } from '@/lib/sidebar'
 import { WorkspaceShell } from '@/components/layout/workspace-shell'
 import { WorkspaceAccessProvider } from '@/components/layout/workspace-access-provider'
 import { PlanBanner } from '@/components/layout/plan-banner'
@@ -20,6 +22,8 @@ export default async function WorkspaceLayout({
 }) {
   const { slug } = await params
   const data = await loadWorkspaceShell(slug)
+  // Drawn at the width the user left it, folded or not (src/lib/sidebar.ts).
+  const sidebar = parseSidebarPref((await cookies()).get(SIDEBAR_COOKIE)?.value)
 
   const { role, isOwner, customPermissions, permissions, propertyIds } = data.workspace
 
@@ -31,6 +35,7 @@ export default async function WorkspaceLayout({
         userName={data.userName}
         userEmail={data.userEmail}
         userImage={data.userImage}
+        sidebar={sidebar}
       >
         <PlanBanner plan={data.plan} slug={data.workspace.slug} canBuy={permissions.includes('billing_manage')} />
         {children}

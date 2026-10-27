@@ -28,7 +28,12 @@
       "finance": "Finance",
       "workspace": "Workspace"
     },
-    "billing": "Plan & billing"
+    "billing": "Plan & billing",
+    "home": "Digistay home page",
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar",
+    "resize": "Sidebar width",
+    "resizeHint": "Drag to resize, double-click to reset"
   },
   "shell": {
     "toDark": "Switch to the dark theme",

@@ -18,8 +18,10 @@ interface AccountMenuProps {
    * 'bar': the avatar (and the name from `sm` up) at the right of a top bar,
    * the menu drops below. 'sidebar': the row at the foot of the sidebar,
    * with `detail` (the role) under the name; the menu opens upwards.
+   * 'rail': the avatar alone at the foot of the folded sidebar; the menu
+   * opens upwards, over the page.
    */
-  variant: 'bar' | 'sidebar'
+  variant: 'bar' | 'sidebar' | 'rail'
   detail?: string
   /** Entries above "Profile", e.g. the list of workspaces on the account pages. */
   links?: { label: string; href: string; icon: React.ReactNode }[]
@@ -180,8 +182,8 @@ export function AccountMenu({ name, email, image, variant, detail, links = [], o
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
-        // The bar shows only the avatar on phones: the button needs a name of its own.
-        aria-label={variant === 'bar' ? t('account') : undefined}
+        // The bar shows only the avatar on phones, the rail always: the button needs a name of its own.
+        aria-label={variant === 'sidebar' ? undefined : t('account')}
         title={email}
         onClick={() => (open ? close(false) : openMenu('first'))}
         onKeyDown={onButtonKeyDown}
@@ -190,11 +192,13 @@ export function AccountMenu({ name, email, image, variant, detail, links = [], o
           open && 'bg-fg/5',
           variant === 'bar'
             ? 'flex items-center gap-2 h-9 px-1.5 max-w-[220px]'
-            : 'w-full flex items-center gap-2.5 px-2 py-1.5 text-left'
+            : variant === 'rail'
+              ? 'flex items-center justify-center h-10 w-10'
+              : 'w-full flex items-center gap-2.5 px-2 py-1.5 text-left'
         )}
       >
         <Avatar src={image} name={label} size="sm" />
-        {variant === 'bar' ? (
+        {variant === 'rail' ? null : variant === 'bar' ? (
           // On phones only the avatar: the bar has no room for the name.
           <span className="hidden sm:block truncate text-small text-fg">{label}</span>
         ) : (
@@ -216,7 +220,7 @@ export function AccountMenu({ name, email, image, variant, detail, links = [], o
           onKeyDown={onMenuKeyDown}
           className={cn(
             'absolute z-50 py-1 bg-raised text-fg rounded-box border border-line shadow-lift',
-            variant === 'bar' ? 'right-0 top-full mt-2 w-60' : 'inset-x-0 bottom-full mb-2'
+            variant === 'bar' ? 'right-0 top-full mt-2 w-60' : variant === 'rail' ? 'left-0 bottom-full mb-2 w-60' : 'inset-x-0 bottom-full mb-2'
           )}
         >
           {entries.map((entry, i) => {

@@ -28,7 +28,12 @@
       "finance": "Tài chính",
       "workspace": "Workspace"
     },
-    "billing": "Gói & thanh toán"
+    "billing": "Gói & thanh toán",
+    "home": "Về trang chủ Digistay",
+    "collapse": "Thu gọn thanh bên",
+    "expand": "Mở rộng thanh bên",
+    "resize": "Độ rộng thanh bên",
+    "resizeHint": "Kéo để đổi độ rộng, nhấp đúp để về mặc định"
   },
   "shell": {
     "toDark": "Chuyển sang giao diện tối",

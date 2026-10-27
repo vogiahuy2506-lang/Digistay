@@ -465,7 +465,9 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
 - Khung: trang ngoài, /workspaces, /profile dùng header trang chủ (`MarketingHeader`); mọi trang trong một
   workspace (danh sách cơ sở, thành viên, gói, cài đặt và các trang của cơ sở) dùng chung một khung có thanh
   bên (`src/app/(dashboard)/workspace/[slug]/layout.tsx`, `WorkspaceShell`). Trên trang của workspace, thanh
-  bên giữ menu của cơ sở mở gần nhất.
+  bên giữ menu của cơ sở mở gần nhất. Thanh bên thu gọn được thành cột biểu tượng và kéo mép để đổi độ rộng;
+  lưu trong cookie `ds-sidebar` (`src/lib/sidebar.ts`) để server vẽ đúng ngay lần đầu. Trang cần chỗ
+  (`foldsSidebar`: trình thiết kế website) tự thu gọn; mở ra ở đó chỉ giữ tới khi rời trang.
 - Nội dung khách sạn tự nhập có bản tiếng Anh: cột `translations` `{ en: {...} }` (Property, RoomType,
   ExtraService, Policy, WebsiteSettings) và `config.en` của khối website; đọc qua `localized` /
   `localizeRow` / `blockText` (`src/lib/i18n/content.ts`), lưu qua `translationsInput` /

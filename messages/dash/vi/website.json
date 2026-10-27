@@ -1,17 +1,18 @@
 {
   "header": {
-    "title": "Website Builder",
-    "subtitle": "Kéo thả để sắp xếp giao diện website",
+    "title": "Thiết kế website",
     "undo": "Hoàn tác (Ctrl+Z)",
     "redo": "Làm lại (Ctrl+Y)",
-    "template": "Template",
+    "template": "Mẫu giao diện",
     "preview": "Xem trước",
     "desktop": "Xem trên máy tính",
-    "mobile": "Xem trên điện thoại"
+    "mobile": "Xem trên điện thoại",
+    "hidePanel": "Ẩn cột chỉnh sửa để xem website rộng hơn",
+    "showPanel": "Hiện cột chỉnh sửa"
   },
   "tabs": {
-    "blocks": "Blocks",
-    "style": "Style",
+    "blocks": "Khối",
+    "style": "Giao diện",
     "settings": "Cài đặt"
   },
   "toast": {
@@ -23,8 +24,8 @@
   },
   "blockTypes": {
     "HERO": {
-      "name": "Banner Hero",
-      "description": "Banner đầu trang với hình ảnh & tìm kiếm"
+      "name": "Ảnh bìa đầu trang",
+      "description": "Ảnh lớn đầu trang kèm ô tìm phòng"
     },
     "ROOMS": {
       "name": "Danh sách phòng",
@@ -55,8 +56,8 @@
       "description": "Thông tin liên hệ"
     },
     "CTA": {
-      "name": "Call to Action",
-      "description": "Nút kêu gọi hành động"
+      "name": "Kêu gọi đặt phòng",
+      "description": "Dải mời khách đặt phòng, kèm nút bấm"
     },
     "SERVICES": {
       "name": "Dịch vụ",
@@ -72,8 +73,8 @@
     }
   },
   "templates": {
-    "choose": "Chọn Template",
-    "subtitle": "Bắt đầu nhanh với template có sẵn",
+    "choose": "Chọn mẫu giao diện",
+    "subtitle": "Bắt đầu nhanh với mẫu có sẵn",
     "startBlank": "Hoặc bắt đầu trống và tự thiết kế theo ý bạn",
     "classicHotel": {
       "name": "Khách sạn Cổ điển",
@@ -101,16 +102,17 @@
     "moving": "Di chuyển..."
   },
   "available": {
-    "addToPage": "Thêm vào trang",
-    "added": "Đã thêm"
+    "added": "Đã thêm",
+    "add": "Thêm",
+    "addNamed": "Thêm khối {name} vào trang"
   },
   "config": {
     "heading": "Cấu hình: {name}",
     "fields": {
       "heroTitle": "Tiêu đề chính",
       "subtitle": "Phụ đề",
-      "ctaButton": "Nút CTA",
-      "ctaLink": "Link CTA",
+      "ctaButton": "Chữ trên nút",
+      "ctaLink": "Liên kết của nút",
       "title": "Tiêu đề",
       "displayStyle": "Kiểu hiển thị",
       "roomsLimit": "Số phòng hiển thị",
@@ -119,15 +121,15 @@
       "columns": "Số cột",
       "reviewsLimit": "Số đánh giá hiển thị",
       "mapAddress": "Địa chỉ hiển thị",
-      "latitude": "Vĩ độ (Latitude)",
-      "longitude": "Kinh độ (Longitude)",
-      "zoom": "Zoom level",
+      "latitude": "Vĩ độ",
+      "longitude": "Kinh độ",
+      "zoom": "Mức phóng to bản đồ",
       "email": "Email",
       "phone": "Số điện thoại",
       "address": "Địa chỉ",
       "description": "Mô tả",
-      "buttonText": "Text nút",
-      "buttonLink": "Link nút"
+      "buttonText": "Chữ trên nút",
+      "buttonLink": "Liên kết của nút"
     },
     "placeholders": {
       "heroTitle": "VD: Chào mừng đến với...",
@@ -142,8 +144,8 @@
       "menuNote": "VD: Đặt bàn qua lễ tân hoặc số 0912…"
     },
     "display": {
-      "grid": "Grid (Lưới)",
-      "list": "List (Danh sách)"
+      "grid": "Dạng lưới",
+      "list": "Dạng danh sách"
     },
     "columnCount": "{count} cột",
     "contactForm": "Hiển thị form liên hệ",
@@ -246,7 +248,7 @@
     "arrangeHint": "Kéo thả để sắp xếp thứ tự",
     "count": "{count} khối",
     "empty": "Chưa có khối nào",
-    "emptyHint": "Chọn template hoặc thêm khối thủ công",
+    "emptyHint": "Chọn mẫu giao diện hoặc tự thêm từng khối",
     "addTitle": "Thêm khối mới",
     "addHint": "Chọn khối để thêm vào website",
     "defaultLayout": "Website đang hiện bố cục mặc định như bên dưới. Sửa, sắp xếp rồi bấm Lưu thay đổi để dùng bố cục của riêng bạn."
@@ -267,7 +269,7 @@
       "youthful": "Trẻ trung",
       "dynamic": "Năng động"
     },
-    "primaryHint": "Link, giá, sao đánh giá và các điểm nhấn.",
+    "primaryHint": "Liên kết, giá, sao đánh giá và các điểm nhấn.",
     "button": "Màu nút bấm",
     "buttonHint": "Nút “Đặt phòng”, “Tìm phòng”…, viền nút phụ và dải kêu gọi đặt phòng.",
     "heading": "Màu tiêu đề",
@@ -276,8 +278,8 @@
     "contrastNote": "Màu quá nhạt hoặc quá đậm so với nền được website tự chỉnh nhẹ để chữ luôn đọc được, ở cả giao diện sáng và tối."
   },
   "settings": {
-    "seo": "SEO & Meta",
-    "metaTitle": "Tiêu đề trang (Meta Title)",
+    "seo": "Hiển thị trên Google (SEO)",
+    "metaTitle": "Tiêu đề trang",
     "metaTitlePlaceholder": "VD: Khách sạn ABC - Đặt phòng online",
     "metaDescription": "Mô tả trang",
     "metaDescriptionPlaceholder": "Mô tả ngắn về cơ sở của bạn..."
@@ -293,7 +295,7 @@
   },
   "canvas": {
     "dragging": "Đang kéo thả... Di chuyển khối đến vị trí mong muốn",
-    "emptyHint": "Thêm các khối từ panel bên trái hoặc chọn template. Lưu khi không có khối nào thì website dùng bố cục mặc định.",
+    "emptyHint": "Thêm các khối từ cột bên trái hoặc chọn mẫu giao diện. Lưu khi không có khối nào thì website dùng bố cục mặc định.",
     "allHidden": "Tất cả các khối đang bị ẩn"
   },
   "domain": {

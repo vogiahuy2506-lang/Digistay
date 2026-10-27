@@ -94,7 +94,7 @@
   "detail": {
     "notFound": "Không tìm thấy cơ sở",
     "viewWebsite": "Xem website",
-    "websiteBuilder": "Website Builder",
+    "websiteBuilder": "Thiết kế website",
     "edit": "Chỉnh sửa",
     "editModal": {
       "title": "Chỉnh sửa cơ sở",
@@ -243,10 +243,10 @@
       "additionalRulesPlaceholder": "Các nội quy khác của cơ sở..."
     },
     "website": {
-      "title": "Website Builder",
+      "title": "Thiết kế website",
       "subtitle": "Tùy chỉnh giao diện website công khai của bạn",
-      "open": "Mở Website Builder",
-      "blocks": "Block Builder",
+      "open": "Mở trình thiết kế website",
+      "blocks": "Sắp xếp khối",
       "blocksHint": "Kéo thả các khối giao diện",
       "colors": "Tùy biến màu sắc",
       "colorsHint": "Thay đổi màu chủ đạo",

@@ -1,13 +1,14 @@
 {
   "header": {
     "title": "Website Builder",
-    "subtitle": "Drag and drop to arrange your website",
     "undo": "Undo (Ctrl+Z)",
     "redo": "Redo (Ctrl+Y)",
     "template": "Template",
     "preview": "Preview",
     "desktop": "Desktop view",
-    "mobile": "Phone view"
+    "mobile": "Phone view",
+    "hidePanel": "Hide the editor to see the website wider",
+    "showPanel": "Show the editor"
   },
   "tabs": {
     "blocks": "Blocks",
@@ -101,8 +102,9 @@
     "moving": "Moving..."
   },
   "available": {
-    "addToPage": "Add to page",
-    "added": "Added"
+    "added": "Added",
+    "add": "Add",
+    "addNamed": "Add the {name} block to the page"
   },
   "config": {
     "heading": "Settings: {name}",

@@ -75,7 +75,7 @@ const EMPTY: BellState = { items: [], unread: 0 }
  * (an invitation: to /workspaces, where it is answered; a plan notice: to the
  * plan page). Every notice: the notifications page, linked at the bottom.
  */
-export function NotificationBell({ align = 'right' }: { align?: 'left' | 'right' }) {
+export function NotificationBell({ align = 'right', buttonClassName }: { align?: 'left' | 'right'; buttonClassName?: string }) {
   const t = useTranslations('dash.common.notifications')
   const { text, ago } = useNoticeText()
   const { slug } = useParams<{ slug?: string }>()
@@ -121,7 +121,10 @@ export function NotificationBell({ align = 'right' }: { align?: 'left' | 'right'
         aria-expanded={open}
         aria-haspopup="dialog"
         aria-label={unread ? t('openUnread', { count: unread }) : t('open')}
-        className="relative w-9 h-9 rounded-ctl flex items-center justify-center text-muted hover:text-fg hover:bg-fg/5 transition-colors duration-160 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
+        className={cn(
+          'relative w-9 h-9 rounded-ctl flex items-center justify-center text-muted hover:text-fg hover:bg-fg/5 transition-colors duration-160 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc',
+          buttonClassName
+        )}
       >
         <Bell className="w-4 h-4" aria-hidden="true" />
         {unread > 0 && (

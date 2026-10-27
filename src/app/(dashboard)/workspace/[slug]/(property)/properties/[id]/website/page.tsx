@@ -46,9 +46,11 @@ import {
   Plus, Trash2, GripVertical, Settings, Layout, Search, ArrowRight,
   Check, X, ChevronRight, Shield, AlertCircle, Loader2, ExternalLink, RefreshCw, Star,
   LayoutGrid, Hotel, ImageIcon, MapPin, Phone, MousePointer2, Zap, Sparkles,
-  FileText, Clock, Undo2, Redo2, Copy, Wand2, ChevronDown, ChevronUp, ConciergeBell, UtensilsCrossed, PanelBottom, History as HistoryIcon
+  FileText, Clock, Undo2, Redo2, Copy, Wand2, ChevronDown, ChevronUp, ConciergeBell, UtensilsCrossed, PanelBottom, History as HistoryIcon,
+  PanelLeftClose, PanelLeftOpen
 } from 'lucide-react'
 import { apiError } from '@/lib/i18n/api-errors'
+import { cn } from '@/lib/utils'
 
 interface WebsiteSettings {
   id: string
@@ -506,24 +508,24 @@ function SortableBlockItem({
       <div 
         {...attributes}
         {...listeners}
-        className="flex items-center gap-3 p-3 select-none"
+        className="flex items-center gap-2 p-2.5 select-none"
       >
         {/* Drag Indicator */}
-        <div className={`
-          flex flex-col gap-0.5 py-1 px-1 rounded-lg transition-colors duration-200
+        <div title={t('dragHint')} className={`
+          flex flex-col gap-0.5 py-1 px-0.5 rounded-lg transition-colors duration-200
           ${isDragging ? 'bg-acc-soft' : 'group-hover:bg-fg/5'}
         `}>
-          <div className="w-4 h-1 rounded-full bg-current opacity-40"></div>
-          <div className="w-4 h-1 rounded-full bg-current opacity-40"></div>
-          <div className="w-4 h-1 rounded-full bg-current opacity-40"></div>
+          <div className="w-3.5 h-1 rounded-full bg-current opacity-40"></div>
+          <div className="w-3.5 h-1 rounded-full bg-current opacity-40"></div>
+          <div className="w-3.5 h-1 rounded-full bg-current opacity-40"></div>
         </div>
 
         {/* Block Icon */}
         <div className={`
-          w-10 h-10 rounded-xl flex items-center justify-center shrink-0
+          w-8 h-8 rounded-lg flex items-center justify-center shrink-0
           bg-gradient-to-br ${bgGradient} text-white shadow-sm
         `}>
-          <BlockIcon className="w-5 h-5" />
+          <BlockIcon className="w-4 h-4" />
         </div>
 
         {/* Block Info */}
@@ -531,16 +533,16 @@ function SortableBlockItem({
           <p className={`font-medium text-sm ${block.isEnabled ? 'text-fg' : 'text-muted'}`}>
             {text.blockName(block)}
           </p>
-          <p className="text-xs text-muted">{text.description(block.type)}</p>
+          <p className="text-xs text-muted line-clamp-2">{text.description(block.type)}</p>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-0.5">
           {/* Edit */}
           <button
             onClick={(e) => { e.stopPropagation(); onEdit(); }}
             className={`
-              p-1.5 rounded-lg transition-all duration-200
+              p-1 rounded-lg transition-all duration-200
               ${isSelected 
                 ? 'bg-acc-soft text-acc hover:bg-acc-soft' 
                 : 'bg-fg/5 text-muted hover:bg-acc-soft hover:text-acc'
@@ -555,7 +557,7 @@ function SortableBlockItem({
           <button
             onClick={(e) => { e.stopPropagation(); onToggle(); }}
             className={`
-              p-1.5 rounded-lg transition-all duration-200
+              p-1 rounded-lg transition-all duration-200
               ${block.isEnabled 
                 ? 'bg-ok-soft text-ok hover:bg-ok-soft' 
                 : 'bg-fg/5 text-muted hover:bg-fg/10'
@@ -569,21 +571,12 @@ function SortableBlockItem({
           {/* Remove */}
           <button
             onClick={(e) => { e.stopPropagation(); onRemove(); }}
-            className="p-1.5 rounded-lg bg-fg/5 text-muted hover:bg-err-soft hover:text-err transition-all duration-200"
+            className="p-1 rounded-lg bg-fg/5 text-muted hover:bg-err-soft hover:text-err transition-all duration-200"
             title={t('remove')}
           >
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
-      </div>
-
-      {/* Drag hint */}
-      <div className={`
-        absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-acc font-medium
-        bg-acc-soft px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none
-        ${isDragging ? 'opacity-100' : ''}
-      `}>
-        {t('dragHint')}
       </div>
     </div>
   )
@@ -1191,50 +1184,42 @@ function AvailableBlockCard({
   const BlockIcon = blockType.icon
 
   return (
-    <div className={`
-      relative group rounded-xl border p-4 transition-all duration-300
-      ${isAdded 
-        ? 'bg-fg/[0.03] border-line opacity-70' 
-        : 'bg-panel border-line hover:border-acc hover:shadow-lg'
-      }
-    `}>
-      <div className="flex items-start gap-3">
-        <div className={`
-          w-12 h-12 rounded-xl flex items-center justify-center
-          bg-gradient-to-br ${blockType.bgGradient} text-white shadow-md
-          group-hover:shadow-lg transition-shadow duration-300
-        `}>
-          <BlockIcon className="w-6 h-6" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className={`font-semibold text-sm ${isAdded ? 'text-muted' : 'text-fg'}`}>
-            {text.typeName(blockType.type)}
-          </p>
-          <p className="text-xs text-muted mt-0.5 line-clamp-2">
-            {text.description(blockType.type)}
-          </p>
-        </div>
+    <div
+      className={cn(
+        'flex items-center gap-3 rounded-xl border border-line p-2.5 transition-colors duration-200',
+        isAdded ? 'bg-fg/[0.03]' : 'bg-panel hover:border-acc'
+      )}
+    >
+      <div
+        className={cn(
+          'w-9 h-9 shrink-0 rounded-xl flex items-center justify-center bg-gradient-to-br text-white shadow-sm',
+          blockType.bgGradient,
+          isAdded && 'opacity-60'
+        )}
+      >
+        <BlockIcon className="w-4 h-4" aria-hidden="true" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className={cn('font-medium text-sm', isAdded ? 'text-muted' : 'text-fg')}>{text.typeName(blockType.type)}</p>
+        <p className="text-xs text-muted line-clamp-2">{text.description(blockType.type)}</p>
       </div>
 
       {/* Add Button */}
       {!isAdded ? (
         <button
+          type="button"
           onClick={onAdd}
-          className="
-            mt-3 w-full py-2 rounded-lg text-sm font-medium
-            bg-ink text-on-ink hover:bg-ink/90
-            shadow-sm hover:shadow transition-all duration-200
-            flex items-center justify-center gap-2
-          "
+          aria-label={t('addNamed', { name: text.typeName(blockType.type) })}
+          className="shrink-0 h-8 px-2.5 rounded-lg text-xs font-medium bg-ink text-on-ink hover:bg-ink/90 flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
         >
-          <Plus className="w-4 h-4" />
-          {t('addToPage')}
+          <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+          {t('add')}
         </button>
       ) : (
-        <div className="mt-3 w-full py-2 rounded-lg text-sm font-medium bg-ok-soft text-ok flex items-center justify-center gap-2">
-          <Check className="w-4 h-4" />
+        <span className="shrink-0 h-8 px-2.5 rounded-lg text-xs font-medium bg-ok-soft text-ok flex items-center gap-1">
+          <Check className="w-3.5 h-3.5" aria-hidden="true" />
           {t('added')}
-        </div>
+        </span>
       )}
     </div>
   )
@@ -1259,6 +1244,8 @@ export default function WebsiteBuilderPage() {
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
   const [previewMode, setPreviewMode] = React.useState<'desktop' | 'mobile'>('desktop')
+  // The editor column; hidden, the preview takes the whole width (from lg up).
+  const [panelOpen, setPanelOpen] = React.useState(true)
   const [activeTab, setActiveTab] = React.useState('blocks')
   const [activeId, setActiveId] = React.useState<string | null>(null)
   const [selectedBlockId, setSelectedBlockId] = React.useState<string | null>(null)
@@ -1546,10 +1533,12 @@ export default function WebsiteBuilderPage() {
   }
 
   return (
-    <PageContainer className="max-w-full">
+    // From lg up the builder fills the window: one row of tools, then the
+    // editor and the preview, each scrolling on its own.
+    <PageContainer className="max-w-full lg:px-5 lg:py-4 lg:h-dvh lg:flex lg:flex-col">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6 bg-panel rounded-2xl p-4 shadow-sm border border-line">
-        <div className="flex min-w-0 items-center gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 mb-4 lg:mb-3 shrink-0 bg-panel rounded-2xl px-3 py-2 shadow-sm border border-line">
+        <div className="flex min-w-0 items-center gap-3">
           <Button 
             variant="ghost" 
             size="sm"
@@ -1560,16 +1549,17 @@ export default function WebsiteBuilderPage() {
             {tc('actions.back')}
           </Button>
           <div className="h-8 w-px bg-fg/10" />
-          <div>
-            <h1 className="text-xl font-bold text-fg flex items-center gap-2">
-              <Layout className="w-5 h-5 text-acc" />
+          <div className="min-w-0">
+            <h1 className="text-base font-semibold text-fg flex items-center gap-2">
+              <Layout className="w-4 h-4 shrink-0 text-acc" aria-hidden="true" />
               {t('header.title')}
             </h1>
-            <p className="text-sm text-muted">{t('header.subtitle')}</p>
+            {/* The sidebar is folded here: which hotel's site this is. */}
+            <p className="text-xs text-muted truncate">{property?.name ?? '\u00a0'}</p>
           </div>
         </div>
         
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Undo/Redo */}
           <div className="flex items-center gap-1 bg-fg/5 rounded-lg p-1">
             <button
@@ -1595,10 +1585,13 @@ export default function WebsiteBuilderPage() {
             variant="outline"
             size="sm"
             onClick={() => setShowTemplateModal(true)}
+            aria-label={t('header.template')}
+            title={t('header.template')}
             className="gap-2"
           >
-            <Wand2 className="w-4 h-4" />
-            {t('header.template')}
+            <Wand2 className="w-4 h-4" aria-hidden="true" />
+            {/* Icons only between lg and xl, where the row is short of room. */}
+            <span className="lg:hidden xl:inline">{t('header.template')}</span>
           </Button>
 
           {/* Saved versions: view, restore */}
@@ -1606,10 +1599,26 @@ export default function WebsiteBuilderPage() {
             variant="outline"
             size="sm"
             onClick={() => setShowHistory(true)}
+            aria-label={t('versions.open')}
+            title={t('versions.open')}
             className="gap-2"
           >
-            <HistoryIcon className="w-4 h-4" />
-            {t('versions.open')}
+            <HistoryIcon className="w-4 h-4" aria-hidden="true" />
+            <span className="lg:hidden xl:inline">{t('versions.open')}</span>
+          </Button>
+
+          {/* The editor column in or out: out, the site takes the whole width. */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPanelOpen((open) => !open)}
+            aria-expanded={panelOpen}
+            aria-controls="builder-panel"
+            aria-label={panelOpen ? t('header.hidePanel') : t('header.showPanel')}
+            title={panelOpen ? t('header.hidePanel') : t('header.showPanel')}
+            className="hidden lg:inline-flex px-2.5"
+          >
+            {panelOpen ? <PanelLeftClose className="w-4 h-4" aria-hidden="true" /> : <PanelLeftOpen className="w-4 h-4" aria-hidden="true" />}
           </Button>
 
           {/* Preview Mode Toggle */}
@@ -1669,9 +1678,15 @@ export default function WebsiteBuilderPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
-        {/* Sidebar - Block Editor */}
-        <div className="xl:col-span-2 space-y-4">
+      {/* The editor in a narrow column, the site in the rest: what the user looks at most. */}
+      <div
+        className={cn(
+          'grid grid-cols-1 gap-4 lg:flex-1 lg:min-h-0',
+          panelOpen ? 'lg:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[400px_minmax(0,1fr)]' : 'lg:grid-cols-1'
+        )}
+      >
+        {/* Block Editor */}
+        <div id="builder-panel" className={cn('space-y-4 lg:min-h-0 lg:overflow-y-auto lg:pr-1 lg:pb-2', !panelOpen && 'lg:hidden')}>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-3 bg-fg/5 p-1 rounded-xl">
               <TabsTrigger 
@@ -1707,8 +1722,8 @@ export default function WebsiteBuilderPage() {
                 onDragEnd={handleDragEnd}
               >
                 {/* Active Blocks - Sortable */}
-                <div className="bg-panel rounded-2xl border border-line p-4 shadow-sm">
-                  <div className="flex items-center justify-between mb-4">
+                <div className="bg-panel rounded-2xl border border-line p-3 shadow-sm">
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-lg">
                         <LayoutGrid className="w-4 h-4 text-white" />
@@ -1771,8 +1786,8 @@ export default function WebsiteBuilderPage() {
               </DndContext>
 
               {/* Available Blocks */}
-              <div className="bg-panel rounded-2xl border border-line p-4 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
+              <div className="bg-panel rounded-2xl border border-line p-3 shadow-sm">
+                <div className="flex items-center gap-2 mb-3">
                   <div className="w-8 h-8 rounded-xl bg-ink flex items-center justify-center shadow-lg">
                     <Plus className="w-4 h-4 text-on-ink" />
                   </div>
@@ -1782,7 +1797,7 @@ export default function WebsiteBuilderPage() {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
                   {blockTypes.map((blockType) => {
                     const isAdded = blocks.some(b => b.type === blockType.type)
                     return (
@@ -1965,97 +1980,97 @@ export default function WebsiteBuilderPage() {
           </Tabs>
         </div>
 
-        {/* Preview Area */}
-        <div className="xl:col-span-3">
-          <Card className="overflow-hidden shadow-lg border-line">
-            <div className={`bg-fg/5 border-b border-line p-4 ${previewMode === 'mobile' ? 'max-w-[420px] mx-auto' : ''}`}>
-              {/* Browser Chrome (the dashboard's colors) */}
-              <div className="bg-panel rounded-t-xl shadow-sm border border-line overflow-hidden">
-                <div className="bg-fg/5 px-4 py-2.5 flex items-center gap-3 border-b border-line">
-                  <div className="flex gap-1.5" aria-hidden="true">
-                    <div className="w-3 h-3 rounded-full bg-err"></div>
-                    <div className="w-3 h-3 rounded-full bg-warn"></div>
-                    <div className="w-3 h-3 rounded-full bg-ok"></div>
-                  </div>
-                  <div className="flex-1 min-w-0 bg-fg/[0.03] rounded-lg px-4 py-1.5 text-sm text-muted flex items-center gap-2">
-                    <Globe className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                    <span className="truncate">{siteAddress}</span>
-                    {customDomain && settings?.sslEnabled && <Shield className="w-3.5 h-3.5 shrink-0 text-ok" aria-hidden="true" />}
-                  </div>
-                </div>
-
-                {/* Website Preview Content: the hotel's site */}
-                <div
-                  data-surface="site"
-                  data-theme={siteTheme}
-                  data-site-heading={settings?.headingColor ? '' : undefined}
-                  style={siteStyle}
-                  className={`${siteFontVariables} min-h-[600px] bg-page text-fg font-site-body ${previewMode === 'mobile' ? 'max-h-[700px] overflow-y-auto' : ''}`}
-                >
-                  {/* Dragging indicator */}
-                  {isDragging && (
-                    <div className="sticky top-0 z-50 bg-ink text-on-ink px-4 py-2 text-sm font-medium flex items-center gap-2 shadow-lg">
-                      <div className="w-2 h-2 rounded-full bg-on-ink animate-pulse"></div>
-                      {t('canvas.dragging')}
-                    </div>
-                  )}
-
-                  {previewBlocks.length === 0 && !isDragging ? (
-                    <div className="flex flex-col items-center justify-center h-full py-20 text-center px-6">
-                      <div className="w-20 h-20 rounded-2xl bg-fg/5 flex items-center justify-center mb-4">
-                        <LayoutGrid className="w-10 h-10 text-muted" />
-                      </div>
-                      <h3 className="text-lg font-semibold text-muted mb-2">{t('blocks.empty')}</h3>
-                      <p className="text-sm text-muted max-w-xs mb-4">
-                        {t('canvas.emptyHint')}
-                      </p>
-                      <Button onClick={() => setShowTemplateModal(true)} className="gap-2">
-                        <Wand2 className="w-4 h-4" />
-                        {t('templates.choose')}
-                      </Button>
-                    </div>
-                  ) : (
-                    <div>
-                      {site && (
-                        <PreviewHeader
-                          site={site}
-                          types={blocks.filter((b) => b.isEnabled).map((b) => b.type)}
-                          compact={previewMode === 'mobile'}
-                        />
-                      )}
-                      {site && (isDragging ? previewBlocks : blocks).filter(b => b.isEnabled).map((block, index) => {
-                        const isBeingDragged = isDragging && activeId === block.id
-
-                        return (
-                          <div
-                            key={block.id}
-                            className={`
-                              relative border-2 transition-all duration-300
-                              ${isBeingDragged
-                                ? 'border-info/40 bg-info-soft opacity-50'
-                                : 'border-transparent hover:border-acc/40'
-                              }
-                            `}
-                          >
-                            <PreviewBlock block={block} site={site} compact={previewMode === 'mobile'} />
-                            <span className="absolute right-2 top-2 rounded-ctl bg-fg/70 px-1.5 py-0.5 text-[11px] font-medium text-page shadow" aria-hidden="true">
-                              #{index + 1}
-                            </span>
-                          </div>
-                        )
-                      })}
-
-                      {(isDragging ? previewBlocks : blocks).filter(b => b.isEnabled).length === 0 && (
-                        <div className="text-center py-12">
-                          <p className="text-muted">{t('canvas.allHidden')}</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+        {/* Preview: the hotel's site in a browser frame, as tall as the window from lg up */}
+        <div className="rounded-2xl border border-line bg-fg/5 p-2 sm:p-3 lg:min-h-0 lg:flex lg:flex-col">
+          {/* Browser Chrome (the dashboard's colors) */}
+          <div className={cn('flex flex-col overflow-hidden rounded-xl border border-line bg-panel shadow-sm lg:min-h-0 lg:flex-1', previewMode === 'mobile' && 'mx-auto w-full max-w-[400px]')}>
+            <div className="shrink-0 bg-fg/5 px-4 py-2 flex items-center gap-3 border-b border-line">
+              <div className="flex gap-1.5" aria-hidden="true">
+                <div className="w-3 h-3 rounded-full bg-err"></div>
+                <div className="w-3 h-3 rounded-full bg-warn"></div>
+                <div className="w-3 h-3 rounded-full bg-ok"></div>
+              </div>
+              <div className="flex-1 min-w-0 bg-fg/[0.03] rounded-lg px-4 py-1.5 text-sm text-muted flex items-center gap-2">
+                <Globe className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                <span className="truncate">{siteAddress}</span>
+                {customDomain && settings?.sslEnabled && <Shield className="w-3.5 h-3.5 shrink-0 text-ok" aria-hidden="true" />}
               </div>
             </div>
-          </Card>
+
+            {/* Website Preview Content: the hotel's site */}
+            <div
+              data-surface="site"
+              data-theme={siteTheme}
+              data-site-heading={settings?.headingColor ? '' : undefined}
+              style={siteStyle}
+              className={cn(
+                siteFontVariables,
+                'min-h-[600px] bg-page text-fg font-site-body lg:min-h-0 lg:flex-1 lg:overflow-y-auto',
+                previewMode === 'mobile' && 'max-h-[700px] overflow-y-auto lg:max-h-none'
+              )}
+            >
+              {/* Dragging indicator */}
+              {isDragging && (
+                <div className="sticky top-0 z-50 bg-ink text-on-ink px-4 py-2 text-sm font-medium flex items-center gap-2 shadow-lg">
+                  <div className="w-2 h-2 rounded-full bg-on-ink animate-pulse"></div>
+                  {t('canvas.dragging')}
+                </div>
+              )}
+
+              {previewBlocks.length === 0 && !isDragging ? (
+                <div className="flex flex-col items-center justify-center h-full py-20 text-center px-6">
+                  <div className="w-20 h-20 rounded-2xl bg-fg/5 flex items-center justify-center mb-4">
+                    <LayoutGrid className="w-10 h-10 text-muted" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-muted mb-2">{t('blocks.empty')}</h3>
+                  <p className="text-sm text-muted max-w-xs mb-4">
+                    {t('canvas.emptyHint')}
+                  </p>
+                  <Button onClick={() => setShowTemplateModal(true)} className="gap-2">
+                    <Wand2 className="w-4 h-4" />
+                    {t('templates.choose')}
+                  </Button>
+                </div>
+              ) : (
+                <div>
+                  {site && (
+                    <PreviewHeader
+                      site={site}
+                      types={blocks.filter((b) => b.isEnabled).map((b) => b.type)}
+                      compact={previewMode === 'mobile'}
+                    />
+                  )}
+                  {site && (isDragging ? previewBlocks : blocks).filter(b => b.isEnabled).map((block, index) => {
+                    const isBeingDragged = isDragging && activeId === block.id
+
+                    return (
+                      <div
+                        key={block.id}
+                        className={`
+                          relative border-2 transition-all duration-300
+                          ${isBeingDragged
+                            ? 'border-info/40 bg-info-soft opacity-50'
+                            : 'border-transparent hover:border-acc/40'
+                          }
+                        `}
+                      >
+                        <PreviewBlock block={block} site={site} compact={previewMode === 'mobile'} />
+                        <span className="absolute right-2 top-2 rounded-ctl bg-fg/70 px-1.5 py-0.5 text-[11px] font-medium text-page shadow" aria-hidden="true">
+                          #{index + 1}
+                        </span>
+                      </div>
+                    )
+                  })}
+
+                  {(isDragging ? previewBlocks : blocks).filter(b => b.isEnabled).length === 0 && (
+                    <div className="text-center py-12">
+                      <p className="text-muted">{t('canvas.allHidden')}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
