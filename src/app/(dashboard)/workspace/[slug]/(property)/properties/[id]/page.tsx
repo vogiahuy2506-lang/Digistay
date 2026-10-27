@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { PageContainer } from '@/components/layout'
-import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Modal, ModalBody, ModalFooter, ModalHeader, Tabs, TabsList, TabsTrigger, TabsContent, Input, Select, Textarea } from '@/components/ui'
+import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Modal, ModalBody, ModalFooter, ModalHeader, Tabs, TabsList, TabsTrigger, TabsContent, Input, Select, Textarea, NumberInput } from '@/components/ui'
 import {
   ArrowLeft, MapPin, Phone, Mail, Globe, Bed, Plus, Pencil, Trash2, Save, Baby, ExternalLink, PawPrint, Cigarette,
 } from 'lucide-react'
@@ -737,12 +737,10 @@ export default function PropertyDetailPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <Input
+                <NumberInput
                   label={t('rooms.modal.totalRooms')}
-                  type="number"
-                  min="1"
                   value={roomTypeForm.totalRooms}
-                  onChange={(e) => setRoomTypeForm({ ...roomTypeForm, totalRooms: parseInt(e.target.value) || 1 })}
+                  onValueChange={(v) => setRoomTypeForm({ ...roomTypeForm, totalRooms: parseInt(v) || 1 })}
                   required
                 />
 
@@ -867,40 +865,32 @@ export default function PropertyDetailPage() {
               />
 
               <div className="grid grid-cols-2 gap-4">
-                <Input
+                <NumberInput
                   label={t('pricing.modal.weekday')}
-                  type="number"
-                  min="0"
                   value={pricingForm.weekdayPrice}
-                  onChange={(e) => setPricingForm({ ...pricingForm, weekdayPrice: parseInt(e.target.value) || 0 })}
+                  onValueChange={(v) => setPricingForm({ ...pricingForm, weekdayPrice: parseInt(v) || 0 })}
                   required
                 />
 
-                <Input
+                <NumberInput
                   label={t('pricing.modal.weekend')}
-                  type="number"
-                  min="0"
                   value={pricingForm.weekendPrice}
-                  onChange={(e) => setPricingForm({ ...pricingForm, weekendPrice: parseInt(e.target.value) || 0 })}
+                  onValueChange={(v) => setPricingForm({ ...pricingForm, weekendPrice: parseInt(v) || 0 })}
                   required
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <Input
+                <NumberInput
                   label={t('pricing.modal.extraAdult')}
-                  type="number"
-                  min="0"
                   value={pricingForm.extraAdultPrice}
-                  onChange={(e) => setPricingForm({ ...pricingForm, extraAdultPrice: parseInt(e.target.value) || 0 })}
+                  onValueChange={(v) => setPricingForm({ ...pricingForm, extraAdultPrice: parseInt(v) || 0 })}
                 />
 
-                <Input
+                <NumberInput
                   label={t('pricing.modal.extraChild')}
-                  type="number"
-                  min="0"
                   value={pricingForm.extraChildPrice}
-                  onChange={(e) => setPricingForm({ ...pricingForm, extraChildPrice: parseInt(e.target.value) || 0 })}
+                  onValueChange={(v) => setPricingForm({ ...pricingForm, extraChildPrice: parseInt(v) || 0 })}
                 />
               </div>
             </ModalBody>

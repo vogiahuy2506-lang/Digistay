@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
-import { Card, CardContent, Button, Badge, Input, Textarea, Select, Modal, ModalFooter } from '@/components/ui'
+import { Card, CardContent, Button, Badge, Input, Textarea, Select, Modal, ModalFooter, NumberInput } from '@/components/ui'
 import { 
   Search, FileText, Plus, Eye, Download, RefreshCw,
   Clock, CheckCircle, XCircle, AlertCircle, Send, Printer,
@@ -1311,13 +1311,11 @@ export default function InvoicesPage() {
               { value: 'decrease', label: t('adjust.decrease') },
             ]}
           />
-          <Input
+          <NumberInput
             label={t('adjust.amount')}
             required
-            type="number"
-            min={1}
             value={adjustForm.amount}
-            onChange={(e) => setAdjustForm({ ...adjustForm, amount: e.target.value })}
+            onValueChange={(v) => setAdjustForm({ ...adjustForm, amount: v })}
           />
           <Textarea
             label={t('adjust.reason')}

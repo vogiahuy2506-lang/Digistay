@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { useTranslations } from 'next-intl'
-import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Textarea } from '@/components/ui'
+import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Textarea, NumberInput } from '@/components/ui'
 import { useDashLabels } from '@/lib/i18n/dash'
 import { apiError } from '@/lib/i18n/api-errors'
 import type { RefundSuggestion } from '@/lib/bookings/cancel-refund'
@@ -164,14 +164,10 @@ export function CancelDialog({
                 {option('suggested', t('cancelDialog.refundSuggested', { amount: labels.money(preview.suggested) }))}
                 {option('custom', t('cancelDialog.refundCustom'))}
                 {decision === 'custom' && (
-                  <Input
-                    type="number"
-                    min={0}
-                    max={preview.totalPaid}
-                    step={1000}
+                  <NumberInput
                     label={t('cancelDialog.amount')}
                     value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
+                    onValueChange={(v) => setAmount(v)}
                   />
                 )}
                 {preview.suggested > 0 && option('none', t('cancelDialog.refundNone'))}

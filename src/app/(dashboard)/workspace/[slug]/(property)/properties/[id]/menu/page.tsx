@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl'
 import { ArrowDown, ArrowUp, ImageIcon, Pencil, Plus, Trash2, Upload, UtensilsCrossed } from 'lucide-react'
 import { Header, PageContainer } from '@/components/layout'
 import { useCan } from '@/components/layout/workspace-context'
-import { Badge, Button, Input, Modal, ModalBody, ModalFooter, Textarea } from '@/components/ui'
+import { Badge, Button, Input, Modal, ModalBody, ModalFooter, Textarea, NumberInput } from '@/components/ui'
 import { EnglishCopy } from '@/components/ui/english-copy'
 import { toast } from '@/components/ui/toast'
 import { apiError } from '@/lib/i18n/api-errors'
@@ -447,15 +447,11 @@ function MenuItemDialog({
             placeholder={t('form.categoryPlaceholder')}
             hint={t('form.categoryHint')}
           />
-          <Input
+          <NumberInput
             label={t('form.price')}
             required
-            type="number"
-            inputMode="numeric"
-            min={0}
-            step={1000}
             value={form.price}
-            onChange={(e) => set({ price: e.target.value })}
+            onValueChange={(v) => set({ price: v })}
             placeholder="0"
             error={errors.price}
             hint={priceOk ? t('form.priceHint', { price: price > 0 ? labels.money(price) : t('list.free') }) : undefined}

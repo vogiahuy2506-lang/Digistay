@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { useTranslations } from 'next-intl'
-import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Textarea } from '@/components/ui'
+import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Textarea, NumberInput } from '@/components/ui'
 import { useDashLabels } from '@/lib/i18n/dash'
 import { apiError } from '@/lib/i18n/api-errors'
 
@@ -143,12 +143,10 @@ export function CheckOutDialog({
               {option('apply', t('checkOut.apply', { fee: labels.money(preview.suggestedFee) }))}
               {option('edit', t('checkOut.edit'))}
               {decision === 'edit' && (
-                <Input
-                  type="number"
-                  min={0}
+                <NumberInput
                   label={t('checkOut.amount')}
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onValueChange={(v) => setAmount(v)}
                 />
               )}
               {option('waive', t('checkOut.waive'))}

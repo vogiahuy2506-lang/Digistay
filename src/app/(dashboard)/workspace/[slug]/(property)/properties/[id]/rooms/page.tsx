@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
-import { Card, CardContent, Button, Badge, Modal, ModalBody, ModalFooter, Input, Select, Textarea, Tabs, TabsList, TabsTrigger } from '@/components/ui'
+import { Card, CardContent, Button, Badge, Modal, ModalBody, ModalFooter, Input, Select, Textarea, Tabs, TabsList, TabsTrigger, NumberInput } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
 import {
   Plus, Bed, Edit, Image, BedDouble, Wrench, X, AlertCircle, DoorOpen,
@@ -826,29 +826,24 @@ export default function RoomTypesPage() {
             />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
+            <NumberInput
               label={t('form.totalRooms')}
-              type="number"
               value={formData.totalRooms}
-              onChange={(e) => setFormData({ ...formData, totalRooms: e.target.value })}
-              min="1"
-              max="10000"
+              onValueChange={(v) => setFormData({ ...formData, totalRooms: v })}
             />
           </div>
           {capacityFieldset}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
+            <NumberInput
               label={t('form.weekdayPrice')}
-              type="number"
               value={formData.weekdayPrice}
-              onChange={(e) => setFormData({ ...formData, weekdayPrice: e.target.value })}
+              onValueChange={(v) => setFormData({ ...formData, weekdayPrice: v })}
               placeholder="500000"
             />
-            <Input
+            <NumberInput
               label={t('form.weekendPrice')}
-              type="number"
               value={formData.weekendPrice}
-              onChange={(e) => setFormData({ ...formData, weekendPrice: e.target.value })}
+              onValueChange={(v) => setFormData({ ...formData, weekendPrice: v })}
               placeholder="650000"
             />
           </div>
@@ -923,30 +918,25 @@ export default function RoomTypesPage() {
             />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
+            <NumberInput
               label={t('form.totalRooms')}
-              type="number"
               value={formData.totalRooms}
-              onChange={(e) => setFormData({ ...formData, totalRooms: e.target.value })}
-              min="1"
-              max="10000"
+              onValueChange={(v) => setFormData({ ...formData, totalRooms: v })}
               disabled={!!selectedRoomType && roomsOf(selectedRoomType.id).length > 0}
               hint={selectedRoomType && roomsOf(selectedRoomType.id).length > 0 ? t('form.totalRoomsListed') : undefined}
             />
           </div>
           {capacityFieldset}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
+            <NumberInput
               label={t('form.weekdayPrice')}
-              type="number"
               value={formData.weekdayPrice}
-              onChange={(e) => setFormData({ ...formData, weekdayPrice: e.target.value })}
+              onValueChange={(v) => setFormData({ ...formData, weekdayPrice: v })}
             />
-            <Input
+            <NumberInput
               label={t('form.weekendPrice')}
-              type="number"
               value={formData.weekendPrice}
-              onChange={(e) => setFormData({ ...formData, weekendPrice: e.target.value })}
+              onValueChange={(v) => setFormData({ ...formData, weekendPrice: v })}
             />
           </div>
         </ModalBody>

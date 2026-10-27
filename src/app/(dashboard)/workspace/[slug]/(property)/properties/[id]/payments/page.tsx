@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
-import { Card, CardContent, Button, Badge, Input, Select, Modal, ModalFooter } from '@/components/ui'
+import { Card, CardContent, Button, Badge, Input, Select, Modal, ModalFooter, NumberInput } from '@/components/ui'
 import { 
   Search, Filter, CreditCard, Smartphone, Banknote, Building, 
   Clock, CheckCircle, XCircle, AlertCircle, Download, RefreshCw,
@@ -805,14 +805,11 @@ export default function PaymentsPage() {
                 </p>
               )}
 
-              <Input
+              <NumberInput
                 label={t('createModal.amount')}
                 required
-                type="number"
-                min="0"
-                step="1000"
                 value={createForm.amount}
-                onChange={(e) => setCreateForm({ ...createForm, amount: e.target.value })}
+                onValueChange={(v) => setCreateForm({ ...createForm, amount: v })}
                 placeholder={t('createModal.amountPlaceholder')}
               />
 

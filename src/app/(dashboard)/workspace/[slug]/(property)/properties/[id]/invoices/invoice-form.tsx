@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { useTranslations } from 'next-intl'
-import { Button, Input, Select } from '@/components/ui'
+import { Button, Input, Select, NumberInput } from '@/components/ui'
 import { useTaxLookup } from '@/lib/hooks/use-tax-lookup'
 import { isVatCode, splitGross, type VatCode } from '@/lib/einvoice/vat'
 import { useDashLabels } from '@/lib/i18n/dash'
@@ -164,14 +164,11 @@ export function InvoiceFormFields({
       <div className="border-t pt-4">
         <h4 className="font-medium text-fg mb-3">{t('amountSection')}</h4>
         <div className="grid grid-cols-2 gap-4">
-          <Input
+          <NumberInput
             label={t('total')}
             required
-            type="number"
-            min="0"
-            step="1000"
             value={value.totalAmount}
-            onChange={(e) => set({ totalAmount: e.target.value })}
+            onValueChange={(v) => set({ totalAmount: v })}
           />
           <div className="text-sm text-muted pt-6">
             {split

@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
-import { Button, Badge, Input, Modal, ModalBody, ModalFooter, ModalHeader, Textarea } from '@/components/ui'
+import { Button, Badge, Input, Modal, ModalBody, ModalFooter, ModalHeader, Textarea, NumberInput } from '@/components/ui'
 import { EnglishCopy } from '@/components/ui/english-copy'
 import { getIcon } from '@/lib/amenity-icons'
 import { amenityName } from '@/lib/i18n/amenities'
@@ -519,12 +519,11 @@ export default function ServicesPage() {
               </select>
             </div>
             <div>
-              <Input
+              <NumberInput
                 label={t('modal.price')}
-                type="number"
                 value={serviceForm.price}
-                onChange={(e) =>
-                  setServiceForm({ ...serviceForm, price: parseInt(e.target.value) || 0 })
+                onValueChange={(v) =>
+                  setServiceForm({ ...serviceForm, price: parseInt(v) || 0 })
                 }
                 placeholder="0"
               />

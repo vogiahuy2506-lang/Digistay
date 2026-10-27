@@ -1,5 +1,6 @@
 export { Button } from './button'
 export { Input, Textarea, Select } from './input'
+export { NumberInput } from './number-input'
 export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './card'
 export { Badge, BookingStatusBadge, PaymentStatusBadge } from './badge'
 export { Modal, ModalFooter, ModalHeader, ModalBody } from './modal'

@@ -19,7 +19,10 @@ async function fillDish(page: Page, dish: { name: string; category: string; pric
   await field('Tên món').fill(dish.name)
   // With its suggestions the group field is a combobox.
   await page.getByRole('dialog').getByRole('combobox', { name: 'Nhóm', exact: true }).first().fill(dish.category)
-  await page.getByRole('dialog').getByRole('spinbutton', { name: 'Giá (VND)' }).fill(dish.price)
+  // A money field (NumberInput): shown with thousands separators as typed.
+  const price = page.getByRole('dialog').getByRole('textbox', { name: 'Giá (VND)' })
+  await price.fill(dish.price)
+  await expect(price).toHaveValue(dish.price.replace(/\B(?=(\d{3})+(?!\d))/g, '.'))
   if (dish.description) await field('Mô tả').fill(dish.description)
 }
 
