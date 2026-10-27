@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import {
   Alert,
   AlertDescription,
@@ -60,14 +60,17 @@ interface CurrentUser {
   image: string | null
 }
 
+/** An invitation to the user's email still open (GET /api/users/me/invitations). */
 interface Invitation {
   id: string
   token: string
   role: string
-  status: string
-  message?: string
+  /** Permissions ticked for them rather than the role's. */
+  customPermissions: boolean
+  /** The properties they would work at; null: all. */
+  properties: string[] | null
+  expiresAt: string
   workspace: { id: string; name: string; slug: string }
-  // /api/users/me/invitations includes the sender as `sender`.
   sender: { id: string; name: string | null; email: string }
 }
 
@@ -88,6 +91,7 @@ const emptyForm = {
 
 export default function WorkspacesPage() {
   const t = useTranslations('workspaces')
+  const locale = useLocale()
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -107,6 +111,9 @@ export default function WorkspacesPage() {
   const [deleting, setDeleting] = React.useState<Workspace | null>(null)
   const [leaving, setLeaving] = React.useState<Workspace | null>(null)
   const [leaveBusy, setLeaveBusy] = React.useState(false)
+  /** The invitation being answered, and the one in the decline dialog. */
+  const [answering, setAnswering] = React.useState<string | null>(null)
+  const [declining, setDeclining] = React.useState<Invitation | null>(null)
   const [deletedVersion, setDeletedVersion] = React.useState(0)
 
   const fetchWorkspaces = React.useCallback(async () => {
@@ -125,9 +132,7 @@ export default function WorkspacesPage() {
       const res = await fetch('/api/users/me/invitations')
       if (!res.ok) return
       const data = await res.json()
-      if (data.success) {
-        setInvitations(data.data.filter((inv: Invitation) => inv.status === 'PENDING'))
-      }
+      if (data.success) setInvitations(data.data)
     } catch (err) {
       console.error('Failed to fetch invitations:', err)
     }
@@ -272,18 +277,28 @@ export default function WorkspacesPage() {
   }
 
   const answerInvitation = async (invitation: Invitation, accept: boolean) => {
-    // The token endpoint, so this page and /invitations/[token] share one path.
-    const res = await fetch(`/api/invitations/${invitation.token}/${accept ? 'accept' : 'decline'}`, {
-      method: 'POST',
-    })
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}))
-      toast.error(apiError(data.error) || t('form.failed'))
-      return
+    setAnswering(invitation.id)
+    try {
+      // The token endpoint, so this page and /invitations/[token] share one path.
+      const res = await fetch(`/api/invitations/${invitation.token}/${accept ? 'accept' : 'decline'}`, {
+        method: 'POST',
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        toast.error(apiError(data.error) || t('form.failed'))
+      } else {
+        toast.success(accept ? t('invitations.accepted', { name: invitation.workspace.name }) : t('invitations.declined'))
+      }
+      // Answered or not (cancelled, say), the lists show where it stands now.
+      await Promise.all([fetchInvitations(), fetchWorkspaces()])
+    } finally {
+      setAnswering(null)
+      setDeclining(null)
     }
-    toast.success(t(accept ? 'invitations.accept' : 'invitations.decline'))
-    await Promise.all([fetchInvitations(), fetchWorkspaces()])
   }
+
+  const inviteDate = (iso: string) =>
+    new Date(iso).toLocaleDateString(locale === 'en' ? 'en-GB' : 'vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })
 
   // An empty tab says why it is empty: nothing matches the search, or nothing
   // of that kind exists yet (the invitations waiting are listed below).
@@ -314,6 +329,53 @@ export default function WorkspacesPage() {
             {t('create')}
           </Button>
         </div>
+
+        {/* Above the list: an invitation waiting is what to do first here (the bell points to it). */}
+        {invitations.length > 0 && (
+          <section aria-labelledby="pending-invitations" className="mt-9 overflow-hidden rounded-box border border-line bg-panel">
+            <div className="flex items-baseline justify-between gap-3 border-b border-line px-5 py-3.5">
+              <h2 id="pending-invitations" className="flex items-center gap-2 text-body font-semibold text-fg">
+                <span className="h-2 w-2 rounded-full bg-acc" aria-hidden="true" />
+                {t('invitations.title')}
+              </h2>
+              <span className="text-small text-muted tabular-nums">
+                {t('invitations.pending', { count: invitations.length })}
+              </span>
+            </div>
+            <ul className="divide-y divide-line">
+              {invitations.map((invitation) => {
+                const role = isRole(invitation.role) ? t(`roles.${invitation.role}`) : invitation.role
+                return (
+                  <li key={invitation.id} className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-body text-fg">
+                        {t.rich('invitations.headline', {
+                          sender: invitation.sender.name || invitation.sender.email,
+                          workspace: invitation.workspace.name,
+                          b: (c) => <b className="font-semibold">{c}</b>,
+                        })}
+                      </p>
+                      <p className="mt-1 text-small text-muted">
+                        {invitation.customPermissions ? t('invitations.customRole', { role }) : t('invitations.role', { role })}
+                        {invitation.properties && <> · {t('invitations.properties', { names: invitation.properties.join(', ') })}</>}
+                        {' · '}
+                        {t('invitations.expires', { date: inviteDate(invitation.expiresAt) })}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button size="sm" onClick={() => answerInvitation(invitation, true)} isLoading={answering === invitation.id && !declining} disabled={answering !== null}>
+                        {t('invitations.accept')}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setDeclining(invitation)} disabled={answering !== null}>
+                        {t('invitations.decline')}
+                      </Button>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+        )}
 
         <div className="mt-9 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
@@ -391,44 +453,6 @@ export default function WorkspacesPage() {
           </ul>
         )}
 
-        {invitations.length > 0 && (
-          <section className="mt-14">
-            <div className="flex items-baseline justify-between gap-3 border-b border-line pb-3">
-              <h2 className="text-body font-semibold text-fg">{t('invitations.title')}</h2>
-              <span className="text-small text-muted tabular-nums">
-                {t('invitations.pending', { count: invitations.length })}
-              </span>
-            </div>
-            <ul className="border-b border-line">
-              {invitations.map((invitation) => (
-                <li key={invitation.id} className="flex flex-col sm:flex-row sm:items-center gap-4 py-4">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-body font-medium text-fg truncate">{invitation.workspace.name}</p>
-                    <p className="mt-0.5 text-small text-muted">
-                      {t('invitations.proposedRole', {
-                        role: isRole(invitation.role) ? t(`roles.${invitation.role}`) : invitation.role,
-                      })}
-                    </p>
-                    <p className="mt-0.5 text-small text-muted truncate">
-                      {t('invitations.from', {
-                        sender: invitation.sender?.name || invitation.sender?.email,
-                      })}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Button size="sm" onClick={() => answerInvitation(invitation, true)}>
-                      {t('invitations.accept')}
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => answerInvitation(invitation, false)}>
-                      {t('invitations.decline')}
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
         {/* The owner's workspaces deleted in the last 30 days, to restore. */}
         <RecentlyDeleted kind="workspace" reloadKey={deletedVersion} />
       </div>
@@ -446,6 +470,23 @@ export default function WorkspacesPage() {
           </Button>
           <Button variant="danger" onClick={leave} isLoading={leaveBusy}>
             {t('leave.confirm')}
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal isOpen={declining !== null} onClose={() => setDeclining(null)} size="sm" title={t('invitations.declineTitle', { name: declining?.workspace.name ?? '' })}>
+        <ModalHeader onClose={() => setDeclining(null)}>
+          <h2 className="text-lg font-semibold text-fg">{t('invitations.declineTitle', { name: declining?.workspace.name ?? '' })}</h2>
+        </ModalHeader>
+        <ModalBody>
+          <p className="text-body text-fg/80">{t('invitations.declineText')}</p>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="outline" onClick={() => setDeclining(null)}>
+            {t('form.cancel')}
+          </Button>
+          <Button variant="danger" onClick={() => declining && answerInvitation(declining, false)} isLoading={answering !== null}>
+            {t('invitations.declineConfirm')}
           </Button>
         </ModalFooter>
       </Modal>

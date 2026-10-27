@@ -60,6 +60,9 @@
     "depositPaidDetail": "{hotel} · {amount}, the booking is confirmed",
     "transferClaimed": "Guest says the deposit was transferred: {code} · {guest}",
     "transferClaimedDetail": "{hotel} · {amount}. Check the account, then confirm it on the booking",
+    "invite": "{sender} invited you to {workspace}",
+    "inviteDetail": "Role: {role} · open to answer",
+    "inviteCustomRole": "{role} (custom permissions)",
     "other": "Notification"
   },
   "roles": {

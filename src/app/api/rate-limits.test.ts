@@ -65,6 +65,8 @@ vi.mock('@/lib/members/invitations', () => ({
   inviteExpiry: () => new Date(Date.now() + 7 * 86_400_000),
   sendInvitationEmail: vi.fn(async () => undefined),
 }))
+// The invitee's bell (src/lib/notifications.ts) is not what this file tests either.
+vi.mock('@/lib/notifications', () => ({ notifyInvitation: vi.fn(async () => 0) }))
 // The plan's staff limit (src/lib/billing) is not what this file tests.
 vi.mock('@/lib/billing/guard', () => ({
   planResponse: vi.fn(async () => null),

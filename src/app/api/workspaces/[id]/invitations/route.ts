@@ -9,6 +9,7 @@ import { lockedResponse, planResponse } from '@/lib/billing/guard'
 import { grantProblem, inviteMemberSchema, toGrant } from '@/lib/members/grant'
 import { inviteExpiry, sendInvitationEmail } from '@/lib/members/invitations'
 import { logMemberActivity } from '@/lib/members/activity'
+import { notifyInvitation } from '@/lib/notifications'
 
 const PERSON = { select: { id: true, name: true, email: true, image: true } } as const
 
@@ -151,6 +152,8 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
         subject: { email },
         changes: { role: created.role, custom: created.customPermissions, properties: grant.allProperties ? 'all' : grant.propertyIds.length },
       })
+      // In the bell too, for an invitee with an account.
+      await notifyInvitation(tx, created.id)
       return created
     })
 

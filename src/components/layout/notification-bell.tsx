@@ -74,7 +74,8 @@ const EMPTY: BellState = { items: [], unread: 0 }
 /**
  * The bell (src/lib/notifications.ts): the unread count, and the latest
  * notices in a panel. Asks every half minute and when the tab comes back
- * (once for all bells); opening one marks it read and goes to its booking.
+ * (once for all bells); opening one marks it read and goes to its booking
+ * (an invitation: to /workspaces, where it is answered).
  */
 export function NotificationBell({ align = 'right' }: { align?: 'left' | 'right' }) {
   const t = useTranslations('dash.common.notifications')
@@ -130,6 +131,14 @@ export function NotificationBell({ align = 'right' }: { align?: 'left' | 'right'
     }
     if (item.type === 'transfer_claimed') {
       return { title: t('transferClaimed', values), detail: t('transferClaimedDetail', { ...values, amount: labels.money(d.amount ?? 0) }) }
+    }
+    if (item.type === 'workspace_invite') {
+      const invite = item.data as { senderName?: string; workspaceName?: string; role?: string; customPermissions?: boolean }
+      const role = labels.role(invite.role ?? '')
+      return {
+        title: t('invite', { sender: invite.senderName ?? '', workspace: invite.workspaceName ?? '' }),
+        detail: t('inviteDetail', { role: invite.customPermissions ? t('inviteCustomRole', { role }) : role }),
+      }
     }
     return { title: t('other'), detail: '' }
   }

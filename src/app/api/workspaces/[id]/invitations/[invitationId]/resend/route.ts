@@ -6,6 +6,7 @@ import { hit, tooManyRequests } from '@/lib/security/rate-limit'
 import { lockedResponse, planResponse } from '@/lib/billing/guard'
 import { inviteExpiry, sendInvitationEmail } from '@/lib/members/invitations'
 import { logMemberActivity } from '@/lib/members/activity'
+import { notifyInvitation } from '@/lib/notifications'
 
 type Props = { params: Promise<{ id: string; invitationId: string }> }
 
@@ -66,6 +67,7 @@ export async function POST(request: NextRequest, props: Props) {
         entityId: invitation.id,
         subject: { email: invitation.email },
       })
+      await notifyInvitation(tx, invitation.id)
     })
     await sendInvitationEmail(invitation.id, request)
 

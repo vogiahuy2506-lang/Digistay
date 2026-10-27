@@ -13,6 +13,8 @@
  *   confirmed a manual transfer) → payments_manage.
  * - transfer_claimed: a guest says they transferred a manual deposit
  *   (manual-deposit.ts) → payments_manage, to check the account.
+ * - workspace_invite: not about a hotel of theirs; someone with a Digistay
+ *   account was invited to a workspace (notifyInvitation).
  *
  * Stored as a type and data, so each reader sees it in their own language.
  */
@@ -22,7 +24,7 @@ import type { Permission } from '@/lib/auth/permissions'
 
 type Tx = Prisma.TransactionClient
 
-export const NOTIFICATION_TYPES = ['booking_new', 'deposit_paid', 'transfer_claimed'] as const
+export const NOTIFICATION_TYPES = ['booking_new', 'deposit_paid', 'transfer_claimed', 'workspace_invite'] as const
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number]
 
 async function notify(
@@ -117,5 +119,56 @@ export function notifyTransferClaimed(
     type: 'transfer_claimed',
     permission: 'payments_manage',
     data: { bookingCode: claim.bookingCode, guestName: claim.guestName, amount: claim.amount, claimedAt: claim.claimedAt.toISOString() },
+  })
+}
+
+/**
+ * An invitation to a workspace, for an invitee who has an account: besides
+ * the email, in the bell of their own workspace. It leads to /workspaces,
+ * where the invitations waiting are answered (never the token: it is the
+ * link of the email). One notice per invitation, sent again when the
+ * invitation is; it leaves once answered or cancelled (clearInvitationNotices).
+ */
+export async function notifyInvitation(tx: Tx, invitationId: string): Promise<number> {
+  const invitation = await tx.invitation.findUniqueOrThrow({
+    where: { id: invitationId },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      customPermissions: true,
+      workspaceId: true,
+      workspace: { select: { name: true } },
+      sender: { select: { name: true, email: true } },
+    },
+  })
+  await clearInvitationNotices(tx, invitation.id)
+  const user = await tx.user.findFirst({
+    where: { email: { equals: invitation.email, mode: 'insensitive' } },
+    select: { id: true },
+  })
+  if (!user) return 0
+  await tx.notification.create({
+    data: {
+      userId: user.id,
+      workspaceId: invitation.workspaceId,
+      type: 'workspace_invite',
+      data: {
+        invitationId: invitation.id,
+        workspaceName: invitation.workspace.name,
+        senderName: invitation.sender.name || invitation.sender.email,
+        role: invitation.role,
+        customPermissions: invitation.customPermissions,
+      },
+      link: '/workspaces',
+    },
+  })
+  return 1
+}
+
+/** The invitation was accepted, declined or cancelled: its notice is done with. */
+export function clearInvitationNotices(tx: Tx, invitationId: string) {
+  return tx.notification.deleteMany({
+    where: { type: 'workspace_invite', data: { path: ['invitationId'], equals: invitationId } },
   })
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAccess } from '@/lib/auth/access'
 import { logMemberActivity } from '@/lib/members/activity'
+import { clearInvitationNotices } from '@/lib/notifications'
 
 type Props = { params: Promise<{ id: string; invitationId: string }> }
 
@@ -33,6 +34,7 @@ export async function DELETE(_request: NextRequest, props: Props) {
         entityId: invitation.id,
         subject: { email: invitation.email },
       })
+      await clearInvitationNotices(tx, invitation.id)
     })
     return NextResponse.json({ success: true, message: 'Đã huỷ lời mời' })
   } catch (error) {

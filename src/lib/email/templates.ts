@@ -610,6 +610,11 @@ export interface WorkspaceInviteTemplateProps {
   previewText?: string
   /** The inviter's language (the page they sent it from). */
   locale?: EmailLocale
+  /**
+   * Whether the email has a Digistay account: sign in to accept, or create
+   * one with it (the link leads to the sign-up page then). Unknown: neither said.
+   */
+  hasAccount?: boolean
 }
 
 // Labels for the roles an invitation can give (WorkspaceRole in prisma/schema.prisma); any other is shown as it is.
@@ -617,7 +622,7 @@ const ROLE_LABELS = ['ADMIN', 'MANAGER', 'RECEPTIONIST', 'USER'] as const
 const hasRoleLabel = (role: string): role is (typeof ROLE_LABELS)[number] => (ROLE_LABELS as readonly string[]).includes(role)
 
 export function workspaceInviteTemplate(props: WorkspaceInviteTemplateProps): { html: string; text: string; subject: string } {
-  const { recipientName, inviterName, workspaceName, role, inviteUrl, expiresAt, personalMessage, previewText, locale = 'vi' } = props
+  const { recipientName, inviterName, workspaceName, role, inviteUrl, expiresAt, personalMessage, previewText, locale = 'vi', hasAccount } = props
   const t = emailTranslator(locale, 'email.invite')
   const common = emailTranslator(locale, 'email.common')
   const roleLabel = hasRoleLabel(role) ? t(`roles.${role}`) : role
@@ -625,6 +630,8 @@ export function workspaceInviteTemplate(props: WorkspaceInviteTemplateProps): { 
     ? common.markup('helloName', { ...escaped({ name: recipientName }), b: strong() })
     : escapeHtml(common('hello'))
   const expiryStr = formatDateTime(expiresAt, locale)
+  const how = hasAccount === undefined ? null : t(hasAccount ? 'existing' : 'newAccount')
+  const button = hasAccount === false ? t('acceptNew') : t('accept')
 
   const bodyHtml = `
     <h1 style="margin: 0 0 8px; font-size: 24px; font-weight: 700; color: ${BRAND.text};">${escapeHtml(t('title'))}</h1>
@@ -661,11 +668,17 @@ export function workspaceInviteTemplate(props: WorkspaceInviteTemplateProps): { 
       </tr>
     </table>
 
+    ${how ? `
+    <p style="margin: 0 0 8px; font-size: 14px; line-height: 1.6; color: ${BRAND.text};">
+      ${escapeHtml(how)}
+    </p>
+    ` : ''}
+
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0;">
       <tr>
         <td align="center">
           <a href="${escapeHtml(inviteUrl)}" style="display: inline-block; background: linear-gradient(135deg, ${BRAND.primary} 0%, ${BRAND.primaryLight} 100%); color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 10px; font-size: 15px; font-weight: 600; box-shadow: 0 4px 12px rgba(169, 49, 25, 0.25);">
-            ${escapeHtml(t('accept'))}
+            ${escapeHtml(button)}
           </a>
           <p style="margin: 12px 0 0; font-size: 12px; color: ${BRAND.textMuted};">
             ${escapeHtml(t('expires', { time: expiryStr }))}
@@ -683,7 +696,8 @@ export function workspaceInviteTemplate(props: WorkspaceInviteTemplateProps): { 
     html: baseLayout({ previewText: previewText || t('preview', { inviter: inviterName, workspace: workspaceName }), bodyHtml, locale }),
     text: [
       t('text', { inviter: inviterName, workspace: workspaceName, role: roleLabel }),
-      t('textAccept', { url: inviteUrl }),
+      ...(how ? [how] : []),
+      t(hasAccount === false ? 'textNew' : 'textAccept', { url: inviteUrl }),
       t('textExpires', { time: expiryStr }),
     ].join('\n'),
     subject: t('subject', { inviter: inviterName, workspace: workspaceName }),

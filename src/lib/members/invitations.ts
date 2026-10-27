@@ -8,6 +8,7 @@ import type { Invitation, Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { queueWorkspaceInvite, sendAfterResponse } from '@/lib/email/outbox'
 import { requestLocale } from '@/lib/i18n/request-locale'
+import { clearInvitationNotices } from '@/lib/notifications'
 import { logMemberActivity } from './activity'
 
 export const INVITE_DAYS = 7
@@ -21,15 +22,20 @@ export async function sendInvitationEmail(invitationId: string, request: NextReq
       include: {
         workspace: { select: { name: true } },
         sender: { select: { name: true, email: true } },
-        recipient: { select: { name: true } },
       },
+    })
+    // Sign in to accept, or create an account first: the email says which.
+    const account = await prisma.user.findFirst({
+      where: { email: { equals: invitation.email, mode: 'insensitive' } },
+      select: { name: true },
     })
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
     // The public accept page is token-only; the workspace is looked up from the token.
     const emailId = await queueWorkspaceInvite(
       {
         recipientEmail: invitation.email,
-        recipientName: invitation.recipient?.name ?? undefined,
+        recipientName: account?.name ?? undefined,
+        hasAccount: !!account,
         inviterName: invitation.sender.name ?? invitation.sender.email,
         workspaceName: invitation.workspace.name,
         role: invitation.role,
@@ -63,6 +69,7 @@ export async function joinFromInvitation(tx: Prisma.TransactionClient, invitatio
     data: { status: 'ACCEPTED', recipientId: user.id },
   })
   if (claimed.count === 0) throw new InvitationAnsweredError()
+  await clearInvitationNotices(tx, invitation.id)
   const access = {
     role: invitation.role,
     permissions: invitation.permissions,

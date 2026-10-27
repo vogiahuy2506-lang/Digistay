@@ -23,6 +23,8 @@ import { POST as resendInvitation } from './[id]/invitations/[invitationId]/rese
 import { GET as lookupInvitation } from '../invitations/[token]/route'
 import { POST as acceptInvitation } from '../invitations/[token]/accept/route'
 import { POST as registerFromInvitation } from '../invitations/[token]/register/route'
+import { POST as declineInvitation } from '../invitations/[token]/decline/route'
+import { GET as myInvitations } from '../users/me/invitations/route'
 
 const mockAuth = auth as unknown as ReturnType<typeof vi.fn>
 const signInAs = (user: { id: string; email: string; name?: string | null }) =>
@@ -74,8 +76,9 @@ describe('inviting and accepting', () => {
     expect((await prisma.invitation.findUniqueOrThrow({ where: { id: row.id } })).status).toBe('ACCEPTED')
   })
 
-  it('lets an invitee without an account set a password from the link, without a workspace of their own', async () => {
+  it('lets an invitee without an account sign up from the link, without a code nor a workspace of their own', async () => {
     const { owner, workspace } = await createTenant()
+    await prisma.user.create({ data: { email: 'dachon@example.com', name: 'Đã có', username: 'dachon' } })
     signInAs(owner)
     await invite(req('POST', { email: 'moi@example.com', role: 'USER' }), ws(workspace.id))
     const row = await prisma.invitation.findFirstOrThrow({ where: { workspaceId: workspace.id } })
@@ -84,19 +87,26 @@ describe('inviting and accepting', () => {
     const preview = await json(await lookupInvitation(req('GET'), token(row.token)))
     expect(preview.body.data).toMatchObject({ hasAccount: false, role: 'USER', properties: null })
 
-    expect((await registerFromInvitation(req('POST', { name: 'A', password: 'Matkhau123!' }), token(row.token))).status).toBe(400)
-    const joined = await json(await registerFromInvitation(req('POST', { name: 'Nhân viên Mới', password: 'Matkhau123!' }), token(row.token)))
+    const signUp = (body: Record<string, string>) => registerFromInvitation(req('POST', body), token(row.token))
+    const form = { name: 'Nhân viên Mới', username: 'nv_moi', phone: '0901234567', password: 'Matkhau123!' }
+    // The sign-up form's checks (registerSchema): a username of one's own.
+    const taken = await json(await signUp({ ...form, username: 'dachon' }))
+    expect(taken).toMatchObject({ status: 400, body: { error: 'Tên đăng nhập đã được sử dụng' } })
+
+    const joined = await json(await signUp(form))
     expect(joined.status).toBe(200)
     expect(joined.body.data.workspaceSlug).toBe(workspace.slug)
 
     const user = await prisma.user.findUniqueOrThrow({ where: { email: 'moi@example.com' } })
+    expect(user).toMatchObject({ name: 'Nhân viên Mới', username: 'nv_moi', phone: '0901234567' })
     expect(user.emailVerified).not.toBeNull()
     expect(user.password).toBeTruthy()
     expect(await prisma.workspace.count({ where: { ownerId: user.id } })).toBe(0)
     expect((await getAccess(workspace.id, user.id))?.role).toBe('USER')
 
     // The link is used up.
-    expect((await registerFromInvitation(req('POST', { name: 'Ai đó', password: 'Matkhau123!' }), token(row.token))).status).toBe(400)
+    const again = await json(await signUp({ ...form, username: 'nv_khac' }))
+    expect(again).toMatchObject({ status: 400, body: { code: 'ANSWERED' } })
   })
 
   it('sends an invitee who has an account to sign in', async () => {
@@ -107,7 +117,7 @@ describe('inviting and accepting', () => {
     const row = await prisma.invitation.findFirstOrThrow({ where: { workspaceId: workspace.id } })
     signOut()
     expect((await json(await lookupInvitation(req('GET'), token(row.token)))).body.data.hasAccount).toBe(true)
-    const res = await json(await registerFromInvitation(req('POST', { name: 'Ai đó', password: 'Matkhau123!' }), token(row.token)))
+    const res = await json(await registerFromInvitation(req('POST', { name: 'Ai đó', username: 'ai_do', password: 'Matkhau123!' }), token(row.token)))
     expect(res.status).toBe(409)
     expect(res.body.code).toBe('HAS_ACCOUNT')
   })
@@ -120,6 +130,83 @@ describe('inviting and accepting', () => {
     expect((await invite(req('POST', { email: 'cu@example.com', role: 'USER' }), ws(workspace.id))).status).toBe(200)
     const rows = await prisma.invitation.findMany({ where: { workspaceId: workspace.id }, orderBy: { createdAt: 'asc' } })
     expect(rows.map((r) => r.status)).toEqual(['EXPIRED', 'PENDING'])
+  })
+})
+
+describe('an invitee with an account hears of it in the app', () => {
+  const notices = (userId: string) => prisma.notification.findMany({ where: { userId, type: 'workspace_invite' } })
+
+  it('puts the invitation in their bell, once, until it is answered or cancelled', async () => {
+    const { owner, workspace } = await createTenant()
+    const invitee = await createUser('Co.TaiKhoan@example.com')
+    signInAs(owner)
+    await invite(req('POST', { email: 'co.taikhoan@example.com', role: 'RECEPTIONIST' }), ws(workspace.id))
+    const row = await prisma.invitation.findFirstOrThrow({ where: { workspaceId: workspace.id } })
+
+    const [notice] = await notices(invitee.id)
+    expect(notice).toMatchObject({ workspaceId: workspace.id, link: '/workspaces', readAt: null })
+    expect(notice.data).toMatchObject({ invitationId: row.id, workspaceName: workspace.name, role: 'RECEPTIONIST', customPermissions: false })
+    expect(JSON.stringify(notice)).not.toContain(row.token)
+
+    // Sent again: a fresh notice, not a second one.
+    await prisma.notification.updateMany({ data: { readAt: new Date() } })
+    expect((await resendInvitation(req('POST'), invitation(workspace.id, row.id))).status).toBe(200)
+    expect(await notices(invitee.id)).toEqual([expect.objectContaining({ readAt: null })])
+
+    // Cancelled: gone from the bell.
+    expect((await revokeInvitation(req('DELETE'), invitation(workspace.id, row.id))).status).toBe(200)
+    expect(await notices(invitee.id)).toEqual([])
+  })
+
+  it('takes it out of the bell once accepted or declined', async () => {
+    const { owner, workspace } = await createTenant()
+    const yes = await createUser('yes@example.com')
+    const no = await createUser('no@example.com')
+    signInAs(owner)
+    await invite(req('POST', { email: 'yes@example.com', role: 'USER' }), ws(workspace.id))
+    await invite(req('POST', { email: 'no@example.com', role: 'USER' }), ws(workspace.id))
+    const rows = await prisma.invitation.findMany({ where: { workspaceId: workspace.id } })
+    const of = (email: string) => rows.find((r) => r.email === email)!
+    expect((await notices(yes.id)).length + (await notices(no.id)).length).toBe(2)
+
+    signInAs(yes)
+    expect((await acceptInvitation(req('POST'), token(of('yes@example.com').token))).status).toBe(200)
+    signInAs(no)
+    expect((await declineInvitation(req('POST'), token(of('no@example.com').token))).status).toBe(200)
+    expect(await notices(yes.id)).toEqual([])
+    expect(await notices(no.id)).toEqual([])
+  })
+
+  it('rings no bell for an email without an account', async () => {
+    const { owner, workspace } = await createTenant()
+    signInAs(owner)
+    await invite(req('POST', { email: 'chua@example.com', role: 'USER' }), ws(workspace.id))
+    expect(await prisma.notification.count()).toBe(0)
+  })
+
+  it('lists the invitations waiting on /workspaces, whatever the case of the email, with what they give', async () => {
+    const { owner, workspace } = await createTenant()
+    const [property] = await prisma.property.findMany({ where: { workspaceId: workspace.id } })
+    const invitee = await createUser('Hoa.Ten@example.com')
+    signInAs(owner)
+    await invite(
+      req('POST', { email: 'hoa.ten@example.com', role: 'RECEPTIONIST', permissions: ['bookings_view'], allProperties: false, propertyIds: [property.id] }),
+      ws(workspace.id)
+    )
+
+    signInAs(invitee)
+    const mine = await json(await myInvitations())
+    expect(mine.body.data).toEqual([
+      expect.objectContaining({
+        role: 'RECEPTIONIST',
+        customPermissions: true,
+        properties: [property.name],
+        workspace: expect.objectContaining({ id: workspace.id, slug: workspace.slug }),
+      }),
+    ])
+    // Someone else's are not theirs.
+    signInAs(owner)
+    expect((await json(await myInvitations())).body.data).toEqual([])
   })
 })
 

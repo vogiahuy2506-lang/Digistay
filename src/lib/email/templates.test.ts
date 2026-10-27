@@ -306,6 +306,28 @@ describe('account emails', () => {
     )
   })
 
+  it('workspace invitation: sign in with an account, create one without', () => {
+    const invite = {
+      recipientEmail: 'nv@x.vn',
+      inviterName: 'An',
+      workspaceName: 'Sen',
+      role: 'USER',
+      inviteUrl: 'https://digistay.test/invitations/tok',
+      expiresAt: new Date('2026-12-30T10:00:00Z'),
+    }
+    const existing = noKeys(workspaceInviteTemplate({ ...invite, hasAccount: true }))
+    expect(existing.html).toContain('Đăng nhập Digistay bằng email này để nhận lời mời.')
+    expect(existing.html).toContain('Chấp nhận lời mời →')
+    expect(existing.text).toContain('Chấp nhận: https://digistay.test/invitations/tok')
+
+    const fresh = noKeys(workspaceInviteTemplate({ ...invite, hasAccount: false, locale: 'en' }))
+    expect(fresh.html).toContain('create one with this email')
+    expect(fresh.html).toContain('Create your account and join →')
+    expect(fresh.text).toBe(
+      "An invited you to join Sen as Staff.\nYou don't have a Digistay account yet: use the button below to create one with this email, and you're in.\nCreate your account and join: https://digistay.test/invitations/tok\nExpires: 30 Dec 2026, 17:00 GMT+7"
+    )
+  })
+
   it('the ops alert stays Vietnamese', () => {
     const mail = opsAlertTemplate([{ severity: 'critical', title: 'DB', lines: [] }])
     expect(mail.html).toContain('<html lang="vi">')

@@ -1,38 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { randomBytes } from 'crypto'
 import bcrypt from 'bcryptjs'
-import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
-import { PASSWORD_MIN_LENGTH, PASSWORD_TOO_SHORT } from '@/lib/validations'
+import { registerSchema } from '@/lib/validations'
 import { getClientIp } from '@/lib/security/client-ip'
 import { LIMITS } from '@/lib/security/limits'
 import { hit, tooManyRequests } from '@/lib/security/rate-limit'
 import { InvitationAnsweredError, joinFromInvitation } from '@/lib/members/invitations'
 
-const schema = z.object({
-  name: z.string().trim().min(2, 'Tên phải có ít nhất 2 ký tự').max(100),
-  password: z.string().min(PASSWORD_MIN_LENGTH, PASSWORD_TOO_SHORT).max(200),
-})
+// The sign-up form's fields but the email: it is the invitation's.
+const schema = registerSchema.omit({ email: true })
 
-/** A free username from the email's name part: they sign in with the email anyway. */
-async function freeUsername(email: string): Promise<string> {
-  const base = email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '').slice(0, 20) || 'user'
-  for (let i = 0; i < 5; i++) {
-    const candidate = `${base}_${randomBytes(3).toString('hex')}`
-    if (!(await prisma.user.findUnique({ where: { username: candidate }, select: { id: true } }))) return candidate
-  }
-  return `user_${randomBytes(8).toString('hex')}`
-}
+const USERNAME_TAKEN = 'Tên đăng nhập đã được sử dụng'
 
 /**
- * POST /api/invitations/[token]/register { name, password }
+ * POST /api/invitations/[token]/register { name, username, phone?, password }
  *
- * An invitee without an account, like UKNOW's: the link in the email proves
- * they own the address, so their account is made verified, joins the
- * workspace with the invitation's access, and the page signs them in with
- * the password they just chose. No workspace or trial of their own (they
- * can create one later). An email that already has an account signs in and
- * accepts instead.
+ * An invitee without an account signs up on the sign-up page
+ * (/register?invite=<token>, RegisterForm) with the invited email. The link
+ * in the email proves they own the address, so there is no code to type:
+ * the account is made verified, joins the workspace with the invitation's
+ * access, and the page signs them in. No workspace or trial of their own
+ * (they can create one later). An email that already has an account signs
+ * in and accepts instead.
  */
 export async function POST(request: NextRequest, props: { params: Promise<{ token: string }> }) {
   const { token } = await props.params
@@ -71,11 +61,15 @@ export async function POST(request: NextRequest, props: { params: Promise<{ toke
       )
     }
 
-    const password = await bcrypt.hash(validation.data.password, 12)
-    const username = await freeUsername(email)
+    const { name, username, phone, password } = validation.data
+    if (await prisma.user.findUnique({ where: { username }, select: { id: true } })) {
+      return NextResponse.json({ success: false, error: USERNAME_TAKEN }, { status: 400 })
+    }
+
+    const hashed = await bcrypt.hash(password, 12)
     await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
-        data: { name: validation.data.name, username, email, password, emailVerified: new Date() },
+        data: { name: name.trim(), username, email, phone: phone?.trim() || null, password: hashed, emailVerified: new Date() },
         select: { id: true, email: true, name: true },
       })
       await joinFromInvitation(tx, invitation, user)
@@ -89,6 +83,13 @@ export async function POST(request: NextRequest, props: { params: Promise<{ toke
   } catch (error) {
     if (error instanceof InvitationAnsweredError) {
       return NextResponse.json({ success: false, error: 'Lời mời đã được xử lý', code: 'ANSWERED' }, { status: 400 })
+    }
+    // Taken meanwhile: the username, or the email by a sign-up at the same moment.
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      const fields = String(error.meta?.target ?? '')
+      return fields.includes('username')
+        ? NextResponse.json({ success: false, error: USERNAME_TAKEN }, { status: 400 })
+        : NextResponse.json({ success: false, error: 'Email này đã có tài khoản. Đăng nhập để chấp nhận lời mời.', code: 'HAS_ACCOUNT' }, { status: 409 })
     }
     console.error('Register from invitation error:', error)
     return NextResponse.json({ success: false, error: 'Đã xảy ra lỗi khi chấp nhận lời mời' }, { status: 500 })

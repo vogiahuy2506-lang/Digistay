@@ -881,7 +881,17 @@
       "verifyText": "We sent a 6-digit code to <b>{email}</b>. Can't see it? Check your spam or promotions folder.",
       "verifyWrong": "Wrong code. Check the latest email from Digistay.",
       "verifySubmit": "Verify and open Digistay",
-      "phoneError": "A phone number has 8 to 15 digits"
+      "phoneError": "A phone number has 8 to 15 digits",
+      "invite": {
+        "loading": "Loading the invitation…",
+        "from": "<b>{sender}</b> invited you to <b>{workspace}</b>",
+        "role": "Role: {role}",
+        "properties": "At: {names}",
+        "title": "Create your account to join {workspace}",
+        "lead": "Sign up with the invited email. Once done you are in the workspace, no code to type.",
+        "emailLocked": "The invited email, it cannot be changed",
+        "submit": "Create my account and join"
+      }
     },
     "forgot": {
       "step": "Step {n} of 4 · {name}",
@@ -944,8 +954,7 @@
       "declineText": "After declining, {sender} has to send a new invitation if you want to join.",
       "declineConfirm": "Decline the invitation",
       "loginToAccept": "Sign in to accept",
-      "createAccount": "Create an account",
-      "useEmail": "Use {email} when you sign in or create the account.",
+      "useEmail": "Sign in with {email}.",
       "login": "Sign in",
       "openWorkspaces": "Open your workspaces",
       "askResend": "Ask for a new invitation",
@@ -959,16 +968,6 @@
       "revokedChip": "Cancelled",
       "revokedTitle": "This invitation was cancelled",
       "revokedLead": "The sender cancelled it. Ask them for a new one if needed.",
-      "joinLead": "You don't have a Digistay account yet: choose a name and password below to join as {role}.",
-      "joinAs": "New account for <b>{email}</b>",
-      "name": "Full name",
-      "password": "Password",
-      "passwordHint": "At least 8 characters. Next time, sign in with this email and password.",
-      "nameShort": "Name must be at least 2 characters",
-      "passwordShort": "Password must be at least 8 characters",
-      "join": "Create account and join",
-      "joining": "Creating your account…",
-      "haveAccount": "Already have an account? <link>Sign in</link>",
       "customRole": "{role} (custom permissions)",
       "properties": "Works at",
       "openWorkspace": "Open {workspace}"
@@ -1024,16 +1023,23 @@
       "title": "No invitations",
       "text": "When someone invites you to their workspace, the invitation shows up on this page.",
       "pendingTitle": "You have not joined an invited workspace yet",
-      "pending": "{count, plural, one {# invitation is} other {# invitations are}} waiting for you below: accept one to join that workspace."
+      "pending": "{count, plural, one {# invitation is} other {# invitations are}} waiting for you above: accept one to join that workspace."
     },
     "invitations": {
-      "title": "Collaboration invitations",
-      "pending": "{count} pending",
-      "empty": "No invitations are waiting.",
-      "proposedRole": "Proposed role: {role}",
-      "from": "From {sender}",
+      "title": "Invitations waiting for you",
+      "pending": "{count, plural, one {# invitation} other {# invitations}}",
+      "headline": "<b>{sender}</b> invited you to <b>{workspace}</b>",
+      "role": "Role: {role}",
+      "customRole": "Role: {role} (custom permissions)",
+      "properties": "At: {names}",
+      "expires": "Expires {date}",
       "accept": "Accept",
-      "decline": "Decline"
+      "decline": "Decline",
+      "accepted": "You joined {name}",
+      "declined": "Invitation declined",
+      "declineTitle": "Decline the invitation to “{name}”?",
+      "declineText": "The invitation stops working. To join later, you need to be invited again.",
+      "declineConfirm": "Decline the invitation"
     },
     "form": {
       "createTitle": "Create a workspace",
@@ -1264,7 +1270,11 @@
       "expires": "⏱️ Expires on {time}",
       "text": "{inviter} invited you to join {workspace} as {role}.",
       "textAccept": "Accept: {url}",
-      "textExpires": "Expires: {time}"
+      "textExpires": "Expires: {time}",
+      "existing": "Sign in to Digistay with this email to accept. The invitation is also waiting in your workspace list.",
+      "newAccount": "You don't have a Digistay account yet: use the button below to create one with this email, and you're in.",
+      "acceptNew": "Create your account and join →",
+      "textNew": "Create your account and join: {url}"
     },
     "invoice": {
       "subject": "E-invoice no. {number} - {hotel}",

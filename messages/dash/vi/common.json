@@ -60,6 +60,9 @@
     "depositPaidDetail": "{hotel} · {amount}, đơn đã được xác nhận",
     "transferClaimed": "Khách báo đã chuyển khoản cọc: {code} · {guest}",
     "transferClaimedDetail": "{hotel} · {amount}. Kiểm tra tài khoản, tiền về thì xác nhận ở đơn",
+    "invite": "{sender} mời bạn vào {workspace}",
+    "inviteDetail": "Vai trò: {role} · bấm để xem và trả lời",
+    "inviteCustomRole": "{role} (quyền tuỳ chỉnh)",
     "other": "Thông báo"
   },
   "roles": {

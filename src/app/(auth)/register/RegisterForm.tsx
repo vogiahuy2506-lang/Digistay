@@ -27,11 +27,31 @@ import {
 type FieldName = 'name' | 'username' | 'email' | 'phone' | 'password' | 'confirm' | 'terms'
 const RESEND_SEC = 60
 
+/** An invitation to a workspace, signed up for (GET /api/invitations/[token]). */
+interface Invite {
+  token: string
+  email: string
+  role: 'ADMIN' | 'MANAGER' | 'RECEPTIONIST' | 'USER'
+  customPermissions?: boolean
+  /** The properties they will work at; null: all. */
+  properties?: string[] | null
+  workspace: { name: string }
+  sender: { name: string | null; email: string }
+}
+
 /**
  * Sign-up in two steps (Claude Design "Digistay Dang Ky"): the account, then
  * the 6-digit code emailed to it. /register?email=…&resend=1 (from the login
  * page, for an account never verified) opens on the code step: the login
  * page has just sent a new code.
+ *
+ * /register?invite=<token> (the invitation page sends an invitee without an
+ * account here): the same form, with the invitation above it and its email
+ * fixed, in one step. The link proved the email, so there is no code: POST
+ * /api/invitations/[token]/register makes the account, joins the workspace,
+ * and they are signed in and taken there. An invitation no longer open, or
+ * an email with an account by now, goes back to the invitation page, which
+ * says why.
  */
 export function RegisterForm({ google }: { google: boolean }) {
   const t = useTranslations('auth')
@@ -51,12 +71,32 @@ export function RegisterForm({ google }: { google: boolean }) {
   const [codeError, setCodeError] = React.useState<'wrong' | 'tooMany' | string | null>(null)
   const [resent, setResent] = React.useState(false)
   const [cooldown, startCooldown] = useCountdown()
+  const [invite, setInvite] = React.useState<Invite | null>(null)
+  const [inviteLoading, setInviteLoading] = React.useState(false)
   // Where to go once the account is ready: ?callbackUrl= (a plan picked on the pricing page, say).
   const [next, setNext] = React.useState('/workspaces')
   const withNext = (path: string) => (next === '/workspaces' ? path : `${path}${path.includes('?') ? '&' : '?'}callbackUrl=${encodeURIComponent(next)}`)
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search)
+    const token = params.get('invite')
+    if (token) {
+      const invitationPage = `/invitations/${encodeURIComponent(token)}`
+      // Signing in instead (the login link, Google) comes back to the invitation.
+      setNext(invitationPage)
+      setInviteLoading(true)
+      fetch(`/api/invitations/${encodeURIComponent(token)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          const found = data?.data
+          if (!found || found.status !== 'PENDING' || found.hasAccount !== false) return router.replace(invitationPage)
+          setInvite({ ...found, token })
+          setForm((f) => ({ ...f, email: found.email }))
+          setInviteLoading(false)
+        })
+        .catch(() => router.replace(invitationPage))
+      return
+    }
     setNext(afterLogin(params.get('callbackUrl')))
     const fromLogin = params.get('email')
     if (fromLogin && params.get('resend') === '1') {
@@ -64,7 +104,7 @@ export function RegisterForm({ google }: { google: boolean }) {
       setStep('verify')
       startCooldown(RESEND_SEC)
     }
-  }, [startCooldown])
+  }, [startCooldown, router])
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((f) => ({ ...f, [k]: e.target.value }))
@@ -94,6 +134,7 @@ export function RegisterForm({ google }: { google: boolean }) {
     setError('')
     if (Object.keys(problems).length > 0) return
     setBusy(true)
+    if (invite) return join(invite)
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
@@ -125,6 +166,37 @@ export function RegisterForm({ google }: { google: boolean }) {
         return
       }
       await finish()
+    } catch {
+      setError(t('common.generic'))
+      setBusy(false)
+    }
+  }
+
+  // Signed up from an invitation: in the workspace at once, signed in with what was just typed.
+  const join = async (invitation: Invite) => {
+    const invitationPage = `/invitations/${encodeURIComponent(invitation.token)}`
+    try {
+      const res = await fetch(`/api/invitations/${encodeURIComponent(invitation.token)}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: form.name.trim(), username: form.username, phone: form.phone.trim(), password: form.password }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        // An account by now, or the invitation expired, answered or cancelled: its page says which.
+        if (res.status === 404 || res.status === 409 || res.status === 410 || data.code === 'ANSWERED') {
+          router.replace(invitationPage)
+          return
+        }
+        if (AUTH_ERROR_KEYS[data.error] === 'errors.usernameTaken') setTaken((x) => ({ ...x, username: message(data.error) }))
+        else setError(message(data.error))
+        setBusy(false)
+        return
+      }
+      const slug: string | undefined = data.data?.workspaceSlug
+      const home = slug ? `/workspace/${slug}` : '/workspaces'
+      const result = await signIn('credentials', { username: form.username, password: form.password, redirect: false, callbackUrl: home })
+      router.push(result?.error ? `/login?callbackUrl=${encodeURIComponent(home)}` : home)
     } catch {
       setError(t('common.generic'))
       setBusy(false)
@@ -252,7 +324,12 @@ export function RegisterForm({ google }: { google: boolean }) {
     )
   }
 
+  if (inviteLoading) {
+    return <p className="py-16 text-center text-[15px] text-muted">{t('register.invite.loading')}</p>
+  }
+
   const termsError = shown.terms ?? (googleTried && !terms ? t('register.termsRequired') : undefined)
+  const inviteRole = invite ? t(`invite.roles.${invite.role}`) : ''
 
   // Google makes the account on its first sign-in (next-auth adapter); the terms box counts for it too.
   const signUpWithGoogle = () => {
@@ -265,10 +342,27 @@ export function RegisterForm({ google }: { google: boolean }) {
 
   return (
     <form onSubmit={submit} noValidate>
-      {stepBar(1)}
+      {invite ? (
+        <div className="mb-6 rounded-box border border-line bg-panel px-5 py-4">
+          <p className="text-[15px] text-fg">
+            {t.rich('register.invite.from', {
+              sender: invite.sender.name || invite.sender.email,
+              workspace: invite.workspace.name,
+              b: (c) => <b className="font-semibold">{c}</b>,
+            })}
+          </p>
+          <p className="mt-1 text-[13.5px] text-muted">
+            {t('register.invite.role', { role: invite.customPermissions ? t('invite.customRole', { role: inviteRole }) : inviteRole })}
+            {invite.properties && <> · {t('register.invite.properties', { names: invite.properties.join(', ') })}</>}
+          </p>
+        </div>
+      ) : (
+        stepBar(1)
+      )}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className={authTitle}>{t('register.title')}</h1>
+          <h1 className={authTitle}>{invite ? t('register.invite.title', { workspace: invite.workspace.name }) : t('register.title')}</h1>
+          {invite && <p className="mt-3 text-[15px] leading-[1.6] text-fg/80">{t('register.invite.lead')}</p>}
           <p className="mt-3 text-[15px] text-fg/80">
             {t.rich('register.haveAccount', { link: (c) => <Link href={withNext('/login')} className={cn(textLink, 'underline')}>{c}</Link> })}
           </p>
@@ -299,7 +393,7 @@ export function RegisterForm({ google }: { google: boolean }) {
               {...describedBy('reg-username', shown.username)}
             />
           </Field>
-          <Field id="reg-email" label={t('common.email')} error={shown.email}>
+          <Field id="reg-email" label={t('common.email')} error={shown.email} hint={invite ? t('register.invite.emailLocked') : undefined}>
             <input
               id="reg-email"
               type="email"
@@ -307,9 +401,10 @@ export function RegisterForm({ google }: { google: boolean }) {
               value={form.email}
               onChange={set('email')}
               disabled={busy}
+              readOnly={!!invite}
               autoComplete="email"
-              className={inputClass(!!shown.email)}
-              {...describedBy('reg-email', shown.email)}
+              className={cn(inputClass(!!shown.email), invite && 'bg-plain-soft text-fg/80')}
+              {...describedBy('reg-email', shown.email, !!invite)}
             />
           </Field>
           <Field id="reg-phone" label={t('register.phone')} extra={t('register.optional')} error={shown.phone}>
@@ -359,7 +454,7 @@ export function RegisterForm({ google }: { google: boolean }) {
           {termsError && <span className="text-[13px] text-err">⚠ {termsError}</span>}
         </div>
         <button type="submit" disabled={busy} className={cn(inkButton, 'h-[52px] w-full text-[15px] disabled:bg-muted')}>
-          {busy ? t('register.submitting') : t('register.submit')}
+          {busy ? t('register.submitting') : invite ? t('register.invite.submit') : t('register.submit')}
         </button>
       </div>
     </form>

@@ -881,7 +881,17 @@
       "verifyText": "Chúng tôi đã gửi mã 6 số tới <b>{email}</b>. Không thấy thư? Kiểm tra mục Spam hoặc Quảng cáo.",
       "verifyWrong": "Mã không đúng. Kiểm tra lại thư mới nhất từ Digistay.",
       "verifySubmit": "Xác thực và vào Digistay",
-      "phoneError": "Số điện thoại cần từ 8 đến 15 chữ số"
+      "phoneError": "Số điện thoại cần từ 8 đến 15 chữ số",
+      "invite": {
+        "loading": "Đang tải lời mời…",
+        "from": "<b>{sender}</b> mời bạn vào <b>{workspace}</b>",
+        "role": "Vai trò: {role}",
+        "properties": "Làm ở: {names}",
+        "title": "Tạo tài khoản để vào {workspace}",
+        "lead": "Đăng ký bằng email được mời. Xong là vào thẳng workspace, không phải nhập mã xác thực.",
+        "emailLocked": "Email nhận lời mời, không đổi được",
+        "submit": "Tạo tài khoản và vào workspace"
+      }
     },
     "forgot": {
       "step": "Bước {n} / 4 · {name}",
@@ -944,8 +954,7 @@
       "declineText": "Sau khi từ chối, bạn cần {sender} gửi lời mời mới nếu muốn vào workspace.",
       "declineConfirm": "Từ chối lời mời",
       "loginToAccept": "Đăng nhập để nhận lời mời",
-      "createAccount": "Tạo tài khoản",
-      "useEmail": "Dùng đúng email {email} khi đăng nhập hoặc tạo tài khoản.",
+      "useEmail": "Đăng nhập bằng đúng email {email}.",
       "login": "Đăng nhập",
       "openWorkspaces": "Mở danh sách workspace",
       "askResend": "Nhờ người mời gửi lại",
@@ -959,16 +968,6 @@
       "revokedChip": "Đã bị huỷ",
       "revokedTitle": "Lời mời này đã bị huỷ",
       "revokedLead": "Người mời đã huỷ lời mời. Nếu cần, hãy nhờ họ mời lại.",
-      "joinLead": "Bạn chưa có tài khoản Digistay: đặt tên và mật khẩu bên dưới là vào được, với vai trò {role}.",
-      "joinAs": "Tài khoản mới cho <b>{email}</b>",
-      "name": "Họ và tên",
-      "password": "Mật khẩu",
-      "passwordHint": "Ít nhất 8 ký tự. Lần sau đăng nhập bằng email này và mật khẩu này.",
-      "nameShort": "Tên phải có ít nhất 2 ký tự",
-      "passwordShort": "Mật khẩu phải có ít nhất 8 ký tự",
-      "join": "Tạo tài khoản và vào workspace",
-      "joining": "Đang tạo tài khoản…",
-      "haveAccount": "Đã có tài khoản? <link>Đăng nhập</link>",
       "customRole": "{role} (quyền tuỳ chỉnh)",
       "properties": "Làm ở cơ sở",
       "openWorkspace": "Vào {workspace}"
@@ -1024,16 +1023,23 @@
       "title": "Không có lời mời nào",
       "text": "Khi có người mời bạn vào workspace của họ, lời mời sẽ hiện ở trang này.",
       "pendingTitle": "Bạn chưa vào workspace nào được mời",
-      "pending": "{count} lời mời đang chờ bạn ở bên dưới: chấp nhận để vào workspace đó."
+      "pending": "{count} lời mời đang chờ bạn ở phía trên: chấp nhận để vào workspace đó."
     },
     "invitations": {
-      "title": "Lời mời cộng tác",
-      "pending": "{count} lời mời chờ xử lý",
-      "empty": "Không có lời mời nào đang chờ.",
-      "proposedRole": "Vai trò đề xuất: {role}",
-      "from": "Từ {sender}",
+      "title": "Lời mời đang chờ bạn",
+      "pending": "{count} lời mời",
+      "headline": "<b>{sender}</b> mời bạn vào <b>{workspace}</b>",
+      "role": "Vai trò: {role}",
+      "customRole": "Vai trò: {role} (quyền tuỳ chỉnh)",
+      "properties": "Làm ở: {names}",
+      "expires": "Hết hạn {date}",
       "accept": "Chấp nhận",
-      "decline": "Từ chối"
+      "decline": "Từ chối",
+      "accepted": "Bạn đã vào {name}",
+      "declined": "Đã từ chối lời mời",
+      "declineTitle": "Từ chối lời mời vào “{name}”?",
+      "declineText": "Lời mời sẽ không dùng được nữa. Muốn vào sau này, bạn cần được mời lại.",
+      "declineConfirm": "Từ chối lời mời"
     },
     "form": {
       "createTitle": "Tạo workspace mới",
@@ -1264,7 +1270,11 @@
       "expires": "⏱️ Hết hạn lúc {time}",
       "text": "{inviter} mời bạn tham gia {workspace} với vai trò {role}.",
       "textAccept": "Chấp nhận: {url}",
-      "textExpires": "Hết hạn: {time}"
+      "textExpires": "Hết hạn: {time}",
+      "existing": "Đăng nhập Digistay bằng email này để nhận lời mời. Lời mời cũng nằm sẵn trong danh sách workspace của bạn.",
+      "newAccount": "Bạn chưa có tài khoản Digistay: bấm nút bên dưới để tạo tài khoản bằng chính email này, xong là vào được workspace.",
+      "acceptNew": "Tạo tài khoản và tham gia →",
+      "textNew": "Tạo tài khoản và tham gia: {url}"
     },
     "invoice": {
       "subject": "Hóa đơn điện tử số {number} - {hotel}",

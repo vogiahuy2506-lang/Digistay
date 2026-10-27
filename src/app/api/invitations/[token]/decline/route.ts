@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { logMemberActivity } from '@/lib/members/activity'
+import { clearInvitationNotices } from '@/lib/notifications'
 
 /**
  * POST /api/invitations/[token]/decline
@@ -67,6 +68,7 @@ export async function POST(
         entityId: invitation.id,
         subject: { email: invitation.email, name: session.user.name },
       })
+      await clearInvitationNotices(tx, invitation.id)
     })
 
     return NextResponse.json({

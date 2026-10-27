@@ -1593,7 +1593,7 @@ model Notification {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   workspaceId String?
   propertyId  String?
-  /// booking_new | deposit_paid | transfer_claimed
+  /// booking_new | deposit_paid | transfer_claimed | workspace_invite
   type        String
   data        Json
   link        String?
