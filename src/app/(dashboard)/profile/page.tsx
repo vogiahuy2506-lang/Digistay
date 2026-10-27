@@ -9,7 +9,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Badge } from '@/components/ui'
 import { Alert, AlertDescription, AlertIcon } from '@/components/ui/alert'
 import {
-  User, Mail, Phone, MapPin, Calendar, FileText, Camera,
+  User, Mail, Phone, Camera,
   Save, Lock, Shield, Check, Loader2, Eye, EyeOff
 } from 'lucide-react'
 import { format } from 'date-fns'
@@ -24,9 +24,6 @@ interface UserProfile {
   email: string
   image: string | null
   phone: string | null
-  address: string | null
-  dateOfBirth: string | null
-  bio: string | null
   role: string
   createdAt: string
   updatedAt: string
@@ -57,9 +54,6 @@ export default function ProfilePage() {
   const [formData, setFormData] = React.useState({
     name: '',
     phone: '',
-    address: '',
-    dateOfBirth: '',
-    bio: '',
   })
 
   const [passwordForm, setPasswordForm] = React.useState<PasswordForm>({
@@ -91,9 +85,6 @@ export default function ProfilePage() {
         setFormData({
           name: data.data.name || '',
           phone: data.data.phone || '',
-          address: data.data.address || '',
-          dateOfBirth: data.data.dateOfBirth ? data.data.dateOfBirth.split('T')[0] : '',
-          bio: data.data.bio || '',
         })
       }
     } catch (err) {
@@ -153,10 +144,8 @@ export default function ProfilePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: formData.name,
-          phone: formData.phone || undefined,
-          address: formData.address || undefined,
-          dateOfBirth: formData.dateOfBirth || undefined,
-          bio: formData.bio || undefined,
+          // Empty clears it (undefined would leave the old number).
+          phone: formData.phone.trim(),
         }),
       })
 
@@ -472,36 +461,6 @@ export default function ProfilePage() {
                   placeholder={t('info.phonePlaceholder')}
                   icon={<Phone className="w-4 h-4" />}
                 />
-
-                <Input
-                  label={t('info.address')}
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder={t('info.addressPlaceholder')}
-                  icon={<MapPin className="w-4 h-4" />}
-                />
-
-                <Input
-                  label={t('info.dateOfBirth')}
-                  type="date"
-                  value={formData.dateOfBirth}
-                  onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-                  icon={<Calendar className="w-4 h-4" />}
-                />
-
-                <div>
-                  <label className="block text-sm font-medium text-fg mb-1.5">
-                    <FileText className="w-4 h-4 inline mr-1.5" />
-                    {t('info.bio')}
-                  </label>
-                  <textarea
-                    className="w-full px-4 py-3 bg-fg/[0.03] border border-line rounded-xl text-sm font-medium text-fg placeholder-muted focus-visible:bg-panel focus-visible:border-acc focus-visible:ring-2 focus-visible:ring-acc/20 transition-all outline-none resize-none"
-                    rows={3}
-                    value={formData.bio}
-                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                    placeholder={t('info.bioPlaceholder')}
-                  />
-                </div>
 
                 <div className="flex justify-end pt-2">
                   <Button onClick={handleSaveProfile} isLoading={isSaving}>

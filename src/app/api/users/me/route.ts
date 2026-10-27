@@ -85,7 +85,8 @@ export async function PATCH(request: NextRequest) {
       where: { id: session.user.id },
       data: {
         name,
-        phone,
+        // "" clears the number.
+        phone: phone === undefined ? undefined : phone.trim() || null,
         address,
         dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
         bio,

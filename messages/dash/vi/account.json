@@ -35,11 +35,6 @@
       "emailHint": "Vào tab Bảo mật để thay đổi email",
       "phone": "Số điện thoại",
       "phonePlaceholder": "VD: 0901234567",
-      "address": "Địa chỉ",
-      "addressPlaceholder": "VD: 123 Nguyễn Trãi, Quận 1, TP.HCM",
-      "dateOfBirth": "Ngày sinh",
-      "bio": "Giới thiệu bản thân",
-      "bioPlaceholder": "Viết vài dòng giới thiệu về bản thân...",
       "saved": "Cập nhật thông tin thành công!",
       "saveFailed": "Lỗi khi cập nhật thông tin",
       "saveError": "Đã xảy ra lỗi khi lưu thông tin"

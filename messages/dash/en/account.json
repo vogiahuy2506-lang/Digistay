@@ -35,11 +35,6 @@
       "emailHint": "Go to the Security tab to change your email",
       "phone": "Phone number",
       "phonePlaceholder": "e.g. 0901234567",
-      "address": "Address",
-      "addressPlaceholder": "e.g. 123 Nguyen Trai, District 1, HCMC",
-      "dateOfBirth": "Date of birth",
-      "bio": "About me",
-      "bioPlaceholder": "Write a few lines about yourself...",
       "saved": "Details updated!",
       "saveFailed": "Couldn't update your details",
       "saveError": "Something went wrong while saving your details"
