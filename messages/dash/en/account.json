@@ -24,7 +24,7 @@
       "admin": "Admin",
       "user": "User"
     },
-    "systemLink": "System page",
+    "systemLink": "Admin pages",
     "joined": "Joined: {date}",
     "info": {
       "title": "Personal details",

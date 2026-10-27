@@ -822,7 +822,8 @@
       "tooManyAccounts": "Too many accounts created. Please try again later.",
       "resetExpired": "Your password reset timed out. Please start again.",
       "alreadyVerified": "This email is already verified. You can sign in.",
-      "sendFailed": "The email couldn't be sent. Please try again."
+      "sendFailed": "The email couldn't be sent. Please try again.",
+      "disabled": "This account has been locked. Contact Digistay for help."
     },
     "login": {
       "title": "Sign in",

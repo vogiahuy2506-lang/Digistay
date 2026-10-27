@@ -238,6 +238,44 @@ describe('ops alerts', () => {
     expect(mismatch.lines[0]).toContain('30000')
   })
 
+  it('plan payments: wrong amounts, money for closed codes until reviewed, payments only PayOS asked about', async () => {
+    await backupRow(new Date())
+    const tenant = await createTenant()
+    const order = await prisma.subscriptionPayment.create({
+      data: { workspaceId: tenant.workspace.id, plan: 'growth', billing: 'MONTH', amount: 5_000, orderCode: '777001', status: 'PAID', paidAfter: 'CANCELLED' },
+    })
+    const log = (action: string, metadata: object, entityId = order.id) =>
+      prisma.activityLog.create({ data: { action, entityType: 'SUBSCRIPTION_PAYMENT', entityId, workspaceId: tenant.workspace.id, metadata } })
+    await log('PLAN_PAID', { orderCode: '777000', amount: 5_000, source: 'webhook' }, 'other') // normal: nothing
+    expect(await keys()).toEqual([])
+
+    await log('PLAN_AMOUNT_MISMATCH', { orderCode: '777002', expected: 5_000, received: 50_000, source: 'webhook' }, 'p2')
+    await log('PLAN_PAID', { orderCode: '777001', amount: 5_000, source: 'webhook', paidAfter: 'CANCELLED' })
+    await log('PLAN_PAID', { orderCode: '777003', amount: 2_000, source: 'reconcile' }, 'p3')
+    const now = Date.now()
+    const problems = await findProblems(new Date(now))
+    expect(problems.map((f) => f.key).sort()).toEqual(['plan_amount_mismatch', 'plan_missed_webhook', 'plan_paid_late'])
+    const mismatch = problems.find((f) => f.key === 'plan_amount_mismatch')!
+    expect(mismatch.severity).toBe('critical')
+    expect(mismatch.lines[0]).toContain(tenant.workspace.name)
+    expect(mismatch.lines[0]).toContain('50000')
+    expect(mismatch.lines[0]).toContain('/admin/orders?q=777002')
+    const late = problems.find((f) => f.key === 'plan_paid_late')!
+    expect(late.severity).toBe('warning')
+    expect(late.lines[0]).toContain('777001 (đã huỷ)')
+
+    // A deleted workspace is still named.
+    await prisma.workspace.update({ where: { id: tenant.workspace.id }, data: { deletedAt: new Date() } })
+    expect((await findProblems(new Date(now))).find((f) => f.key === 'plan_missed_webhook')!.lines[0]).toContain(`${tenant.workspace.name} (đã xoá)`)
+
+    // The missed webhook counts for a day, the rest for two; a reviewed order is done.
+    expect(await keys(new Date(now + 25 * HOUR))).toEqual(['plan_amount_mismatch', 'plan_paid_late'])
+    await prisma.subscriptionPayment.update({ where: { id: order.id }, data: { reviewedAt: new Date() } })
+    expect(await keys(new Date(now + 25 * HOUR))).toEqual(['plan_amount_mismatch'])
+    // (The backup is late by then: only the plan rules are looked at.)
+    expect((await keys(new Date(now + 49 * HOUR))).filter((k) => k.startsWith('plan_'))).toEqual([])
+  })
+
   it('the route needs the cron secret, records its own run and emails', async () => {
     const run = (secret?: string) =>
       opsAlertsRoute(

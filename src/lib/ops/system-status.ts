@@ -7,14 +7,14 @@
 import { prisma, prismaWithDeleted } from '@/lib/db'
 import { missingMigrations, redisState } from './health-checks'
 import { alertRecipients, findProblems } from './alerts'
+import { platformAdmin } from '@/lib/admin/guard'
 
 export const SYSTEM_JOBS = ['payos-reconcile', 'subscription-jobs', 'einvoice-jobs', 'email-outbox', 'purge-deleted', 'ops-alerts', 'backup'] as const
 const DAY = 24 * 60 * 60 * 1000
 
-/** Users whose platform role allows the system page (read from the DB, not the token). */
+/** Users whose platform role allows the operator pages (src/lib/admin/guard.ts). */
 export async function isPlatformAdmin(userId: string) {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } })
-  return user?.role === 'SUPER_ADMIN'
+  return (await platformAdmin(userId)) !== null
 }
 
 const countBy = (rows: { status: string | null; _count: { _all: number } }[]) =>

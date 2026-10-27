@@ -48,6 +48,11 @@ model User {
   // Optional two-factor sign-in (src/lib/auth/two-factor.ts)
   twoFactor UserTwoFactor?
 
+  /// Locked by Digistay's operators (/admin, src/lib/admin/users.ts): no
+  /// sign-in of any kind, and sessions ended. Their workspaces go on.
+  disabledAt     DateTime?
+  disabledReason String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -238,6 +243,13 @@ model SubscriptionPayment {
   /// {type: none | personal | company, name, idNumber, companyName, taxCode, address, phone}
   invoiceBuyer Json?
   invoice      SubscriptionInvoice?
+  /// The money came for an order no longer open (CANCELLED | EXPIRED |
+  /// FAILED): applied anyway, flagged for an operator on /admin/orders.
+  paidAfter    String?
+  /// An operator looked at a flagged order (/admin/orders), and what they noted.
+  reviewedAt   DateTime?
+  reviewedById String?
+  reviewNote   String?
   createdAt    DateTime                  @default(now())
   updatedAt    DateTime                  @updatedAt
 
@@ -1546,6 +1558,10 @@ model ActivityLog {
   @@index([workspaceId])
   @@index([propertyId])
   @@index([userId])
+  // The platform's log (/admin/activity): newest first, by action, by what it is about.
+  @@index([createdAt])
+  @@index([action, createdAt])
+  @@index([entityType, entityId])
   @@map("activity_logs")
 }
 

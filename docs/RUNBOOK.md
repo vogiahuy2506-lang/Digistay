@@ -571,19 +571,37 @@ hoặc 24 giờ (cảnh báo) tới khi hết; có mục mới thì gửi ngay.
 | PayOS về sai số tiền | nghiêm trọng | khoản đó **không** được ghi nhận: liên hệ khách, hoàn hoặc ghi tay |
 | PayOS trả vào link đã huỷ/hết hạn hay đơn đã đóng | cảnh báo | đã ghi nhận; nhân viên quyết hoàn hay giữ |
 | PayOS chỉ được ghi nhận nhờ đối soát | cảnh báo | webhook của khách sạn đó hỏng: "Đổi khoá" ở trang Tài khoản ngân hàng |
+| Mua gói: tiền về sai số tiền (`plan_amount_mismatch`) | nghiêm trọng | gói **không** được áp dụng: mở đơn ở `/admin/orders`, liên hệ khách, hoàn tiền hoặc cho mua lại |
+| Mua gói: tiền về đơn đã huỷ/hết hạn (`plan_paid_late`) | cảnh báo | đã áp dụng cho gói; `/admin/orders` lọc "Chưa xem": kiểm khách có trả trùng không, hoàn nếu cần, rồi "Đánh dấu đã xem" (hết cảnh báo) |
+| Mua gói chỉ được ghi nhận nhờ hỏi lại PayOS (`plan_missed_webhook`) | cảnh báo | job đối soát mới thấy tiền, webhook PayOS của Digistay không tới: kiểm và đăng ký lại (mục "Bán gói", lệnh `confirm-webhook`). Trang thanh toán của khách và nút "Hỏi lại PayOS" ở `/admin/orders` hỏi trước webhook thì không tính |
 
 Lịch sử chạy job nằm ở bảng `job_runs` (giữ 30 ngày); `backup.sh` cũng ghi vào đó.
 
-**Trang Hệ thống** (`/admin/system`, chỉ user `SUPER_ADMIN`; người khác thấy "Không tìm thấy"):
-tình trạng (phiên bản, migration, Redis), vấn đề hiện tại theo các luật cảnh báo, từng job (lần
-chạy gần nhất, lỗi 24 giờ), hàng đợi email, cảnh báo đã gửi. Cấp quyền:
+**Trang quản trị** (`/admin`, chỉ user `SUPER_ADMIN`, kiểm trong DB; người khác thấy trang 404):
+
+- **Khách hàng** (`/admin/customers`): mỗi workspace đang dùng gói gì, hết hạn khi nào, dùng bao
+  nhiêu so với gói. Trong một workspace: **Đổi gói / gia hạn** (tặng gói, kéo dài dùng thử, bù ngày
+  sự cố; không tạo đơn, không thu tiền, bắt buộc ghi lý do). Tab Tài khoản: **khoá / mở khoá** tài
+  khoản (không đăng nhập được bằng cách nào, mọi phiên bị đăng xuất; workspace họ sở hữu vẫn chạy
+  cho nhân viên) và **đặt lại 2FA** (mục "Đặt lại xác thực hai lớp"). Không thao tác được trên tài
+  khoản `SUPER_ADMIN`.
+- **Đơn hàng gói** (`/admin/orders`): mọi lần mua gói, doanh thu, huỷ đơn đang chờ, hỏi lại PayOS,
+  và các đơn **trả sau khi huỷ / hết hạn** (đã áp vào gói, cần người xem rồi bấm "Đánh dấu đã xem"
+  kèm ghi chú). Không hoàn tiền: ca hiếm phải trả lại tiền thì chuyển khoản tay rồi ghi vào ghi chú.
+- **Nhật ký** (`/admin/activity`): mọi thao tác trên Digistay (ai, ở workspace/cơ sở nào, lúc nào),
+  lọc theo người, workspace, mã đặt phòng, loại thao tác, ngày. Trả lời "ai đã xoá đặt phòng này"
+  ở đây thay vì SQL.
+- **Hệ thống** (`/admin/system`): tình trạng (phiên bản, migration, Redis), vấn đề hiện tại theo
+  các luật cảnh báo, từng job (lần chạy gần nhất, lỗi 24 giờ), hàng đợi email, cảnh báo đã gửi.
+
+Mọi thao tác ở đây được ghi vào Nhật ký kèm email người làm. Cấp quyền:
 
 ```bash
 docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c \
   "UPDATE users SET role = '"'"'SUPER_ADMIN'"'"' WHERE email = '"'"'ban@digistay.vn'"'"'"'
 ```
 
-Link "Trang Hệ thống" hiện ở trang Tài khoản của tôi (`/profile`), cạnh nhãn Super Admin.
+Link "Trang quản trị" hiện ở trang Tài khoản của tôi (`/profile`), cạnh nhãn Super Admin.
 
 Email xác nhận đặt phòng, báo đơn mới cho chủ và lời mời đi qua hàng đợi `email_outbox` (nội dung
 mã hoá): gửi ngay sau request, lỗi thì job `email-outbox` thử lại sau 10 phút, 30 phút, 2 giờ,
@@ -1298,7 +1316,11 @@ email là thứ kẻ gian thường chiếm trước, đặt lại theo yêu c�
 
 1. Xác minh người yêu cầu đúng là chủ tài khoản: gọi vào số điện thoại đã biết từ trước hoặc
    gọi video, và với nhân viên thì hỏi lại chủ workspace của họ.
-2. Đặt lại (ghi nhật ký `TWO_FACTOR_RESET_BY_OPERATOR`, kèm ai làm và xác minh bằng cách nào):
+2. Đặt lại ở `/admin/customers` → tab **Tài khoản** → tìm email → ⋮ → **Đặt lại 2FA**: chọn đã
+   xác minh bằng cách nào và ghi chú (gọi số nào, lúc nào). Nhật ký ghi
+   `TWO_FACTOR_RESET_BY_OPERATOR` kèm ai làm và cách xác minh.
+
+   Khi không vào được trang quản trị, chạy script (ghi cùng nhật ký đó):
 
    ```bash
    cd /opt/digistay

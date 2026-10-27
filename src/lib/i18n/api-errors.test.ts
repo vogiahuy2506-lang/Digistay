@@ -15,6 +15,7 @@ const LIB = [
   'payments/guest-deposit.ts', 'bookings/create-booking.ts', 'auth/rbac.ts', 'auth/access.ts', 'members/grant.ts', 'auth/index.ts', 'marketing/contact.ts',
   'hooks/use-workspace.ts', 'hooks/use-property.ts', 'pricing/rates.ts', 'security/secret-box.ts', 'bookings/late-checkout.ts',
   'cloudinary/index.ts', 'media/upload-input.ts', 'billing/guard.ts', 'billing/limits.ts', 'billing/checkout.ts', 'billing/einvoice.ts',
+  'admin/guard.ts', 'admin/users.ts', 'admin/customers.ts', 'admin/orders.ts', 'admin/activity.ts',
 ]
 
 function apiFiles(dir: string): string[] {

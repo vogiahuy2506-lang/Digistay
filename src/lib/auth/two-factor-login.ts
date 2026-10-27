@@ -10,7 +10,7 @@ import { LOGIN_ERRORS } from './credentials'
 import { isSessionRevoked } from './session-revocation'
 import { issueChallenge, readChallenge } from './two-factor-challenge'
 import { TWO_FACTOR_ERRORS, TwoFactorError, isTwoFactorEnabled, verifySecondFactor } from './two-factor'
-import { TWO_FACTOR_QUERY } from './two-factor-shared'
+import { ACCOUNT_DISABLED, TWO_FACTOR_QUERY } from './two-factor-shared'
 
 type Headers = Parameters<typeof getClientIp>[0]
 
@@ -41,17 +41,21 @@ export async function authorizeWithSecondFactor(
 
   const user = await prisma.user.findUnique({
     where: { id: challenge.userId },
-    select: { id: true, email: true, name: true, image: true, role: true },
+    select: { id: true, email: true, name: true, image: true, role: true, disabledAt: true },
   })
   if (!user) throw new Error(TWO_FACTOR_ERRORS.expired)
-  return user
+  // Locked after the password step: no session either.
+  if (user.disabledAt) throw new Error(LOGIN_ERRORS.disabled)
+  const { disabledAt: _disabledAt, ...signedIn } = user
+  return signedIn
 }
 
 /**
  * Google signIn callback: true to continue, or a redirect to the code step
  * when the account behind this Google login has two-factor on. That is the
  * already linked account, or else the account with the same email, which
- * next-auth links automatically (allowDangerousEmailAccountLinking).
+ * next-auth links automatically (allowDangerousEmailAccountLinking). An
+ * account Digistay locked goes back to the login page, which says so.
  */
 export async function googleSignInGate(
   account: { provider: string; providerAccountId: string },
@@ -64,6 +68,9 @@ export async function googleSignInGate(
   const userId =
     linked?.userId ??
     (email ? (await prisma.user.findUnique({ where: { email }, select: { id: true } }))?.id : undefined)
+  if (userId && (await prisma.user.findUnique({ where: { id: userId }, select: { disabledAt: true } }))?.disabledAt) {
+    return `/login?error=${ACCOUNT_DISABLED}`
+  }
   if (!userId || !(await isTwoFactorEnabled(userId))) return true
   return `/login?${TWO_FACTOR_QUERY}=${encodeURIComponent(issueChallenge(userId, 'google'))}`
 }

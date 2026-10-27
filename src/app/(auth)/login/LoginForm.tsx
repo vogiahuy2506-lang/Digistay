@@ -8,7 +8,7 @@ import { useTranslations } from 'next-intl'
 import { inkButton, textLink } from '@/components/marketing/styles'
 import { afterLogin } from '@/lib/auth/after-login'
 import { LOGIN_ERRORS, TWO_FACTOR_ERRORS } from '@/lib/auth/error-messages'
-import { TWO_FACTOR_PROVIDER, TWO_FACTOR_QUERY, TWO_FACTOR_REQUIRED } from '@/lib/auth/two-factor-shared'
+import { ACCOUNT_DISABLED, TWO_FACTOR_PROVIDER, TWO_FACTOR_QUERY, TWO_FACTOR_REQUIRED } from '@/lib/auth/two-factor-shared'
 import { cn } from '@/lib/utils'
 import { CodeInput, Field, GoogleButton, Notice, PasswordInput, authTitle, describedBy, inputClass, useAuthError } from '../_components/ui'
 
@@ -46,7 +46,8 @@ export function LoginForm({ google }: { google: boolean }) {
     setVerified(params.get('verified') === '1')
     const fromGoogle = params.get(TWO_FACTOR_QUERY)
     if (fromGoogle) setChallenge(fromGoogle)
-    if (params.get('error')) setProblem({ kind: 'other', text: t('login.googleFailed') })
+    const error = params.get('error')
+    if (error) setProblem({ kind: 'other', text: error === ACCOUNT_DISABLED ? t('errors.disabled') : t('login.googleFailed') })
     if (fromGoogle || params.has('error')) {
       params.delete(TWO_FACTOR_QUERY)
       params.delete('error')

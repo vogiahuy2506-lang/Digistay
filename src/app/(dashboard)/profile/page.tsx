@@ -412,9 +412,9 @@ export default function ProfilePage() {
                   <Badge variant={profile?.role === 'SUPER_ADMIN' || profile?.role === 'ADMIN' ? 'primary' : 'secondary'}>
                     {profile?.role === 'SUPER_ADMIN' ? t('role.superAdmin') : profile?.role === 'ADMIN' ? t('role.admin') : t('role.user')}
                   </Badge>
-                  {/* /api/admin/system checks the role again, in the database. */}
+                  {/* /admin checks the role again, in the database (src/lib/admin/guard.ts). */}
                   {profile?.role === 'SUPER_ADMIN' && (
-                    <Link href="/admin/system" className="text-xs font-medium text-acc underline">
+                    <Link href="/admin" className="text-xs font-medium text-acc underline">
                       {t('systemLink')}
                     </Link>
                   )}

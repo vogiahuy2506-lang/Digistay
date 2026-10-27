@@ -4,10 +4,16 @@
  * is reported first: webhook, the page asking (syncSubscriptionPayment) or
  * the reconcile job. Like the hotels' payments (src/lib/payments/payos.ts):
  *
- * - PAID is one conditional update, so duplicates do nothing.
- * - The amount must match exactly; a mismatch is logged and not applied.
- * - Money for a link we cancelled or that expired is still applied: it
- *   reached Digistay's account.
+ * - PAID is one conditional update under the payment's row lock, so
+ *   duplicates do nothing. Every payment applied is logged (PLAN_PAID).
+ * - The amount must match exactly; a mismatch is logged
+ *   (PLAN_AMOUNT_MISMATCH, an ops alert) and not applied.
+ * - A new checkout cancels the workspace's codes still waiting, here and at
+ *   PayOS (best effort), so the old QR and the new one cannot both be paid.
+ * - Money for a code we cancelled or that expired is still applied (it
+ *   reached Digistay's account) but flagged: paidAfter keeps the status the
+ *   code had, an ops alert fires, and an operator reviews it on
+ *   /admin/orders. The reconcile job watches cancelled codes for a day.
  * - The return URL never marks anything paid.
  *
  * A payment is applied by period.ts planChange, decided again when the
@@ -33,6 +39,9 @@ import { reconcileOverageSoon } from './overage'
 /** How long a plan's QR can be paid. */
 export const CHECKOUT_TTL_SEC = 30 * 60
 const PAYABLE = ['PENDING', 'CANCELLED', 'EXPIRED', 'FAILED'] as const
+const DAY_MS = 86_400_000
+/** What PayOS records for a code closed by a newer one. */
+const REPLACED_REASON = 'Khách tạo mã thanh toán mới'
 
 export const PAYOS_NOT_READY = 'Digistay chưa kết nối PayOS để nhận tiền mua gói. Vui lòng thử lại sau hoặc liên hệ Digistay.'
 
@@ -79,9 +88,33 @@ function payosMessage(error: unknown): string {
 }
 
 /**
- * A new payment for `plan` / `billing` and its PayOS link. Earlier links of
- * the workspace still waiting are marked cancelled here (PayOS is not asked:
- * if one is paid anyway, its money is still applied).
+ * Closes plan payment links at PayOS so they can no longer be paid. Best
+ * effort: an error is logged, never thrown (money that comes anyway is
+ * applied and flagged, and the reconcile job asks about cancelled codes for
+ * a day). Returns the order codes PayOS did not cancel.
+ */
+export async function cancelPlanLinks(orderCodes: string[], reason: string): Promise<string[]> {
+  if (orderCodes.length === 0 || !platformPayosConfigured()) return orderCodes
+  const failed = await Promise.all(
+    orderCodes.map(async (code) => {
+      try {
+        await platformPayos().paymentRequests.cancel(Number(code), reason)
+        return null
+      } catch (error) {
+        console.warn(`[billing] PayOS did not cancel plan payment ${code}: ${payosMessage(error)}`)
+        return code
+      }
+    }),
+  )
+  return failed.filter((code): code is string => code !== null)
+}
+
+/**
+ * A new payment for `plan` / `billing` and its PayOS link. Earlier codes of
+ * the workspace still waiting are cancelled, here and at PayOS, so the
+ * customer cannot pay the old QR and the new one. PayOS failing to cancel
+ * one does not stop the new code: if it is paid anyway, its money is still
+ * applied and flagged (applySubscriptionPaid).
  */
 export async function createCheckout(input: {
   workspaceId: string
@@ -96,10 +129,18 @@ export async function createCheckout(input: {
   const { sub, change } = await quoteChange(input.workspaceId, input.plan, input.billing)
   if (change.blocked) throw new BillingError(changeBlockMessage(change.blocked, change, sub), 409)
   const amount = priceFor(input.plan, input.billing)
-  await prisma.subscriptionPayment.updateMany({
+  const waiting = await prisma.subscriptionPayment.findMany({
     where: { workspaceId: input.workspaceId, status: 'PENDING' },
-    data: { status: 'CANCELLED' },
+    select: { id: true, orderCode: true },
   })
+  if (waiting.length > 0) {
+    await prisma.subscriptionPayment.updateMany({
+      where: { id: { in: waiting.map((p) => p.id) }, status: 'PENDING' },
+      data: { status: 'CANCELLED' },
+    })
+  }
+  // At PayOS too, alongside the new link (awaited below; it never throws).
+  const closing = cancelPlanLinks(waiting.map((p) => p.orderCode), REPLACED_REASON)
   const payment = await prisma.subscriptionPayment.create({
     data: {
       workspaceId: input.workspaceId,
@@ -128,37 +169,93 @@ export async function createCheckout(input: {
   } catch (error) {
     await prisma.subscriptionPayment.updateMany({ where: { id: payment.id, status: 'PENDING' }, data: { status: 'FAILED' } })
     throw new BillingError(`PayOS không tạo được mã thanh toán: ${payosMessage(error)}`, 502)
+  } finally {
+    await closing
   }
 }
 
 export type PlanPaidOutcome = 'paid' | 'duplicate' | 'unknown' | 'amount_mismatch' | 'not_payable'
+
+/**
+ * Who reported the money: PayOS's webhook; the reconcile job (a webhook
+ * missed: the plan_missed_webhook alert counts these only); the payer's
+ * page or an operator asking PayOS (syncSubscriptionPayment), which may
+ * simply be ahead of the webhook.
+ */
+export type PlanPaidSource = 'webhook' | 'reconcile' | 'page' | 'operator'
+
+const isPayable = (status: string) => (PAYABLE as readonly string[]).includes(status)
+
+/**
+ * A PayOS amount that is not the payment's: not applied, logged for the ops
+ * alert. Once per payment and amount: reconcile asks PayOS again every run.
+ */
+async function logAmountMismatch(payment: SubscriptionPayment, received: number, source: string) {
+  console.warn(`[billing] PayOS amount ${received} for plan payment ${payment.id} expected ${payment.amount} (${source})`)
+  const seen = await prisma.activityLog.findFirst({
+    where: { action: 'PLAN_AMOUNT_MISMATCH', entityId: payment.id, metadata: { path: ['received'], equals: received } },
+    select: { id: true },
+  })
+  if (seen) return
+  await prisma.activityLog.create({
+    data: {
+      workspaceId: payment.workspaceId,
+      action: 'PLAN_AMOUNT_MISMATCH',
+      entityType: 'SUBSCRIPTION_PAYMENT',
+      entityId: payment.id,
+      metadata: { orderCode: payment.orderCode, expected: payment.amount, received, source },
+    },
+  })
+}
 
 /** Applies money PayOS reports for a plan payment. Safe to call any number of times, concurrently. */
 export async function applySubscriptionPaid(input: {
   orderCode: number | string
   amount: number
   reference?: string | null
-  source: 'webhook' | 'reconcile'
+  source: PlanPaidSource
   now?: Date
 }): Promise<PlanPaidOutcome> {
   const payment = await prisma.subscriptionPayment.findUnique({ where: { orderCode: String(input.orderCode) } })
   if (!payment) return 'unknown'
   if (payment.status === 'PAID') return 'duplicate'
-  if (!(PAYABLE as readonly string[]).includes(payment.status)) return 'not_payable'
+  if (!isPayable(payment.status)) return 'not_payable'
   if (Math.round(input.amount) !== payment.amount) {
-    console.warn(`[billing] PayOS amount ${input.amount} for plan payment ${payment.id} expected ${payment.amount} (${input.source})`)
+    await logAmountMismatch(payment, input.amount, input.source)
     return 'amount_mismatch'
   }
 
   const paidAt = input.now ?? new Date()
   const applied = await prisma.$transaction(async (tx) => {
+    // The status the code has when the money comes, read under the row's
+    // lock: anything but PENDING is kept as paidAfter, for an operator.
+    const [row] = await tx.$queryRaw<{ status: string }[]>`
+      SELECT "status"::text AS status FROM "subscription_payments" WHERE "id" = ${payment.id} FOR UPDATE`
+    if (!row || !isPayable(row.status)) return null
+    const paidAfter = row.status === 'PENDING' ? null : row.status
     const sub = await startScheduledPlan(await ensureSubscription(payment.workspaceId, tx, paidAt), tx, paidAt)
     const marked = await tx.subscriptionPayment.updateMany({
       where: { id: payment.id, status: { in: [...PAYABLE] } },
-      data: { status: 'PAID', paidAt, reference: input.reference ?? null },
+      data: { status: 'PAID', paidAt, reference: input.reference ?? null, paidAfter },
     })
     if (marked.count === 0) return null
     await applyToSubscription(sub, payment, paidAt, tx)
+    await tx.activityLog.create({
+      data: {
+        workspaceId: payment.workspaceId,
+        action: 'PLAN_PAID',
+        entityType: 'SUBSCRIPTION_PAYMENT',
+        entityId: payment.id,
+        metadata: {
+          orderCode: payment.orderCode,
+          amount: payment.amount,
+          plan: payment.plan,
+          billing: payment.billing,
+          source: input.source,
+          ...(paidAfter && { paidAfter }),
+        },
+      },
+    })
     const invoiceId = await prepareSubscriptionInvoice(payment, tx)
     return { emails: await queueSubscriptionPaid(payment.id, tx), invoiceId }
   })
@@ -212,7 +309,7 @@ async function applyToSubscription(sub: Subscription, payment: SubscriptionPayme
 }
 
 /** Asks PayOS about one plan payment and applies what it says; returns the status after. */
-export async function syncSubscriptionPayment(paymentId: string) {
+export async function syncSubscriptionPayment(paymentId: string, source: Exclude<PlanPaidSource, 'webhook'> = 'reconcile') {
   const payment = await prisma.subscriptionPayment.findUniqueOrThrow({ where: { id: paymentId } })
   if (payment.status === 'PAID' || !platformPayosConfigured()) return payment.status
   let link
@@ -226,7 +323,7 @@ export async function syncSubscriptionPayment(paymentId: string) {
       orderCode: payment.orderCode,
       amount: link.amountPaid,
       reference: link.transactions[0]?.reference ?? null,
-      source: 'reconcile',
+      source,
     })
   } else if (link.status === 'CANCELLED' || link.status === 'EXPIRED') {
     await prisma.subscriptionPayment.updateMany({ where: { id: payment.id, status: 'PENDING' }, data: { status: link.status } })
@@ -234,11 +331,22 @@ export async function syncSubscriptionPayment(paymentId: string) {
   return (await prisma.subscriptionPayment.findUniqueOrThrow({ where: { id: payment.id }, select: { status: true } })).status
 }
 
-/** For the reconcile job: plan payments still waiting from the last 3 days, a missed webhook found. */
+/**
+ * For the reconcile job, a missed webhook found: plan payments still waiting
+ * from the last 3 days, and codes cancelled in the last day (by a newer
+ * checkout or an operator) in case PayOS could not cancel one and it was
+ * paid anyway.
+ */
 export async function reconcileSubscriptionPayments(now = new Date()) {
   if (!platformPayosConfigured()) return { checked: 0, paid: 0, failed: 0 }
   const waiting = await prisma.subscriptionPayment.findMany({
-    where: { status: 'PENDING', createdAt: { gte: new Date(now.getTime() - 3 * 86_400_000) } },
+    where: {
+      OR: [
+        { status: 'PENDING', createdAt: { gte: new Date(now.getTime() - 3 * DAY_MS) } },
+        // Nothing writes a cancelled code after, so updatedAt is when it was cancelled.
+        { status: 'CANCELLED', checkoutUrl: { not: null }, updatedAt: { gte: new Date(now.getTime() - DAY_MS) } },
+      ],
+    },
     orderBy: { createdAt: 'asc' },
     take: 100,
     select: { id: true },

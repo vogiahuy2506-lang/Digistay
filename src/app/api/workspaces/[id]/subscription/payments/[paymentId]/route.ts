@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
 
   if (payment.status === 'PENDING' && request.nextUrl.searchParams.get('sync') === '1') {
     try {
-      await syncSubscriptionPayment(payment.id)
+      await syncSubscriptionPayment(payment.id, 'page')
     } catch (error) {
       if (!(error instanceof BillingError)) throw error
       console.warn('[billing] sync failed:', error.message)

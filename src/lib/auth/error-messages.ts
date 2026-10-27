@@ -15,6 +15,8 @@ export const LOGIN_ERRORS = {
   tooMany: 'Bạn đã đăng nhập sai quá nhiều lần. Vui lòng thử lại sau ít phút.',
   locked: 'Tài khoản tạm khoá 30 phút do đăng nhập sai nhiều lần. Bạn có thể đặt lại mật khẩu để mở khoá ngay.',
   unverified: 'Vui lòng xác thực email trước khi đăng nhập. Kiểm tra hộp thư đến của bạn.',
+  /** Locked by Digistay's operators (User.disabledAt, src/lib/admin/users.ts). */
+  disabled: 'Tài khoản này đã bị khoá. Liên hệ Digistay để được hỗ trợ.',
 } as const
 
 export const TWO_FACTOR_ERRORS = {
@@ -34,6 +36,7 @@ export type AuthErrorKey =
       | 'loginTooMany'
       | 'locked'
       | 'unverified'
+      | 'disabled'
       | 'twoFactorWrong'
       | 'twoFactorLocked'
       | 'twoFactorExpired'
@@ -58,6 +61,7 @@ export const AUTH_ERROR_KEYS: Record<string, AuthErrorKey> = {
   [LOGIN_ERRORS.tooMany]: 'errors.loginTooMany',
   [LOGIN_ERRORS.locked]: 'errors.locked',
   [LOGIN_ERRORS.unverified]: 'errors.unverified',
+  [LOGIN_ERRORS.disabled]: 'errors.disabled',
   [TWO_FACTOR_ERRORS.invalidCode]: 'errors.twoFactorWrong',
   [TWO_FACTOR_ERRORS.locked]: 'errors.twoFactorLocked',
   [TWO_FACTOR_ERRORS.expired]: 'errors.twoFactorExpired',

@@ -42,6 +42,7 @@ import { POST as reconcileRoute } from '@/app/api/internal/payos-reconcile/route
 import { POST as createProperty } from '@/app/api/properties/route'
 import { POST as invite } from '@/app/api/workspaces/[id]/invitations/route'
 import { runSubscriptionReminders } from './jobs'
+import { reconcileSubscriptionPayments } from './checkout'
 
 const fake = new FakePayos()
 const DIGISTAY: FakeAccount = { clientId: 'digistay-client', apiKey: 'digistay-api', checksumKey: 'digistay-checksum' }
@@ -126,6 +127,8 @@ describe('buying a plan', () => {
     expect(link.account.clientId).toBe(DIGISTAY.clientId)
     const old = await prisma.subscriptionPayment.findUniqueOrThrow({ where: { id: first.body.data.id } })
     expect(old.status).toBe('CANCELLED')
+    // At PayOS too: the old QR can no longer be paid.
+    expect(fake.links.get(Number(first.body.data.orderCode))!.status).toBe('CANCELLED')
   })
 
   it('says so when Digistay has no PayOS account set up', async () => {
@@ -154,6 +157,12 @@ describe('buying a plan', () => {
     expect(days).toBeLessThanOrEqual(31)
     const mails = await prisma.emailOutbox.findMany({ where: { kind: 'subscription_paid' } })
     expect(mails.map((m) => m.toEmail)).toEqual([t.owner.email])
+    // Logged once, not flagged.
+    const logs = await prisma.activityLog.findMany({ where: { action: 'PLAN_PAID' } })
+    expect(logs).toHaveLength(1)
+    expect(logs[0]).toMatchObject({ workspaceId: t.workspace.id, userId: null, entityType: 'SUBSCRIPTION_PAYMENT', entityId: body.data.id })
+    expect(logs[0].metadata).toEqual({ orderCode: body.data.orderCode, amount: body.data.amount, plan: 'business', billing: 'MONTH', source: 'webhook' })
+    expect((await prisma.subscriptionPayment.findUniqueOrThrow({ where: { id: body.data.id } })).paidAfter).toBeNull()
   })
 
   it('refuses a webhook signed with another account and one with the wrong amount', async () => {
@@ -167,6 +176,15 @@ describe('buying a plan', () => {
     expect((await prisma.subscriptionPayment.findUniqueOrThrow({ where: { id: body.data.id } })).status).toBe('PENDING')
     // Still on the trial: no paid plan was written.
     expect((await prisma.subscription.findUnique({ where: { workspaceId: t.workspace.id } }))?.trial ?? true).toBe(true)
+
+    // Logged for the ops alert, once although PayOS resends and reconcile asks again.
+    expect((await deliver(short)).status).toBe(200)
+    await reconcileSubscriptionPayments()
+    const logs = await prisma.activityLog.findMany({ where: { action: 'PLAN_AMOUNT_MISMATCH' } })
+    expect(logs).toHaveLength(1)
+    expect(logs[0]).toMatchObject({ workspaceId: t.workspace.id, entityType: 'SUBSCRIPTION_PAYMENT', entityId: body.data.id })
+    expect(logs[0].metadata).toEqual({ orderCode: body.data.orderCode, expected: 5_000, received: 4_000, source: 'webhook' })
+    expect(await prisma.activityLog.count({ where: { action: 'PLAN_PAID' } })).toBe(0)
   })
 
   it('applies money the page asks PayOS about (?sync=1) when the webhook never comes', async () => {
@@ -197,6 +215,90 @@ describe('buying a plan', () => {
     signInAs(b.owner)
     const res = await paymentRoute(new NextRequest('http://digistay.test/x'), params({ id: b.workspace.id, paymentId: body.data.id }))
     expect(res.status).toBe(404)
+  })
+})
+
+describe('money for a code no longer open', () => {
+  const paymentOf = (id: string) => prisma.subscriptionPayment.findUniqueOrThrow({ where: { id } })
+  const paidLogs = () => prisma.activityLog.findMany({ where: { action: 'PLAN_PAID' }, orderBy: { createdAt: 'asc' } })
+
+  it('is applied, flagged with the status the code had, and logged with it', async () => {
+    const t = await createTenant()
+    signInAs(t.owner)
+    const first = await buy(t.workspace.id, 'growth', 'MONTH')
+    const second = await buy(t.workspace.id, 'business', 'MONTH')
+    // The customer pays the old QR anyway (PayOS took it before the cancel).
+    expect((await deliver(await fake.pay(Number(first.body.data.orderCode)))).status).toBe(200)
+    expect(await paymentOf(first.body.data.id)).toMatchObject({ status: 'PAID', paidAfter: 'CANCELLED', reviewedAt: null })
+    expect((await subOf(t.workspace.id)).plan).toBe('growth')
+    // Then the new one: applied as usual, not flagged.
+    await deliver(await fake.pay(Number(second.body.data.orderCode)))
+    expect(await paymentOf(second.body.data.id)).toMatchObject({ status: 'PAID', paidAfter: null })
+
+    const logs = await paidLogs()
+    expect(logs.map((l) => [l.entityId, (l.metadata as { paidAfter?: string }).paidAfter ?? null])).toEqual([
+      [first.body.data.id, 'CANCELLED'],
+      [second.body.data.id, null],
+    ])
+    expect(logs[0].metadata).toMatchObject({ orderCode: first.body.data.orderCode, source: 'webhook', plan: 'growth', billing: 'MONTH' })
+  })
+
+  it('the webhook and reconcile reporting it at once apply it and log it once', async () => {
+    for (let round = 0; round < 3; round++) {
+      await resetDatabase()
+      const t = await createTenant()
+      signInAs(t.owner)
+      const { body } = await buy(t.workspace.id, 'growth', 'MONTH')
+      await prisma.subscriptionPayment.update({ where: { id: body.data.id }, data: { status: 'CANCELLED' } })
+      const paid = await fake.pay(Number(body.data.orderCode))
+      await Promise.all([deliver(paid), deliver(paid), reconcileSubscriptionPayments()])
+      expect(await paymentOf(body.data.id)).toMatchObject({ status: 'PAID', paidAfter: 'CANCELLED' })
+      expect(await prisma.activityLog.count({ where: { action: 'PLAN_PAID' } })).toBe(1)
+      expect(await prisma.emailOutbox.count({ where: { kind: 'subscription_paid' } })).toBe(1)
+    }
+  })
+
+  it('an expired code paid late keeps EXPIRED', async () => {
+    const t = await createTenant()
+    signInAs(t.owner)
+    const { body } = await buy(t.workspace.id, 'starter', 'MONTH')
+    await prisma.subscriptionPayment.update({ where: { id: body.data.id }, data: { status: 'EXPIRED' } })
+    await deliver(await fake.pay(Number(body.data.orderCode)))
+    expect(await paymentOf(body.data.id)).toMatchObject({ status: 'PAID', paidAfter: 'EXPIRED' })
+    expect((await paidLogs())[0].metadata).toMatchObject({ paidAfter: 'EXPIRED' })
+  })
+
+  it('a new checkout still works when PayOS refuses to cancel the old code; reconcile finds the old one paid', async () => {
+    const t = await createTenant()
+    signInAs(t.owner)
+    const first = await buy(t.workspace.id, 'growth', 'MONTH')
+    // PayOS answers the cancel with an error (here: the link is not PENDING there).
+    const oldLink = fake.links.get(Number(first.body.data.orderCode))!
+    oldLink.status = 'EXPIRED'
+    const second = await buy(t.workspace.id, 'starter', 'YEAR')
+    expect(second.res.status).toBe(200)
+    expect(second.body.data.status).toBe('PENDING')
+    expect((await paymentOf(first.body.data.id)).status).toBe('CANCELLED')
+    expect(oldLink.status).toBe('EXPIRED')
+
+    // The old code is paid and its webhook never comes: the job asks PayOS about it.
+    await fake.pay(oldLink.orderCode)
+    expect(await reconcileSubscriptionPayments()).toEqual({ checked: 2, paid: 1, failed: 0 })
+    expect(await paymentOf(first.body.data.id)).toMatchObject({ status: 'PAID', paidAfter: 'CANCELLED' })
+    expect((await paidLogs())[0].metadata).toMatchObject({ source: 'reconcile', paidAfter: 'CANCELLED' })
+  })
+
+  it('reconcile asks about cancelled codes for a day only, and only those that had a link', async () => {
+    const t = await createTenant()
+    signInAs(t.owner)
+    const { body } = await buy(t.workspace.id, 'growth', 'MONTH')
+    await prisma.subscriptionPayment.update({ where: { id: body.data.id }, data: { status: 'CANCELLED' } })
+    await prisma.subscriptionPayment.create({
+      data: { workspaceId: t.workspace.id, plan: 'growth', billing: 'MONTH', amount: 5_000, orderCode: '990000001', status: 'CANCELLED' },
+    })
+    expect((await reconcileSubscriptionPayments()).checked).toBe(1)
+    await prisma.$executeRaw`UPDATE subscription_payments SET "updatedAt" = now() - interval '25 hours' WHERE id = ${body.data.id}`
+    expect((await reconcileSubscriptionPayments()).checked).toBe(0)
   })
 })
 

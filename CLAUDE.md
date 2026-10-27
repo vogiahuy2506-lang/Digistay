@@ -278,6 +278,13 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
   20/10/2026: DB trống mà health vẫn ok). Cảnh báo vận hành gửi email cho `ALERT_EMAILS` hoặc
   `SUPER_ADMIN`; thêm luật mới trong `alerts.ts`, mỗi luật trả về fingerprint các mục để không gửi
   lặp. RUNBOOK, "Giám sát và cảnh báo".
+- **Trang quản trị Digistay** (`/admin`): Khách hàng, Đơn hàng gói, Nhật ký, Hệ thống. Chỉ user
+  `SUPER_ADMIN` (đọc trong DB, không tin token): trang kiểm ở `src/app/(dashboard)/admin/layout.tsx`,
+  mọi route `/api/admin/*` gọi `requirePlatformAdmin()` (`src/lib/admin/guard.ts`) đầu tiên; người
+  khác nhận 404. Thao tác của operator ghi ActivityLog với `userId` = operator và `metadata.by` =
+  email của họ. Không thao tác được trên tài khoản `SUPER_ADMIN` (cấp/bỏ quyền vẫn bằng SQL,
+  RUNBOOK). Tài khoản bị khoá (`User.disabledAt`) không đăng nhập được bằng mật khẩu, mã 2FA lẫn
+  Google, và khoá thì thu hồi phiên (`revokeSessions`): đường đăng nhập mới phải kiểm cả nó.
 - **Email gửi sau request** đi qua hàng đợi `src/lib/email/outbox.ts` (`queue*` rồi
   `sendAfterResponse`): lưu mã hoá, gửi ngay sau response, job `email-outbox` thử lại, hết lượt thì
   có cảnh báo. Đừng gửi kiểu "bắn rồi quên": `send()` báo lỗi bằng giá trị trả về chứ không ném,

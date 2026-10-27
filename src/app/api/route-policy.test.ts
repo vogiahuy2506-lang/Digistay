@@ -24,8 +24,11 @@ import ts from 'typescript'
 
 const API_DIR = path.join(__dirname)
 const HTTP_METHODS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'])
-/** Calls that require a signed-in caller (requireAccess / requirePropertyAccess: src/lib/auth/access.ts). */
-const AUTH_HELPERS = new Set(['auth', 'getServerSession', 'requireSession', 'requireAccess', 'requirePropertyAccess'])
+/**
+ * Calls that require a signed-in caller (requireAccess / requirePropertyAccess:
+ * src/lib/auth/access.ts; requirePlatformAdmin: src/lib/admin/guard.ts).
+ */
+const AUTH_HELPERS = new Set(['auth', 'getServerSession', 'requireSession', 'requireAccess', 'requirePropertyAccess', 'requirePlatformAdmin'])
 
 /** Reviewed public handlers. Key: "METHOD /api/path". Keep the reason specific. */
 const PUBLIC_HANDLERS: Record<string, string> = {

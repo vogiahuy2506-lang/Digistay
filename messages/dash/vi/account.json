@@ -24,7 +24,7 @@
       "admin": "Admin",
       "user": "Người dùng"
     },
-    "systemLink": "Trang Hệ thống",
+    "systemLink": "Trang quản trị",
     "joined": "Tham gia: {date}",
     "info": {
       "title": "Thông tin cá nhân",

@@ -1,0 +1,215 @@
+{
+  "frame": {
+    "title": "Quản trị Digistay",
+    "back": "Về workspace của tôi",
+    "nav": {
+      "customers": "Khách hàng",
+      "orders": "Đơn hàng gói",
+      "activity": "Nhật ký",
+      "system": "Hệ thống"
+    }
+  },
+  "common": {
+    "loadFailed": "Không tải được dữ liệu. Thử lại sau.",
+    "retry": "Thử lại",
+    "refresh": "Làm mới",
+    "prev": "Trước",
+    "next": "Sau",
+    "page": "Trang {page}/{pages}",
+    "all": "Tất cả",
+    "search": "Tìm kiếm",
+    "cancel": "Huỷ",
+    "save": "Lưu",
+    "close": "Đóng",
+    "note": "Ghi chú",
+    "noteRequired": "Ghi rõ lý do: ai yêu cầu, vì sao",
+    "working": "Đang xử lý…",
+    "done": "Đã xong",
+    "failed": "Không thực hiện được: {error}",
+    "none": "—"
+  },
+  "plans": {
+    "starter": "Starter",
+    "growth": "Growth",
+    "business": "Business"
+  },
+  "billing": {
+    "MONTH": "Tháng",
+    "YEAR": "Năm"
+  },
+  "states": {
+    "trial": "Dùng thử",
+    "active": "Đang dùng",
+    "grace": "Quá hạn",
+    "locked": "Đã khoá"
+  },
+  "customers": {
+    "title": "Khách hàng",
+    "lead": "Mỗi workspace là một khách hàng: đang dùng gói gì, hết hạn khi nào, dùng bao nhiêu.",
+    "tabs": {
+      "workspaces": "Workspace",
+      "accounts": "Tài khoản"
+    },
+    "stats": {
+      "workspaces": "Workspace",
+      "newWorkspaces": "{count} mới trong 30 ngày",
+      "trial": "Đang dùng thử",
+      "active": "Đang trả phí",
+      "grace": "Quá hạn",
+      "locked": "Đã khoá (chỉ xem)",
+      "lockedUsers": "Tài khoản bị khoá",
+      "users": "trên {count} tài khoản"
+    },
+    "search": "Tìm theo tên, tên rút gọn hoặc email chủ",
+    "stateFilter": "Trạng thái gói",
+    "columns": {
+      "workspace": "Workspace",
+      "plan": "Gói",
+      "state": "Trạng thái",
+      "usage": "Mức dùng",
+      "created": "Tạo ngày"
+    },
+    "trialOf": "Dùng thử {plan}",
+    "planBilling": "{plan} · {billing}",
+    "endsOn": "Hết hạn {date}",
+    "daysLeft": "còn {count} ngày",
+    "locksOn": "Khoá ngày {date}",
+    "noPlan": "Chưa có gói",
+    "ownerLocked": "Chủ bị khoá",
+    "usage": {
+      "properties": "Cơ sở",
+      "rooms": "Phòng",
+      "staff": "Nhân viên",
+      "invoices": "Hoá đơn/tháng"
+    },
+    "empty": "Không có workspace nào khớp."
+  },
+  "accounts": {
+    "search": "Tìm theo email, tên, tên đăng nhập, số điện thoại",
+    "lockedOnly": "Chỉ tài khoản bị khoá",
+    "columns": {
+      "account": "Tài khoản",
+      "workspaces": "Workspace",
+      "security": "Bảo mật",
+      "status": "Trạng thái",
+      "created": "Tạo ngày"
+    },
+    "workspaces": "Sở hữu {owned} · thành viên {member}",
+    "twoFactorOn": "2FA bật",
+    "twoFactorOff": "2FA tắt",
+    "unverified": "Chưa xác thực email",
+    "operator": "Quản trị Digistay",
+    "locked": "Đã khoá",
+    "lockedSince": "Khoá từ {date}: {reason}",
+    "active": "Hoạt động",
+    "empty": "Không có tài khoản nào khớp.",
+    "actions": {
+      "menu": "Thao tác với tài khoản",
+      "lock": "Khoá tài khoản",
+      "unlock": "Mở khoá",
+      "resetTwoFactor": "Đặt lại 2FA",
+      "activity": "Xem nhật ký"
+    },
+    "lock": {
+      "title": "Khoá tài khoản {email}?",
+      "text": "Người này không đăng nhập được nữa (cả mật khẩu, mã 2FA lẫn Google) và mọi phiên đang mở bị đăng xuất. Workspace họ sở hữu vẫn chạy cho nhân viên.",
+      "reason": "Lý do khoá",
+      "reasonPlaceholder": "VD: chủ khách sạn báo tài khoản bị lộ",
+      "confirm": "Khoá tài khoản",
+      "done": "Đã khoá {email}"
+    },
+    "unlock": {
+      "title": "Mở khoá {email}?",
+      "text": "Người này đăng nhập lại được như trước.",
+      "reason": "Lý do mở khoá",
+      "reasonPlaceholder": "VD: đã xác minh lại chủ tài khoản qua điện thoại",
+      "confirm": "Mở khoá",
+      "done": "Đã mở khoá {email}"
+    },
+    "twoFactor": {
+      "title": "Đặt lại xác thực hai lớp cho {email}?",
+      "text": "Chỉ làm khi đã chắc đúng là chủ tài khoản: gọi vào số điện thoại đã biết từ trước hoặc gọi video; với nhân viên, hỏi lại chủ workspace của họ. Đừng đặt lại chỉ vì nhận được email hay tin nhắn.",
+      "after": "Sau đó người này đăng nhập bằng mật khẩu và có thể bật lại 2FA.",
+      "via": "Đã xác minh bằng",
+      "viaOptions": {
+        "phone": "Gọi số điện thoại đã biết từ trước",
+        "video": "Gọi video",
+        "owner": "Chủ workspace xác nhận (nhân viên)"
+      },
+      "note": "Ghi chú xác minh",
+      "notePlaceholder": "VD: gọi 0901… lúc 10:20, khớp tên và workspace",
+      "confirm": "Tắt xác thực hai lớp",
+      "done": "Đã tắt xác thực hai lớp của {email}"
+    }
+  },
+  "detail": {
+    "back": "Khách hàng",
+    "owner": "Chủ sở hữu",
+    "created": "Tạo ngày {date}",
+    "deleted": "Workspace này đã bị xoá ngày {date}.",
+    "openActivity": "Nhật ký của workspace",
+    "openOrders": "Đơn mua gói",
+    "notFound": "Không tìm thấy workspace này.",
+    "plan": {
+      "title": "Gói",
+      "change": "Đổi gói / gia hạn",
+      "current": "Gói",
+      "period": "Kỳ hiện tại",
+      "state": "Trạng thái",
+      "next": "Gói hạ cấp đang chờ",
+      "nextValue": "{plan} · {from} → {to}",
+      "overLimit": "Vượt giới hạn gói từ {date}"
+    },
+    "usage": {
+      "title": "Mức dùng",
+      "openInvitations": "gồm {count} lời mời chưa trả lời"
+    },
+    "people": {
+      "title": "Người dùng",
+      "memberLocked": "Bị workspace khoá",
+      "planLocked": "Vượt gói",
+      "empty": "Chưa có nhân viên."
+    },
+    "properties": {
+      "title": "Cơ sở",
+      "rooms": "{count} phòng",
+      "planLocked": "Khoá vì vượt gói",
+      "deleted": "Đã xoá",
+      "empty": "Chưa có cơ sở."
+    },
+    "payments": {
+      "title": "Đơn mua gói gần đây",
+      "all": "Xem tất cả",
+      "empty": "Chưa mua gói lần nào.",
+      "late": "Trả sau khi huỷ",
+      "status": {
+        "PENDING": "Chờ trả",
+        "PAID": "Đã trả",
+        "CANCELLED": "Đã huỷ",
+        "EXPIRED": "Hết hạn",
+        "FAILED": "Lỗi"
+      }
+    }
+  },
+  "planForm": {
+    "title": "Đổi gói / gia hạn",
+    "lead": "Để tặng gói, kéo dài dùng thử hoặc bù ngày khi có sự cố. Không tạo đơn, không thu tiền; thao tác được ghi vào nhật ký.",
+    "plan": "Gói",
+    "kind": "Loại",
+    "kindTrial": "Dùng thử",
+    "kindPaid": "Đang dùng (không thu tiền)",
+    "end": "Hết hạn vào cuối ngày",
+    "quick": {
+      "d7": "+7 ngày",
+      "d30": "+30 ngày",
+      "d365": "+1 năm"
+    },
+    "samePlan": "Cùng gói: kỳ hiện tại được kéo dài tới ngày này.",
+    "otherPlan": "Đổi gói: kỳ mới tính từ bây giờ.",
+    "nextMoves": "Gói hạ cấp đang chờ sẽ dời theo ngày hết hạn mới.",
+    "note": "Lý do",
+    "notePlaceholder": "VD: khách xin thêm 7 ngày dùng thử; bù 3 ngày sự cố 20/10",
+    "confirm": "Lưu gói",
+    "done": "Đã cập nhật gói"
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "title": "Plan orders",
+  "lead": "Every plan bought through Digistay's PayOS, newest first.",
+  "stats": {
+    "month": "Revenue this month",
+    "monthHint": "{count, plural, one {# order paid} other {# orders paid}}",
+    "last30": "Last 30 days",
+    "last30Hint": "By the day the money came",
+    "pending": "Awaiting payment",
+    "pendingHint": "QR code still valid",
+    "flagged": "To review",
+    "flaggedHint": "Paid after the order was cancelled or expired"
+  },
+  "filters": {
+    "search": "Order code, workspace name, owner email",
+    "status": "Status",
+    "flag": "Flag",
+    "allFlags": "All orders",
+    "late": "Paid after cancelled/expired",
+    "unreviewed": "Not reviewed",
+    "workspace": "Only orders of {name}",
+    "clearWorkspace": "Clear"
+  },
+  "status": {
+    "PENDING": "Awaiting payment",
+    "PAID": "Paid",
+    "CANCELLED": "Cancelled",
+    "EXPIRED": "Expired",
+    "FAILED": "Code failed"
+  },
+  "change": {
+    "new": "New",
+    "renew": "Renewal",
+    "upgrade": "Upgrade",
+    "downgrade": "Downgrade"
+  },
+  "invoice": {
+    "PENDING": "To issue",
+    "ISSUING": "Issuing",
+    "ISSUED": "Issued",
+    "FAILED": "Issue failed",
+    "number": "No. {number}"
+  },
+  "columns": {
+    "order": "Order",
+    "workspace": "Workspace",
+    "plan": "Plan",
+    "amount": "Amount",
+    "status": "Status",
+    "period": "Period paid for",
+    "invoice": "Invoice",
+    "actions": "Actions"
+  },
+  "planBilling": "{plan} · {billing}",
+  "created": "Created {time}",
+  "paid": "Paid {time}",
+  "expires": "QR expires {time}",
+  "qrExpired": "QR code expired",
+  "deleted": "Deleted",
+  "late": {
+    "CANCELLED": "Paid after cancelled",
+    "EXPIRED": "Paid after expired",
+    "FAILED": "Paid after failed"
+  },
+  "reviewed": "Reviewed",
+  "reviewedBy": "{email}, {time}: {note}",
+  "actions": {
+    "cancel": "Cancel order",
+    "sync": "Ask PayOS again",
+    "review": "Mark as reviewed"
+  },
+  "cancelDialog": {
+    "title": "Cancel order {code}?",
+    "text": "The QR code is cancelled at PayOS too, so it can no longer be paid. If money still comes, the plan is applied anyway and the order is flagged for review.",
+    "note": "Note (optional)",
+    "keep": "Keep it",
+    "confirm": "Cancel order"
+  },
+  "reviewDialog": {
+    "title": "Reviewed order {code}",
+    "text": "The money came while the order was “{status}”, and the plan was applied. Note what was done: did the customer pay twice, was it refunded.",
+    "note": "Note",
+    "placeholder": "E.g. paid twice, refunded 5,000 ₫ on 28/10",
+    "tooShort": "Write at least 3 characters",
+    "confirm": "Mark as reviewed"
+  },
+  "toast": {
+    "cancelled": "Order {code} cancelled",
+    "cancelledHere": "Order {code} cancelled, but PayOS could not cancel the QR code",
+    "cancelledHereText": "If the customer still pays, the plan is applied and the order is flagged.",
+    "synced": "Order {code}: {status}",
+    "reviewed": "Order {code} marked as reviewed",
+    "failed": "Could not do it"
+  },
+  "empty": "No order matches the filters."
+}

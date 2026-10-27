@@ -28,6 +28,8 @@ describe('dashboard theme', () => {
     // Not moved: it always redirects to /workspaces anyway.
     expect(isDarkReady('/workspace-picker/demo')).toBe(false)
     expect(isDarkReady('/admin/system')).toBe(true)
+    expect(isDarkReady('/admin/customers/ws_1')).toBe(true)
+    expect(isDarkReady('/admin/orders')).toBe(true)
     expect(isDarkReady('/admin/other')).toBe(false)
     expect(isDarkReady('/workspace/demo/properties/p1/reports/daily/extra')).toBe(false)
     expect(isDarkReady(null)).toBe(false)

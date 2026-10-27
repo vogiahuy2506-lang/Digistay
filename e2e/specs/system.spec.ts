@@ -1,5 +1,5 @@
 /**
- * The system page (/admin/system): SUPER_ADMIN only, and it shows the
+ * The operator pages (/admin): SUPER_ADMIN only; the system page shows the
  * scheduled jobs and problems once they have run.
  */
 import { test, expect } from '@playwright/test'
@@ -7,11 +7,13 @@ import { E2E } from '../env'
 import { failOnPageErrors, leftLogin, signIn } from '../helpers'
 
 test('a hotel admin does not see it', async ({ page }) => {
-  await page.goto('/admin/system')
-  await expect(page.getByRole('heading', { name: 'Không tìm thấy trang' })).toBeVisible()
+  for (const path of ['/admin/system', '/admin/customers']) {
+    await page.goto(path)
+    await expect(page.getByRole('heading', { name: 'Không tìm thấy trang' })).toBeVisible()
+  }
   await page.goto('/profile')
   await expect(page.getByText('Thông tin cá nhân').first()).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Trang Hệ thống' })).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'Trang quản trị' })).toHaveCount(0)
 })
 
 test.describe('as SUPER_ADMIN', () => {
@@ -27,8 +29,11 @@ test.describe('as SUPER_ADMIN', () => {
     await signIn(page, E2E.users.root.username)
     await leftLogin(page)
     await page.goto('/profile')
-    await page.getByRole('link', { name: 'Trang Hệ thống' }).click()
-    await expect(page.getByRole('heading', { name: 'Hệ thống' })).toBeVisible()
+    await page.getByRole('link', { name: 'Trang quản trị' }).click()
+    // /admin opens on the customers; the system page is one of its tabs.
+    await expect(page.getByRole('heading', { name: 'Khách hàng', level: 1 })).toBeVisible()
+    await page.getByRole('navigation').getByRole('link', { name: 'Hệ thống' }).click()
+    await expect(page.getByRole('heading', { name: 'Hệ thống', level: 1 })).toBeVisible()
     await expect(page.getByText('Đủ', { exact: true })).toBeVisible() // migrations
     const jobs = page.locator('section', { has: page.getByRole('heading', { name: 'Job định kỳ' }) })
     await expect(jobs.getByRole('row', { name: /Đối soát PayOS/ })).toContainText('SUCCESS')

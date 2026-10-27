@@ -101,6 +101,7 @@ export async function authorizeWithPassword(
 
   // Only now, with the right password, may the caller learn about the lock.
   if (await isAccountLocked(user.id)) throw new Error(LOGIN_ERRORS.locked)
+  if (user.disabledAt) throw new Error(LOGIN_ERRORS.disabled)
 
   await Promise.all([clearLimit(LIMITS.loginNameIp, nameIpId), clearLimit(LIMITS.accountFailures, user.id)])
 

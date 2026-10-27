@@ -822,7 +822,8 @@
       "tooManyAccounts": "Bạn đã tạo quá nhiều tài khoản. Vui lòng thử lại sau.",
       "resetExpired": "Phiên đặt lại mật khẩu đã hết hạn. Vui lòng làm lại từ đầu.",
       "alreadyVerified": "Email đã được xác thực. Bạn có thể đăng nhập.",
-      "sendFailed": "Chưa gửi được email. Vui lòng thử lại."
+      "sendFailed": "Chưa gửi được email. Vui lòng thử lại.",
+      "disabled": "Tài khoản này đã bị khoá. Liên hệ Digistay để được hỗ trợ."
     },
     "login": {
       "title": "Đăng nhập",

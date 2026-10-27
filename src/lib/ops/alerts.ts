@@ -51,6 +51,14 @@ async function propertyNames(ids: (string | null)[]) {
   return (id: string | null) => (id && map.get(id)) || 'khách sạn không rõ'
 }
 
+async function workspaceNames(ids: (string | null)[]) {
+  const unique = [...new Set(ids.filter((id): id is string => Boolean(id)))]
+  // Deleted ones too: money paid to Digistay matters whatever happened since.
+  const rows = await prismaWithDeleted.workspace.findMany({ where: { id: { in: unique } }, select: { id: true, name: true, deletedAt: true } })
+  const map = new Map(rows.map((r) => [r.id, r.deletedAt ? `${r.name} (đã xoá)` : r.name]))
+  return (id: string | null) => (id && map.get(id)) || 'workspace không rõ'
+}
+
 async function jobFailures(now: Date): Promise<Finding[]> {
   const findings: Finding[] = []
   for (const job of WATCHED_JOBS) {
@@ -254,6 +262,70 @@ async function payosFlags(now: Date): Promise<Finding[]> {
   return findings
 }
 
+/**
+ * Plan payments on Digistay's own account (src/lib/billing/checkout.ts),
+ * like payosFlags: each line names the order to open on /admin/orders.
+ */
+async function planPaymentFlags(now: Date): Promise<Finding[]> {
+  const since = (hours: number) => ({ gt: new Date(now.getTime() - hours * HOUR) })
+  const meta = (l: { metadata: unknown }) => (l.metadata ?? {}) as Record<string, unknown>
+  const [mismatch, paid] = await Promise.all([
+    prisma.activityLog.findMany({ where: { action: 'PLAN_AMOUNT_MISMATCH', createdAt: since(48) }, orderBy: { createdAt: 'desc' }, take: 50 }),
+    prisma.activityLog.findMany({ where: { action: 'PLAN_PAID', createdAt: since(48) }, orderBy: { createdAt: 'desc' }, take: 500 }),
+  ])
+  // Money for a code no longer open, until an operator has looked at it.
+  const flagged = paid.filter((l) => meta(l).paidAfter)
+  const reviewed = flagged.length
+    ? await prisma.subscriptionPayment.findMany({
+        where: { id: { in: flagged.map((l) => l.entityId) }, reviewedAt: { not: null } },
+        select: { id: true },
+      })
+    : []
+  const late = flagged.filter((l) => !reviewed.some((p) => p.id === l.entityId))
+  const dayAgo = now.getTime() - 24 * HOUR
+  const missed = paid.filter((l) => meta(l).source === 'reconcile' && l.createdAt.getTime() > dayAgo)
+  const nameOf = await workspaceNames([...mismatch, ...late, ...missed].map((l) => l.workspaceId))
+  const order = (l: { metadata: unknown }) => `đơn ${meta(l).orderCode ?? '?'}`
+  const open = (l: { metadata: unknown }) => `/admin/orders?q=${meta(l).orderCode ?? ''}`
+  const closedAs: Record<string, string> = { CANCELLED: 'đã huỷ', EXPIRED: 'đã hết hạn', FAILED: 'lỗi tạo mã' }
+  const findings: Finding[] = []
+  if (mismatch.length > 0) {
+    findings.push({
+      key: 'plan_amount_mismatch',
+      severity: 'critical',
+      title: `${mismatch.length} khoản mua gói về sai số tiền (chưa áp dụng cho gói)`,
+      lines: mismatch.map(
+        (l) => `${nameOf(l.workspaceId)} · ${order(l)} · cần ${meta(l).expected} ₫, nhận ${meta(l).received} ₫ · ${vnTime(l.createdAt)} · ${open(l)}`
+      ),
+      fingerprint: fingerprintOf(mismatch.map((l) => l.id)),
+    })
+  }
+  if (late.length > 0) {
+    findings.push({
+      key: 'plan_paid_late',
+      severity: 'warning',
+      title: `${late.length} khoản mua gói trả vào đơn đã huỷ/hết hạn (đã áp dụng, chưa ai xem)`,
+      lines: late.map((l) => {
+        const status = String(meta(l).paidAfter)
+        return `${nameOf(l.workspaceId)} · ${order(l)} (${closedAs[status] ?? status}) · ${meta(l).amount ?? '?'} ₫ · ${vnTime(l.createdAt)} · ${open(l)}`
+      }),
+      fingerprint: fingerprintOf(late.map((l) => l.id)),
+    })
+  }
+  if (missed.length > 0) {
+    findings.push({
+      key: 'plan_missed_webhook',
+      severity: 'warning',
+      title: `${missed.length} khoản mua gói chỉ được ghi nhận nhờ hỏi lại PayOS (webhook không tới)`,
+      lines: missed.map(
+        (l) => `${nameOf(l.workspaceId)} · ${order(l)} · ${vnTime(l.createdAt)}: kiểm webhook PayOS của Digistay · ${open(l)}`
+      ),
+      fingerprint: fingerprintOf(missed.map((l) => l.id)),
+    })
+  }
+  return findings
+}
+
 export async function findProblems(now = new Date()): Promise<Finding[]> {
   const groups = await Promise.all([
     jobFailures(now),
@@ -263,6 +335,7 @@ export async function findProblems(now = new Date()): Promise<Finding[]> {
     planInvoiceProblems(now),
     outboxGaveUp(now),
     payosFlags(now),
+    planPaymentFlags(now),
   ])
   return groups.flat().map((f) => ({ ...f, lines: f.lines.slice(0, MAX_LINES).concat(f.lines.length > MAX_LINES ? [`… và ${f.lines.length - MAX_LINES} mục khác`] : []) }))
 }

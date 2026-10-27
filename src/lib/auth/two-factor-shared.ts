@@ -9,3 +9,6 @@
 export const TWO_FACTOR_REQUIRED = 'TWO_FACTOR_REQUIRED:'
 export const TWO_FACTOR_PROVIDER = 'two-factor'
 export const TWO_FACTOR_QUERY = 'twoFactor'
+
+/** /login?error=… after a Google sign-in into an account Digistay locked (User.disabledAt). */
+export const ACCOUNT_DISABLED = 'AccountDisabled'

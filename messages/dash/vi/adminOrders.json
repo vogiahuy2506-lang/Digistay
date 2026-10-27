@@ -1,0 +1,96 @@
+{
+  "title": "Đơn hàng gói",
+  "lead": "Mọi lần mua gói qua PayOS của Digistay, đơn mới nhất trước.",
+  "stats": {
+    "month": "Doanh thu tháng này",
+    "monthHint": "{count} đơn đã trả",
+    "last30": "30 ngày qua",
+    "last30Hint": "Theo ngày tiền về",
+    "pending": "Đơn đang chờ trả",
+    "pendingHint": "Mã QR còn hạn",
+    "flagged": "Đơn cần xem",
+    "flaggedHint": "Tiền về sau khi đơn đã huỷ/hết hạn"
+  },
+  "filters": {
+    "search": "Mã đơn, tên workspace, email chủ",
+    "status": "Trạng thái",
+    "flag": "Cờ",
+    "allFlags": "Mọi đơn",
+    "late": "Trả sau khi huỷ/hết hạn",
+    "unreviewed": "Chưa xem",
+    "workspace": "Chỉ đơn của {name}",
+    "clearWorkspace": "Bỏ lọc"
+  },
+  "status": {
+    "PENDING": "Chờ trả",
+    "PAID": "Đã trả",
+    "CANCELLED": "Đã huỷ",
+    "EXPIRED": "Hết hạn",
+    "FAILED": "Lỗi tạo mã"
+  },
+  "change": {
+    "new": "Mua mới",
+    "renew": "Gia hạn",
+    "upgrade": "Nâng gói",
+    "downgrade": "Hạ gói"
+  },
+  "invoice": {
+    "PENDING": "Chờ xuất",
+    "ISSUING": "Đang xuất",
+    "ISSUED": "Đã xuất",
+    "FAILED": "Xuất lỗi",
+    "number": "Số {number}"
+  },
+  "columns": {
+    "order": "Mã đơn",
+    "workspace": "Workspace",
+    "plan": "Gói",
+    "amount": "Số tiền",
+    "status": "Trạng thái",
+    "period": "Kỳ được trả",
+    "invoice": "Hoá đơn",
+    "actions": "Thao tác"
+  },
+  "planBilling": "{plan} · {billing}",
+  "created": "Tạo {time}",
+  "paid": "Trả {time}",
+  "expires": "QR hết hạn {time}",
+  "qrExpired": "QR đã hết hạn",
+  "deleted": "Đã xoá",
+  "late": {
+    "CANCELLED": "Trả sau khi huỷ",
+    "EXPIRED": "Trả sau khi hết hạn",
+    "FAILED": "Trả sau khi lỗi"
+  },
+  "reviewed": "Đã xem",
+  "reviewedBy": "{email}, {time}: {note}",
+  "actions": {
+    "cancel": "Huỷ đơn",
+    "sync": "Hỏi lại PayOS",
+    "review": "Đánh dấu đã xem"
+  },
+  "cancelDialog": {
+    "title": "Huỷ đơn {code}?",
+    "text": "Mã QR bị huỷ ở cả PayOS, khách không trả vào được nữa. Nếu tiền vẫn về, gói vẫn được áp dụng và đơn được gắn cờ để xem lại.",
+    "note": "Ghi chú (không bắt buộc)",
+    "keep": "Không huỷ",
+    "confirm": "Huỷ đơn"
+  },
+  "reviewDialog": {
+    "title": "Đã xem đơn {code}",
+    "text": "Tiền về khi đơn đã ở trạng thái “{status}”, và gói đã được áp dụng. Ghi lại cách xử lý: khách có trả trùng không, đã hoàn tiền chưa.",
+    "note": "Ghi chú",
+    "placeholder": "VD: khách trả trùng, đã hoàn 5.000 ₫ ngày 28/10",
+    "tooShort": "Ghi ít nhất 3 ký tự",
+    "confirm": "Đánh dấu đã xem"
+  },
+  "toast": {
+    "cancelled": "Đã huỷ đơn {code}",
+    "cancelledHere": "Đã huỷ đơn {code}, nhưng PayOS chưa huỷ được mã QR",
+    "cancelledHereText": "Nếu khách vẫn trả, gói vẫn được áp dụng và đơn được gắn cờ.",
+    "synced": "Đơn {code}: {status}",
+    "reviewed": "Đã đánh dấu đơn {code}",
+    "failed": "Không thực hiện được"
+  },
+  "empty": "Không có đơn nào khớp bộ lọc."
+}

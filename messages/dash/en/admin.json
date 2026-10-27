@@ -1,0 +1,215 @@
+{
+  "frame": {
+    "title": "Digistay admin",
+    "back": "Back to my workspaces",
+    "nav": {
+      "customers": "Customers",
+      "orders": "Plan orders",
+      "activity": "Activity log",
+      "system": "System"
+    }
+  },
+  "common": {
+    "loadFailed": "Could not load the data. Try again later.",
+    "retry": "Try again",
+    "refresh": "Refresh",
+    "prev": "Previous",
+    "next": "Next",
+    "page": "Page {page}/{pages}",
+    "all": "All",
+    "search": "Search",
+    "cancel": "Cancel",
+    "save": "Save",
+    "close": "Close",
+    "note": "Note",
+    "noteRequired": "Say why: who asked, and for what",
+    "working": "Working…",
+    "done": "Done",
+    "failed": "Could not do it: {error}",
+    "none": "—"
+  },
+  "plans": {
+    "starter": "Starter",
+    "growth": "Growth",
+    "business": "Business"
+  },
+  "billing": {
+    "MONTH": "Monthly",
+    "YEAR": "Yearly"
+  },
+  "states": {
+    "trial": "Trial",
+    "active": "Active",
+    "grace": "Overdue",
+    "locked": "Locked"
+  },
+  "customers": {
+    "title": "Customers",
+    "lead": "Each workspace is a customer: which plan, until when, how much it uses.",
+    "tabs": {
+      "workspaces": "Workspaces",
+      "accounts": "Accounts"
+    },
+    "stats": {
+      "workspaces": "Workspaces",
+      "newWorkspaces": "{count} new in 30 days",
+      "trial": "On trial",
+      "active": "Paying",
+      "grace": "Overdue",
+      "locked": "Locked (read-only)",
+      "lockedUsers": "Locked accounts",
+      "users": "of {count} accounts"
+    },
+    "search": "Search by name, short name or owner email",
+    "stateFilter": "Plan state",
+    "columns": {
+      "workspace": "Workspace",
+      "plan": "Plan",
+      "state": "State",
+      "usage": "Usage",
+      "created": "Created"
+    },
+    "trialOf": "{plan} trial",
+    "planBilling": "{plan} · {billing}",
+    "endsOn": "Ends {date}",
+    "daysLeft": "{count} days left",
+    "locksOn": "Locks on {date}",
+    "noPlan": "No plan yet",
+    "ownerLocked": "Owner locked",
+    "usage": {
+      "properties": "Properties",
+      "rooms": "Rooms",
+      "staff": "Staff",
+      "invoices": "Invoices/month"
+    },
+    "empty": "No workspace matches."
+  },
+  "accounts": {
+    "search": "Search by email, name, username, phone",
+    "lockedOnly": "Locked accounts only",
+    "columns": {
+      "account": "Account",
+      "workspaces": "Workspaces",
+      "security": "Security",
+      "status": "Status",
+      "created": "Created"
+    },
+    "workspaces": "Owns {owned} · member of {member}",
+    "twoFactorOn": "2FA on",
+    "twoFactorOff": "2FA off",
+    "unverified": "Email not verified",
+    "operator": "Digistay admin",
+    "locked": "Locked",
+    "lockedSince": "Locked since {date}: {reason}",
+    "active": "Active",
+    "empty": "No account matches.",
+    "actions": {
+      "menu": "Account actions",
+      "lock": "Lock account",
+      "unlock": "Unlock",
+      "resetTwoFactor": "Reset 2FA",
+      "activity": "View activity"
+    },
+    "lock": {
+      "title": "Lock {email}?",
+      "text": "They can no longer sign in (password, 2FA code or Google) and every open session is signed out. Workspaces they own keep running for their staff.",
+      "reason": "Why lock it",
+      "reasonPlaceholder": "E.g. the hotel owner reports the account was compromised",
+      "confirm": "Lock account",
+      "done": "{email} locked"
+    },
+    "unlock": {
+      "title": "Unlock {email}?",
+      "text": "They can sign in again as before.",
+      "reason": "Why unlock it",
+      "reasonPlaceholder": "E.g. account owner verified again by phone",
+      "confirm": "Unlock",
+      "done": "{email} unlocked"
+    },
+    "twoFactor": {
+      "title": "Reset two-factor sign-in for {email}?",
+      "text": "Only once you are sure it is the account owner: call a phone number known beforehand or make a video call; for staff, ask their workspace owner. Never reset just because of an email or a message.",
+      "after": "They then sign in with their password and can turn 2FA on again.",
+      "via": "Verified by",
+      "viaOptions": {
+        "phone": "A call to a number known beforehand",
+        "video": "A video call",
+        "owner": "Their workspace owner (staff)"
+      },
+      "note": "Verification note",
+      "notePlaceholder": "E.g. called 0901… at 10:20, name and workspace match",
+      "confirm": "Turn off two-factor sign-in",
+      "done": "Two-factor sign-in turned off for {email}"
+    }
+  },
+  "detail": {
+    "back": "Customers",
+    "owner": "Owner",
+    "created": "Created {date}",
+    "deleted": "This workspace was deleted on {date}.",
+    "openActivity": "Workspace activity",
+    "openOrders": "Plan orders",
+    "notFound": "Workspace not found.",
+    "plan": {
+      "title": "Plan",
+      "change": "Change plan / extend",
+      "current": "Plan",
+      "period": "Current period",
+      "state": "State",
+      "next": "Downgrade waiting",
+      "nextValue": "{plan} · {from} → {to}",
+      "overLimit": "Over the plan limits since {date}"
+    },
+    "usage": {
+      "title": "Usage",
+      "openInvitations": "including {count} open invitations"
+    },
+    "people": {
+      "title": "People",
+      "memberLocked": "Locked by the workspace",
+      "planLocked": "Over the plan",
+      "empty": "No staff yet."
+    },
+    "properties": {
+      "title": "Properties",
+      "rooms": "{count} rooms",
+      "planLocked": "Locked over the plan",
+      "deleted": "Deleted",
+      "empty": "No property yet."
+    },
+    "payments": {
+      "title": "Recent plan orders",
+      "all": "See all",
+      "empty": "No plan bought yet.",
+      "late": "Paid after cancel",
+      "status": {
+        "PENDING": "Awaiting payment",
+        "PAID": "Paid",
+        "CANCELLED": "Cancelled",
+        "EXPIRED": "Expired",
+        "FAILED": "Failed"
+      }
+    }
+  },
+  "planForm": {
+    "title": "Change plan / extend",
+    "lead": "To give a plan, extend a trial or make up days after an outage. No order and no charge; the change is logged.",
+    "plan": "Plan",
+    "kind": "Kind",
+    "kindTrial": "Trial",
+    "kindPaid": "Active (no charge)",
+    "end": "Ends at the end of",
+    "quick": {
+      "d7": "+7 days",
+      "d30": "+30 days",
+      "d365": "+1 year"
+    },
+    "samePlan": "Same plan: the current period runs until this day.",
+    "otherPlan": "Another plan: a new period from now.",
+    "nextMoves": "The downgrade waiting moves with the new end.",
+    "note": "Reason",
+    "notePlaceholder": "E.g. customer asked for 7 more trial days; 3 days made up for the outage on 20/10",
+    "confirm": "Save plan",
+    "done": "Plan updated"
+  }
+}
