@@ -433,8 +433,12 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
   `?callbackUrl=` nếu là đường dẫn trong site (`src/lib/auth/after-login.ts`).
 - Trang quản lý: chữ ở `messages/dash/{vi,en}/<khu>.json` (nhóm `dash.<khu>`, gộp trong
   `src/i18n/request.ts`); nhãn dùng chung (vai trò, trạng thái, nguồn, tiền, ngày) qua
-  `useDashLabels()` (`src/lib/i18n/dash.ts`). Nút VI | EN: `LanguageButton` (thanh bên, thanh trên của
-  workspace, /workspaces), ghi cookie `NEXT_LOCALE`.
+  `useDashLabels()` (`src/lib/i18n/dash.ts`). Nút VI | EN: trong header của trang ngoài (LocaleToggle) và
+  trong menu tài khoản ở chân thanh bên (`useLanguageSwitch`), ghi cookie `NEXT_LOCALE`.
+- Khung: trang ngoài, /workspaces, /profile dùng header trang chủ (`MarketingHeader`); mọi trang trong một
+  workspace (danh sách cơ sở, thành viên, gói, cài đặt và các trang của cơ sở) dùng chung một khung có thanh
+  bên (`src/app/(dashboard)/workspace/[slug]/layout.tsx`, `WorkspaceShell`). Trên trang của workspace, thanh
+  bên giữ menu của cơ sở mở gần nhất.
 - Nội dung khách sạn tự nhập có bản tiếng Anh: cột `translations` `{ en: {...} }` (Property, RoomType,
   ExtraService, Policy, WebsiteSettings) và `config.en` của khối website; đọc qua `localized` /
   `localizeRow` / `blockText` (`src/lib/i18n/content.ts`), lưu qua `translationsInput` /

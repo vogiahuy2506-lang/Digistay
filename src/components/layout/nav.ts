@@ -18,6 +18,7 @@ export type NavKey =
   | 'policies'
   | 'website'
   | 'members'
+  | 'billing'
   | 'settings'
 
 /** The sidebar's sections, in order; 'main' has no heading (dash.common.nav.groups.<group>). */
@@ -74,6 +75,7 @@ export function primaryNav(slug: string, propertyId?: string): NavItem[] {
 export function workspaceNav(slug: string): NavItem[] {
   return [
     { key: 'members', href: routes.members(slug), roles: managers, group: 'workspace' },
+    { key: 'billing', href: routes.billing(slug), roles: ['ADMIN'], group: 'workspace' },
     { key: 'settings', href: routes.settings(slug), roles: ['ADMIN'], group: 'workspace' },
   ]
 }

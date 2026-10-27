@@ -7,9 +7,10 @@ import { useTranslations } from 'next-intl'
 import { Alert, AlertDescription, Button, Input, Loading } from '@/components/ui'
 import { useWorkspace } from '@/lib/hooks/use-workspace'
 import { useWorkspaceRole } from '@/components/layout/workspace-context'
+import { TitleBlock } from '@/components/layout'
 import { cn } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
-import { ArrowRight, Building2, Plus, Search, SlidersHorizontal } from 'lucide-react'
+import { ArrowRight, Building2, Plus, Search } from 'lucide-react'
 import { apiError } from '@/lib/i18n/api-errors'
 import { addressLocality } from '@/lib/vn-admin/address'
 import { RecentlyDeleted } from '@/components/deletion/recently-deleted'
@@ -94,52 +95,8 @@ export default function WorkspaceDashboardPage() {
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
-        <div className="max-w-xl">
-          <h1 className="font-serif text-[30px] leading-[1.15] tracking-[-0.02em] text-fg sm:text-[38px]">
-            {t('title')}
-          </h1>
-          <p className="mt-2 text-small text-muted sm:text-body">{t('lead')}</p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
-          {/* Members and shared details live in settings; the members list is
-              one page of its own next to it. The plan is for owners and admins. */}
-          {role === 'ADMIN' && (
-            <Link
-              href={routes.billing(slug)}
-              className={cn(
-                'inline-flex items-center gap-1.5 rounded-ctl border border-ink h-9 sm:h-8 px-3',
-                'text-small font-medium text-fg hover:bg-panel transition-colors duration-160',
-                'focus:outline-none focus-visible:ring-2 focus-visible:ring-acc'
-              )}
-            >
-              {tb('nav')}
-            </Link>
-          )}
-          <Link
-            href={routes.members(slug)}
-            className={cn(
-              'inline-flex items-center gap-1.5 rounded-ctl border border-ink h-9 sm:h-8 px-3',
-              'text-small font-medium text-fg hover:bg-panel transition-colors duration-160',
-              'focus:outline-none focus-visible:ring-2 focus-visible:ring-acc'
-            )}
-          >
-            {t('members')}
-          </Link>
-          <Link
-            href={routes.settings(slug)}
-            aria-label={t('customizeLabel')}
-            className={cn(
-              'inline-flex items-center gap-1.5 rounded-ctl border border-ink h-9 sm:h-8 px-3',
-              'text-small font-medium text-fg hover:bg-panel transition-colors duration-160',
-              'focus:outline-none focus-visible:ring-2 focus-visible:ring-acc'
-            )}
-          >
-            <SlidersHorizontal className="w-4 h-4" aria-hidden="true" />
-            {t('customize')}
-          </Link>
-        </div>
-      </div>
+      {/* Members, the plan and settings are in the sidebar (the shared frame, ../layout.tsx). */}
+      <TitleBlock title={t('title')} lead={t('lead')} />
 
       {error ? (
         <Alert variant="destructive" className="mt-6">

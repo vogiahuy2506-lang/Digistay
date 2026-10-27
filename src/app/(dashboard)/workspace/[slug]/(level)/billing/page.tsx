@@ -4,6 +4,7 @@ import * as React from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { Alert, AlertDescription, Badge, Button, Loading } from '@/components/ui'
+import { TitleBlock } from '@/components/layout'
 import { useWorkspace } from '@/lib/hooks/use-workspace'
 import { formatVnd } from '@/lib/bookings/display'
 import { apiError } from '@/lib/i18n/api-errors'
@@ -89,10 +90,7 @@ export default function BillingPage() {
 
   return (
     <>
-      <div className="max-w-2xl">
-        <h1 className="font-serif text-[30px] leading-[1.15] tracking-[-0.02em] text-fg sm:text-[38px]">{t('title')}</h1>
-        <p className="mt-2 text-small text-muted sm:text-body">{t('lead', { workspace: data.workspace.name })}</p>
-      </div>
+      <TitleBlock title={t('title')} lead={t('lead', { workspace: data.workspace.name })} />
 
       {/* The plan in force */}
       <section className="mt-8 grid gap-6 rounded-box border border-line bg-panel p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-10">

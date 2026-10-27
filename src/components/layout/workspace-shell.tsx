@@ -17,6 +17,7 @@ import {
   Landmark,
   LayoutDashboard,
   Menu,
+  Package,
   Receipt,
   ScrollText,
   Settings,
@@ -52,6 +53,7 @@ const NAV_ICONS: Record<NavKey, LucideIcon> = {
   policies: ScrollText,
   website: Globe,
   members: UsersRound,
+  billing: Package,
   settings: Settings,
 }
 import { useDocumentTitle } from './document-title'
@@ -75,10 +77,39 @@ interface WorkspaceShellProps {
  * Dashboard frame (redesign 4a): a 240 px sidebar from `lg` up; below that a
  * top bar whose menu button opens the same sidebar as a drawer.
  */
+/**
+ * Whose menu the sidebar shows: the property in the URL; on the workspace's
+ * own pages (members, plan, settings) the one opened last, so going there
+ * from a property keeps its menu (kept in this browser for a reload); none
+ * on the property list and the new-property form.
+ */
+function useSidebarPropertyId(slug: string, pathname: string): string | undefined {
+  const routeId = useParams<{ id?: string }>().id
+  const key = `ds-last-property:${slug}`
+  const [last, setLast] = React.useState<string | undefined>(routeId)
+  React.useEffect(() => {
+    try {
+      if (routeId) {
+        setLast(routeId)
+        localStorage.setItem(key, routeId)
+      } else if (!last) {
+        setLast(localStorage.getItem(key) ?? undefined)
+      }
+    } catch {}
+  }, [routeId, key, last])
+  if (routeId) return routeId
+  const home = routes.workspace(slug)
+  if (pathname === home || pathname.startsWith(`${home}/properties`)) return undefined
+  return last
+}
+
 export function WorkspaceShell(props: WorkspaceShellProps) {
   const t = useTranslations('dash.common.nav')
   const pathname = usePathname()
-  const { property } = useProperty()
+  const sidebarPropertyId = useSidebarPropertyId(props.workspace.slug, pathname)
+  const { property, error: propertyError } = useProperty(sidebarPropertyId)
+  // A remembered property that is gone (deleted, no access): the workspace's menu.
+  const propertyId = sidebarPropertyId && !propertyError ? sidebarPropertyId : undefined
   const [drawerOpen, setDrawerOpen] = React.useState(false)
   const drawerRef = React.useRef<HTMLDivElement>(null)
   const closeDrawer = React.useCallback(() => setDrawerOpen(false), [])
@@ -90,7 +121,7 @@ export function WorkspaceShell(props: WorkspaceShellProps) {
   return (
     <div className="lg:flex min-h-screen">
       <aside className="hidden lg:flex flex-col w-60 shrink-0 h-screen sticky top-0 border-r border-line bg-page [&:has([data-bell-open])]:z-[45]">
-        <SidebarContent {...props} pathname={pathname} property={property} />
+        <SidebarContent {...props} pathname={pathname} property={property} propertyId={propertyId} />
       </aside>
 
       <header className="lg:hidden sticky top-0 z-30 [&:has([data-bell-open])]:z-[45] flex items-center gap-2 h-14 px-2 border-b border-line bg-page/95 backdrop-blur">
@@ -128,7 +159,7 @@ export function WorkspaceShell(props: WorkspaceShellProps) {
             >
               <X className="w-4 h-4" aria-hidden="true" />
             </button>
-            <SidebarContent {...props} pathname={pathname} property={property} />
+            <SidebarContent {...props} pathname={pathname} property={property} propertyId={propertyId} />
           </div>
         </div>
       )}
@@ -157,13 +188,13 @@ function SidebarContent({
   userImage,
   pathname,
   property,
-}: WorkspaceShellProps & { pathname: string; property: PropertyContext | null }) {
+  propertyId,
+}: WorkspaceShellProps & { pathname: string; property: PropertyContext | null; propertyId: string | undefined }) {
   const t = useTranslations('dash.common.nav')
   const labels = useDashLabels()
   const router = useRouter()
   const params = useParams<{ slug: string; id?: string }>()
   const slug = params.slug ?? workspace.slug
-  const propertyId = params.id
 
   const allowed = (item: NavItem) => item.roles.includes(workspace.role)
   const main = primaryNav(slug, propertyId).filter(allowed)
@@ -174,7 +205,8 @@ function SidebarContent({
   // entry, not only the role's: a page opened by its URL still says what it is.
   const every = [...primaryNav(slug, propertyId), ...workspaceNav(slug)]
   const page = every.find((item) => item.href === activeHref(pathname, every))
-  useDocumentTitle([page && t(page.key), propertyId ? property?.name : workspace.name])
+  // A property's page names the property; the workspace's own pages the workspace.
+  useDocumentTitle([page && t(page.key), params.id ? property?.name : workspace.name])
 
   // The menu scrolls when the window is short: a fade over its last visible
   // items says there is more below, above the account block.

@@ -1,7 +1,6 @@
 'use client'
 
 import * as React from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { TitleBlock } from '@/components/layout'
@@ -199,11 +198,11 @@ export default function WorkspaceSettingsPage() {
     return <Loading className="py-24" />
   }
 
-  // The site header's frame (layout.tsx), like the other workspace pages: the
-  // tabs down the left on wide screens, the chosen tab's cards on the right.
+  // Inside the sidebar frame (../layout.tsx): the tabs in a row above the cards,
+  // like the property page's tabs (a second column of links beside the sidebar was one too many).
   const tabClass = (tab: string) =>
     cn(
-      'flex shrink-0 items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition lg:w-full lg:px-3',
+      'flex shrink-0 items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition',
       activeTab === tab ? 'bg-panel text-acc shadow-sm' : 'text-muted hover:text-fg'
     )
   return (
@@ -211,19 +210,6 @@ export default function WorkspaceSettingsPage() {
       <TitleBlock
         title={t('settings.title')}
         lead={t('settings.description', { name: workspace.name })}
-        actions={
-          <Link
-            href={routes.members(workspace.slug)}
-            className={cn(
-              'inline-flex items-center gap-1.5 rounded-ctl border border-ink h-9 sm:h-8 px-3',
-              'text-small font-medium text-fg hover:bg-panel transition-colors duration-160',
-              'focus:outline-none focus-visible:ring-2 focus-visible:ring-acc'
-            )}
-          >
-            <Users className="w-4 h-4" aria-hidden="true" />
-            {tc('nav.members')}
-          </Link>
-        }
       />
 
       {/* Success/Error Messages */}
@@ -238,9 +224,9 @@ export default function WorkspaceSettingsPage() {
         </div>
       )}
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-10">
-      {/* Tabs: a row on phones, a column beside the cards from lg */}
-      <div className="flex h-fit w-fit max-w-full gap-2 overflow-x-auto rounded-lg bg-fg/5 p-1 lg:w-full lg:flex-col lg:gap-1">
+      <div className="mt-6 space-y-6">
+      {/* Tabs */}
+      <div className="flex w-fit max-w-full gap-1 overflow-x-auto rounded-lg bg-fg/5 p-1">
         <button type="button" aria-pressed={activeTab === 'general'} onClick={() => setActiveTab('general')} className={tabClass('general')}>
           <Settings className="w-4 h-4" aria-hidden="true" />
           {t('settings.tabs.general')}

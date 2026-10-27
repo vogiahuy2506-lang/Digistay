@@ -27,7 +27,8 @@
       "property": "Khách sạn",
       "finance": "Tài chính",
       "workspace": "Workspace"
-    }
+    },
+    "billing": "Gói & thanh toán"
   },
   "shell": {
     "toDark": "Chuyển sang giao diện tối",

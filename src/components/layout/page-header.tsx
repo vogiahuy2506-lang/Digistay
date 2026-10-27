@@ -41,19 +41,18 @@ interface TitleBlockProps {
 }
 
 /**
- * The heading of the workspace level pages: a serif title, a plain lead line
- * and the actions on the right — the shape /workspaces uses.
+ * The heading of the workspace's own pages (properties, members, plan,
+ * settings): the property pages' heading (Header), as they share the frame;
+ * `lead` under the title, actions on the right.
  */
 export function TitleBlock({ title, lead, actions }: TitleBlockProps) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
-      <div className="max-w-xl">
-        <h1 className="font-serif text-[30px] leading-[1.15] tracking-[-0.02em] text-fg sm:text-[38px]">
-          {title}
-        </h1>
-        {lead && <p className="mt-2 text-small text-muted sm:text-body">{lead}</p>}
+    <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+      <div className="min-w-0 flex-1">
+        <h1 className="text-[22px] leading-8 font-semibold tracking-tight text-fg">{title}</h1>
+        {lead && <p className="mt-1 text-small text-muted">{lead}</p>}
       </div>
-      {actions && <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">{actions}</div>}
+      {actions && <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">{actions}</div>}
     </div>
   )
 }

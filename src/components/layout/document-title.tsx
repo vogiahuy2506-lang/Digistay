@@ -1,8 +1,6 @@
 'use client'
 
 import * as React from 'react'
-import { usePathname } from 'next/navigation'
-import { useTranslations } from 'next-intl'
 
 /**
  * The tab's title while mounted: the parts, then "Digistay" ("Đặt phòng ·
@@ -29,20 +27,4 @@ export function useDocumentTitle(parts: (string | null | undefined | false)[]) {
       if (document.title === title) document.title = previous
     }
   }, [title])
-}
-
-/** The workspace level's pages (no sidebar there): "Thành viên · <workspace> · Digistay". */
-export function WorkspaceLevelTitle({ workspaceName }: { workspaceName: string }) {
-  const t = useTranslations('dash.common.nav')
-  const tBilling = useTranslations('dash.billing')
-  const pathname = usePathname() ?? ''
-  const page = /\/members\/?$/.test(pathname)
-    ? t('members')
-    : /\/settings\/?$/.test(pathname)
-      ? t('settings')
-      : /\/billing\/?$/.test(pathname)
-        ? tBilling('nav')
-        : t('properties')
-  useDocumentTitle([page, workspaceName])
-  return null
 }

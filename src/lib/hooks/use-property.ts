@@ -16,16 +16,17 @@ export interface PropertyContext {
 }
 
 /**
- * Resolve the current property from the [id] route param.
- * Fetches /api/properties/[id] for full context.
+ * Resolve the current property from the [id] route param (or `fallbackId`
+ * on a page without one: the sidebar on the workspace's own pages shows the
+ * property opened last). Fetches /api/properties/[id] for full context.
  */
-export function useProperty(): {
+export function useProperty(fallbackId?: string): {
   property: PropertyContext | null
   loading: boolean
   error: string | null
 } {
   const params = useParams<{ id?: string }>()
-  const id = params?.id
+  const id = params?.id ?? fallbackId
   const [property, setProperty] = useState<PropertyContext | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

@@ -4,10 +4,13 @@ import { WorkspaceRoleProvider } from '@/components/layout/workspace-role-provid
 import { PlanBanner } from '@/components/layout/plan-banner'
 
 /**
- * Inside one property the sidebar earns its place: the menu lists bookings,
- * the calendar, room types, invoices and the rest.
+ * Every page inside a workspace wears the same frame: the sidebar (the
+ * property's menu, then the workspace's: members, plan, settings), so going
+ * from a property's bookings to the members never changes the frame. One
+ * layout for the workspace level and the property pages, so the sidebar is
+ * not drawn again when moving between them.
  */
-export default async function WorkspacePropertyLayout({
+export default async function WorkspaceLayout({
   children,
   params,
 }: {

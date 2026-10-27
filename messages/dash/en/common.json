@@ -27,7 +27,8 @@
       "property": "Hotel",
       "finance": "Finance",
       "workspace": "Workspace"
-    }
+    },
+    "billing": "Plan & billing"
   },
   "shell": {
     "toDark": "Switch to the dark theme",
