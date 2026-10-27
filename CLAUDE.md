@@ -447,6 +447,12 @@ kịch bản ở `e2e/specs/`; dịch vụ bên ngoài phải đi qua `e2e/fakes
   (`src/lib/billing`: PayOS của Digistay, quy tắc nâng/hạ/gia hạn trong `period.ts` `planChange`,
   hoá đơn gói qua Mắt Bão của Digistay trong `einvoice.ts`; RUNBOOK "Bán gói"). Form liên hệ gửi email cho `CONTACT_EMAILS` (không có thì
   `ALERT_EMAILS`) qua outbox; không có ai nhận thì báo chưa gửi được, không giả vờ đã nhận.
+- Giới hạn gói: route chặn bằng `planResponse` / `planResponseForProperty` (`src/lib/billing/guard.ts`),
+  trả `code` (`PLAN_LIMIT`, `WORKSPACE_LOCKED`, `PROPERTY_PLAN_LOCKED`) và với `PLAN_LIMIT` thêm `limit`
+  (đã dùng, giới hạn, gói gợi ý). `PlanLimitPrompt` trong layout workspace bắt mọi phản hồi đó và mở
+  hộp gợi ý nâng cấp, nên route mới chỉ cần trả đúng `code`, trang không phải tự xử lý. Chủ workspace
+  được nhắc trong chuông (và email) khi gần hết hạn, khi vượt gói và khi dùng tới 80% / 100% giới hạn
+  (`src/lib/billing/usage-alerts.ts`); xem mọi thông báo ở `/workspace/<slug>/notifications`.
 - Đăng nhập / đăng ký / quên mật khẩu / lời mời / 404 / trang lỗi theo Claude Design "Dang Nhap",
   "Dang Ky", "Quen Mat Khau", "Loi Moi", "Loi". Lỗi từ `/api/auth` vẫn là câu tiếng Việt cố định:
   trang dịch bằng `AUTH_ERROR_KEYS` (`src/lib/auth/error-messages.ts`); thêm câu lỗi mới ở route thì

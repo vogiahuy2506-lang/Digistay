@@ -16,6 +16,7 @@
 import type { Prisma, PrismaClient } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { workspacePlan } from './subscription'
+import { planToFit, type PlanLimitFacts } from './plan-fit'
 
 type Db = PrismaClient | Prisma.TransactionClient
 
@@ -62,18 +63,32 @@ const MESSAGES: Record<LimitKind, (limit: number) => string> = {
 
 export const NO_INVOICES_IN_PLAN = 'Gói hiện tại không gồm hoá đơn điện tử. Nâng cấp gói trong Gói & thanh toán để phát hành hoá đơn.'
 
+/** A change the plan refuses: the message for the page, and the facts behind it (plan-fit.ts). */
+export interface PlanLimitRefusal {
+  message: string
+  facts: PlanLimitFacts
+}
+
 /**
- * The message when adding `adding` more of `kind` would pass the plan's
- * limit, or null when it fits. `adding` may be 0 or negative (a change that
- * does not grow the count always fits).
+ * Why adding `adding` more of `kind` would pass the plan's limit, with what
+ * is used, the limit and the plan that would fit; null when it fits.
+ * `adding` may be 0 or negative (a change that does not grow the count
+ * always fits).
  */
-export async function planLimitProblem(workspaceId: string, kind: LimitKind, adding: number, db: Db = prisma): Promise<string | null> {
+export async function planLimitRefusal(workspaceId: string, kind: LimitKind, adding: number, db: Db = prisma): Promise<PlanLimitRefusal | null> {
   if (adding <= 0) return null
-  const [{ plan }, usage] = await Promise.all([workspacePlan(workspaceId, db), workspaceUsage(workspaceId, db)])
+  const [{ plan, planId }, usage] = await Promise.all([workspacePlan(workspaceId, db), workspaceUsage(workspaceId, db)])
   const limit = plan[kind]
   if (usage[kind] + adding <= limit) return null
-  if (kind === 'invoices' && limit === 0) return NO_INVOICES_IN_PLAN
-  return MESSAGES[kind](limit)
+  return {
+    message: kind === 'invoices' && limit === 0 ? NO_INVOICES_IN_PLAN : MESSAGES[kind](limit),
+    facts: { kind, used: usage[kind], limit, adding, plan: planId, suggested: planToFit(usage, kind, adding) },
+  }
+}
+
+/** The message of planLimitRefusal alone, or null when the change fits. */
+export async function planLimitProblem(workspaceId: string, kind: LimitKind, adding: number, db: Db = prisma): Promise<string | null> {
+  return (await planLimitRefusal(workspaceId, kind, adding, db))?.message ?? null
 }
 
 /**

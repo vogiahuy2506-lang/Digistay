@@ -228,7 +228,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     if (error instanceof EinvoiceError) {
-      return NextResponse.json({ success: false, error: error.message }, { status: error.status })
+      return NextResponse.json({ success: false, error: error.message, ...error.extra }, { status: error.status })
     }
     console.error('Create invoice error:', error)
     return NextResponse.json({ success: false, error: 'Lỗi khi tạo hóa đơn' }, { status: 500 })

@@ -2,7 +2,8 @@
  * The plan reminders (/api/internal/subscription-jobs, every 10 minutes with
  * the other jobs): 30 days (yearly plans), 7 days and 1 day before the end,
  * when it ends, and when the workspace locks — each once per period
- * (Subscription.reminders, cleared when a payment starts a new period).
+ * (Subscription.reminders, cleared when a payment starts a new period), by
+ * email and in the owner's bell (notifyPlanOwner).
  * First, scheduled downgrades whose day has come start (reading the plan
  * does it too: subscription.ts startScheduledPlan).
  */
@@ -12,6 +13,7 @@ import { sendAfterResponse } from '@/lib/email/outbox'
 import { GRACE_DAYS, dueReminder } from './period'
 import { queueSubscriptionReminder } from './emails'
 import { startScheduledPlan } from './subscription'
+import { notifyPlanOwner } from '@/lib/notifications'
 
 export async function runSubscriptionReminders(now = new Date()) {
   // Subscriptions are not hidden with a deleted workspace (src/lib/db/soft-delete.ts): skip those here.
@@ -35,6 +37,13 @@ export async function runSubscriptionReminders(now = new Date()) {
         data: { reminders },
       })
       if (claimed.count === 0) return []
+      await notifyPlanOwner(tx, sub.workspaceId, 'plan_reminder', {
+        kind,
+        trial: sub.trial,
+        plan: sub.plan,
+        periodEnd: sub.periodEnd.toISOString(),
+        locksAt: new Date(sub.periodEnd.getTime() + GRACE_DAYS * 86_400_000).toISOString(),
+      })
       return queueSubscriptionReminder(sub.workspaceId, kind, sub, tx)
     })
     if (ids.length) {

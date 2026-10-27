@@ -5,7 +5,11 @@
  *   is read-only until it buys a plan. Reading, the plan page, payments
  *   from guests and webhooks keep working; changes are refused with 402.
  * - over the limit: adding a property, rooms, a staff account or an
- *   e-invoice beyond the plan is refused with 403.
+ *   e-invoice beyond the plan is refused with 403. Besides the message the
+ *   body carries `limit` (PlanLimitFacts: what is used, the limit, the plan
+ *   that would fit), for the dashboard's upgrade prompt
+ *   (src/components/billing/plan-limit-prompt.tsx), which also answers the
+ *   two 402 codes.
  * - a property locked for being over the plan (src/lib/billing/overage.ts):
  *   the same read-only lock, for that property only (402). Its site stays
  *   up but takes no online bookings; a locked room type takes no new
@@ -13,7 +17,7 @@
  */
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { planLimitProblem, type LimitKind } from './limits'
+import { planLimitRefusal, type LimitKind } from './limits'
 import { workspacePlan } from './subscription'
 
 export const WORKSPACE_LOCKED = 'Gói của workspace đã hết hạn quá 7 ngày nên đang bị khoá (chỉ xem). Gia hạn trong Gói & thanh toán để tiếp tục.'
@@ -73,9 +77,9 @@ export async function planResponseForProperty(propertyId: string, kind: LimitKin
 }
 
 async function limitResponse(workspaceId: string, kind: LimitKind, adding: number): Promise<NextResponse | null> {
-  const problem = await planLimitProblem(workspaceId, kind, adding)
-  if (!problem) return null
-  return NextResponse.json({ success: false, error: problem, code: 'PLAN_LIMIT' }, { status: 403 })
+  const refused = await planLimitRefusal(workspaceId, kind, adding)
+  if (!refused) return null
+  return NextResponse.json({ success: false, error: refused.message, code: 'PLAN_LIMIT', limit: refused.facts }, { status: 403 })
 }
 
 /**

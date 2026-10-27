@@ -45,7 +45,7 @@ export async function POST(_request: NextRequest, props: RouteParams) {
     return NextResponse.json({ success: true, data: published, message: 'Phát hành hóa đơn thành công' })
   } catch (error) {
     if (error instanceof EinvoiceError) {
-      return NextResponse.json({ success: false, error: error.message }, { status: error.status })
+      return NextResponse.json({ success: false, error: error.message, ...error.extra }, { status: error.status })
     }
     console.error('Publish invoice error:', error)
     return NextResponse.json({ success: false, error: 'Lỗi khi phát hành hóa đơn' }, { status: 500 })

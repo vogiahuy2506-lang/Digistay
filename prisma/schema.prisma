@@ -208,6 +208,9 @@ model Subscription {
   nextPaymentId  String?
   /// When the workspace went over its plan's limits (src/lib/billing/overage.ts): 7 days later the excess is locked
   overLimitSince DateTime?
+  /// Nearing the plan's limits, what the owner was told already (src/lib/billing/usage-alerts.ts):
+  /// {"staff": 80, "rooms": 100, "invoices": {"month": "2026-10", "level": 80}}
+  usageAlerts    Json?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 

@@ -210,5 +210,59 @@
     "roomType": "Hạng phòng {name} ({property}, {rooms} phòng)",
     "member": "Tài khoản {name}",
     "howToUnlock": "Nâng cấp gói, hoặc xoá/tắt bớt phần khác: phần bị khoá tự mở lại khi vừa giới hạn."
+  },
+  "limitPrompt": {
+    "title": {
+      "properties": "Đã dùng hết số cơ sở của gói {plan}",
+      "rooms": "Đã dùng hết số phòng của gói {plan}",
+      "staff": "Đã dùng hết tài khoản nhân viên của gói {plan}",
+      "invoices": "Đã dùng hết hoá đơn điện tử tháng này của gói {plan}"
+    },
+    "notEnough": {
+      "properties": "Gói {plan} không còn đủ chỗ cho cơ sở mới",
+      "rooms": "Gói {plan} không còn đủ phòng cho thao tác này",
+      "staff": "Gói {plan} không còn đủ tài khoản nhân viên",
+      "invoices": "Gói {plan} không còn đủ hoá đơn điện tử tháng này"
+    },
+    "noInvoicesTitle": "Gói {plan} không gồm hoá đơn điện tử",
+    "usage": {
+      "properties": "Gói {plan} cho phép tối đa {limit} cơ sở, workspace đang dùng {used}.",
+      "rooms": "Gói {plan} cho phép tối đa {limit} phòng, workspace đang dùng {used}.",
+      "staff": "Gói {plan} cho phép tối đa {limit} tài khoản nhân viên, workspace đang dùng {used} (tính cả lời mời chưa nhận).",
+      "invoices": "Gói {plan} gồm {limit} hoá đơn điện tử mỗi tháng, tháng này đã phát hành {used}."
+    },
+    "adding": {
+      "properties": "Thao tác này thêm {count} cơ sở.",
+      "rooms": "Thao tác này thêm {count} phòng.",
+      "staff": "Thao tác này thêm {count} tài khoản nhân viên.",
+      "invoices": "Thao tác này phát hành thêm {count} hoá đơn."
+    },
+    "suggested": "Gói phù hợp",
+    "offer": {
+      "properties": "Gói {plan}: tối đa {limit} cơ sở",
+      "rooms": "Gói {plan}: tối đa {limit} phòng",
+      "staff": "Gói {plan}: tối đa {limit} tài khoản nhân viên",
+      "invoices": "Gói {plan}: {limit} hoá đơn điện tử mỗi tháng"
+    },
+    "price": "{price}/tháng",
+    "yearly": "Hoặc {price}/năm, tặng {months} tháng",
+    "noPlan": "Gói lớn nhất cũng chưa đủ. Liên hệ Digistay để có gói riêng, hoặc giảm bớt phần đang dùng.",
+    "contact": "Liên hệ Digistay",
+    "upgrade": "Nâng cấp gói",
+    "later": "Để sau",
+    "close": "Đóng",
+    "askOwner": "Nhờ chủ workspace nâng cấp gói.",
+    "fallbackTitle": "Đã chạm giới hạn của gói",
+    "locked": {
+      "title": "Workspace đang chỉ xem vì gói đã hết hạn",
+      "text": "Dữ liệu vẫn còn nguyên và xem được, nhưng chưa thay đổi được. Gia hạn để làm việc tiếp ngay.",
+      "action": "Gia hạn",
+      "askOwner": "Nhờ chủ workspace gia hạn gói."
+    },
+    "propertyLocked": {
+      "title": "Cơ sở này đang bị khoá vì workspace dùng vượt gói",
+      "text": "Dữ liệu vẫn còn nguyên và xem được. Nâng cấp gói hoặc giảm bớt cơ sở để mở lại.",
+      "action": "Xem gói"
+    }
   }
 }

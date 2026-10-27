@@ -176,7 +176,7 @@ describe('a deleted property', () => {
     await prisma.notification.create({ data: { userId: owner.id, workspaceId: workspace.id, propertyId: property.id, type: 'booking_new', data: {} } })
     await prisma.notification.create({ data: { userId: owner.id, workspaceId: workspace.id, type: 'booking_new', data: {} } })
     signInAs(owner)
-    const bell = await (await notifications()).json()
+    const bell = await (await notifications(new NextRequest('http://localhost/api/notifications'))).json()
     expect(bell.data.items).toHaveLength(1)
     expect(bell.data.unread).toBe(1)
   })

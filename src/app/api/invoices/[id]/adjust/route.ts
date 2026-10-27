@@ -39,7 +39,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
     return NextResponse.json({ success: true, data: draft, message: 'Đã tạo hoá đơn điều chỉnh (nháp)' })
   } catch (error) {
     if (error instanceof EinvoiceError) {
-      return NextResponse.json({ success: false, error: error.message }, { status: error.status })
+      return NextResponse.json({ success: false, error: error.message, ...error.extra }, { status: error.status })
     }
     console.error('Adjust invoice error:', error)
     return NextResponse.json({ success: false, error: 'Lỗi khi lập hoá đơn điều chỉnh' }, { status: 500 })

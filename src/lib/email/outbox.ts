@@ -53,6 +53,7 @@ type Kind =
   | 'subscription_switched'
   | 'plan_overage_grace'
   | 'plan_overage_locked'
+  | 'plan_usage'
 interface Message {
   to: EmailRecipient
   subject: string

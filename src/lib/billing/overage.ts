@@ -29,6 +29,7 @@ import { invalidatePublicSite } from '@/lib/public-site/site'
 import { ensureSubscription, workspacePlan } from './subscription'
 import { workspaceUsage } from './limits'
 import { queueOverageGrace, queueOverageLocked, type LockedForEmail } from './overage-emails'
+import { notifyPlanOwner } from '@/lib/notifications'
 import {
   countUsage,
   isEmptyPlan,
@@ -204,7 +205,13 @@ export async function reconcileOverage(workspaceId: string, now = new Date()): P
         holdings = withLocks(holdings, locks, now)
         outcome.locked = locks
         touchSites(locks)
-        emailIds.push(await queueOverageLocked(workspaceId, { plan: current.planId, locked: describeLocks(loaded, locks) }, tx))
+        const locked = describeLocks(loaded, locks)
+        emailIds.push(await queueOverageLocked(workspaceId, { plan: current.planId, locked }, tx))
+        await notifyPlanOwner(tx, workspaceId, 'plan_overage', {
+          state: 'locked',
+          plan: current.planId,
+          locked: { properties: locked.properties.length, roomTypes: locked.roomTypes.length, members: locked.members.length },
+        })
       }
     }
 
@@ -222,6 +229,7 @@ export async function reconcileOverage(workspaceId: string, now = new Date()): P
       await tx.subscription.update({ where: { workspaceId }, data: { overLimitSince: now } })
       outcome.started = true
       emailIds.push(await queueOverageGrace(workspaceId, { plan: current.planId, over: overBy(usage, limits), locksAt: overageLocksAt(now) }, tx))
+      await notifyPlanOwner(tx, workspaceId, 'plan_overage', { state: 'grace', plan: current.planId, over, locksAt: overageLocksAt(now).toISOString() })
     } else if (!over.length && since) {
       await tx.subscription.update({ where: { workspaceId }, data: { overLimitSince: null } })
       outcome.cleared = true

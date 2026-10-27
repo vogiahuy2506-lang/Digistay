@@ -158,6 +158,8 @@ describe('the grace', () => {
     expect(sent[0].to).toBe(w.owner.email)
     expect(sent[0].text).toContain('3/1 cơ sở')
     expect(sent[0].text).toContain('5/3 tài khoản nhân viên')
+    const bell = await prisma.notification.findMany({ where: { userId: w.owner.id, type: 'plan_overage' } })
+    expect(bell).toEqual([expect.objectContaining({ data: expect.objectContaining({ state: 'grace', plan: 'starter', over: ['properties', 'rooms', 'staff'] }) })])
 
     for (const later of [1, 3, 6.9]) {
       const again = await reconcileOverage(w.workspace.id, new Date(now.getTime() + later * DAY))
@@ -214,6 +216,8 @@ describe('after 7 days', () => {
     expect(mail.text).toContain('Third Hotel')
     expect(mail.text).toContain('Deluxe')
     expect(mail.text).toContain('late@example.com')
+    const bell = await prisma.notification.findFirstOrThrow({ where: { userId: w.owner.id, type: 'plan_overage' } })
+    expect(bell.data).toMatchObject({ state: 'locked', locked: { properties: 2, roomTypes: 1, members: 1 } })
 
     const view = await overageView(w.workspace.id)
     expect(view).toMatchObject({ since: null, locksAt: null, over: {} })
@@ -367,6 +371,7 @@ describe('the plan jobs', () => {
     expect(res.status).toBe(200)
     expect(res.body.data.reminders).toBeDefined()
     expect(res.body.data.overage).toMatchObject({ checked: 2, started: 1, failed: 0 })
+    expect(res.body.data.usage).toMatchObject({ checked: 2 })
     expect(await sinceOf(over.workspace.id)).not.toBeNull()
     expect(await sinceOf(fits.workspace.id)).toBeNull()
   })

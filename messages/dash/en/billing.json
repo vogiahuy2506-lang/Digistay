@@ -210,5 +210,59 @@
     "roomType": "Room type {name} ({property}, {rooms} rooms)",
     "member": "Account {name}",
     "howToUnlock": "Upgrade, or delete/turn off something else: locked items come back by themselves once they fit."
+  },
+  "limitPrompt": {
+    "title": {
+      "properties": "All properties of the {plan} plan are in use",
+      "rooms": "All rooms of the {plan} plan are in use",
+      "staff": "All staff accounts of the {plan} plan are in use",
+      "invoices": "This month’s e-invoices of the {plan} plan are used up"
+    },
+    "notEnough": {
+      "properties": "The {plan} plan has no room for another property",
+      "rooms": "The {plan} plan does not have enough rooms left for this",
+      "staff": "The {plan} plan does not have enough staff accounts left",
+      "invoices": "The {plan} plan does not have enough e-invoices left this month"
+    },
+    "noInvoicesTitle": "The {plan} plan has no e-invoices",
+    "usage": {
+      "properties": "The {plan} plan allows up to {limit, plural, one {# property} other {# properties}}; the workspace uses {used}.",
+      "rooms": "The {plan} plan allows up to {limit, plural, one {# room} other {# rooms}}; the workspace uses {used}.",
+      "staff": "The {plan} plan allows up to {limit, plural, one {# staff account} other {# staff accounts}}; the workspace uses {used} (open invitations included).",
+      "invoices": "The {plan} plan includes {limit, plural, one {# e-invoice} other {# e-invoices}} a month; {used} issued this month."
+    },
+    "adding": {
+      "properties": "This adds {count, plural, one {# property} other {# properties}}.",
+      "rooms": "This adds {count, plural, one {# room} other {# rooms}}.",
+      "staff": "This adds {count, plural, one {# staff account} other {# staff accounts}}.",
+      "invoices": "This issues {count, plural, one {# more invoice} other {# more invoices}}."
+    },
+    "suggested": "A plan that fits",
+    "offer": {
+      "properties": "{plan} plan: up to {limit, plural, one {# property} other {# properties}}",
+      "rooms": "{plan} plan: up to {limit, plural, one {# room} other {# rooms}}",
+      "staff": "{plan} plan: up to {limit, plural, one {# staff account} other {# staff accounts}}",
+      "invoices": "{plan} plan: {limit, plural, one {# e-invoice} other {# e-invoices}} a month"
+    },
+    "price": "{price}/month",
+    "yearly": "Or {price}/year, {months} months free",
+    "noPlan": "Even the biggest plan is not enough. Contact Digistay for a custom plan, or reduce what is in use.",
+    "contact": "Contact Digistay",
+    "upgrade": "Upgrade plan",
+    "later": "Not now",
+    "close": "Close",
+    "askOwner": "Ask the workspace owner to upgrade the plan.",
+    "fallbackTitle": "The plan’s limit is reached",
+    "locked": {
+      "title": "The workspace is read-only because the plan has ended",
+      "text": "All the data is kept and can be viewed, but not changed. Renew to carry on working right away.",
+      "action": "Renew",
+      "askOwner": "Ask the workspace owner to renew the plan."
+    },
+    "propertyLocked": {
+      "title": "This property is locked: the workspace is over its plan",
+      "text": "All its data is kept and can be viewed. Upgrade the plan or reduce the number of properties to unlock it.",
+      "action": "See plans"
+    }
   }
 }

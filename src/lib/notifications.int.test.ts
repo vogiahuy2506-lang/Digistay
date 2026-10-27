@@ -14,7 +14,9 @@ import { prisma } from '@/lib/db'
 import { createRoomType, createTenant, createUser, resetDatabase } from '@/test/integration/fixtures'
 import { createBooking } from '@/lib/bookings/create-booking'
 import { queueGuestDepositReceived } from '@/lib/payments/deposit-received'
-import { GET, POST } from '@/app/api/notifications/route'
+import { GET as listRoute, POST } from '@/app/api/notifications/route'
+
+const GET = (query = '') => listRoute(new NextRequest(`http://digistay.test/api/notifications${query}`))
 
 const signInAs = (user: { id: string; email: string }) =>
   vi.mocked(auth).mockResolvedValue({ user: { id: user.id, email: user.email } } as never)
@@ -118,6 +120,37 @@ describe('/api/notifications', () => {
     expect(await prisma.notification.count({ where: { userId: staff.ADMIN.id, readAt: null } })).toBe(2)
 
     expect((await mark({ ids: [] })).status).toBe(400)
+  })
+
+  it('pages through every notice, and the unread ones', async () => {
+    const owner = await createUser()
+    signInAs(owner)
+    const base = Date.now()
+    await prisma.notification.createMany({
+      data: Array.from({ length: 35 }, (_, i) => ({
+        userId: owner.id,
+        type: 'booking_new',
+        data: { bookingCode: `B${i}` },
+        createdAt: new Date(base - i * 60_000),
+        ...(i % 2 === 1 && { readAt: new Date() }),
+      })),
+    })
+    const first = (await (await GET('?limit=20')).json()).data
+    expect(first.items).toHaveLength(20)
+    expect(first.unread).toBe(18)
+    expect(first.items[0].data.bookingCode).toBe('B0')
+    const second = (await (await GET(`?limit=20&cursor=${first.nextCursor}`)).json()).data
+    expect(second.items.map((n: { data: { bookingCode: string } }) => n.data.bookingCode)).toEqual(Array.from({ length: 15 }, (_, i) => `B${i + 20}`))
+    expect(second.nextCursor).toBeNull()
+
+    const unread = (await (await GET('?unread=1&limit=50')).json()).data
+    expect(unread.items).toHaveLength(18)
+    expect(unread.items.every((n: { readAt: string | null }) => n.readAt === null)).toBe(true)
+
+    // The bell's request: the latest 30.
+    expect((await (await GET()).json()).data.items).toHaveLength(30)
+    expect((await GET('?cursor=nope')).status).toBe(400)
+    expect((await GET('?limit=500')).status).toBe(400)
   })
 
   it('needs a session', async () => {

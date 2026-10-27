@@ -31,7 +31,8 @@ import { vndToWords } from './amount-words'
 import { MatbaoClient, MatbaoError, type MatbaoEnvironment } from './matbao-client'
 import { isVatCode, splitGross, type VatCode } from './vat'
 import { WORKSPACE_LOCKED, isWorkspaceLocked } from '@/lib/billing/guard'
-import { planLimitProblem } from '@/lib/billing/limits'
+import { planLimitRefusal } from '@/lib/billing/limits'
+import type { PlanLimitFacts } from '@/lib/billing/plan-fit'
 
 /** Longer than a login plus a create call, both 30 s at most. */
 export const PUBLISH_LEASE_MS = 2 * 60 * 1000
@@ -40,7 +41,9 @@ const HANOI_TZ = 'Asia/Ho_Chi_Minh'
 export class EinvoiceError extends Error {
   constructor(
     message: string,
-    readonly status = 400
+    readonly status = 400,
+    /** Sent with the error: the plan's code and facts, so the dashboard offers an upgrade (plan-limit-prompt.tsx). */
+    readonly extra: { code?: string; limit?: PlanLimitFacts } = {}
   ) {
     super(message)
     this.name = 'EinvoiceError'
@@ -377,10 +380,16 @@ export async function publishInvoice(invoiceId: string, userId: string | null, n
   // The plan (src/lib/billing): no publishing while the workspace is locked, nor
   // past its e-invoices this month. The reason stays on the invoice for staff.
   const { workspaceId } = await prisma.property.findUniqueOrThrow({ where: { id: invoice.propertyId }, select: { workspaceId: true } })
-  const planProblem = (await isWorkspaceLocked(workspaceId)) ? WORKSPACE_LOCKED : await planLimitProblem(workspaceId, 'invoices', 1)
+  const locked = await isWorkspaceLocked(workspaceId)
+  const refusal = locked ? null : await planLimitRefusal(workspaceId, 'invoices', 1)
+  const planProblem = locked ? WORKSPACE_LOCKED : (refusal?.message ?? null)
   if (planProblem) {
     await prisma.invoice.updateMany({ where: { id: invoiceId, status: { in: ['DRAFT', 'PENDING'] } }, data: { publishError: planProblem } })
-    throw new EinvoiceError(planProblem, planProblem === WORKSPACE_LOCKED ? 402 : 403)
+    throw new EinvoiceError(
+      planProblem,
+      locked ? 402 : 403,
+      locked ? { code: 'WORKSPACE_LOCKED' } : { code: 'PLAN_LIMIT', limit: refusal?.facts },
+    )
   }
   const config = await verifiedConfig(invoice.propertyId)
   // A password the keys cannot read stops here, before the invoice is

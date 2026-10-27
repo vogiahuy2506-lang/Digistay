@@ -15,6 +15,8 @@
  *   (manual-deposit.ts) → payments_manage, to check the account.
  * - workspace_invite: not about a hotel of theirs; someone with a Digistay
  *   account was invited to a workspace (notifyInvitation).
+ * - plan_reminder, plan_overage, plan_usage: the workspace's Digistay plan,
+ *   for its owner (notifyPlanOwner), next to the plan emails.
  *
  * Stored as a type and data, so each reader sees it in their own language.
  */
@@ -24,7 +26,15 @@ import type { Permission } from '@/lib/auth/permissions'
 
 type Tx = Prisma.TransactionClient
 
-export const NOTIFICATION_TYPES = ['booking_new', 'deposit_paid', 'transfer_claimed', 'workspace_invite'] as const
+export const NOTIFICATION_TYPES = [
+  'booking_new',
+  'deposit_paid',
+  'transfer_claimed',
+  'workspace_invite',
+  'plan_reminder',
+  'plan_overage',
+  'plan_usage',
+] as const
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number]
 
 async function notify(
@@ -170,5 +180,28 @@ export async function notifyInvitation(tx: Tx, invitationId: string): Promise<nu
 export function clearInvitationNotices(tx: Tx, invitationId: string) {
   return tx.notification.deleteMany({
     where: { type: 'workspace_invite', data: { path: ['invitationId'], equals: invitationId } },
+  })
+}
+
+export type PlanNoticeType = Extract<NotificationType, 'plan_reminder' | 'plan_overage' | 'plan_usage'>
+
+/**
+ * A notice about the workspace's Digistay plan, for its owner (who gets the
+ * plan emails: src/lib/billing/emails.ts, overage-emails.ts): the reminders
+ * around the end of a period (plan_reminder: kind soon30 | soon7 | soon1 |
+ * ended | locked), being over the plan (plan_overage: state grace | locked)
+ * and nearing its limits (plan_usage: src/lib/billing/usage-alerts.ts). It
+ * leads to the plan page; the data says it in the reader's language.
+ */
+export async function notifyPlanOwner(tx: Tx, workspaceId: string, type: PlanNoticeType, data: Prisma.JsonObject) {
+  const workspace = await tx.workspace.findUniqueOrThrow({ where: { id: workspaceId }, select: { name: true, slug: true, ownerId: true } })
+  await tx.notification.create({
+    data: {
+      userId: workspace.ownerId,
+      workspaceId,
+      type,
+      data: { ...data, workspaceName: workspace.name },
+      link: `/workspace/${workspace.slug}/billing`,
+    },
   })
 }

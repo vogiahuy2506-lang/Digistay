@@ -32,7 +32,7 @@ vi.mock('next/server', async (original) => ({ ...(await original<typeof import('
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { createTenant, createUser, resetDatabase } from '@/test/integration/fixtures'
+import { createBooking, createTenant, createUser, resetDatabase } from '@/test/integration/fixtures'
 import { FakePayos, type FakeAccount } from '@/test/integration/fake-payos'
 import { GET as getSubscription } from '@/app/api/workspaces/[id]/subscription/route'
 import { POST as checkoutRoute } from '@/app/api/workspaces/[id]/subscription/checkout/route'
@@ -41,6 +41,7 @@ import { POST as platformWebhook } from '@/app/api/webhooks/payos/digistay/route
 import { POST as reconcileRoute } from '@/app/api/internal/payos-reconcile/route'
 import { POST as createProperty } from '@/app/api/properties/route'
 import { POST as invite } from '@/app/api/workspaces/[id]/invitations/route'
+import { POST as publishInvoiceRoute } from '@/app/api/invoices/[id]/publish/route'
 import { runSubscriptionReminders } from './jobs'
 import { reconcileSubscriptionPayments } from './checkout'
 
@@ -328,6 +329,34 @@ describe('limits and the lock', () => {
     expect((await res.json()).error).toMatch(/tối đa 1 cơ sở/)
   })
 
+  it('refuses an e-invoice on Starter with what the upgrade prompt needs', async () => {
+    const t = await createTenant()
+    await onStarter(t)
+    signInAs(t.owner)
+    const booking = await createBooking(t.property.id)
+    const draft = await prisma.invoice.create({
+      data: {
+        bookingId: booking.id,
+        propertyId: t.property.id,
+        invoiceNumber: `INV-${Date.now()}`,
+        companyName: 'Khách sạn',
+        companyAddress: 'Hà Nội',
+        taxCode: '0101234567',
+        customerName: 'Khách',
+        customerEmail: 'khach@example.com',
+        subtotal: 100_000,
+        taxAmount: 8_000,
+        totalAmount: 108_000,
+      },
+    })
+    const res = await publishInvoiceRoute(new NextRequest(`http://digistay.test/api/invoices/${draft.id}/publish`, { method: 'POST' }), params({ id: draft.id }))
+    expect(res.status).toBe(403)
+    expect(await res.json()).toMatchObject({
+      code: 'PLAN_LIMIT',
+      limit: { kind: 'invoices', used: 0, limit: 0, plan: 'starter', suggested: 'growth' },
+    })
+  })
+
   it('counts open invitations as staff seats', async () => {
     const t = await createTenant()
     await onStarter(t)
@@ -369,5 +398,9 @@ describe('reminders', () => {
     const mails = await prisma.emailOutbox.findMany({ where: { kind: 'subscription_reminder' }, orderBy: { createdAt: 'asc' } })
     expect(mails).toHaveLength(2)
     expect(mails.every((m) => m.toEmail === owner.email)).toBe(true)
+    // In the owner's bell too, leading to the plan page.
+    const bell = await prisma.notification.findMany({ where: { userId: owner.id, type: 'plan_reminder' }, orderBy: { createdAt: 'asc' } })
+    expect(bell.map((n) => (n.data as { kind: string }).kind)).toEqual(['soon7', 'soon1'])
+    expect(bell[0]).toMatchObject({ workspaceId: workspace.id, link: `/workspace/${workspace.slug}/billing`, data: { workspaceName: 'Mây Biển', trial: false, plan: 'growth' } })
   })
 })

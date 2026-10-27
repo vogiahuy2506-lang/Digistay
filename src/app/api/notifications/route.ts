@@ -7,6 +7,22 @@ import { auth } from '@/lib/auth'
 export const dynamic = 'force-dynamic'
 
 const LIMIT = 30
+const MAX_LIMIT = 50
+
+const listQuery = z.object({
+  /** Where the page before ended: base64url "createdAt|id". */
+  cursor: z.string().max(200).optional(),
+  unread: z.enum(['1']).optional(),
+  limit: z.coerce.number().int().min(1).max(MAX_LIMIT).default(LIMIT),
+})
+
+function readCursor(cursor: string): { createdAt: Date; id: string } | null {
+  const [iso, id, ...rest] = Buffer.from(cursor, 'base64url').toString('utf8').split('|')
+  const createdAt = new Date(iso)
+  if (rest.length || !id || Number.isNaN(createdAt.getTime())) return null
+  return { createdAt, id }
+}
+const makeCursor = (row: { createdAt: Date; id: string }) => Buffer.from(`${row.createdAt.toISOString()}|${row.id}`).toString('base64url')
 
 /**
  * Notices about a deleted property or workspace (src/lib/deletion) leave the
@@ -30,26 +46,43 @@ async function liveNotices(): Promise<Prisma.NotificationWhereInput> {
 }
 
 /**
- * GET /api/notifications — the signed-in user's bell (src/lib/notifications.ts):
- * the latest notices and how many are unread. Only their own.
+ * GET /api/notifications?cursor=&unread=1&limit= — the signed-in user's
+ * notices (src/lib/notifications.ts), newest first, and how many are unread:
+ * the bell asks for the latest; the notifications page pages through them
+ * all with nextCursor, or the unread ones. Only their own.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
   }
+  const query = listQuery.safeParse(Object.fromEntries(request.nextUrl.searchParams))
+  const after = query.success && query.data.cursor ? readCursor(query.data.cursor) : null
+  if (!query.success || (query.data.cursor && !after)) {
+    return NextResponse.json({ success: false, error: 'Yêu cầu không hợp lệ' }, { status: 400 })
+  }
+  const { unread: unreadOnly, limit } = query.data
   const userId = session.user.id
   const live = await liveNotices()
-  const [items, unread] = await Promise.all([
+  const where: Prisma.NotificationWhereInput = {
+    userId,
+    ...live,
+    ...(unreadOnly && { readAt: null }),
+    // Older than the last one shown (ties on the time: by id).
+    ...(after && { OR: [{ createdAt: { lt: after.createdAt } }, { createdAt: after.createdAt, id: { lt: after.id } }] }),
+  }
+  const [rows, unread] = await Promise.all([
     prisma.notification.findMany({
-      where: { userId, ...live },
-      orderBy: { createdAt: 'desc' },
-      take: LIMIT,
+      where,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: limit + 1,
       select: { id: true, type: true, data: true, link: true, readAt: true, createdAt: true },
     }),
     prisma.notification.count({ where: { userId, readAt: null, ...live } }),
   ])
-  return NextResponse.json({ success: true, data: { items, unread } }, { headers: { 'Cache-Control': 'no-store' } })
+  const items = rows.slice(0, limit)
+  const nextCursor = rows.length > limit ? makeCursor(items[items.length - 1]) : null
+  return NextResponse.json({ success: true, data: { items, unread, nextCursor } }, { headers: { 'Cache-Control': 'no-store' } })
 }
 
 const readSchema = z.union([

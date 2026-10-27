@@ -95,6 +95,30 @@ export async function queueSubscriptionReminder(
   return ids
 }
 
+/**
+ * The workspace has used 80% or all of its e-invoices this month
+ * (usage-alerts.ts): issuing more is refused at the limit. Returns the
+ * queued id.
+ */
+export async function queueUsageAlert(
+  workspaceId: string,
+  facts: { kind: 'properties' | 'rooms' | 'staff' | 'invoices'; level: 80 | 100; used: number; limit: number; plan: string },
+  db: Db = prisma,
+): Promise<string> {
+  const { workspace, to } = await recipients(workspaceId, null, db)
+  const plan = `gói ${capital(planById(facts.plan).id)}`
+  const subject =
+    facts.level === 100
+      ? `[Digistay] ${workspace.name} đã dùng hết ${facts.limit} hoá đơn điện tử của tháng`
+      : `[Digistay] ${workspace.name} đã dùng ${facts.used}/${facts.limit} hoá đơn điện tử của tháng`
+  const lead =
+    facts.level === 100
+      ? `Workspace ${workspace.name} đã phát hành đủ ${facts.limit} hoá đơn điện tử ${plan} cho phép trong tháng này. Từ giờ đến hết tháng không phát hành thêm được, trừ khi nâng cấp gói.`
+      : `Workspace ${workspace.name} đã phát hành ${facts.used} trên ${facts.limit} hoá đơn điện tử ${plan} cho phép trong tháng này. Hết số này thì không phát hành thêm được cho đến tháng sau.`
+  const body = message(subject, [lead, '', `Xem mức dùng và nâng cấp gói: ${billingUrl(workspace.slug)}`])
+  return queueEmail('plan_usage', { to: { email: to[0].email, name: to[0].name ?? undefined }, ...body }, workspaceId, db)
+}
+
 /** A scheduled downgrade has started (subscription.ts startScheduledPlan); returns the queued ids. */
 export async function queueSubscriptionSwitched(
   workspaceId: string,

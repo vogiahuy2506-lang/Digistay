@@ -2,6 +2,7 @@ import { loadWorkspaceShell } from '@/lib/auth/workspace-shell-data'
 import { WorkspaceShell } from '@/components/layout/workspace-shell'
 import { WorkspaceAccessProvider } from '@/components/layout/workspace-access-provider'
 import { PlanBanner } from '@/components/layout/plan-banner'
+import { PlanLimitPrompt } from '@/components/billing/plan-limit-prompt'
 
 /**
  * Every page inside a workspace wears the same frame: the sidebar (the
@@ -33,6 +34,9 @@ export default async function WorkspaceLayout({
       >
         <PlanBanner plan={data.plan} slug={data.workspace.slug} canBuy={permissions.includes('billing_manage')} />
         {children}
+        {/* A change refused for the plan (over its limits, or locked) opens the way to upgrade. After
+            the page so its dialog is drawn above the page's own (Modal renders in place, no portal). */}
+        <PlanLimitPrompt slug={data.workspace.slug} canBuy={permissions.includes('billing_manage')} />
       </WorkspaceShell>
     </WorkspaceAccessProvider>
   )

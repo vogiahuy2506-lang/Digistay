@@ -1,21 +1,15 @@
 'use client'
 
 import * as React from 'react'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { useParams, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Bell } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useDashLabels } from '@/lib/i18n/dash'
+import { useNoticeText, type NoticeItem } from './notification-text'
 import { useDialogBehavior } from '@/components/ui/dialog-behavior'
 
-interface Item {
-  id: string
-  type: string
-  data: Record<string, unknown>
-  link: string | null
-  readAt: string | null
-  createdAt: string
-}
+type Item = NoticeItem
 
 const POLL_MS = 30_000
 
@@ -53,6 +47,9 @@ const store: {
 }
 const onVisible = () => document.visibilityState === 'visible' && store.load()
 
+/** Asks for the bell's notices again now: the notifications page marked some read. */
+export const refreshBell = () => store.load()
+
 function subscribe(listener: () => void) {
   store.listeners.add(listener)
   if (store.listeners.size === 1) {
@@ -75,11 +72,13 @@ const EMPTY: BellState = { items: [], unread: 0 }
  * The bell (src/lib/notifications.ts): the unread count, and the latest
  * notices in a panel. Asks every half minute and when the tab comes back
  * (once for all bells); opening one marks it read and goes to its booking
- * (an invitation: to /workspaces, where it is answered).
+ * (an invitation: to /workspaces, where it is answered; a plan notice: to the
+ * plan page). Every notice: the notifications page, linked at the bottom.
  */
 export function NotificationBell({ align = 'right' }: { align?: 'left' | 'right' }) {
   const t = useTranslations('dash.common.notifications')
-  const labels = useDashLabels()
+  const { text, ago } = useNoticeText()
+  const { slug } = useParams<{ slug?: string }>()
   const router = useRouter()
   const { items, unread } = React.useSyncExternalStore(subscribe, () => store.state, () => EMPTY)
   const [open, setOpen] = React.useState(false)
@@ -111,44 +110,6 @@ export function NotificationBell({ align = 'right' }: { align?: 'left' | 'right'
       markRead({ ids: [item.id] })
     }
     if (item.link) router.push(item.link)
-  }
-
-  const text = (item: Item) => {
-    const d = item.data as { bookingCode?: string; guestName?: string; propertyName?: string; checkIn?: string; checkOut?: string; total?: number; amount?: number; fromWebsite?: boolean }
-    const values = { code: d.bookingCode ?? '', guest: d.guestName ?? '', hotel: d.propertyName ?? '' }
-    if (item.type === 'booking_new') {
-      return {
-        title: t(d.fromWebsite ? 'bookingNewWebsite' : 'bookingNewStaff', values),
-        detail: t('bookingNewDetail', {
-          ...values,
-          dates: d.checkIn && d.checkOut ? `${labels.dayMonth(d.checkIn)} → ${labels.dayMonth(d.checkOut)}` : '',
-          total: labels.money(d.total ?? 0),
-        }),
-      }
-    }
-    if (item.type === 'deposit_paid') {
-      return { title: t('depositPaid', values), detail: t('depositPaidDetail', { ...values, amount: labels.money(d.amount ?? 0) }) }
-    }
-    if (item.type === 'transfer_claimed') {
-      return { title: t('transferClaimed', values), detail: t('transferClaimedDetail', { ...values, amount: labels.money(d.amount ?? 0) }) }
-    }
-    if (item.type === 'workspace_invite') {
-      const invite = item.data as { senderName?: string; workspaceName?: string; role?: string; customPermissions?: boolean }
-      const role = labels.role(invite.role ?? '')
-      return {
-        title: t('invite', { sender: invite.senderName ?? '', workspace: invite.workspaceName ?? '' }),
-        detail: t('inviteDetail', { role: invite.customPermissions ? t('inviteCustomRole', { role }) : role }),
-      }
-    }
-    return { title: t('other'), detail: '' }
-  }
-
-  const ago = (iso: string) => {
-    const minutes = Math.round((Date.now() - Date.parse(iso)) / 60_000)
-    const rtf = new Intl.RelativeTimeFormat(labels.locale === 'en' ? 'en' : 'vi', { numeric: 'auto' })
-    if (minutes < 60) return rtf.format(-Math.max(0, minutes), 'minute')
-    if (minutes < 24 * 60) return rtf.format(-Math.round(minutes / 60), 'hour')
-    return rtf.format(-Math.round(minutes / (24 * 60)), 'day')
   }
 
   return (
@@ -212,6 +173,13 @@ export function NotificationBell({ align = 'right' }: { align?: 'left' | 'right'
                 )
               })}
             </ul>
+          )}
+          {slug && (
+            <div className="border-t border-line px-4 py-2.5 text-center">
+              <Link href={`/workspace/${slug}/notifications`} onClick={close} className="text-xs font-medium text-acc hover:underline">
+                {t('viewAll')}
+              </Link>
+            </div>
           )}
         </div>
       )}

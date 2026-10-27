@@ -150,7 +150,7 @@ export async function PUT(request: NextRequest, props: RouteParams) {
     })
   } catch (error) {
     if (error instanceof EinvoiceError) {
-      return NextResponse.json({ success: false, error: error.message }, { status: error.status })
+      return NextResponse.json({ success: false, error: error.message, ...error.extra }, { status: error.status })
     }
     console.error('Update invoice error:', error)
     return NextResponse.json({ success: false, error: 'Lỗi khi cập nhật hóa đơn' }, { status: 500 })
@@ -214,7 +214,7 @@ export async function DELETE(request: NextRequest, props: RouteParams) {
     })
   } catch (error) {
     if (error instanceof EinvoiceError) {
-      return NextResponse.json({ success: false, error: error.message }, { status: error.status })
+      return NextResponse.json({ success: false, error: error.message, ...error.extra }, { status: error.status })
     }
     console.error('Delete invoice error:', error)
     return NextResponse.json({ success: false, error: 'Lỗi khi xóa hóa đơn' }, { status: 500 })
