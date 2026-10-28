@@ -264,5 +264,20 @@
       "text": "Dữ liệu vẫn còn nguyên và xem được. Nâng cấp gói hoặc giảm bớt cơ sở để mở lại.",
       "action": "Xem gói"
     }
+  },
+  "trialWelcome": {
+    "title": "Bạn được tặng {days} ngày dùng gói {plan} miễn phí",
+    "lead": "Chào mừng đến với Digistay! Workspace {workspace} được dùng đầy đủ gói {plan} đến ngày {date}, không cần thanh toán trước.",
+    "includesTitle": "Trong thời gian dùng thử, bạn có",
+    "includes": {
+      "properties": "Tối đa {count} cơ sở",
+      "rooms": "Tối đa {count} phòng",
+      "staff": "{count} tài khoản nhân viên",
+      "invoices": "{count} hoá đơn điện tử mỗi tháng",
+      "website": "Website đặt phòng riêng, gắn được tên miền của khách sạn"
+    },
+    "after": "Hết thời gian dùng thử, bạn chọn một gói để dùng tiếp. Dữ liệu được giữ nguyên và không có khoản nào tự động bị trừ.",
+    "start": "Bắt đầu sử dụng",
+    "plans": "Xem các gói"
   }
 }

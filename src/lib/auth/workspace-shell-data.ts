@@ -6,7 +6,7 @@ import { accessibleWorkspaces, getAccess } from '@/lib/auth/access'
 import type { Permission } from '@/lib/auth/permissions'
 import type { WorkspaceRole } from '@/components/layout/nav'
 import { workspacePlan } from '@/lib/billing/subscription'
-import type { SubscriptionStateName } from '@/lib/billing/period'
+import { welcomesTrial, type SubscriptionStateName } from '@/lib/billing/period'
 import { overageBanner, type OverageBanner } from '@/lib/billing/overage'
 
 export interface WorkspaceShellData {
@@ -37,6 +37,10 @@ export interface WorkspaceShellData {
     periodEnd: string
     /** Over the plan's limits or with things locked for it (src/lib/billing/overage.ts); null otherwise or while read-only. */
     overage: OverageBanner | null
+    /** The owner is told once that the workspace got the free trial (src/components/billing/trial-welcome.tsx). */
+    trialWelcome: boolean
+    /** Days from the period's start to its end: a trial's length, which an operator may have changed (/admin). */
+    periodDays: number
   }
 }
 
@@ -89,6 +93,8 @@ export async function loadWorkspaceShell(slug: string): Promise<WorkspaceShellDa
       graceDaysLeft: plan.graceDaysLeft,
       periodEnd: plan.subscription.periodEnd.toISOString(),
       overage,
+      trialWelcome: welcomesTrial(plan.subscription, plan.state, access.isOwner),
+      periodDays: Math.max(1, Math.round((plan.subscription.periodEnd.getTime() - plan.subscription.periodStart.getTime()) / 86_400_000)),
     },
     workspace: {
       id: workspace.id,

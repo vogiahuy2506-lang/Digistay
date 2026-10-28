@@ -5,6 +5,7 @@ import { WorkspaceShell } from '@/components/layout/workspace-shell'
 import { WorkspaceAccessProvider } from '@/components/layout/workspace-access-provider'
 import { PlanBanner } from '@/components/layout/plan-banner'
 import { PlanLimitPrompt } from '@/components/billing/plan-limit-prompt'
+import { TrialWelcome } from '@/components/billing/trial-welcome'
 
 /**
  * Every page inside a workspace wears the same frame: the sidebar (the
@@ -42,6 +43,17 @@ export default async function WorkspaceLayout({
         {/* A change refused for the plan (over its limits, or locked) opens the way to upgrade. After
             the page so its dialog is drawn above the page's own (Modal renders in place, no portal). */}
         <PlanLimitPrompt slug={data.workspace.slug} canBuy={permissions.includes('billing_manage')} />
+        {/* The owner's first visit during the free trial: what they were given. */}
+        {data.plan.trialWelcome && (
+          <TrialWelcome
+            workspaceId={data.workspace.id}
+            workspaceName={data.workspace.name}
+            slug={data.workspace.slug}
+            periodEnd={data.plan.periodEnd}
+            days={data.plan.periodDays}
+            planId={data.plan.planId}
+          />
+        )}
       </WorkspaceShell>
     </WorkspaceAccessProvider>
   )

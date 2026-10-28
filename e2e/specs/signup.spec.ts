@@ -1,6 +1,7 @@
 /**
  * Sign-up with the form, end to end: the 6-digit code arrives by email,
- * the account is verified, signed in and lands on /workspaces. The e2e
+ * the account is verified, signed in and lands on /workspaces; its first
+ * workspace greets the owner with the free trial, once. The e2e
  * environment has (placeholder) Google settings, so the Google button shows.
  */
 import { test, expect } from '@playwright/test'
@@ -49,5 +50,16 @@ test('sign up with the form, verify the emailed code, land in the app', async ({
 
   await page.waitForURL((u) => new URL(u).pathname === '/workspaces', { timeout: 20_000 })
   expect((await page.context().cookies()).some((c) => c.name.includes('next-auth.session-token'))).toBe(true)
+
+  // Sign-up made a first workspace: its owner is welcomed to the free Growth trial, once.
+  await page.getByRole('link', { name: 'Mở', exact: true }).click()
+  const welcome = page.getByRole('dialog', { name: 'Bạn được tặng 14 ngày dùng gói Growth miễn phí' })
+  await expect(welcome).toBeVisible({ timeout: 20_000 })
+  await expect(welcome).toContainText('Tối đa 60 phòng')
+  await welcome.getByRole('button', { name: 'Bắt đầu sử dụng' }).click()
+  await expect(welcome).toBeHidden()
+  await page.reload()
+  await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible()
+  await expect(welcome).toHaveCount(0)
   noErrors()
 })

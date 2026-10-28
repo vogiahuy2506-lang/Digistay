@@ -54,6 +54,14 @@ export function trialEndFrom(start: Date): Date {
 
 export type SubscriptionStateName = 'trial' | 'active' | 'grace' | 'locked'
 
+/**
+ * The trial's welcome (src/components/billing/trial-welcome.tsx): to the
+ * owner, once, while the free trial runs.
+ */
+export function welcomesTrial(sub: { trial: boolean; trialWelcomedAt: Date | null }, state: SubscriptionStateName, isOwner: boolean): boolean {
+  return isOwner && sub.trial && state === 'trial' && !sub.trialWelcomedAt
+}
+
 export interface SubscriptionState {
   state: SubscriptionStateName
   /** Whole days until periodEnd (trial / active), rounded up; 0 once past it. */

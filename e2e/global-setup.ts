@@ -34,6 +34,14 @@ export default async function globalSetup() {
     })
 
     const workspace = await prisma.workspace.findFirstOrThrow({ where: { slug: 'demo-workspace' } })
+    // Its owner has seen the free trial's welcome, or it would cover the pages of
+    // every other spec (signup.spec.ts meets it on a new workspace).
+    const now = new Date()
+    await prisma.subscription.upsert({
+      where: { workspaceId: workspace.id },
+      create: { workspaceId: workspace.id, plan: 'growth', trial: true, periodStart: now, periodEnd: new Date(now.getTime() + 14 * 86_400_000), trialWelcomedAt: now },
+      update: { trialWelcomedAt: now },
+    })
     const property = await prisma.property.findFirstOrThrow({ where: { subdomain: 'khach-san-demo' } })
     await prisma.workspaceMember.create({ data: { workspaceId: workspace.id, userId: root.id, role: 'ADMIN' } })
     // A service a guest can add when booking (priced per night and per person).

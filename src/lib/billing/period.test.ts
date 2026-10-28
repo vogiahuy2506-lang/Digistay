@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addMonths, dueReminder, periodEndFrom, planChange, priceFor, subscriptionState, trialEndFrom } from './period'
+import { addMonths, dueReminder, periodEndFrom, planChange, priceFor, subscriptionState, trialEndFrom, welcomesTrial } from './period'
 
 const at = (iso: string) => new Date(iso)
 const DAY = 86_400_000
@@ -143,5 +143,19 @@ describe('planChange (Founder AI rules, renewals chained)', () => {
     expect(planChange(sub({ billing: 'YEAR', daysLeft: 200 }), { plan: 'business', billing: 'MONTH' }, now)).toMatchObject({ blocked: 'YEARLY_TO_MONTHLY' })
     expect(planChange(sub({ billing: 'YEAR', daysLeft: 20 }), { plan: 'business', billing: 'MONTH' }, now)).toMatchObject({ kind: 'upgrade', blocked: null })
     expect(planChange(sub({ billing: 'YEAR', daysLeft: 20 }), { plan: 'starter', billing: 'MONTH' }, now)).toMatchObject({ kind: 'downgrade', blocked: null })
+  })
+})
+
+describe('welcomesTrial', () => {
+  const trial = { trial: true, trialWelcomedAt: null }
+  it('welcomes the owner once, while the free trial runs', () => {
+    expect(welcomesTrial(trial, 'trial', true)).toBe(true)
+    expect(welcomesTrial({ ...trial, trialWelcomedAt: at('2026-10-28T03:00:00Z') }, 'trial', true)).toBe(false)
+  })
+  it('not a member, a paid plan, or a trial that has ended', () => {
+    expect(welcomesTrial(trial, 'trial', false)).toBe(false)
+    expect(welcomesTrial({ ...trial, trial: false }, 'active', true)).toBe(false)
+    expect(welcomesTrial(trial, 'grace', true)).toBe(false)
+    expect(welcomesTrial(trial, 'locked', true)).toBe(false)
   })
 })

@@ -189,30 +189,32 @@ enum SubscriptionPaymentStatus {
 /// is chained to periodEnd, a downgrade is scheduled for periodEnd in next*).
 /// Past periodEnd: 7 days of grace, then the workspace is read-only.
 model Subscription {
-  workspaceId    String         @id
-  workspace      Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId     String         @id
+  workspace       Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   /// starter | growth | business (src/lib/marketing/plans.ts)
-  plan           String
+  plan            String
   /// null while on the trial
-  billing        BillingPeriod?
-  trial          Boolean        @default(true)
-  periodStart    DateTime
-  periodEnd      DateTime
+  billing         BillingPeriod?
+  trial           Boolean        @default(true)
+  periodStart     DateTime
+  periodEnd       DateTime
   /// Reminder emails already sent for this period, e.g. {"soon7": "2026-…"}
-  reminders      Json?
+  reminders       Json?
   /// A paid downgrade waiting for periodEnd: then plan/billing become these
   /// and the period runs from periodEnd to nextPeriodEnd.
-  nextPlan       String?
-  nextBilling    BillingPeriod?
-  nextPeriodEnd  DateTime?
-  nextPaymentId  String?
+  nextPlan        String?
+  nextBilling     BillingPeriod?
+  nextPeriodEnd   DateTime?
+  nextPaymentId   String?
   /// When the workspace went over its plan's limits (src/lib/billing/overage.ts): 7 days later the excess is locked
-  overLimitSince DateTime?
+  overLimitSince  DateTime?
   /// Nearing the plan's limits, what the owner was told already (src/lib/billing/usage-alerts.ts):
   /// {"staff": 80, "rooms": 100, "invoices": {"month": "2026-10", "level": 80}}
-  usageAlerts    Json?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  usageAlerts     Json?
+  /// When the owner was welcomed to the free trial (src/components/billing/trial-welcome.tsx): shown once, null until then
+  trialWelcomedAt DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 
   @@index([periodEnd])
   @@map("subscriptions")

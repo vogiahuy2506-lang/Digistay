@@ -264,5 +264,20 @@
       "text": "All its data is kept and can be viewed. Upgrade the plan or reduce the number of properties to unlock it.",
       "action": "See plans"
     }
+  },
+  "trialWelcome": {
+    "title": "You get {days} days of the {plan} plan, free",
+    "lead": "Welcome to Digistay! Workspace {workspace} has the full {plan} plan until {date}, with nothing to pay up front.",
+    "includesTitle": "During the trial you get",
+    "includes": {
+      "properties": "Up to {count} properties",
+      "rooms": "Up to {count} rooms",
+      "staff": "{count} staff accounts",
+      "invoices": "{count} e-invoices a month",
+      "website": "Your own booking website, on your hotel's domain if you like"
+    },
+    "after": "When the trial ends, choose a plan to carry on. Your data stays as it is, and nothing is charged automatically.",
+    "start": "Get started",
+    "plans": "See the plans"
   }
 }
