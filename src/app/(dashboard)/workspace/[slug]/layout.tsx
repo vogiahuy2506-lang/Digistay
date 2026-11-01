@@ -36,6 +36,7 @@ export default async function WorkspaceLayout({
         userName={data.userName}
         userEmail={data.userEmail}
         userImage={data.userImage}
+        isSuperAdmin={data.isSuperAdmin}
         sidebar={sidebar}
       >
         <PlanBanner plan={data.plan} slug={data.workspace.slug} canBuy={permissions.includes('billing_manage')} />

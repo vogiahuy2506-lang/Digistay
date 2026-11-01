@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { ChevronsUpDown, LogOut, Moon, Sun, UserRound } from 'lucide-react'
+import { ChevronsUpDown, LogOut, Moon, ShieldCheck, Sun, UserRound } from 'lucide-react'
 import { Avatar } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
@@ -23,6 +23,7 @@ interface AccountMenuProps {
    */
   variant: 'bar' | 'sidebar' | 'rail'
   detail?: string
+  isSuperAdmin?: boolean
   /** Entries above "Profile", e.g. the list of workspaces on the account pages. */
   links?: { label: string; href: string; icon: React.ReactNode }[]
   onSignOut: () => void
@@ -52,7 +53,7 @@ interface Entry {
  * moves on. Escape is marked handled, so the phone drawer around the sidebar
  * stays open (dialog-behavior.ts).
  */
-export function AccountMenu({ name, email, image, variant, detail, links = [], onSignOut }: AccountMenuProps) {
+export function AccountMenu({ name, email, image, variant, detail, isSuperAdmin, links = [], onSignOut }: AccountMenuProps) {
   const t = useTranslations('dash.common.shell')
   const router = useRouter()
   const theme = useTheme()
@@ -76,6 +77,16 @@ export function AccountMenu({ name, email, image, variant, detail, links = [], o
       icon: link.icon,
       onSelect: () => router.push(link.href),
     })),
+    ...(isSuperAdmin
+      ? [
+          {
+            key: 'superAdmin',
+            label: t('superAdmin'),
+            icon: <ShieldCheck className="w-4 h-4 text-acc" aria-hidden="true" />,
+            onSelect: () => router.push('/admin'),
+          },
+        ]
+      : []),
     {
       key: 'profile',
       label: t('profile'),

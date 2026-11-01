@@ -90,6 +90,7 @@ interface WorkspaceShellProps {
   userName?: string
   userEmail?: string
   userImage?: string
+  isSuperAdmin?: boolean
   /** The width and fold the user left the sidebar at (the ds-sidebar cookie, src/lib/sidebar.ts). */
   sidebar: SidebarPref
   children: React.ReactNode
@@ -423,7 +424,7 @@ function useSwitcherItems({ slug, propertyId, workspaces, workspace }: { slug: s
 }
 
 function SidebarContent(props: SidebarProps & { onCollapse?: () => void }) {
-  const { workspace, workspaces, userName, userEmail, userImage, property, propertyId, onCollapse } = props
+  const { workspace, workspaces, userName, userEmail, userImage, isSuperAdmin, property, propertyId, onCollapse } = props
   const t = useTranslations('dash.common.nav')
   const labels = useDashLabels()
   const { slug, access, current, sections } = useSidebarNav(props)
@@ -542,7 +543,7 @@ function SidebarContent(props: SidebarProps & { onCollapse?: () => void }) {
         )}
       </div>
 
-      <UserBlock name={userName} email={userEmail} image={userImage} role={access?.isOwner ? 'OWNER' : workspace.role} />
+      <UserBlock name={userName} email={userEmail} image={userImage} role={access?.isOwner ? 'OWNER' : workspace.role} isSuperAdmin={isSuperAdmin} />
     </div>
   )
 }
@@ -561,7 +562,7 @@ interface TipHandlers {
  * clip it), the switcher and the account behind their own buttons.
  */
 function SidebarRail(props: SidebarProps & { onExpand: () => void }) {
-  const { workspace, workspaces, userName, userEmail, userImage, property, propertyId, onExpand } = props
+  const { workspace, workspaces, userName, userEmail, userImage, isSuperAdmin, property, propertyId, onExpand } = props
   const t = useTranslations('dash.common.nav')
   const labels = useDashLabels()
   const { slug, access, current, sections } = useSidebarNav(props)
@@ -659,6 +660,7 @@ function SidebarRail(props: SidebarProps & { onExpand: () => void }) {
           email={userEmail}
           image={userImage}
           detail={labels.role(access?.isOwner ? 'OWNER' : workspace.role)}
+          isSuperAdmin={isSuperAdmin}
           onSignOut={() => signOut({ callbackUrl: '/login' })}
         />
       </div>
@@ -681,7 +683,7 @@ function SidebarRail(props: SidebarProps & { onExpand: () => void }) {
  * The foot of the sidebar: the user, whose row opens the account menu
  * (profile, theme, language, sign out) upwards.
  */
-function UserBlock({ name, email, image, role }: { name?: string; email?: string; image?: string; role: WorkspaceRole | 'OWNER' }) {
+function UserBlock({ name, email, image, role, isSuperAdmin }: { name?: string; email?: string; image?: string; role: WorkspaceRole | 'OWNER'; isSuperAdmin?: boolean }) {
   const labels = useDashLabels()
 
   return (
@@ -694,6 +696,7 @@ function UserBlock({ name, email, image, role }: { name?: string; email?: string
         email={email}
         image={image}
         detail={labels.role(role)}
+        isSuperAdmin={isSuperAdmin}
         onSignOut={() => signOut({ callbackUrl: '/login' })}
       />
     </div>

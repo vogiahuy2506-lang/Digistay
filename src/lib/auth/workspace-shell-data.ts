@@ -27,6 +27,7 @@ export interface WorkspaceShellData {
   userName?: string
   userEmail?: string
   userImage?: string
+  isSuperAdmin?: boolean
   /** The Digistay plan's state, for the banner (src/components/layout/plan-banner.tsx). */
   plan: {
     state: SubscriptionStateName
@@ -115,5 +116,6 @@ export async function loadWorkspaceShell(slug: string): Promise<WorkspaceShellDa
     userName: session.user.name || undefined,
     userEmail: session.user.email,
     userImage: session.user.image || undefined,
+    isSuperAdmin: session.user.role === 'SUPER_ADMIN',
   }
 }

@@ -3,10 +3,67 @@
     "title": "Quản trị Digistay",
     "back": "Về workspace của tôi",
     "nav": {
+      "overview": "Tổng quan",
       "customers": "Khách hàng",
       "orders": "Đơn hàng gói",
       "activity": "Nhật ký",
       "system": "Hệ thống"
+    }
+  },
+  "overview": {
+    "title": "Tổng quan nền tảng",
+    "lead": "Theo dõi doanh thu, quy mô khách hàng workspace, tình trạng vận hành và bảo mật của Digistay.",
+    "kpis": {
+      "revenueMonth": "Doanh thu tháng này",
+      "revenue30d": "Doanh thu 30 ngày qua",
+      "activeWorkspaces": "Workspace hoạt động",
+      "totalUsers": "Người dùng nền tảng",
+      "systemHealth": "Vận hành & Hệ thống",
+      "healthy": "Hoạt động bình thường",
+      "hasProblems": "{count} cảnh báo vận hành",
+      "lockedAccounts": "{count} tài khoản bị khoá",
+      "paidOrders": "{count} đơn thành công",
+      "trialWorkspaces": "{count} đang dùng thử"
+    },
+    "quickActions": {
+      "title": "Phím tắt quản trị",
+      "customers": "Quản lý khách hàng",
+      "customersDesc": "Xem danh sách workspace, gia hạn gói, khoá / mở khoá tài khoản",
+      "orders": "Đơn hàng & Doanh thu",
+      "ordersDesc": "Theo dõi thanh toán PayOS, đối soát giao dịch, hoá đơn điện tử",
+      "activity": "Nhật ký hệ thống",
+      "activityDesc": "Kiểm toán thao tác của người dùng, operator và bảo mật",
+      "system": "Hạ tầng & Vận hành",
+      "systemDesc": "Giám sát background jobs, hàng đợi email, Redis và cảnh báo"
+    },
+    "scale": {
+      "title": "Quy mô hệ thống",
+      "properties": "Cơ sở lưu trú",
+      "bookings": "Lượt đặt phòng",
+      "rooms": "Tổng phòng quản lý",
+      "plansBreakdown": "Phân bổ gói dịch vụ"
+    },
+    "recentOrders": {
+      "title": "Đơn hàng gói gần đây",
+      "viewAll": "Xem tất cả đơn hàng",
+      "orderCode": "Mã đơn",
+      "customer": "Khách hàng",
+      "plan": "Gói",
+      "amount": "Số tiền",
+      "status": "Trạng thái",
+      "time": "Thời gian"
+    },
+    "recentActivity": {
+      "title": "Nhật ký hoạt động mới nhất",
+      "viewAll": "Xem toàn bộ nhật ký",
+      "actor": "Thực hiện",
+      "action": "Hành động",
+      "target": "Đối tượng",
+      "time": "Thời gian"
+    },
+    "export": {
+      "csv": "Xuất CSV",
+      "exporting": "Đang xuất..."
     }
   },
   "common": {

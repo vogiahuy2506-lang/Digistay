@@ -11,7 +11,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { CheckCheck, MoreVertical, RefreshCw, Search, X, XCircle } from 'lucide-react'
+import { CheckCheck, Download, MoreVertical, RefreshCw, Search, X, XCircle } from 'lucide-react'
 import { Button, Dropdown, DropdownItem, Input, Modal, ModalBody, ModalFooter, Select, Textarea, toast } from '@/components/ui'
 import { useDashLabels } from '@/lib/i18n/dash'
 import { apiError } from '@/lib/i18n/api-errors'
@@ -148,8 +148,44 @@ export default function OrdersPage() {
   // The workspace filtered on, by name once its orders are loaded.
   const workspaceName = orders.data?.rows.find((r) => r.workspace.id === workspace)?.workspace.name ?? workspace
 
+  const exportOrdersCsv = () => {
+    if (!orders.data?.rows.length) return
+    const headers = ['Order Code', 'Workspace', 'Buyer Email', 'Plan', 'Billing', 'Amount', 'Status', 'Created At', 'Paid At']
+    const rows = orders.data.rows.map((o) => [
+      o.orderCode,
+      `"${(o.workspace.name || '').replace(/"/g, '""')}"`,
+      o.buyer?.email || '',
+      o.plan,
+      o.billing,
+      o.amount,
+      o.status,
+      o.createdAt,
+      o.paidAt || '',
+    ])
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.setAttribute('href', url)
+    link.setAttribute('download', `digistay-orders-${new Date().toISOString().slice(0, 10)}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   return (
-    <AdminPage title={t('title')} lead={t('lead')}>
+    <AdminPage
+      title={t('title')}
+      lead={t('lead')}
+      actions={
+        orders.data && orders.data.rows.length > 0 ? (
+          <Button variant="secondary" size="sm" onClick={exportOrdersCsv} className="gap-1.5">
+            <Download className="h-4 w-4" aria-hidden="true" />
+            <span>Xuất CSV</span>
+          </Button>
+        ) : undefined
+      }
+    >
       {summary && (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Stat label={t('stats.month')} value={labels.money(summary.revenueMonth)} hint={t('stats.monthHint', { count: summary.paidMonth })} />

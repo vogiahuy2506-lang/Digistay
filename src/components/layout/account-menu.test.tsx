@@ -171,4 +171,19 @@ describe('AccountMenu', () => {
     render('bar')
     expect(button().getAttribute('aria-label')).toBe('account')
   })
+
+  it('renders superAdmin shortcut to /admin when isSuperAdmin is true', () => {
+    act(() =>
+      root.render(
+        <ThemeRoot initial="light">
+          <AccountMenu variant="sidebar" name="Admin" email="admin@digistay.vn" isSuperAdmin={true} onSignOut={onSignOut} />
+        </ThemeRoot>
+      )
+    )
+    act(() => button().click())
+    const adminItem = items().find((it) => it.textContent?.includes('superAdmin'))
+    expect(adminItem).toBeDefined()
+    act(() => adminItem?.click())
+    expect(router.push).toHaveBeenCalledWith('/admin')
+  })
 })

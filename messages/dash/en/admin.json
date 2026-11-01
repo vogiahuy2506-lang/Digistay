@@ -3,10 +3,67 @@
     "title": "Digistay admin",
     "back": "Back to my workspaces",
     "nav": {
+      "overview": "Overview",
       "customers": "Customers",
       "orders": "Plan orders",
       "activity": "Activity log",
       "system": "System"
+    }
+  },
+  "overview": {
+    "title": "Platform Overview",
+    "lead": "Monitor subscription revenue, customer workspaces, operational health, and system security across Digistay.",
+    "kpis": {
+      "revenueMonth": "Revenue this month",
+      "revenue30d": "Revenue (last 30d)",
+      "activeWorkspaces": "Active Workspaces",
+      "totalUsers": "Platform Users",
+      "systemHealth": "Ops & System Health",
+      "healthy": "Operating normally",
+      "hasProblems": "{count} ops alerts",
+      "lockedAccounts": "{count} accounts locked",
+      "paidOrders": "{count} paid orders",
+      "trialWorkspaces": "{count} on trial"
+    },
+    "quickActions": {
+      "title": "Admin Shortcuts",
+      "customers": "Customer Management",
+      "customersDesc": "View workspaces, extend plans, lock / unlock accounts",
+      "orders": "Orders & Revenue",
+      "ordersDesc": "Track PayOS payments, reconcile transactions, e-invoices",
+      "activity": "System Activity",
+      "activityDesc": "Audit user actions, operator interventions, and security",
+      "system": "Infrastructure & Ops",
+      "systemDesc": "Monitor scheduled jobs, email outbox, Redis, and health alerts"
+    },
+    "scale": {
+      "title": "Platform Scale",
+      "properties": "Properties",
+      "bookings": "Total Bookings",
+      "rooms": "Total Rooms Managed",
+      "plansBreakdown": "Plan Distribution"
+    },
+    "recentOrders": {
+      "title": "Recent Plan Orders",
+      "viewAll": "View all orders",
+      "orderCode": "Order Code",
+      "customer": "Customer",
+      "plan": "Plan",
+      "amount": "Amount",
+      "status": "Status",
+      "time": "Time"
+    },
+    "recentActivity": {
+      "title": "Recent System Activity",
+      "viewAll": "View all activity",
+      "actor": "Actor",
+      "action": "Action",
+      "target": "Target",
+      "time": "Time"
+    },
+    "export": {
+      "csv": "Export CSV",
+      "exporting": "Exporting..."
     }
   },
   "common": {

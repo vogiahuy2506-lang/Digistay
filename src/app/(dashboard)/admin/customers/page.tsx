@@ -10,8 +10,8 @@ import * as React from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { Search } from 'lucide-react'
-import { Input, Select } from '@/components/ui'
+import { Download, ExternalLink, Search } from 'lucide-react'
+import { Button, Input, Select } from '@/components/ui'
 import { useDashLabels } from '@/lib/i18n/dash'
 import { cn } from '@/lib/utils'
 import { AdminPage, Empty, Pager, Pill, Section, Stat, useAdminData, useDebounced } from '@/components/admin/admin-ui'
@@ -103,8 +103,45 @@ export default function CustomersPage() {
   const tabClass = (active: boolean) =>
     cn('inline-flex h-10 items-center border-b-2 px-3 text-sm font-medium', active ? 'border-acc text-fg' : 'border-transparent text-muted hover:text-fg')
 
+  const exportWorkspacesCsv = () => {
+    if (!customers.data?.rows.length) return
+    const headers = ['Workspace', 'Slug', 'Owner Name', 'Owner Email', 'Plan', 'State', 'Days Left', 'Properties', 'Rooms', 'Created At']
+    const rows = customers.data.rows.map((r) => [
+      `"${r.name.replace(/"/g, '""')}"`,
+      r.slug,
+      `"${(r.owner.name || '').replace(/"/g, '""')}"`,
+      r.owner.email,
+      r.plan?.plan ?? '',
+      r.plan?.state ?? '',
+      r.plan?.daysLeft ?? '',
+      r.usage.properties,
+      r.usage.rooms,
+      r.createdAt,
+    ])
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.setAttribute('href', url)
+    link.setAttribute('download', `digistay-customers-${new Date().toISOString().slice(0, 10)}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   return (
-    <AdminPage title={t('customers.title')} lead={t('customers.lead')}>
+    <AdminPage
+      title={t('customers.title')}
+      lead={t('customers.lead')}
+      actions={
+        tab === 'workspaces' && customers.data && customers.data.rows.length > 0 ? (
+          <Button variant="secondary" size="sm" onClick={exportWorkspacesCsv} className="gap-1.5">
+            <Download className="h-4 w-4" aria-hidden="true" />
+            <span>Xuất CSV</span>
+          </Button>
+        ) : undefined
+      }
+    >
       {summary && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <Stat label={t('customers.stats.workspaces')} value={summary.workspaces} hint={t('customers.stats.newWorkspaces', { count: summary.newWorkspaces })} />
@@ -187,9 +224,20 @@ export default function CustomersPage() {
                   {customers.data.rows.map((row) => (
                     <tr key={row.id} className="border-b border-line/70 align-top last:border-0 hover:bg-fg/[0.02]">
                       <td className="py-3 pr-3">
-                        <Link href={`/admin/customers/${row.id}`} className="font-medium text-fg hover:underline">
-                          {row.name}
-                        </Link>
+                        <div className="flex items-center gap-1.5">
+                          <Link href={`/admin/customers/${row.id}`} className="font-medium text-fg hover:underline">
+                            {row.name}
+                          </Link>
+                          <Link
+                            href={`/workspace/${row.slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Mở workspace trực tiếp"
+                            className="inline-flex text-muted hover:text-acc"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                          </Link>
+                        </div>
                         <p className="text-xs text-muted">{row.owner.email}</p>
                         {row.owner.disabledAt && <Pill tone="bad">{t('customers.ownerLocked')}</Pill>}
                       </td>
