@@ -1,0 +1,64 @@
+{
+  "title": "Khách hàng tiềm năng",
+  "description": "Thu thập thông tin khách quan tâm từ popup giữ chân và biểu mẫu",
+  "noProperty": "Không xác định được cơ sở.",
+  "loadFailed": "Không tải được danh sách khách hàng tiềm năng",
+  "loadError": "Đã xảy ra lỗi khi tải danh sách",
+  "search": "Tìm theo email, họ tên, số điện thoại...",
+  "all": "Tất cả nguồn",
+  "empty": "Chưa có khách hàng tiềm năng nào",
+  "emptyHint": "Khách để lại email qua popup giữ chân hoặc form liên hệ sẽ xuất hiện ở đây",
+  "exportCsv": "Xuất file CSV",
+  "exporting": "Đang xuất...",
+  "exportSuccess": "Đã tải file CSV thành công",
+  "exportError": "Không thể xuất file CSV",
+  "stats": {
+    "total": "Tổng số leads",
+    "exitPopup": "Từ Popup giữ chân",
+    "contactForm": "Từ Form liên hệ",
+    "other": "Nguồn khác"
+  },
+  "sources": {
+    "EXIT_POPUP": "Popup giữ chân",
+    "CONTACT_FORM": "Form liên hệ",
+    "OTHER": "Nguồn khác"
+  },
+  "columns": {
+    "contact": "Thông tin liên hệ",
+    "source": "Nguồn",
+    "offer": "Ưu đãi / Trang",
+    "notes": "Ghi chú",
+    "createdAt": "Thời gian",
+    "actions": "Thao tác"
+  },
+  "noNotes": "Chưa có ghi chú",
+  "pagination": {
+    "page": "Trang {page} / {totalPages} · {total} khách tiềm năng",
+    "prev": "Trước",
+    "next": "Sau"
+  },
+  "deleteConfirm": "Xoá thông tin khách hàng {email} khỏi danh sách?",
+  "deleteFailed": "Không xoá được khách hàng tiềm năng",
+  "deleted": "Đã xoá khách hàng tiềm năng",
+  "deleteError": "Đã xảy ra lỗi khi xoá",
+  "modal": {
+    "title": "Chi tiết khách hàng tiềm năng",
+    "subtitle": "Xem và cập nhật thông tin ghi chú liên hệ",
+    "email": "Email",
+    "name": "Họ và tên",
+    "namePlaceholder": "Nhập họ tên...",
+    "phone": "Số điện thoại",
+    "phonePlaceholder": "Nhập số điện thoại...",
+    "source": "Nguồn thu thập",
+    "createdAt": "Thời gian gửi",
+    "coupon": "Mã ưu đãi đã nhận",
+    "page": "Trang gửi thông tin",
+    "notes": "Ghi chú nội bộ",
+    "notesPlaceholder": "Ghi chú sở thích, nhu cầu phòng, lịch sử tư vấn...",
+    "save": "Lưu thay đổi",
+    "saving": "Đang lưu...",
+    "saved": "Đã lưu thông tin ghi chú",
+    "saveFailed": "Không lưu được thông tin"
+  }
+}
+

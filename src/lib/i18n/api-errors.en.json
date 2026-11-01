@@ -747,5 +747,20 @@
   "Chỉ đánh dấu được đơn trả sau khi đã huỷ hoặc hết hạn": "Only an order paid after it was cancelled or expired can be marked",
   "Ghi chú cần ít nhất 3 ký tự": "The note needs at least 3 characters",
   "Đơn này đã được đánh dấu đã xem": "This order is already marked as reviewed",
-  "Digistay huỷ đơn": "Cancelled by Digistay"
+  "Digistay huỷ đơn": "Cancelled by Digistay",
+  "Nguồn không hợp lệ": "Invalid source",
+  "Lỗi khi lấy danh sách khách hàng tiềm năng": "Failed to load leads",
+  "Không tìm thấy khách hàng tiềm năng": "Lead not found",
+  "Lỗi khi cập nhật khách hàng tiềm năng": "Failed to update lead",
+  "Lỗi khi xoá khách hàng tiềm năng": "Failed to delete lead",
+  "Thời gian": "Time",
+  "Họ tên": "Full name",
+  "Số điện thoại": "Phone number",
+  "Nguồn": "Source",
+  "Mã ưu đãi": "Coupon code",
+  "Trang nguồn": "Source page",
+  "Ghi chú": "Notes",
+  "Popup giữ chân": "Exit popup",
+  "Form liên hệ": "Contact form",
+  "Khác": "Other"
 }

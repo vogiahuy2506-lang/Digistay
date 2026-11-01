@@ -1,0 +1,64 @@
+{
+  "title": "Leads",
+  "description": "Captured contacts from exit-intent popups and contact forms",
+  "noProperty": "Property not specified.",
+  "loadFailed": "Couldn't load leads",
+  "loadError": "An error occurred while loading leads",
+  "search": "Search by email, name, phone...",
+  "all": "All sources",
+  "empty": "No leads yet",
+  "emptyHint": "Visitors leaving their email in exit popups or contact forms will appear here",
+  "exportCsv": "Export CSV",
+  "exporting": "Exporting...",
+  "exportSuccess": "CSV file downloaded successfully",
+  "exportError": "Couldn't export CSV",
+  "stats": {
+    "total": "Total leads",
+    "exitPopup": "Exit-intent popup",
+    "contactForm": "Contact form",
+    "other": "Other sources"
+  },
+  "sources": {
+    "EXIT_POPUP": "Exit-intent popup",
+    "CONTACT_FORM": "Contact form",
+    "OTHER": "Other"
+  },
+  "columns": {
+    "contact": "Contact info",
+    "source": "Source",
+    "offer": "Offer / Page",
+    "notes": "Notes",
+    "createdAt": "Captured at",
+    "actions": "Actions"
+  },
+  "noNotes": "No notes yet",
+  "pagination": {
+    "page": "Page {page} / {totalPages} · {total} leads",
+    "prev": "Previous",
+    "next": "Next"
+  },
+  "deleteConfirm": "Delete lead {email} from the list?",
+  "deleteFailed": "Couldn't delete lead",
+  "deleted": "Lead deleted",
+  "deleteError": "An error occurred while deleting",
+  "modal": {
+    "title": "Lead details",
+    "subtitle": "View and update contact notes",
+    "email": "Email",
+    "name": "Full name",
+    "namePlaceholder": "Enter full name...",
+    "phone": "Phone number",
+    "phonePlaceholder": "Enter phone number...",
+    "source": "Capture source",
+    "createdAt": "Submitted at",
+    "coupon": "Claimed coupon code",
+    "page": "Referrer page",
+    "notes": "Internal notes",
+    "notesPlaceholder": "Customer preferences, room needs, follow-up history...",
+    "save": "Save changes",
+    "saving": "Saving...",
+    "saved": "Notes saved",
+    "saveFailed": "Couldn't save notes"
+  }
+}
+
