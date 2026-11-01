@@ -621,6 +621,8 @@
   "Mã ưu đãi đã hết lượt sử dụng": "This coupon has no uses left",
   "Mã ưu đãi tối đa 30 ký tự": "The coupon code is at most 30 characters",
   "Vui lòng nhập mã ưu đãi": "Enter the coupon code",
+  "Mã ưu đãi không đúng, kiểm tra lại giúp bạn nhé": "This coupon code is not valid. Please check it and try again.",
+  "Bạn tra mã quá nhiều lần. Vui lòng thử lại sau ít phút.": "Too many coupon checks. Please try again in a few minutes.",
   "Tên chương trình phải có ít nhất 2 ký tự": "The campaign name must be at least 2 characters",
   "Tên chương trình tối đa 100 ký tự": "The campaign name is at most 100 characters",
   "Mức giảm tối đa phải từ 0 trở lên": "The maximum discount must be 0 or more",

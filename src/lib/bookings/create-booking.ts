@@ -26,6 +26,7 @@ import { depositFor, quoteStay, ratesFrom, type PricedService } from '@/lib/pric
 import { depositUrl } from '@/lib/payments/deposit-link'
 import { NO_PRICE_MESSAGE, ROOM_RATE_INCLUDE, propertyRateDefaults } from '@/lib/pricing/rates'
 import { ROOM_TYPE_PLAN_LOCKED } from '@/lib/billing/guard'
+import { couponUsability, discountFor, normalizeCouponCode } from '@/lib/marketing/coupons'
 import { formatAddress } from '@/lib/vn-admin/address'
 import { lockRoomType, roomsTaken } from './occupancy'
 
@@ -65,6 +66,8 @@ export interface NewBooking {
   deposit?: { percent: number; deadlineMinutes: number; mode?: 'PAYOS' | 'MANUAL' } | null
   /** The language of the page the guest booked on: their emails follow it. Staff bookings: 'vi'. */
   locale?: Locale
+  /** Discount code the guest typed (tasks 41-42): re-checked under a row lock, never trusted. */
+  couponCode?: string | null
 }
 
 /** The room type, its rates and the chosen services, or a BookingError. */
@@ -216,6 +219,52 @@ export async function createBooking(input: NewBooking) {
 
   return prisma.$transaction(async (tx) => {
     await lockRoomType(tx, roomType.id)
+    // A discount code the guest typed: re-checked here under a row lock and
+    // never trusted from the preview (POST /api/public/coupons/validate).
+    // The coupon row is locked before the count is bumped, so a code with
+    // one use left cannot be spent twice (coupons.test.ts races it).
+    let couponId: string | null = null
+    let appliedCouponCode: string | null = null
+    let discount = 0
+    const typedCoupon = input.couponCode?.trim() ? normalizeCouponCode(input.couponCode) : ''
+    if (typedCoupon) {
+      const rows = await tx.$queryRaw<
+        {
+          id: string
+          code: string
+          discountType: 'PERCENT' | 'FIXED_AMOUNT'
+          discountValue: number
+          maxDiscount: number | null
+          minOrderAmount: number | null
+          startDate: Date
+          endDate: Date
+          usageLimit: number | null
+          usageCount: number
+          isActive: boolean
+        }[]
+      >`SELECT id, code, "discountType", "discountValue", "maxDiscount", "minOrderAmount", "startDate", "endDate", "usageLimit", "usageCount", "isActive"
+         FROM coupons WHERE "propertyId" = ${input.propertyId} AND code = ${typedCoupon} AND "deletedAt" IS NULL
+         FOR UPDATE`
+      const found = rows[0]
+      if (!found) throw new BookingError('Mã ưu đãi không đúng, kiểm tra lại giúp bạn nhé', 404)
+      const usable = couponUsability(found)
+      if (!usable.ok) throw new BookingError(usable.error, 400)
+      const priced = discountFor(found, quote.total)
+      if (!priced.ok) throw new BookingError(priced.error, 400)
+      // Bump the counter only if a use is still left: the second of two
+      // requests racing for the last use updates zero rows and fails here.
+      const bumped = await tx.coupon.updateMany({
+        where: {
+          id: found.id,
+          ...(found.usageLimit != null ? { usageCount: { lt: found.usageLimit } } : {}),
+        },
+        data: { usageCount: { increment: 1 } },
+      })
+      if (bumped.count === 0) throw new BookingError('Mã ưu đãi đã hết lượt sử dụng', 409)
+      couponId = found.id
+      appliedCouponCode = found.code
+      discount = priced.discount
+    }
     const taken = await roomsTaken(tx, roomType.id, {
       propertyId: input.propertyId,
       checkIn: input.checkIn,
@@ -261,7 +310,9 @@ export async function createBooking(input: NewBooking) {
         status: 'PENDING',
         subtotal: quote.basePrice,
         extraCharges: quote.extraCharges,
-        totalAmount: quote.total,
+        discount,
+        totalAmount: Math.max(0, Math.round(quote.total) - discount),
+        ...(couponId && { couponId, couponCode: appliedCouponCode }),
         depositAmount: 0,
         source: 'DIRECT',
         createdById: input.createdById ?? null,
