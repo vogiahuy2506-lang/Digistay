@@ -13,6 +13,8 @@ import { CoverPicker } from './cover-picker'
 import { ReviewsEditor, type ReviewEntry } from './reviews-editor'
 import { CustomDomainCard, type DomainSettings } from './custom-domain-card'
 import { VersionHistory } from './version-history'
+import { WebsiteSettingsModal } from './website-settings-modal'
+import { ThemeStyleModal } from './theme-style-modal'
 import { useProperty } from '@/lib/hooks/use-property'
 import { Card, CardContent, CardHeader, CardTitle, Button, Input, Badge, Tabs, TabsList, TabsTrigger, TabsContent, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import {
@@ -1372,6 +1374,8 @@ export default function WebsiteBuilderPage() {
   const [isDragging, setIsDragging] = React.useState(false)
   const [previewBlocks, setPreviewBlocks] = React.useState<Block[]>([])
   const [showTemplateModal, setShowTemplateModal] = React.useState(false)
+  const [showThemeModal, setShowThemeModal] = React.useState(false)
+  const [showSettingsModal, setShowSettingsModal] = React.useState(false)
   const [showHistory, setShowHistory] = React.useState(false)
   const [propertyData, setPropertyData] = React.useState<any>(null)
   // What the site shows (real rooms, prices, photos...), for the preview.
@@ -1728,6 +1732,32 @@ export default function WebsiteBuilderPage() {
             <span className="lg:hidden xl:inline">{t('header.template')}</span>
           </Button>
 
+          {/* Theme & Style Modal */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowThemeModal(true)}
+            aria-label={t('tabs.style')}
+            title={t('tabs.style')}
+            className="gap-2"
+          >
+            <Palette className="w-4 h-4 text-acc" aria-hidden="true" />
+            <span className="lg:hidden xl:inline">{t('tabs.style')}</span>
+          </Button>
+
+          {/* Website Settings Modal */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowSettingsModal(true)}
+            aria-label={t('tabs.settings')}
+            title={t('tabs.settings')}
+            className="gap-2"
+          >
+            <Settings className="w-4 h-4 text-acc" aria-hidden="true" />
+            <span className="lg:hidden xl:inline">{t('tabs.settings')}</span>
+          </Button>
+
           {/* Saved versions: view, restore */}
           <Button
             variant="outline"
@@ -1839,35 +1869,9 @@ export default function WebsiteBuilderPage() {
           panelOpen ? 'lg:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[400px_minmax(0,1fr)]' : 'lg:grid-cols-1'
         )}
       >
-        {/* Block Editor */}
+        {/* Block Manager Sidebar */}
         <div id="builder-panel" className={cn('space-y-4 lg:min-h-0 lg:overflow-y-auto lg:pr-1 lg:pb-2', !panelOpen && 'lg:hidden')}>
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3 bg-fg/5 p-1 rounded-xl">
-              <TabsTrigger 
-                value="blocks"
-                className="rounded-lg data-[state=active]:bg-panel data-[state=active]:shadow-sm"
-              >
-                <Layout className="w-4 h-4 mr-1.5" />
-                {t('tabs.blocks')}
-              </TabsTrigger>
-              <TabsTrigger 
-                value="style"
-                className="rounded-lg data-[state=active]:bg-panel data-[state=active]:shadow-sm"
-              >
-                <Palette className="w-4 h-4 mr-1.5" />
-                {t('tabs.style')}
-              </TabsTrigger>
-              <TabsTrigger 
-                value="settings"
-                className="rounded-lg data-[state=active]:bg-panel data-[state=active]:shadow-sm"
-              >
-                <Settings className="w-4 h-4 mr-1.5" />
-                {t('tabs.settings')}
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Blocks Tab */}
-            <TabsContent value="blocks" className="mt-4 space-y-4">
+          <div className="space-y-4">
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
@@ -1965,240 +1969,7 @@ export default function WebsiteBuilderPage() {
                   })}
                 </div>
               </div>
-            </TabsContent>
-
-            {/* Style Tab */}
-            <TabsContent value="style" className="mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Palette className="w-4 h-4" />
-                    {t('style.colors')}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-fg">{t('style.primary')}</label>
-                    <p className="text-xs text-muted">{t('style.primaryHint')}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <input
-                        type="color"
-                        value={settings?.primaryColor || '#3B82F6'}
-                        onChange={(e) => setSettings({ ...settings!, primaryColor: e.target.value })}
-                        className="w-10 h-10 rounded border cursor-pointer"
-                      />
-                      <Input
-                        value={settings?.primaryColor || '#3B82F6'}
-                        onChange={(e) => setSettings({ ...settings!, primaryColor: e.target.value })}
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
-                  <OptionalColor
-                    label={t('style.button')}
-                    hint={t('style.buttonHint')}
-                    value={settings?.buttonColor ?? null}
-                    fallback="#1C1B19"
-                    onChange={(buttonColor) => setSettings({ ...settings!, buttonColor })}
-                    defaultLabel={t('style.useDefault')}
-                  />
-                  <OptionalColor
-                    label={t('style.heading')}
-                    hint={t('style.headingHint')}
-                    value={settings?.headingColor ?? null}
-                    fallback="#1B1C1A"
-                    onChange={(headingColor) => setSettings({ ...settings!, headingColor })}
-                    defaultLabel={t('style.useDefault')}
-                  />
-                  <p className="text-xs text-muted">{t('style.contrastNote')}</p>
-                </CardContent>
-              </Card>
-
-              <Card className="mt-4">
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Type className="w-4 h-4" />
-                    {t('style.fonts')}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-fg">{t('style.bodyFont')}</label>
-                    <select
-                      value={normalizeFont(settings?.fontFamily, 'body')}
-                      onChange={(e) => setSettings({ ...settings!, fontFamily: e.target.value })}
-                      className="w-full mt-1 px-3 py-2 border border-line rounded-ctl bg-raised text-fg text-base sm:text-sm"
-                    >
-                      {bodyFonts.map((font) => (
-                        <option key={font.value} value={font.value}>{`${font.value} - ${t(`style.fontTraits.${font.trait}`)}`}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-fg">{t('style.headingFont')}</label>
-                    <select
-                      value={normalizeFont(settings?.headingFont, 'heading')}
-                      onChange={(e) => setSettings({ ...settings!, headingFont: e.target.value })}
-                      className="w-full mt-1 px-3 py-2 border border-line rounded-ctl bg-raised text-fg text-base sm:text-sm"
-                    >
-                      {headingFonts.map((font) => (
-                        <option key={font.value} value={font.value}>{`${font.value} - ${t(`style.fontTraits.${font.trait}`)}`}</option>
-                      ))}
-                    </select>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Settings Tab */}
-            <TabsContent value="settings" className="mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">{t('settings.seo')}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Input
-                    label={t('settings.metaTitle')}
-                    value={settings?.metaTitle || ''}
-                    onChange={(e) => setSettings({ ...settings!, metaTitle: e.target.value })}
-                    placeholder={t('settings.metaTitlePlaceholder')}
-                  />
-                  <div>
-                    <label className="text-sm font-medium text-fg">{t('settings.metaDescription')}</label>
-                    <textarea
-                      value={settings?.metaDescription || ''}
-                      onChange={(e) => setSettings({ ...settings!, metaDescription: e.target.value })}
-                      placeholder={t('settings.metaDescriptionPlaceholder')}
-                      className="w-full mt-1 px-3 py-2 border border-line rounded-ctl bg-raised text-fg text-base sm:text-sm"
-                      rows={3}
-                    />
-                  </div>
-                  {settings && (
-                    <EnglishCopy filled={Boolean(settings.translations?.en?.metaTitle || settings.translations?.en?.metaDescription)}>
-                      <Input
-                        label={t('settings.metaTitle')}
-                        value={settings.translations?.en?.metaTitle ?? ''}
-                        onChange={(e) => setSettings({ ...settings, translations: { en: { ...settings.translations?.en, metaTitle: e.target.value } } })}
-                        placeholder={settings.metaTitle ?? ''}
-                      />
-                      <div>
-                        <label htmlFor="seo-en-description" className="text-sm font-medium text-fg">{t('settings.metaDescription')}</label>
-                        <textarea
-                          id="seo-en-description"
-                          value={settings.translations?.en?.metaDescription ?? ''}
-                          onChange={(e) => setSettings({ ...settings, translations: { en: { ...settings.translations?.en, metaDescription: e.target.value } } })}
-                          placeholder={settings.metaDescription ?? ''}
-                          className="w-full mt-1 px-3 py-2 border border-line rounded-ctl bg-raised text-fg text-base sm:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acc"
-                          rows={3}
-                        />
-                      </div>
-                    </EnglishCopy>
-                  )}
-                </CardContent>
-              </Card>
-
-              {settings && (
-                <CustomDomainCard
-                  propertyId={propertyId}
-                  settings={settings as DomainSettings}
-                  onChange={mergeDomain}
-                  onRemove={() => handleSave({ ...settings, customDomain: '' }, t('domain.removed'))}
-                  subdomain={property?.subdomain}
-                />
-              )}
-
-              {/* Exit-Intent Popup (Task 43) */}
-              <Card className="mt-4">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-acc-soft flex items-center justify-center text-acc">
-                      <Sparkles className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-base">{t('settings.exitIntent.title')}</CardTitle>
-                      <p className="text-xs text-muted mt-0.5">{t('settings.exitIntent.hint')}</p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between p-3 rounded-xl bg-fg/[0.02] border border-line">
-                    <div className="pr-4">
-                      <label htmlFor="exit-intent-toggle" className="text-sm font-medium text-fg block cursor-pointer">
-                        {t('settings.exitIntent.enabledLabel')}
-                      </label>
-                      <p className="text-xs text-muted mt-0.5">{t('settings.exitIntent.previewNote')}</p>
-                    </div>
-                    <input
-                      id="exit-intent-toggle"
-                      type="checkbox"
-                      checked={Boolean(settings?.exitIntentEnabled)}
-                      onChange={(e) => setSettings({ ...settings!, exitIntentEnabled: e.target.checked })}
-                      className="w-5 h-5 rounded border-line text-acc focus:ring-acc"
-                    />
-                  </div>
-
-                  {settings?.exitIntentEnabled && (
-                    <div className="space-y-2 pt-1 animate-in fade-in duration-200">
-                      <label className="text-sm font-medium text-fg block">
-                        {t('settings.exitIntent.couponLabel')}
-                      </label>
-                      {availableCoupons.length > 0 ? (
-                        <select
-                          value={settings?.exitIntentCouponId || ''}
-                          onChange={(e) => setSettings({ ...settings!, exitIntentCouponId: e.target.value || null })}
-                          className="w-full h-10 px-3 border border-line rounded-ctl bg-raised text-fg text-sm focus:outline-none focus:ring-2 focus:ring-acc"
-                        >
-                          <option value="">{t('settings.exitIntent.selectCouponPlaceholder')}</option>
-                          {availableCoupons.map((c) => (
-                            <option key={c.id} value={c.id}>
-                              [{c.code}] {c.name} - Giảm {c.discountType === 'PERCENT' ? `${c.discountValue}%` : `${c.discountValue.toLocaleString('vi-VN')}₫`}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <div className="p-3 rounded-xl bg-warn-soft border border-warn/30 text-xs text-warn">
-                          <p className="font-medium mb-1">{t('settings.exitIntent.noCoupons')}</p>
-                          <button
-                            type="button"
-                            onClick={() => router.push(routes.propertyCoupons(slug, propertyId))}
-                            className="text-acc font-semibold hover:underline inline-flex items-center gap-1"
-                          >
-                            <span>{t('settings.exitIntent.createCouponLink')}</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card className="mt-4">
-                <CardHeader>
-                  <CardTitle>{t('publish.title')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">
-                        {settings?.isPublished ? t('publish.published') : t('publish.unpublished')}
-                      </p>
-                      <p className="text-sm text-muted">
-                        {settings?.isPublished ? t('publish.publishedHint') : t('publish.unpublishedHint')}
-                      </p>
-                    </div>
-                    <Button
-                      onClick={togglePublish}
-                      disabled={isSaving || !settings}
-                      variant={settings?.isPublished ? 'danger' : 'primary'}
-                    >
-                      {settings?.isPublished ? t('publish.unpublish') : t('publish.publishNow')}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+            </div>
         </div>
 
         {/* Preview: the hotel's site in a browser frame, as tall as the window from lg up */}
@@ -2337,6 +2108,33 @@ export default function WebsiteBuilderPage() {
         onClose={() => setShowHistory(false)}
         onRestored={afterRestore}
       />
+
+      {/* Website Settings Modal */}
+      {settings && (
+        <WebsiteSettingsModal
+          isOpen={showSettingsModal}
+          onClose={() => setShowSettingsModal(false)}
+          propertyId={propertyId}
+          slug={slug}
+          subdomain={property?.subdomain}
+          settings={settings}
+          onChange={(patch) => setSettings((curr) => (curr ? { ...curr, ...patch } as any : curr))}
+          onSaveDomain={(patch, msg) => handleSave({ ...settings, ...(patch as any) }, msg)}
+          availableCoupons={availableCoupons}
+        />
+      )}
+
+      {/* Theme & Style Modal */}
+      {settings && (
+        <ThemeStyleModal
+          isOpen={showThemeModal}
+          onClose={() => setShowThemeModal(false)}
+          settings={settings}
+          onChange={(patch) => setSettings((curr) => (curr ? { ...curr, ...patch } as any : curr))}
+          bodyFonts={bodyFonts}
+          headingFonts={headingFonts}
+        />
+      )}
     </PageContainer>
   )
 }

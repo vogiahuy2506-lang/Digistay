@@ -8,6 +8,7 @@ import { loadVisibleSite } from '@/lib/public-site/visibility'
 import { OG_LOCALES } from '@/lib/seo/page-metadata'
 import { SiteBaseProvider, type SiteHotel } from './_components/site-base'
 import { ExitIntentModal } from './_components/ExitIntentModal'
+import { StickyBookingBar } from './_components/StickyBookingBar'
 import { siteSections } from './_components/booking/frame'
 import { siteFontVariables } from './fonts'
 
@@ -104,6 +105,7 @@ export default async function HotelSiteLayout({
       {preview && <p className="bg-ink px-4 py-2 text-center text-small text-on-ink">{t('preview')}</p>}
       <SiteBaseProvider locale={locale} bases={bases} switchHref={switchHref} theme={theme} hotel={hotel}>
         {children}
+        <StickyBookingBar />
         {exitCoupon && frame && (
           <ExitIntentModal
             propertyId={frame.id}
