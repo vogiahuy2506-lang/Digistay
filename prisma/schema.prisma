@@ -498,6 +498,13 @@ model Property {
   /// Who deleted it (a user id, no foreign key, like activity_logs.userId).
   deletedById String?
 
+  // Marketing & CRM (tasks 41-50)
+  coupons          Coupon[]
+  leads            Lead[]
+  blogPosts        BlogPost[]
+  customerProfiles CustomerProfile[]
+  reviews          Review[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -851,6 +858,13 @@ model WebsiteSettings {
   isPublished Boolean   @default(false)
   publishedAt DateTime?
 
+  // Marketing & tracking (tasks 43, 47)
+  facebookPixelId String?
+  googleTagId     String?
+  /// Exit-intent popup enabled (task 43)
+  exitIntentEnabled  Boolean @default(false)
+  exitIntentCouponId String?
+
   // Relations
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
@@ -960,12 +974,24 @@ model Booking {
   /// (src/lib/payments/manual-deposit.ts): set once, staff are told then.
   transferClaimedAt DateTime?
 
+  // Marketing & CRM (tasks 42, 48, 50)
+  /// The coupon applied (tasks 41-42): copied code kept for history even if the coupon is deleted.
+  couponId   String?
+  coupon     Coupon? @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  couponCode String?
+  /// Email nhắc giỏ hàng bỏ quên đã gửi lúc nào (task 48); null: chưa gửi.
+  abandonedEmailSentAt DateTime?
+  /// Email xin đánh giá sau chuyến đi đã gửi lúc nào (task 50); null: chưa gửi.
+  postStayEmailSentAt DateTime?
+
   // Relations
   bookingItems BookingItem[]
   roomSegments BookingRoomSegment[]
   roomLocks    RoomLock[]
   payments     Payment[]
   invoices     Invoice[]
+  /// Review the guest left from the post-stay email (task 50).
+  review Review?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1632,7 +1658,7 @@ model Notification {
 model EmailOutbox {
   id        String    @id
   /// booking_confirmation, owner_new_booking, workspace_invite, deposit_received, deposit_expired, contact_request,
-  /// subscription_paid, subscription_reminder, subscription_switched
+  /// subscription_paid, subscription_reminder, subscription_switched, abandoned_cart, post_stay_survey
   kind      String
   toEmail   String
   /// encrypted JSON { to, name, subject, text, html }
@@ -1651,4 +1677,155 @@ model EmailOutbox {
 
   @@index([status, nextAt])
   @@map("email_outbox")
+}
+
+// ============================================
+// MARKETING & MINI CRM (Tasks 41-50)
+// ============================================
+
+enum DiscountType {
+  PERCENT     // Giảm theo % (vd: 10%, 15%)
+  FIXED_AMOUNT // Giảm số tiền cố định (vd: 100,000 VND)
+}
+
+/// Mã giảm giá của một cơ sở (tasks 41-42). Xoá mềm: đơn đã dùng giữ
+/// lại couponCode để đối chiếu lịch sử.
+model Coupon {
+  id         String       @id @default(cuid())
+  propertyId String
+  property   Property     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  /// Mã viết hoa, không dấu (vd: HELLO2026); duy nhất trong cơ sở.
+  code            String
+  name            String
+  discountType    DiscountType @default(PERCENT)
+  /// % (0-100) khi PERCENT, số tiền VND khi FIXED_AMOUNT.
+  discountValue   Float
+  /// Mức giảm tối đa (chỉ khi PERCENT); null: không trần.
+  maxDiscount     Float?
+  /// Giá trị đơn tối thiểu để được áp dụng; null: không yêu cầu.
+  minOrderAmount  Float?
+  startDate       DateTime
+  endDate         DateTime
+  /// Giới hạn tổng số lần sử dụng; null: vô hạn.
+  usageLimit      Int?
+  usageCount      Int          @default(0)
+  isActive        Boolean      @default(true)
+
+  bookings Booking[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@unique([propertyId, code])
+  @@index([propertyId, isActive, startDate, endDate])
+  @@map("coupons")
+}
+
+/// Khách hàng tiềm năng từ popup giữ chân / form liên hệ (tasks 43-44).
+model Lead {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  email    String
+  phone    String?
+  name     String?
+  /// EXIT_POPUP, CONTACT_FORM, BLOG_CTA...
+  source   String   @default("EXIT_POPUP")
+  notes    String?
+  /// Trang đang xem, mã coupon đã tặng, v.v.
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([propertyId, email])
+  @@map("leads")
+}
+
+/// Bài viết blog / tin tức quảng bá của cơ sở (task 45).
+model BlogPost {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  title       String
+  /// URL thân thiện không dấu, duy nhất trong cơ sở.
+  slug        String
+  summary     String?
+  /// Nội dung bài viết (Markdown hoặc HTML).
+  content     String
+  coverImage  String?
+  isPublished Boolean   @default(false)
+  publishedAt DateTime?
+  authorName  String?
+
+  // SEO riêng cho bài viết
+  metaTitle       String?
+  metaDescription String?
+  /// Bản tiếng Anh { en: { title?, summary?, content? } }; trống: hiện bản Việt.
+  translations    Json?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@unique([propertyId, slug])
+  @@index([propertyId, isPublished, publishedAt])
+  @@map("blog_posts")
+}
+
+/// Hồ sơ & sở thích khách hàng cũ (task 49, Mini CRM).
+model CustomerProfile {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  email String
+  phone String
+  name  String
+  /// Ghi chú sở thích cá nhân, yêu cầu đặc biệt.
+  notes String?
+  /// VIP, Khách gia đình, Doanh nhân...
+  tags  String[] @default([])
+
+  totalStays Int    @default(0)
+  totalSpent Float  @default(0)
+  lastStayAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([propertyId, email, phone])
+  @@index([propertyId, email])
+  @@index([propertyId, phone])
+  @@map("customer_profiles")
+}
+
+/// Đánh giá của khách sau chuyến đi (task 50). Khách gửi không cần
+/// đăng nhập bằng reviewToken trong email.
+model Review {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  bookingId  String?  @unique
+  booking    Booking? @relation(fields: [bookingId], references: [id])
+
+  guestName  String
+  guestEmail String
+  /// 1 - 5 sao
+  rating     Int
+  title      String?
+  comment    String
+  isPublished Boolean @default(true)
+  reviewToken String? @unique
+  tokenUsedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([propertyId, isPublished, rating])
+  @@map("reviews")
 }
