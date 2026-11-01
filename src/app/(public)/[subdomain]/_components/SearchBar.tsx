@@ -88,7 +88,7 @@ export function SearchBar() {
 
   return (
     <form onSubmit={onSubmit} aria-label={t('stay.searchLabel')}>
-      <div className="grid grid-cols-2 border border-line bg-panel shadow-lift lg:grid-cols-[1fr_1fr_1fr_1fr_auto] lg:divide-x lg:divide-line [&>*]:border-line max-lg:[&>*:nth-child(odd)]:border-r max-lg:[&>*:nth-child(-n+4)]:border-b">
+      <div className="grid grid-cols-2 rounded-2xl overflow-hidden border border-line bg-panel shadow-xl lg:grid-cols-[1fr_1fr_1fr_1fr_auto] lg:divide-x lg:divide-line [&>*]:border-line max-lg:[&>*:nth-child(odd)]:border-r max-lg:[&>*:nth-child(-n+4)]:border-b">
         {dateField(t('stay.checkIn'), checkIn, vnDay(0), (v) => {
           setCheckIn(v)
           if (v >= checkOut) setCheckOut(new Date(new Date(`${v}T12:00:00Z`).getTime() + 86400000).toISOString().slice(0, 10))

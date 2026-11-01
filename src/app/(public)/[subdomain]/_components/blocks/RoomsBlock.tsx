@@ -35,43 +35,55 @@ export function RoomsBlock({ block, roomTypes, property }: Props) {
           {t('blocks.rooms.empty', { name: property.name })}
         </p>
       ) : (
-        <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {rooms.map((room) => (
-            <li key={room.id} className="flex flex-col border border-line bg-panel rounded-box overflow-hidden">
-              {room.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img {...responsiveImage(room.image, '(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw', { fallback: 800 })} alt={room.name} loading="lazy" className="aspect-[4/3] w-full object-cover" />
-              ) : (
-                // One column on phones: no photo to line up with, so no tall empty block.
-                <PhotoPlaceholder label={t('room.noPhoto')} className="h-28 w-full sm:h-auto sm:aspect-[4/3]" />
-              )}
-              <div className="flex flex-1 flex-col p-5">
+            <li key={room.id} className="group flex flex-col border border-line bg-panel rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:border-acc/40 transition-all duration-300">
+              <div className="relative aspect-[4/3] w-full overflow-hidden bg-fg/5">
+                {room.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    {...responsiveImage(room.image, '(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw', { fallback: 800 })}
+                    alt={room.name}
+                    loading="lazy"
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  // One column on phones: no photo to line up with, so no tall empty block.
+                  <PhotoPlaceholder label={t('room.noPhoto')} className="h-full w-full" />
+                )}
+                {showPrice && room.fromPrice != null && room.fromPrice > 0 && (
+                  <div className="absolute top-3 right-3 rounded-full bg-ink/80 backdrop-blur-md px-3 py-1 text-xs font-semibold text-on-ink shadow">
+                    Giá tốt nhất
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-1 flex-col p-5 sm:p-6">
                 <div className="flex items-start justify-between gap-3">
-                  <h3 className="text-body font-semibold text-fg">{room.name}</h3>
+                  <h3 className="text-lg font-semibold text-fg group-hover:text-acc transition-colors">{room.name}</h3>
                   {showPrice && room.fromPrice != null && room.fromPrice > 0 && (
-                    <p className="shrink-0 text-right text-body font-semibold tabular-nums text-fg">
+                    <p className="shrink-0 text-right text-base font-bold tabular-nums text-fg">
                       {formatVnd(room.fromPrice, locale)}
-                      <span className="text-xs font-normal text-muted">{t('units.perNight')}</span>
+                      <span className="block text-xs font-normal text-muted">{t('units.perNight')}</span>
                     </p>
                   )}
                 </div>
-                <p className="mt-1 text-small text-muted">{roomMeta(room, t)}</p>
+                <p className="mt-1.5 text-small text-muted">{roomMeta(room, t)}</p>
                 {room.amenities.length > 0 && (
-                  <ul className="mt-3 flex flex-wrap gap-1.5" aria-label={t('room.amenities')}>
+                  <ul className="mt-3.5 flex flex-wrap gap-1.5" aria-label={t('room.amenities')}>
                     {room.amenities.slice(0, AMENITIES_SHOWN).map((name) => (
-                      <li key={name} className="rounded-ctl bg-fg/5 px-2 py-0.5 text-xs text-fg">
+                      <li key={name} className="rounded-ctl bg-fg/5 px-2.5 py-1 text-xs font-medium text-fg">
                         {name}
                       </li>
                     ))}
                     {room.amenities.length > AMENITIES_SHOWN && (
-                      <li className="px-1 py-0.5 text-xs text-muted">
+                      <li className="px-1 py-1 text-xs text-muted">
                         {t('room.moreAmenities', { count: room.amenities.length - AMENITIES_SHOWN })}
                       </li>
                     )}
                   </ul>
                 )}
                 {showCTA && (
-                  <div className="mt-auto pt-4">
+                  <div className="mt-auto pt-5">
                     <div className="flex items-center justify-between gap-3 border-t border-line pt-4">
                       <SiteLink path={`/rooms/${room.id}`} className="text-small font-medium text-acc hover:underline">
                         {t('room.details')}
@@ -79,7 +91,7 @@ export function RoomsBlock({ block, roomTypes, property }: Props) {
                       {/* The room page's booking box: dates, guests, then the booking form. */}
                       <SiteLink
                         path={`/rooms/${room.id}#dat-phong`}
-                        className="inline-flex h-10 shrink-0 items-center rounded-ctl bg-ink px-4 text-small font-medium text-on-ink transition-colors hover:bg-ink/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
+                        className="inline-flex h-10 shrink-0 items-center rounded-ctl bg-ink px-4 text-small font-medium text-on-ink shadow-sm transition-all hover:bg-ink/90 hover:shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
                       >
                         {t('room.bookNow')}
                       </SiteLink>
