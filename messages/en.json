@@ -219,6 +219,7 @@
         "home": "Back to home",
         "roomPrice": "Room · {nights}",
         "extraGuests": "Extra guests",
+        "discount": "Discount ({code})",
         "total": "Total",
         "depositToday": "Deposit today",
         "depositPaid": "Deposit paid",
@@ -313,6 +314,13 @@
         "failed": "The booking wasn't sent. Please try again or call the hotel.",
         "unavailable": "This room can't be booked for these dates any more.",
         "backToRooms": "See other rooms",
+        "couponTitle": "Discount code",
+        "couponPlaceholder": "Enter a discount code / voucher",
+        "couponApply": "Apply",
+        "couponApplying": "Checking…",
+        "couponApplied": "Applied {code}: {amount} off",
+        "couponRemove": "Remove",
+        "couponStale": "The price changed, re-checking the code…",
         "loading": "Loading the room…"
       },
       "deposit": {

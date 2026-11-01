@@ -69,6 +69,8 @@ const PUBLIC_HANDLERS: Record<string, string> = {
     'an invitee without an account sets a password; the emailed token proves the address, rate-limited per IP, refused when the email has an account',
   'POST /api/public/bookings':
     'guests book on the hotel site: rate-limited per IP and per email, PENDING, never a payment (create-booking.ts)',
+  'POST /api/public/coupons/validate':
+    'guests preview a discount code while booking: per-IP limit, never trusts its answer (create-booking.ts re-checks under a row lock)',
   'POST /api/public/contact': 'contact form on the marketing site; emails the Digistay team only, per-IP limit',
   'GET /api/public/deposits/[token]': 'the deposit page polls where its deposit stands; the token is the credential, per-IP limit',
   'POST /api/public/deposits/[token]':

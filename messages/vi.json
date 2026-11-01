@@ -219,6 +219,7 @@
         "home": "Về trang chủ",
         "roomPrice": "Tiền phòng · {nights}",
         "extraGuests": "Phụ thu khách thêm",
+        "discount": "Giảm giá ({code})",
         "total": "Tổng",
         "depositToday": "Cọc hôm nay",
         "depositPaid": "Đã đặt cọc",
@@ -313,6 +314,13 @@
         "failed": "Chưa gửi được đặt phòng. Vui lòng thử lại hoặc gọi khách sạn.",
         "unavailable": "Phòng này không còn nhận đặt cho ngày đã chọn.",
         "backToRooms": "Xem các phòng khác",
+        "couponTitle": "Mã ưu đãi",
+        "couponPlaceholder": "Nhập mã ưu đãi / voucher",
+        "couponApply": "Áp dụng",
+        "couponApplying": "Đang kiểm tra…",
+        "couponApplied": "Đã áp dụng mã {code}: giảm {amount}",
+        "couponRemove": "Bỏ mã",
+        "couponStale": "Giá phòng đã đổi, đang kiểm tra lại mã…",
         "loading": "Đang tải thông tin phòng…"
       },
       "deposit": {

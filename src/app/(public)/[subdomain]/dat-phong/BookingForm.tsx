@@ -78,6 +78,11 @@ export function BookingForm({
   const [sending, setSending] = React.useState(false)
   const [problem, setProblem] = React.useState<'roomGone' | 'badDates' | 'tooMany' | 'failed' | string | null>(null)
   const [wait, setWait] = React.useState(0)
+  // Discount code (task 42): typed, then checked with POST /api/public/coupons/validate.
+  const [couponInput, setCouponInput] = React.useState('')
+  const [coupon, setCoupon] = React.useState<{ code: string; discount: number } | null>(null)
+  const [couponError, setCouponError] = React.useState<string | null>(null)
+  const [couponChecking, setCouponChecking] = React.useState(false)
   // Booked, but no link to the next pages (no signing secret on the server): the code here.
   const [bookedCode, setBookedCode] = React.useState<string | null>(null)
   const holdId = React.useRef<string | null>(null)
@@ -153,7 +158,58 @@ export function BookingForm({
     baseOccupancy: room.baseOccupancy,
     services: chosen,
   })
-  const depositAmount = deposit ? depositFor(quote.total, deposit.percent) : 0
+  // The previewed discount (POST /api/public/coupons/validate). The server
+  // re-checks everything under a row lock at booking time and never trusts it.
+  const discountedTotal = coupon ? Math.max(0, Math.round(quote.total) - coupon.discount) : quote.total
+  const validatedTotal = React.useRef<number | null>(null)
+  const applyCoupon = async (code: string, subtotal: number) => {
+    const res = await fetch('/api/public/coupons/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ propertyId: property.id, code, subtotal: Math.round(subtotal) }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (res.ok && data.success) {
+      validatedTotal.current = Math.round(subtotal)
+      setCoupon({ code: data.data.coupon.code, discount: data.data.discount })
+      setCouponError(null)
+    } else {
+      validatedTotal.current = null
+      setCoupon(null)
+      setCouponError(apiError(data.error) ?? tf('failed'))
+    }
+  }
+  const submitCoupon = async () => {
+    const code = couponInput.trim()
+    if (!code || couponChecking || sending) return
+    setCouponChecking(true)
+    try {
+      await applyCoupon(code, quote.total)
+    } finally {
+      setCouponChecking(false)
+    }
+  }
+  // The total moves when the guest adds services: re-check the code against
+  // the new subtotal so the green line never shows a stale amount.
+  React.useEffect(() => {
+    if (!coupon || couponChecking) return
+    if (validatedTotal.current === Math.round(quote.total)) return
+    let live = true
+    setCouponChecking(true)
+    const id = setTimeout(async () => {
+      try {
+        await applyCoupon(coupon.code, quote.total)
+      } finally {
+        if (live) setCouponChecking(false)
+      }
+    }, 400)
+    return () => {
+      live = false
+      clearTimeout(id)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quote.total])
+  const depositAmount = deposit ? depositFor(discountedTotal, deposit.percent) : 0
   const money = (n: number) => formatVnd(n, lang)
   const nightsText = t('units.nights', { count: quote.nights })
 
@@ -198,6 +254,7 @@ export function BookingForm({
             vatAddress: vat.address.trim() || undefined,
             vatEmail: vat.email.trim(),
           }),
+          ...(coupon && { couponCode: coupon.code }),
           // The guest's emails come in the page's language.
           locale: lang,
         }),
@@ -250,6 +307,9 @@ export function BookingForm({
       ? [{ label: t('booking.common.extraGuests'), amount: quote.extraAdultCharge + quote.extraChildCharge }]
       : []),
     ...quote.services.map((s) => ({ label: `${s.name} × ${s.quantity}`, amount: s.amount })),
+    ...(coupon && coupon.discount > 0
+      ? [{ label: t('booking.common.discount', { code: coupon.code }), amount: -coupon.discount, tone: 'ok' as const }]
+      : []),
   ]
   const summary = (
     <StaySummary
@@ -262,7 +322,7 @@ export function BookingForm({
       adults={stay.adults}
       childGuests={stay.children}
       lines={lines}
-      total={quote.total}
+      total={discountedTotal}
       deposit={deposit ? { amount: depositAmount, paid: false } : null}
       note={vatRate ? t('booking.common.pricesIncludeVat', { rate: vatRate }) : t('booking.common.pricesIncludeTaxes')}
     />
@@ -479,6 +539,74 @@ export function BookingForm({
 
           {section(
             String(2 + (services.length > 0 ? 1 : 0) + (policies.length > 0 ? 1 : 0) + 1).padStart(2, '0'),
+            tf('couponTitle'),
+            <div className="flex flex-col gap-3">
+              {coupon ? (
+                <div className="flex flex-wrap items-center justify-between gap-3 border border-ok/30 bg-ok-soft/40 px-4 py-3">
+                  <p role="status" className="text-[14px] font-medium text-ok">
+                    ✓ {tf('couponApplied', { code: coupon.code, amount: money(coupon.discount) })}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      validatedTotal.current = null
+                      setCoupon(null)
+                      setCouponInput('')
+                      setCouponError(null)
+                    }}
+                    disabled={sending || couponChecking}
+                    className="text-[13.5px] font-medium text-fg underline underline-offset-2 disabled:opacity-50"
+                  >
+                    {tf('couponRemove')}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    id="bk-coupon"
+                    value={couponInput}
+                    onChange={(e) => {
+                      setCouponInput(e.target.value)
+                      if (couponError) setCouponError(null)
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        void submitCoupon()
+                      }
+                    }}
+                    placeholder={tf('couponPlaceholder')}
+                    autoComplete="off"
+                    spellCheck={false}
+                    disabled={sending || couponChecking}
+                    aria-label={tf('couponTitle')}
+                    className={cn(inputClass(!!couponError), 'uppercase placeholder:normal-case')}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void submitCoupon()}
+                    disabled={!couponInput.trim() || couponChecking || sending}
+                    className="h-12 shrink-0 border border-ink bg-panel px-5 text-[14px] font-medium text-fg hover:bg-ink hover:text-on-ink disabled:opacity-50"
+                  >
+                    {couponChecking ? tf('couponApplying') : tf('couponApply')}
+                  </button>
+                </div>
+              )}
+              {couponChecking && coupon ? (
+                <p aria-live="polite" className="text-[13px] text-muted">
+                  {tf('couponStale')}
+                </p>
+              ) : null}
+              {couponError && !coupon ? (
+                <p role="alert" className="text-[13px] text-err">
+                  ⚠ {couponError}
+                </p>
+              ) : null}
+            </div>,
+          )}
+
+          {section(
+            String(2 + (services.length > 0 ? 1 : 0) + (policies.length > 0 ? 1 : 0) + 2).padStart(2, '0'),
             tf('payment'),
             <div className="flex items-start justify-between gap-6 border border-ink bg-panel p-5 ring-1 ring-ink lg:p-6">
               <div className="flex gap-4">

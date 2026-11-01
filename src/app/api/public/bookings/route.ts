@@ -35,6 +35,8 @@ const guestBookingSchema = z.object({
   vatTaxCode: z.string().trim().max(20).optional(),
   vatAddress: z.string().trim().max(300).optional(),
   vatEmail: z.string().trim().email('Email nhận hoá đơn không hợp lệ').max(200).optional().or(z.literal('')),
+  /** Discount code the guest typed (tasks 41-42): re-checked under a row lock, never trusted. */
+  couponCode: z.string().trim().max(30).optional(),
   /** The page's language: the guest's emails follow it. Anything but 'vi' | 'en' is Vietnamese, never an error. */
   locale: z.unknown().optional().transform(emailLocale),
 })
@@ -152,6 +154,7 @@ export async function POST(request: NextRequest) {
       deposit: depositPolicy,
       vat: { company: data.vatCompany, taxCode: data.vatTaxCode, address: data.vatAddress, email: data.vatEmail || null },
       createdById: null,
+      couponCode: data.couponCode,
       locale: data.locale,
     })
     sendAfterResponse(emailIds)

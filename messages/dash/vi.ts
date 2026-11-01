@@ -3,6 +3,7 @@
  * so the areas can be translated side by side. src/i18n/request.ts adds them as `dash`.
  */
 import common from './vi/common.json'
+import coupons from './vi/coupons.json'
 import bookings from './vi/bookings.json'
 import calendar from './vi/calendar.json'
 import property from './vi/property.json'
@@ -21,5 +22,5 @@ import admin from './vi/admin.json'
 import adminOrders from './vi/adminOrders.json'
 import adminActivity from './vi/adminActivity.json'
 
-const dash = { common, bookings, calendar, property, rooms, menu, money, reports, website, workspace, account, ui, billing, deletion, members, admin, adminOrders, adminActivity }
+const dash = { common, coupons, bookings, calendar, property, rooms, menu, money, reports, website, workspace, account, ui, billing, deletion, members, admin, adminOrders, adminActivity }
 export default dash

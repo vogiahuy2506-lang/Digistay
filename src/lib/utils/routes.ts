@@ -45,6 +45,7 @@ export const routes = {
   propertyServices: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/services`,
   propertyMenu: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/menu`,
   propertyPolicies: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/policies`,
+  propertyCoupons: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/coupons`,
 
   // Workspace-scoped
   members: (slug: string) => `/workspace/${slug}/members`,

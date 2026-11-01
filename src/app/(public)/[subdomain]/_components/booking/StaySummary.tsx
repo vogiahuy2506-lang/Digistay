@@ -27,6 +27,8 @@ export interface SummaryLine {
   label: string
   sub?: string
   amount: number
+  /** 'ok': green (discount); 'err': red. Default: normal text. */
+  tone?: 'ok' | 'err'
 }
 
 /**
@@ -129,8 +131,10 @@ export function StaySummary({
           {lines.map((line, i) => (
             <div key={i}>
               <div className="flex justify-between gap-4">
-                <dt className="text-fg">{line.label}</dt>
-                <dd className="whitespace-nowrap tabular-nums text-fg">{money(line.amount)}</dd>
+                <dt className={line.tone === 'ok' ? 'font-medium text-ok' : line.tone === 'err' ? 'text-err' : 'text-fg'}>{line.label}</dt>
+                <dd className={cn('whitespace-nowrap tabular-nums', line.tone === 'ok' ? 'font-medium text-ok' : line.tone === 'err' ? 'text-err' : 'text-fg')}>
+                  {line.tone === 'ok' && line.amount < 0 ? `−${money(-line.amount)}` : money(line.amount)}
+                </dd>
               </div>
               {line.sub && <p className="mt-0.5 text-[12.5px] text-muted">{line.sub}</p>}
             </div>

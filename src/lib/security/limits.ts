@@ -44,6 +44,8 @@ export const LIMITS = {
   depositClaimIp: { name: 'deposit-claim-ip', limit: 10, windowSec: 10 * MIN },
   /** Tax-code lookups from one IP (invoice forms; each asks VietQR unless cached, src/lib/einvoice/tax-lookup.ts). */
   taxLookupIp: { name: 'tax-lookup-ip', limit: 60, windowSec: 10 * MIN },
+  /** Coupon checks from one IP on hotel booking pages (each reads one coupon row). */
+  couponValidateIp: { name: 'coupon-validate-ip', limit: 30, windowSec: 10 * MIN },
   /** Wrong two-factor codes at sign-in from one IP, across accounts (failures only). */
   twoFactorVerifyIp: { name: '2fa-verify-ip', limit: 20, windowSec: 15 * MIN },
   /** Wrong codes while turning two-factor on, per user (failures only). */
