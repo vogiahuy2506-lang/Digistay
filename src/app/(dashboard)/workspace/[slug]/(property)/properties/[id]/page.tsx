@@ -3,14 +3,11 @@
 import * as React from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { PageContainer } from '@/components/layout'
-import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Modal, ModalBody, ModalFooter, ModalHeader, Tabs, TabsList, TabsTrigger, TabsContent, Input, Select, Textarea, NumberInput } from '@/components/ui'
+import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Modal, ModalBody, ModalFooter, ModalHeader, Input, Select } from '@/components/ui'
 import {
-  ArrowLeft, MapPin, Phone, Mail, Globe, Plus, Pencil, Trash2, Save, ExternalLink,
+  ArrowLeft, MapPin, Phone, Mail, Globe, Plus, Pencil, Trash2, ExternalLink,
 } from 'lucide-react'
 import { toast } from '@/components/ui/toast'
-import { getIcon } from '@/lib/amenity-icons'
-import { groupAmenities } from '@/lib/amenity-categories'
-import { amenityName } from '@/lib/i18n/amenities'
 import { routes } from '@/lib/utils/routes'
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
@@ -118,20 +115,7 @@ export default function PropertyDetailPage() {
 
   const [property, setProperty] = React.useState<Property | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
-  const [activeTab, setActiveTab] = React.useState('overview')
   const [showEditModal, setShowEditModal] = React.useState(false)
-  /** Every shared amenity, with whether this property has it (GET /api/properties/[id]/amenities). */
-  const [amenityOptions, setAmenityOptions] = React.useState<(Amenity & { isSelected: boolean })[]>([])
-
-  // Pricing form state
-  const [showPricingModal, setShowPricingModal] = React.useState(false)
-  const [pricingForm, setPricingForm] = React.useState({
-    name: 'Standard',
-    weekdayPrice: 0,
-    weekendPrice: 0,
-    extraAdultPrice: 0,
-    extraChildPrice: 0,
-  })
 
   // Image upload form state
   const [showImageModal, setShowImageModal] = React.useState(false)
@@ -202,17 +186,7 @@ export default function PropertyDetailPage() {
 
   React.useEffect(() => {
     fetchProperty()
-    fetchAmenities()
   }, [propertyId])
-
-  const fetchAmenities = async () => {
-    try {
-      const data = await fetch(`/api/properties/${propertyId}/amenities`).then((r) => r.json())
-      if (data.success) setAmenityOptions(data.data)
-    } catch (err) {
-      console.error('Failed to fetch amenities:', err)
-    }
-  }
 
   const fetchProperty = async () => {
     try {
@@ -225,57 +199,6 @@ export default function PropertyDetailPage() {
       console.error('Failed to fetch property:', err)
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const handleSavePricing = async () => {
-    try {
-      const response = await fetch(`/api/properties/${propertyId}/pricing`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(pricingForm),
-      })
-
-      if (response.ok) {
-        setShowPricingModal(false)
-        resetPricingForm()
-        fetchProperty()
-      } else {
-        toast.error((await response.json().catch(() => ({}))).error || tc('states.error'))
-      }
-    } catch (err) {
-      console.error('Failed to save pricing:', err)
-      toast.error(tc('states.error'))
-    }
-  }
-
-  const resetPricingForm = () => {
-    setPricingForm({
-      name: 'Standard',
-      weekdayPrice: 0,
-      weekendPrice: 0,
-      extraAdultPrice: 0,
-      extraChildPrice: 0,
-    })
-  }
-
-  const handleToggleAmenity = async (amenityId: string) => {
-    const next = amenityOptions.map((a) => (a.id === amenityId ? { ...a, isSelected: !a.isSelected } : a))
-    setAmenityOptions(next)
-    try {
-      const response = await fetch(`/api/properties/${propertyId}/amenities`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amenityIds: next.filter((a) => a.isSelected).map((a) => a.id) }),
-      })
-      const data = await response.json().catch(() => ({}))
-      if (!response.ok || !data.success) throw new Error(apiError(data.error) || tc('states.error'))
-      toast.success(t('amenities.saved'))
-      fetchProperty()
-    } catch (err) {
-      // Put the switch back: the change was not saved.
-      setAmenityOptions(amenityOptions)
-      toast.error(err instanceof Error ? err.message : tc('states.error'))
     }
   }
 
@@ -344,17 +267,8 @@ export default function PropertyDetailPage() {
       </div>
       <EditPropertyModal property={property} isOpen={showEditModal} onClose={() => setShowEditModal(false)} onSaved={fetchProperty} />
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="overview">{t('tabs.overview')}</TabsTrigger>
-          <TabsTrigger value="amenities">{t('tabs.amenities')}</TabsTrigger>
-          <TabsTrigger value="pricing">{t('tabs.pricing')}</TabsTrigger>
-        </TabsList>
-
-        {/* Overview Tab: today at the hotel first (the figures the calendar page had), then the property. */}
-        <TabsContent value="overview">
-          <TodayOverview slug={slug} propertyId={propertyId} />
+      {/* Today at the hotel first (the figures the calendar page had), then the property. */}
+      <TodayOverview slug={slug} propertyId={propertyId} />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Images */}
             <div className="lg:col-span-2">
@@ -463,163 +377,8 @@ export default function PropertyDetailPage() {
             </div>
           </div>
 
-          {/* Deleting the property: its workspace's owner only. */}
-          <DeletePropertyZone propertyId={propertyId} slug={slug} />
-        </TabsContent>
-
-        {/* Pricing Tab */}
-        <TabsContent value="pricing">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>{t('pricing.title')}</CardTitle>
-                <p className="text-sm text-muted mt-1">{t('pricing.subtitle')}</p>
-              </div>
-              <Button onClick={() => setShowPricingModal(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                {t('pricing.add')}
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {property.pricing.length > 0 ? (
-                <div className="space-y-4">
-                  {property.pricing.map((price) => (
-                    <div key={price.id} className="p-4 bg-fg/[0.03] rounded-lg">
-                      <div className="flex items-center justify-between mb-4">
-                        <h4 className="font-medium text-fg">{price.name}</h4>
-                        <Badge variant={price.isActive ? 'success' : 'gray'}>
-                          {price.isActive ? tp('status.active') : tp('status.inactive')}
-                        </Badge>
-                      </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div>
-                          <p className="text-sm text-muted">{t('pricing.weekday')}</p>
-                          <p className="font-semibold text-fg">{labels.money(price.weekdayPrice)}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted">{t('pricing.weekend')}</p>
-                          <p className="font-semibold text-fg">{labels.money(price.weekendPrice)}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted">{t('pricing.extraAdult')}</p>
-                          <p className="font-semibold text-fg">{labels.money(price.extraAdultPrice)}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted">{t('pricing.extraChild')}</p>
-                          <p className="font-semibold text-fg">{labels.money(price.extraChildPrice)}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <p className="text-muted mb-4">{t('pricing.empty')}</p>
-                  <Button onClick={() => setShowPricingModal(true)}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    {t('pricing.addFirst')}
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Pricing Modal */}
-          <Modal isOpen={showPricingModal} onClose={() => setShowPricingModal(false)} size="sm" title={t('pricing.modal.title')}>
-            <ModalHeader onClose={() => setShowPricingModal(false)}>
-              <h2 className="text-lg font-semibold text-fg">{t('pricing.modal.title')}</h2>
-            </ModalHeader>
-            <ModalBody className="space-y-4">
-              <Input
-                label={t('pricing.modal.name')}
-                placeholder={t('pricing.modal.namePlaceholder')}
-                value={pricingForm.name}
-                onChange={(e) => setPricingForm({ ...pricingForm, name: e.target.value })}
-                required
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <NumberInput
-                  label={t('pricing.modal.weekday')}
-                  value={pricingForm.weekdayPrice}
-                  onValueChange={(v) => setPricingForm({ ...pricingForm, weekdayPrice: parseInt(v) || 0 })}
-                  required
-                />
-
-                <NumberInput
-                  label={t('pricing.modal.weekend')}
-                  value={pricingForm.weekendPrice}
-                  onValueChange={(v) => setPricingForm({ ...pricingForm, weekendPrice: parseInt(v) || 0 })}
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <NumberInput
-                  label={t('pricing.modal.extraAdult')}
-                  value={pricingForm.extraAdultPrice}
-                  onValueChange={(v) => setPricingForm({ ...pricingForm, extraAdultPrice: parseInt(v) || 0 })}
-                />
-
-                <NumberInput
-                  label={t('pricing.modal.extraChild')}
-                  value={pricingForm.extraChildPrice}
-                  onValueChange={(v) => setPricingForm({ ...pricingForm, extraChildPrice: parseInt(v) || 0 })}
-                />
-              </div>
-            </ModalBody>
-            <ModalFooter className="sm:justify-end">
-              <Button variant="outline" onClick={() => setShowPricingModal(false)}>
-                {tc('actions.cancel')}
-              </Button>
-              <Button onClick={handleSavePricing}>
-                <Save className="w-4 h-4 mr-2" />
-                {tc('actions.save')}
-              </Button>
-            </ModalFooter>
-          </Modal>
-        </TabsContent>
-
-        {/* Amenities Tab */}
-        <TabsContent value="amenities">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('amenities.title')}</CardTitle>
-              <p className="text-sm text-muted mt-1">{t('amenities.subtitle')}</p>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* By group, with the labels and the selected look of the Services page. */}
-              {groupAmenities(amenityOptions).map(({ category, items }) => (
-                <section key={category}>
-                  <h3 className="text-sm font-medium text-fg mb-3">{t(`amenities.categories.${category}`)}</h3>
-                  <div className="grid grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                    {items.map((amenity) => {
-                      const isSelected = amenity.isSelected
-                      const Icon = getIcon(amenity.icon)
-                      return (
-                        <button
-                          key={amenity.id}
-                          type="button"
-                          aria-pressed={isSelected}
-                          onClick={() => handleToggleAmenity(amenity.id)}
-                          className={`flex items-center gap-3 px-4 py-3 rounded-lg border text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-acc ${
-                            isSelected ? 'border-info/30 bg-info-soft' : 'border-line hover:bg-fg/[0.03]'
-                          }`}
-                        >
-                          <Icon className={`w-5 h-5 shrink-0 ${isSelected ? 'text-info' : 'text-muted'}`} aria-hidden="true" />
-                          <span className={`text-sm font-medium ${isSelected ? 'text-info' : 'text-fg'}`}>
-                            {amenityName(amenity.slug, amenity.name, labels.locale)}
-                          </span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </section>
-              ))}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      {/* Deleting the property: its workspace's owner only. */}
+      <DeletePropertyZone propertyId={propertyId} slug={slug} />
 
       {/* Image Upload Modal */}
       <Modal isOpen={showImageModal} onClose={() => setShowImageModal(false)} title={t('images.addTitle')}>
