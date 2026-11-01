@@ -20,7 +20,6 @@ export type NavKey =
   | 'coupons'
   | 'leads'
   | 'website'
-  | 'landingPages'
   | 'members'
   | 'billing'
   | 'settings'
@@ -66,7 +65,6 @@ export function primaryNav(slug: string, propertyId?: string): NavItem[] {
     { key: 'coupons', href: routes.propertyCoupons(slug, id), can: ['property_edit'], group: 'property' },
     { key: 'leads', href: routes.propertyLeads(slug, id), can: ['property_edit'], group: 'property' },
     { key: 'website', href: routes.propertyWebsite(slug, id), can: ['website_manage'], group: 'property' },
-    { key: 'landingPages', href: routes.propertyLandingPages(slug, id), can: ['website_manage'], group: 'property' },
     { key: 'payments', href: routes.propertyPayments(slug, id), can: ['payments_manage'], group: 'finance' },
     { key: 'invoices', href: routes.propertyInvoices(slug, id), can: ['invoices_manage'], group: 'finance' },
     { key: 'cashbook', href: routes.propertyDailyReport(slug, id), can: ['cashbook_view'], group: 'finance' },

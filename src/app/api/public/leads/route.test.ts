@@ -33,9 +33,6 @@ const h = vi.hoisted(() => {
         create: vi.fn(),
         update: vi.fn(),
       },
-      landingPage: {
-        update: vi.fn().mockResolvedValue({ id: 'lp_1' }),
-      },
     },
   }
 })
@@ -190,46 +187,5 @@ describe('POST /api/public/leads (task 43)', () => {
     const data = await blocked.json()
     expect(data.error).toContain('thử lại')
   })
-
-  it('captures lead with name, phone, landingPageId and increments landing page leadCount', async () => {
-    h.prisma.property.findFirst.mockResolvedValueOnce({
-      id: 'prop_1',
-      websiteSettings: { exitIntentEnabled: false, exitIntentCouponId: null },
-    })
-    h.prisma.lead.findFirst.mockResolvedValueOnce(null)
-    h.prisma.lead.create.mockResolvedValueOnce({
-      id: 'lead_campaign',
-      email: 'campaign_guest@example.com',
-    })
-
-    const res = await postLead({
-      propertyId: 'prop_1',
-      landingPageId: 'lp_summer',
-      email: 'campaign_guest@example.com',
-      name: 'Nguyen Van A',
-      phone: '0912345678',
-      source: 'LANDING_PAGE',
-    })
-
-    expect(res.status).toBe(200)
-    expect(h.prisma.lead.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          email: 'campaign_guest@example.com',
-          name: 'Nguyen Van A',
-          phone: '0912345678',
-          source: 'LANDING_PAGE',
-          metadata: expect.objectContaining({
-            landingPageId: 'lp_summer',
-          }),
-        }),
-      })
-    )
-    expect(h.prisma.landingPage.update).toHaveBeenCalledWith({
-      where: { id: 'lp_summer' },
-      data: { leadCount: { increment: 1 } },
-    })
-  })
 })
-
 
