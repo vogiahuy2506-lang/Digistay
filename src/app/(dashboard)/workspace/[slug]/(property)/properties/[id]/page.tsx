@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { PageContainer } from '@/components/layout'
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Modal, ModalBody, ModalFooter, ModalHeader, Tabs, TabsList, TabsTrigger, TabsContent, Input, Select, Textarea, NumberInput } from '@/components/ui'
 import {
-  ArrowLeft, MapPin, Phone, Mail, Globe, Bed, Plus, Pencil, Trash2, Save, Baby, ExternalLink, PawPrint, Cigarette,
+  ArrowLeft, MapPin, Phone, Mail, Globe, Plus, Pencil, Trash2, Save, ExternalLink,
 } from 'lucide-react'
 import { toast } from '@/components/ui/toast'
 import { getIcon } from '@/lib/amenity-icons'
@@ -123,22 +123,6 @@ export default function PropertyDetailPage() {
   /** Every shared amenity, with whether this property has it (GET /api/properties/[id]/amenities). */
   const [amenityOptions, setAmenityOptions] = React.useState<(Amenity & { isSelected: boolean })[]>([])
 
-  // Room type form state
-  const [showRoomTypeModal, setShowRoomTypeModal] = React.useState(false)
-  const [editingRoomType, setEditingRoomType] = React.useState<RoomType | null>(null)
-  const [roomTypeForm, setRoomTypeForm] = React.useState({
-    name: '',
-    description: '',
-    area: '',
-    bedType: 'DOUBLE',
-    maxAdults: 2,
-    maxChildren: 0,
-    totalRooms: 1,
-    baseOccupancy: 2,
-    maxOccupancy: 4,
-    amenityIds: [] as string[],
-  })
-
   // Pricing form state
   const [showPricingModal, setShowPricingModal] = React.useState(false)
   const [pricingForm, setPricingForm] = React.useState({
@@ -148,9 +132,6 @@ export default function PropertyDetailPage() {
     extraAdultPrice: 0,
     extraChildPrice: 0,
   })
-
-  // Policy form state
-  const [policyForm, setPolicyForm] = React.useState<Partial<Policy>>({})
 
   // Image upload form state
   const [showImageModal, setShowImageModal] = React.useState(false)
@@ -239,90 +220,12 @@ export default function PropertyDetailPage() {
       const data = await response.json()
       if (data.success) {
         setProperty(data.data)
-        if (data.data.policy) {
-          setPolicyForm(data.data.policy)
-        }
       }
     } catch (err) {
       console.error('Failed to fetch property:', err)
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const handleSaveRoomType = async () => {
-    try {
-      const url = editingRoomType 
-        ? `/api/properties/${propertyId}/room-types/${editingRoomType.id}`
-        : `/api/properties/${propertyId}/room-types`
-      
-      const response = await fetch(url, {
-        method: editingRoomType ? 'PATCH' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...roomTypeForm,
-          area: roomTypeForm.area ? parseFloat(roomTypeForm.area) : null,
-          amenityIds: roomTypeForm.amenityIds,
-        }),
-      })
-
-      if (response.ok) {
-        setShowRoomTypeModal(false)
-        setEditingRoomType(null)
-        resetRoomTypeForm()
-        fetchProperty()
-      } else {
-        toast.error((await response.json().catch(() => ({}))).error || tc('states.error'))
-      }
-    } catch (err) {
-      console.error('Failed to save room type:', err)
-      toast.error(tc('states.error'))
-    }
-  }
-
-  const handleDeleteRoomType = async (id: string) => {
-    if (!confirm(t('rooms.deleteConfirm'))) return
-
-    try {
-      await fetch(`/api/properties/${propertyId}/room-types/${id}`, {
-        method: 'DELETE',
-      })
-      fetchProperty()
-    } catch (err) {
-      console.error('Failed to delete room type:', err)
-    }
-  }
-
-  const handleEditRoomType = (roomType: RoomType) => {
-    setEditingRoomType(roomType)
-    setRoomTypeForm({
-      name: roomType.name,
-      description: roomType.description || '',
-      area: roomType.area?.toString() || '',
-      bedType: roomType.bedType,
-      maxAdults: roomType.maxAdults,
-      maxChildren: roomType.maxChildren,
-      totalRooms: roomType.totalRooms,
-      baseOccupancy: roomType.baseOccupancy,
-      maxOccupancy: roomType.maxOccupancy,
-      amenityIds: roomType.amenities.map(a => a.amenity.id),
-    })
-    setShowRoomTypeModal(true)
-  }
-
-  const resetRoomTypeForm = () => {
-    setRoomTypeForm({
-      name: '',
-      description: '',
-      area: '',
-      bedType: 'DOUBLE',
-      maxAdults: 2,
-      maxChildren: 0,
-      totalRooms: 1,
-      baseOccupancy: 2,
-      maxOccupancy: 4,
-      amenityIds: [],
-    })
   }
 
   const handleSavePricing = async () => {
@@ -354,26 +257,6 @@ export default function PropertyDetailPage() {
       extraAdultPrice: 0,
       extraChildPrice: 0,
     })
-  }
-
-  const handleSavePolicy = async () => {
-    try {
-      const response = await fetch(`/api/properties/${propertyId}/policy`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(policyForm),
-      })
-      const data = await response.json().catch(() => ({}))
-      if (!response.ok || !data.success) {
-        toast.error(apiError(data.error) || tc('states.error'))
-        return
-      }
-      toast.success(tc('states.saved'))
-      fetchProperty()
-    } catch (err) {
-      console.error('Failed to save policy:', err)
-      toast.error(tc('states.error'))
-    }
   }
 
   const handleToggleAmenity = async (amenityId: string) => {
@@ -463,13 +346,10 @@ export default function PropertyDetailPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
+        <TabsList className="mb-6">
           <TabsTrigger value="overview">{t('tabs.overview')}</TabsTrigger>
-          <TabsTrigger value="rooms">{t('tabs.rooms')}</TabsTrigger>
-          <TabsTrigger value="pricing">{t('tabs.pricing')}</TabsTrigger>
           <TabsTrigger value="amenities">{t('tabs.amenities')}</TabsTrigger>
-          <TabsTrigger value="policy">{t('tabs.policy')}</TabsTrigger>
-          <TabsTrigger value="website">{t('tabs.website')}</TabsTrigger>
+          <TabsTrigger value="pricing">{t('tabs.pricing')}</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab: today at the hotel first (the figures the calendar page had), then the property. */}
@@ -583,214 +463,8 @@ export default function PropertyDetailPage() {
             </div>
           </div>
 
-          {/* Room types summary */}
-          <Card className="mt-6">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>{t('overview.roomsSummary')}</CardTitle>
-              <Button size="sm" onClick={() => setActiveTab('rooms')}>
-                {t('overview.viewDetails')}
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                {property.roomTypes.length > 0 ? (
-                  property.roomTypes.map((room) => (
-                    <div key={room.id} className="p-4 bg-fg/[0.03] rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Bed className="w-4 h-4 text-muted" />
-                        <span className="font-medium text-fg">{room.name}</span>
-                        {room.planLockedAt && <Badge variant="danger">{t('rooms.planLocked')}</Badge>}
-                      </div>
-                      <p className="text-sm text-muted">
-                        {t('rooms.capacity', { rooms: room.totalRooms, guests: room.maxOccupancy })}
-                      </p>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-muted col-span-full text-center py-4">
-                    {t('rooms.empty')}
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Deleting the property: its workspace's owner only. */}
           <DeletePropertyZone propertyId={propertyId} slug={slug} />
-        </TabsContent>
-
-        {/* Room Types Tab */}
-        <TabsContent value="rooms">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>{t('rooms.title')}</CardTitle>
-                <p className="text-sm text-muted mt-1">{t('rooms.subtitle')}</p>
-              </div>
-              <Button onClick={() => {
-                setEditingRoomType(null)
-                resetRoomTypeForm()
-                setShowRoomTypeModal(true)
-              }}>
-                <Plus className="w-4 h-4 mr-2" />
-                {t('rooms.add')}
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {property.roomTypes.length > 0 ? (
-                <div className="space-y-4">
-                  {property.roomTypes.map((room) => (
-                    <div key={room.id} className="flex items-center justify-between p-4 bg-fg/[0.03] rounded-lg">
-                      <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 bg-fg/10 rounded-lg flex items-center justify-center">
-                          {room.images[0] ? (
-                            <Image src={room.images[0].url} alt={room.name} width={64} height={64} className="rounded-lg object-cover" />
-                          ) : (
-                            <Bed className="w-8 h-8 text-muted" />
-                          )}
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-fg">{room.name}</h4>
-                          <p className="text-sm text-muted">
-                            {bedTypeLabel(room.bedType)} • 
-                            {room.area && `${room.area}m² • `}
-                            {t('rooms.capacity', { rooms: room.totalRooms, guests: room.maxOccupancy })}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {room.planLockedAt && <Badge variant="danger">{t('rooms.planLocked')}</Badge>}
-                        <Badge variant={room.isActive ? 'success' : 'gray'}>
-                          {room.isActive ? tp('status.active') : tp('status.inactive')}
-                        </Badge>
-                        <Button aria-label={tc('actions.edit')} variant="ghost" size="sm" onClick={() => handleEditRoomType(room)}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button aria-label={tc('actions.delete')} variant="ghost" size="sm" onClick={() => handleDeleteRoomType(room.id)}>
-                          <Trash2 className="w-4 h-4 text-err" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <Bed className="w-12 h-12 text-muted mx-auto mb-4" />
-                  <p className="text-muted mb-4">{t('rooms.empty')}</p>
-                  <Button onClick={() => {
-                    setEditingRoomType(null)
-                    resetRoomTypeForm()
-                    setShowRoomTypeModal(true)
-                  }}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    {t('rooms.addFirst')}
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Room Type Modal */}
-          <Modal
-            isOpen={showRoomTypeModal}
-            onClose={() => setShowRoomTypeModal(false)}
-            size="lg"
-            title={editingRoomType ? t('rooms.modal.editTitle') : t('rooms.modal.addTitle')}
-          >
-            <ModalHeader onClose={() => setShowRoomTypeModal(false)}>
-              <h2 className="text-lg font-semibold text-fg">
-                {editingRoomType ? t('rooms.modal.editTitle') : t('rooms.modal.addTitle')}
-              </h2>
-            </ModalHeader>
-            <ModalBody className="space-y-4">
-              <Input
-                label={t('rooms.modal.name')}
-                placeholder={t('rooms.modal.namePlaceholder')}
-                value={roomTypeForm.name}
-                onChange={(e) => setRoomTypeForm({ ...roomTypeForm, name: e.target.value })}
-                required
-              />
-
-              <Textarea
-                label={t('rooms.modal.description')}
-                placeholder={t('rooms.modal.descriptionPlaceholder')}
-                value={roomTypeForm.description}
-                onChange={(e) => setRoomTypeForm({ ...roomTypeForm, description: e.target.value })}
-                rows={3}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label={t('rooms.modal.area')}
-                  type="number"
-                  placeholder="25"
-                  value={roomTypeForm.area}
-                  onChange={(e) => setRoomTypeForm({ ...roomTypeForm, area: e.target.value })}
-                />
-
-                <Select
-                  label={t('rooms.modal.bedType')}
-                  options={bedTypes}
-                  value={roomTypeForm.bedType}
-                  onChange={(e) => setRoomTypeForm({ ...roomTypeForm, bedType: e.target.value })}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <NumberInput
-                  label={t('rooms.modal.totalRooms')}
-                  value={roomTypeForm.totalRooms}
-                  onValueChange={(v) => setRoomTypeForm({ ...roomTypeForm, totalRooms: parseInt(v) || 1 })}
-                  required
-                />
-
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    label={t('rooms.modal.maxAdults')}
-                    type="number"
-                    min="1"
-                    value={roomTypeForm.maxAdults}
-                    onChange={(e) => setRoomTypeForm({ ...roomTypeForm, maxAdults: parseInt(e.target.value) || 1 })}
-                  />
-                  <Input
-                    label={t('rooms.modal.maxChildren')}
-                    type="number"
-                    min="0"
-                    value={roomTypeForm.maxChildren}
-                    onChange={(e) => setRoomTypeForm({ ...roomTypeForm, maxChildren: parseInt(e.target.value) || 0 })}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label={t('rooms.modal.baseOccupancy')}
-                  type="number"
-                  min="1"
-                  value={roomTypeForm.baseOccupancy}
-                  onChange={(e) => setRoomTypeForm({ ...roomTypeForm, baseOccupancy: parseInt(e.target.value) || 1 })}
-                  hint={t('rooms.modal.baseOccupancyHint')}
-                />
-
-                <Input
-                  label={t('rooms.modal.maxOccupancy')}
-                  type="number"
-                  min="1"
-                  value={roomTypeForm.maxOccupancy}
-                  onChange={(e) => setRoomTypeForm({ ...roomTypeForm, maxOccupancy: parseInt(e.target.value) || 4 })}
-                />
-              </div>
-            </ModalBody>
-            <ModalFooter className="sm:justify-end">
-              <Button variant="outline" onClick={() => setShowRoomTypeModal(false)}>
-                {tc('actions.cancel')}
-              </Button>
-              <Button onClick={handleSaveRoomType}>
-                <Save className="w-4 h-4 mr-2" />
-                {tc('actions.save')}
-              </Button>
-            </ModalFooter>
-          </Modal>
         </TabsContent>
 
         {/* Pricing Tab */}
@@ -942,175 +616,6 @@ export default function PropertyDetailPage() {
                   </div>
                 </section>
               ))}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Policy Tab */}
-        <TabsContent value="policy">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>{t('policy.title')}</CardTitle>
-                <p className="text-sm text-muted mt-1">{t('policy.subtitle')}</p>
-              </div>
-              <Button onClick={handleSavePolicy}>
-                <Save className="w-4 h-4 mr-2" />
-                {tc('actions.saveChanges')}
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Check-in/out times */}
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label={t('policy.checkIn')}
-                  type="time"
-                  value={policyForm.checkInTime || '14:00'}
-                  onChange={(e) => setPolicyForm({ ...policyForm, checkInTime: e.target.value })}
-                />
-                <Input
-                  label={t('policy.checkOut')}
-                  type="time"
-                  value={policyForm.checkOutTime || '12:00'}
-                  onChange={(e) => setPolicyForm({ ...policyForm, checkOutTime: e.target.value })}
-                />
-              </div>
-
-              {/* Policies */}
-              <div className="space-y-4">
-                <h4 className="font-medium text-fg">{t('policy.rules')}</h4>
-                
-                <div className="flex items-center justify-between p-4 bg-fg/[0.03] rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Baby className="w-5 h-5 text-muted" />
-                    <div>
-                      <p className="font-medium text-fg">{t('policy.children')}</p>
-                      <p className="text-sm text-muted">{t('policy.childrenHint')}</p>
-                    </div>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={policyForm.childrenAllowed ?? true}
-                      onChange={(e) => setPolicyForm({ ...policyForm, childrenAllowed: e.target.checked })}
-                    />
-                    <div className="w-11 h-6 bg-fg/10 peer-focus:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-acc rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-on-ink after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-panel after:border-line after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-ink"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-fg/[0.03] rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <PawPrint className="w-5 h-5 text-muted" />
-                    <div>
-                      <p className="font-medium text-fg">{t('policy.pets')}</p>
-                      <p className="text-sm text-muted">{t('policy.petsHint')}</p>
-                    </div>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={policyForm.petsAllowed ?? false}
-                      onChange={(e) => setPolicyForm({ ...policyForm, petsAllowed: e.target.checked })}
-                    />
-                    <div className="w-11 h-6 bg-fg/10 peer-focus:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-acc rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-on-ink after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-panel after:border-line after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-ink"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-fg/[0.03] rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Cigarette className="w-5 h-5 text-muted" />
-                    <div>
-                      <p className="font-medium text-fg">{t('policy.smoking')}</p>
-                      <p className="text-sm text-muted">{t('policy.smokingHint')}</p>
-                    </div>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={policyForm.smokingAllowed ?? false}
-                      onChange={(e) => setPolicyForm({ ...policyForm, smokingAllowed: e.target.checked })}
-                    />
-                    <div className="w-11 h-6 bg-fg/10 peer-focus:outline-none peer-focus-visible:ring-4 peer-focus-visible:ring-acc rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-on-ink after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-panel after:border-line after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-ink"></div>
-                  </label>
-                </div>
-              </div>
-
-              {/* Cancellation Policy */}
-              <div>
-                <h4 className="font-medium text-fg mb-2">{t('policy.cancellation')}</h4>
-                <Textarea
-                  placeholder={t('policy.cancellationPlaceholder')}
-                  value={policyForm.cancellationPolicy || ''}
-                  onChange={(e) => setPolicyForm({ ...policyForm, cancellationPolicy: e.target.value })}
-                  rows={3}
-                />
-              </div>
-
-              {/* Additional Rules */}
-              <div>
-                <h4 className="font-medium text-fg mb-2">{t('policy.additionalRules')}</h4>
-                <Textarea
-                  placeholder={t('policy.additionalRulesPlaceholder')}
-                  value={policyForm.additionalRules || ''}
-                  onChange={(e) => setPolicyForm({ ...policyForm, additionalRules: e.target.value })}
-                  rows={4}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Website Tab */}
-        <TabsContent value="website">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>{t('website.title')}</CardTitle>
-                <p className="text-sm text-muted mt-1">{t('website.subtitle')}</p>
-              </div>
-              <Button onClick={() => router.push(routes.propertyWebsite(slug, propertyId))}>
-                <Globe className="w-4 h-4 mr-2" />
-                {t('website.open')}
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-fg/[0.03] rounded-lg text-center">
-                  <Globe className="w-8 h-8 text-acc mx-auto mb-2" />
-                  <h4 className="font-medium">{t('website.blocks')}</h4>
-                  <p className="text-sm text-muted mt-1">{t('website.blocksHint')}</p>
-                </div>
-                <div className="p-4 bg-fg/[0.03] rounded-lg text-center">
-                  <Pencil className="w-8 h-8 text-acc mx-auto mb-2" />
-                  <h4 className="font-medium">{t('website.colors')}</h4>
-                  <p className="text-sm text-muted mt-1">{t('website.colorsHint')}</p>
-                </div>
-                <div className="p-4 bg-fg/[0.03] rounded-lg text-center">
-                  <ExternalLink className="w-8 h-8 text-acc mx-auto mb-2" />
-                  <h4 className="font-medium">{t('website.publish')}</h4>
-                  <p className="text-sm text-muted mt-1">{t('website.publishHint')}</p>
-                </div>
-              </div>
-              <div className="mt-6 flex items-center justify-between p-4 bg-acc-soft rounded-lg">
-                <div>
-                  <h4 className="font-medium text-fg">{t('website.public')}</h4>
-                  <p className="text-sm text-muted">https://{property.subdomain}.digistay.vn</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={() => window.open(`/${property.subdomain}`, '_blank')}>
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    {t('viewWebsite')}
-                  </Button>
-                  {property.websiteSettings?.isPublished ? (
-                    <Badge variant="success">{t('website.published')}</Badge>
-                  ) : (
-                    <Badge variant="gray">{t('website.unpublished')}</Badge>
-                  )}
-                </div>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>
