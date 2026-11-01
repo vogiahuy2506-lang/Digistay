@@ -35,6 +35,9 @@ export const routes = {
   propertyCalendar: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/calendar`,
   propertyRooms: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/rooms`,
   propertyWebsite: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/website`,
+  propertyLandingPages: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/landing-pages`,
+  propertyLandingPageBuilder: (slug: string, id: string, pageId: string) =>
+    `/workspace/${slug}/properties/${id}/landing-pages/${pageId}`,
   propertyReports: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/reports`,
   propertyDailyReport: (slug: string, id: string) =>
     `/workspace/${slug}/properties/${id}/reports/daily`,

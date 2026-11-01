@@ -504,6 +504,7 @@ model Property {
   blogPosts        BlogPost[]
   customerProfiles CustomerProfile[]
   reviews          Review[]
+  landingPages     LandingPage[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1829,3 +1830,52 @@ model Review {
   @@index([propertyId, isPublished, rating])
   @@map("reviews")
 }
+
+// ============================================
+// LANDING PAGES & CAMPAIGNS (Landing Pages Cơ sở)
+// ============================================
+
+enum PageType {
+  MAIN_SITE
+  CAMPAIGN_LP
+}
+
+enum PageStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model LandingPage {
+  id              String      @id @default(cuid())
+  propertyId      String
+  property        Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  title           String
+  slug            String
+  type            PageType    @default(CAMPAIGN_LP)
+  status          PageStatus  @default(DRAFT)
+
+  // Giao diện & màu sắc
+  themeConfig     Json        @default("{}")
+  metaTitle       String?
+  metaDescription String?
+  ogImage         String?
+  trackingPixels  Json?
+  blocks          Json        @default("[]")
+
+  // Thống kê chuyển đổi
+  viewCount       Int         @default(0)
+  leadCount       Int         @default(0)
+  bookingCount    Int         @default(0)
+
+  publishedAt     DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  deletedAt       DateTime?
+
+  @@unique([propertyId, slug])
+  @@index([propertyId, status])
+  @@map("landing_pages")
+}
+

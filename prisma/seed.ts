@@ -47,7 +47,24 @@ async function main() {
 
   // Create demo user
   const hashedPassword = await bcrypt.hash('demo123', 12)
-  
+  const superAdminPassword = await bcrypt.hash('123456aa', 12)
+
+  // Tài khoản Super Admin nền tảng (/admin)
+  const superAdminUser = await prisma.user.upsert({
+    where: { email: 'superadmin@digistay.vn' },
+    update: {
+      password: superAdminPassword,
+      role: 'SUPER_ADMIN',
+    },
+    create: {
+      name: 'Super Admin',
+      email: 'superadmin@digistay.vn',
+      password: superAdminPassword,
+      role: 'SUPER_ADMIN',
+    },
+  })
+  console.log(`Created superadmin user: ${superAdminUser.email}`)
+
   // Tài khoản Admin (Chủ sở hữu workspace - toàn quyền)
   const adminUser = await prisma.user.upsert({
     where: { email: 'admin@digistay.vn' },
