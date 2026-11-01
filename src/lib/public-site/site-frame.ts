@@ -16,6 +16,7 @@ export const loadSiteFrame = cache((subdomain: string) =>
   prisma.property.findFirst({
     where: { subdomain, isActive: true },
     select: {
+      id: true,
       name: true,
       description: true,
       translations: true,
@@ -37,12 +38,55 @@ export const loadSiteFrame = cache((subdomain: string) =>
           metaTitle: true,
           metaDescription: true,
           translations: true,
+          exitIntentEnabled: true,
+          exitIntentCouponId: true,
           ...SITE_DOMAIN_SELECT,
         },
       },
     },
   })
 )
+
+export interface ExitIntentCoupon {
+  code: string
+  name: string
+  discountType: 'PERCENT' | 'FIXED_AMOUNT'
+  discountValue: number
+  maxDiscount: number | null
+}
+
+/** The active exit-intent coupon if one is configured for the property. */
+export const loadExitIntentCoupon = cache(async (propertyId: string, couponId: string): Promise<ExitIntentCoupon | null> => {
+  const now = new Date()
+  const coupon = await prisma.coupon.findFirst({
+    where: {
+      id: couponId,
+      propertyId,
+      isActive: true,
+      deletedAt: null,
+      startDate: { lte: now },
+      endDate: { gte: now },
+    },
+    select: {
+      code: true,
+      name: true,
+      discountType: true,
+      discountValue: true,
+      maxDiscount: true,
+      usageLimit: true,
+      usageCount: true,
+    },
+  })
+  if (!coupon) return null
+  if (coupon.usageLimit != null && coupon.usageCount >= coupon.usageLimit) return null
+  return {
+    code: coupon.code,
+    name: coupon.name,
+    discountType: coupon.discountType,
+    discountValue: coupon.discountValue,
+    maxDiscount: coupon.maxDiscount,
+  }
+})
 
 export type SiteFrame = NonNullable<Awaited<ReturnType<typeof loadSiteFrame>>>
 

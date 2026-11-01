@@ -282,7 +282,17 @@
     "metaTitle": "Page title (meta title)",
     "metaTitlePlaceholder": "e.g. ABC Hotel - Book online",
     "metaDescription": "Page description",
-    "metaDescriptionPlaceholder": "A short description of your property..."
+    "metaDescriptionPlaceholder": "A short description of your property...",
+    "exitIntent": {
+      "title": "Exit-Intent Retention Popup",
+      "hint": "Display a popup offering a discount code when visitors are about to leave your site to boost booking conversions.",
+      "enabledLabel": "Enable exit-intent popup",
+      "couponLabel": "Discount code to offer",
+      "selectCouponPlaceholder": "-- Select an active discount code --",
+      "noCoupons": "No active discount codes available.",
+      "createCouponLink": "Create a new discount code",
+      "previewNote": "When a visitor moves their cursor to close the tab or switch pages, a popup will invite them to enter their email to receive this discount."
+    }
   },
   "publish": {
     "title": "Publishing",

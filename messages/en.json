@@ -28,6 +28,21 @@
       "toDark": "Switch to the dark theme",
       "toLight": "Switch to the light theme"
     },
+    "exitIntent": {
+      "badge": "Exclusive Offer",
+      "headingPercent": "Don't miss out! Get {percent}% off today",
+      "headingFixed": "Don't miss out! Get {amount} off today",
+      "subtitle": "Leave your email to receive an exclusive discount for your stay at {hotel}.",
+      "emailPlaceholder": "Enter your email address…",
+      "submit": "Get Discount Code",
+      "submitting": "Sending…",
+      "successTitle": "Your discount code is ready!",
+      "successSubtitle": "Apply this code at checkout to claim your savings instantly.",
+      "copyCode": "Copy code",
+      "codeCopied": "Copied!",
+      "bookNow": "Book now",
+      "close": "Close"
+    },
     "sections": {
       "rooms": "Rooms",
       "amenities": "Amenities",

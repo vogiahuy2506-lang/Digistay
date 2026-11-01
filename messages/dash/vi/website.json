@@ -282,7 +282,17 @@
     "metaTitle": "Tiêu đề trang",
     "metaTitlePlaceholder": "VD: Khách sạn ABC - Đặt phòng online",
     "metaDescription": "Mô tả trang",
-    "metaDescriptionPlaceholder": "Mô tả ngắn về cơ sở của bạn..."
+    "metaDescriptionPlaceholder": "Mô tả ngắn về cơ sở của bạn...",
+    "exitIntent": {
+      "title": "Cửa sổ bật giữ chân khách (Exit-Intent Popup)",
+      "hint": "Hiển thị popup tặng mã giảm giá khi khách chuẩn bị rời trang để tăng tỷ lệ đặt phòng.",
+      "enabledLabel": "Bật cửa sổ giữ chân khách",
+      "couponLabel": "Mã giảm giá tặng khách",
+      "selectCouponPlaceholder": "-- Chọn mã giảm giá đang hoạt động --",
+      "noCoupons": "Chưa có mã giảm giá nào đang hoạt động.",
+      "createCouponLink": "Tạo mã giảm giá mới",
+      "previewNote": "Khi khách di chuyển chuột ra ngoài để tắt tab hoặc đổi trang, popup sẽ hiện ra mời khách nhập email nhận mã ưu đãi này."
+    }
   },
   "publish": {
     "title": "Xuất bản",

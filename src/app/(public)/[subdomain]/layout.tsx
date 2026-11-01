@@ -3,10 +3,11 @@ import { headers } from 'next/headers'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { publicTheme } from '@/components/marketing/PublicFrame'
 import { SITE_BASE_HEADER, SITE_PATH_HEADER, siteBasePath, siteHref } from '@/lib/public-site/paths'
-import { loadSiteFrame, siteFrameStyle, siteSeoTexts } from '@/lib/public-site/site-frame'
+import { loadExitIntentCoupon, loadSiteFrame, siteFrameStyle, siteSeoTexts } from '@/lib/public-site/site-frame'
 import { loadVisibleSite } from '@/lib/public-site/visibility'
 import { OG_LOCALES } from '@/lib/seo/page-metadata'
 import { SiteBaseProvider, type SiteHotel } from './_components/site-base'
+import { ExitIntentModal } from './_components/ExitIntentModal'
 import { siteSections } from './_components/booking/frame'
 import { siteFontVariables } from './fonts'
 
@@ -86,6 +87,11 @@ export default async function HotelSiteLayout({
 
   const style = siteFrameStyle(settings)
 
+  const exitCoupon =
+    visible && settings?.exitIntentEnabled && settings.exitIntentCouponId && frame?.id
+      ? await loadExitIntentCoupon(frame.id, settings.exitIntentCouponId)
+      : null
+
   return (
     <div
       data-public-theme
@@ -98,6 +104,13 @@ export default async function HotelSiteLayout({
       {preview && <p className="bg-ink px-4 py-2 text-center text-small text-on-ink">{t('preview')}</p>}
       <SiteBaseProvider locale={locale} bases={bases} switchHref={switchHref} theme={theme} hotel={hotel}>
         {children}
+        {exitCoupon && frame && (
+          <ExitIntentModal
+            propertyId={frame.id}
+            hotelName={frame.name}
+            coupon={exitCoupon}
+          />
+        )}
       </SiteBaseProvider>
     </div>
   )

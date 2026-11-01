@@ -162,6 +162,8 @@ export async function PUT(request: NextRequest) {
           metaTitle: settings.metaTitle,
           metaDescription: settings.metaDescription,
           translations: mergeTranslations(current?.translations, translations.data),
+          ...(settings.exitIntentEnabled !== undefined && { exitIntentEnabled: Boolean(settings.exitIntentEnabled) }),
+          ...(settings.exitIntentCouponId !== undefined && { exitIntentCouponId: settings.exitIntentCouponId ? String(settings.exitIntentCouponId) : null }),
           ...domainFields,
           isPublished: settings.isPublished,
           publishedAt: settings.isPublished ? new Date() : null,
@@ -179,6 +181,8 @@ export async function PUT(request: NextRequest) {
           metaTitle: settings.metaTitle,
           metaDescription: settings.metaDescription,
           translations: mergeTranslations(null, translations.data),
+          exitIntentEnabled: Boolean(settings.exitIntentEnabled),
+          exitIntentCouponId: settings.exitIntentCouponId ? String(settings.exitIntentCouponId) : null,
           isPublished: settings.isPublished || false,
         },
       })

@@ -67,6 +67,8 @@ interface WebsiteSettings {
   metaTitle?: string
   metaDescription?: string
   translations?: { en?: { metaTitle?: string; metaDescription?: string } } | null
+  exitIntentEnabled?: boolean
+  exitIntentCouponId?: string | null
   isPublished: boolean
   customDomain?: string
   sslEnabled: boolean
@@ -1258,6 +1260,9 @@ export default function WebsiteBuilderPage() {
   const [site, setSite] = React.useState<PreviewSite | null>(null)
   // No layout saved yet: the blocks are the default layout the site shows.
   const [usingDefaults, setUsingDefaults] = React.useState(false)
+  const [availableCoupons, setAvailableCoupons] = React.useState<
+    { id: string; code: string; name: string; discountType: string; discountValue: number }[]
+  >([])
   
   // Undo/Redo state
   const [history, setHistory] = React.useState<Block[][]>([])
@@ -1316,6 +1321,16 @@ export default function WebsiteBuilderPage() {
           setSettings(blocksData.data.settings)
         }
       }
+
+      // Fetch active coupons for exit-intent popup (task 43)
+      fetch(`/api/properties/${propertyId}/coupons?status=active&limit=100`)
+        .then((res) => res.json())
+        .then((couponsData) => {
+          if (couponsData.success && Array.isArray(couponsData.data)) {
+            setAvailableCoupons(couponsData.data)
+          }
+        })
+        .catch(() => {})
     } catch (err) {
       console.error('Failed to fetch website data:', err)
     } finally {
@@ -1951,6 +1966,72 @@ export default function WebsiteBuilderPage() {
                   onRemove={() => handleSave({ ...settings, customDomain: '' }, t('domain.removed'))}
                 />
               )}
+
+              {/* Exit-Intent Popup (Task 43) */}
+              <Card className="mt-4">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-acc-soft flex items-center justify-center text-acc">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">{t('settings.exitIntent.title')}</CardTitle>
+                      <p className="text-xs text-muted mt-0.5">{t('settings.exitIntent.hint')}</p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-fg/[0.02] border border-line">
+                    <div className="pr-4">
+                      <label htmlFor="exit-intent-toggle" className="text-sm font-medium text-fg block cursor-pointer">
+                        {t('settings.exitIntent.enabledLabel')}
+                      </label>
+                      <p className="text-xs text-muted mt-0.5">{t('settings.exitIntent.previewNote')}</p>
+                    </div>
+                    <input
+                      id="exit-intent-toggle"
+                      type="checkbox"
+                      checked={Boolean(settings?.exitIntentEnabled)}
+                      onChange={(e) => setSettings({ ...settings!, exitIntentEnabled: e.target.checked })}
+                      className="w-5 h-5 rounded border-line text-acc focus:ring-acc"
+                    />
+                  </div>
+
+                  {settings?.exitIntentEnabled && (
+                    <div className="space-y-2 pt-1 animate-in fade-in duration-200">
+                      <label className="text-sm font-medium text-fg block">
+                        {t('settings.exitIntent.couponLabel')}
+                      </label>
+                      {availableCoupons.length > 0 ? (
+                        <select
+                          value={settings?.exitIntentCouponId || ''}
+                          onChange={(e) => setSettings({ ...settings!, exitIntentCouponId: e.target.value || null })}
+                          className="w-full h-10 px-3 border border-line rounded-ctl bg-raised text-fg text-sm focus:outline-none focus:ring-2 focus:ring-acc"
+                        >
+                          <option value="">{t('settings.exitIntent.selectCouponPlaceholder')}</option>
+                          {availableCoupons.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              [{c.code}] {c.name} - Giảm {c.discountType === 'PERCENT' ? `${c.discountValue}%` : `${c.discountValue.toLocaleString('vi-VN')}₫`}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="p-3 rounded-xl bg-warn-soft border border-warn/30 text-xs text-warn">
+                          <p className="font-medium mb-1">{t('settings.exitIntent.noCoupons')}</p>
+                          <button
+                            type="button"
+                            onClick={() => router.push(routes.propertyCoupons(slug, propertyId))}
+                            className="text-acc font-semibold hover:underline inline-flex items-center gap-1"
+                          >
+                            <span>{t('settings.exitIntent.createCouponLink')}</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
               <Card className="mt-4">
                 <CardHeader>

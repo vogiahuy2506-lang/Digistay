@@ -93,13 +93,17 @@ export function BookingForm({
   // e2e): keep it.
   React.useEffect(() => {
     const typed = (id: string) => formRef.current?.querySelector<HTMLInputElement | HTMLTextAreaElement>(`#${id}`)?.value ?? ''
+    let exitEmail = ''
+    try {
+      exitEmail = window.sessionStorage.getItem(`ds_exit_email_${property.id}`) || ''
+    } catch {}
     setGuest((g) => ({
       name: g.name || typed('bk-name'),
       phone: g.phone || typed('bk-phone'),
-      email: g.email || typed('bk-email'),
+      email: g.email || typed('bk-email') || exitEmail,
       note: g.note || typed('bk-note'),
     }))
-  }, [])
+  }, [property.id])
 
   // Hold the room while the guest fills the form in, under the browser's one
   // hold session (hold-session.ts): a reload replaces the hold, never adds one.
@@ -179,6 +183,18 @@ export function BookingForm({
       setCouponError(apiError(data.error) ?? tf('failed'))
     }
   }
+
+  // Pre-fill discount code saved from exit-intent popup if available
+  React.useEffect(() => {
+    try {
+      const exitCoupon = window.sessionStorage.getItem(`ds_exit_coupon_${property.id}`)
+      if (exitCoupon && !couponInput) {
+        setCouponInput(exitCoupon)
+        void applyCoupon(exitCoupon, quote.total)
+      }
+    } catch {}
+  }, [property.id])
+
   const submitCoupon = async () => {
     const code = couponInput.trim()
     if (!code || couponChecking || sending) return

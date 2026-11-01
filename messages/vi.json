@@ -28,6 +28,21 @@
       "toDark": "Chuyển sang giao diện tối",
       "toLight": "Chuyển sang giao diện sáng"
     },
+    "exitIntent": {
+      "badge": "Ưu đãi độc quyền",
+      "headingPercent": "Đừng bỏ lỡ! Nhận mã giảm {percent}% ngay hôm nay",
+      "headingFixed": "Đừng bỏ lỡ! Nhận mã giảm {amount} ngay hôm nay",
+      "subtitle": "Để lại email để nhận mã ưu đãi độc quyền cho kỳ nghỉ của bạn tại {hotel}.",
+      "emailPlaceholder": "Nhập địa chỉ email của bạn…",
+      "submit": "Nhận mã ưu đãi ngay",
+      "submitting": "Đang gửi…",
+      "successTitle": "Mã ưu đãi của bạn đã sẵn sàng!",
+      "successSubtitle": "Áp dụng mã này khi đặt phòng để nhận ưu đãi ngay lập tức.",
+      "copyCode": "Sao chép mã",
+      "codeCopied": "Đã sao chép!",
+      "bookNow": "Đặt phòng ngay",
+      "close": "Đóng"
+    },
     "sections": {
       "rooms": "Phòng",
       "amenities": "Tiện ích",
