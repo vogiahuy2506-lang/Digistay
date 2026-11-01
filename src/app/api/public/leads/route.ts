@@ -8,6 +8,10 @@ import { hit, tooManyRequests } from '@/lib/security/rate-limit'
 const leadSchema = z.object({
   propertyId: z.string().min(1, 'Thiếu propertyId'),
   email: z.string().trim().max(200, 'Email quá dài').email('Email chưa đúng định dạng'),
+  landingPageId: z.string().optional(),
+  name: z.string().trim().max(100).optional(),
+  phone: z.string().trim().max(30).optional(),
+  source: z.string().trim().max(50).optional(),
 })
 
 /**
@@ -85,6 +89,10 @@ export async function POST(request: NextRequest) {
   }
 
   const page = request.headers.get('referer')?.slice(0, 500) ?? null
+  const source = parsed.data.source || 'EXIT_POPUP'
+  const name = parsed.data.name || null
+  const phone = parsed.data.phone || null
+
   const existing = await prisma.lead.findFirst({
     where: { propertyId, email: normalizedEmail },
     select: { id: true },
@@ -93,8 +101,14 @@ export async function POST(request: NextRequest) {
     ? await prisma.lead.update({
         where: { id: existing.id },
         data: {
-          source: 'EXIT_POPUP',
-          metadata: { ...(page ? { page } : {}), ...(coupon ? { couponCode: coupon.code } : {}) },
+          source,
+          ...(name ? { name } : {}),
+          ...(phone ? { phone } : {}),
+          metadata: {
+            ...(page ? { page } : {}),
+            ...(coupon ? { couponCode: coupon.code } : {}),
+            ...(parsed.data.landingPageId ? { landingPageId: parsed.data.landingPageId } : {}),
+          },
         },
         select: { id: true, email: true },
       })
@@ -102,11 +116,26 @@ export async function POST(request: NextRequest) {
         data: {
           propertyId,
           email: normalizedEmail,
-          source: 'EXIT_POPUP',
-          metadata: { ...(page ? { page } : {}), ...(coupon ? { couponCode: coupon.code } : {}) },
+          name,
+          phone,
+          source,
+          metadata: {
+            ...(page ? { page } : {}),
+            ...(coupon ? { couponCode: coupon.code } : {}),
+            ...(parsed.data.landingPageId ? { landingPageId: parsed.data.landingPageId } : {}),
+          },
         },
         select: { id: true, email: true },
       })
+
+  if (parsed.data.landingPageId) {
+    await prisma.landingPage
+      .update({
+        where: { id: parsed.data.landingPageId },
+        data: { leadCount: { increment: 1 } },
+      })
+      .catch(() => {})
+  }
 
   return NextResponse.json({
     success: true,

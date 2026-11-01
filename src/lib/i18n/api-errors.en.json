@@ -762,5 +762,15 @@
   "Ghi chú": "Notes",
   "Popup giữ chân": "Exit popup",
   "Form liên hệ": "Contact form",
-  "Khác": "Other"
+  "Khác": "Other",
+  "Tiêu đề không được để trống": "Title cannot be empty",
+  "Lỗi tải danh sách landing page": "Failed to load landing pages",
+  "Đường dẫn (slug) không hợp lệ": "Invalid slug",
+  "Không thể tạo landing page": "Failed to create landing page",
+  "Không tìm thấy landing page": "Landing page not found",
+  "Lỗi tải chi tiết landing page": "Failed to load landing page details",
+  "Đường dẫn này đã được sử dụng cho một trang khác": "This slug is already used by another page",
+  "Không thể cập nhật landing page": "Failed to update landing page",
+  "Đã xoá landing page": "Landing page deleted",
+  "Không thể xoá landing page": "Failed to delete landing page"
 }
