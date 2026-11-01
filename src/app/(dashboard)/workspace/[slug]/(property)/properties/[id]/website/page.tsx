@@ -47,7 +47,7 @@ import {
   Check, X, ChevronRight, Shield, AlertCircle, Loader2, ExternalLink, RefreshCw, Star,
   LayoutGrid, Hotel, ImageIcon, MapPin, Phone, MousePointer2, Zap, Sparkles,
   FileText, Clock, Undo2, Redo2, Copy, Wand2, ChevronDown, ChevronUp, ConciergeBell, UtensilsCrossed, PanelBottom, History as HistoryIcon,
-  PanelLeftClose, PanelLeftOpen
+  PanelLeftClose, PanelLeftOpen, Moon, Sun
 } from 'lucide-react'
 import { apiError } from '@/lib/i18n/api-errors'
 import { cn } from '@/lib/utils'
@@ -1363,6 +1363,7 @@ export default function WebsiteBuilderPage() {
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
   const [previewMode, setPreviewMode] = React.useState<'desktop' | 'mobile'>('desktop')
+  const [previewTheme, setPreviewTheme] = React.useState<'auto' | 'light' | 'dark'>('auto')
   // The editor column; hidden, the preview takes the whole width (from lg up).
   const [panelOpen, setPanelOpen] = React.useState(true)
   const [activeTab, setActiveTab] = React.useState('blocks')
@@ -1629,8 +1630,9 @@ export default function WebsiteBuilderPage() {
 
   // The preview is the hotel's site: its own look (data-surface="site"), its
   // colors and fonts as chosen in the Style tab, light or dark as the site
-  // shows it to this viewer (the same ds-theme choice as the dashboard).
-  const siteTheme = theme?.preference === 'dark' && theme.darkAvailable ? 'dark' : 'light'
+  // shows it to this viewer (or overridden by the preview theme toggle).
+  const defaultSiteTheme = theme?.preference === 'dark' && theme.darkAvailable ? 'dark' : 'light'
+  const siteTheme = previewTheme === 'auto' ? defaultSiteTheme : previewTheme
   const siteStyle = React.useMemo(
     () =>
       ({
@@ -1778,6 +1780,26 @@ export default function WebsiteBuilderPage() {
               `}
             >
               <Smartphone className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Preview Theme Toggle (Light / Dark) */}
+          <div className="flex items-center bg-fg/5 rounded-xl p-1">
+            <button
+              aria-label={siteTheme === 'dark' ? t('header.previewThemeLight') : t('header.previewThemeDark')}
+              title={siteTheme === 'dark' ? t('header.previewThemeLight') : t('header.previewThemeDark')}
+              onClick={() =>
+                setPreviewTheme((curr) => {
+                  const effective = curr === 'auto' ? defaultSiteTheme : curr
+                  return effective === 'dark' ? 'light' : 'dark'
+                })
+              }
+              className={`
+                p-2 rounded-lg transition-all duration-200
+                ${siteTheme === 'dark' ? 'bg-panel shadow-sm text-acc' : 'text-muted hover:text-fg'}
+              `}
+            >
+              {siteTheme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
             </button>
           </div>
           
@@ -2189,10 +2211,26 @@ export default function WebsiteBuilderPage() {
                 <div className="w-3 h-3 rounded-full bg-warn"></div>
                 <div className="w-3 h-3 rounded-full bg-ok"></div>
               </div>
-              <div className="flex-1 min-w-0 bg-fg/[0.03] rounded-lg px-4 py-1.5 text-sm text-muted flex items-center gap-2">
-                <Globe className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                <span className="truncate">{siteAddress}</span>
-                {customDomain && settings?.sslEnabled && <Shield className="w-3.5 h-3.5 shrink-0 text-ok" aria-hidden="true" />}
+              <div className="flex-1 min-w-0 bg-fg/[0.03] rounded-lg px-4 py-1.5 text-sm text-muted flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0 truncate">
+                  <Globe className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                  <span className="truncate">{siteAddress}</span>
+                  {customDomain && settings?.sslEnabled && <Shield className="w-3.5 h-3.5 shrink-0 text-ok" aria-hidden="true" />}
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setPreviewTheme((curr) => {
+                      const effective = curr === 'auto' ? defaultSiteTheme : curr
+                      return effective === 'dark' ? 'light' : 'dark'
+                    })
+                  }
+                  className="shrink-0 flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-raised border border-line text-fg hover:border-acc transition-colors"
+                  title={siteTheme === 'dark' ? t('header.previewThemeLight') : t('header.previewThemeDark')}
+                >
+                  {siteTheme === 'dark' ? <Moon className="w-3 h-3 text-acc" /> : <Sun className="w-3 h-3 text-warn" />}
+                  <span className="text-[11px] font-medium hidden sm:inline">{siteTheme === 'dark' ? 'Tối' : 'Sáng'}</span>
+                </button>
               </div>
             </div>
 

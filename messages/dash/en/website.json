@@ -7,6 +7,8 @@
     "preview": "Preview",
     "desktop": "Desktop view",
     "mobile": "Phone view",
+    "previewThemeDark": "Preview dark theme",
+    "previewThemeLight": "Preview light theme",
     "hidePanel": "Hide the editor to see the website wider",
     "showPanel": "Show the editor"
   },

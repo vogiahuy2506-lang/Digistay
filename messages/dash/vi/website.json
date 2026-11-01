@@ -7,6 +7,8 @@
     "preview": "Xem trước",
     "desktop": "Xem trên máy tính",
     "mobile": "Xem trên điện thoại",
+    "previewThemeDark": "Xem giao diện tối",
+    "previewThemeLight": "Xem giao diện sáng",
     "hidePanel": "Ẩn cột chỉnh sửa để xem website rộng hơn",
     "showPanel": "Hiện cột chỉnh sửa"
   },
