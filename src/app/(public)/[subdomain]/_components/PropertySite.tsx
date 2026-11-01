@@ -229,6 +229,8 @@ function CtaBlock({ block }: { block: PublicBlock }) {
   const subtitle = blockText(cfg, locale, 'ctaSubtitle', 'subtitle')
   const label = blockText(cfg, locale, 'ctaButtonText', 'buttonText') ?? t('button')
   const link = cfgText(cfg, 'ctaButtonLink') ?? '#booking'
+  const badge = cfgText(cfg, 'ctaBadge')
+  const perks = Array.isArray(cfg.ctaPerks) ? (cfg.ctaPerks as string[]) : []
   const buttonClass =
     'mt-8 inline-flex h-12 items-center rounded-ctl bg-page px-6 text-body font-medium text-fg hover:bg-page/90 transition-colors ' +
     'dark:bg-ink dark:text-on-ink dark:hover:bg-ink/90'
@@ -237,8 +239,24 @@ function CtaBlock({ block }: { block: PublicBlock }) {
     // Dark band on the light page; in the dark theme a raised band, not a bright one.
     <section data-band className="bg-ink py-16 sm:py-20 text-on-ink dark:bg-raised dark:text-fg">
       <Container className="max-w-3xl text-center">
+        {badge && (
+          <div className="mb-4 inline-flex items-center gap-1.5 rounded-full bg-page/15 px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-page dark:bg-fg/10 dark:text-fg">
+            <span>✨</span>
+            <span>{badge}</span>
+          </div>
+        )}
         <h2 className="font-site text-[32px] leading-[40px] sm:text-h2">{title}</h2>
         {subtitle && <p className="mt-4 text-lead text-on-ink/80 dark:text-muted">{subtitle}</p>}
+        {perks.length > 0 && (
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-on-ink/90 dark:text-fg/90">
+            {perks.map((p) => (
+              <span key={p} className="inline-flex items-center gap-1.5">
+                <span className="text-ok">✓</span>
+                <span>{p}</span>
+              </span>
+            ))}
+          </div>
+        )}
         {link.startsWith('/') ? (
           <SiteLink path={link} className={buttonClass}>
             {label}

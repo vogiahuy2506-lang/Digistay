@@ -132,12 +132,14 @@ interface BlockConfig {
   contactAddress?: string
   contactFormEnabled?: boolean
   
-  // CTA
+  // CTA & CRO
   ctaTitle?: string
   ctaSubtitle?: string
   ctaButtonText?: string
   ctaButtonLink?: string
   ctaBackground?: string
+  ctaBadge?: string
+  ctaPerks?: string[]
 
   // Services (the services page's list) and the restaurant menu (the menu page's dishes)
   servicesTitle?: string
@@ -637,6 +639,44 @@ function BlockConfigPanel({
           {/* Hero Config */}
           {block.type === 'HERO' && (
             <>
+              <div className="rounded-box bg-acc/5 border border-acc/20 p-2.5 text-xs space-y-1.5">
+                <div className="flex items-center gap-1.5 font-medium text-acc">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Gợi ý câu từ chuyển đổi cao (CRO):</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateConfig('heroTitle', propertyData?.name ? `Trải nghiệm nghỉ dưỡng tuyệt vời tại ${propertyData.name}` : 'Trải nghiệm nghỉ dưỡng đẳng cấp')
+                      updateConfig('heroSubtitle', 'Không gian thư thái, dịch vụ tận tâm và cam kết giá tốt nhất khi đặt trực tiếp.')
+                    }}
+                    className="px-2 py-1 rounded bg-raised border border-line hover:border-acc text-fg text-xs transition-colors"
+                  >
+                    + Nghỉ dưỡng & Thư giãn
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateConfig('heroTitle', propertyData?.name ? `Chào mừng đến với ${propertyData.name}` : 'Điểm dừng chân lý tưởng')
+                      updateConfig('heroSubtitle', 'Vị trí đắc địa, tiện nghi hiện đại và dịch vụ tận tâm cho kỳ nghỉ trọn vẹn.')
+                    }}
+                    className="px-2 py-1 rounded bg-raised border border-line hover:border-acc text-fg text-xs transition-colors"
+                  >
+                    + Hiện đại & Tiện nghi
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateConfig('heroTitle', 'Ưu đãi đặt phòng trực tiếp hôm nay')
+                      updateConfig('heroSubtitle', 'Giảm ngay 10% so với OTA kèm miễn phí bữa sáng hàng ngày khi đặt phòng tại website.')
+                    }}
+                    className="px-2 py-1 rounded bg-raised border border-line hover:border-acc text-fg text-xs transition-colors"
+                  >
+                    + Khuyến mãi trực tiếp
+                  </button>
+                </div>
+              </div>
               <div>
                 <label className="text-sm font-medium text-fg block mb-1">{t('fields.heroTitle')}</label>
                 <Input 
@@ -953,6 +993,46 @@ function BlockConfigPanel({
           {/* CTA Config */}
           {block.type === 'CTA' && (
             <>
+              <div className="rounded-box bg-acc/5 border border-acc/20 p-2.5 text-xs space-y-1.5">
+                <div className="flex items-center gap-1.5 font-medium text-acc">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Gợi ý CTA thúc đẩy chuyển đổi:</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateConfig('ctaBadge', 'Ưu đãi độc quyền trực tiếp')
+                      updateConfig('ctaTitle', 'Đặt phòng ngay hôm nay - Giữ giá ưu đãi')
+                      updateConfig('ctaSubtitle', 'Tiết kiệm tới 15% so với đặt qua các trang OTA, hỗ trợ đổi trả linh hoạt.')
+                      updateConfig('ctaButtonText', 'Đặt phòng ngay')
+                    }}
+                    className="px-2 py-1 rounded bg-raised border border-line hover:border-acc text-fg text-xs transition-colors"
+                  >
+                    + Ưu đãi giá tốt nhất
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateConfig('ctaBadge', 'Kỳ nghỉ trong mơ')
+                      updateConfig('ctaTitle', 'Sẵn sàng cho chuyến du lịch sắp tới?')
+                      updateConfig('ctaSubtitle', 'Lựa chọn hạng phòng ưng ý và tận hưởng dịch vụ chu đáo hàng đầu.')
+                      updateConfig('ctaButtonText', 'Xem phòng & Giá ưu đãi')
+                    }}
+                    className="px-2 py-1 rounded bg-raised border border-line hover:border-acc text-fg text-xs transition-colors"
+                  >
+                    + Thúc đẩy du lịch
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-fg block mb-1">Huy hiệu ưu đãi (Badge)</label>
+                <Input 
+                  value={config.ctaBadge || ''} 
+                  onChange={(e) => updateConfig('ctaBadge', e.target.value)}
+                  placeholder="Ví dụ: Ưu đãi đặt trực tiếp"
+                />
+              </div>
               <div>
                 <label className="text-sm font-medium text-fg block mb-1">{t('fields.title')}</label>
                 <Input 
@@ -981,6 +1061,43 @@ function BlockConfigPanel({
                     value={config.ctaButtonLink || ''} 
                     onChange={(e) => updateConfig('ctaButtonLink', e.target.value)}
                   />
+                </div>
+              </div>
+
+              {/* Direct Booking Perks */}
+              <div className="space-y-2 pt-2 border-t border-line">
+                <label className="text-sm font-medium text-fg block">Đặc quyền đặt trực tiếp (Perks)</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  {[
+                    'Cam kết giá rẻ hơn Booking/Agoda',
+                    'Miễn phí bữa sáng hàng ngày',
+                    'Nhận phòng sớm & Trả phòng trễ',
+                    'Miễn phí hủy phòng trước 24h',
+                  ].map((perk) => {
+                    const perks = config.ctaPerks || []
+                    const active = perks.includes(perk)
+                    return (
+                      <button
+                        type="button"
+                        key={perk}
+                        onClick={() => {
+                          const next = active ? perks.filter((p) => p !== perk) : [...perks, perk]
+                          updateConfig('ctaPerks', next)
+                        }}
+                        className={cn(
+                          'flex items-center gap-2 p-2 rounded-lg border text-left transition-colors',
+                          active
+                            ? 'border-acc bg-acc/10 text-acc font-medium'
+                            : 'border-line text-muted hover:border-fg/20'
+                        )}
+                      >
+                        <span className={cn('w-4 h-4 rounded-full flex items-center justify-center text-[10px]', active ? 'bg-acc text-on-acc' : 'bg-fg/10')}>
+                          {active ? '✓' : '+'}
+                        </span>
+                        <span className="truncate">{perk}</span>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             </>
@@ -1964,6 +2081,7 @@ export default function WebsiteBuilderPage() {
                   settings={settings as DomainSettings}
                   onChange={mergeDomain}
                   onRemove={() => handleSave({ ...settings, customDomain: '' }, t('domain.removed'))}
+                  subdomain={property?.subdomain}
                 />
               )}
 

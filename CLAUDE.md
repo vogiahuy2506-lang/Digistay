@@ -3,6 +3,10 @@
 Hướng dẫn cho Claude Code trong repo Digistay. File này được nạp vào mọi phiên, nên chỉ ghi
 điều **không đọc ra được từ code**. Chi tiết dài để ở `docs/`.
 
+## Ngôn ngữ giao tiếp
+
+- Luôn hỏi đáp và trả lời bằng tiếng Việt (trừ khi người dùng yêu cầu ngôn ngữ khác).
+
 ## Git — đọc trước khi commit
 
 - **Merge vào `main` là deploy production.** Workflow `Deploy to VPS` chạy ngay sau khi CI xanh

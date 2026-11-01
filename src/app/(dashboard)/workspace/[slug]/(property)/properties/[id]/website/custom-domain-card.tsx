@@ -2,8 +2,8 @@
 
 import * as React from 'react'
 import { useTranslations } from 'next-intl'
-import { CheckCircle2, Copy, ExternalLink, Globe, Loader2, ShieldCheck, TriangleAlert } from 'lucide-react'
-import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@/components/ui'
+import { CheckCircle2, Copy, ExternalLink, Globe, Link2, Loader2, ShieldCheck, TriangleAlert } from 'lucide-react'
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
 import { apiError } from '@/lib/i18n/api-errors'
 import { useDashLabels } from '@/lib/i18n/dash'
@@ -49,6 +49,7 @@ export function CustomDomainCard({
   settings,
   onChange,
   onRemove,
+  subdomain,
 }: {
   propertyId: string
   settings: DomainSettings
@@ -56,6 +57,8 @@ export function CustomDomainCard({
   onChange: (patch: DomainSettings) => void
   /** Save the settings without the domain (the builder's own save). */
   onRemove: () => Promise<boolean>
+  /** Subdomain of the property on Digistay. */
+  subdomain?: string
 }) {
   const t = useTranslations('dash.website.domain')
   const labels = useDashLabels()
@@ -143,95 +146,184 @@ export function CustomDomainCard({
     }
   }
 
+  const defaultUrl = subdomain ? `https://${subdomain}.digistay.vn` : ''
+
+  const copySubdomain = () => {
+    if (!defaultUrl) return
+    void navigator.clipboard?.writeText(defaultUrl).then(() => toast.success(t('copiedLink')))
+  }
+
+  const copyCname = () => {
+    void navigator.clipboard?.writeText('cname.digistay.vn').then(() => toast.success(t('copied')))
+  }
+
   return (
     <section aria-label={t('title')} className="mt-4">
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Globe className="w-4 h-4" aria-hidden="true" />
+            <Globe className="w-4 h-4 text-acc" aria-hidden="true" />
             {t('title')}
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {attached ? (
-            <>
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="min-w-0 break-all font-medium text-fg">{attached}</p>
-                <Button type="button" variant="ghost" size="sm" onClick={remove}>
-                  {t('remove')}
-                </Button>
+        <CardContent className="space-y-6">
+          {/* Option 1: Tên miền phụ Digistay */}
+          <div className="rounded-box border border-line p-4 bg-fg/[0.02]">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-2">
+                <Link2 className="w-4 h-4 text-acc" aria-hidden="true" />
+                <span className="font-medium text-sm text-fg">{t('subdomainTitle')}</span>
               </div>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-start gap-2 text-ok">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                  <span>{t('dnsOk')}</span>
-                </li>
-                {state === 'active' && (
-                  <li className="flex flex-wrap items-start gap-2 text-ok">
-                    <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                    <span>{t('httpsOk')}</span>
-                    <a href={`https://${attached}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-acc hover:underline">
-                      {t('open')} <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-                    </a>
+              <div className="flex items-center gap-1.5">
+                <Badge variant="outline" className="border-ok/30 bg-ok/10 text-ok text-xs font-normal">
+                  <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-ok" />
+                  {t('subdomainActive')}
+                </Badge>
+                <Badge variant="outline" className="border-acc/30 bg-acc/10 text-acc text-xs font-normal">
+                  <ShieldCheck className="mr-1 h-3 w-3" />
+                  {t('subdomainSsl')}
+                </Badge>
+              </div>
+            </div>
+            <p className="text-xs text-muted mb-3">{t('subdomainDesc')}</p>
+            {defaultUrl ? (
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <div className="flex-1 min-w-0 bg-raised border border-line rounded-ctl px-3 py-2 text-sm font-mono text-fg truncate">
+                  {defaultUrl}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button type="button" variant="outline" size="sm" onClick={copySubdomain} className="gap-1.5">
+                    <Copy className="w-3.5 h-3.5" aria-hidden="true" />
+                    {t('copy')}
+                  </Button>
+                  <a
+                    href={defaultUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-ctl bg-acc text-on-acc hover:bg-acc/90 transition-colors"
+                  >
+                    {t('open')}
+                    <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+                  </a>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center" aria-hidden="true">
+              <div className="w-full border-t border-line" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-raised px-2 text-muted font-medium">hoặc</span>
+            </div>
+          </div>
+
+          {/* Option 2: Kết nối Tên miền riêng (Custom Domain) */}
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-medium text-sm text-fg flex items-center gap-2">
+                {t('customDomainTitle')}
+              </h4>
+              <p className="text-xs text-muted mt-1">{t('customDomainDesc')}</p>
+            </div>
+
+            {attached ? (
+              <div className="rounded-box border border-line p-4 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="min-w-0 break-all font-medium text-fg">{attached}</p>
+                  <Button type="button" variant="ghost" size="sm" onClick={remove}>
+                    {t('remove')}
+                  </Button>
+                </div>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-start gap-2 text-ok">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span>{t('dnsOk')}</span>
                   </li>
-                )}
-                {state === 'pending' && !slow && (
-                  <li className="flex items-start gap-2 text-muted">
-                    <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
-                    <span>{t('httpsPending')}</span>
-                  </li>
-                )}
-                {slow && (
-                  <li className="flex flex-wrap items-start gap-2 text-warn">
-                    <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                    <span className="min-w-0 flex-1">
-                      {t('httpsSlow', { when: labels.dateTime(settings.sslRequestedAt!) })}
-                      <span className="mt-1 block text-muted">{t('httpsSlowCheck')}</span>
-                    </span>
-                    <Button type="button" variant="outline" size="sm" onClick={retry} isLoading={retrying}>
-                      {t('retry')}
-                    </Button>
-                  </li>
-                )}
-                {state === 'failed' && (
-                  <li className="flex flex-wrap items-start gap-2 text-warn">
-                    <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                    <span className="flex-1">{t('httpsFailed')}</span>
-                    <Button type="button" variant="outline" size="sm" onClick={retry} isLoading={retrying}>
-                      {t('retry')}
-                    </Button>
-                  </li>
-                )}
-              </ul>
-            </>
-          ) : (
-            <>
-              <p className="text-sm text-muted">{t('intro')}</p>
-              <form
-                className="flex flex-col gap-2 sm:flex-row"
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  if (domain.trim()) void check(domain.trim())
-                }}
-              >
-                <Input
-                  aria-label={t('label')}
-                  value={domain}
-                  onChange={(e) => setDomain(e.target.value)}
-                  placeholder="www.khachsan.vn"
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  className="flex-1"
-                />
-                <Button type="submit" isLoading={checking} disabled={!domain.trim()}>
-                  {t('check')}
-                </Button>
-              </form>
-              {problem && <p className="rounded-ctl border border-warn/30 bg-warn-soft p-3 text-sm text-warn">{problem}</p>}
-              {records && <DnsSteps records={records} />}
-            </>
-          )}
+                  {state === 'active' && (
+                    <li className="flex flex-wrap items-start gap-2 text-ok">
+                      <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                      <span>{t('httpsOk')}</span>
+                      <a href={`https://${attached}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-acc hover:underline">
+                        {t('open')} <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                      </a>
+                    </li>
+                  )}
+                  {state === 'pending' && !slow && (
+                    <li className="flex items-start gap-2 text-muted">
+                      <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
+                      <span>{t('httpsPending')}</span>
+                    </li>
+                  )}
+                  {slow && (
+                    <li className="flex flex-wrap items-start gap-2 text-warn">
+                      <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                      <span className="min-w-0 flex-1">
+                        {t('httpsSlow', { when: labels.dateTime(settings.sslRequestedAt!) })}
+                        <span className="mt-1 block text-muted">{t('httpsSlowCheck')}</span>
+                      </span>
+                      <Button type="button" variant="outline" size="sm" onClick={retry} isLoading={retrying}>
+                        {t('retry')}
+                      </Button>
+                    </li>
+                  )}
+                  {state === 'failed' && (
+                    <li className="flex flex-wrap items-start gap-2 text-warn">
+                      <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                      <span className="flex-1">{t('httpsFailed')}</span>
+                      <Button type="button" variant="outline" size="sm" onClick={retry} isLoading={retrying}>
+                        {t('retry')}
+                      </Button>
+                    </li>
+                  )}
+                </ul>
+              </div>
+            ) : (
+              <>
+                <div className="rounded-box border border-dashed border-line p-3 bg-fg/[0.01] text-xs space-y-1.5">
+                  <p className="font-medium text-fg flex items-center justify-between">
+                    <span>{t('cnameTip')}</span>
+                    <button
+                      type="button"
+                      onClick={copyCname}
+                      className="inline-flex items-center gap-1 text-acc hover:underline font-normal"
+                    >
+                      <Copy className="w-3 h-3" />
+                      {t('copyTarget')}
+                    </button>
+                  </p>
+                  <p className="text-muted">
+                    Bản ghi <span className="font-mono font-medium text-fg">CNAME</span>: Host <span className="font-mono text-fg">www</span> hoặc <span className="font-mono text-fg">booking</span> &rarr; Trỏ đến <span className="font-mono font-semibold text-acc">cname.digistay.vn</span>
+                  </p>
+                </div>
+
+                <form
+                  className="flex flex-col gap-2 sm:flex-row"
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    if (domain.trim()) void check(domain.trim())
+                  }}
+                >
+                  <Input
+                    aria-label={t('label')}
+                    value={domain}
+                    onChange={(e) => setDomain(e.target.value)}
+                    placeholder="www.khachsan.vn"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    className="flex-1"
+                  />
+                  <Button type="submit" isLoading={checking} disabled={!domain.trim()}>
+                    {t('check')}
+                  </Button>
+                </form>
+                {problem && <p className="rounded-ctl border border-warn/30 bg-warn-soft p-3 text-sm text-warn">{problem}</p>}
+                {records && <DnsSteps records={records} />}
+              </>
+            )}
+          </div>
         </CardContent>
       </Card>
     </section>

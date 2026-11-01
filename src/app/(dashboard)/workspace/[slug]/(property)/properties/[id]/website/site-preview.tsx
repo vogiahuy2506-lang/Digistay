@@ -407,10 +407,26 @@ export function PreviewBlock({ block, site, compact }: { block: PreviewBlockData
     case 'CTA': {
       // A dark band on the light page; a raised one in the dark theme (CtaBlock).
       const subtitle = text(cfg, 'ctaSubtitle', 'subtitle')
+      const badge = text(cfg, 'ctaBadge')
+      const perks = Array.isArray(cfg.ctaPerks) ? (cfg.ctaPerks as string[]) : []
       return (
         <section data-band className="bg-ink px-6 py-10 text-center text-on-ink dark:bg-raised dark:text-fg">
+          {badge && (
+            <span className="mb-3 inline-block rounded-full bg-page/20 px-3 py-0.5 text-xs font-medium text-page dark:bg-fg/10 dark:text-fg">
+              ✨ {badge}
+            </span>
+          )}
           <h2 className="font-site text-[28px] leading-9">{text(cfg, 'ctaTitle', 'title') ?? t('ctaTitle')}</h2>
           {subtitle && <p className="mt-3 text-body text-on-ink/80 dark:text-muted">{subtitle}</p>}
+          {perks.length > 0 && (
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-xs text-on-ink/90 dark:text-fg/80">
+              {perks.map((p) => (
+                <span key={p} className="inline-flex items-center gap-1">
+                  <span className="text-ok">✓</span> {p}
+                </span>
+              ))}
+            </div>
+          )}
           <span className="mt-6 inline-flex h-11 items-center rounded-ctl bg-page px-5 text-small font-medium text-fg dark:bg-ink dark:text-on-ink">
             {text(cfg, 'ctaButtonText', 'buttonText') ?? t('ctaButton')}
           </span>
