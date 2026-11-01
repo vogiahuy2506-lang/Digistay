@@ -1135,6 +1135,25 @@
     "paused": "Paused",
     "roomTypes": "{count} room types",
     "open": "Manage",
+    "filter": {
+      "all": "All",
+      "active": "Active",
+      "paused": "Paused"
+    },
+    "emptyActive": {
+      "title": "No active properties",
+      "text": "There are no properties currently active."
+    },
+    "emptyPaused": {
+      "title": "No paused properties",
+      "text": "There are no properties currently paused."
+    },
+    "actions": {
+      "viewWebsite": "View website",
+      "rooms": "Room types",
+      "bookings": "Bookings",
+      "settings": "Property settings"
+    },
     "empty": {
       "title": "No properties yet",
       "text": "Add your first property to start taking bookings and building its website.",

@@ -1135,6 +1135,25 @@
     "paused": "Tạm dừng",
     "roomTypes": "{count} hạng phòng",
     "open": "Quản lý",
+    "filter": {
+      "all": "Tất cả",
+      "active": "Hoạt động",
+      "paused": "Tạm dừng"
+    },
+    "emptyActive": {
+      "title": "Không có cơ sở đang hoạt động",
+      "text": "Chưa có cơ sở nào ở trạng thái hoạt động."
+    },
+    "emptyPaused": {
+      "title": "Không có cơ sở tạm dừng",
+      "text": "Chưa có cơ sở nào ở trạng thái tạm dừng."
+    },
+    "actions": {
+      "viewWebsite": "Xem website",
+      "rooms": "Hạng phòng",
+      "bookings": "Đặt phòng",
+      "settings": "Cài đặt cơ sở"
+    },
     "empty": {
       "title": "Chưa có cơ sở nào",
       "text": "Thêm cơ sở đầu tiên để bắt đầu đặt phòng và dựng website.",
