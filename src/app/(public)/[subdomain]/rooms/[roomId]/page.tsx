@@ -9,6 +9,7 @@ import { isLocale, type Locale } from '@/i18n/locales'
 import { amenityName } from '@/lib/i18n/amenities'
 import { localizeRow } from '@/lib/i18n/content'
 import { JsonLd } from '@/components/seo/JsonLd'
+import { TrackRoomView } from '@/components/marketing/TrackRoomView'
 import { SiteHeader, type SiteSection } from '../../_components/SiteHeader'
 import { SiteLink } from '../../_components/site-base'
 import { Container, bedLabel, roomMeta } from '../../_components/site-ui'
@@ -184,6 +185,11 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
   return (
     <>
       <JsonLd data={structured} />
+      <TrackRoomView
+        roomId={room.id}
+        roomName={room.name}
+        price={rates?.weekdayPrice ? rates.weekdayPrice : undefined}
+      />
       <SiteHeader property={property} sections={sections} onHome={false} />
 
       <main className="pb-28 lg:pb-24">

@@ -27,6 +27,12 @@ export interface HotelPageMetaInput {
   description?: string | null
   /** Tried in order; the first absolute http(s) one is used. */
   images: (string | null | undefined)[]
+  /** Open Graph type: 'website' (default) or 'article' for blog posts. */
+  type?: 'website' | 'article'
+  /** Published timestamp for article Open Graph tags (ISO 8601). */
+  publishedTime?: string
+  /** Author names for article Open Graph tags. */
+  authors?: string[]
 }
 
 /** A page of a hotel's site, on its canonical origin, in both languages. */
@@ -36,13 +42,15 @@ export function hotelPageMetadata(input: HotelPageMetaInput): PageMeta {
   return {
     alternates: { canonical: url, languages: sitePageLanguages(input.origin, input.path) },
     openGraph: {
-      type: 'website',
+      type: input.type ?? 'website',
       url,
       siteName: input.siteName,
       title: input.title,
       ...(input.description ? { description: input.description } : {}),
       locale: OG_LOCALES[input.locale],
       alternateLocale: OG_LOCALES[input.locale === 'en' ? 'vi' : 'en'],
+      ...(input.type === 'article' && input.publishedTime ? { publishedTime: input.publishedTime } : {}),
+      ...(input.type === 'article' && input.authors?.length ? { authors: input.authors } : {}),
       ...(image ? { images: [{ url: image, alt: input.title }] } : {}),
     },
     twitter: { card: image ? 'summary_large_image' : 'summary' },

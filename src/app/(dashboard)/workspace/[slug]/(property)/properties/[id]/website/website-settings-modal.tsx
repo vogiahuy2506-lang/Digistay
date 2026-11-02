@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { Globe, Search, Sparkles, ShieldCheck, ArrowRight, ExternalLink } from 'lucide-react'
+import { Globe, Search, Sparkles, ShieldCheck, ArrowRight, ExternalLink, Activity, Share2, CheckCircle2, AlertCircle } from 'lucide-react'
 import {
   Modal,
   ModalHeader,
@@ -20,6 +20,7 @@ import {
 import { EnglishCopy } from '@/components/ui/english-copy'
 import { CustomDomainCard, type DomainSettings } from './custom-domain-card'
 import { routes } from '@/lib/utils/routes'
+import { isValidFacebookPixelId, isValidGoogleTagId } from '@/lib/marketing/tracking'
 
 interface WebsiteSettingsModalProps {
   isOpen: boolean
@@ -27,6 +28,8 @@ interface WebsiteSettingsModalProps {
   propertyId: string
   slug: string
   subdomain?: string
+  propertyName?: string
+  coverImage?: string | null
   settings: {
     metaTitle?: string
     metaDescription?: string
@@ -38,6 +41,8 @@ interface WebsiteSettingsModalProps {
     sslError?: string | null
     exitIntentEnabled?: boolean
     exitIntentCouponId?: string | null
+    facebookPixelId?: string | null
+    googleTagId?: string | null
     isPublished: boolean
   }
   onChange: (updated: Record<string, unknown>) => void
@@ -57,6 +62,8 @@ export function WebsiteSettingsModal({
   propertyId,
   slug,
   subdomain,
+  propertyName,
+  coverImage,
   settings,
   onChange,
   onSaveDomain,
@@ -85,20 +92,24 @@ export function WebsiteSettingsModal({
 
       <ModalBody className="space-y-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="domain" className="gap-1.5 text-xs sm:text-sm">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 gap-1 h-auto p-1 bg-fg/[0.04]">
+            <TabsTrigger value="domain" className="gap-1.5 text-xs sm:text-sm py-2">
               <Globe className="h-4 w-4" />
               <span>Tên miền & SSL</span>
             </TabsTrigger>
-            <TabsTrigger value="seo" className="gap-1.5 text-xs sm:text-sm">
+            <TabsTrigger value="seo" className="gap-1.5 text-xs sm:text-sm py-2">
               <Search className="h-4 w-4" />
-              <span>{t('settings.seo')}</span>
+              <span>SEO & Mạng XH</span>
             </TabsTrigger>
-            <TabsTrigger value="exitIntent" className="gap-1.5 text-xs sm:text-sm">
+            <TabsTrigger value="marketing" className="gap-1.5 text-xs sm:text-sm py-2">
+              <Activity className="h-4 w-4" />
+              <span>Đo lường & Pixel</span>
+            </TabsTrigger>
+            <TabsTrigger value="exitIntent" className="gap-1.5 text-xs sm:text-sm py-2">
               <Sparkles className="h-4 w-4" />
               <span>Popup ưu đãi</span>
             </TabsTrigger>
-            <TabsTrigger value="publish" className="gap-1.5 text-xs sm:text-sm">
+            <TabsTrigger value="publish" className="gap-1.5 text-xs sm:text-sm py-2">
               <ShieldCheck className="h-4 w-4" />
               <span>{t('publish.title')}</span>
             </TabsTrigger>
@@ -203,6 +214,176 @@ export function WebsiteSettingsModal({
                 />
               </div>
             </EnglishCopy>
+
+            {/* Social Share Preview (Task 46) */}
+            <div className="p-4 rounded-xl border border-line bg-fg/[0.02] space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-1.5">
+                  <Share2 className="w-3.5 h-3.5 text-acc" />
+                  <span>Xem trước hiển thị Mạng xã hội (Zalo, Facebook, Messenger)</span>
+                </p>
+                {publicUrl && (
+                  <a
+                    href={`https://developers.facebook.com/tools/debug/?q=${encodeURIComponent(publicUrl)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-acc hover:underline flex items-center gap-1"
+                  >
+                    <span>Kiểm tra Facebook Debugger</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </div>
+
+              {/* Social Card Mockup */}
+              <div className="max-w-md mx-auto overflow-hidden rounded-xl border border-line bg-panel shadow-sm">
+                <div className="relative aspect-[1.91/1] w-full bg-fg/[0.06] overflow-hidden flex items-center justify-center">
+                  {coverImage ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={coverImage}
+                      alt={settings.metaTitle || propertyName || 'Ảnh chia sẻ'}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="text-center p-4">
+                      <Globe className="w-8 h-8 mx-auto text-muted/40 mb-1" />
+                      <span className="text-xs text-muted">Chưa có ảnh bìa (Hiển thị ảnh mặc định)</span>
+                    </div>
+                  )}
+                  <span className="absolute bottom-2 right-2 rounded bg-black/70 px-1.5 py-0.5 text-[10px] text-white backdrop-blur-sm">
+                    1200 x 630
+                  </span>
+                </div>
+                <div className="p-3 bg-fg/[0.02]">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted truncate">
+                    {(settings.customDomain || publicUrl || 'KHÁCH SẠN.DIGISTAY.VN').replace(/^https?:\/\//, '').split('/')[0]}
+                  </p>
+                  <h4 className="text-sm font-semibold text-fg line-clamp-1 mt-0.5">
+                    {settings.metaTitle || propertyName || 'Tên khách sạn - Đặt phòng trực tiếp'}
+                  </h4>
+                  <p className="text-xs text-muted line-clamp-2 mt-1">
+                    {settings.metaDescription || 'Trải nghiệm kỳ nghỉ tuyệt vời với giá tốt nhất, ưu đãi độc quyền khi đặt phòng trực tiếp tại website khách sạn.'}
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-muted leading-relaxed">
+                Hệ thống tự động gắn thẻ Open Graph (<code>og:image</code>, <code>og:title</code>, <code>og:description</code>) và Twitter Card theo chuẩn quốc tế để hiển thị đẹp nhất khi copy link gửi qua tin nhắn.
+              </p>
+            </div>
+          </TabsContent>
+
+          {/* Marketing & Tracking Tab (Task 47) */}
+          <TabsContent value="marketing" className="mt-4 space-y-4">
+            <div className="p-4 rounded-xl border border-line bg-fg/[0.02]">
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-acc-soft text-acc">
+                  <Activity className="h-4.5 w-4.5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-fg">Mã đo lường Tiếp thị (Facebook Pixel & Google Tag)</h3>
+                  <p className="text-xs text-muted mt-0.5">
+                    Tự động ghi nhận lượt xem phòng, thao tác đặt phòng và doanh thu đơn hàng để tối ưu hoá các chiến dịch quảng cáo Facebook và Google Ads mà không cần can thiệp mã nguồn.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Meta / Facebook Pixel */}
+            <div className="p-4 rounded-xl border border-line bg-panel space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-semibold text-fg flex items-center gap-2">
+                  <span>Facebook Pixel ID (Meta Pixel)</span>
+                  {settings.facebookPixelId ? (
+                    isValidFacebookPixelId(settings.facebookPixelId) ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] text-acc font-medium bg-acc-soft px-2 py-0.5 rounded-full">
+                        <CheckCircle2 className="w-3 h-3" /> Đang hoạt động
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[11px] text-err font-medium bg-err-soft px-2 py-0.5 rounded-full">
+                        <AlertCircle className="w-3 h-3" /> ID không hợp lệ
+                      </span>
+                    )
+                  ) : (
+                    <span className="text-[11px] text-muted">Chưa cài đặt</span>
+                  )}
+                </label>
+              </div>
+
+              <Input
+                value={settings.facebookPixelId || ''}
+                onChange={(e) => onChange({ facebookPixelId: e.target.value.trim() })}
+                placeholder="Ví dụ: 123456789012345 (gồm 9 - 20 chữ số)"
+              />
+
+              <div className="rounded-lg bg-fg/[0.02] p-2.5 text-xs text-muted space-y-1">
+                <p className="font-medium text-fg">📌 Cách lấy Facebook Pixel ID:</p>
+                <p>1. Truy cập <b>Meta Events Manager</b> (Trình quản lý sự kiện Facebook).</p>
+                <p>2. Chọn nguồn dữ liệu (Pixel / Tập dữ liệu) của bạn → Vào mục <b>Cài đặt</b>.</p>
+                <p>3. Sao chép dãy số <b>ID tập dữ liệu</b> (thường gồm 15-16 số) và dán vào ô trên.</p>
+              </div>
+            </div>
+
+            {/* Google Tag / GA4 / GTM */}
+            <div className="p-4 rounded-xl border border-line bg-panel space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-semibold text-fg flex items-center gap-2">
+                  <span>Google Tag ID (Google Analytics 4 / Google Tag Manager)</span>
+                  {settings.googleTagId ? (
+                    isValidGoogleTagId(settings.googleTagId) ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] text-acc font-medium bg-acc-soft px-2 py-0.5 rounded-full">
+                        <CheckCircle2 className="w-3 h-3" /> Đang hoạt động
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[11px] text-err font-medium bg-err-soft px-2 py-0.5 rounded-full">
+                        <AlertCircle className="w-3 h-3" /> Sai định dạng (G-..., GT-..., GTM-...)
+                      </span>
+                    )
+                  ) : (
+                    <span className="text-[11px] text-muted">Chưa cài đặt</span>
+                  )}
+                </label>
+              </div>
+
+              <Input
+                value={settings.googleTagId || ''}
+                onChange={(e) => onChange({ googleTagId: e.target.value.trim().toUpperCase() })}
+                placeholder="Ví dụ: G-ABC1234567 hoặc GTM-XXXXXXX"
+              />
+
+              <div className="rounded-lg bg-fg/[0.02] p-2.5 text-xs text-muted space-y-1">
+                <p className="font-medium text-fg">📌 Hỗ trợ các định dạng Google Tag:</p>
+                <p>• <b>Google Analytics 4</b>: Bắt đầu bằng <code>G-</code> (vd: <code>G-ABC1234567</code>).</p>
+                <p>• <b>Google Tag Manager</b>: Bắt đầu bằng <code>GTM-</code> (vd: <code>GTM-XXXXXXX</code>).</p>
+                <p>• <b>Google Ads Conversion</b>: Bắt đầu bằng <code>AW-</code> (vd: <code>AW-123456789</code>).</p>
+              </div>
+            </div>
+
+            {/* E-commerce Auto Events breakdown */}
+            <div className="p-4 rounded-xl border border-line bg-fg/[0.02] space-y-2.5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+                ⚡ Các sự kiện chuẩn được Digistay tự động kích hoạt
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <div className="p-2 rounded-lg border border-line/60 bg-panel">
+                  <span className="font-semibold text-fg">PageView</span>
+                  <p className="text-muted text-[11px] mt-0.5">Tự động gửi khi khách truy cập bất kỳ trang nào.</p>
+                </div>
+                <div className="p-2 rounded-lg border border-line/60 bg-panel">
+                  <span className="font-semibold text-fg">ViewContent</span>
+                  <p className="text-muted text-[11px] mt-0.5">Kích hoạt khi khách mở xem chi tiết một hạng phòng.</p>
+                </div>
+                <div className="p-2 rounded-lg border border-line/60 bg-panel">
+                  <span className="font-semibold text-fg">InitiateCheckout</span>
+                  <p className="text-muted text-[11px] mt-0.5">Kích hoạt khi khách vào trang điền thông tin đặt phòng.</p>
+                </div>
+                <div className="p-2 rounded-lg border border-line/60 bg-panel">
+                  <span className="font-semibold text-fg">Purchase</span>
+                  <p className="text-muted text-[11px] mt-0.5">Kích hoạt khi thanh toán thành công kèm doanh thu & mã đơn.</p>
+                </div>
+              </div>
+            </div>
           </TabsContent>
 
           {/* Exit-Intent Popup Tab */}

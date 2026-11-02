@@ -27,6 +27,7 @@ export const loadSiteFrame = cache((subdomain: string) =>
       district: true,
       phone: true,
       address: true,
+      coverImage: true,
       websiteBlocks: { where: { isEnabled: true }, select: { type: true } },
       websiteSettings: {
         select: {
@@ -40,6 +41,8 @@ export const loadSiteFrame = cache((subdomain: string) =>
           translations: true,
           exitIntentEnabled: true,
           exitIntentCouponId: true,
+          facebookPixelId: true,
+          googleTagId: true,
           ...SITE_DOMAIN_SELECT,
         },
       },

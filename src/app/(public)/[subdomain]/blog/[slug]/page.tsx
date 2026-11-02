@@ -44,7 +44,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const description = post.metaDescription || post.summary || post.title
   const images = post.coverImage ? [post.coverImage] : []
 
-  const metadata = hotelPageMetadata({
+  return hotelPageMetadata({
     origin: canonicalSiteOrigin(subdomain, frame.websiteSettings),
     locale,
     path: `/blog/${slug}`,
@@ -52,18 +52,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: `${title} · ${frame.name}`,
     description,
     images,
+    type: 'article',
+    publishedTime: post.publishedAt?.toISOString(),
+    authors: post.authorName ? [post.authorName] : undefined,
   })
-
-  // Thêm Open Graph kiểu bài viết (article)
-  return {
-    ...metadata,
-    openGraph: {
-      ...metadata.openGraph,
-      type: 'article',
-      publishedTime: post.publishedAt?.toISOString(),
-      authors: post.authorName ? [post.authorName] : undefined,
-    },
-  }
 }
 
 export default async function BlogPostDetailPage({ params }: PageProps) {

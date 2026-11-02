@@ -62,6 +62,26 @@ describe('hotelPageMetadata', () => {
     expect((meta.openGraph as { locale?: string }).locale).toBe('vi_VN')
     expect(meta.twitter).toEqual({ card: 'summary' })
   })
+
+  it('supports article Open Graph type with publication details', () => {
+    const meta = hotelPageMetadata({
+      origin: ORIGIN,
+      locale: 'vi',
+      path: '/blog/cam-nang-du-lich',
+      siteName: 'Mây Biển',
+      title: 'Cẩm nang du lịch · Mây Biển',
+      description: 'Khám phá ẩm thực và cảnh đẹp.',
+      images: ['https://img.example/blog.jpg'],
+      type: 'article',
+      publishedTime: '2026-11-02T10:00:00.000Z',
+      authors: ['Lễ tân khách sạn'],
+    })
+    expect(meta.openGraph).toMatchObject({
+      type: 'article',
+      publishedTime: '2026-11-02T10:00:00.000Z',
+      authors: ['Lễ tân khách sạn'],
+    })
+  })
 })
 
 describe('digistayPageMetadata', () => {

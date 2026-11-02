@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     siteName: frame.name,
     title: `${t('title')} · ${frame.name}`,
     description: t('metaDescription', { hotel: frame.name }),
-    images: [],
+    images: [frame.coverImage],
   })
 }
 

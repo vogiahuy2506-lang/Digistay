@@ -6,7 +6,7 @@ import { prisma } from '@/lib/db'
 import { formatVnd } from '@/lib/bookings/display'
 import { depositToken } from '@/lib/payments/deposit-link'
 import { SiteLink } from '../_components/site-base'
-import { WaitForPayment } from './WaitForPayment'
+import { TrackPurchase, WaitForPayment } from './WaitForPayment'
 
 interface PageProps {
   params: Promise<{ subdomain: string }>
@@ -86,6 +86,12 @@ export default async function PaymentReturnPage({ params, searchParams }: PagePr
       <div className="max-w-md w-full border border-line bg-raised p-8 text-center space-y-4 shadow-lift">
         <h1 className="font-site text-2xl font-semibold text-fg">{title}</h1>
         <p className="text-muted">{body}</p>
+        {paid && payment && (
+          <TrackPurchase
+            bookingCode={payment.booking.bookingCode}
+            amount={payment.amount}
+          />
+        )}
         {payment && !paid && !cancelled && !expired && <WaitForPayment />}
         {payAgain && (
           <SiteLink

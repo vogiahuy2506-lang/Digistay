@@ -8,6 +8,7 @@ import { keepSiteBaseline, recordSiteVersion } from '@/lib/public-site/versions'
 import { NO_PERMISSION, accessibleProperties, can, checkPropertyAccess } from '@/lib/auth/access'
 import { mergeTranslations, translationsInput } from '@/lib/i18n/translations-input'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
+import { cleanFacebookPixelId, cleanGoogleTagId } from '@/lib/marketing/tracking'
 
 // propertyId must be a string: undefined or a filter object reaching
 // Prisma would match the wrong property.
@@ -162,6 +163,8 @@ export async function PUT(request: NextRequest) {
           metaTitle: settings.metaTitle,
           metaDescription: settings.metaDescription,
           translations: mergeTranslations(current?.translations, translations.data),
+          ...(settings.facebookPixelId !== undefined && { facebookPixelId: cleanFacebookPixelId(settings.facebookPixelId) }),
+          ...(settings.googleTagId !== undefined && { googleTagId: cleanGoogleTagId(settings.googleTagId) }),
           ...(settings.exitIntentEnabled !== undefined && { exitIntentEnabled: Boolean(settings.exitIntentEnabled) }),
           ...(settings.exitIntentCouponId !== undefined && { exitIntentCouponId: settings.exitIntentCouponId ? String(settings.exitIntentCouponId) : null }),
           ...domainFields,
@@ -181,6 +184,8 @@ export async function PUT(request: NextRequest) {
           metaTitle: settings.metaTitle,
           metaDescription: settings.metaDescription,
           translations: mergeTranslations(null, translations.data),
+          facebookPixelId: cleanFacebookPixelId(settings.facebookPixelId),
+          googleTagId: cleanGoogleTagId(settings.googleTagId),
           exitIntentEnabled: Boolean(settings.exitIntentEnabled),
           exitIntentCouponId: settings.exitIntentCouponId ? String(settings.exitIntentCouponId) : null,
           isPublished: settings.isPublished || false,

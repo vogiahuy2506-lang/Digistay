@@ -12,6 +12,7 @@ import { StaySummary, type SummaryLine } from '../_components/booking/StaySummar
 import { apiError } from '@/lib/i18n/api-errors'
 import { useTaxLookup } from '@/lib/hooks/use-tax-lookup'
 import { HOLD_HEADER, browserHoldSession } from '@/lib/bookings/hold-session'
+import { trackMarketingEvent } from '@/components/marketing/MarketingTracking'
 
 interface Service extends PricedService {
   description: string | null
@@ -186,6 +187,12 @@ export function BookingForm({
 
   // Pre-fill discount code saved from exit-intent popup if available
   React.useEffect(() => {
+    trackMarketingEvent('InitiateCheckout', {
+      content_name: room.name,
+      content_ids: [room.id],
+      value: quote.total,
+      currency: 'VND',
+    })
     try {
       const exitCoupon = window.sessionStorage.getItem(`ds_exit_coupon_${property.id}`)
       if (exitCoupon && !couponInput) {
@@ -193,6 +200,7 @@ export function BookingForm({
         void applyCoupon(exitCoupon, quote.total)
       }
     } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [property.id])
 
   const submitCoupon = async () => {

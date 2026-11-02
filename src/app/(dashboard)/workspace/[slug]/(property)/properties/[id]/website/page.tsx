@@ -71,6 +71,8 @@ interface WebsiteSettings {
   translations?: { en?: { metaTitle?: string; metaDescription?: string } } | null
   exitIntentEnabled?: boolean
   exitIntentCouponId?: string | null
+  facebookPixelId?: string | null
+  googleTagId?: string | null
   isPublished: boolean
   customDomain?: string
   sslEnabled: boolean
@@ -2117,6 +2119,8 @@ export default function WebsiteBuilderPage() {
           propertyId={propertyId}
           slug={slug}
           subdomain={property?.subdomain}
+          propertyName={property?.name}
+          coverImage={propertyData?.property?.coverImage || property?.coverImage}
           settings={settings}
           onChange={(patch) => setSettings((curr) => (curr ? { ...curr, ...patch } as any : curr))}
           onSaveDomain={(patch, msg) => handleSave({ ...settings, ...(patch as any) }, msg)}

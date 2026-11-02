@@ -3,9 +3,23 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { trackMarketingEvent } from '@/components/marketing/MarketingTracking'
 
 const EVERY_MS = 4_000
 const FOR_MS = 2 * 60 * 1000
+
+/** Tracks e-commerce Purchase event to Facebook Pixel & Google Tag upon confirmed payment. */
+export function TrackPurchase({ bookingCode, amount }: { bookingCode: string; amount: number }) {
+  useEffect(() => {
+    trackMarketingEvent('Purchase', {
+      order_id: bookingCode,
+      value: amount,
+      currency: 'VND',
+    })
+  }, [bookingCode, amount])
+
+  return null
+}
 
 /** Reloads the return page while the webhook is on its way, for two minutes at most. */
 export function WaitForPayment() {

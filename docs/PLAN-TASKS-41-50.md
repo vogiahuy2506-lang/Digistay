@@ -352,9 +352,9 @@ gantt
     Áp dụng mã tại Checkout (Task 42) :         p1_3, after p1_2, 2d
     Exit-Intent & Lead Gen (43, 44)   :         p1_4, after p1_3, 2d
     section Giai đoạn 2: Content & Đo lường
-    Module Blog & Tin tức (Task 45)   :         p2_1, after p1_4, 2d
-    Open Graph & Social Share (46)    :         p2_2, after p2_1, 1d
-    Gắn mã Pixel & Google Tag (47)    :         p2_3, after p2_2, 1d
+    Module Blog & Tin tức (Task 45)   :done,    p2_1, after p1_4, 2d
+    Open Graph & Social Share (46)    :done,    p2_2, after p2_1, 1d
+    Gắn mã Pixel & Google Tag (47)    :done,    p2_3, after p2_2, 1d
     section Giai đoạn 3: Automation & CRM
     Abandoned Cart Email (Task 48)    :         p3_1, after p2_3, 2d
     Mini CRM Danh bạ khách (Task 49)  :         p3_2, after p3_1, 2d
