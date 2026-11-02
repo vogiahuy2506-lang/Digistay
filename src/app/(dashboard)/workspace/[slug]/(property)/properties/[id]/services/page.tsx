@@ -11,8 +11,9 @@ import { toast } from '@/components/ui/toast'
 import { useTranslations } from 'next-intl'
 import { useDashLabels } from '@/lib/i18n/dash'
 import {
-  Plus, Trash2, Edit, Save, ConciergeBell, Search,
+  Plus, Trash2, Edit, Save, ConciergeBell, Search, X,
 } from 'lucide-react'
+import { PhotoUploadButton } from '@/components/ui/photo-upload'
 import { apiError } from '@/lib/i18n/api-errors'
 
 interface Amenity {
@@ -35,6 +36,11 @@ interface ExtraService {
   price: number
   perPerson: boolean
   isActive: boolean
+  coverImage?: string | null
+  leadTimeHours?: number
+  dailyCapacity?: number | null
+  operatingHours?: string | null
+  showOnBooking?: boolean
 }
 
 // Labels: messages dash.rooms.services.serviceCategory.* and .amenityCategory.*
@@ -67,6 +73,11 @@ export default function ServicesPage() {
     priceType: 'FIXED' as 'FIXED' | 'PER_NIGHT' | 'PER_PERSON',
     price: 0,
     perPerson: false,
+    coverImage: '',
+    leadTimeHours: 0,
+    dailyCapacity: '' as string | number,
+    operatingHours: '',
+    showOnBooking: true,
   })
 
   React.useEffect(() => {
@@ -165,13 +176,30 @@ export default function ServicesPage() {
         : '/api/extra-services'
       const method = editingService ? 'PATCH' : 'POST'
 
+      const capacityNum = typeof serviceForm.dailyCapacity === 'number'
+        ? serviceForm.dailyCapacity
+        : parseInt(serviceForm.dailyCapacity, 10)
+
+      const payload = {
+        propertyId,
+        name: serviceForm.name,
+        description: serviceForm.description || null,
+        category: serviceForm.category,
+        priceType: serviceForm.priceType,
+        price: serviceForm.price,
+        perPerson: serviceForm.perPerson,
+        coverImage: serviceForm.coverImage ? serviceForm.coverImage.trim() : null,
+        leadTimeHours: Number(serviceForm.leadTimeHours) || 0,
+        dailyCapacity: capacityNum && capacityNum > 0 ? capacityNum : null,
+        operatingHours: serviceForm.operatingHours ? serviceForm.operatingHours.trim() : null,
+        showOnBooking: serviceForm.showOnBooking,
+        translations: { en: serviceForm.en },
+      }
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          propertyId,
-          ...(({ en, ...fields }) => ({ ...fields, translations: { en } }))(serviceForm),
-        }),
+        body: JSON.stringify(payload),
       })
       const data = await res.json()
       if (!data.success) {
@@ -200,6 +228,11 @@ export default function ServicesPage() {
       priceType: 'FIXED',
       price: 0,
       perPerson: false,
+      coverImage: '',
+      leadTimeHours: 0,
+      dailyCapacity: '',
+      operatingHours: '',
+      showOnBooking: true,
     })
   }
 
@@ -213,6 +246,11 @@ export default function ServicesPage() {
       priceType: service.priceType,
       price: service.price,
       perPerson: service.perPerson,
+      coverImage: service.coverImage ?? '',
+      leadTimeHours: service.leadTimeHours ?? 0,
+      dailyCapacity: service.dailyCapacity ?? '',
+      operatingHours: service.operatingHours ?? '',
+      showOnBooking: service.showOnBooking ?? true,
     })
     setShowServiceModal(true)
   }
@@ -385,25 +423,53 @@ export default function ServicesPage() {
                 return (
                   <div
                     key={service.id}
-                    className="flex flex-wrap sm:flex-nowrap items-center gap-x-4 gap-y-1 py-4 first:pt-0 last:pb-0"
+                    className="flex flex-wrap sm:flex-nowrap items-center gap-x-4 gap-y-2 py-4 first:pt-0 last:pb-0"
                   >
-                    <div className="hidden sm:flex w-10 h-10 bg-fg/5 rounded-lg items-center justify-center shrink-0">
-                      <ConciergeBell className="w-5 h-5 text-muted" />
+                    <div className="w-12 h-12 rounded-lg shrink-0 overflow-hidden bg-fg/5 border border-line/60 flex items-center justify-center">
+                      {service.coverImage ? (
+                        <img
+                          src={service.coverImage}
+                          alt={service.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <ConciergeBell className="w-5 h-5 text-muted" />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0 basis-full sm:basis-auto">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className={`font-medium break-words ${service.isActive ? 'text-fg' : 'text-muted'}`}>
                           {service.name}
                         </span>
                         {!service.isActive && (
                           <Badge variant="secondary" className="text-xs">{t('list.off')}</Badge>
                         )}
+                        {service.showOnBooking && (
+                          <Badge variant="outline" className="text-[11px] text-ok border-ok/30 bg-ok/5">
+                            🌐 {t('list.showOnBooking')}
+                          </Badge>
+                        )}
+                        {Boolean(service.leadTimeHours && service.leadTimeHours > 0) && (
+                          <Badge variant="outline" className="text-[11px] text-warn border-warn/30 bg-warn/5">
+                            ⏰ {t('list.leadTime', { hours: service.leadTimeHours! })}
+                          </Badge>
+                        )}
+                        {Boolean(service.dailyCapacity && service.dailyCapacity > 0) && (
+                          <Badge variant="outline" className="text-[11px] text-info border-info/30 bg-info/5">
+                            📊 {t('list.capacity', { count: service.dailyCapacity! })}
+                          </Badge>
+                        )}
                       </div>
-                      <p className="text-sm text-muted mt-0.5">
-                        {serviceCategoryLabel(service.category)}
-                        {service.priceType === 'PER_NIGHT' && ` · ${t('priceType.PER_NIGHT')}`}
-                        {service.priceType === 'PER_PERSON' && ` · ${service.perPerson ? t('priceType.PER_PERSON') : t('list.perUse')}`}
-                      </p>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-muted mt-0.5">
+                        <span>{serviceCategoryLabel(service.category)}</span>
+                        {service.priceType === 'PER_NIGHT' && <span>· {t('priceType.PER_NIGHT')}</span>}
+                        {service.priceType === 'PER_PERSON' && (
+                          <span>· {service.perPerson ? t('priceType.PER_PERSON') : t('list.perUse')}</span>
+                        )}
+                        {service.operatingHours && (
+                          <span>· 🕒 {service.operatingHours}</span>
+                        )}
+                      </div>
                     </div>
                     <span className="text-base font-semibold text-fg tabular-nums whitespace-nowrap mr-auto sm:mr-0">
                       {formatPrice(service.price, service.priceType, service.perPerson)}
@@ -541,6 +607,115 @@ export default function ServicesPage() {
               <span className="text-sm text-fg">{t('modal.perPerson')}</span>
             </label>
           )}
+
+          {/* Operations & Booking Settings */}
+          <div className="pt-3 border-t border-line space-y-4">
+            <h4 className="text-sm font-semibold text-fg">
+              {t('modal.operationsSection')}
+            </h4>
+
+            {/* Cover Image */}
+            <div>
+              <label className="block text-sm font-medium text-fg mb-1">
+                {t('modal.coverImage')}
+              </label>
+              <p className="text-xs text-muted mb-2">
+                {t('modal.coverImageHint')}
+              </p>
+              {serviceForm.coverImage ? (
+                <div className="relative inline-block rounded-lg overflow-hidden border border-line bg-fg/5">
+                  <img
+                    src={serviceForm.coverImage}
+                    alt={serviceForm.name || 'Service cover'}
+                    className="w-40 h-24 object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setServiceForm({ ...serviceForm, coverImage: '' })}
+                    className="absolute top-1 right-1 p-1 bg-panel/80 hover:bg-panel text-fg rounded-full border border-line shadow-sm"
+                    title={t('modal.removePhoto')}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <PhotoUploadButton
+                    target={{ propertyId }}
+                    onUploaded={(url) => setServiceForm({ ...serviceForm, coverImage: url })}
+                    label={t('modal.uploadPhoto')}
+                  />
+                  <span className="text-xs text-muted">hoặc</span>
+                  <Input
+                    placeholder="https://..."
+                    value={serviceForm.coverImage}
+                    onChange={(e) => setServiceForm({ ...serviceForm, coverImage: e.target.value })}
+                    className="text-xs h-9 flex-1"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Input
+                  type="number"
+                  min="0"
+                  step="1"
+                  label={t('modal.leadTimeHours')}
+                  value={serviceForm.leadTimeHours}
+                  onChange={(e) =>
+                    setServiceForm({
+                      ...serviceForm,
+                      leadTimeHours: Math.max(0, parseInt(e.target.value, 10) || 0),
+                    })
+                  }
+                  placeholder={t('modal.leadTimeHoursPlaceholder')}
+                  hint={t('modal.leadTimeHoursHint')}
+                />
+              </div>
+
+              <div>
+                <Input
+                  type="number"
+                  min="1"
+                  step="1"
+                  label={t('modal.dailyCapacity')}
+                  value={serviceForm.dailyCapacity}
+                  onChange={(e) =>
+                    setServiceForm({
+                      ...serviceForm,
+                      dailyCapacity: e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value, 10) || 1),
+                    })
+                  }
+                  placeholder={t('modal.dailyCapacityPlaceholder')}
+                  hint={t('modal.dailyCapacityHint')}
+                />
+              </div>
+            </div>
+
+            <div>
+              <Input
+                label={t('modal.operatingHours')}
+                value={serviceForm.operatingHours}
+                onChange={(e) => setServiceForm({ ...serviceForm, operatingHours: e.target.value })}
+                placeholder={t('modal.operatingHoursPlaceholder')}
+              />
+            </div>
+
+            <label className="flex items-start gap-2.5 cursor-pointer pt-1">
+              <input
+                type="checkbox"
+                checked={serviceForm.showOnBooking}
+                onChange={(e) => setServiceForm({ ...serviceForm, showOnBooking: e.target.checked })}
+                className="w-4 h-4 rounded border-line text-info mt-0.5"
+              />
+              <div className="text-sm">
+                <span className="font-medium text-fg block">{t('modal.showOnBooking')}</span>
+                <span className="text-xs text-muted block mt-0.5">{t('modal.showOnBookingHint')}</span>
+              </div>
+            </label>
+          </div>
         </ModalBody>
         <ModalFooter>
           <Button

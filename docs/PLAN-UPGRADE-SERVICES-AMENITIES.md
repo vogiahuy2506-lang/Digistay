@@ -153,14 +153,18 @@ model PropertyAmenity {
 
 ---
 
-### Task 53: Cấu hình Vận hành Nâng cao cho Dịch vụ
-- **Giao diện (`src/app/(dashboard)/workspace/[slug]/(property)/properties/[id]/services/page.tsx`)**:
-  - Modal tạo/sửa dịch vụ bổ sung các trường:
-    - `coverImage`: Upload ảnh qua component `PhotoUploadButton` đã có sẵn.
-    - `leadTimeHours`: Input số giờ báo trước tối thiểu (VD: 24h đối với xe đưa đón).
-    - `dailyCapacity`: Giới hạn số lượt/ngày (tránh quá tải xe hoặc bàn ăn).
-    - `showOnBooking`: Checkbox cho phép hiển thị dịch vụ này trên website công khai để khách đặt trước.
-  - Xem trước hiển thị trực quan (Live Preview) dạng thẻ dịch vụ công khai.
+### Task 53: Cấu hình Vận hành Nâng cao cho Dịch vụ ✅ *Đã hoàn thành*
+- **Backend API (`/api/extra-services` & `/api/extra-services/[id]`)**:
+  - Mở rộng Zod validation & Prisma update hỗ trợ đầy đủ `coverImage`, `leadTimeHours`, `dailyCapacity`, `operatingHours`, `showOnBooking`.
+  - Tự động làm sạch URL, kiểm tra số nguyên không âm và invalidate cache website công khai tức thì.
+- **Giao diện Quản trị (`src/app/(dashboard)/workspace/[slug]/(property)/properties/[id]/services/page.tsx`)**:
+  - Modal tạo/sửa dịch vụ bổ sung phân mục "Cấu hình Vận hành & Đặt trước":
+    - Upload ảnh thumbnail trực tiếp hoặc nhập URL ảnh cover, hỗ trợ xóa/đổi ảnh.
+    - Cấu hình số giờ báo trước tối thiểu `leadTimeHours` (VD: 24h).
+    - Cấu hình giới hạn công suất phục vụ mỗi ngày `dailyCapacity`.
+    - Cấu hình khung giờ hoạt động `operatingHours` (VD: 06:00 - 22:00).
+    - Checkbox bật/tắt hiển thị trên luồng đặt phòng trực tuyến `showOnBooking`.
+  - Danh sách dịch vụ hiển thị thumbnail ảnh cover thực tế cùng hệ thống Badge thông minh: `🌐 Đặt trước khi book`, `⏰ Báo trước Xh`, `📊 X lượt/ngày`, `🕒 Giờ phục vụ`.
 
 ---
 

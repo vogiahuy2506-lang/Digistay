@@ -9,12 +9,17 @@ import { checkPropertyAccess } from '@/lib/auth/access'
 
 const updateSchema = z.object({
   name: z.string().min(2).optional(),
-  description: z.string().optional(),
-  category: z.string().optional(),
+  description: z.string().optional().nullable(),
+  category: z.string().optional().nullable(),
   priceType: z.enum(['FIXED', 'PER_NIGHT', 'PER_PERSON']).optional(),
   price: z.number().nonnegative().optional(),
   perPerson: z.boolean().optional(),
   isActive: z.boolean().optional(),
+  coverImage: z.string().url().optional().nullable().or(z.literal('')),
+  leadTimeHours: z.number().int().nonnegative().optional(),
+  dailyCapacity: z.number().int().positive().optional().nullable(),
+  operatingHours: z.string().max(100).optional().nullable(),
+  showOnBooking: z.boolean().optional(),
   translations: translationsInput(['name', 'description']),
 })
 
@@ -55,10 +60,20 @@ export async function PATCH(
       )
     }
 
-    const { translations, ...fields } = validation.data
+    const { translations, coverImage, dailyCapacity, operatingHours, description, category, ...fields } = validation.data
+    const dataToUpdate: Record<string, unknown> = {
+      ...fields,
+      translations: mergeTranslations(authz.service.translations, translations),
+    }
+    if (description !== undefined) dataToUpdate.description = description || null
+    if (category !== undefined) dataToUpdate.category = category || null
+    if (coverImage !== undefined) dataToUpdate.coverImage = coverImage && coverImage.trim() ? coverImage.trim() : null
+    if (dailyCapacity !== undefined) dataToUpdate.dailyCapacity = dailyCapacity && dailyCapacity > 0 ? dailyCapacity : null
+    if (operatingHours !== undefined) dataToUpdate.operatingHours = operatingHours && operatingHours.trim() ? operatingHours.trim() : null
+
     const updated = await prisma.extraService.update({
       where: { id: params.id },
-      data: { ...fields, translations: mergeTranslations(authz.service.translations, translations) },
+      data: dataToUpdate,
     })
     invalidatePublicSite(updated.propertyId)
     return NextResponse.json({ success: true, data: updated })
