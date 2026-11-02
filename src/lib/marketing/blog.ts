@@ -41,3 +41,4 @@ export const blogPostInputSchema = z.object({
 })
 
 export type BlogPostInput = z.infer<typeof blogPostInputSchema>
+

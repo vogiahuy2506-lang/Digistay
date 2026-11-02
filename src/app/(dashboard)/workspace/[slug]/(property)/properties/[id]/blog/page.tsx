@@ -626,7 +626,7 @@ export default function BlogManagementPage() {
         </ModalHeader>
         <ModalBody>
           <p className="text-body text-fg/80">
-            Bạn có chắc chắn muốn xóa bài viết <b>"{deleting?.title}"</b>? Bài viết sẽ được gỡ khỏi trang công khai.
+            Bạn có chắc chắn muốn xóa bài viết <b>&ldquo;{deleting?.title}&rdquo;</b>? Bài viết sẽ được gỡ khỏi trang công khai.
           </p>
         </ModalBody>
         <ModalFooter>

@@ -144,35 +144,14 @@ export default function WorkspaceDashboardPage() {
           </h1>
           <p className="mt-2 text-small text-muted sm:text-body">{t('lead')}</p>
         </div>
-        <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto flex-wrap">
-          {canBilling && (
-            <Link href={routes.billing(slug)}>
-              <Button variant="outline">
-                {tb('nav')}
-              </Button>
-            </Link>
-          )}
-          <Link href={routes.members(slug)}>
-            <Button variant="outline">
-              <Users className="w-4 h-4 mr-1.5" aria-hidden="true" />
-              {t('members')}
+        {canAddProperty && (
+          <Link href={routes.newProperty(slug)} className="shrink-0 self-start sm:self-auto">
+            <Button>
+              <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />
+              {t('addProperty')}
             </Button>
           </Link>
-          <Link href={routes.settings(slug)}>
-            <Button variant="outline">
-              <Settings className="w-4 h-4 mr-1.5" aria-hidden="true" />
-              {t('customize')}
-            </Button>
-          </Link>
-          {canAddProperty && (
-            <Link href={routes.newProperty(slug)}>
-              <Button>
-                <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />
-                {t('addProperty')}
-              </Button>
-            </Link>
-          )}
-        </div>
+        )}
       </div>
 
       {error ? (

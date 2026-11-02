@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, CreditCard, Settings, Users } from 'lucide-react'
 import { Dropdown, DropdownDivider, DropdownItem } from '@/components/ui'
 import { routes } from '@/lib/utils/routes'
 import type { WorkspaceRole } from './nav'
@@ -22,6 +22,7 @@ export function WorkspaceSwitcher({
   workspaces: WorkspaceItem[]
 }) {
   const t = useTranslations('workspaces')
+  const tc = useTranslations('dash.common.nav')
   const router = useRouter()
   const [open, setOpen] = React.useState(false)
 
@@ -53,8 +54,17 @@ export function WorkspaceSwitcher({
         </DropdownItem>
       ))}
       <DropdownDivider />
+      <DropdownItem onClick={() => router.push(routes.members(workspace.slug))} icon={<Users className="w-4 h-4" />}>
+        {tc('members')}
+      </DropdownItem>
+      <DropdownItem onClick={() => router.push(routes.billing(workspace.slug))} icon={<CreditCard className="w-4 h-4" />}>
+        {tc('billing')}
+      </DropdownItem>
+      <DropdownItem onClick={() => router.push(routes.settings(workspace.slug))} icon={<Settings className="w-4 h-4" />}>
+        {tc('settings')}
+      </DropdownItem>
+      <DropdownDivider />
       <DropdownItem onClick={() => router.push(routes.workspaces())}>{t('allWorkspaces')}</DropdownItem>
     </Dropdown>
   )
 }
-

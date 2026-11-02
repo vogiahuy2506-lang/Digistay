@@ -152,7 +152,7 @@ export default async function BlogPostDetailPage({ params }: PageProps) {
             {/* Summary callout */}
             {post.summary && (
               <div className="p-5 sm:p-6 mb-10 rounded-ctl border-l-4 border-acc bg-panel text-body italic text-muted leading-relaxed">
-                "{post.summary}"
+                &ldquo;{post.summary}&rdquo;
               </div>
             )}
 
