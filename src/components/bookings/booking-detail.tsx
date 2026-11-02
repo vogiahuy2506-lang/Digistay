@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Check, Copy, MoreHorizontal, Phone } from 'lucide-react'
+import { Check, Copy, MoreHorizontal, Phone, Plus, Trash2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import {
@@ -23,6 +23,7 @@ import { useCan } from '@/components/layout/workspace-context'
 import { CheckOutDialog } from './check-out-dialog'
 import { CancelDialog } from './cancel-dialog'
 import { CheckInDialog } from './check-in-dialog'
+import { AddServiceDialog } from './add-service-dialog'
 import { buildPrintHtml, nightsBetween, remainingAmount } from '@/lib/bookings/display'
 import { addDays as addDay, nightStart, roomPlan, spanOnNight, vnDay } from '@/lib/bookings/room-plan'
 import { useDashLabels } from '@/lib/i18n/dash'
@@ -67,6 +68,8 @@ export interface BookingDetailData {
     amount: number
     unitPrice?: number
     priceType?: string
+    notes?: string | null
+    addedBy?: string | null
   }> | null
   /** the guest said they transferred a manual deposit (src/lib/payments/manual-deposit.ts) */
   transferClaimedAt?: string | null
@@ -277,6 +280,7 @@ export function BookingDetailContent({ booking, onChanged }: { booking: BookingD
   const editable = useCan('bookings_edit')
   const t = useTranslations('dash.bookings.detail')
   const tb = useTranslations('dash.bookings')
+  const tc = useTranslations('dash.common')
   const labels = useDashLabels()
   const nights = nightsBetween(booking.checkInDate, booking.checkOutDate)
   const remaining = remainingAmount(booking)
@@ -288,6 +292,33 @@ export function BookingDetailContent({ booking, onChanged }: { booking: BookingD
   const [movingFrom, setMovingFrom] = React.useState(false)
   const moveDays = movableNights(booking)
   const canMoveFrom = editable && moveDays.length > 0 && (parts.length > 1 || !!booking.bookingItems[0]?.roomId)
+
+  const [showAddService, setShowAddService] = React.useState(false)
+  const [deletingServiceIndex, setDeletingServiceIndex] = React.useState<number | null>(null)
+  const canManageServices = editable && booking.status !== 'CANCELLED' && booking.status !== 'NO_SHOW'
+
+  const handleDeleteService = async (index: number, serviceName: string) => {
+    if (!window.confirm(t('money.deleteServiceConfirm'))) return
+    setDeletingServiceIndex(index)
+    try {
+      const res = await fetch(`/api/bookings/${booking.id}/services`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ serviceIndex: index }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success(t('money.deleteServiceSuccess'))
+        onChanged()
+      } else {
+        toast.error(apiError(data.error) || tb('actions.failed'))
+      }
+    } catch {
+      toast.error(tb('actions.noConnection'))
+    } finally {
+      setDeletingServiceIndex(null)
+    }
+  }
 
   const copyPhone = async () => {
     try {
@@ -379,19 +410,56 @@ export function BookingDetailContent({ booking, onChanged }: { booking: BookingD
       <Section title={t('money.title')}>
         <MoneyRow label={t('money.room')} value={labels.money(booking.subtotal)} />
         {booking.extraCharges > 0 && <MoneyRow label={t('money.extraCharges')} value={labels.money(booking.extraCharges)} />}
-        {Array.isArray(booking.services) && booking.services.length > 0 && (
-          <div className="pl-3 py-1.5 space-y-1 text-xs text-muted border-l-2 border-line my-1.5 bg-fg/[0.02] rounded-r-ctl">
-            <span className="text-[11px] font-medium text-fg uppercase tracking-wider block mb-1">
-              {t('money.services')}
-            </span>
-            {booking.services.map((s, idx) => (
-              <div key={idx} className="flex justify-between items-center py-0.5">
-                <span className="truncate pr-2 text-fg/90">
-                  {s.name} <span className="font-semibold text-fg">× {s.quantity}</span>
-                </span>
-                <span className="tabular-nums font-medium text-fg">{labels.money(s.amount)}</span>
+        {((Array.isArray(booking.services) && booking.services.length > 0) || canManageServices) && (
+          <div className="pl-3 py-2 space-y-1.5 border-l-2 border-line my-2 bg-fg/[0.02] rounded-r-ctl">
+            <div className="flex justify-between items-center">
+              <span className="text-[11px] font-medium text-fg uppercase tracking-wider">
+                {t('money.services')}
+              </span>
+              {canManageServices && (
+                <button
+                  type="button"
+                  onClick={() => setShowAddService(true)}
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-acc hover:underline cursor-pointer"
+                >
+                  <Plus className="w-3 h-3" />
+                  {t('money.addService')}
+                </button>
+              )}
+            </div>
+            {Array.isArray(booking.services) && booking.services.length > 0 ? (
+              <div className="divide-y divide-line/40">
+                {booking.services.map((s, idx) => (
+                  <div key={idx} className="group flex justify-between items-start py-1.5">
+                    <div className="min-w-0 pr-2">
+                      <div className="text-xs text-fg/90">
+                        <span className="font-medium text-fg">{s.name}</span>{' '}
+                        <span className="font-semibold text-fg/70">× {s.quantity}</span>
+                      </div>
+                      {s.notes && (
+                        <div className="text-[11px] text-muted truncate mt-0.5">{s.notes}</div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="tabular-nums font-medium text-fg text-xs">{labels.money(s.amount)}</span>
+                      {canManageServices && (
+                        <button
+                          type="button"
+                          disabled={deletingServiceIndex !== null}
+                          onClick={() => handleDeleteService(idx, s.name)}
+                          className="text-muted/60 hover:text-danger p-0.5 rounded transition-colors disabled:opacity-40"
+                          title={tc('actions.delete')}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            ) : (
+              <p className="text-xs text-muted italic py-0.5">{t('money.noServices')}</p>
+            )}
           </div>
         )}
         {booking.discount > 0 && <MoneyRow label={t('money.discount')} value={`−${labels.money(booking.discount)}`} />}
@@ -435,6 +503,15 @@ export function BookingDetailContent({ booking, onChanged }: { booking: BookingD
             {booking.vatEmail && <Field label={t('email')}>{booking.vatEmail}</Field>}
           </dl>
         </Section>
+      )}
+
+      {showAddService && (
+        <AddServiceDialog
+          bookingId={booking.id}
+          isOpen={showAddService}
+          onClose={() => setShowAddService(false)}
+          onDone={onChanged}
+        />
       )}
     </div>
   )

@@ -124,7 +124,7 @@ model PropertyAmenity {
 
 ## 4. Thiết kế Chi tiết Kỹ thuật theo từng Task
 
-### Task 51: Bán chéo Dịch vụ khi Đặt phòng (Booking Add-ons Upsell)
+### Task 51: Bán chéo Dịch vụ khi Đặt phòng (Booking Add-ons Upsell) ✅ *Đã hoàn thành*
 - **Frontend (`src/app/(public)/[subdomain]/dat-phong/BookingForm.tsx`)**:
   - Thêm section **"Dịch vụ cộng thêm & Trải nghiệm"** nằm giữa phần chọn phòng và thông tin liên hệ.
   - Mỗi dịch vụ hiển thị dạng card tinh gọn: Ảnh thumbnail, Tên, Mô tả ngắn, Badge phân loại, Đơn giá minh bạch.
@@ -138,15 +138,18 @@ model PropertyAmenity {
 
 ---
 
-### Task 52: Giao diện Thêm dịch vụ tại quầy cho Lễ tân (Frontdesk Folio)
-- **Frontend (`src/app/(dashboard)/workspace/[slug]/(property)/properties/[id]/bookings/[bookingId]/page.tsx`)**:
-  - Trong tab "Chi tiết chi phí" hoặc "Dịch vụ phòng", bổ sung bảng danh sách các dịch vụ đã sử dụng.
-  - Nút **"+ Thêm dịch vụ phát sinh"** mở Modal nhanh:
-    - Tìm kiếm và chọn từ danh sách `ExtraService` của cơ sở (hoặc tùy chọn nhập dịch vụ tự do kèm giá tức thì).
-    - Nhập số lượng và ghi chú nội bộ (VD: *Khách phòng 201 dùng 2 lon bia Tiger, 1 gói snack*).
-  - Nút xóa/sửa dịch vụ (với quyền hạn `bookings_edit`).
-- **Tích hợp Hóa đơn (`src/app/api/properties/[id]/invoices`)**:
-  - Hóa đơn điện tử hoặc hóa đơn thanh toán lúc trả phòng tự động liệt kê các dòng dịch vụ phát sinh cùng với tiền phòng để khách hàng kiểm tra và ký xác nhận.
+### Task 52: Giao diện Thêm dịch vụ tại quầy cho Lễ tân (Frontdesk Folio) ✅ *Đã hoàn thành*
+- **Frontend (`src/components/bookings/booking-detail.tsx`, `src/components/bookings/add-service-dialog.tsx`)**:
+  - Trong phần Tiền / Chi phí của chi tiết đơn đặt phòng, hiển thị phân mục Dịch vụ đã đặt kèm ghi chú và nút xóa nhanh.
+  - Nút **"+ Thêm dịch vụ"** mở Modal nhanh (`AddServiceDialog`):
+    - Tìm kiếm và chọn từ danh mục `ExtraService` có sẵn của khách sạn hoặc chọn "Dịch vụ tự do / Nhập tay".
+    - Tự động điền đơn giá theo danh mục, cho phép tùy chỉnh đơn giá linh hoạt.
+    - Nhập số lượng và ghi chú phát sinh (VD: *Khách phòng 201 dùng 2 lon bia Tiger, 1 gói snack*).
+  - Khi thêm hoặc xóa dịch vụ, hệ thống tự động cập nhật `extraCharges`, `totalAmount`, chạy `syncBookingPayments` điều chỉnh trạng thái thanh toán (PAID -> PARTIAL nếu phát sinh thêm nợ), và ghi ActivityLog đầy đủ.
+- **Backend (`src/app/api/bookings/[id]/services/route.ts`)**:
+  - `GET`: Lấy danh sách dịch vụ hiện tại và catalog dịch vụ khả dụng của property.
+  - `POST`: Thêm dịch vụ (catalog hoặc tự do), lock dòng booking, cập nhật phụ phí, tính lại tổng tiền và đồng bộ thanh toán.
+  - `DELETE`: Xóa dịch vụ theo vị trí index, trừ phí tương ứng và đồng bộ thanh toán.
 
 ---
 

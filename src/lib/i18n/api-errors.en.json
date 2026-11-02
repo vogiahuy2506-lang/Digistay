@@ -791,5 +791,16 @@
   "Ghi chú": "Notes",
   "Popup giữ chân": "Exit popup",
   "Form liên hệ": "Contact form",
-  "Khác": "Other"
+  "Khác": "Other",
+  "Tên dịch vụ không được để trống": "Service name cannot be empty",
+  "Đơn giá phải lớn hơn hoặc bằng 0": "Unit price must be greater than or equal to 0",
+  "Số lượng tối thiểu là 1": "Quantity must be at least 1",
+  "Vị trí dịch vụ không hợp lệ": "Invalid service index",
+  "Lỗi khi lấy thông tin dịch vụ": "Failed to load service details",
+  "Không thể thêm dịch vụ cho đơn đặt phòng đã đóng hoặc hủy": "Cannot add services to a closed or cancelled booking",
+  "Đã thêm dịch vụ vào đơn đặt phòng": "Service added to booking",
+  "Không thể xóa dịch vụ của đơn đặt phòng đã đóng hoặc hủy": "Cannot remove services from a closed or cancelled booking",
+  "Dịch vụ không tồn tại hoặc đã bị xóa": "Service does not exist or has been removed",
+  "Đã xóa dịch vụ khỏi đơn đặt phòng": "Service removed from booking",
+  "Lỗi khi xóa dịch vụ": "Failed to remove service"
 }
