@@ -1384,6 +1384,22 @@
       "viewOnline": "View the invoice and download the PDF",
       "lookupLink": "You can view this invoice and download its PDF at any time from the link below, no sign-in needed.",
       "textLookupLink": "View the invoice and download the PDF: {url}"
+    },
+    "abandonedCart": {
+      "subject": "Your stay at {hotel} is waiting to be completed!",
+      "preview": "Don't miss out on your stay at {hotel} - Complete your booking now",
+      "title": "🛎️ Your stay is waiting for you!",
+      "lead": "You recently selected a room at <b>{hotel}</b> but haven't completed your booking or deposit yet.",
+      "room": "Room type",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "total": "Total amount",
+      "button": "Continue Booking & Hold Room →",
+      "note": "⚠️ Rooms remain open to other guests until booking is completed.",
+      "contact": "Need help? Contact the hotel at: {phone}",
+      "textSubject": "Your stay at {hotel} is waiting to be completed!",
+      "textLead": "You recently selected a room at {hotel} but haven't completed your booking yet.",
+      "textContinue": "Continue booking: {url}"
     }
   }
 }

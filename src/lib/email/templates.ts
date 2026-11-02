@@ -876,6 +876,99 @@ export function depositExpiredTemplate(props: DepositExpiredTemplateProps): { ht
 }
 
 // ============================================
+//  Abandoned Cart Email (Task 48)
+// ============================================
+export interface AbandonedCartTemplateProps extends BaseEmailProps {
+  guestName: string
+  guestEmail: string
+  hotelName: string
+  hotelPhone?: string | null
+  roomName: string
+  checkIn: string | Date
+  checkOut: string | Date
+  totalAmount: number
+  continueUrl: string
+  currency?: string
+}
+
+export function abandonedCartTemplate(props: AbandonedCartTemplateProps): { html: string; text: string; subject: string } {
+  const { guestName, hotelName, hotelPhone, roomName, checkIn, checkOut, totalAmount, continueUrl, previewText, currency = 'VND', locale = 'vi' } = props
+  const t = emailTranslator(locale, 'email.abandonedCart')
+  const common = emailTranslator(locale, 'email.common')
+
+  const formattedCheckIn = formatDate(checkIn, locale)
+  const formattedCheckOut = formatDate(checkOut, locale)
+  const formattedTotal = formatVnd(totalAmount, currency, locale)
+
+  const bodyHtml = `
+    <h1 style="margin: 0 0 12px; font-size: 22px; font-weight: 700; color: ${BRAND.text};">${escapeHtml(t('title'))}</h1>
+    <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: ${BRAND.textMuted};">
+      ${common.markup('helloName', { name: escapeHtml(guestName), b: strong() })}<br/>
+      ${t.markup('lead', { hotel: escapeHtml(hotelName), b: strong() })}
+    </p>
+
+    <!-- Stay Summary Table -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0; border: 1px solid ${BRAND.border}; border-radius: 10px; overflow: hidden; background-color: ${BRAND.surface};">
+      <tr>
+        <td style="padding: 12px 16px; border-bottom: 1px solid ${BRAND.border}; font-size: 13px; color: ${BRAND.textMuted}; width: 35%;">${escapeHtml(t('room'))}</td>
+        <td style="padding: 12px 16px; border-bottom: 1px solid ${BRAND.border}; font-size: 14px; font-weight: 600; color: ${BRAND.text};">${escapeHtml(roomName)}</td>
+      </tr>
+      <tr>
+        <td style="padding: 12px 16px; border-bottom: 1px solid ${BRAND.border}; font-size: 13px; color: ${BRAND.textMuted};">${escapeHtml(t('checkIn'))}</td>
+        <td style="padding: 12px 16px; border-bottom: 1px solid ${BRAND.border}; font-size: 14px; color: ${BRAND.text};">${formattedCheckIn}</td>
+      </tr>
+      <tr>
+        <td style="padding: 12px 16px; border-bottom: 1px solid ${BRAND.border}; font-size: 13px; color: ${BRAND.textMuted};">${escapeHtml(t('checkOut'))}</td>
+        <td style="padding: 12px 16px; border-bottom: 1px solid ${BRAND.border}; font-size: 14px; color: ${BRAND.text};">${formattedCheckOut}</td>
+      </tr>
+      <tr>
+        <td style="padding: 12px 16px; font-size: 13px; color: ${BRAND.textMuted};">${escapeHtml(t('total'))}</td>
+        <td style="padding: 12px 16px; font-size: 16px; font-weight: 700; color: ${BRAND.primary};">${formattedTotal}</td>
+      </tr>
+    </table>
+
+    <!-- CTA Button -->
+    <div style="text-align: center; margin: 28px 0;">
+      <a href="${escapeHtml(continueUrl)}" style="display: inline-block; background-color: ${BRAND.primary}; color: #ffffff; padding: 14px 28px; font-size: 15px; font-weight: 600; text-decoration: none; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        ${escapeHtml(t('button'))}
+      </a>
+    </div>
+
+    <!-- Reassurance / Warning -->
+    <p style="margin: 16px 0 0; font-size: 13px; color: #b45309; line-height: 1.5; text-align: center;">
+      ${escapeHtml(t('note'))}
+    </p>
+
+    ${hotelPhone ? `
+    <p style="margin: 20px 0 0; font-size: 13px; color: ${BRAND.textMuted}; text-align: center;">
+      ${escapeHtml(t('contact', { phone: hotelPhone }))}
+    </p>` : ''}
+  `
+
+  const text = [
+    common('helloText', { name: guestName }),
+    '',
+    t('textLead', { hotel: hotelName }),
+    '',
+    `${t('room')}: ${roomName}`,
+    `${t('checkIn')}: ${formattedCheckIn}`,
+    `${t('checkOut')}: ${formattedCheckOut}`,
+    `${t('total')}: ${formattedTotal}`,
+    '',
+    t('textContinue', { url: continueUrl }),
+    '',
+    t('note'),
+    ...(hotelPhone ? [t('contact', { phone: hotelPhone })] : []),
+  ].join('\n')
+
+  return {
+    html: baseLayout({ previewText: previewText || t('preview', { hotel: hotelName }), bodyHtml, locale }),
+    text,
+    subject: t('subject', { hotel: hotelName }),
+  }
+}
+
+// ============================================
 //  Ops alerts (src/lib/ops/alerts.ts), for the people running Digistay
 // ============================================
 export function opsAlertTemplate(

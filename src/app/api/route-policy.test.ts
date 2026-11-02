@@ -50,6 +50,8 @@ const PUBLIC_HANDLERS: Record<string, string> = {
     'certificate outcome from docker/certbot/custom-domains.sh: checkCronSecret, and nginx does not route /api/internal/',
   'GET /api/public/site-host':
     "which site a verified custom domain serves, for the middleware; public like visiting the domain itself",
+  'POST /api/internal/abandoned-cart':
+    'scheduled job: checkCronSecret (CRON_SECRET header, timing-safe), and nginx does not route /api/internal/',
   'POST /api/internal/email-outbox':
     'scheduled job: checkCronSecret (CRON_SECRET header, timing-safe), and nginx does not route /api/internal/',
   'POST /api/internal/einvoice-jobs':

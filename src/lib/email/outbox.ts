@@ -25,10 +25,12 @@ import { decryptSecret, encryptSecret, secretContext } from '@/lib/security/secr
 import { escapeHtml } from '@/lib/utils/escape-html'
 import { sendRendered, type EmailRecipient } from './index'
 import {
+  abandonedCartTemplate,
   bookingConfirmationTemplate,
   depositExpiredTemplate,
   depositReceivedTemplate,
   workspaceInviteTemplate,
+  type AbandonedCartTemplateProps,
   type BookingConfirmationTemplateProps,
   type DepositExpiredTemplateProps,
   type DepositReceivedTemplateProps,
@@ -54,6 +56,7 @@ type Kind =
   | 'plan_overage_grace'
   | 'plan_overage_locked'
   | 'plan_usage'
+  | 'abandoned_cart'
 interface Message {
   to: EmailRecipient
   subject: string
@@ -81,6 +84,10 @@ export async function queueEmail(kind: Kind, message: Message, refId?: string, d
 
 export function queueBookingConfirmation(data: BookingConfirmationTemplateProps, bookingId: string, db?: Db) {
   return queueEmail('booking_confirmation', { to: { email: data.guestEmail, name: data.guestName }, ...bookingConfirmationTemplate(data) }, bookingId, db)
+}
+
+export function queueAbandonedCart(data: AbandonedCartTemplateProps, bookingId: string, db?: Db) {
+  return queueEmail('abandoned_cart', { to: { email: data.guestEmail, name: data.guestName }, ...abandonedCartTemplate(data) }, bookingId, db)
 }
 
 export interface OwnerNewBookingData {

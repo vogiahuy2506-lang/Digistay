@@ -16,7 +16,7 @@ set -u
 APP_CONTAINER="${APP_CONTAINER:-digistay-app}"
 
 rc=0
-for job in payos-reconcile subscription-jobs einvoice-jobs email-outbox purge-deleted ops-alerts; do
+for job in payos-reconcile subscription-jobs einvoice-jobs email-outbox abandoned-cart purge-deleted ops-alerts; do
   # Single quotes: $CRON_SECRET is expanded by the container's shell.
   if docker exec -e "JOB=$job" "$APP_CONTAINER" sh -c \
     'wget -q -O- --header "x-cron-secret: $CRON_SECRET" --post-data "" "http://127.0.0.1:3000/api/internal/$JOB"'; then

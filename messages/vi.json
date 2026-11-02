@@ -1384,6 +1384,22 @@
       "viewOnline": "Xem hoá đơn và tải PDF",
       "lookupLink": "Bạn có thể xem lại hoá đơn và tải bản PDF bất cứ lúc nào tại link dưới đây, không cần đăng nhập.",
       "textLookupLink": "Xem hoá đơn và tải PDF: {url}"
+    },
+    "abandonedCart": {
+      "subject": "Chuyến đi của bạn tại {hotel} vẫn đang chờ hoàn tất!",
+      "preview": "Đừng bỏ lỡ phòng nghỉ tại {hotel} - Hoàn tất đặt phòng ngay",
+      "title": "🛎️ Kỳ nghỉ của bạn đang chờ hoàn tất!",
+      "lead": "Bạn vừa chọn phòng tại <b>{hotel}</b> nhưng chưa hoàn tất bước đặt phòng/đặt cọc.",
+      "room": "Hạng phòng",
+      "checkIn": "Nhận phòng",
+      "checkOut": "Trả phòng",
+      "total": "Tổng tiền",
+      "button": "Tiếp tục đặt phòng & Giữ chỗ →",
+      "note": "⚠️ Phòng có thể được đặt bởi khách khác nếu chưa hoàn tất giữ chỗ.",
+      "contact": "Cần hỗ trợ? Liên hệ hotline khách sạn: {phone}",
+      "textSubject": "Chuyến đi của bạn tại {hotel} vẫn đang chờ hoàn tất!",
+      "textLead": "Bạn vừa chọn phòng tại {hotel} nhưng chưa hoàn tất đặt phòng.",
+      "textContinue": "Tiếp tục đặt phòng: {url}"
     }
   }
 }
