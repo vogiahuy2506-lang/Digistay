@@ -47,6 +47,9 @@ export const routes = {
   propertyPolicies: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/policies`,
   propertyCoupons: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/coupons`,
   propertyLeads: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/leads`,
+  propertyBlog: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/blog`,
+  propertyBlogNew: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/blog/new`,
+  propertyBlogPost: (slug: string, id: string, postId: string) => `/workspace/${slug}/properties/${id}/blog/${postId}`,
 
   // Workspace-scoped
   members: (slug: string) => `/workspace/${slug}/members`,
@@ -55,6 +58,8 @@ export const routes = {
 
   // Public
   publicSite: (subdomain: string) => `/${subdomain}`,
+  publicBlog: (subdomain: string) => `/${subdomain}/blog`,
+  publicBlogPost: (subdomain: string, postSlug: string) => `/${subdomain}/blog/${postSlug}`,
   /** A saved version of the site, read-only, for the people who may edit it. */
   siteVersionPreview: (subdomain: string, versionId: string) => `/${subdomain}/phien-ban/${versionId}`,
 
