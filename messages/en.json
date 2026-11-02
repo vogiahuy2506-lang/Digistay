@@ -175,7 +175,8 @@
       "amenities": {
         "title": "Everything for an easy stay",
         "eyebrow": "Amenities",
-        "empty": "The list of amenities is being updated."
+        "empty": "The list of amenities is being updated.",
+        "featured": "Featured"
       },
       "contact": {
         "title": "Contact us to book",

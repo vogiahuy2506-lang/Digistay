@@ -38,7 +38,10 @@ export async function loadSiteProps(propertyId: string) {
     where: { id: propertyId },
     include: {
       images: { orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }] },
-      amenities: { include: { amenity: true } },
+      amenities: {
+        include: { amenity: true },
+        orderBy: [{ isFeatured: 'desc' }, { sortOrder: 'asc' }],
+      },
       roomTypes: {
         where: { isActive: true },
         orderBy: { createdAt: 'asc' },
@@ -99,9 +102,13 @@ export async function loadSiteProps(propertyId: string) {
     amenities: property.amenities.map((pa) => ({
       id: pa.amenity.id,
       slug: pa.amenity.slug,
-      name: pa.amenity.name,
+      name: pa.customName || pa.amenity.name,
       icon: pa.amenity.icon,
       category: pa.amenity.category,
+      isFeatured: pa.isFeatured,
+      customName: pa.customName,
+      images: pa.images,
+      sortOrder: pa.sortOrder,
     })),
     roomTypes: property.roomTypes.map((rt) => ({
       id: rt.id,
@@ -206,7 +213,7 @@ export function localizeSiteProps(site: SiteProps, locale: Locale, amenityName: 
   return {
     ...site,
     property: localizeRow(site.property, ['description'], locale),
-    amenities: site.amenities.map((a) => ({ ...a, name: amenityName(a.slug, a.name) })),
+    amenities: site.amenities.map((a) => ({ ...a, name: a.customName ? a.customName : amenityName(a.slug, a.name) })),
     roomTypes: site.roomTypes.map((rt) => ({
       ...localizeRow(rt, ['name', 'description'], locale),
       amenities: rt.amenities.map((name, i) => amenityName(rt.amenitySlugs[i], name)),

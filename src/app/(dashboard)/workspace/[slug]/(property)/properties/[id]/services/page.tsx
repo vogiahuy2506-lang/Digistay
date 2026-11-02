@@ -11,7 +11,7 @@ import { toast } from '@/components/ui/toast'
 import { useTranslations } from 'next-intl'
 import { useDashLabels } from '@/lib/i18n/dash'
 import {
-  Plus, Trash2, Edit, Save, ConciergeBell, Search, X,
+  Plus, Trash2, Edit, Save, ConciergeBell, Search, X, Star,
 } from 'lucide-react'
 import { PhotoUploadButton } from '@/components/ui/photo-upload'
 import { apiError } from '@/lib/i18n/api-errors'
@@ -23,6 +23,10 @@ interface Amenity {
   icon: string | null
   category: string
   isSelected: boolean
+  isFeatured?: boolean
+  customName?: string | null
+  images?: string[]
+  sortOrder?: number
 }
 
 interface ExtraService {
@@ -80,6 +84,19 @@ export default function ServicesPage() {
     showOnBooking: true,
   })
 
+  // State for Custom Amenity Modal
+  const [showCustomModal, setShowCustomModal] = React.useState(false)
+  const [customForm, setCustomForm] = React.useState({
+    name: '',
+    category: 'facility',
+    icon: 'sparkles',
+    isFeatured: false,
+  })
+
+  // State for Custom Name Editing Modal
+  const [editingAmenity, setEditingAmenity] = React.useState<Amenity | null>(null)
+  const [customNameInput, setCustomNameInput] = React.useState('')
+
   React.useEffect(() => {
     if (propertyId) {
       fetchData()
@@ -116,17 +133,82 @@ export default function ServicesPage() {
   }
 
   const toggleAmenity = (id: string) => {
-    setAmenities(amenities.map(a => (a.id === id ? { ...a, isSelected: !a.isSelected } : a)))
+    setAmenities(amenities.map(a => {
+      if (a.id !== id) return a
+      const nextSelected = !a.isSelected
+      return {
+        ...a,
+        isSelected: nextSelected,
+        isFeatured: nextSelected ? a.isFeatured : false,
+      }
+    }))
+  }
+
+  const toggleFeatured = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation()
+    const target = amenities.find(a => a.id === id)
+    if (!target) return
+    const currentFeaturedCount = amenities.filter(a => a.isSelected && a.isFeatured).length
+    if (!target.isFeatured && currentFeaturedCount >= 6) {
+      toast.warning(t('amenities.maxFeaturedWarning'))
+    }
+    setAmenities(amenities.map(a => (a.id === id ? { ...a, isFeatured: !a.isFeatured } : a)))
+  }
+
+  const handleOpenEditCustomName = (e: React.MouseEvent, amenity: Amenity) => {
+    e.stopPropagation()
+    setEditingAmenity(amenity)
+    setCustomNameInput(amenity.customName ?? '')
+  }
+
+  const handleSaveCustomName = () => {
+    if (!editingAmenity) return
+    const trimmed = customNameInput.trim()
+    setAmenities(amenities.map(a => (a.id === editingAmenity.id ? { ...a, customName: trimmed || null } : a)))
+    setEditingAmenity(null)
+  }
+
+  const handleCreateCustomAmenity = async () => {
+    if (!propertyId || !customForm.name.trim()) return
+    setIsSubmitting(true)
+    try {
+      const res = await fetch(`/api/properties/${propertyId}/amenities`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(customForm),
+      })
+      const data = await res.json()
+      if (!data.success) {
+        toast.error(apiError(data.error) || t('amenities.saveFailed'))
+        return
+      }
+      toast.success(t('amenities.createSuccess'))
+      setAmenities(prev => [...prev, data.data])
+      setShowCustomModal(false)
+      setCustomForm({ name: '', category: 'facility', icon: 'sparkles', isFeatured: false })
+    } catch {
+      toast.error(t('amenities.saveError'))
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleSaveAmenities = async () => {
     setIsSubmitting(true)
     try {
-      const selectedIds = amenities.filter(a => a.isSelected).map(a => a.id)
+      const selectedAmenities = amenities.filter(a => a.isSelected)
       const res = await fetch(`/api/properties/${propertyId}/amenities`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amenityIds: selectedIds }),
+        body: JSON.stringify({
+          amenities: selectedAmenities.map((a, idx) => ({
+            amenityId: a.id,
+            isFeatured: Boolean(a.isFeatured),
+            customName: a.customName || null,
+            images: a.images || [],
+            sortOrder: typeof a.sortOrder === 'number' ? a.sortOrder : idx,
+          })),
+        }),
       })
       const data = await res.json()
       if (!data.success) {
@@ -269,7 +351,9 @@ export default function ServicesPage() {
 
   const groupedAmenities = React.useMemo(() => {
     const filtered = amenities.filter(a =>
-      searchQuery ? amenityName(a.slug, a.name, labels.locale).toLowerCase().includes(searchQuery.toLowerCase()) : true
+      searchQuery
+        ? (a.customName || amenityName(a.slug, a.name, labels.locale)).toLowerCase().includes(searchQuery.toLowerCase())
+        : true
     )
     const groups: Record<string, Amenity[]> = {}
     filtered.forEach(a => {
@@ -280,6 +364,7 @@ export default function ServicesPage() {
   }, [amenities, searchQuery, labels.locale])
 
   const selectedCount = amenities.filter(a => a.isSelected).length
+  const featuredCount = amenities.filter(a => a.isSelected && a.isFeatured).length
 
   if (!propertyId) {
     return (
@@ -303,9 +388,12 @@ export default function ServicesPage() {
               <h2 className="text-lg font-medium text-fg">{t('amenities.title')}</h2>
               <p className="text-sm text-muted mt-0.5">
                 {selectedCount > 0 ? t('amenities.selected', { count: selectedCount }) : t('amenities.choose')}
+                {featuredCount > 0 && (
+                  <span className="text-amber-500 font-medium"> · ⭐ {t('amenities.featuredCount', { count: featuredCount })}</span>
+                )}
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               <div className="relative flex-1 sm:flex-none">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" aria-hidden="true" />
                 <input
@@ -314,9 +402,17 @@ export default function ServicesPage() {
                   placeholder={t('amenities.search')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 pr-4 py-2 text-base sm:text-sm bg-panel text-fg border border-line rounded-lg focus:outline-none focus:border-muted w-full sm:w-56"
+                  className="pl-9 pr-4 py-2 text-base sm:text-sm bg-panel text-fg border border-line rounded-lg focus:outline-none focus:border-muted w-full sm:w-48"
                 />
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCustomModal(true)}
+              >
+                <Plus className="w-4 h-4 mr-1.5" />
+                {t('amenities.addCustom')}
+              </Button>
               <Button
                 onClick={handleSaveAmenities}
                 isLoading={isSubmitting}
@@ -349,27 +445,59 @@ export default function ServicesPage() {
                   <h3 className="text-sm font-medium text-fg mb-3">
                     {amenityCategoryLabel(category)}
                   </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                     {items.map((amenity) => {
                       const IconComponent = getIcon(amenity.icon)
                       return (
-                        <button
+                        <div
                           key={amenity.id}
                           onClick={() => toggleAmenity(amenity.id)}
                           className={`
-                            flex items-center gap-3 px-4 py-3 rounded-lg border text-left
-                            transition-colors
+                            group relative flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-lg border text-left cursor-pointer
+                            transition-all select-none
                             ${amenity.isSelected
-                              ? 'border-info/30 bg-info-soft'
+                              ? amenity.isFeatured
+                                ? 'border-amber-500/50 bg-amber-500/[0.08] shadow-sm ring-1 ring-amber-500/30'
+                                : 'border-info/30 bg-info-soft'
                               : 'border-line hover:border-line hover:bg-fg/[0.03]'
                             }
                           `}
                         >
-                          <IconComponent className={`w-5 h-5 ${amenity.isSelected ? 'text-info' : 'text-muted'}`} />
-                          <span className={`text-sm font-medium ${amenity.isSelected ? 'text-info' : 'text-fg'}`}>
-                            {amenityName(amenity.slug, amenity.name, labels.locale)}
-                          </span>
-                        </button>
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <IconComponent className={`w-4 h-4 shrink-0 ${amenity.isFeatured ? 'text-amber-500' : amenity.isSelected ? 'text-info' : 'text-muted'}`} />
+                            <div className="min-w-0">
+                              <span className={`text-sm font-medium block truncate ${amenity.isFeatured ? 'text-amber-600 dark:text-amber-400 font-semibold' : amenity.isSelected ? 'text-info' : 'text-fg'}`}>
+                                {amenity.customName || amenityName(amenity.slug, amenity.name, labels.locale)}
+                              </span>
+                              {amenity.customName && (
+                                <span className="text-[10px] text-muted block truncate">
+                                  ({amenityName(amenity.slug, amenity.name, labels.locale)})
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {amenity.isSelected && (
+                            <div className="flex items-center gap-0.5 shrink-0 ml-1">
+                              <button
+                                type="button"
+                                onClick={(e) => toggleFeatured(e, amenity.id)}
+                                title={amenity.isFeatured ? t('amenities.unpinFeatured') : t('amenities.pinFeatured')}
+                                className={`p-1 rounded hover:bg-fg/10 transition-colors ${amenity.isFeatured ? 'text-amber-500' : 'text-muted/60 hover:text-amber-500'}`}
+                              >
+                                <Star className={`w-3.5 h-3.5 ${amenity.isFeatured ? 'fill-amber-500' : ''}`} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => handleOpenEditCustomName(e, amenity)}
+                                title={t('amenities.editCustomName')}
+                                className="p-1 rounded text-muted/60 hover:text-fg hover:bg-fg/10 transition-colors"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       )
                     })}
                   </div>
@@ -730,6 +858,104 @@ export default function ServicesPage() {
             isLoading={isSubmitting}
           >
             {editingService ? tc('actions.saveChanges') : t('modal.create')}
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Custom Amenity Modal */}
+      <Modal
+        isOpen={showCustomModal}
+        onClose={() => !isSubmitting && setShowCustomModal(false)}
+        size="sm"
+      >
+        <ModalHeader onClose={() => !isSubmitting && setShowCustomModal(false)}>
+          <span className="font-semibold">{t('amenities.addCustomTitle')}</span>
+        </ModalHeader>
+        <ModalBody className="space-y-4">
+          <Input
+            label={t('amenities.customName')}
+            placeholder={t('amenities.customNamePlaceholder')}
+            value={customForm.name}
+            onChange={(e) => setCustomForm({ ...customForm, name: e.target.value })}
+            required
+            autoFocus
+          />
+
+          <div>
+            <label className="block text-sm font-medium text-fg mb-1.5">{t('amenities.category')}</label>
+            <select
+              value={customForm.category}
+              onChange={(e) => setCustomForm({ ...customForm, category: e.target.value })}
+              className="w-full h-10 px-3 text-base sm:text-sm text-fg border border-line rounded-lg focus:outline-none focus:border-muted bg-panel"
+            >
+              {AMENITY_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {amenityCategoryLabel(cat)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <label className="flex items-center gap-2 cursor-pointer pt-1">
+            <input
+              type="checkbox"
+              checked={customForm.isFeatured}
+              onChange={(e) => setCustomForm({ ...customForm, isFeatured: e.target.checked })}
+              className="w-4 h-4 rounded border-line text-info"
+            />
+            <span className="text-sm font-medium text-fg">⭐ {t('amenities.makeFeatured')}</span>
+          </label>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            variant="ghost"
+            onClick={() => setShowCustomModal(false)}
+            disabled={isSubmitting}
+          >
+            {tc('actions.cancel')}
+          </Button>
+          <Button
+            onClick={handleCreateCustomAmenity}
+            isLoading={isSubmitting}
+            disabled={!customForm.name.trim()}
+          >
+            {tc('actions.create')}
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Edit Custom Name Modal */}
+      <Modal
+        isOpen={Boolean(editingAmenity)}
+        onClose={() => setEditingAmenity(null)}
+        size="sm"
+      >
+        <ModalHeader onClose={() => setEditingAmenity(null)}>
+          <span className="font-semibold">{t('amenities.editCustomNameTitle')}</span>
+        </ModalHeader>
+        <ModalBody className="space-y-3">
+          <p className="text-xs text-muted">
+            Tên gốc: <span className="font-medium text-fg">{editingAmenity ? amenityName(editingAmenity.slug, editingAmenity.name, labels.locale) : ''}</span>
+          </p>
+          <Input
+            label={t('amenities.editCustomName')}
+            placeholder={t('amenities.editCustomNamePlaceholder')}
+            value={customNameInput}
+            onChange={(e) => setCustomNameInput(e.target.value)}
+            autoFocus
+          />
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            variant="ghost"
+            onClick={() => setEditingAmenity(null)}
+          >
+            {tc('actions.cancel')}
+          </Button>
+          <Button
+            onClick={handleSaveCustomName}
+          >
+            {tc('actions.save')}
           </Button>
         </ModalFooter>
       </Modal>

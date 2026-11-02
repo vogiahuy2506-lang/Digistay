@@ -175,7 +175,8 @@
       "amenities": {
         "title": "Mọi thứ cần cho một kỳ nghỉ nhẹ nhàng",
         "eyebrow": "Tiện ích",
-        "empty": "Danh sách tiện ích đang được cập nhật."
+        "empty": "Danh sách tiện ích đang được cập nhật.",
+        "featured": "Nổi bật"
       },
       "contact": {
         "title": "Liên hệ đặt phòng",

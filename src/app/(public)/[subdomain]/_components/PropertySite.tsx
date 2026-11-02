@@ -59,6 +59,10 @@ export interface PublicAmenity {
   name: string
   icon: string | null
   category: string
+  isFeatured?: boolean
+  customName?: string | null
+  images?: string[]
+  sortOrder?: number
 }
 
 export interface PublicRoomType {

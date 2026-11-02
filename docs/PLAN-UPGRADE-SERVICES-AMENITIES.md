@@ -168,12 +168,18 @@ model PropertyAmenity {
 
 ---
 
-### Task 54: Tiện ích Tùy chỉnh (Custom) & Tiện ích Nổi bật (Featured Badges)
+### Task 54: Tiện ích Tùy chỉnh (Custom) & Tiện ích Nổi bật (Featured Badges) ✅ *Đã hoàn thành*
+- **Backend API (`/api/properties/[id]/amenities`)**:
+  - `GET`: Trả về danh sách tiện ích kèm trạng thái `isSelected`, `isFeatured`, `customName`, `images`, `sortOrder`.
+  - `PUT`: Hỗ trợ lưu trữ thuộc tính nổi bật ⭐ `isFeatured`, tên hiển thị riêng `customName` và thứ tự sắp xếp của từng tiện ích tại cơ sở.
+  - `POST`: Cho phép tạo tiện ích tùy chỉnh riêng biệt cho khách sạn (sân pickleball, trạm sạc xe điện, v.v.) với slug cô lập an toàn.
 - **Giao diện Quản lý Tiện ích (`/services`)**:
-  - Nút ghim sao ⭐ **"Nổi bật"** ngay cạnh từng tiện ích (tối đa chọn 6 tiện ích nổi bật).
-  - Nút **"+ Thêm tiện ích riêng"** cho phép tạo tiện ích tùy biến nếu khách sạn có những tiện nghi đặc biệt (sân tennis, trạm sạc xe điện, phòng thiền, máy chiếu phim ngoài trời).
+  - Nút ghim sao ⭐ **"Nổi bật"** ngay cạnh từng tiện ích đã chọn, có cảnh báo khi chọn quá 6 tiện ích nổi bật.
+  - Nút đổi tên ✏️ cho phép đặt tên hiển thị riêng theo phong cách của từng resort/khách sạn.
+  - Nút **"+ Thêm tiện ích riêng"** kèm Modal tạo tiện ích độc quyền của cơ sở.
 - **Hiển thị trên Public Site (`src/app/(public)/[subdomain]`)**:
-  - Khối Hero Banner và phần Giới thiệu phòng sẽ render các Badge nổi bật nổi bật màu Accent (VD: ⭐ *Hồ bơi vô cực* • ⭐ *Bồn tắm nằm hướng biển* • ⭐ *Bữa sáng buffet miễn phí*).
+  - Khối **HeroBlock**: Render danh sách các chip nổi bật màu Accent (VD: ⭐ *Hồ bơi vô cực* • ⭐ *Bồn tắm Jacuzzi*) ngay dưới phần giới thiệu đầu trang.
+  - Khối **AmenitiesBlock**: Render badge `⭐ Nổi bật` và ưu tiên hiển thị tiện ích nổi bật lên hàng đầu.
 
 ---
 

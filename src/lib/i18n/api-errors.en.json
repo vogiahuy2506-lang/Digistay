@@ -802,5 +802,7 @@
   "Không thể xóa dịch vụ của đơn đặt phòng đã đóng hoặc hủy": "Cannot remove services from a closed or cancelled booking",
   "Dịch vụ không tồn tại hoặc đã bị xóa": "Service does not exist or has been removed",
   "Đã xóa dịch vụ khỏi đơn đặt phòng": "Service removed from booking",
-  "Lỗi khi xóa dịch vụ": "Failed to remove service"
+  "Lỗi khi xóa dịch vụ": "Failed to remove service",
+  "Đã tạo tiện ích riêng": "Custom amenity created",
+  "Lỗi khi tạo tiện ích riêng": "Failed to create custom amenity"
 }

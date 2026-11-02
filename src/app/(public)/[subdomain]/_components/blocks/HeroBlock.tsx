@@ -2,7 +2,7 @@ import { blockText } from '@/lib/i18n/content'
 import { responsiveImage } from '@/lib/media/image-url'
 import { middleOut, photoKey } from '@/lib/public-site/hero-photos'
 import { SearchBar } from '../SearchBar'
-import type { PublicBlock, PublicImage, PublicProperty } from '../PropertySite'
+import type { PublicAmenity, PublicBlock, PublicImage, PublicProperty } from '../PropertySite'
 import { Container, Eyebrow, propertyTypeLabel, cfgText } from '../site-ui'
 import { useLocale, useTranslations } from 'next-intl'
 
@@ -10,6 +10,7 @@ interface Props {
   block: PublicBlock
   property: PublicProperty
   images: PublicImage[]
+  amenities?: PublicAmenity[]
   /** The page has a map section to link to. */
   hasMap?: boolean
 }
@@ -24,10 +25,11 @@ interface Photo {
  * from direction B on wide screens, a flat swipeable strip on phones, and the
  * search bar overlapping the strip.
  */
-export function HeroBlock({ block, property, images, hasMap }: Props) {
+export function HeroBlock({ block, property, images, amenities, hasMap }: Props) {
   const locale = useLocale()
   const t = useTranslations('site')
   const cfg = block.config || {}
+  const featured = amenities?.filter((a) => a.isFeatured) ?? []
   // The builder's old default title stopped at "Chào mừng đến với" (to …): the hotel's name instead.
   const typed = blockText(cfg, locale, 'heroTitle', 'title')
   const title = typed && typed !== 'Chào mừng đến với' ? typed : property.name
@@ -62,6 +64,19 @@ export function HeroBlock({ block, property, images, hasMap }: Props) {
         </div>
         <div className="lg:pb-3">
           <p className="text-lead text-muted">{subtitle}</p>
+          {featured.length > 0 && (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {featured.map((f) => (
+                <span
+                  key={f.id}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-acc/10 text-acc border border-acc/20 shadow-sm"
+                >
+                  <span aria-hidden="true">⭐</span>
+                  <span>{f.name}</span>
+                </span>
+              ))}
+            </div>
+          )}
           {hasMap && (
             <a href="#map" className="mt-4 inline-block text-small text-acc hover:underline">
               {t('blocks.hero.seeOnMap')}
