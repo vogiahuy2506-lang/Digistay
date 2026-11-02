@@ -31,6 +31,7 @@ import {
   Plus,
   Search,
   Settings,
+  Users,
 } from 'lucide-react'
 import { apiError } from '@/lib/i18n/api-errors'
 import { addressLocality } from '@/lib/vn-admin/address'
@@ -62,7 +63,7 @@ export default function WorkspaceDashboardPage() {
   const params = useParams<{ slug: string }>()
   const slug = params.slug
   const { workspace, loading: wsLoading } = useWorkspace()
-  // Who has properties_create adds properties (a chain grows one at a time).
+  const canBilling = useCan('billing_manage') || access?.isOwner
   const canAddProperty = useCan('properties_create')
 
   const [properties, setProperties] = React.useState<Property[]>([])
@@ -134,7 +135,7 @@ export default function WorkspaceDashboardPage() {
   }
 
   return (
-    <div className="py-6 sm:py-10">
+    <div>
       {/* Header aligned like /workspaces */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
         <div className="max-w-xl">
@@ -143,14 +144,35 @@ export default function WorkspaceDashboardPage() {
           </h1>
           <p className="mt-2 text-small text-muted sm:text-body">{t('lead')}</p>
         </div>
-        {canAddProperty && (
-          <Link href={routes.newProperty(slug)} className="shrink-0 self-start sm:self-auto">
-            <Button>
-              <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />
-              {t('addProperty')}
+        <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto flex-wrap">
+          {canBilling && (
+            <Link href={routes.billing(slug)}>
+              <Button variant="outline">
+                {tb('nav')}
+              </Button>
+            </Link>
+          )}
+          <Link href={routes.members(slug)}>
+            <Button variant="outline">
+              <Users className="w-4 h-4 mr-1.5" aria-hidden="true" />
+              {t('members')}
             </Button>
           </Link>
-        )}
+          <Link href={routes.settings(slug)}>
+            <Button variant="outline">
+              <Settings className="w-4 h-4 mr-1.5" aria-hidden="true" />
+              {t('customize')}
+            </Button>
+          </Link>
+          {canAddProperty && (
+            <Link href={routes.newProperty(slug)}>
+              <Button>
+                <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />
+                {t('addProperty')}
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
 
       {error ? (
