@@ -524,7 +524,7 @@ export default function BlogManagementPage() {
                 <Input
                   value={form.slug}
                   onChange={(e) => onSlugChange(e.target.value)}
-                  placeholder="top-5-quan-an-ngon"
+                  placeholder={t('modal.slugPlaceholder')}
                   className="font-mono text-small"
                   required
                 />
@@ -560,7 +560,7 @@ export default function BlogManagementPage() {
 
             {form.coverImage && (
               <div className="relative w-full h-40 rounded-ctl overflow-hidden border border-line bg-page">
-                <Image src={form.coverImage} alt="Cover Preview" fill className="object-cover" />
+                <Image src={form.coverImage} alt={t('modal.coverAlt')} fill className="object-cover" />
                 <button
                   type="button"
                   onClick={() => setForm({ ...form, coverImage: '' })}

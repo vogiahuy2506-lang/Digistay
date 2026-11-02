@@ -2,24 +2,22 @@
 
 import * as React from 'react'
 import { useParams } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { Header, PageContainer } from '@/components/layout'
 import { useCan } from '@/components/layout/workspace-context'
-import { Badge, Button, Input, Modal, ModalBody, ModalFooter } from '@/components/ui'
+import { Badge, Button, Modal } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
 import { formatVnd } from '@/lib/bookings/display'
 import {
   Users,
   Search,
-  Sparkles,
   Mail,
   Phone,
   RefreshCw,
   Crown,
   CalendarCheck,
   CreditCard,
-  Pencil,
   Tag,
   ChevronRight,
   ExternalLink,
@@ -65,11 +63,9 @@ interface Summary {
   totalRevenue: number
 }
 
-const PRESET_TAGS = ['VIP', 'Khách quen', 'Gia đình', 'Doanh nhân', 'Khách đoàn', 'Cần chăm sóc']
-
 export default function CustomersPage() {
   const t = useTranslations('dash.customers')
-  const tc = useTranslations('dash.common')
+  const locale = useLocale()
   const { slug, id: propertyId } = useParams<{ slug: string; id: string }>()
   const canEdit = useCan('bookings_edit')
 
@@ -100,6 +96,18 @@ export default function CustomersPage() {
   const [newTagInput, setNewTagInput] = React.useState('')
   const [savingDetail, setSavingDetail] = React.useState(false)
 
+  const presetTags = React.useMemo(
+    () => [
+      t('tags.vip'),
+      t('tags.frequent'),
+      t('tags.family'),
+      t('tags.business'),
+      t('tags.group'),
+      t('tags.careNeeded'),
+    ],
+    [t]
+  )
+
   React.useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(search.trim())
@@ -127,15 +135,15 @@ export default function CustomersPage() {
         if (json.summary) setSummary(json.summary)
       } else {
         setLoadFailed(true)
-        toast.error(json.error || 'Lỗi khi tải danh bạ khách hàng')
+        toast.error(json.error || t('toasts.loadFailed'))
       }
     } catch {
       setLoadFailed(true)
-      toast.error('Lỗi khi tải danh bạ khách hàng')
+      toast.error(t('toasts.loadFailed'))
     } finally {
       setLoading(false)
     }
-  }, [propertyId, page, debouncedQuery, selectedTag, sortBy])
+  }, [propertyId, page, debouncedQuery, selectedTag, sortBy, t])
 
   React.useEffect(() => {
     load()
@@ -151,10 +159,10 @@ export default function CustomersPage() {
         toast.success(json.message || t('syncSuccess'))
         load()
       } else {
-        toast.error(json.error || 'Lỗi khi đồng bộ khách hàng')
+        toast.error(json.error || t('toasts.syncFailed'))
       }
     } catch {
-      toast.error('Lỗi khi kết nối máy chủ')
+      toast.error(t('toasts.networkError'))
     } finally {
       setSyncing(false)
     }
@@ -172,11 +180,11 @@ export default function CustomersPage() {
         setEditNotes(json.data.customer.notes || '')
         setEditTags(json.data.customer.tags || [])
       } else {
-        toast.error(json.error || 'Không thể tải thông tin chi tiết')
+        toast.error(json.error || t('toasts.detailFailed'))
         setActiveCustomerId(null)
       }
     } catch {
-      toast.error('Lỗi kết nối')
+      toast.error(t('toasts.networkError'))
       setActiveCustomerId(null)
     } finally {
       setDetailLoading(false)
@@ -197,18 +205,18 @@ export default function CustomersPage() {
       })
       const json = await res.json().catch(() => ({}))
       if (res.ok && json.success) {
-        toast.success(json.message || 'Cập nhật thành công')
+        toast.success(json.message || t('toasts.saveSuccess'))
         setCustomers((prev) =>
-          prev
+            prev
             ? prev.map((c) => (c.id === activeCustomerId ? { ...c, notes: editNotes, tags: editTags } : c))
             : null
         )
         setActiveCustomerId(null)
       } else {
-        toast.error(json.error || 'Lỗi khi lưu thông tin')
+        toast.error(json.error || t('toasts.saveFailed'))
       }
     } catch {
-      toast.error('Lỗi kết nối máy chủ')
+      toast.error(t('toasts.networkError'))
     } finally {
       setSavingDetail(false)
     }
@@ -222,14 +230,17 @@ export default function CustomersPage() {
   }
 
   const handleRemoveTag = (tagToRemove: string) => {
-    setEditTags(editTags.filter((t) => t !== tagToRemove))
+    setEditTags(editTags.filter((tg) => tg !== tagToRemove))
   }
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return t('table.never')
     try {
-      const d = new Date(dateStr)
-      return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+      return new Date(dateStr).toLocaleDateString(locale === 'en' ? 'en-US' : 'vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      })
     } catch {
       return dateStr
     }
@@ -241,6 +252,18 @@ export default function CustomersPage() {
     if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
   }
+
+  const isVip = (tag: string) => {
+    const lower = tag.toLowerCase()
+    return lower === 'vip' || lower.includes('vip')
+  }
+
+  const isFrequent = (tag: string) => {
+    const lower = tag.toLowerCase()
+    return lower.includes('quen') || lower.includes('frequent')
+  }
+
+  const numFormat = (n: number) => n.toLocaleString(locale === 'en' ? 'en-US' : 'vi-VN')
 
   return (
     <PageContainer>
@@ -264,43 +287,43 @@ export default function CustomersPage() {
 
       {/* Metrics Bar */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="p-4 rounded-xl border border-line bg-card/60 backdrop-blur-sm shadow-sm flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-acc/10 text-acc flex items-center justify-center shrink-0">
+        <div className="p-4 rounded-box border border-line bg-panel shadow-sm flex items-center gap-3">
+          <div className="w-10 h-10 rounded-ctl bg-acc/10 text-acc flex items-center justify-center shrink-0">
             <Users className="w-5 h-5" />
           </div>
           <div className="min-w-0">
             <p className="text-xs text-muted truncate">{t('metrics.totalCustomers')}</p>
-            <p className="text-xl font-bold text-fg">{summary.totalCustomers.toLocaleString('vi-VN')}</p>
+            <p className="text-xl font-bold text-fg">{numFormat(summary.totalCustomers)}</p>
           </div>
         </div>
 
-        <div className="p-4 rounded-xl border border-line bg-card/60 backdrop-blur-sm shadow-sm flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
+        <div className="p-4 rounded-box border border-line bg-panel shadow-sm flex items-center gap-3">
+          <div className="w-10 h-10 rounded-ctl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
             <Crown className="w-5 h-5" />
           </div>
           <div className="min-w-0">
             <p className="text-xs text-muted truncate">{t('metrics.vipCustomers')}</p>
-            <p className="text-xl font-bold text-fg">{summary.vipCount.toLocaleString('vi-VN')}</p>
+            <p className="text-xl font-bold text-fg">{numFormat(summary.vipCount)}</p>
           </div>
         </div>
 
-        <div className="p-4 rounded-xl border border-line bg-card/60 backdrop-blur-sm shadow-sm flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+        <div className="p-4 rounded-box border border-line bg-panel shadow-sm flex items-center gap-3">
+          <div className="w-10 h-10 rounded-ctl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
             <CalendarCheck className="w-5 h-5" />
           </div>
           <div className="min-w-0">
             <p className="text-xs text-muted truncate">{t('metrics.totalStays')}</p>
-            <p className="text-xl font-bold text-fg">{summary.totalStays.toLocaleString('vi-VN')}</p>
+            <p className="text-xl font-bold text-fg">{numFormat(summary.totalStays)}</p>
           </div>
         </div>
 
-        <div className="p-4 rounded-xl border border-line bg-card/60 backdrop-blur-sm shadow-sm flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
+        <div className="p-4 rounded-box border border-line bg-panel shadow-sm flex items-center gap-3">
+          <div className="w-10 h-10 rounded-ctl bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
             <CreditCard className="w-5 h-5" />
           </div>
           <div className="min-w-0">
             <p className="text-xs text-muted truncate">{t('metrics.totalRevenue')}</p>
-            <p className="text-xl font-bold text-fg truncate">{formatVnd(summary.totalRevenue, 'vi')}</p>
+            <p className="text-xl font-bold text-fg truncate">{formatVnd(summary.totalRevenue, locale)}</p>
           </div>
         </div>
       </div>
@@ -311,7 +334,7 @@ export default function CustomersPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
           <input
             type="text"
-            className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-line bg-card text-fg focus:outline-none focus:ring-2 focus:ring-acc/30 placeholder:text-muted"
+            className="w-full pl-9 pr-3 py-2 text-sm rounded-ctl border border-line bg-panel text-fg focus:outline-none focus:ring-2 focus:ring-acc/30 placeholder:text-muted"
             placeholder={t('searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -320,7 +343,7 @@ export default function CustomersPage() {
 
         <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
           <select
-            className="px-3 py-2 text-sm rounded-lg border border-line bg-card text-fg focus:outline-none focus:ring-2 focus:ring-acc/30 shrink-0"
+            className="px-3 py-2 text-sm rounded-ctl border border-line bg-panel text-fg focus:outline-none focus:ring-2 focus:ring-acc/30 shrink-0"
             value={selectedTag}
             onChange={(e) => {
               setSelectedTag(e.target.value)
@@ -333,26 +356,27 @@ export default function CustomersPage() {
             <option value="Gia đình">{t('tags.family')}</option>
             <option value="Doanh nhân">{t('tags.business')}</option>
             <option value="Khách đoàn">{t('tags.group')}</option>
+            <option value="Cần chăm sóc">{t('tags.careNeeded')}</option>
           </select>
 
           <select
-            className="px-3 py-2 text-sm rounded-lg border border-line bg-card text-fg focus:outline-none focus:ring-2 focus:ring-acc/30 shrink-0"
+            className="px-3 py-2 text-sm rounded-ctl border border-line bg-panel text-fg focus:outline-none focus:ring-2 focus:ring-acc/30 shrink-0"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
           >
-            <option value="lastStayAt">Lần ở gần nhất</option>
-            <option value="totalSpent">Chi tiêu cao nhất</option>
-            <option value="totalStays">Số lần ở nhiều nhất</option>
-            <option value="name">Tên A-Z</option>
+            <option value="lastStayAt">{t('sortBy.lastStayAt')}</option>
+            <option value="totalSpent">{t('sortBy.totalSpent')}</option>
+            <option value="totalStays">{t('sortBy.totalStays')}</option>
+            <option value="name">{t('sortBy.name')}</option>
           </select>
         </div>
       </div>
 
       {/* Main Table */}
-      <div className="rounded-xl border border-line bg-card overflow-hidden shadow-sm">
+      <div className="rounded-box border border-line bg-panel overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="bg-bg-subtle/50 border-b border-line text-xs font-semibold text-muted uppercase tracking-wider">
+            <thead className="bg-fg/5 border-b border-line text-xs font-semibold text-muted uppercase tracking-wider">
               <tr>
                 <th className="px-4 py-3.5">{t('table.customer')}</th>
                 <th className="px-4 py-3.5">{t('table.contact')}</th>
@@ -369,15 +393,15 @@ export default function CustomersPage() {
                 <tr>
                   <td colSpan={8} className="px-4 py-12 text-center text-muted">
                     <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 opacity-50" />
-                    <span>Đang tải danh bạ khách hàng...</span>
+                    <span>{t('states.loading')}</span>
                   </td>
                 </tr>
               ) : loadFailed ? (
                 <tr>
                   <td colSpan={8} className="px-4 py-12 text-center text-muted">
-                    <p className="text-destructive mb-2">Không thể tải dữ liệu danh bạ</p>
+                    <p className="text-err mb-2">{t('states.loadError')}</p>
                     <Button variant="outline" size="sm" onClick={load}>
-                      Thử lại
+                      {t('states.retry')}
                     </Button>
                   </td>
                 </tr>
@@ -399,7 +423,7 @@ export default function CustomersPage() {
                 customers.map((c) => (
                   <tr
                     key={c.id}
-                    className="hover:bg-bg-subtle/50 transition-colors cursor-pointer group"
+                    className="hover:bg-fg/5 transition-colors cursor-pointer group"
                     onClick={() => openCustomerDetail(c.id)}
                   >
                     <td className="px-4 py-3.5">
@@ -411,7 +435,9 @@ export default function CustomersPage() {
                           <p className="font-medium text-fg truncate group-hover:text-acc transition-colors">
                             {c.name}
                           </p>
-                          <p className="text-xs text-muted">Mã: #{c.id.slice(-6).toUpperCase()}</p>
+                          <p className="text-xs text-muted">
+                            {t('states.customerCode', { code: c.id.slice(-6).toUpperCase() })}
+                          </p>
                         </div>
                       </div>
                     </td>
@@ -436,18 +462,18 @@ export default function CustomersPage() {
                     <td className="px-4 py-3.5">
                       <div className="flex flex-wrap gap-1 max-w-[200px]">
                         {c.tags && c.tags.length > 0 ? (
-                          c.tags.map((tag) => (
+                          c.tags.map((tg) => (
                             <span
-                              key={tag}
+                              key={tg}
                               className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${
-                                tag === 'VIP'
+                                isVip(tg)
                                   ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
-                                  : tag === 'Khách quen'
+                                  : isFrequent(tg)
                                     ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
-                                    : 'bg-bg-subtle text-muted border border-line'
+                                    : 'bg-fg/5 text-muted border border-line'
                               }`}
                             >
-                              {tag}
+                              {tg}
                             </span>
                           ))
                         ) : (
@@ -457,13 +483,13 @@ export default function CustomersPage() {
                     </td>
 
                     <td className="px-4 py-3.5 text-center">
-                      <span className="inline-block px-2 py-0.5 rounded bg-bg-subtle font-semibold text-xs text-fg">
+                      <span className="inline-block px-2 py-0.5 rounded-ctl bg-fg/5 font-semibold text-xs text-fg">
                         {c.totalStays}
                       </span>
                     </td>
 
                     <td className="px-4 py-3.5 text-right font-medium text-fg">
-                      {formatVnd(c.totalSpent, 'vi')}
+                      {formatVnd(c.totalSpent, locale)}
                     </td>
 
                     <td className="px-4 py-3.5 text-xs text-muted whitespace-nowrap">
@@ -476,7 +502,7 @@ export default function CustomersPage() {
                           {c.notes}
                         </p>
                       ) : (
-                        <span className="text-xs text-muted/50 italic">Chưa có ghi chú</span>
+                        <span className="text-xs text-muted/50 italic">{t('states.noNotes')}</span>
                       )}
                     </td>
 
@@ -502,9 +528,13 @@ export default function CustomersPage() {
 
         {/* Pagination */}
         {pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-line text-xs text-muted bg-bg-subtle/30">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-line text-xs text-muted bg-fg/5">
             <span>
-              Trang {pagination.page} / {pagination.totalPages} ({pagination.total} khách hàng)
+              {t('pagination.page', {
+                page: pagination.page,
+                totalPages: pagination.totalPages,
+                total: pagination.total,
+              })}
             </span>
             <div className="flex gap-1">
               <Button
@@ -513,7 +543,7 @@ export default function CustomersPage() {
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
               >
-                Trước
+                {t('pagination.prev')}
               </Button>
               <Button
                 variant="outline"
@@ -521,7 +551,7 @@ export default function CustomersPage() {
                 disabled={page >= pagination.totalPages}
                 onClick={() => setPage((p) => p + 1)}
               >
-                Sau
+                {t('pagination.next')}
               </Button>
             </div>
           </div>
@@ -536,7 +566,7 @@ export default function CustomersPage() {
               <div>
                 <h3 className="text-lg font-bold text-fg flex items-center gap-2">
                   <span>{detailCustomer?.name || t('detail.title')}</span>
-                  {detailCustomer?.tags.includes('VIP') && (
+                  {detailCustomer?.tags.some(isVip) && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
                       <Crown className="w-3 h-3" /> VIP
                     </span>
@@ -549,7 +579,7 @@ export default function CustomersPage() {
               <button
                 type="button"
                 onClick={() => setActiveCustomerId(null)}
-                className="text-muted hover:text-fg p-1 rounded-lg hover:bg-bg-subtle transition-colors"
+                className="text-muted hover:text-fg p-1 rounded-ctl hover:bg-fg/5 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -558,24 +588,26 @@ export default function CustomersPage() {
             {detailLoading ? (
               <div className="py-12 text-center text-muted">
                 <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 opacity-50" />
-                <span>Đang tải thông tin khách hàng...</span>
+                <span>{t('states.loadingDetail')}</span>
               </div>
             ) : detailCustomer ? (
               <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-1">
                 {/* Stats summary */}
-                <div className="grid grid-cols-3 gap-3 p-3 rounded-lg bg-bg-subtle/60 border border-line text-center">
+                <div className="grid grid-cols-3 gap-3 p-3 rounded-ctl bg-fg/5 border border-line text-center">
                   <div>
-                    <p className="text-xs text-muted">Số lần lưu trú</p>
-                    <p className="text-base font-bold text-fg mt-0.5">{detailCustomer.totalStays} lần</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted">Tổng chi tiêu</p>
-                    <p className="text-base font-bold text-acc mt-0.5">
-                      {formatVnd(detailCustomer.totalSpent, 'vi')}
+                    <p className="text-xs text-muted">{t('table.stays')}</p>
+                    <p className="text-base font-bold text-fg mt-0.5">
+                      {t('states.stayCount', { count: detailCustomer.totalStays })}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted">Lần ở gần nhất</p>
+                    <p className="text-xs text-muted">{t('table.spent')}</p>
+                    <p className="text-base font-bold text-acc mt-0.5">
+                      {formatVnd(detailCustomer.totalSpent, locale)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted">{t('table.lastStay')}</p>
                     <p className="text-xs font-medium text-fg mt-1">
                       {formatDate(detailCustomer.lastStayAt)}
                     </p>
@@ -584,22 +616,22 @@ export default function CustomersPage() {
 
                 {/* Tags management */}
                 <div>
-                  <label className="block text-xs font-semibold text-fg mb-1.5 flex items-center gap-1.5">
+                  <label className="text-xs font-semibold text-fg mb-1.5 flex items-center gap-1.5">
                     <Tag className="w-3.5 h-3.5 text-muted" />
                     <span>{t('detail.editTags')}</span>
                   </label>
                   <div className="flex flex-wrap gap-1.5 mb-2">
-                    {editTags.map((tag) => (
+                    {editTags.map((tg) => (
                       <span
-                        key={tag}
+                        key={tg}
                         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-acc/10 text-acc border border-acc/20"
                       >
-                        {tag}
+                        {tg}
                         {canEdit && (
                           <button
                             type="button"
-                            onClick={() => handleRemoveTag(tag)}
-                            className="hover:text-destructive p-0.5"
+                            onClick={() => handleRemoveTag(tg)}
+                            className="hover:text-err p-0.5"
                           >
                             <X className="w-3 h-3" />
                           </button>
@@ -613,8 +645,8 @@ export default function CustomersPage() {
                       <div className="flex gap-2">
                         <input
                           type="text"
-                          className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-line bg-card text-fg focus:outline-none focus:ring-1 focus:ring-acc"
-                          placeholder="Nhập tên thẻ phân loại..."
+                          className="flex-1 px-3 py-1.5 text-xs rounded-ctl border border-line bg-panel text-fg focus:outline-none focus:ring-1 focus:ring-acc"
+                          placeholder={t('tagPresets.placeholder')}
                           value={newTagInput}
                           onChange={(e) => setNewTagInput(e.target.value)}
                           onKeyDown={(e) => {
@@ -631,23 +663,25 @@ export default function CustomersPage() {
                           disabled={!newTagInput.trim()}
                         >
                           <Plus className="w-3.5 h-3.5 mr-1" />
-                          Thêm
+                          {t('tagPresets.add')}
                         </Button>
                       </div>
 
                       {/* Quick preset suggestions */}
                       <div className="flex flex-wrap gap-1 items-center">
-                        <span className="text-[11px] text-muted mr-1">Gợi ý nhanh:</span>
-                        {PRESET_TAGS.filter((pt) => !editTags.includes(pt)).map((pt) => (
-                          <button
-                            key={pt}
-                            type="button"
-                            onClick={() => handleAddTag(pt)}
-                            className="text-[11px] px-2 py-0.5 rounded border border-dashed border-line hover:border-acc hover:text-acc transition-colors text-muted"
-                          >
-                            + {pt}
-                          </button>
-                        ))}
+                        <span className="text-[11px] text-muted mr-1">{t('tagPresets.quickPresets')}</span>
+                        {presetTags
+                          .filter((pt) => !editTags.includes(pt))
+                          .map((pt) => (
+                            <button
+                              key={pt}
+                              type="button"
+                              onClick={() => handleAddTag(pt)}
+                              className="text-[11px] px-2 py-0.5 rounded-ctl border border-dashed border-line hover:border-acc hover:text-acc transition-colors text-muted"
+                            >
+                              + {pt}
+                            </button>
+                          ))}
                       </div>
                     </div>
                   )}
@@ -655,21 +689,21 @@ export default function CustomersPage() {
 
                 {/* Notes / Preferences */}
                 <div>
-                  <label className="block text-xs font-semibold text-fg mb-1.5 flex items-center gap-1.5">
+                  <label className="text-xs font-semibold text-fg mb-1.5 flex items-center gap-1.5">
                     <FileText className="w-3.5 h-3.5 text-muted" />
                     <span>{t('detail.editNotes')}</span>
                   </label>
                   {canEdit ? (
                     <textarea
                       rows={3}
-                      className="w-full px-3 py-2 text-xs rounded-lg border border-line bg-card text-fg focus:outline-none focus:ring-2 focus:ring-acc/30 placeholder:text-muted"
+                      className="w-full px-3 py-2 text-xs rounded-ctl border border-line bg-panel text-fg focus:outline-none focus:ring-2 focus:ring-acc/30 placeholder:text-muted"
                       placeholder={t('detail.notesPlaceholder')}
                       value={editNotes}
                       onChange={(e) => setEditNotes(e.target.value)}
                     />
                   ) : (
-                    <div className="p-3 rounded-lg border border-line bg-bg-subtle text-xs text-muted">
-                      {detailCustomer.notes || 'Chưa có ghi chú nội bộ'}
+                    <div className="p-3 rounded-ctl border border-line bg-fg/5 text-xs text-muted">
+                      {detailCustomer.notes || t('states.noInternalNotes')}
                     </div>
                   )}
                 </div>
@@ -678,11 +712,13 @@ export default function CustomersPage() {
                 <div>
                   <h4 className="text-xs font-semibold text-fg mb-2 flex items-center gap-1.5">
                     <History className="w-3.5 h-3.5 text-muted" />
-                    <span>{t('detail.history')} ({detailBookings.length})</span>
+                    <span>
+                      {t('detail.history')} ({detailBookings.length})
+                    </span>
                   </h4>
 
                   {detailBookings.length === 0 ? (
-                    <div className="p-4 rounded-lg border border-dashed border-line text-center text-xs text-muted">
+                    <div className="p-4 rounded-ctl border border-dashed border-line text-center text-xs text-muted">
                       {t('detail.noHistory')}
                     </div>
                   ) : (
@@ -690,40 +726,43 @@ export default function CustomersPage() {
                       {detailBookings.map((b) => (
                         <div
                           key={b.id}
-                          className="p-3 rounded-lg border border-line bg-card hover:border-acc/40 transition-colors flex items-center justify-between text-xs"
+                          className="p-3 rounded-ctl border border-line bg-panel hover:border-acc/40 transition-colors flex items-center justify-between text-xs"
                         >
                           <div className="space-y-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <span className="font-semibold text-fg">#{b.bookingCode}</span>
                               <span
-                                className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                                className={`px-1.5 py-0.5 rounded-ctl text-[10px] font-medium ${
                                   b.status === 'CHECKED_OUT'
                                     ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
                                     : b.status === 'CHECKED_IN'
                                       ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
-                                      : 'bg-bg-subtle text-muted'
+                                      : 'bg-fg/5 text-muted'
                                 }`}
                               >
                                 {b.status}
                               </span>
                               <span
-                                className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                                className={`px-1.5 py-0.5 rounded-ctl text-[10px] font-medium ${
                                   b.paymentStatus === 'PAID'
-                                    ? 'bg-emerald-500/15 text-emerald-600'
-                                    : 'bg-amber-500/15 text-amber-600'
+                                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                                    : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
                                 }`}
                               >
                                 {b.paymentStatus}
                               </span>
                             </div>
                             <p className="text-muted truncate">
-                              {b.roomNames} {b.roomNumbers ? `(Phòng ${b.roomNumbers})` : ''} •{' '}
-                              {formatDate(b.checkInDate)} → {formatDate(b.checkOutDate)}
+                              {b.roomNames}{' '}
+                              {b.roomNumbers
+                                ? t('states.roomNumber', { number: b.roomNumbers })
+                                : ''}{' '}
+                              • {formatDate(b.checkInDate)} → {formatDate(b.checkOutDate)}
                             </p>
                           </div>
 
                           <div className="text-right shrink-0 ml-3">
-                            <p className="font-semibold text-fg">{formatVnd(b.totalAmount, 'vi')}</p>
+                            <p className="font-semibold text-fg">{formatVnd(b.totalAmount, locale)}</p>
                             <Link
                               href={`/workspace/${slug}/properties/${propertyId}/bookings`}
                               className="text-[11px] text-acc hover:underline flex items-center justify-end gap-0.5 mt-0.5"

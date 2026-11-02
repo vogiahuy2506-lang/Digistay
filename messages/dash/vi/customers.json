@@ -5,13 +5,49 @@
   "syncing": "Đang đồng bộ...",
   "syncSuccess": "Đã đồng bộ thành công",
   "searchPlaceholder": "Tìm theo họ tên, số điện thoại, email hoặc ghi chú...",
+  "sortBy": {
+    "lastStayAt": "Lần ở gần nhất",
+    "totalSpent": "Chi tiêu cao nhất",
+    "totalStays": "Số lần ở nhiều nhất",
+    "name": "Tên A-Z"
+  },
   "tags": {
     "all": "Tất cả khách",
     "vip": "Khách VIP",
     "frequent": "Khách quen",
     "family": "Gia đình",
     "business": "Doanh nhân",
-    "group": "Khách đoàn"
+    "group": "Khách đoàn",
+    "careNeeded": "Cần chăm sóc"
+  },
+  "tagPresets": {
+    "quickPresets": "Gợi ý nhanh:",
+    "placeholder": "Nhập tên thẻ phân loại...",
+    "add": "Thêm"
+  },
+  "states": {
+    "loading": "Đang tải danh bạ khách hàng...",
+    "loadError": "Không thể tải dữ liệu danh bạ",
+    "retry": "Thử lại",
+    "customerCode": "Mã: #{code}",
+    "noNotes": "Chưa có ghi chú",
+    "noInternalNotes": "Chưa có ghi chú nội bộ",
+    "loadingDetail": "Đang tải thông tin khách hàng...",
+    "stayCount": "{count} lần",
+    "roomNumber": "(Phòng {number})"
+  },
+  "pagination": {
+    "page": "Trang {page} / {totalPages} ({total} khách hàng)",
+    "prev": "Trước",
+    "next": "Sau"
+  },
+  "toasts": {
+    "loadFailed": "Lỗi khi tải danh bạ khách hàng",
+    "syncFailed": "Lỗi khi đồng bộ khách hàng",
+    "networkError": "Lỗi khi kết nối máy chủ",
+    "detailFailed": "Không thể tải thông tin chi tiết",
+    "saveSuccess": "Cập nhật thành công",
+    "saveFailed": "Lỗi khi lưu thông tin"
   },
   "metrics": {
     "totalCustomers": "Tổng số khách",

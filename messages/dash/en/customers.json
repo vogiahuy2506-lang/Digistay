@@ -5,13 +5,49 @@
   "syncing": "Syncing...",
   "syncSuccess": "Sync completed successfully",
   "searchPlaceholder": "Search by name, phone, email, or notes...",
+  "sortBy": {
+    "lastStayAt": "Most recent stay",
+    "totalSpent": "Highest spent",
+    "totalStays": "Most stays",
+    "name": "Name A-Z"
+  },
   "tags": {
     "all": "All guests",
     "vip": "VIP guests",
     "frequent": "Frequent",
     "family": "Family",
     "business": "Business",
-    "group": "Group"
+    "group": "Group",
+    "careNeeded": "Special Care"
+  },
+  "tagPresets": {
+    "quickPresets": "Quick presets:",
+    "placeholder": "Enter tag name...",
+    "add": "Add"
+  },
+  "states": {
+    "loading": "Loading customer directory...",
+    "loadError": "Failed to load customer directory",
+    "retry": "Retry",
+    "customerCode": "ID: #{code}",
+    "noNotes": "No notes recorded",
+    "noInternalNotes": "No internal notes recorded",
+    "loadingDetail": "Loading guest profile...",
+    "stayCount": "{count} stays",
+    "roomNumber": "(Room {number})"
+  },
+  "pagination": {
+    "page": "Page {page} of {totalPages} ({total} guests)",
+    "prev": "Previous",
+    "next": "Next"
+  },
+  "toasts": {
+    "loadFailed": "Failed to load customer directory",
+    "syncFailed": "Failed to sync customers",
+    "networkError": "Network error connecting to server",
+    "detailFailed": "Failed to load customer details",
+    "saveSuccess": "Customer details updated successfully",
+    "saveFailed": "Failed to save customer details"
   },
   "metrics": {
     "totalCustomers": "Total Guests",
