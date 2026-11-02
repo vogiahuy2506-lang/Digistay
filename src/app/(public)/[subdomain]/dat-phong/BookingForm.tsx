@@ -13,9 +13,44 @@ import { apiError } from '@/lib/i18n/api-errors'
 import { useTaxLookup } from '@/lib/hooks/use-tax-lookup'
 import { HOLD_HEADER, browserHoldSession } from '@/lib/bookings/hold-session'
 import { trackMarketingEvent } from '@/components/marketing/MarketingTracking'
+import { Plus, Minus, Clock, ConciergeBell, Car, UtensilsCrossed, Shirt, Sparkles } from 'lucide-react'
 
 interface Service extends PricedService {
   description: string | null
+  category?: string | null
+  coverImage?: string | null
+  leadTimeHours?: number | null
+}
+
+function serviceCategoryIcon(category?: string | null) {
+  switch (category) {
+    case 'transport':
+      return Car
+    case 'food':
+      return UtensilsCrossed
+    case 'laundry':
+      return Shirt
+    case 'entertainment':
+      return Sparkles
+    default:
+      return ConciergeBell
+  }
+}
+
+function serviceCategoryLabel(category: string | null | undefined, tf: ReturnType<typeof useTranslations<'site.booking.form'>>) {
+  if (!category) return null
+  switch (category) {
+    case 'laundry':
+      return tf('categories.laundry')
+    case 'transport':
+      return tf('categories.transport')
+    case 'food':
+      return tf('categories.food')
+    case 'entertainment':
+      return tf('categories.entertainment')
+    default:
+      return tf('categories.other')
+  }
 }
 
 const inputClass = (bad?: boolean) =>
@@ -459,33 +494,113 @@ export function BookingForm({
             section(
               '02',
               tf('services'),
-              <ul className="border-t border-line">
+              <div className="space-y-3.5">
                 {services.map((s) => {
                   const n = qty[s.id] ?? 0
+                  const isSelected = n > 0
                   const set = (v: number) => setQty((q) => ({ ...q, [s.id]: Math.max(0, Math.min(20, v)) }))
+                  const IconComponent = serviceCategoryIcon(s.category)
                   return (
-                    <li key={s.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 border-b border-line py-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:gap-6">
-                      <div className="min-w-0">
-                        <p className="text-[15px] font-medium text-fg">{s.name}</p>
-                        {s.description && <p className="mt-0.5 text-[13px] text-muted">{s.description}</p>}
+                    <div
+                      key={s.id}
+                      className={cn(
+                        'flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-ctl border transition-all duration-200',
+                        isSelected
+                          ? 'border-acc bg-acc-soft/10 shadow-sm'
+                          : 'border-line bg-panel hover:border-muted/50'
+                      )}
+                    >
+                      <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                        {s.coverImage ? (
+                          <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-ctl overflow-hidden shrink-0 border border-line bg-page">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={s.coverImage} alt={s.name} className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-ctl flex items-center justify-center shrink-0 border border-line bg-fg/5 text-acc">
+                            <IconComponent className="w-6 h-6" />
+                          </div>
+                        )}
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="text-[15px] font-semibold text-fg">{s.name}</h3>
+                            {s.category && (
+                              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-fg/5 text-muted border border-line">
+                                {serviceCategoryLabel(s.category, tf)}
+                              </span>
+                            )}
+                            {s.leadTimeHours && s.leadTimeHours > 0 ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] text-warn bg-warn-soft/60 px-2 py-0.5 rounded-full">
+                                <Clock className="w-3 h-3" />
+                                {tf('leadTimeWarning', { hours: s.leadTimeHours })}
+                              </span>
+                            ) : null}
+                          </div>
+
+                          {s.description && (
+                            <p className="mt-1 text-[13px] text-muted leading-relaxed line-clamp-2">
+                              {s.description}
+                            </p>
+                          )}
+
+                          <div className="mt-2 flex items-center gap-2">
+                            <span className="text-[14px] font-bold text-fg tabular-nums">
+                              {money(s.price)}
+                            </span>
+                            <span className="text-[12px] text-muted">
+                              {unitOf(s)}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-right">
-                        <span className="block text-[15px] font-semibold tabular-nums">{money(s.price)}</span>
-                        <span className="text-[12.5px] text-muted">{unitOf(s)}</span>
-                      </p>
-                      <div className="col-span-2 flex h-11 w-[140px] items-center justify-between border border-line bg-panel sm:col-span-1">
-                        <button type="button" onClick={() => set(n - 1)} disabled={n === 0 || sending} aria-label={tf('fewer', { name: s.name })} className="h-full w-11 text-[18px] disabled:opacity-40">
-                          −
-                        </button>
-                        <span className="text-[15px] font-medium tabular-nums">{n}</span>
-                        <button type="button" onClick={() => set(n + 1)} disabled={sending} aria-label={tf('more', { name: s.name })} className="h-full w-11 text-[18px]">
-                          +
-                        </button>
+
+                      <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-line/60">
+                        {isSelected ? (
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-10 items-center border border-acc rounded-ctl bg-panel overflow-hidden shadow-xs">
+                              <button
+                                type="button"
+                                onClick={() => set(n - 1)}
+                                disabled={sending}
+                                aria-label={tf('fewer', { name: s.name })}
+                                className="h-full w-9 flex items-center justify-center text-fg hover:bg-fg/5 active:bg-fg/10 transition-colors disabled:opacity-40"
+                              >
+                                <Minus className="w-3.5 h-3.5" />
+                              </button>
+                              <span className="w-10 text-center text-[14px] font-bold text-acc tabular-nums">
+                                {n}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => set(n + 1)}
+                                disabled={sending || n >= 20}
+                                aria-label={tf('more', { name: s.name })}
+                                className="h-full w-9 flex items-center justify-center text-fg hover:bg-fg/5 active:bg-fg/10 transition-colors"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                            <span className="text-xs font-semibold text-acc tabular-nums min-w-[70px] text-right">
+                              = {money(s.price * n)}
+                            </span>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => set(1)}
+                            disabled={sending}
+                            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-ctl border border-line bg-panel hover:border-acc hover:text-acc text-[13px] font-medium text-fg transition-colors"
+                          >
+                            <Plus className="w-4 h-4" />
+                            <span>{tf('addService')}</span>
+                          </button>
+                        )}
                       </div>
-                    </li>
+                    </div>
                   )
                 })}
-              </ul>,
+              </div>,
               tf('servicesLead', { hotel: property.name }),
             )}
 

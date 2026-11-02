@@ -22,7 +22,7 @@ Hiện tại trên Digistay:
 
 | Task ID | Tên tính năng | Phân loại | Mô tả chi tiết yêu cầu nghiệp vụ |
 | :--- | :--- | :--- | :--- |
-| **51** | **Bán chéo Dịch vụ khi Đặt phòng (Booking Add-ons)** | Doanh thu / CRO | Trong trang `/dat-phong`, hiển thị danh sách các dịch vụ cộng thêm với hình ảnh, giá, mô tả. Cho phép khách chọn số lượng (hoặc tính theo đêm/người). Tự động cộng dồn vào Tổng tiền phòng, Tiền đặt cọc và Hợp đồng booking. |
+| **51** | **Bán chéo Dịch vụ khi Đặt phòng (Booking Add-ons)** | Doanh thu / CRO | ✅ **Hoàn thành**: UI Card trực quan, chọn số lượng, ảnh đại diện, badge danh mục, cảnh báo lead time, hiển thị chi tiết trong StaySummary & Dashboard. |
 | **52** | **Quản lý Dịch vụ phát sinh tại quầy cho Lễ tân** | Vận hành / Kế toán | Tại màn hình chi tiết đơn đặt phòng (`Bookings`), thêm tab hoặc nút "+ Thêm dịch vụ". Lễ tân ghi nhận đồ uống, giặt ủi, tour... Hệ thống tự động tính vào công nợ phòng và liệt kê chi tiết trong Hóa đơn / Phiếu thanh toán (`Invoices`). |
 | **53** | **Cấu hình Vận hành Dịch vụ Nâng cao** | Quản trị / Vận hành | Mở rộng trang quản lý dịch vụ (`/services`): Thêm ảnh minh họa, quy định thời gian đặt trước tối thiểu (Lead time, vd: báo trước 24h đối với BBQ/Đón sân bay), giới hạn số lượng phục vụ tối đa mỗi ngày (Capacity), khung giờ phục vụ. |
 | **54** | **Tiện ích Tùy chỉnh (Custom) & Tiện ích Nổi bật (Featured)** | Trải nghiệm / CRO | Cho phép chủ cơ sở tự tạo thêm tiện ích ngoài danh mục có sẵn; chọn 4-6 tiện ích đặc sắc nhất để gắn huy hiệu "Nổi bật" (Featured ⭐) hiển thị ưu tiên tại Hero Banner, thẻ tìm kiếm và thẻ chi tiết phòng. |
@@ -211,3 +211,4 @@ Tuần 3: Task 54 & Task 55 (Tiện ích Tùy chỉnh & Thư viện ảnh)
 
 ---
 *Tài liệu được cập nhật ngày 02/11/2026. Sẵn sàng bắt đầu triển khai theo từng Task cụ thể.*
+

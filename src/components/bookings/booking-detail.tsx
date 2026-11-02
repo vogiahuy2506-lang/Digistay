@@ -59,6 +59,15 @@ export interface BookingDetailData {
   vatEmail: string | null
   source: string
   createdAt: string
+  /** Extra services chosen by guest or added by staff */
+  services?: Array<{
+    serviceId?: string
+    name: string
+    quantity: number
+    amount: number
+    unitPrice?: number
+    priceType?: string
+  }> | null
   /** the guest said they transferred a manual deposit (src/lib/payments/manual-deposit.ts) */
   transferClaimedAt?: string | null
   bookingItems: { id: string; roomTypeId: string; roomTypeName: string | null; roomNumber: string | null; roomId?: string | null }[]
@@ -370,6 +379,21 @@ export function BookingDetailContent({ booking, onChanged }: { booking: BookingD
       <Section title={t('money.title')}>
         <MoneyRow label={t('money.room')} value={labels.money(booking.subtotal)} />
         {booking.extraCharges > 0 && <MoneyRow label={t('money.extraCharges')} value={labels.money(booking.extraCharges)} />}
+        {Array.isArray(booking.services) && booking.services.length > 0 && (
+          <div className="pl-3 py-1.5 space-y-1 text-xs text-muted border-l-2 border-line my-1.5 bg-fg/[0.02] rounded-r-ctl">
+            <span className="text-[11px] font-medium text-fg uppercase tracking-wider block mb-1">
+              {t('money.services')}
+            </span>
+            {booking.services.map((s, idx) => (
+              <div key={idx} className="flex justify-between items-center py-0.5">
+                <span className="truncate pr-2 text-fg/90">
+                  {s.name} <span className="font-semibold text-fg">× {s.quantity}</span>
+                </span>
+                <span className="tabular-nums font-medium text-fg">{labels.money(s.amount)}</span>
+              </div>
+            ))}
+          </div>
+        )}
         {booking.discount > 0 && <MoneyRow label={t('money.discount')} value={`−${labels.money(booking.discount)}`} />}
         <div className="my-2 border-t border-line" />
         <MoneyRow label={t('money.total')} value={labels.money(booking.totalAmount)} strong />

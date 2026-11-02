@@ -58,9 +58,20 @@ export default async function BookingPage({ params, searchParams }: PageProps) {
     propertyRateDefaults(prisma, propertyId),
     prisma.policy.findUnique({ where: { propertyId } }),
     prisma.extraService.findMany({
-      where: { propertyId, isActive: true },
+      where: { propertyId, isActive: true, showOnBooking: true },
       orderBy: { createdAt: 'asc' },
-      select: { id: true, name: true, description: true, price: true, priceType: true, perPerson: true, translations: true },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        price: true,
+        priceType: true,
+        perPerson: true,
+        translations: true,
+        category: true,
+        coverImage: true,
+        leadTimeHours: true,
+      },
     }),
     onlineDepositOf(propertyId),
   ])

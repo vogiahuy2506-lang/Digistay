@@ -318,6 +318,15 @@
         "summary": "Kiểm tra lại {count} mục bên trên.",
         "services": "Dịch vụ thêm",
         "servicesLead": "Dịch vụ và giá do {hotel} cung cấp. Bạn có thể bỏ qua bước này.",
+        "addService": "Thêm dịch vụ",
+        "leadTimeWarning": "Cần đặt trước {hours}h",
+        "categories": {
+          "laundry": "Giặt ủi",
+          "transport": "Đưa đón",
+          "food": "Ăn uống",
+          "entertainment": "Giải trí",
+          "other": "Dịch vụ khác"
+        },
         "fewer": "Bớt {name}",
         "more": "Thêm {name}",
         "invoice": "Hoá đơn công ty",

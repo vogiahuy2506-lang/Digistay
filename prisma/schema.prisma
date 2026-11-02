@@ -656,6 +656,11 @@ model PropertyAmenity {
   propertyId String
   amenityId  String
 
+  isFeatured Boolean  @default(false)
+  customName String?
+  images     String[] @default([])
+  sortOrder  Int      @default(0)
+
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   amenity  Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
 
@@ -1161,6 +1166,7 @@ model ExtraService {
   translations Json?
   /// laundry | transport | food | entertainment | other (the services page's groups)
   category     String?
+  coverImage   String?
 
   // Pricing
   priceType PriceType @default(FIXED)
@@ -1169,9 +1175,16 @@ model ExtraService {
   // Per person/per room
   perPerson Boolean @default(false)
 
+  // Advanced operation configuration
+  leadTimeHours  Int?      @default(0)
+  dailyCapacity  Int?
+  operatingHours String?
+  showOnBooking  Boolean   @default(true)
+
   isActive Boolean @default(true)
 
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
 
   @@index([propertyId])
   @@map("extra_services")

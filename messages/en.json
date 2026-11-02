@@ -318,6 +318,15 @@
         "summary": "{count, plural, one {Check the field above.} other {Check the # fields above.}}",
         "services": "Extra services",
         "servicesLead": "Services and prices from {hotel}. You can skip this step.",
+        "addService": "Add service",
+        "leadTimeWarning": "Book {hours}h in advance",
+        "categories": {
+          "laundry": "Laundry",
+          "transport": "Transport",
+          "food": "Food & Dining",
+          "entertainment": "Entertainment",
+          "other": "Other"
+        },
         "fewer": "Fewer: {name}",
         "more": "More: {name}",
         "invoice": "Company invoice",

@@ -70,6 +70,7 @@
       "title": "Amounts",
       "room": "Room charge",
       "extraCharges": "Extra charges",
+      "services": "Booked services",
       "discount": "Discount",
       "total": "Total",
       "paid": "Paid",
