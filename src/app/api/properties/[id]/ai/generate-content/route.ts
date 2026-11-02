@@ -16,6 +16,8 @@ const generateSchema = z.object({
   language: z.enum(['vi', 'en', 'bilingual'] as [AiLanguage, ...AiLanguage[]]).optional(),
   targetAudience: z.string().optional(),
   topic: z.string().optional(),
+  apiKey: z.string().optional(),
+  model: z.string().optional(),
 })
 
 export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }) {

@@ -1,4 +1,7 @@
 {
+  "Vui lòng cung cấp khóa API": "Please provide an API key",
+  "Không thể kiểm tra cấu hình AI lúc này": "Unable to check AI configuration at this time",
+  "Không thể kiểm tra khóa API lúc này": "Unable to test API key at this time",
   "Vui lòng nhập ít nhất vài từ khóa": "Please enter at least a few keywords",
   "Khách sạn": "Hotel",
   "Không thể tạo nội dung bằng AI lúc này": "Unable to generate AI content at this time",

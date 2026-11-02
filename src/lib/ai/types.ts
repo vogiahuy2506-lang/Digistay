@@ -15,6 +15,8 @@ export interface GenerateContentInput {
   targetAudience?: string
   propertyName?: string
   topic?: string
+  apiKey?: string
+  model?: string
 }
 
 export interface ContentLocalizedOutput {
@@ -31,3 +33,10 @@ export interface GenerateContentOutput extends ContentLocalizedOutput {
   generatedAt: string
 }
 
+export interface AiConfigState {
+  hasKey: boolean
+  keyMasked?: string | null
+  provider: 'GEMINI' | 'OPENAI' | 'HEURISTIC'
+  model: string
+  source: 'PROPERTY' | 'ENV' | 'NONE'
+}

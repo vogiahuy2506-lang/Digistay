@@ -141,14 +141,14 @@ Let us make your stay extraordinary from the moment you step through our doors.`
 
 /**
  * Main AI Content Generation function.
- * Uses Google Gemini API if GEMINI_API_KEY is available, or OpenAI if OPENAI_API_KEY is present,
+ * Uses Google Gemini API if input.apiKey or GEMINI_API_KEY is available, or OpenAI if OPENAI_API_KEY is present,
  * with safe fallback to the heuristic copywriting engine.
  */
 export async function generateHospitalityContent(input: GenerateContentInput): Promise<GenerateContentOutput> {
-  const geminiKey = process.env.GEMINI_API_KEY
-  const openAiKey = process.env.OPENAI_API_KEY
+  const geminiKey = input.apiKey || process.env.GEMINI_API_KEY
+  const openAiKey = (!input.apiKey && process.env.OPENAI_API_KEY) || (input.apiKey?.startsWith('sk-') ? input.apiKey : undefined)
 
-  if (geminiKey) {
+  if (geminiKey && !geminiKey.startsWith('sk-')) {
     try {
       const geminiResult = await callGeminiApi(input, geminiKey)
       if (geminiResult) return geminiResult
@@ -167,6 +167,38 @@ export async function generateHospitalityContent(input: GenerateContentInput): P
   }
 
   return generateHeuristicContent(input)
+}
+
+/**
+ * Validates a Google Gemini API Key by making a minimal ping request.
+ */
+export async function testGeminiApiKey(apiKey: string, model = 'gemini-2.5-flash'): Promise<{ ok: boolean; message: string }> {
+  if (!apiKey || apiKey.trim().length < 10) {
+    return { ok: false, message: 'Khóa API không hợp lệ (chuỗi quá ngắn)' }
+  }
+
+  const trimmed = apiKey.trim()
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${trimmed}`
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: 'ping' }] }],
+      }),
+    })
+
+    if (!response.ok) {
+      const errorJson = await response.json().catch(() => null)
+      const errorMsg = errorJson?.error?.message || `Lỗi kết nối HTTP ${response.status}`
+      return { ok: false, message: errorMsg }
+    }
+
+    return { ok: true, message: 'Kết nối Google Gemini API thành công! Sẵn sàng sử dụng.' }
+  } catch (error: any) {
+    return { ok: false, message: error?.message || 'Không thể kết nối đến máy chủ Google Gemini' }
+  }
 }
 
 /**
