@@ -6,7 +6,7 @@ import { loadSiteFrame } from '@/lib/public-site/site-frame'
 import { loadVisibleSite } from '@/lib/public-site/visibility'
 import { canonicalSiteOrigin } from '@/lib/public-site/site-host'
 import { hotelPageMetadata } from '@/lib/seo/page-metadata'
-import { getLocale } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { isLocale, type Locale } from '@/i18n/locales'
 import { SiteHeader } from '../../_components/SiteHeader'
 import { Container } from '../../_components/site-ui'
@@ -71,6 +71,10 @@ export default async function BlogPostDetailPage({ params }: PageProps) {
   const frame = await loadSiteFrame(subdomain)
   if (!frame) notFound()
 
+  const rawLocale = await getLocale()
+  const locale = isLocale(rawLocale) ? rawLocale : 'vi'
+  const t = await getTranslations({ locale, namespace: 'site.blog' })
+
   const post = await prisma.blogPost.findFirst({
     where: {
       propertyId: visible.propertyId,
@@ -94,7 +98,7 @@ export default async function BlogPostDetailPage({ params }: PageProps) {
               className="inline-flex items-center gap-1.5 text-small text-muted hover:text-fg transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
-              Tất cả bài viết
+              {t('allPosts')}
             </SiteLink>
           </div>
 
@@ -116,7 +120,7 @@ export default async function BlogPostDetailPage({ params }: PageProps) {
                   {post.publishedAt && (
                     <span className="flex items-center gap-1.5">
                       <Calendar className="w-4 h-4" />
-                      {new Date(post.publishedAt).toLocaleDateString('vi-VN', {
+                      {new Date(post.publishedAt).toLocaleDateString(locale === 'en' ? 'en-US' : 'vi-VN', {
                         day: 'numeric',
                         month: 'long',
                         year: 'numeric',
@@ -126,7 +130,7 @@ export default async function BlogPostDetailPage({ params }: PageProps) {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-xs uppercase tracking-wider text-muted">Chia sẻ:</span>
+                  <span className="text-xs uppercase tracking-wider text-muted">{t('share')}</span>
                   <a
                     href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
                       `${canonicalSiteOrigin(subdomain, frame.websiteSettings)}/blog/${slug}`
@@ -134,7 +138,7 @@ export default async function BlogPostDetailPage({ params }: PageProps) {
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-line bg-panel hover:bg-fg/5 text-fg text-xs"
-                    title="Chia sẻ lên Facebook"
+                    title={t('shareFb')}
                   >
                     FB
                   </a>
@@ -157,7 +161,7 @@ export default async function BlogPostDetailPage({ params }: PageProps) {
             )}
 
             {/* Post Content */}
-            <div className="prose prose-neutral dark:prose-invert max-w-none text-body sm:text-[17px] leading-[1.8] text-fg/90 space-y-6">
+            <div className="max-w-none text-body sm:text-[17px] leading-[1.8] text-fg/90 space-y-6">
               {post.content.split('\n\n').map((paragraph, idx) => {
                 const trimmed = paragraph.trim()
                 if (!trimmed) return null
@@ -174,17 +178,19 @@ export default async function BlogPostDetailPage({ params }: PageProps) {
           <div className="mt-16 sm:mt-20 pt-10 border-t border-line">
             <div className="rounded-box border border-line bg-panel p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
               <div>
-                <span className="text-xs font-semibold text-acc uppercase tracking-wider">Lưu trú & Nghỉ dưỡng</span>
+                <span className="text-xs font-semibold text-acc uppercase tracking-wider">{t('stayEyebrow')}</span>
                 <h4 className="mt-1 font-site text-[22px] text-fg">{frame.name}</h4>
                 <p className="mt-1 text-small text-muted">
-                  Địa chỉ: {[frame.address, frame.ward, frame.district, frame.city].filter(Boolean).join(', ')}
+                  {t('address', {
+                    address: [frame.address, frame.ward, frame.district, frame.city].filter(Boolean).join(', '),
+                  })}
                 </p>
               </div>
               <SiteLink
                 path="/search"
                 className="inline-flex items-center justify-center rounded-ctl bg-ink text-on-ink px-5 py-2.5 text-small font-semibold hover:bg-ink/90 transition-colors shrink-0"
               >
-                Đặt phòng ngay
+                {t('bookNow')}
               </SiteLink>
             </div>
           </div>

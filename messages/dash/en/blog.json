@@ -1,0 +1,80 @@
+{
+  "title": "Blog & News",
+  "description": "Publish posts highlighting local cuisine, travel guides, and attractions around your property.",
+  "viewBlog": "View Blog",
+  "newPost": "Write new post",
+  "tabs": {
+    "all": "All",
+    "published": "Published",
+    "draft": "Draft"
+  },
+  "searchPlaceholder": "Search by title, slug...",
+  "loading": "Loading posts...",
+  "empty": {
+    "title": "No posts yet",
+    "text": "Publish posts about local food, travel tips, and attractions to attract more guests.",
+    "action": "Create first post"
+  },
+  "status": {
+    "published": "Published",
+    "draft": "Draft"
+  },
+  "byAuthor": "Author: {name}",
+  "publishedOn": "Published: {date}",
+  "createdOn": "Created: {date}",
+  "actions": {
+    "view": "View",
+    "viewPublicTooltip": "View on public site",
+    "edit": "Edit",
+    "publish": "Publish post",
+    "unpublish": "Switch to draft",
+    "delete": "Delete post"
+  },
+  "modal": {
+    "newTitle": "Write new post",
+    "newHeader": "Write new blog & news post",
+    "editTitle": "Edit post",
+    "titleLabel": "Post title",
+    "titlePlaceholder": "e.g., Top 5 local food spots near our hotel",
+    "slugLabel": "Static path (Slug URL)",
+    "authorLabel": "Author",
+    "authorPlaceholder": "e.g., Hotel Concierge / Management",
+    "coverLabel": "Cover image",
+    "coverPlaceholder": "https://... or upload image",
+    "uploadCover": "Upload",
+    "removeCover": "Remove image",
+    "summaryLabel": "Short summary",
+    "summaryPlaceholder": "A short 1-2 sentence overview shown in post listings and social share previews.",
+    "contentLabel": "Post content",
+    "contentPlaceholder": "Write your full post content here. You can separate paragraphs with line breaks or paste formatted text.",
+    "contentHint": "Supports natural text formatting, paragraph breaks, and links.",
+    "publishImmediately": "Publish immediately to the property's public website",
+    "seoToggleShow": "Custom SEO & Social Media tags ▼",
+    "seoToggleHide": "Hide advanced SEO settings ▲",
+    "metaTitleLabel": "SEO Title (Meta Title)",
+    "metaTitlePlaceholder": "Defaults to post title",
+    "metaDescLabel": "SEO Description (Meta Description)",
+    "metaDescPlaceholder": "Defaults to post summary",
+    "cancel": "Cancel",
+    "createSubmit": "Create post",
+    "editSubmit": "Save changes"
+  },
+  "deleteModal": {
+    "title": "Delete post?",
+    "confirmText": "Are you sure you want to delete \"{title}\"? It will be removed from your public site.",
+    "cancel": "Cancel",
+    "confirm": "Delete post"
+  },
+  "toasts": {
+    "created": "Created new post",
+    "saved": "Saved post changes",
+    "toDraft": "Switched to draft",
+    "toPublished": "Published post",
+    "deleted": "Deleted post",
+    "loadFailed": "Failed to load posts",
+    "saveFailed": "Failed to save post",
+    "networkError": "Network error while saving post",
+    "deleteFailed": "Failed to delete post",
+    "statusFailed": "Failed to update post status"
+  }
+}

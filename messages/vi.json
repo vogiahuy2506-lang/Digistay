@@ -478,6 +478,41 @@
       "taxPortal": "Kiểm tra trên cổng của cơ quan thuế",
       "taxPortalHint": "Trên cổng hoá đơn điện tử của cơ quan thuế (hoadondientu.gdt.gov.vn), mục Tra cứu hoá đơn: nhập mã số thuế người bán, ký hiệu, số hoá đơn và số tiền ở trên.",
       "tooMany": "Bạn mở trang này quá nhiều lần. Vui lòng thử lại sau ít phút."
+    },
+    "blog": {
+      "eyebrow": "Góc chia sẻ",
+      "title": "Cẩm nang & Tin tức",
+      "description": "Khám phá văn hóa ẩm thực địa phương, kinh nghiệm tham quan và những câu chuyện thú vị cùng {hotel}.",
+      "metaDescription": "Khám phá các bài viết cẩm nang du lịch, ẩm thực và tin tức mới nhất từ {hotel}.",
+      "emptyTitle": "Chưa có bài viết nào",
+      "emptyText": "Các bài viết chia sẻ kinh nghiệm và cẩm nang du lịch sẽ sớm được cập nhật.",
+      "backHome": "Về trang chủ",
+      "readMore": "Đọc tiếp",
+      "share": "Chia sẻ:",
+      "shareFb": "Chia sẻ lên Facebook",
+      "stayEyebrow": "Lưu trú & Nghỉ dưỡng",
+      "address": "Địa chỉ: {address}",
+      "bookNow": "Đặt phòng ngay",
+      "allPosts": "Tất cả bài viết"
+    },
+    "paymentReturn": {
+      "titlePaid": "Đã nhận tiền thanh toán",
+      "titleExpired": "Đặt phòng đã bị huỷ",
+      "titleCancelled": "Bạn đã huỷ thanh toán",
+      "titleWaiting": "Đang chờ ngân hàng xác nhận",
+      "titleThanks": "Cảm ơn bạn đã thanh toán",
+      "bodyExpired": "Đặt phòng {code} đã được huỷ vì chưa nhận được tiền cọc trong thời hạn. Nếu bạn đã chuyển khoản, vui lòng liên hệ {hotel}.",
+      "bodyPaid": "{hotel} đã nhận {amount} cho đặt phòng {code}. Đặt phòng của bạn đã được xác nhận{deposit}.",
+      "bodyPaidDepositSuffix": "; email xác nhận đang được gửi tới bạn",
+      "bodyCancelled": "Chưa có khoản tiền nào được chuyển.{retained} Nếu cần, hãy liên hệ {hotel} để nhận lại link thanh toán.",
+      "bodyCancelledRetained": " Đặt phòng {code} vẫn được giữ chờ khách sạn liên hệ.",
+      "bodyWaiting": "Nếu bạn đã chuyển khoản, {hotel} sẽ xác nhận đặt phòng {code} ngay khi tiền về, thường trong vài giây. Bạn không cần làm gì thêm.",
+      "bodyFallback": "{hotel} sẽ xác nhận ngay khi nhận được tiền. Bạn không cần làm gì thêm.",
+      "payAgain": "Thanh toán lại",
+      "contactHotel": "Liên hệ khách sạn: {phone}",
+      "backToHotel": "Về trang khách sạn",
+      "waitingPoll": "Trang tự cập nhật…",
+      "waitingTimeout": "Chưa thấy tiền về. Khách sạn sẽ liên hệ khi nhận được."
     }
   },
   "marketing": {

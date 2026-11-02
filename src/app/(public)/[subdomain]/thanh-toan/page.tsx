@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { getLocale, getTranslations } from 'next-intl/server'
+import { isLocale } from '@/i18n/locales'
 import { prisma } from '@/lib/db'
 import { formatVnd } from '@/lib/bookings/display'
 import { depositToken } from '@/lib/payments/deposit-link'
@@ -48,24 +50,36 @@ export default async function PaymentReturnPage({ params, searchParams }: PagePr
   // Left PayOS without paying a deposit that still holds the room: pay again (dat-coc).
   const payAgain = cancelled && deposit && payment?.booking.status === 'PENDING'
 
+  const rawLocale = await getLocale()
+  const locale = isLocale(rawLocale) ? rawLocale : 'vi'
+  const t = await getTranslations({ locale, namespace: 'site.paymentReturn' })
+
   const title = paid
-    ? 'Đã nhận tiền thanh toán'
+    ? t('titlePaid')
     : expired
-      ? 'Đặt phòng đã bị huỷ'
+      ? t('titleExpired')
       : cancelled
-      ? 'Bạn đã huỷ thanh toán'
+      ? t('titleCancelled')
       : payment
-        ? 'Đang chờ ngân hàng xác nhận'
-        : 'Cảm ơn bạn đã thanh toán'
+        ? t('titleWaiting')
+        : t('titleThanks')
   const body = expired
-    ? `Đặt phòng ${payment!.booking.bookingCode} đã được huỷ vì chưa nhận được tiền cọc trong thời hạn. Nếu bạn đã chuyển khoản, vui lòng liên hệ ${property.name}.`
+    ? t('bodyExpired', { code: payment!.booking.bookingCode, hotel: property.name })
     : paid
-    ? `${property.name} đã nhận ${formatVnd(payment.amount)} cho đặt phòng ${payment.booking.bookingCode}. Đặt phòng của bạn đã được xác nhận${deposit ? '; email xác nhận đang được gửi tới bạn' : ''}.`
+    ? t('bodyPaid', {
+        hotel: property.name,
+        amount: formatVnd(payment.amount),
+        code: payment.booking.bookingCode,
+        deposit: deposit ? t('bodyPaidDepositSuffix') : '',
+      })
     : cancelled
-      ? `Chưa có khoản tiền nào được chuyển.${payment ? ` Đặt phòng ${payment.booking.bookingCode} vẫn được giữ chờ khách sạn liên hệ.` : ''} Nếu cần, hãy liên hệ ${property.name} để nhận lại link thanh toán.`
+      ? t('bodyCancelled', {
+          hotel: property.name,
+          retained: payment ? t('bodyCancelledRetained', { code: payment.booking.bookingCode }) : '',
+        })
       : payment
-        ? `Nếu bạn đã chuyển khoản, ${property.name} sẽ xác nhận đặt phòng ${payment.booking.bookingCode} ngay khi tiền về, thường trong vài giây. Bạn không cần làm gì thêm.`
-        : `${property.name} sẽ xác nhận ngay khi nhận được tiền. Bạn không cần làm gì thêm.`
+        ? t('bodyWaiting', { hotel: property.name, code: payment.booking.bookingCode })
+        : t('bodyFallback', { hotel: property.name })
 
   return (
     <main className="min-h-screen flex items-center justify-center px-4 py-16">
@@ -78,15 +92,15 @@ export default async function PaymentReturnPage({ params, searchParams }: PagePr
             path={`/dat-coc/${depositToken(payment.booking.id)}`}
             className="inline-flex h-11 items-center rounded-ctl border border-line px-6 text-small font-medium text-fg hover:bg-fg/[0.03]"
           >
-            Thanh toán lại
+            {t('payAgain')}
           </SiteLink>
         )}
-        {property.phone && <p className="text-small text-muted">Liên hệ khách sạn: {property.phone}</p>}
+        {property.phone && <p className="text-small text-muted">{t('contactHotel', { phone: property.phone })}</p>}
         <SiteLink
           path="/"
           className="inline-flex h-11 items-center rounded-ctl bg-ink px-6 text-small font-medium text-on-ink hover:bg-ink/90"
         >
-          Về trang khách sạn
+          {t('backToHotel')}
         </SiteLink>
       </div>
     </main>

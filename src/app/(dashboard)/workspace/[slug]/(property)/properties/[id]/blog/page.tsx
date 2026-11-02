@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { Header, PageContainer } from '@/components/layout'
 import { useCan } from '@/components/layout/workspace-context'
+import { useLocale, useTranslations } from 'next-intl'
 import {
   Badge,
   Button,
@@ -87,6 +88,8 @@ const EMPTY_FORM: FormState = {
 export default function BlogManagementPage() {
   const { slug, id: propertyId } = useParams<{ slug: string; id: string }>()
   const canEdit = useCan('property_edit')
+  const t = useTranslations('dash.blog')
+  const locale = useLocale()
 
   const [posts, setPosts] = React.useState<BlogPost[] | null>(null)
   const [subdomain, setSubdomain] = React.useState<string>('')
@@ -113,14 +116,14 @@ export default function BlogManagementPage() {
       if (data.success) {
         setPosts(data.data)
       } else {
-        toast.error('Lỗi tải bài viết', apiError(data.error))
+        toast.error(t('toasts.loadFailed'), apiError(data.error))
       }
     } catch {
-      toast.error('Lỗi kết nối', 'Không thể tải danh sách bài viết')
+      toast.error(t('toasts.networkError'), t('toasts.loadFailed'))
     } finally {
       setLoading(false)
     }
-  }, [propertyId, search, status])
+  }, [propertyId, search, status, t])
 
   // Lấy subdomain của property để tạo link xem thử
   React.useEffect(() => {
@@ -210,14 +213,14 @@ export default function BlogManagementPage() {
       })
       const data = await res.json()
       if (data.success) {
-        toast.success(isNew ? 'Đã tạo bài viết mới' : 'Đã lưu thay đổi bài viết')
+        toast.success(isNew ? t('toasts.created') : t('toasts.saved'))
         setEditing(null)
         fetchPosts()
       } else {
-        setFormError(apiError(data.error) || 'Không thể lưu bài viết')
+        setFormError(apiError(data.error) || t('toasts.saveFailed'))
       }
     } catch {
-      setFormError('Lỗi kết nối khi lưu bài viết')
+      setFormError(t('toasts.networkError'))
     } finally {
       setSaving(false)
     }
@@ -232,13 +235,13 @@ export default function BlogManagementPage() {
       })
       const data = await res.json()
       if (data.success) {
-        toast.success(post.isPublished ? 'Đã chuyển thành bản nháp' : 'Đã xuất bản bài viết')
+        toast.success(post.isPublished ? t('toasts.toDraft') : t('toasts.toPublished'))
         fetchPosts()
       } else {
-        toast.error('Thất bại', apiError(data.error))
+        toast.error(t('toasts.statusFailed'), apiError(data.error))
       }
     } catch {
-      toast.error('Lỗi kết nối', 'Không thể đổi trạng thái bài viết')
+      toast.error(t('toasts.networkError'), t('toasts.statusFailed'))
     }
   }
 
@@ -251,14 +254,14 @@ export default function BlogManagementPage() {
       })
       const data = await res.json()
       if (data.success) {
-        toast.success('Đã xóa bài viết')
+        toast.success(t('toasts.deleted'))
         setDeleting(null)
         fetchPosts()
       } else {
-        toast.error('Lỗi khi xóa', apiError(data.error))
+        toast.error(t('toasts.deleteFailed'), apiError(data.error))
       }
     } catch {
-      toast.error('Lỗi kết nối', 'Không thể xóa bài viết')
+      toast.error(t('toasts.networkError'), t('toasts.deleteFailed'))
     } finally {
       setDeletingBusy(false)
     }
@@ -270,8 +273,8 @@ export default function BlogManagementPage() {
   return (
     <PageContainer>
       <Header
-        title="Bài viết & Tin tức"
-        description="Đăng tải bài viết giới thiệu món ăn ngon, cẩm nang du lịch và điểm đến xung quanh khách sạn."
+        title={t('title')}
+        description={t('description')}
         actions={
           <div className="flex items-center gap-2">
             {subdomain && (
@@ -282,14 +285,14 @@ export default function BlogManagementPage() {
                 className="inline-flex items-center gap-1.5 rounded-ctl border border-line bg-panel px-3 h-9 text-small font-medium text-fg hover:bg-fg/5 transition-colors duration-160"
               >
                 <Globe className="w-4 h-4 text-muted" />
-                Xem trang Blog
+                {t('viewBlog')}
                 <ExternalLink className="w-3.5 h-3.5 text-muted ml-0.5" />
               </a>
             )}
             {canEdit && (
               <Button onClick={openNew}>
                 <Plus className="w-4 h-4 mr-1.5" />
-                Viết bài mới
+                {t('newPost')}
               </Button>
             )}
           </div>
@@ -301,15 +304,15 @@ export default function BlogManagementPage() {
         <Tabs value={status} onValueChange={(v) => setStatus(v as typeof status)}>
           <TabsList variant="underline">
             <TabsTrigger value="all">
-              Tất cả
+              {t('tabs.all')}
               <span className="ml-1.5 text-xs text-muted tabular-nums">{posts?.length ?? 0}</span>
             </TabsTrigger>
             <TabsTrigger value="published">
-              Đã xuất bản
+              {t('tabs.published')}
               <span className="ml-1.5 text-xs text-muted tabular-nums">{publishedCount}</span>
             </TabsTrigger>
             <TabsTrigger value="draft">
-              Bản nháp
+              {t('tabs.draft')}
               <span className="ml-1.5 text-xs text-muted tabular-nums">{draftCount}</span>
             </TabsTrigger>
           </TabsList>
@@ -320,25 +323,23 @@ export default function BlogManagementPage() {
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm theo tiêu đề, đường dẫn..."
+            placeholder={t('searchPlaceholder')}
             icon={<Search className="w-4 h-4" />}
           />
         </div>
       </div>
 
       {loading ? (
-        <Loading className="py-20" text="Đang tải danh sách bài viết..." />
+        <Loading className="py-20" text={t('loading')} />
       ) : !posts || posts.length === 0 ? (
         <div className="mt-6 rounded-box border border-line bg-panel px-6 py-16 text-center">
           <Newspaper className="mx-auto w-10 h-10 text-muted/60 mb-3" />
-          <p className="text-body font-medium text-fg">Chưa có bài viết nào</p>
-          <p className="mt-1 text-small text-muted">
-            Đăng các bài viết về ẩm thực địa phương, cẩm nang tham quan du lịch để thu hút thêm du khách.
-          </p>
+          <p className="text-body font-medium text-fg">{t('empty.title')}</p>
+          <p className="mt-1 text-small text-muted">{t('empty.text')}</p>
           {canEdit && (
             <Button className="mt-6" onClick={openNew}>
               <Plus className="w-4 h-4 mr-1.5" />
-              Tạo bài viết đầu tiên
+              {t('empty.action')}
             </Button>
           )}
         </div>
@@ -366,7 +367,7 @@ export default function BlogManagementPage() {
                       {post.title}
                     </h3>
                     <Badge variant={post.isPublished ? 'ok' : 'plain'} size="sm">
-                      {post.isPublished ? 'Đã xuất bản' : 'Bản nháp'}
+                      {post.isPublished ? t('status.published') : t('status.draft')}
                     </Badge>
                   </div>
 
@@ -379,14 +380,22 @@ export default function BlogManagementPage() {
                     {post.authorName && (
                       <>
                         <span className="w-1 h-1 rounded-full bg-muted/60" />
-                        <span>Tác giả: {post.authorName}</span>
+                        <span>{t('byAuthor', { name: post.authorName })}</span>
                       </>
                     )}
                     <span className="w-1 h-1 rounded-full bg-muted/60" />
                     <span>
                       {post.publishedAt
-                        ? `Ngày đăng: ${new Date(post.publishedAt).toLocaleDateString('vi-VN')}`
-                        : `Tạo ngày: ${new Date(post.createdAt).toLocaleDateString('vi-VN')}`}
+                        ? t('publishedOn', {
+                            date: new Date(post.publishedAt).toLocaleDateString(
+                              locale === 'en' ? 'en-US' : 'vi-VN'
+                            ),
+                          })
+                        : t('createdOn', {
+                            date: new Date(post.createdAt).toLocaleDateString(
+                              locale === 'en' ? 'en-US' : 'vi-VN'
+                            ),
+                          })}
                     </span>
                   </div>
                 </div>
@@ -399,17 +408,17 @@ export default function BlogManagementPage() {
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-1 rounded-ctl border border-line px-2.5 h-8 text-xs font-medium text-fg hover:bg-fg/5"
-                    title="Xem trên trang công khai"
+                    title={t('actions.viewPublicTooltip')}
                   >
                     <Eye className="w-3.5 h-3.5" />
-                    Xem
+                    {t('actions.view')}
                   </a>
                 )}
 
                 {canEdit && (
                   <Button size="sm" variant="outline" onClick={() => openEdit(post)}>
                     <Pencil className="w-3.5 h-3.5 mr-1" />
-                    Sửa
+                    {t('actions.edit')}
                   </Button>
                 )}
 
@@ -419,6 +428,7 @@ export default function BlogManagementPage() {
                     trigger={
                       <button
                         type="button"
+                        aria-label={t('actions.edit')}
                         className="w-8 h-8 rounded-ctl flex items-center justify-center text-muted hover:text-fg hover:bg-fg/5"
                       >
                         <MoreVertical className="w-4 h-4" />
@@ -426,11 +436,11 @@ export default function BlogManagementPage() {
                     }
                   >
                     <DropdownItem onClick={() => togglePublish(post)}>
-                      {post.isPublished ? 'Chuyển về bản nháp' : 'Xuất bản bài viết'}
+                      {post.isPublished ? t('actions.unpublish') : t('actions.publish')}
                     </DropdownItem>
                     <DropdownDivider />
                     <DropdownItem danger icon={<Trash2 className="w-4 h-4" />} onClick={() => setDeleting(post)}>
-                      Xóa bài viết
+                      {t('actions.delete')}
                     </DropdownItem>
                   </Dropdown>
                 )}
@@ -445,11 +455,11 @@ export default function BlogManagementPage() {
         isOpen={editing !== null}
         onClose={() => !saving && setEditing(null)}
         size="lg"
-        title={editing === 'new' ? 'Viết bài mới' : 'Chỉnh sửa bài viết'}
+        title={editing === 'new' ? t('modal.newTitle') : t('modal.editTitle')}
       >
         <ModalHeader onClose={() => !saving && setEditing(null)}>
           <h2 className="text-lg font-semibold text-fg">
-            {editing === 'new' ? 'Viết bài blog & tin tức mới' : 'Chỉnh sửa bài viết'}
+            {editing === 'new' ? t('modal.newHeader') : t('modal.editTitle')}
           </h2>
         </ModalHeader>
         <form onSubmit={savePost}>
@@ -462,19 +472,19 @@ export default function BlogManagementPage() {
 
             <div>
               <label className="block text-small font-medium text-fg mb-1.5">
-                Tiêu đề bài viết <span className="text-err">*</span>
+                {t('modal.titleLabel')} <span className="text-err">*</span>
               </label>
               <Input
                 value={form.title}
                 onChange={(e) => onTitleChange(e.target.value)}
-                placeholder="VD: Top 5 quán ăn ngon gần khách sạn không thể bỏ lỡ"
+                placeholder={t('modal.titlePlaceholder')}
                 required
               />
             </div>
 
             <div>
               <label className="block text-small font-medium text-fg mb-1.5">
-                Đường dẫn tĩnh (Slug URL) <span className="text-err">*</span>
+                {t('modal.slugLabel')} <span className="text-err">*</span>
               </label>
               <div className="flex items-center gap-1 text-small text-muted">
                 <span className="shrink-0">{subdomain ? `${subdomain}.digistay.vn/blog/` : '/blog/'}</span>
@@ -490,26 +500,26 @@ export default function BlogManagementPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-small font-medium text-fg mb-1.5">Tác giả bài viết</label>
+                <label className="block text-small font-medium text-fg mb-1.5">{t('modal.authorLabel')}</label>
                 <Input
                   value={form.authorName}
                   onChange={(e) => setForm({ ...form, authorName: e.target.value })}
-                  placeholder="VD: Lễ tân khách sạn / Ban quản lý"
+                  placeholder={t('modal.authorPlaceholder')}
                 />
               </div>
               <div>
-                <label className="block text-small font-medium text-fg mb-1.5">Ảnh bìa (Cover Image)</label>
+                <label className="block text-small font-medium text-fg mb-1.5">{t('modal.coverLabel')}</label>
                 <div className="flex items-center gap-2">
                   <Input
                     value={form.coverImage}
                     onChange={(e) => setForm({ ...form, coverImage: e.target.value })}
-                    placeholder="https://... hoặc tải ảnh lên"
+                    placeholder={t('modal.coverPlaceholder')}
                     className="flex-1 text-small"
                   />
                   <PhotoUploadButton
                     target={{ propertyId }}
                     onUploaded={(url) => setForm({ ...form, coverImage: url })}
-                    label="Tải ảnh"
+                    label={t('modal.uploadCover')}
                   />
                 </div>
               </div>
@@ -521,38 +531,38 @@ export default function BlogManagementPage() {
                 <button
                   type="button"
                   onClick={() => setForm({ ...form, coverImage: '' })}
-                  className="absolute top-2 right-2 px-2 py-1 bg-black/70 hover:bg-black text-white text-xs rounded-sm backdrop-blur"
+                  className="absolute top-2 right-2 px-2 py-1 bg-ink/80 hover:bg-ink text-on-ink text-xs rounded-sm backdrop-blur transition-colors"
                 >
-                  Gỡ ảnh
+                  {t('modal.removeCover')}
                 </button>
               </div>
             )}
 
             <div>
               <label className="block text-small font-medium text-fg mb-1.5">
-                Đoạn tóm tắt ngắn (Summary)
+                {t('modal.summaryLabel')}
               </label>
               <Textarea
                 rows={2}
                 value={form.summary}
                 onChange={(e) => setForm({ ...form, summary: e.target.value })}
-                placeholder="Đoạn văn ngắn 1-2 câu tóm tắt nội dung bài viết hiển thị ở danh sách bài và thẻ chia sẻ mạng xã hội."
+                placeholder={t('modal.summaryPlaceholder')}
               />
             </div>
 
             <div>
               <label className="block text-small font-medium text-fg mb-1.5">
-                Nội dung bài viết <span className="text-err">*</span>
+                {t('modal.contentLabel')} <span className="text-err">*</span>
               </label>
               <Textarea
                 rows={10}
                 value={form.content}
                 onChange={(e) => setForm({ ...form, content: e.target.value })}
-                placeholder="Soạn nội dung chi tiết bài viết ở đây. Bạn có thể xuống dòng, chia đoạn văn bản hoặc dán nội dung từ tài liệu."
+                placeholder={t('modal.contentPlaceholder')}
                 required
               />
               <p className="mt-1 text-xs text-muted">
-                Hỗ trợ định dạng văn bản tự nhiên, ngắt dòng thành các đoạn và chèn link.
+                {t('modal.contentHint')}
               </p>
             </div>
 
@@ -565,7 +575,7 @@ export default function BlogManagementPage() {
                   className="w-4 h-4 rounded border-line text-acc focus:ring-acc"
                 />
                 <span className="text-small font-medium text-fg">
-                  Xuất bản ngay lên website công khai của cơ sở
+                  {t('modal.publishImmediately')}
                 </span>
               </label>
             </div>
@@ -577,30 +587,30 @@ export default function BlogManagementPage() {
                 onClick={() => setShowSeo((v) => !v)}
                 className="text-xs font-semibold text-acc hover:underline flex items-center gap-1"
               >
-                {showSeo ? 'Ẩn cấu hình SEO nâng cao ▲' : 'Tuỳ chỉnh thẻ SEO & Mạng xã hội ▼'}
+                {showSeo ? t('modal.seoToggleHide') : t('modal.seoToggleShow')}
               </button>
 
               {showSeo && (
                 <div className="mt-3 p-3.5 rounded-ctl border border-line bg-page/60 space-y-3">
                   <div>
                     <label className="block text-xs font-medium text-fg mb-1">
-                      Tiêu đề SEO (Meta Title)
+                      {t('modal.metaTitleLabel')}
                     </label>
                     <Input
                       value={form.metaTitle}
                       onChange={(e) => setForm({ ...form, metaTitle: e.target.value })}
-                      placeholder="Mặc định lấy theo tiêu đề bài viết"
+                      placeholder={t('modal.metaTitlePlaceholder')}
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-fg mb-1">
-                      Mô tả SEO (Meta Description)
+                      {t('modal.metaDescLabel')}
                     </label>
                     <Textarea
                       rows={2}
                       value={form.metaDescription}
                       onChange={(e) => setForm({ ...form, metaDescription: e.target.value })}
-                      placeholder="Mặc định lấy theo đoạn tóm tắt bài viết"
+                      placeholder={t('modal.metaDescPlaceholder')}
                     />
                   </div>
                 </div>
@@ -610,31 +620,34 @@ export default function BlogManagementPage() {
 
           <ModalFooter>
             <Button type="button" variant="outline" onClick={() => setEditing(null)} disabled={saving}>
-              Huỷ
+              {t('modal.cancel')}
             </Button>
             <Button type="submit" isLoading={saving}>
-              {editing === 'new' ? 'Tạo bài viết' : 'Lưu thay đổi'}
+              {editing === 'new' ? t('modal.createSubmit') : t('modal.editSubmit')}
             </Button>
           </ModalFooter>
         </form>
       </Modal>
 
       {/* Modal xác nhận xóa */}
-      <Modal isOpen={deleting !== null} onClose={() => !deletingBusy && setDeleting(null)} size="sm" title="Xóa bài viết">
+      <Modal isOpen={deleting !== null} onClose={() => !deletingBusy && setDeleting(null)} size="sm" title={t('deleteModal.title')}>
         <ModalHeader onClose={() => !deletingBusy && setDeleting(null)}>
-          <h2 className="text-lg font-semibold text-fg">Xóa bài viết?</h2>
+          <h2 className="text-lg font-semibold text-fg">{t('deleteModal.title')}</h2>
         </ModalHeader>
         <ModalBody>
           <p className="text-body text-fg/80">
-            Bạn có chắc chắn muốn xóa bài viết <b>&ldquo;{deleting?.title}&rdquo;</b>? Bài viết sẽ được gỡ khỏi trang công khai.
+            {t.rich('deleteModal.confirmText', {
+              title: deleting?.title ?? '',
+              b: (chunks) => <b>{chunks}</b>,
+            })}
           </p>
         </ModalBody>
         <ModalFooter>
           <Button variant="outline" onClick={() => setDeleting(null)} disabled={deletingBusy}>
-            Huỷ
+            {t('deleteModal.cancel')}
           </Button>
           <Button variant="danger" onClick={deletePost} isLoading={deletingBusy}>
-            Xóa bài viết
+            {t('deleteModal.confirm')}
           </Button>
         </ModalFooter>
       </Modal>

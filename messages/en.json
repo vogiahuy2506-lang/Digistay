@@ -478,6 +478,41 @@
       "taxPortal": "Check on the tax authority's portal",
       "taxPortalHint": "On the tax authority's e-invoice portal (hoadondientu.gdt.gov.vn), under invoice lookup: enter the seller's tax code, the series, the invoice number and the amounts above.",
       "tooMany": "You've opened this page too many times. Please try again in a few minutes."
+    },
+    "blog": {
+      "eyebrow": "Stories & Guide",
+      "title": "Travel Guide & News",
+      "description": "Explore local culinary culture, travel tips, and exciting stories with {hotel}.",
+      "metaDescription": "Explore travel tips, local cuisine, and the latest news from {hotel}.",
+      "emptyTitle": "No posts yet",
+      "emptyText": "Travel guides and insightful local tips will be published soon.",
+      "backHome": "Back to home",
+      "readMore": "Read more",
+      "share": "Share:",
+      "shareFb": "Share on Facebook",
+      "stayEyebrow": "Stay & Relax",
+      "address": "Address: {address}",
+      "bookNow": "Book now",
+      "allPosts": "All posts"
+    },
+    "paymentReturn": {
+      "titlePaid": "Payment received",
+      "titleExpired": "Booking was cancelled",
+      "titleCancelled": "Payment was cancelled",
+      "titleWaiting": "Waiting for bank confirmation",
+      "titleThanks": "Thank you for your payment",
+      "bodyExpired": "Booking {code} has been cancelled because the deposit was not received in time. If you have already transferred, please contact {hotel}.",
+      "bodyPaid": "{hotel} has received {amount} for booking {code}. Your booking has been confirmed{deposit}.",
+      "bodyPaidDepositSuffix": "; confirmation email is on its way",
+      "bodyCancelled": "No payment was completed.{retained} If needed, please contact {hotel} to get a new payment link.",
+      "bodyCancelledRetained": " Booking {code} is still held while awaiting hotel contact.",
+      "bodyWaiting": "If you have transferred, {hotel} will confirm booking {code} as soon as funds arrive, usually within seconds. No further action needed.",
+      "bodyFallback": "{hotel} will confirm as soon as funds arrive. No further action needed.",
+      "payAgain": "Pay again",
+      "contactHotel": "Contact hotel: {phone}",
+      "backToHotel": "Back to hotel website",
+      "waitingPoll": "Page updates automatically…",
+      "waitingTimeout": "Payment not detected yet. The hotel will reach out once received."
     }
   },
   "marketing": {

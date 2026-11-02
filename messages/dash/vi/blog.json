@@ -1,0 +1,80 @@
+{
+  "title": "Bài viết & Tin tức",
+  "description": "Đăng tải bài viết giới thiệu món ăn ngon, cẩm nang du lịch và điểm đến xung quanh khách sạn.",
+  "viewBlog": "Xem trang Blog",
+  "newPost": "Viết bài mới",
+  "tabs": {
+    "all": "Tất cả",
+    "published": "Đã xuất bản",
+    "draft": "Bản nháp"
+  },
+  "searchPlaceholder": "Tìm theo tiêu đề, đường dẫn...",
+  "loading": "Đang tải danh sách bài viết...",
+  "empty": {
+    "title": "Chưa có bài viết nào",
+    "text": "Đăng các bài viết về ẩm thực địa phương, cẩm nang tham quan du lịch để thu hút thêm du khách.",
+    "action": "Tạo bài viết đầu tiên"
+  },
+  "status": {
+    "published": "Đã xuất bản",
+    "draft": "Bản nháp"
+  },
+  "byAuthor": "Tác giả: {name}",
+  "publishedOn": "Ngày đăng: {date}",
+  "createdOn": "Tạo ngày: {date}",
+  "actions": {
+    "view": "Xem",
+    "viewPublicTooltip": "Xem trên trang công khai",
+    "edit": "Sửa",
+    "publish": "Xuất bản bài viết",
+    "unpublish": "Chuyển về bản nháp",
+    "delete": "Xóa bài viết"
+  },
+  "modal": {
+    "newTitle": "Viết bài mới",
+    "newHeader": "Viết bài blog & tin tức mới",
+    "editTitle": "Chỉnh sửa bài viết",
+    "titleLabel": "Tiêu đề bài viết",
+    "titlePlaceholder": "VD: Top 5 quán ăn ngon gần khách sạn không thể bỏ lỡ",
+    "slugLabel": "Đường dẫn tĩnh (Slug URL)",
+    "authorLabel": "Tác giả bài viết",
+    "authorPlaceholder": "VD: Lễ tân khách sạn / Ban quản lý",
+    "coverLabel": "Ảnh bìa (Cover Image)",
+    "coverPlaceholder": "https://... hoặc tải ảnh lên",
+    "uploadCover": "Tải ảnh",
+    "removeCover": "Gỡ ảnh",
+    "summaryLabel": "Đoạn tóm tắt ngắn (Summary)",
+    "summaryPlaceholder": "Đoạn văn ngắn 1-2 câu tóm tắt nội dung bài viết hiển thị ở danh sách bài và thẻ chia sẻ mạng xã hội.",
+    "contentLabel": "Nội dung bài viết",
+    "contentPlaceholder": "Soạn nội dung chi tiết bài viết ở đây. Bạn có thể xuống dòng, chia đoạn văn bản hoặc dán nội dung từ tài liệu.",
+    "contentHint": "Hỗ trợ định dạng văn bản tự nhiên, ngắt dòng thành các đoạn và chèn link.",
+    "publishImmediately": "Xuất bản ngay lên website công khai của cơ sở",
+    "seoToggleShow": "Tuỳ chỉnh thẻ SEO & Mạng xã hội ▼",
+    "seoToggleHide": "Ẩn cấu hình SEO nâng cao ▲",
+    "metaTitleLabel": "Tiêu đề SEO (Meta Title)",
+    "metaTitlePlaceholder": "Mặc định lấy theo tiêu đề bài viết",
+    "metaDescLabel": "Mô tả SEO (Meta Description)",
+    "metaDescPlaceholder": "Mặc định lấy theo đoạn tóm tắt bài viết",
+    "cancel": "Huỷ",
+    "createSubmit": "Tạo bài viết",
+    "editSubmit": "Lưu thay đổi"
+  },
+  "deleteModal": {
+    "title": "Xóa bài viết?",
+    "confirmText": "Bạn có chắc chắn muốn xóa bài viết \"{title}\"? Bài viết sẽ được gỡ khỏi trang công khai.",
+    "cancel": "Huỷ",
+    "confirm": "Xóa bài viết"
+  },
+  "toasts": {
+    "created": "Đã tạo bài viết mới",
+    "saved": "Đã lưu thay đổi bài viết",
+    "toDraft": "Đã chuyển thành bản nháp",
+    "toPublished": "Đã xuất bản bài viết",
+    "deleted": "Đã xóa bài viết",
+    "loadFailed": "Không thể tải danh sách bài viết",
+    "saveFailed": "Không thể lưu bài viết",
+    "networkError": "Lỗi kết nối khi lưu bài viết",
+    "deleteFailed": "Không thể xóa bài viết",
+    "statusFailed": "Không thể đổi trạng thái bài viết"
+  }
+}
