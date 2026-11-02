@@ -43,6 +43,34 @@
       "bookNow": "Đặt phòng ngay",
       "close": "Đóng"
     },
+    "reviewPage": {
+      "title": "Đánh giá kỳ nghỉ",
+      "subtitle": "Chia sẻ trải nghiệm lưu trú của bạn tại {hotel}",
+      "stayInfo": "Thông tin kỳ nghỉ",
+      "room": "Hạng phòng",
+      "stayDates": "Thời gian lưu trú",
+      "guest": "Khách lưu trú",
+      "ratingLabel": "Bạn đánh giá kỳ nghỉ này thế nào?",
+      "ratings": {
+        "1": "Tệ",
+        "2": "Tạm được",
+        "3": "Bình thường",
+        "4": "Rất tốt",
+        "5": "Tuyệt vời"
+      },
+      "titleLabel": "Tiêu đề đánh giá (không bắt buộc)",
+      "titlePlaceholder": "Ví dụ: Kỳ nghỉ tuyệt vời, dịch vụ rất chu đáo...",
+      "commentLabel": "Nhận xét chi tiết của bạn",
+      "commentPlaceholder": "Hãy chia sẻ cảm nhận về phòng nghỉ, thái độ phục vụ, không gian và tiện ích...",
+      "submit": "Gửi đánh giá",
+      "submitting": "Đang gửi...",
+      "alreadyReviewedTitle": "Cảm ơn bạn đã gửi đánh giá!",
+      "alreadyReviewedDesc": "Đánh giá của bạn đã được ghi nhận và hiển thị công khai trên website khách sạn.",
+      "backToHome": "Về trang chủ khách sạn",
+      "yourReview": "Đánh giá của bạn",
+      "invalidToken": "Mã đánh giá không hợp lệ hoặc đã hết hạn",
+      "invalidTokenDesc": "Vui lòng kiểm tra lại đường dẫn trong email cảm ơn hoặc liên hệ trực tiếp với khách sạn."
+    },
     "sections": {
       "rooms": "Phòng",
       "amenities": "Tiện ích",
@@ -1400,6 +1428,21 @@
       "textSubject": "Chuyến đi của bạn tại {hotel} vẫn đang chờ hoàn tất!",
       "textLead": "Bạn vừa chọn phòng tại {hotel} nhưng chưa hoàn tất đặt phòng.",
       "textContinue": "Tiếp tục đặt phòng: {url}"
+    },
+    "postStaySurvey": {
+      "subject": "Cảm ơn bạn đã lưu trú tại {hotel} - Hãy chia sẻ cảm nhận của bạn!",
+      "preview": "Đánh giá kỳ nghỉ của bạn tại {hotel} - Chỉ mất 1 phút",
+      "title": "✨ Cảm ơn bạn đã đồng hành cùng {hotel}!",
+      "lead": "Hy vọng bạn đã có một kỳ nghỉ thật thoải mái và trọn vẹn vừa qua.",
+      "room": "Hạng phòng",
+      "checkIn": "Nhận phòng",
+      "checkOut": "Trả phòng",
+      "button": "Đánh giá kỳ nghỉ của bạn ★★★★★",
+      "note": "Ý kiến đóng góp quý báu của bạn sẽ giúp khách sạn không ngừng nâng cao chất lượng dịch vụ cho những lần lưu trú tiếp theo.",
+      "contact": "Cần hỗ trợ hoặc phản ánh thêm? Liên hệ: {phone}",
+      "textSubject": "Cảm ơn bạn đã lưu trú tại {hotel} - Hãy chia sẻ cảm nhận của bạn!",
+      "textLead": "Hy vọng bạn đã có một kỳ nghỉ thoải mái tại {hotel}.",
+      "textReview": "Gửi đánh giá kỳ nghỉ tại đây: {url}"
     }
   }
 }

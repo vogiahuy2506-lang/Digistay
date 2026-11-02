@@ -358,7 +358,7 @@ gantt
     section Giai đoạn 3: Automation & CRM
     Abandoned Cart Email (Task 48)    :done,    p3_1, after p2_3, 2d
     Mini CRM Danh bạ khách (Task 49)  :done,    p3_2, after p3_1, 2d
-    Post-Stay Review Email (Task 50)  :         p3_3, after p3_2, 2d
+    Post-Stay Review Email (Task 50)  :done,    p3_3, after p3_2, 2d
     Kiểm thử tích hợp & E2E           :         p3_4, after p3_3, 2d
 ```
 

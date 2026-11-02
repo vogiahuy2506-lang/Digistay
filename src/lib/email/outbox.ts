@@ -29,11 +29,13 @@ import {
   bookingConfirmationTemplate,
   depositExpiredTemplate,
   depositReceivedTemplate,
+  postStaySurveyTemplate,
   workspaceInviteTemplate,
   type AbandonedCartTemplateProps,
   type BookingConfirmationTemplateProps,
   type DepositExpiredTemplateProps,
   type DepositReceivedTemplateProps,
+  type PostStaySurveyTemplateProps,
   type WorkspaceInviteTemplateProps,
 } from './templates'
 
@@ -57,6 +59,7 @@ type Kind =
   | 'plan_overage_locked'
   | 'plan_usage'
   | 'abandoned_cart'
+  | 'post_stay_survey'
 interface Message {
   to: EmailRecipient
   subject: string
@@ -88,6 +91,10 @@ export function queueBookingConfirmation(data: BookingConfirmationTemplateProps,
 
 export function queueAbandonedCart(data: AbandonedCartTemplateProps, bookingId: string, db?: Db) {
   return queueEmail('abandoned_cart', { to: { email: data.guestEmail, name: data.guestName }, ...abandonedCartTemplate(data) }, bookingId, db)
+}
+
+export function queuePostStaySurvey(data: PostStaySurveyTemplateProps, bookingId: string, db?: Db) {
+  return queueEmail('post_stay_survey', { to: { email: data.guestEmail, name: data.guestName }, ...postStaySurveyTemplate(data) }, bookingId, db)
 }
 
 export interface OwnerNewBookingData {

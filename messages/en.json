@@ -43,6 +43,34 @@
       "bookNow": "Book now",
       "close": "Close"
     },
+    "reviewPage": {
+      "title": "Review your stay",
+      "subtitle": "Share your experience at {hotel}",
+      "stayInfo": "Stay information",
+      "room": "Room type",
+      "stayDates": "Stay dates",
+      "guest": "Guest",
+      "ratingLabel": "How would you rate your stay?",
+      "ratings": {
+        "1": "Poor",
+        "2": "Fair",
+        "3": "Good",
+        "4": "Very Good",
+        "5": "Excellent"
+      },
+      "titleLabel": "Review title (optional)",
+      "titlePlaceholder": "e.g., Wonderful stay, attentive service...",
+      "commentLabel": "Your detailed feedback",
+      "commentPlaceholder": "Tell us about the room, staff, amenities, and overall experience...",
+      "submit": "Submit Review",
+      "submitting": "Submitting...",
+      "alreadyReviewedTitle": "Thank you for your review!",
+      "alreadyReviewedDesc": "Your feedback has been recorded and is displayed publicly on the hotel website.",
+      "backToHome": "Back to hotel homepage",
+      "yourReview": "Your review",
+      "invalidToken": "Invalid or expired review link",
+      "invalidTokenDesc": "Please check the link in your thank-you email or contact the hotel directly."
+    },
     "sections": {
       "rooms": "Rooms",
       "amenities": "Amenities",
@@ -1400,6 +1428,21 @@
       "textSubject": "Your stay at {hotel} is waiting to be completed!",
       "textLead": "You recently selected a room at {hotel} but haven't completed your booking yet.",
       "textContinue": "Continue booking: {url}"
+    },
+    "postStaySurvey": {
+      "subject": "Thank you for staying at {hotel} - Share your feedback!",
+      "preview": "Review your stay at {hotel} - Takes just 1 minute",
+      "title": "✨ Thank you for choosing {hotel}!",
+      "lead": "We hope you enjoyed a pleasant and memorable stay with us.",
+      "room": "Room type",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "button": "Rate your stay ★★★★★",
+      "note": "Your valuable feedback helps us continuously improve our services for future visits.",
+      "contact": "Need further assistance? Contact: {phone}",
+      "textSubject": "Thank you for staying at {hotel} - Share your feedback!",
+      "textLead": "We hope you enjoyed your stay at {hotel}.",
+      "textReview": "Submit your review here: {url}"
     }
   }
 }

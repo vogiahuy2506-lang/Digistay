@@ -60,7 +60,15 @@ export async function loadSiteProps(propertyId: string) {
   })
   if (!property) return null
   // The same rates a booking is charged (src/lib/pricing/quote.ts).
-  const defaults = await propertyRateDefaults(prisma, propertyId)
+  const [defaults, publishedReviews] = await Promise.all([
+    propertyRateDefaults(prisma, propertyId),
+    prisma.review.findMany({
+      where: { propertyId, isPublished: true },
+      orderBy: { createdAt: 'desc' },
+      take: 12,
+      select: { guestName: true, rating: true, comment: true },
+    }),
+  ])
 
   const blocks = siteBlocks(property.websiteBlocks, property.type)
 
@@ -130,12 +138,33 @@ export async function loadSiteProps(propertyId: string) {
       sortOrder: m.sortOrder,
       translations: m.translations,
     })),
-    blocks: blocks.map((b) => ({
-      id: b.id,
-      type: b.type,
-      name: b.name,
-      config: b.config as Record<string, any>,
-    })),
+    blocks: blocks.map((b) => {
+      if (b.type === 'REVIEWS') {
+        const cfg = (b.config as Record<string, any>) || {}
+        const existingReviews = Array.isArray(cfg.reviews) ? cfg.reviews : []
+        const mappedPublished = publishedReviews.map((r) => ({
+          name: r.guestName,
+          text: r.comment,
+          rating: r.rating,
+          source: 'Digistay Verified Guest',
+        }))
+        return {
+          id: b.id,
+          type: b.type,
+          name: b.name,
+          config: {
+            ...cfg,
+            reviews: [...mappedPublished, ...existingReviews],
+          },
+        }
+      }
+      return {
+        id: b.id,
+        type: b.type,
+        name: b.name,
+        config: b.config as Record<string, any>,
+      }
+    }),
     settings: property.websiteSettings
       ? {
           primaryColor: property.websiteSettings.primaryColor,

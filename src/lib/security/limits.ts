@@ -48,6 +48,8 @@ export const LIMITS = {
   couponValidateIp: { name: 'coupon-validate-ip', limit: 30, windowSec: 10 * MIN },
   /** Lead submissions from one IP on hotel public sites (exit-intent popup / contact). */
   leadCaptureIp: { name: 'lead-capture-ip', limit: 10, windowSec: 15 * MIN },
+  /** Guest review submissions from one IP after stay. */
+  reviewSubmitIp: { name: 'review-submit-ip', limit: 10, windowSec: 15 * MIN },
   /** Wrong two-factor codes at sign-in from one IP, across accounts (failures only). */
   twoFactorVerifyIp: { name: '2fa-verify-ip', limit: 20, windowSec: 15 * MIN },
   /** Wrong codes while turning two-factor on, per user (failures only). */

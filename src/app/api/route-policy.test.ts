@@ -52,6 +52,8 @@ const PUBLIC_HANDLERS: Record<string, string> = {
     "which site a verified custom domain serves, for the middleware; public like visiting the domain itself",
   'POST /api/internal/abandoned-cart':
     'scheduled job: checkCronSecret (CRON_SECRET header, timing-safe), and nginx does not route /api/internal/',
+  'POST /api/internal/post-stay-survey':
+    'scheduled job: checkCronSecret (CRON_SECRET header, timing-safe), and nginx does not route /api/internal/',
   'POST /api/internal/email-outbox':
     'scheduled job: checkCronSecret (CRON_SECRET header, timing-safe), and nginx does not route /api/internal/',
   'POST /api/internal/einvoice-jobs':
@@ -85,6 +87,10 @@ const PUBLIC_HANDLERS: Record<string, string> = {
     '"I have transferred" on a manual deposit: the HMAC token names one booking, per-IP limit, once per booking; tells staff, never marks anything paid',
   'GET /api/public/tax-lookup':
     'company name and address for a tax code, for invoice fields (public tax register via VietQR); per-IP limit, nothing stored',
+  'GET /api/public/reviews/preview':
+    'guest reviews preview: the signed HMAC reviewToken in the URL is the credential (review-token.ts)',
+  'POST /api/public/reviews':
+    'guest submits a stay review: the signed HMAC reviewToken is the credential (review-token.ts), rate-limited per IP',
   'POST /api/payments/webhook': 'disabled: always 404; gateways use /api/webhooks/<gateway>/...',
   'POST /api/webhooks/matbao/[propertyId]/[token]':
     'Mắt Bão tax-office status; the per-property secret token in the URL is the credential (unsigned callbacks); per-IP limit',
