@@ -11,7 +11,7 @@ import { toast } from '@/components/ui/toast'
 import { useTranslations } from 'next-intl'
 import { useDashLabels } from '@/lib/i18n/dash'
 import {
-  Plus, Trash2, Edit, Save, ConciergeBell, Search, X, Star,
+  Plus, Trash2, Edit, Save, ConciergeBell, Search, X, Star, Camera,
 } from 'lucide-react'
 import { PhotoUploadButton } from '@/components/ui/photo-upload'
 import { apiError } from '@/lib/i18n/api-errors'
@@ -97,6 +97,10 @@ export default function ServicesPage() {
   const [editingAmenity, setEditingAmenity] = React.useState<Amenity | null>(null)
   const [customNameInput, setCustomNameInput] = React.useState('')
 
+  // State for Amenity Photos Modal
+  const [editingPhotosAmenity, setEditingPhotosAmenity] = React.useState<Amenity | null>(null)
+  const [photoUrlInput, setPhotoUrlInput] = React.useState('')
+
   React.useEffect(() => {
     if (propertyId) {
       fetchData()
@@ -166,6 +170,29 @@ export default function ServicesPage() {
     const trimmed = customNameInput.trim()
     setAmenities(amenities.map(a => (a.id === editingAmenity.id ? { ...a, customName: trimmed || null } : a)))
     setEditingAmenity(null)
+  }
+
+  const handleOpenPhotosModal = (e: React.MouseEvent, amenity: Amenity) => {
+    e.stopPropagation()
+    setEditingPhotosAmenity(amenity)
+    setPhotoUrlInput('')
+  }
+
+  const handleAddPhoto = (url: string) => {
+    if (!editingPhotosAmenity || !url.trim()) return
+    const updatedImages = [...(editingPhotosAmenity.images ?? []), url.trim()]
+    const updatedAmenity = { ...editingPhotosAmenity, images: updatedImages }
+    setEditingPhotosAmenity(updatedAmenity)
+    setAmenities(amenities.map(a => (a.id === updatedAmenity.id ? updatedAmenity : a)))
+    setPhotoUrlInput('')
+  }
+
+  const handleRemovePhoto = (index: number) => {
+    if (!editingPhotosAmenity) return
+    const updatedImages = (editingPhotosAmenity.images ?? []).filter((_, i) => i !== index)
+    const updatedAmenity = { ...editingPhotosAmenity, images: updatedImages }
+    setEditingPhotosAmenity(updatedAmenity)
+    setAmenities(amenities.map(a => (a.id === updatedAmenity.id ? updatedAmenity : a)))
   }
 
   const handleCreateCustomAmenity = async () => {
@@ -479,6 +506,19 @@ export default function ServicesPage() {
 
                           {amenity.isSelected && (
                             <div className="flex items-center gap-0.5 shrink-0 ml-1">
+                              {Boolean(amenity.images && amenity.images.length > 0) && (
+                                <span className="text-[10px] font-semibold text-muted bg-fg/10 px-1.5 py-0.5 rounded-full mr-0.5">
+                                  📷 {amenity.images!.length}
+                                </span>
+                              )}
+                              <button
+                                type="button"
+                                onClick={(e) => handleOpenPhotosModal(e, amenity)}
+                                title={t('amenities.managePhotos')}
+                                className={`p-1 rounded hover:bg-fg/10 transition-colors ${amenity.images && amenity.images.length > 0 ? 'text-acc' : 'text-muted/60 hover:text-fg'}`}
+                              >
+                                <Camera className="w-3.5 h-3.5" />
+                              </button>
                               <button
                                 type="button"
                                 onClick={(e) => toggleFeatured(e, amenity.id)}
@@ -956,6 +996,89 @@ export default function ServicesPage() {
             onClick={handleSaveCustomName}
           >
             {tc('actions.save')}
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Amenity Photos Management Modal */}
+      <Modal
+        isOpen={Boolean(editingPhotosAmenity)}
+        onClose={() => setEditingPhotosAmenity(null)}
+        size="md"
+      >
+        <ModalHeader onClose={() => setEditingPhotosAmenity(null)}>
+          <span className="font-semibold">
+            {t('amenities.photosModalTitle', {
+              name: editingPhotosAmenity ? (editingPhotosAmenity.customName || amenityName(editingPhotosAmenity.slug, editingPhotosAmenity.name, labels.locale)) : ''
+            })}
+          </span>
+        </ModalHeader>
+        <ModalBody className="space-y-4">
+          <p className="text-xs text-muted">
+            {t('amenities.photosModalHint')}
+          </p>
+
+          {/* Current Photos */}
+          {editingPhotosAmenity?.images && editingPhotosAmenity.images.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {editingPhotosAmenity.images.map((imgUrl, idx) => (
+                <div key={idx} className="relative group rounded-lg overflow-hidden border border-line bg-fg/5 aspect-[4/3]">
+                  <img
+                    src={imgUrl}
+                    alt={`Amenity photo ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemovePhoto(idx)}
+                    title={t('amenities.deletePhoto')}
+                    className="absolute top-1.5 right-1.5 p-1 bg-black/60 hover:bg-danger text-white rounded-full transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-8 text-center border-2 border-dashed border-line rounded-lg">
+              <Camera className="w-8 h-8 text-muted mx-auto mb-2 opacity-50" />
+              <p className="text-xs text-muted">{t('amenities.noPhotosYet')}</p>
+            </div>
+          )}
+
+          {/* Upload / Add section */}
+          <div className="pt-2 border-t border-line flex flex-wrap items-center gap-3">
+            <PhotoUploadButton
+              target={{ propertyId }}
+              onUploaded={handleAddPhoto}
+              label={t('amenities.uploadPhotos')}
+            />
+            <span className="text-xs text-muted">hoặc</span>
+            <div className="flex-1 flex gap-2 min-w-[200px]">
+              <Input
+                placeholder="https://... dán link ảnh"
+                value={photoUrlInput}
+                onChange={(e) => setPhotoUrlInput(e.target.value)}
+                className="h-9 text-xs"
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                type="button"
+                disabled={!photoUrlInput.trim()}
+                onClick={() => handleAddPhoto(photoUrlInput)}
+              >
+                {tc('actions.add')}
+              </Button>
+            </div>
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            variant="primary"
+            onClick={() => setEditingPhotosAmenity(null)}
+          >
+            {tc('actions.close')}
           </Button>
         </ModalFooter>
       </Modal>

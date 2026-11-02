@@ -176,7 +176,11 @@
         "title": "Everything for an easy stay",
         "eyebrow": "Amenities",
         "empty": "The list of amenities is being updated.",
-        "featured": "Featured"
+        "featured": "Featured",
+        "viewPhotos": "View photos",
+        "photosCount": "{count, plural, one {# photo} other {# photos}}",
+        "galleryTitle": "Amenity spaces",
+        "close": "Close"
       },
       "contact": {
         "title": "Contact us to book",

@@ -176,7 +176,11 @@
         "title": "Mọi thứ cần cho một kỳ nghỉ nhẹ nhàng",
         "eyebrow": "Tiện ích",
         "empty": "Danh sách tiện ích đang được cập nhật.",
-        "featured": "Nổi bật"
+        "featured": "Nổi bật",
+        "viewPhotos": "Xem ảnh",
+        "photosCount": "{count} ảnh",
+        "galleryTitle": "Không gian tiện ích",
+        "close": "Đóng"
       },
       "contact": {
         "title": "Liên hệ đặt phòng",

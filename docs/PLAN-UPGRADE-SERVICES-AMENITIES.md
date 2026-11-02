@@ -183,11 +183,16 @@ model PropertyAmenity {
 
 ---
 
-### Task 55: Thư viện ảnh Tiện ích & Trực quan hóa Website
-- **Frontend Quản trị**:
-  - Bấm vào tiện ích cho phép upload 1–3 ảnh chụp góc rộng của tiện ích đó.
+### Task 55: Thư viện ảnh Tiện ích & Trực quan hóa Website ✅ *Đã hoàn thành*
+- **Frontend Quản trị (`/services`)**:
+  - Bổ sung nút 📷 **"Quản lý ảnh"** trên từng thẻ tiện ích đã chọn, có badge hiển thị số lượng ảnh đã upload.
+  - Modal quản lý ảnh tiện ích hỗ trợ xem trước thumbnail, xóa ảnh và upload thêm 1–4 ảnh chụp góc rộng của tiện ích (hoặc dán link ảnh trực tiếp).
+  - Tự động lưu trữ danh sách ảnh vào `PropertyAmenity.images` khi lưu cấu hình.
 - **Frontend Public Site (`AmenitiesBlock.tsx`)**:
-  - Nâng cấp khối Tiện ích trên website từ danh sách chữ đơn điệu thành dạng lưới ảnh (Photo Grid & Lightbox) tương tự Airbnb/Booking.com: khách hàng click vào tiện ích để xem cận cảnh hồ bơi, phòng gym hoặc quầy bar.
+  - Nâng cấp khối Tiện ích trên website từ danh sách chữ đơn điệu sang hệ thống danh thiếp ảnh trực quan (Visual Gallery Cards) tương tự các nền tảng khách sạn cao cấp.
+  - Hiển thị ảnh chụp góc rộng của tiện ích, icon danh mục, tên tiện ích, huy hiệu `⭐ Nổi bật` và số lượng ảnh.
+  - Tích hợp cửa sổ phóng to **Lightbox** toàn màn hình: hỗ trợ lướt xem từng ảnh, thanh chọn thumbnail thu nhỏ, phím tắt mũi tên và phím `Escape` đóng mở mượt mà.
+  - Các tiện ích khác không có ảnh vẫn hiển thị trong danh sách phân loại rõ ràng, có nút máy ảnh 📷 để mở nhanh Lightbox.
 
 ---
 
