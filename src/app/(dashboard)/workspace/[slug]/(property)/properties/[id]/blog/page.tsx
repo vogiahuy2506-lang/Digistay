@@ -49,9 +49,11 @@ import {
   Plus,
   Quote,
   Search,
+  Sparkles,
   Trash2,
 } from 'lucide-react'
 import Image from 'next/image'
+import { AiWriterModal, type AiWriterApplyData } from '@/components/ai/ai-writer-modal'
 
 interface BlogPost {
   id: string
@@ -112,6 +114,22 @@ export default function BlogManagementPage() {
   const [saving, setSaving] = React.useState(false)
   const [formError, setFormError] = React.useState('')
   const [showSeo, setShowSeo] = React.useState(false)
+  const [isAiOpen, setIsAiOpen] = React.useState(false)
+
+  const handleApplyAiBlog = (data: AiWriterApplyData) => {
+    setForm((prev) => ({
+      ...prev,
+      title: data.title,
+      slug: prev.slugEdited ? prev.slug : finishPostSlug(slugFromTitle(data.title)),
+      summary: data.shortDescription,
+      content: data.fullDescription,
+      metaTitle: data.metaTitle || prev.metaTitle,
+      metaDescription: data.metaDescription || prev.metaDescription,
+    }))
+    if (data.metaTitle || data.metaDescription) {
+      setShowSeo(true)
+    }
+  }
 
   const [deleting, setDeleting] = React.useState<BlogPost | null>(null)
   const [deletingBusy, setDeletingBusy] = React.useState(false)
@@ -504,9 +522,19 @@ export default function BlogManagementPage() {
             )}
 
             <div>
-              <label className="block text-small font-medium text-fg mb-1.5">
-                {t('modal.titleLabel')} <span className="text-err">*</span>
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-small font-medium text-fg">
+                  {t('modal.titleLabel')} <span className="text-err">*</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsAiOpen(true)}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-acc hover:text-acc/80 transition-colors"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Viết bài bằng AI
+                </button>
+              </div>
               <Input
                 value={form.title}
                 onChange={(e) => onTitleChange(e.target.value)}
@@ -798,6 +826,16 @@ export default function BlogManagementPage() {
           </Button>
         </ModalFooter>
       </Modal>
+
+      {/* AI Blog Writer Modal */}
+      <AiWriterModal
+        isOpen={isAiOpen}
+        onClose={() => setIsAiOpen(false)}
+        propertyId={propertyId}
+        contentType="BLOG_POST"
+        initialTopic={form.title}
+        onApply={handleApplyAiBlog}
+      />
     </PageContainer>
   )
 }

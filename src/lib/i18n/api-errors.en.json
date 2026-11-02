@@ -1,4 +1,7 @@
 {
+  "Vui lòng nhập ít nhất vài từ khóa": "Please enter at least a few keywords",
+  "Khách sạn": "Hotel",
+  "Không thể tạo nội dung bằng AI lúc này": "Unable to generate AI content at this time",
   "Thiếu mã đánh giá": "Missing review token",
   "Mã đánh giá không hợp lệ hoặc đã hết hạn": "Invalid or expired review token",
   "Lỗi khi tải thông tin đánh giá": "Failed to load review details",

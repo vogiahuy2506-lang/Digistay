@@ -443,8 +443,8 @@ gantt
     dateFormat  YYYY-MM-DD
     section Sprint 1: Trí tuệ nhân tạo (AI)
     Prisma Schema AI & OTA Models    :done,    sp1_1, 2026-11-03, 1d
-    AI Content Generator (Task 51)   :active,  sp1_2, after sp1_1, 2d
-    AI Hotel Chatbot FAQ (Task 52)   :         sp1_3, after sp1_2, 2d
+    AI Content Generator (Task 51)   :done,    sp1_2, after sp1_1, 2d
+    AI Hotel Chatbot FAQ (Task 52)   :active,  sp1_3, after sp1_2, 2d
     AI Booking Assistant (Task 53)   :         sp1_4, after sp1_3, 2d
     Dynamic Pricing Engine (Task 54) :         sp1_5, after sp1_4, 2d
     section Sprint 2: Kênh bán & OTA Sync
@@ -482,3 +482,4 @@ Mỗi tính năng trong Giai đoạn 6 bắt buộc phải vượt qua các bài
    - Không có bất kỳ lỗi cú pháp hoặc cảnh báo kiểu dữ liệu (`npm run typecheck` đạt 0 lỗi).
    - Đạt chuẩn kiểm tra mã nguồn (`npm run lint` đạt 0 cảnh báo).
    - Toàn bộ bộ test hiện có (117 test files, 940+ tests) tiếp tục vượt qua 100%.
+

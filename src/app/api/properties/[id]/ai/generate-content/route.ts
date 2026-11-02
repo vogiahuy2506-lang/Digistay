@@ -1,0 +1,59 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/db'
+import { auth } from '@/lib/auth'
+import { checkPropertyAccess } from '@/lib/auth/access'
+import { z } from 'zod'
+import { generateHospitalityContent } from '@/lib/ai/content-generator'
+import { AiContentType, AiLanguage, AiTone } from '@/lib/ai/types'
+
+const generateSchema = z.object({
+  contentType: z.enum(['ROOM_DESCRIPTION', 'BLOG_POST'] as [AiContentType, ...AiContentType[]]),
+  keywords: z.string().min(1, 'Vui lòng nhập ít nhất vài từ khóa'),
+  roomName: z.string().optional(),
+  bedType: z.string().optional(),
+  area: z.number().nullable().optional(),
+  tone: z.enum(['LUXURY', 'COZY', 'MODERN', 'ROMANTIC', 'FAMILY'] as [AiTone, ...AiTone[]]).optional(),
+  language: z.enum(['vi', 'en', 'bilingual'] as [AiLanguage, ...AiLanguage[]]).optional(),
+  targetAudience: z.string().optional(),
+  topic: z.string().optional(),
+})
+
+export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params
+  try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
+    }
+
+    const access = await checkPropertyAccess(session.user.id, params.id, 'property_edit', 'Không tìm thấy cơ sở')
+    if (!access.ok) return access.response
+
+    const body = await request.json().catch(() => null)
+    const parsed = generateSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, error: parsed.error.errors[0]?.message || 'Dữ liệu không hợp lệ' }, { status: 400 })
+    }
+
+    const property = await prisma.property.findUnique({
+      where: { id: params.id },
+      select: { name: true },
+    })
+
+    const input = {
+      ...parsed.data,
+      propertyName: property?.name || 'Khách sạn',
+    }
+
+    const generated = await generateHospitalityContent(input)
+
+    return NextResponse.json({
+      success: true,
+      data: generated,
+    })
+  } catch (error) {
+    console.error('[API AI Generate Content Error]:', error)
+    return NextResponse.json({ success: false, error: 'Không thể tạo nội dung bằng AI lúc này' }, { status: 500 })
+  }
+}
+

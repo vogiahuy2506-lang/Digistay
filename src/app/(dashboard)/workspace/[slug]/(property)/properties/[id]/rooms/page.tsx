@@ -6,8 +6,9 @@ import { Header, PageContainer } from '@/components/layout'
 import { Card, CardContent, Button, Badge, Modal, ModalBody, ModalFooter, Input, Select, Textarea, Tabs, TabsList, TabsTrigger, NumberInput } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
 import {
-  Plus, Bed, Edit, Image, BedDouble, Wrench, X, AlertCircle, DoorOpen,
+  Plus, Bed, Edit, Image, BedDouble, Wrench, X, AlertCircle, DoorOpen, Sparkles,
 } from 'lucide-react'
+import { AiWriterModal, type AiWriterApplyData } from '@/components/ai/ai-writer-modal'
 import { RoomList, type RoomTypeRooms } from './room-list'
 import { RoomTypePhotos } from './room-type-photos'
 import { resizedImage } from '@/lib/media/image-url'
@@ -84,8 +85,21 @@ export default function RoomTypesPage() {
   const [isLoading, setIsLoading] = React.useState(true)
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false)
+  const [isAiModalOpen, setIsAiModalOpen] = React.useState(false)
   const [selectedRoomType, setSelectedRoomType] = React.useState<RoomType | null>(null)
   const [isSaving, setIsSaving] = React.useState(false)
+
+  const handleApplyAiRoom = (data: AiWriterApplyData) => {
+    setFormData((prev) => ({
+      ...prev,
+      name: prev.name.trim() ? prev.name : data.title,
+      description: data.shortDescription || data.fullDescription,
+      en: {
+        name: prev.en.name.trim() ? prev.en.name : (data.english?.title || prev.en.name),
+        description: data.english?.shortDescription || data.english?.fullDescription || prev.en.description,
+      },
+    }))
+  }
 
   // Maintenance state
   const [activeTab, setActiveTab] = React.useState<'rooms' | 'list' | 'maintenance'>('rooms')
@@ -785,13 +799,25 @@ export default function RoomTypesPage() {
             placeholder={t('form.namePlaceholder')}
             required
           />
-          <Textarea
-            label={t('form.description')}
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            placeholder={t('form.descriptionPlaceholder')}
-            rows={3}
-          />
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-small font-medium text-fg">{t('form.description')}</label>
+              <button
+                type="button"
+                onClick={() => setIsAiModalOpen(true)}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-acc hover:text-acc/80 transition-colors"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Viết bằng AI
+              </button>
+            </div>
+            <Textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder={t('form.descriptionPlaceholder')}
+              rows={3}
+            />
+          </div>
           <EnglishCopy filled={Boolean(formData.en.name || formData.en.description)}>
             <Input
               label={t('form.name')}
@@ -879,12 +905,24 @@ export default function RoomTypesPage() {
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             required
           />
-          <Textarea
-            label={t('form.description')}
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            rows={3}
-          />
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-small font-medium text-fg">{t('form.description')}</label>
+              <button
+                type="button"
+                onClick={() => setIsAiModalOpen(true)}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-acc hover:text-acc/80 transition-colors"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Viết bằng AI
+              </button>
+            </div>
+            <Textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={3}
+            />
+          </div>
           <EnglishCopy filled={Boolean(formData.en.name || formData.en.description)}>
             <Input
               label={t('form.name')}
@@ -1017,6 +1055,18 @@ export default function RoomTypesPage() {
           </Button>
         </ModalFooter>
       </Modal>
+
+      {/* AI Content Writer Modal */}
+      <AiWriterModal
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+        propertyId={selectedProperty}
+        contentType="ROOM_DESCRIPTION"
+        initialRoomName={formData.name}
+        initialArea={formData.area ? parseFloat(formData.area) : null}
+        initialBedType={formData.bedType}
+        onApply={handleApplyAiRoom}
+      />
     </div>
   )
 }
