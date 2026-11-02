@@ -25,6 +25,15 @@ export function finishPostSlug(value: string): string {
   return value.replace(/^-+|-+$/g, '')
 }
 
+/**
+ * Calculates estimated reading time in minutes based on ~200 wpm.
+ */
+export function readingTimeMinutes(content: string): number {
+  if (!content) return 1
+  const words = content.trim().split(/\s+/).filter(Boolean).length
+  return Math.max(1, Math.ceil(words / 200))
+}
+
 const emptyToNull = (v: unknown) => (v === '' || v === undefined ? null : v)
 
 export const blogPostInputSchema = z.object({

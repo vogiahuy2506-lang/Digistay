@@ -3,6 +3,7 @@ import {
   blogPostInputSchema,
   cleanPostSlug,
   finishPostSlug,
+  readingTimeMinutes,
   slugFromTitle,
 } from './blog'
 
@@ -45,6 +46,13 @@ describe('blog helper functions (task 45)', () => {
 
     const res = blogPostInputSchema.safeParse(invalid)
     expect(res.success).toBe(false)
+  })
+
+  it('calculates reading time correctly based on word count', () => {
+    expect(readingTimeMinutes('')).toBe(1)
+    expect(readingTimeMinutes('Một bài viết ngắn')).toBe(1)
+    const longContent = Array(450).fill('từ').join(' ')
+    expect(readingTimeMinutes(longContent)).toBe(3)
   })
 })
 

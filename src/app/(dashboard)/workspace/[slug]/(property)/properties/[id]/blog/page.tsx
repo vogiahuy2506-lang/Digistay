@@ -26,18 +26,28 @@ import {
 import { toast } from '@/components/ui/toast'
 import { PhotoUploadButton } from '@/components/ui/photo-upload'
 import { apiError } from '@/lib/i18n/api-errors'
-import { cleanPostSlug, finishPostSlug, slugFromTitle } from '@/lib/marketing/blog'
+import { cleanPostSlug, finishPostSlug, readingTimeMinutes, slugFromTitle } from '@/lib/marketing/blog'
 import { routes } from '@/lib/utils/routes'
+import { BlogContent } from '@/components/blog/blog-content'
 import {
   ArrowRight,
+  Bold,
+  Clock,
   ExternalLink,
   Eye,
   FileText,
   Globe,
+  Heading2,
+  Heading3,
+  Italic,
+  Link2,
+  List,
+  ListOrdered,
   MoreVertical,
   Newspaper,
   Pencil,
   Plus,
+  Quote,
   Search,
   Trash2,
 } from 'lucide-react'
@@ -105,6 +115,27 @@ export default function BlogManagementPage() {
 
   const [deleting, setDeleting] = React.useState<BlogPost | null>(null)
   const [deletingBusy, setDeletingBusy] = React.useState(false)
+  const [editorTab, setEditorTab] = React.useState<'write' | 'preview'>('write')
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null)
+
+  const insertFormat = (prefix: string, suffix = '') => {
+    const el = textareaRef.current
+    if (!el) {
+      setForm((prev) => ({ ...prev, content: prev.content + prefix + suffix }))
+      return
+    }
+    const start = el.selectionStart
+    const end = el.selectionEnd
+    const text = el.value
+    const selected = text.substring(start, end)
+    const replacement = prefix + (selected || '') + suffix
+    const nextContent = text.substring(0, start) + replacement + text.substring(end)
+    setForm((prev) => ({ ...prev, content: nextContent }))
+    setTimeout(() => {
+      el.focus()
+      el.setSelectionRange(start + prefix.length, start + prefix.length + selected.length)
+    }, 0)
+  }
 
   const fetchPosts = React.useCallback(async () => {
     try {
@@ -145,6 +176,7 @@ export default function BlogManagementPage() {
     setForm(EMPTY_FORM)
     setFormError('')
     setShowSeo(false)
+    setEditorTab('write')
     setEditing('new')
   }
 
@@ -163,6 +195,7 @@ export default function BlogManagementPage() {
     })
     setFormError('')
     setShowSeo(Boolean(post.metaTitle || post.metaDescription))
+    setEditorTab('write')
     setEditing(post)
   }
 
@@ -551,19 +584,133 @@ export default function BlogManagementPage() {
             </div>
 
             <div>
-              <label className="block text-small font-medium text-fg mb-1.5">
-                {t('modal.contentLabel')} <span className="text-err">*</span>
-              </label>
-              <Textarea
-                rows={10}
-                value={form.content}
-                onChange={(e) => setForm({ ...form, content: e.target.value })}
-                placeholder={t('modal.contentPlaceholder')}
-                required
-              />
-              <p className="mt-1 text-xs text-muted">
-                {t('modal.contentHint')}
-              </p>
+              <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <label className="text-small font-medium text-fg">
+                    {t('modal.contentLabel')} <span className="text-err">*</span>
+                  </label>
+                  {form.content.trim() && (
+                    <span className="inline-flex items-center gap-1 text-xs text-muted font-normal">
+                      <Clock className="w-3.5 h-3.5" />
+                      {t('readingTime', { minutes: readingTimeMinutes(form.content) })}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center rounded-ctl border border-line bg-panel p-0.5 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setEditorTab('write')}
+                    className={`px-2.5 py-1 rounded-[4px] font-medium transition-colors ${
+                      editorTab === 'write' ? 'bg-ink text-on-ink' : 'text-muted hover:text-fg'
+                    }`}
+                  >
+                    {t('editor.writeTab')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditorTab('preview')}
+                    className={`px-2.5 py-1 rounded-[4px] font-medium transition-colors ${
+                      editorTab === 'preview' ? 'bg-ink text-on-ink' : 'text-muted hover:text-fg'
+                    }`}
+                  >
+                    {t('editor.previewTab')}
+                  </button>
+                </div>
+              </div>
+
+              {editorTab === 'write' ? (
+                <>
+                  {/* Toolbar */}
+                  <div className="flex items-center gap-1 p-1 rounded-t-ctl border-t border-l border-r border-line bg-panel/70 flex-wrap">
+                    <button
+                      type="button"
+                      title={t('editor.bold')}
+                      onClick={() => insertFormat('**', '**')}
+                      className="p-1.5 rounded hover:bg-fg/5 text-muted hover:text-fg transition-colors"
+                    >
+                      <Bold className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      title={t('editor.italic')}
+                      onClick={() => insertFormat('*', '*')}
+                      className="p-1.5 rounded hover:bg-fg/5 text-muted hover:text-fg transition-colors"
+                    >
+                      <Italic className="w-4 h-4" />
+                    </button>
+                    <span className="w-px h-4 bg-line mx-0.5" />
+                    <button
+                      type="button"
+                      title={t('editor.h2')}
+                      onClick={() => insertFormat('\n## ')}
+                      className="p-1.5 rounded hover:bg-fg/5 text-muted hover:text-fg transition-colors font-bold text-xs"
+                    >
+                      H2
+                    </button>
+                    <button
+                      type="button"
+                      title={t('editor.h3')}
+                      onClick={() => insertFormat('\n### ')}
+                      className="p-1.5 rounded hover:bg-fg/5 text-muted hover:text-fg transition-colors font-semibold text-xs"
+                    >
+                      H3
+                    </button>
+                    <span className="w-px h-4 bg-line mx-0.5" />
+                    <button
+                      type="button"
+                      title={t('editor.ul')}
+                      onClick={() => insertFormat('\n- ')}
+                      className="p-1.5 rounded hover:bg-fg/5 text-muted hover:text-fg transition-colors"
+                    >
+                      <List className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      title={t('editor.ol')}
+                      onClick={() => insertFormat('\n1. ')}
+                      className="p-1.5 rounded hover:bg-fg/5 text-muted hover:text-fg transition-colors"
+                    >
+                      <ListOrdered className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      title={t('editor.quote')}
+                      onClick={() => insertFormat('\n> ')}
+                      className="p-1.5 rounded hover:bg-fg/5 text-muted hover:text-fg transition-colors"
+                    >
+                      <Quote className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      title={t('editor.link')}
+                      onClick={() => insertFormat('[', '](https://)')}
+                      className="p-1.5 rounded hover:bg-fg/5 text-muted hover:text-fg transition-colors"
+                    >
+                      <Link2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <Textarea
+                    ref={textareaRef}
+                    rows={10}
+                    value={form.content}
+                    onChange={(e) => setForm({ ...form, content: e.target.value })}
+                    placeholder={t('modal.contentPlaceholder')}
+                    className="rounded-t-none border-t-0"
+                    required
+                  />
+                  <p className="mt-1 text-xs text-muted">{t('modal.contentHint')}</p>
+                </>
+              ) : (
+                <div className="rounded-ctl border border-line bg-page p-5 min-h-[260px] max-h-[380px] overflow-y-auto">
+                  {form.content.trim() ? (
+                    <BlogContent content={form.content} />
+                  ) : (
+                    <p className="text-small text-muted italic text-center py-12">{t('editor.emptyPreview')}</p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="pt-2 border-t border-line">

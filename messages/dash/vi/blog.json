@@ -22,6 +22,20 @@
   "byAuthor": "Tác giả: {name}",
   "publishedOn": "Ngày đăng: {date}",
   "createdOn": "Tạo ngày: {date}",
+  "readingTime": "~ {minutes} phút đọc",
+  "editor": {
+    "writeTab": "Soạn thảo",
+    "previewTab": "Xem trước",
+    "bold": "In đậm",
+    "italic": "In nghiêng",
+    "h2": "Tiêu đề 2",
+    "h3": "Tiêu đề 3",
+    "ul": "Danh sách gạch đầu dòng",
+    "ol": "Danh sách số",
+    "quote": "Trích dẫn",
+    "link": "Chèn liên kết",
+    "emptyPreview": "Chưa có nội dung để xem trước"
+  },
   "actions": {
     "view": "Xem",
     "viewPublicTooltip": "Xem trên trang công khai",
@@ -78,3 +92,4 @@
     "statusFailed": "Không thể đổi trạng thái bài viết"
   }
 }
+

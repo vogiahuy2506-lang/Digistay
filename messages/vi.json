@@ -493,7 +493,15 @@
       "stayEyebrow": "Lưu trú & Nghỉ dưỡng",
       "address": "Địa chỉ: {address}",
       "bookNow": "Đặt phòng ngay",
-      "allPosts": "Tất cả bài viết"
+      "allPosts": "Tất cả bài viết",
+      "readingTime": "{minutes} phút đọc",
+      "relatedTitle": "Bài viết cùng chủ đề",
+      "relatedEyebrow": "Khám phá thêm",
+      "copyLink": "Sao chép liên kết",
+      "linkCopied": "Đã sao chép liên kết",
+      "shareZalo": "Chia sẻ qua Zalo",
+      "ctaTitle": "Lên kế hoạch nghỉ dưỡng tại {hotel}",
+      "ctaDesc": "Trải nghiệm không gian nghỉ dưỡng tuyệt vời cùng ẩm thực đặc sắc ngay hôm nay."
     },
     "paymentReturn": {
       "titlePaid": "Đã nhận tiền thanh toán",

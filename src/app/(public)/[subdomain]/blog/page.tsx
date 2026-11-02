@@ -11,7 +11,8 @@ import { isLocale, type Locale } from '@/i18n/locales'
 import { SiteHeader } from '../_components/SiteHeader'
 import { Container } from '../_components/site-ui'
 import { SiteLink } from '../_components/site-base'
-import { ArrowRight, Calendar, FileText, User } from 'lucide-react'
+import { ArrowRight, Calendar, Clock, FileText, User } from 'lucide-react'
+import { readingTimeMinutes } from '@/lib/marketing/blog'
 
 interface PageProps {
   params: Promise<{ subdomain: string }>
@@ -118,13 +119,17 @@ export default async function PublicBlogPage({ params }: PageProps) {
                   </SiteLink>
 
                   <div className="flex flex-col flex-1 p-5 sm:p-6">
-                    <div className="flex items-center gap-3 text-xs text-muted mb-2.5">
+                    <div className="flex items-center gap-3 text-xs text-muted mb-2.5 flex-wrap">
                       {post.publishedAt && (
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3.5 h-3.5" />
                           {new Date(post.publishedAt).toLocaleDateString(locale === 'en' ? 'en-US' : 'vi-VN')}
                         </span>
                       )}
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" />
+                        {t('readingTime', { minutes: readingTimeMinutes(post.content) })}
+                      </span>
                       {post.authorName && (
                         <span className="flex items-center gap-1">
                           <User className="w-3.5 h-3.5" />

@@ -493,7 +493,15 @@
       "stayEyebrow": "Stay & Relax",
       "address": "Address: {address}",
       "bookNow": "Book now",
-      "allPosts": "All posts"
+      "allPosts": "All posts",
+      "readingTime": "{minutes} min read",
+      "relatedTitle": "Related stories",
+      "relatedEyebrow": "Discover more",
+      "copyLink": "Copy link",
+      "linkCopied": "Link copied",
+      "shareZalo": "Share on Zalo",
+      "ctaTitle": "Plan your getaway at {hotel}",
+      "ctaDesc": "Experience wonderful stays and exceptional local hospitality today."
     },
     "paymentReturn": {
       "titlePaid": "Payment received",
