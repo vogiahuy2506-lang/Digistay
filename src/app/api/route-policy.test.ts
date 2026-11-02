@@ -91,6 +91,10 @@ const PUBLIC_HANDLERS: Record<string, string> = {
     'guest reviews preview: the signed HMAC reviewToken in the URL is the credential (review-token.ts)',
   'POST /api/public/reviews':
     'guest submits a stay review: the signed HMAC reviewToken is the credential (review-token.ts), rate-limited per IP',
+  'GET /api/public/chatbot/config':
+    'public chatbot greeting and suggested questions for visitors on hotel websites',
+  'POST /api/public/chatbot/message':
+    'public hotel chatbot Q&A for visitors; grounded in published hotel knowledge base, rate-limited per IP',
   'POST /api/payments/webhook': 'disabled: always 404; gateways use /api/webhooks/<gateway>/...',
   'POST /api/webhooks/matbao/[propertyId]/[token]':
     'Mắt Bão tax-office status; the per-property secret token in the URL is the credential (unsigned callbacks); per-IP limit',

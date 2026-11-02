@@ -50,6 +50,8 @@ export const LIMITS = {
   leadCaptureIp: { name: 'lead-capture-ip', limit: 10, windowSec: 15 * MIN },
   /** Guest review submissions from one IP after stay. */
   reviewSubmitIp: { name: 'review-submit-ip', limit: 10, windowSec: 15 * MIN },
+  /** Chatbot inquiries from one IP on public hotel websites. */
+  chatbotMessageIp: { name: 'chatbot-message-ip', limit: 40, windowSec: 10 * MIN },
   /** Wrong two-factor codes at sign-in from one IP, across accounts (failures only). */
   twoFactorVerifyIp: { name: '2fa-verify-ip', limit: 20, windowSec: 15 * MIN },
   /** Wrong codes while turning two-factor on, per user (failures only). */

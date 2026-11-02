@@ -9,6 +9,7 @@ import { OG_LOCALES } from '@/lib/seo/page-metadata'
 import { SiteBaseProvider, type SiteHotel } from './_components/site-base'
 import { ExitIntentModal } from './_components/ExitIntentModal'
 import { StickyBookingBar } from './_components/StickyBookingBar'
+import { WebsiteChatbot } from './_components/WebsiteChatbot'
 import { MarketingTracking } from '@/components/marketing/MarketingTracking'
 import { siteSections } from './_components/booking/frame'
 import { siteFontVariables } from './fonts'
@@ -113,6 +114,12 @@ export default async function HotelSiteLayout({
         )}
         {children}
         <StickyBookingBar />
+        {frame && (
+          <WebsiteChatbot
+            propertyId={frame.id}
+            hotelName={frame.name}
+          />
+        )}
         {exitCoupon && frame && (
           <ExitIntentModal
             propertyId={frame.id}
