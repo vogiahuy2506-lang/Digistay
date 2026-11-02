@@ -28,6 +28,7 @@ import {
   Calendar,
   ExternalLink,
   MoreVertical,
+  Newspaper,
   Plus,
   Search,
   Settings,
@@ -59,6 +60,7 @@ interface Property {
 export default function WorkspaceDashboardPage() {
   const t = useTranslations('workspaceHome')
   const tb = useTranslations('dash.billing')
+  const tc = useTranslations('dash.common.nav')
   const access = useWorkspaceAccess()
   const params = useParams<{ slug: string }>()
   const slug = params.slug
@@ -224,6 +226,7 @@ export default function WorkspaceDashboardPage() {
                 rooms: t('actions.rooms'),
                 bookings: t('actions.bookings'),
                 settings: t('actions.settings'),
+                blog: tc('blog'),
               }}
             />
           ))}
@@ -256,6 +259,7 @@ interface PropertyRowProps {
     rooms: string
     bookings: string
     settings: string
+    blog: string
   }
 }
 
@@ -332,6 +336,12 @@ function PropertyRow({ property, slug, href, labels }: PropertyRowProps) {
             icon={<BedDouble className="w-4 h-4" />}
           >
             {labels.rooms}
+          </DropdownItem>
+          <DropdownItem
+            onClick={() => router.push(routes.propertyBlog(slug, property.id))}
+            icon={<Newspaper className="w-4 h-4" />}
+          >
+            {labels.blog}
           </DropdownItem>
           <DropdownDivider />
           <DropdownItem

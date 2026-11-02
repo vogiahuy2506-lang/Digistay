@@ -1,6 +1,7 @@
 import type { PublicBlock, PublicProperty } from '../PropertySite'
 import type { SiteSection } from '../SiteHeader'
 import { Container } from '../site-ui'
+import { SiteLink } from '../site-base'
 import { useTranslations } from 'next-intl'
 import { formatAddress } from '@/lib/vn-admin/address'
 
@@ -54,6 +55,11 @@ export function FooterBlock({ property, sections = [] }: Props) {
                     </a>
                   </li>
                 ))}
+                <li>
+                  <SiteLink path="/blog" className="hover:text-acc">
+                    Blog & Tin tức
+                  </SiteLink>
+                </li>
               </ul>
             </div>
           )}

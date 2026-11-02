@@ -50,7 +50,8 @@
       "services": "Services",
       "menu": "Menu",
       "map": "Location",
-      "contact": "Contact"
+      "contact": "Contact",
+      "blog": "News"
     },
     "propertyType": {
       "HOTEL": "Hotel",

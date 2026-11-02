@@ -49,6 +49,9 @@ export function SiteHeader({ property, sections, onHome = true }: Props) {
                 </SiteLink>
               )
             )}
+            <SiteLink path="/blog" className={linkClass}>
+              {t('sections.blog')}
+            </SiteLink>
           </nav>
         )}
 
@@ -95,6 +98,9 @@ export function SiteHeader({ property, sections, onHome = true }: Props) {
                     </SiteLink>
                   )
                 )}
+                <SiteLink path="/blog" className="block px-4 py-3 text-body text-fg hover:bg-fg/5">
+                  {t('sections.blog')}
+                </SiteLink>
                 <div className="mt-2 border-t border-line pt-2">
                   <SiteThemeToggle withLabel className="px-4 py-3 text-body focus:outline-none focus-visible:bg-fg/5" />
                 </div>

@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { PageContainer } from '@/components/layout'
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Modal, ModalBody, ModalFooter, ModalHeader, Input, Select } from '@/components/ui'
 import {
-  ArrowLeft, MapPin, Phone, Mail, Globe, Plus, Pencil, Trash2, ExternalLink,
+  ArrowLeft, MapPin, Phone, Mail, Globe, Plus, Pencil, Trash2, ExternalLink, Newspaper,
 } from 'lucide-react'
 import { toast } from '@/components/ui/toast'
 import { routes } from '@/lib/utils/routes'
@@ -258,6 +258,10 @@ export default function PropertyDetailPage() {
           <Button variant="outline" onClick={() => router.push(routes.propertyWebsite(slug, propertyId))}>
             <Globe className="w-4 h-4 mr-2" />
             {t('websiteBuilder')}
+          </Button>
+          <Button variant="outline" onClick={() => router.push(routes.propertyBlog(slug, propertyId))}>
+            <Newspaper className="w-4 h-4 mr-2" />
+            {tc('nav.blog')}
           </Button>
           <Button variant="outline" onClick={() => setShowEditModal(true)}>
             <Pencil className="w-4 h-4 mr-2" />

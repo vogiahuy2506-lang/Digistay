@@ -50,7 +50,8 @@
       "services": "Dịch vụ",
       "menu": "Thực đơn",
       "map": "Vị trí",
-      "contact": "Liên hệ"
+      "contact": "Liên hệ",
+      "blog": "Tin tức"
     },
     "propertyType": {
       "HOTEL": "Khách sạn",
