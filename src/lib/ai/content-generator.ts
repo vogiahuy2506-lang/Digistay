@@ -169,36 +169,50 @@ export async function generateHospitalityContent(input: GenerateContentInput): P
   return generateHeuristicContent(input)
 }
 
+export const DEFAULT_GEMINI_MODEL = 'gemini-3.1-flash-lite'
+
 /**
  * Validates a Google Gemini API Key by making a minimal ping request.
  */
-export async function testGeminiApiKey(apiKey: string, model = 'gemini-2.5-flash'): Promise<{ ok: boolean; message: string }> {
+export async function testGeminiApiKey(apiKey: string, model = DEFAULT_GEMINI_MODEL): Promise<{ ok: boolean; message: string }> {
   if (!apiKey || apiKey.trim().length < 10) {
     return { ok: false, message: 'Khóa API không hợp lệ (chuỗi quá ngắn)' }
   }
 
   const trimmed = apiKey.trim()
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${trimmed}`
+  const candidateModels = [model, 'gemini-2.5-flash', 'gemini-2.0-flash-lite']
 
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: 'ping' }] }],
-      }),
-    })
+  for (const m of candidateModels) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${trimmed}`
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: 'ping' }] }],
+        }),
+      })
 
-    if (!response.ok) {
+      if (response.ok) {
+        return { ok: true, message: `Kết nối Google Gemini (${m}) thành công! Sẵn sàng sử dụng.` }
+      }
+
+      // If it's a 404 model not found, try the next candidate model
+      if (response.status === 404 && m !== candidateModels[candidateModels.length - 1]) {
+        continue
+      }
+
       const errorJson = await response.json().catch(() => null)
       const errorMsg = errorJson?.error?.message || `Lỗi kết nối HTTP ${response.status}`
       return { ok: false, message: errorMsg }
+    } catch (error: any) {
+      if (m === candidateModels[candidateModels.length - 1]) {
+        return { ok: false, message: error?.message || 'Không thể kết nối đến máy chủ Google Gemini' }
+      }
     }
-
-    return { ok: true, message: 'Kết nối Google Gemini API thành công! Sẵn sàng sử dụng.' }
-  } catch (error: any) {
-    return { ok: false, message: error?.message || 'Không thể kết nối đến máy chủ Google Gemini' }
   }
+
+  return { ok: false, message: 'Không thể kết nối đến máy chủ Google Gemini' }
 }
 
 /**
@@ -206,30 +220,41 @@ export async function testGeminiApiKey(apiKey: string, model = 'gemini-2.5-flash
  */
 async function callGeminiApi(input: GenerateContentInput, apiKey: string): Promise<GenerateContentOutput | null> {
   const prompt = buildAiPrompt(input)
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`
+  const targetModel = input.model || DEFAULT_GEMINI_MODEL
+  const candidateModels = [targetModel, 'gemini-2.5-flash', 'gemini-2.0-flash-lite']
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        responseMimeType: 'application/json',
-        temperature: 0.7,
-      },
-    }),
-  })
+  for (const m of candidateModels) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`
 
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => '')
-    throw new Error(`Gemini HTTP ${response.status}: ${errorText}`)
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          temperature: 0.7,
+        },
+      }),
+    })
+
+    if (!response.ok) {
+      // If model not found (404), fall back to next model
+      if (response.status === 404 && m !== candidateModels[candidateModels.length - 1]) {
+        continue
+      }
+      const errorText = await response.text().catch(() => '')
+      throw new Error(`Gemini (${m}) HTTP ${response.status}: ${errorText}`)
+    }
+
+    const json = await response.json()
+    const candidateText = json.candidates?.[0]?.content?.parts?.[0]?.text
+    if (!candidateText) return null
+
+    return parseAiJsonResponse(candidateText, m)
   }
 
-  const json = await response.json()
-  const candidateText = json.candidates?.[0]?.content?.parts?.[0]?.text
-  if (!candidateText) return null
-
-  return parseAiJsonResponse(candidateText, 'gemini-2.5-flash')
+  return null
 }
 
 /**

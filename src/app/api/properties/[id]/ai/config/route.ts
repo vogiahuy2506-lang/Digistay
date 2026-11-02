@@ -6,7 +6,7 @@ import { testGeminiApiKey } from '@/lib/ai/content-generator'
 
 const testKeySchema = z.object({
   apiKey: z.string().min(1, 'Vui lòng cung cấp khóa API'),
-  model: z.string().optional().default('gemini-2.5-flash'),
+  model: z.string().optional().default('gemini-3.1-flash-lite'),
 })
 
 export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
         hasEnvKey,
         maskedKey: masked,
         provider: 'GEMINI',
-        defaultModel: 'gemini-2.5-flash',
+        defaultModel: 'gemini-3.1-flash-lite',
       },
     })
   } catch (error) {
@@ -75,3 +75,4 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
     return NextResponse.json({ success: false, error: 'Không thể kiểm tra khóa API lúc này' }, { status: 500 })
   }
 }
+

@@ -84,7 +84,7 @@ export function AiWriterModal({
   // API Key & Model Setup State
   const [showApiSettings, setShowApiSettings] = React.useState(false)
   const [apiKey, setApiKey] = React.useState('')
-  const [selectedModel, setSelectedModel] = React.useState('gemini-2.5-flash')
+  const [selectedModel, setSelectedModel] = React.useState('gemini-3.1-flash-lite')
   const [showKeyText, setShowKeyText] = React.useState(false)
   const [isTestingKey, setIsTestingKey] = React.useState(false)
   const [hasServerEnvKey, setHasServerEnvKey] = React.useState(false)
@@ -94,7 +94,7 @@ export function AiWriterModal({
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedKey = localStorage.getItem(`digistay_ai_key_${propertyId}`) || localStorage.getItem('digistay_ai_key') || ''
-      const savedModel = localStorage.getItem('digistay_ai_model') || 'gemini-2.5-flash'
+      const savedModel = localStorage.getItem('digistay_ai_model') || 'gemini-3.1-flash-lite'
       if (savedKey) setApiKey(savedKey)
       if (savedModel) setSelectedModel(savedModel)
     }
@@ -334,9 +334,10 @@ export function AiWriterModal({
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
               >
-                <option value="gemini-2.5-flash">Gemini 2.5 Flash (Khuyên dùng - Nhanh nhất)</option>
-                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-                <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite (Khuyên dùng - Siêu nhanh & Tối ưu)</option>
+                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash-Lite</option>
+                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
               </Select>
 
               <div className="flex items-end gap-2">
