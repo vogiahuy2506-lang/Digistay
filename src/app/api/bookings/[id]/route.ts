@@ -7,6 +7,7 @@ import { lockBooking } from '@/lib/payments/booking-payments'
 import { z } from 'zod'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
 import { can, checkPropertyAccess } from '@/lib/auth/access'
+import { syncCustomerProfileFromBooking } from '@/lib/customers/sync-customer'
 
 const NOT_FOUND = 'Không tìm thấy đơn đặt phòng'
 
@@ -179,6 +180,12 @@ export async function PATCH(
       },
       })
     })
+
+    if (data.status === 'CHECKED_OUT') {
+      await syncCustomerProfileFromBooking(prisma, id).catch((err) =>
+        console.error('[crm] booking update check-out sync error:', err)
+      )
+    }
 
     // Log activity
     await prisma.activityLog.create({

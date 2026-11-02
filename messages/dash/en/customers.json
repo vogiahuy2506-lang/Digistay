@@ -1,0 +1,56 @@
+{
+  "title": "Customer Directory",
+  "subtitle": "Manage guest profiles, tags, personal preferences, and full stay history",
+  "sync": "Sync from bookings",
+  "syncing": "Syncing...",
+  "syncSuccess": "Sync completed successfully",
+  "searchPlaceholder": "Search by name, phone, email, or notes...",
+  "tags": {
+    "all": "All guests",
+    "vip": "VIP guests",
+    "frequent": "Frequent",
+    "family": "Family",
+    "business": "Business",
+    "group": "Group"
+  },
+  "metrics": {
+    "totalCustomers": "Total Guests",
+    "vipCustomers": "VIP / Returning",
+    "totalStays": "Total Stays",
+    "totalRevenue": "Total Revenue"
+  },
+  "table": {
+    "customer": "Guest",
+    "contact": "Contact",
+    "tags": "Tags",
+    "stays": "Stays",
+    "spent": "Total Spent",
+    "lastStay": "Last Stay",
+    "notes": "Preferences / Notes",
+    "actions": "Actions",
+    "empty": "No guest records found",
+    "emptyHint": "Guest records are automatically updated when bookings complete or receive payments, or click 'Sync from bookings' above.",
+    "never": "None yet"
+  },
+  "detail": {
+    "title": "Guest Profile",
+    "overview": "Overview",
+    "history": "Stay History at Property",
+    "noHistory": "No stay history recorded",
+    "editNotes": "Personal Preferences / Internal Notes",
+    "notesPlaceholder": "e.g., Prefers high floor, quiet room, seafood allergy, early check-in...",
+    "editTags": "Classification Tags",
+    "addTag": "Add tag",
+    "save": "Save Changes",
+    "saving": "Saving...",
+    "close": "Close",
+    "bookingCode": "Booking Code",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "room": "Room",
+    "amount": "Total Amount",
+    "status": "Status",
+    "payment": "Payment",
+    "viewBooking": "View booking"
+  }
+}

@@ -52,7 +52,7 @@ describe('dashboard menu', () => {
     expect(forRole('MANAGER')).not.toContain('settings')
     expect(forRole('MANAGER')).toEqual(expect.arrayContaining(['members', 'cashbook', 'reports']))
     expect(forRole('ADMIN')).toEqual(expect.arrayContaining(['bankAccounts', 'billing', 'settings']))
-    expect(forRole('RECEPTIONIST')).toEqual(['overview', 'bookings', 'rooms', 'payments', 'invoices', 'cashbook'])
+    expect(forRole('RECEPTIONIST')).toEqual(['overview', 'bookings', 'customers', 'rooms', 'payments', 'invoices', 'cashbook'])
     expect(forRole('USER')).toEqual(['overview', 'bookings', 'rooms'])
   })
 

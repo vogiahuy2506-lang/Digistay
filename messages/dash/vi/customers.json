@@ -1,0 +1,56 @@
+{
+  "title": "Danh bạ khách hàng",
+  "subtitle": "Quản lý hồ sơ, thẻ phân loại, ghi chú sở thích và toàn bộ lịch sử lưu trú của khách",
+  "sync": "Đồng bộ từ đặt phòng",
+  "syncing": "Đang đồng bộ...",
+  "syncSuccess": "Đã đồng bộ thành công",
+  "searchPlaceholder": "Tìm theo họ tên, số điện thoại, email hoặc ghi chú...",
+  "tags": {
+    "all": "Tất cả khách",
+    "vip": "Khách VIP",
+    "frequent": "Khách quen",
+    "family": "Gia đình",
+    "business": "Doanh nhân",
+    "group": "Khách đoàn"
+  },
+  "metrics": {
+    "totalCustomers": "Tổng số khách",
+    "vipCustomers": "Khách VIP / Thân thiết",
+    "totalStays": "Tổng lượt lưu trú",
+    "totalRevenue": "Doanh thu tích lũy"
+  },
+  "table": {
+    "customer": "Khách hàng",
+    "contact": "Liên hệ",
+    "tags": "Phân loại",
+    "stays": "Số lượt ở",
+    "spent": "Tổng chi tiêu",
+    "lastStay": "Lần ở gần nhất",
+    "notes": "Ghi chú sở thích",
+    "actions": "Thao tác",
+    "empty": "Chưa có dữ liệu khách hàng",
+    "emptyHint": "Dữ liệu khách hàng sẽ tự động cập nhật khi có booking hoàn tất hoặc thanh toán, hoặc bấm 'Đồng bộ từ đặt phòng' ở trên.",
+    "never": "Chưa có lượt"
+  },
+  "detail": {
+    "title": "Hồ sơ khách hàng",
+    "overview": "Thông tin tổng quan",
+    "history": "Lịch sử lưu trú tại cơ sở",
+    "noHistory": "Chưa có lịch sử lưu trú nào",
+    "editNotes": "Ghi chú sở thích cá nhân",
+    "notesPlaceholder": "Ví dụ: Thích tầng cao, view yên tĩnh, dị ứng đồ biển, check-in sớm...",
+    "editTags": "Thẻ phân loại",
+    "addTag": "Thêm thẻ",
+    "save": "Lưu thay đổi",
+    "saving": "Đang lưu...",
+    "close": "Đóng",
+    "bookingCode": "Mã đơn",
+    "checkIn": "Nhận phòng",
+    "checkOut": "Trả phòng",
+    "room": "Phòng",
+    "amount": "Tổng tiền",
+    "status": "Trạng thái",
+    "payment": "Thanh toán",
+    "viewBooking": "Xem đơn"
+  }
+}

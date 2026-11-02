@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { lateCheckoutFee } from '@/lib/bookings/late-checkout'
 import { lockBooking, syncBookingPayments } from '@/lib/payments/booking-payments'
+import { syncCustomerProfileFromBooking } from '@/lib/customers/sync-customer'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
 import { can, checkPropertyAccess } from '@/lib/auth/access'
 
@@ -163,6 +164,8 @@ export async function POST(
       })
       // A booking paid in full owes the late fee: PAID becomes PARTIAL.
       await syncBookingPayments(tx, id)
+      // Task 49: Cập nhật hồ sơ khách hàng (Mini CRM)
+      await syncCustomerProfileFromBooking(tx, id).catch((err) => console.error('[crm] check-out sync error:', err))
 
       await tx.activityLog.create({
         data: {

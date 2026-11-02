@@ -14,6 +14,7 @@
  */
 import type { Prisma } from '@prisma/client'
 import { autoIssueAfterResponse } from '@/lib/einvoice/issue-now'
+import { syncCustomerProfileFromBooking } from '@/lib/customers/sync-customer'
 
 type Tx = Prisma.TransactionClient
 
@@ -55,6 +56,12 @@ export async function syncBookingPayments(
     },
   })
   // Fully paid just now: the invoice goes out after the response, not at the job's next run.
-  if (paymentStatus === 'PAID' && booking.paymentStatus !== 'PAID') autoIssueAfterResponse(bookingId)
+  if (paymentStatus === 'PAID' && booking.paymentStatus !== 'PAID') {
+    autoIssueAfterResponse(bookingId)
+    // Task 49: Cập nhật hồ sơ khách hàng (Mini CRM) khi thanh toán hoàn tất
+    await syncCustomerProfileFromBooking(tx, bookingId).catch((err) =>
+      console.error('[crm] booking payment sync error:', err)
+    )
+  }
   return { totalPaid, closed }
 }

@@ -18,6 +18,7 @@ export type NavKey =
   | 'bankAccounts'
   | 'policies'
   | 'coupons'
+  | 'customers'
   | 'leads'
   | 'blog'
   | 'website'
@@ -57,6 +58,12 @@ export function primaryNav(slug: string, propertyId?: string): NavItem[] {
       href: routes.propertyBookings(slug, id),
       also: [routes.propertyCalendar(slug, id)],
       can: ['bookings_view'],
+      group: 'operations',
+    },
+    {
+      key: 'customers',
+      href: routes.propertyCustomers(slug, id),
+      can: ['bookings_edit'],
       group: 'operations',
     },
     { key: 'rooms', href: routes.propertyRooms(slug, id), can: ['rooms_manage', 'rooms_status'], group: 'property' },

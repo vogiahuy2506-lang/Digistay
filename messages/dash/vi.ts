@@ -23,6 +23,7 @@ import admin from './vi/admin.json'
 import adminOrders from './vi/adminOrders.json'
 import adminActivity from './vi/adminActivity.json'
 import blog from './vi/blog.json'
+import customers from './vi/customers.json'
 
-const dash = { common, coupons, leads, bookings, calendar, property, rooms, menu, money, reports, website, workspace, account, ui, billing, deletion, members, admin, adminOrders, adminActivity, blog }
+const dash = { common, coupons, customers, leads, bookings, calendar, property, rooms, menu, money, reports, website, workspace, account, ui, billing, deletion, members, admin, adminOrders, adminActivity, blog }
 export default dash

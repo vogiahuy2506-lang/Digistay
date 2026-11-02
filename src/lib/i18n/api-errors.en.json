@@ -1,4 +1,12 @@
 {
+  "Lỗi khi tải danh bạ khách hàng": "Failed to load customer directory",
+  "Đã đồng bộ thành công {0} khách hàng từ các đơn đặt phòng": "Successfully synced {0} customers from bookings",
+  "Lỗi khi đồng bộ danh bạ khách hàng": "Failed to sync customer directory",
+  "Họ tên không được để trống": "Name cannot be empty",
+  "Không tìm thấy khách hàng": "Customer not found",
+  "Lỗi khi tải chi tiết khách hàng": "Failed to load customer details",
+  "Cập nhật thông tin khách hàng thành công": "Customer updated successfully",
+  "Lỗi khi cập nhật khách hàng": "Failed to update customer",
   "Bio không được quá 500 ký tự": "Bio must be at most 500 characters",
   "Lỗi khi lấy danh sách bài viết": "Failed to load blog posts",
   "Đường dẫn (slug) không hợp lệ": "Invalid post slug",
