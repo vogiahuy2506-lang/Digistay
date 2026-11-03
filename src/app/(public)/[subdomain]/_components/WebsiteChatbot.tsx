@@ -8,10 +8,12 @@ import {
   X,
   Minimize2,
   Maximize2,
-  MessageSquare,
   RefreshCw,
+  Bed,
+  ArrowRight,
 } from 'lucide-react'
 import { useLocale } from 'next-intl'
+import type { ChatRoomCard } from '@/lib/ai/chatbot'
 
 interface ChatMessage {
   id: string
@@ -19,6 +21,7 @@ interface ChatMessage {
   content: string
   createdAt: string
   suggestions?: string[]
+  roomCards?: ChatRoomCard[]
 }
 
 interface WebsiteChatbotProps {
@@ -35,26 +38,25 @@ export function WebsiteChatbot({ propertyId, hotelName }: WebsiteChatbotProps) {
   const [messages, setMessages] = React.useState<ChatMessage[]>([])
   const [input, setInput] = React.useState('')
   const [isLoading, setIsLoading] = React.useState(false)
-  const [hasInteracted, setHasInteracted] = React.useState(false)
 
   const messagesEndRef = React.useRef<HTMLDivElement>(null)
   const inputRef = React.useRef<HTMLInputElement>(null)
 
-  const defaultWelcomeVi = `Dạ em chào quý khách! Em là Trợ lý AI của ${hotelName}. Em có thể giải đáp 24/7 về giờ check-in, thực đơn ăn uống, quy định thú cưng hoặc thông tin các hạng phòng. Quý khách cần hỗ trợ gì ạ?`
-  const defaultWelcomeEn = `Welcome to ${hotelName}! I am your 24/7 AI Receptionist. I can instantly help you with check-in/out times, room types, pet policies, and dining options. How may I assist you today?`
+  const defaultWelcomeVi = `Dạ em chào quý khách! Em là Trợ lý AI của ${hotelName}. Em có thể giải đáp 24/7 về giờ check-in, thực đơn ăn uống, quy định thú cưng hoặc hỗ trợ tìm và đặt phòng trực tiếp. Quý khách cần hỗ trợ gì ạ?`
+  const defaultWelcomeEn = `Welcome to ${hotelName}! I am your 24/7 AI Receptionist. I can assist you with hotel policies, check-in hours, dining, or help you find and book available rooms directly. How may I assist you today?`
 
   const defaultSuggestionsVi = [
+    '📅 Tìm phòng cuối tuần này (2 người)',
     '⏰ Giờ nhận & trả phòng?',
     '🐾 Có được mang thú cưng không?',
     '🍜 Thực đơn ăn uống & ăn sáng?',
-    '🛏️ Các hạng phòng và giá?',
   ]
 
   const defaultSuggestionsEn = [
+    '📅 Find a room this weekend (2 guests)',
     '⏰ Check-in & check-out times?',
     '🐾 Are pets allowed?',
     '🍜 Breakfast & dining menu?',
-    '🛏️ Room types & prices?',
   ]
 
   // Initialize welcome message when opened
@@ -90,7 +92,6 @@ export function WebsiteChatbot({ propertyId, hotelName }: WebsiteChatbotProps) {
     const text = (textToSend || input).trim()
     if (!text || isLoading) return
 
-    setHasInteracted(true)
     const userMsg: ChatMessage = {
       id: `u-${Date.now()}`,
       role: 'user',
@@ -129,6 +130,7 @@ export function WebsiteChatbot({ propertyId, hotelName }: WebsiteChatbotProps) {
         content: data.data.reply,
         createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         suggestions: data.data.suggestions,
+        roomCards: data.data.roomCards,
       }
 
       setMessages((prev) => [...prev, botMsg])
@@ -167,7 +169,6 @@ export function WebsiteChatbot({ propertyId, hotelName }: WebsiteChatbotProps) {
         {lines.map((line, idx) => {
           if (!line.trim()) return <div key={idx} className="h-1" />
 
-          // Replace **bold** with <strong>
           const parts = line.split(/(\*\*.*?\*\*)/g)
           return (
             <p key={idx}>
@@ -213,7 +214,7 @@ export function WebsiteChatbot({ propertyId, hotelName }: WebsiteChatbotProps) {
           className={`fixed z-50 transition-all duration-200 ease-out shadow-2xl rounded-2xl border border-line bg-panel overflow-hidden flex flex-col ${
             isMinimized
               ? 'bottom-20 right-4 sm:bottom-6 sm:right-6 w-72 h-14'
-              : 'bottom-20 right-4 sm:bottom-6 sm:right-6 w-[calc(100vw-2rem)] sm:w-[390px] h-[520px] max-h-[82vh]'
+              : 'bottom-20 right-4 sm:bottom-6 sm:right-6 w-[calc(100vw-2rem)] sm:w-[410px] h-[550px] max-h-[85vh]'
           }`}
         >
           {/* Header */}
@@ -225,7 +226,7 @@ export function WebsiteChatbot({ propertyId, hotelName }: WebsiteChatbotProps) {
               </div>
               <div className="min-w-0">
                 <h4 className="text-xs sm:text-small font-semibold truncate leading-tight">
-                  {isEn ? 'AI Receptionist' : 'Lễ tân ảo AI 24/7'}
+                  {isEn ? 'AI Receptionist & Booking' : 'Lễ tân ảo AI & Đặt phòng 24/7'}
                 </h4>
                 <p className="text-[11px] text-on-ink/70 truncate leading-none mt-0.5">
                   {hotelName}
@@ -274,7 +275,7 @@ export function WebsiteChatbot({ propertyId, hotelName }: WebsiteChatbotProps) {
                       className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}
                     >
                       <div
-                        className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 shadow-xs ${
+                        className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 shadow-xs ${
                           isUser
                             ? 'bg-ink text-on-ink rounded-tr-xs'
                             : 'bg-panel border border-line text-fg rounded-tl-xs'
@@ -282,6 +283,65 @@ export function WebsiteChatbot({ propertyId, hotelName }: WebsiteChatbotProps) {
                       >
                         {renderMessageContent(msg.content)}
                       </div>
+
+                      {/* Interactive Room Cards (Task 53) */}
+                      {!isUser && msg.roomCards && msg.roomCards.length > 0 && (
+                        <div className="w-full space-y-2 mt-2 max-w-[96%]">
+                          {msg.roomCards.map((card) => (
+                            <div
+                              key={card.id}
+                              className="rounded-xl border border-line bg-panel p-2.5 shadow-xs space-y-2 hover:border-acc/40 transition-all"
+                            >
+                              <div className="flex gap-2.5">
+                                {card.imageUrl ? (
+                                  <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-page shrink-0">
+                                    <img
+                                      src={card.imageUrl}
+                                      alt={card.name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="w-16 h-16 rounded-lg bg-ink/5 border border-line flex items-center justify-center shrink-0">
+                                    <Bed className="w-5 h-5 text-muted" />
+                                  </div>
+                                )}
+
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between gap-1">
+                                    <h5 className="font-semibold text-xs sm:text-small text-fg truncate">
+                                      {card.name}
+                                    </h5>
+                                    <span className="text-[10px] text-ok bg-ok/10 px-1.5 py-0.5 rounded font-medium shrink-0">
+                                      {isEn ? `${card.availableRooms} left` : `Còn ${card.availableRooms} phòng`}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex items-center gap-1.5 text-[11px] text-muted mt-0.5">
+                                    {card.area && <span>{card.area}m² ·</span>}
+                                    <span>Tối đa {card.maxOccupancy} khách</span>
+                                  </div>
+
+                                  <div className="mt-1">
+                                    <span className="text-xs sm:text-small font-bold text-fg">
+                                      {card.nightlyPrice.toLocaleString('vi-VN')} VNĐ
+                                    </span>
+                                    <span className="text-[10px] font-normal text-muted"> / đêm</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <a
+                                href={card.bookingUrl}
+                                className="w-full py-1.5 px-3 rounded-lg bg-acc text-acc-fg font-medium text-xs flex items-center justify-center gap-1 hover:bg-acc/90 shadow-xs transition-colors"
+                              >
+                                <span>{isEn ? 'Book this room now' : 'Đặt phòng này ngay'}</span>
+                                <ArrowRight className="w-3.5 h-3.5" />
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      )}
 
                       <span className="text-[10px] text-muted px-1 mt-1">
                         {msg.createdAt}
@@ -336,8 +396,8 @@ export function WebsiteChatbot({ propertyId, hotelName }: WebsiteChatbotProps) {
                     onChange={(e) => setInput(e.target.value)}
                     placeholder={
                       isEn
-                        ? 'Ask check-in time, menu, pet rules...'
-                        : 'Hỏi giờ check-in, thực đơn, thú cưng...'
+                        ? 'e.g. Any room for 2 guests this weekend?'
+                        : 'Ví dụ: Cuối tuần này có phòng cho 2 người không?'
                     }
                     className="flex-1 bg-page border border-line rounded-xl px-3.5 py-2 text-xs sm:text-small text-fg placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-acc"
                     disabled={isLoading}
@@ -355,9 +415,9 @@ export function WebsiteChatbot({ propertyId, hotelName }: WebsiteChatbotProps) {
                 <div className="mt-2 flex items-center justify-between text-[10px] text-muted px-1">
                   <span className="flex items-center gap-1">
                     <Sparkles className="w-3 h-3 text-acc" />
-                    {isEn ? 'Powered by Gemini 3.1 Flash-Lite' : 'Tích hợp Gemini 3.1 Flash-Lite'}
+                    {isEn ? 'AI Live Inventory Search' : 'Tra cứu kho phòng tự động qua AI'}
                   </span>
-                  <span>{isEn ? 'Instant answers 24/7' : 'Phản hồi 24/7'}</span>
+                  <span>{isEn ? 'Direct Booking' : 'Đặt trực tiếp'}</span>
                 </div>
               </div>
             </>
@@ -367,4 +427,3 @@ export function WebsiteChatbot({ propertyId, hotelName }: WebsiteChatbotProps) {
     </>
   )
 }
-

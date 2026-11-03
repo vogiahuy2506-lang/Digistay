@@ -1,5 +1,8 @@
 import { prisma } from '@/lib/db'
 import { DEFAULT_GEMINI_MODEL } from './content-generator'
+import { parseStayDatesFromText, searchAvailableRoomsForChat, type ChatRoomCard } from './room-finder'
+
+export type { ChatRoomCard }
 
 export interface ChatbotMessage {
   role: 'user' | 'assistant'
@@ -315,7 +318,7 @@ export async function answerHotelChatbotQuestion(params: {
   history?: ChatbotMessage[]
   apiKey?: string
   model?: string
-}): Promise<{ reply: string; suggestions?: string[]; modelUsed: string }> {
+}): Promise<{ reply: string; suggestions?: string[]; roomCards?: ChatRoomCard[]; modelUsed: string }> {
   const kb = await loadHotelKnowledgeBase(params.propertyId)
   if (!kb) {
     return {
@@ -328,6 +331,55 @@ export async function answerHotelChatbotQuestion(params: {
   const isEn = /^[a-zA-Z0-9\s.,?!'"-]*$/.test(params.message) && (
     /\b(what|when|where|how|who|can|is|are|do|does|pet|check|room|price|cost|hotel)\b/i.test(params.message)
   )
+
+  // Check if visitor is asking to find or book a room
+  const parsedStay = parseStayDatesFromText(params.message)
+  if (parsedStay.isRoomInquiry) {
+    const { cards } = await searchAvailableRoomsForChat(params.propertyId, {
+      checkIn: parsedStay.checkIn,
+      checkOut: parsedStay.checkOut,
+      adults: parsedStay.adults,
+      children: parsedStay.children,
+      locale: isEn ? 'en' : 'vi',
+    })
+
+    if (cards.length > 0) {
+      const checkInFormatted = parsedStay.checkIn.split('-').reverse().join('/')
+      const checkOutFormatted = parsedStay.checkOut.split('-').reverse().join('/')
+
+      const reply = isEn
+        ? `I checked our live room inventory from **${checkInFormatted}** to **${checkOutFormatted}** for **${parsedStay.adults} adult(s)**${parsedStay.children > 0 ? ` and ${parsedStay.children} child(ren)` : ''}. We have **${cards.length} available room option(s)**:\n\nPlease tap **"Book this room"** below to reserve your room with instant confirmation!`
+        : `Dạ em đã kiểm tra kho phòng trống theo thời gian thực từ ngày **${checkInFormatted}** đến **${checkOutFormatted}** cho **${parsedStay.adults} người lớn**${parsedStay.children > 0 ? ` và ${parsedStay.children} trẻ em` : ''}.\n\nKhách sạn hiện đang có **${cards.length} hạng phòng phù hợp** sẵn sàng phục vụ quý khách. Quý khách bấm **"Đặt phòng này"** ngay bên dưới để giữ phòng với giá tốt nhất nhé ạ!`
+
+      const suggestions = isEn
+        ? ['What is the check-in time?', 'Are pets allowed?', 'Breakfast options?']
+        : ['Giờ nhận và trả phòng?', 'Khách sạn có cho mang thú cưng không?', 'Thực đơn ăn uống?']
+
+      return {
+        reply,
+        suggestions,
+        roomCards: cards,
+        modelUsed: 'live-inventory-assistant',
+      }
+    } else if (parsedStay.hasExplicitDates) {
+      const checkInFormatted = parsedStay.checkIn.split('-').reverse().join('/')
+      const checkOutFormatted = parsedStay.checkOut.split('-').reverse().join('/')
+
+      const reply = isEn
+        ? `We are sorry! All rooms are fully booked from **${checkInFormatted}** to **${checkOutFormatted}** for ${parsedStay.adults} guest(s). Please try selecting different dates or contact our reception at **${kb.phone}** for priority waitlist assistance!`
+        : `Dạ rất tiếc, trong khoảng thời gian từ ngày **${checkInFormatted}** đến **${checkOutFormatted}**, khách sạn hiện **đã hết phòng trống** phù hợp cho ${parsedStay.adults} người. Quý khách vui lòng thử chọn ngày lưu trú khác hoặc liên hệ hotline **${kb.phone}** để lễ tân kiểm tra hỗ trợ sắp xếp phòng nhé ạ!`
+
+      const suggestions = isEn
+        ? ['Hỏi ngày khác', 'Liên hệ lễ tân']
+        : ['Giờ nhận và trả phòng?', 'Khách sạn có cho mang thú cưng không?']
+
+      return {
+        reply,
+        suggestions,
+        modelUsed: 'live-inventory-assistant',
+      }
+    }
+  }
 
   const geminiKey = params.apiKey || process.env.GEMINI_API_KEY
   if (geminiKey) {

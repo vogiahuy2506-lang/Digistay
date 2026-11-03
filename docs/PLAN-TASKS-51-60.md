@@ -445,8 +445,8 @@ gantt
     Prisma Schema AI & OTA Models    :done,    sp1_1, 2026-11-03, 1d
     AI Content Generator (Task 51)   :done,    sp1_2, after sp1_1, 2d
     AI Hotel Chatbot FAQ (Task 52)   :done,    sp1_3, after sp1_2, 2d
-    AI Booking Assistant (Task 53)   :active,  sp1_4, after sp1_3, 2d
-    Dynamic Pricing Engine (Task 54) :         sp1_5, after sp1_4, 2d
+    AI Booking Assistant (Task 53)   :done,    sp1_4, after sp1_3, 2d
+    Dynamic Pricing Engine (Task 54) :active,  sp1_5, after sp1_4, 2d
     section Sprint 2: Kênh bán & OTA Sync
     Cấu hình OTA & Mapping (Task 55) :         sp2_1, after sp1_5, 3d
     Đồng bộ phòng 2 chiều (Task 56)  :         sp2_2, after sp2_1, 3d

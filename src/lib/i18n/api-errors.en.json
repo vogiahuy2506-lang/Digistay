@@ -683,7 +683,6 @@
   "Giới hạn lượt dùng phải lớn hơn 0": "The usage limit must be greater than 0",
   "Phần trăm giảm từ 1 đến 100": "The percent off is between 1 and 100",
   "Số tiền giảm phải lớn hơn 0": "The discount amount must be greater than 0",
-  "Ngày bắt đầu phải trước ngày kết thúc": "Start date must be before end date",
   "Đơn hàng chưa có giá trị để áp dụng mã": "The order has no value to apply a coupon to",
   "Đơn tối thiểu {0} mới dùng được mã này": "Orders of at least {0} can use this coupon",
   "Lỗi khi lấy danh sách mã giảm giá": "Couldn't load coupons",
