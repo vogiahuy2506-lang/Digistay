@@ -269,3 +269,4 @@ export async function searchAvailableRoomsForChat(
     return { cards: [], totalAvailable: 0 }
   }
 }
+

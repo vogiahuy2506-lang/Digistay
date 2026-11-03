@@ -44,3 +44,4 @@ describe('AI Natural Language Stay Date & Guest Parser', () => {
     expect(res.checkOut).toBe('2026-11-15')
   })
 })
+

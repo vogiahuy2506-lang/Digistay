@@ -110,3 +110,4 @@ ALTER TABLE "channel_room_mappings" ADD CONSTRAINT "channel_room_mappings_roomTy
 
 -- AddForeignKey
 ALTER TABLE "channel_sync_logs" ADD CONSTRAINT "channel_sync_logs_channelAccountId_fkey" FOREIGN KEY ("channelAccountId") REFERENCES "channel_accounts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
