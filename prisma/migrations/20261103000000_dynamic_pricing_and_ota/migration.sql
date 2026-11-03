@@ -1,3 +1,4 @@
+-- fixed-after-failed-deploy: Fix 63-char PostgreSQL index truncation for dynamic_pricing_suggestions
 -- CreateEnum
 CREATE TYPE "DynamicPricingStatus" AS ENUM ('PENDING', 'APPLIED', 'DISMISSED');
 
@@ -80,7 +81,7 @@ CREATE TABLE "channel_sync_logs" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "dynamic_pricing_suggestions_propertyId_roomTypeId_targetDate_key" ON "dynamic_pricing_suggestions"("propertyId", "roomTypeId", "targetDate");
+CREATE UNIQUE INDEX "dynamic_pricing_suggestions_propertyId_roomTypeId_targetDat_key" ON "dynamic_pricing_suggestions"("propertyId", "roomTypeId", "targetDate");
 CREATE INDEX "dynamic_pricing_suggestions_propertyId_status_targetDate_idx" ON "dynamic_pricing_suggestions"("propertyId", "status", "targetDate");
 
 -- CreateIndex
