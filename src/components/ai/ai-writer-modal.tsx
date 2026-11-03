@@ -131,7 +131,7 @@ export function AiWriterModal({
   }, [isOpen, contentType, initialArea, initialBedType])
 
   const handleTestApiKey = async () => {
-    if (!apiKey.trim()) {
+    if (!apiKey.trim() && !hasServerEnvKey) {
       toast.error('Vui lòng nhập khóa API Gemini để kiểm tra')
       return
     }
@@ -142,7 +142,7 @@ export function AiWriterModal({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          apiKey: apiKey.trim(),
+          apiKey: apiKey.trim() || undefined,
           model: selectedModel,
         }),
       })
@@ -152,8 +152,12 @@ export function AiWriterModal({
         throw new Error(data.error || 'Khóa API không hợp lệ')
       }
 
-      toast.success('Kết nối Google Gemini thành công! Khóa API hợp lệ.')
-      if (typeof window !== 'undefined') {
+      toast.success(
+        apiKey.trim()
+          ? 'Kết nối Google Gemini thành công! Khóa API cá nhân hợp lệ.'
+          : 'Kết nối Google Gemini thành công! Khóa API hệ thống (.env) hợp lệ.'
+      )
+      if (typeof window !== 'undefined' && apiKey.trim()) {
         localStorage.setItem(`digistay_ai_key_${propertyId}`, apiKey.trim())
         localStorage.setItem('digistay_ai_model', selectedModel)
       }
@@ -302,13 +306,22 @@ export function AiWriterModal({
               </a>
             </div>
 
+            {hasServerEnvKey && (
+              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-700 dark:text-emerald-300">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                <span>
+                  Hệ thống đã nhận diện khóa <strong>GEMINI_API_KEY</strong> từ file <code>.env</code> ({maskedServerKey || '****'}). Bạn không cần nhập gì thêm, AI tự động dùng key này!
+                </span>
+              </div>
+            )}
+
             <div className="space-y-1">
               <div className="relative">
                 <Input
                   type={showKeyText ? 'text' : 'password'}
                   placeholder={
                     hasServerEnvKey
-                      ? `Đang dùng key hệ thống (${maskedServerKey || '****'}). Nhập key riêng nếu muốn thay đổi.`
+                      ? `Đang dùng key hệ thống .env (${maskedServerKey || '****'}). Nhập key riêng nếu muốn thay đổi.`
                       : 'Dán khóa Gemini API Key vào đây (bắt đầu bằng AIzaSy...)'
                   }
                   value={apiKey}
@@ -347,7 +360,7 @@ export function AiWriterModal({
                   size="sm"
                   onClick={handleTestApiKey}
                   isLoading={isTestingKey}
-                  disabled={!apiKey.trim()}
+                  disabled={!apiKey.trim() && !hasServerEnvKey}
                   className="w-full text-xs"
                 >
                   Kiểm tra kết nối
@@ -376,7 +389,7 @@ export function AiWriterModal({
             ) : hasServerEnvKey ? (
               <>
                 <CheckCircle2 className="w-4 h-4 text-ok" />
-                <span className="text-fg font-medium">Đã kết nối Gemini API hệ thống ({selectedModel})</span>
+                <span className="text-fg font-medium">Đã kết nối Gemini API hệ thống .env ({selectedModel})</span>
               </>
             ) : (
               <>

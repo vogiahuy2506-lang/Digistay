@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { checkPropertyAccess } from '@/lib/auth/access'
-import { z } from 'zod'
+import { accessibleProperties } from '@/lib/auth/access'
 import { testGeminiApiKey } from '@/lib/ai/content-generator'
-
-const testKeySchema = z.object({
-  apiKey: z.string().min(1, 'Vui lòng cung cấp khóa API'),
-  model: z.string().optional().default('gemini-3.1-flash-lite'),
-})
 
 export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
   const params = await props.params
@@ -17,8 +12,13 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
       return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
     }
 
-    const access = await checkPropertyAccess(session.user.id, params.id, 'property_edit', 'Không tìm thấy cơ sở')
-    if (!access.ok) return access.response
+    const property = await prisma.property.findFirst({
+      where: { id: params.id, ...accessibleProperties(session.user.id) },
+      select: { id: true },
+    })
+    if (!property) {
+      return NextResponse.json({ success: false, error: 'Không tìm thấy cơ sở' }, { status: 403 })
+    }
 
     const envKey = process.env.GEMINI_API_KEY
     const hasEnvKey = Boolean(envKey && envKey.trim().length > 0)
@@ -47,17 +47,22 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
       return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
     }
 
-    const access = await checkPropertyAccess(session.user.id, params.id, 'property_edit', 'Không tìm thấy cơ sở')
-    if (!access.ok) return access.response
-
-    const body = await request.json().catch(() => null)
-    const parsed = testKeySchema.safeParse(body)
-    if (!parsed.success) {
-      return NextResponse.json({ success: false, error: parsed.error.errors[0]?.message || 'Dữ liệu không hợp lệ' }, { status: 400 })
+    const property = await prisma.property.findFirst({
+      where: { id: params.id, ...accessibleProperties(session.user.id) },
+      select: { id: true },
+    })
+    if (!property) {
+      return NextResponse.json({ success: false, error: 'Không tìm thấy cơ sở' }, { status: 403 })
     }
 
-    const { apiKey, model } = parsed.data
-    const testResult = await testGeminiApiKey(apiKey, model)
+    const body = await request.json().catch(() => null)
+    const keyToTest = (body?.apiKey && typeof body.apiKey === 'string' && body.apiKey.trim()) || process.env.GEMINI_API_KEY
+    if (!keyToTest) {
+      return NextResponse.json({ success: false, error: 'Vui lòng cung cấp khóa API' }, { status: 400 })
+    }
+
+    const model = (body?.model && typeof body.model === 'string') ? body.model : 'gemini-3.1-flash-lite'
+    const testResult = await testGeminiApiKey(keyToTest, model)
 
     if (!testResult.ok) {
       return NextResponse.json({

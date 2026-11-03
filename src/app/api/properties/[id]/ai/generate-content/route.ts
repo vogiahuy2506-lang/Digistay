@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { checkPropertyAccess } from '@/lib/auth/access'
+import { accessibleProperties } from '@/lib/auth/access'
 import { z } from 'zod'
 import { generateHospitalityContent } from '@/lib/ai/content-generator'
 import { AiContentType, AiLanguage, AiTone } from '@/lib/ai/types'
@@ -28,8 +28,13 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
       return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
     }
 
-    const access = await checkPropertyAccess(session.user.id, params.id, 'property_edit', 'Không tìm thấy cơ sở')
-    if (!access.ok) return access.response
+    const property = await prisma.property.findFirst({
+      where: { id: params.id, ...accessibleProperties(session.user.id) },
+      select: { id: true, name: true },
+    })
+    if (!property) {
+      return NextResponse.json({ success: false, error: 'Không tìm thấy cơ sở' }, { status: 403 })
+    }
 
     const body = await request.json().catch(() => null)
     const parsed = generateSchema.safeParse(body)
@@ -37,14 +42,9 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
       return NextResponse.json({ success: false, error: parsed.error.errors[0]?.message || 'Dữ liệu không hợp lệ' }, { status: 400 })
     }
 
-    const property = await prisma.property.findUnique({
-      where: { id: params.id },
-      select: { name: true },
-    })
-
     const input = {
       ...parsed.data,
-      propertyName: property?.name || 'Khách sạn',
+      propertyName: property.name || 'Khách sạn',
     }
 
     const generated = await generateHospitalityContent(input)
