@@ -1,4 +1,12 @@
 {
+  "Đã xảy ra lỗi khi lấy gợi ý giá": "An error occurred while fetching pricing suggestions",
+  "Đã phân tích và cập nhật {0} gợi ý định giá": "Analyzed and updated {0} pricing suggestions",
+  "Đã xảy ra lỗi khi tạo gợi ý giá": "An error occurred while generating pricing suggestions",
+  "Không tìm thấy gợi ý định giá": "Pricing suggestion not found",
+  "Đã áp dụng mức giá gợi ý thành công": "Suggested price applied successfully",
+  "Đã bỏ qua gợi ý này": "Pricing suggestion dismissed",
+  "Hành động không hợp lệ": "Invalid action",
+  "Đã xảy ra lỗi khi cập nhật gợi ý giá": "An error occurred while updating the pricing suggestion",
   "Lễ tân ảo {0}": "Virtual Receptionist {0}",
   "Xin chào quý khách! Em là Trợ lý AI của {0}. Em có thể giải đáp tự động 24/7 về giờ check-in, thực đơn, quy định thú cưng hoặc thông tin các hạng phòng. Quý khách cần hỗ trợ gì ạ?": "Welcome! I am the AI Assistant of {0}. I can help you 24/7 with check-in/out times, dining menus, pet policies, or room information. How may I assist you?",
   "Giờ check-in và check-out?": "Check-in and check-out hours?",

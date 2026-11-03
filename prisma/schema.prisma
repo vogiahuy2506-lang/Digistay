@@ -505,6 +505,10 @@ model Property {
   customerProfiles CustomerProfile[]
   reviews          Review[]
 
+  // AI & Channel Manager (tasks 51-60)
+  dynamicPricingSuggestions DynamicPricingSuggestion[]
+  channelAccounts           ChannelAccount[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -552,9 +556,11 @@ model RoomType {
   maxOccupancy  Int @default(4)
 
   // Relations
-  images    RoomTypeImage[]
-  pricing   RoomTypePricing[]
-  amenities RoomTypeAmenity[]
+  images                     RoomTypeImage[]
+  pricing                    RoomTypePricing[]
+  amenities                  RoomTypeAmenity[]
+  dynamicPricingSuggestions  DynamicPricingSuggestion[]
+  channelRoomMappings        ChannelRoomMapping[]
 
   isActive     Boolean   @default(true)
   /// Locked because the workspace is over its plan's room limit (src/lib/billing/overage.ts): no new bookings into it
@@ -989,6 +995,10 @@ model Booking {
   /// Email xin đánh giá sau chuyến đi đã gửi lúc nào (task 50); null: chưa gửi.
   postStayEmailSentAt DateTime?
 
+  // Channel Manager (tasks 55, 56)
+  channelBookingId String?
+  channelMetadata  Json?
+
   // Relations
   bookingItems BookingItem[]
   roomSegments BookingRoomSegment[]
@@ -1005,6 +1015,7 @@ model Booking {
   @@index([bookingCode])
   @@index([status])
   @@index([checkInDate])
+  @@index([propertyId, channelBookingId])
   @@map("bookings")
 }
 
@@ -1842,3 +1853,129 @@ model Review {
   @@index([propertyId, isPublished, rating])
   @@map("reviews")
 }
+
+// ============================================
+// DYNAMIC PRICING (Task 54)
+// ============================================
+
+enum DynamicPricingStatus {
+  PENDING
+  APPLIED
+  DISMISSED
+}
+
+model DynamicPricingSuggestion {
+  id               String               @id @default(cuid())
+  propertyId       String
+  property         Property             @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  roomTypeId       String
+  roomType         RoomType             @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+
+  targetDate       DateTime
+  currentPrice     Float
+  suggestedPrice   Float
+  percentageChange Float
+  reasoningVi      String
+  reasoningEn      String?
+
+  status           DynamicPricingStatus @default(PENDING)
+  appliedAt        DateTime?
+
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  @@unique([propertyId, roomTypeId, targetDate])
+  @@index([propertyId, status, targetDate])
+  @@map("dynamic_pricing_suggestions")
+}
+
+// ============================================
+// CHANNEL MANAGER (Tasks 55, 56)
+// ============================================
+
+enum OtaChannel {
+  AGODA
+  BOOKING_COM
+  AIRBNB
+  TRAVELOKA
+  EXPEDIA
+}
+
+enum ChannelSyncStatus {
+  SUCCESS
+  FAILED
+  PENDING
+  PARTIAL
+}
+
+enum ChannelSyncDirection {
+  OUTBOUND_AVAILABILITY
+  OUTBOUND_RATE
+  INBOUND_BOOKING
+  INBOUND_CANCELLATION
+}
+
+model ChannelAccount {
+  id              String               @id @default(cuid())
+  propertyId      String
+  property        Property             @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  channel         OtaChannel
+  hotelIdentifier String
+  encryptedConfig String
+
+  isActive        Boolean              @default(false)
+  lastSyncedAt    DateTime?
+  lastError       String?
+
+  mappings        ChannelRoomMapping[]
+  syncLogs        ChannelSyncLog[]
+
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  @@unique([propertyId, channel])
+  @@index([propertyId, isActive])
+  @@map("channel_accounts")
+}
+
+model ChannelRoomMapping {
+  id                String         @id @default(cuid())
+  channelAccountId  String
+  channelAccount    ChannelAccount @relation(fields: [channelAccountId], references: [id], onDelete: Cascade)
+
+  roomTypeId        String
+  roomType          RoomType       @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+
+  channelRoomId     String
+  channelRoomName   String?
+  channelRatePlanId String?
+
+  rateMultiplier    Float          @default(1.0)
+  isSyncEnabled     Boolean        @default(true)
+
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@unique([channelAccountId, roomTypeId])
+  @@index([channelAccountId, isSyncEnabled])
+  @@map("channel_room_mappings")
+}
+
+model ChannelSyncLog {
+  id               String               @id @default(cuid())
+  channelAccountId String
+  channelAccount   ChannelAccount       @relation(fields: [channelAccountId], references: [id], onDelete: Cascade)
+
+  direction        ChannelSyncDirection
+  status           ChannelSyncStatus
+  payload          Json?
+  response         Json?
+  errorMessage     String?
+
+  createdAt        DateTime             @default(now())
+
+  @@index([channelAccountId, createdAt])
+  @@map("channel_sync_logs")
+}
+

@@ -11,6 +11,7 @@ import {
 import { AiWriterModal, type AiWriterApplyData } from '@/components/ai/ai-writer-modal'
 import { RoomList, type RoomTypeRooms } from './room-list'
 import { RoomTypePhotos } from './room-type-photos'
+import { DynamicPricingTab } from '@/components/pricing/dynamic-pricing-tab'
 import { resizedImage } from '@/lib/media/image-url'
 import { format, addDays } from 'date-fns'
 import { useTranslations } from 'next-intl'
@@ -102,7 +103,7 @@ export default function RoomTypesPage() {
   }
 
   // Maintenance state
-  const [activeTab, setActiveTab] = React.useState<'rooms' | 'list' | 'maintenance'>('rooms')
+  const [activeTab, setActiveTab] = React.useState<'rooms' | 'list' | 'maintenance' | 'pricing'>('rooms')
   // The hotel's numbered rooms per type (room-list.tsx): a listed type's count follows them.
   const [listed, setListed] = React.useState<RoomTypeRooms[]>([])
   const loadListed = React.useCallback(async () => {
@@ -510,8 +511,17 @@ export default function RoomTypesPage() {
               <Wrench className="w-4 h-4 inline mr-2" aria-hidden="true" />
               {t('tabs.maintenance')}
             </TabsTrigger>
+            <TabsTrigger value="pricing">
+              <Sparkles className="w-4 h-4 inline mr-2 text-primary" aria-hidden="true" />
+              Định giá AI
+            </TabsTrigger>
           </TabsList>
         </Tabs>
+
+        {/* Dynamic Pricing Tab */}
+        {activeTab === 'pricing' && selectedProperty && (
+          <DynamicPricingTab propertyId={selectedProperty} />
+        )}
 
         {/* Room list Tab */}
         {activeTab === 'list' && selectedProperty && (
