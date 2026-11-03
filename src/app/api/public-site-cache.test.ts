@@ -42,6 +42,7 @@ const EXEMPT: Record<string, string> = {
 /** Library code that writes those models on its own (a job), and drops the cache itself. */
 const LIB_WRITERS: Record<string, string> = {
   'src/lib/billing/overage.ts': 'locks and unlocks properties and room types over the plan (the plan jobs)',
+  'src/lib/pricing/dynamic-pricing.ts': 'applies dynamic pricing suggestions to room type prices and invalidates cache',
 }
 
 function files(dir: string, keep: (f: string) => boolean): string[] {
