@@ -60,6 +60,8 @@ const backdateWorkspace = (id: string, days: number) =>
 const stayNow = () => ({ checkInDate: new Date(Date.now() - DAY), checkOutDate: new Date(Date.now() + DAY) })
 /** A stay that ended last week. */
 const stayPast = () => ({ checkInDate: new Date(Date.now() - 9 * DAY), checkOutDate: new Date(Date.now() - 7 * DAY) })
+/** An upcoming stay: check-in tomorrow, check-out in 3 days. */
+const stayUpcoming = () => ({ checkInDate: new Date(Date.now() + DAY), checkOutDate: new Date(Date.now() + 3 * DAY) })
 
 beforeAll(() => {
   process.env.CRON_SECRET = CRON
@@ -101,8 +103,8 @@ describe('DELETE /api/properties/[id]', () => {
     await createBooking(property.id, { status: 'NO_SHOW' })
     await prisma.booking.update({ where: { id: (await createBooking(property.id, { status: 'CHECKED_OUT' })).id }, data: stayNow() })
     // These do: upcoming (pending, confirmed), and a guest still in past their check-out day.
-    await createBooking(property.id)
-    await createBooking(property.id, { status: 'CONFIRMED' })
+    await createBooking(property.id, stayUpcoming())
+    await createBooking(property.id, { status: 'CONFIRMED', ...stayUpcoming() })
     await prisma.booking.update({ where: { id: (await createBooking(property.id, { status: 'CHECKED_IN' })).id }, data: stayPast() })
 
     const preflight = await (await propertyDeletion(req('/x', 'GET'), params(property.id))).json()
@@ -386,7 +388,7 @@ describe('deleting a workspace', () => {
     const second = await prisma.property.create({
       data: { workspaceId: workspace.id, name: 'Thứ hai', slug: 'thu-hai', type: 'HOTEL', address: '1', city: 'Huế', subdomain: 'thu-hai' },
     })
-    await createBooking(second.id, { status: 'CONFIRMED' })
+    await createBooking(second.id, { status: 'CONFIRMED', ...stayUpcoming() })
     const res = await delWorkspace(workspace.id, workspace.name)
     expect(res.status).toBe(409)
     expect(await res.json()).toMatchObject({ code: 'GUESTS_BOOKED', count: 1 })

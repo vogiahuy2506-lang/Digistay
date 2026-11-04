@@ -102,7 +102,13 @@ export async function addMemberProperty(workspaceId: string, userId: string, pro
 
 export function createBooking(
   propertyId: string,
-  opts: { totalAmount?: number; status?: BookingStatus; guestEmail?: string } = {}
+  opts: {
+    totalAmount?: number
+    status?: BookingStatus
+    guestEmail?: string
+    checkInDate?: Date
+    checkOutDate?: Date
+  } = {}
 ) {
   const total = opts.totalAmount ?? 1_000_000
   return prisma.booking.create({
@@ -112,8 +118,8 @@ export function createBooking(
       guestName: 'Test Guest',
       guestEmail: opts.guestEmail ?? `g-${uid()}@example.com`,
       guestPhone: '0900000000',
-      checkInDate: new Date('2026-11-01T14:00:00Z'),
-      checkOutDate: new Date('2026-11-03T12:00:00Z'),
+      checkInDate: opts.checkInDate ?? new Date('2026-11-01T14:00:00Z'),
+      checkOutDate: opts.checkOutDate ?? new Date('2026-11-03T12:00:00Z'),
       subtotal: total,
       totalAmount: total,
       status: opts.status ?? 'PENDING',
