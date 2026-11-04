@@ -7,7 +7,6 @@ import {
   ModalBody,
   ModalFooter,
   Button,
-  Input,
   Textarea,
   Select,
   Badge,
@@ -16,13 +15,7 @@ import {
   Sparkles,
   Check,
   Wand2,
-  Settings2,
-  ExternalLink,
-  Eye,
-  EyeOff,
   CheckCircle2,
-  AlertTriangle,
-  Key,
 } from 'lucide-react'
 import { toast } from '@/components/ui/toast'
 import { AiContentType, AiLanguage, AiTone, GenerateContentOutput } from '@/lib/ai/types'
@@ -81,37 +74,6 @@ export function AiWriterModal({
   const [result, setResult] = React.useState<GenerateContentOutput | null>(null)
   const [previewTab, setPreviewTab] = React.useState<'vi' | 'en'>('vi')
 
-  // API Key & Model Setup State
-  const [showApiSettings, setShowApiSettings] = React.useState(false)
-  const [apiKey, setApiKey] = React.useState('')
-  const [selectedModel, setSelectedModel] = React.useState('gemini-3.1-flash-lite')
-  const [showKeyText, setShowKeyText] = React.useState(false)
-  const [isTestingKey, setIsTestingKey] = React.useState(false)
-  const [hasServerEnvKey, setHasServerEnvKey] = React.useState(false)
-  const [maskedServerKey, setMaskedServerKey] = React.useState<string | null>(null)
-
-  // Load saved API Key from localStorage or check server config
-  React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedKey = localStorage.getItem(`digistay_ai_key_${propertyId}`) || localStorage.getItem('digistay_ai_key') || ''
-      const savedModel = localStorage.getItem('digistay_ai_model') || 'gemini-3.1-flash-lite'
-      if (savedKey) setApiKey(savedKey)
-      if (savedModel) setSelectedModel(savedModel)
-    }
-
-    if (isOpen && propertyId) {
-      fetch(`/api/properties/${propertyId}/ai/config`)
-        .then((res) => (res.ok ? res.json() : null))
-        .then((json) => {
-          if (json?.success && json.data) {
-            setHasServerEnvKey(Boolean(json.data.hasEnvKey))
-            setMaskedServerKey(json.data.maskedKey)
-          }
-        })
-        .catch(() => {})
-    }
-  }, [isOpen, propertyId])
-
   // Reset or preset keywords when opened
   React.useEffect(() => {
     if (isOpen) {
@@ -129,58 +91,6 @@ export function AiWriterModal({
       })
     }
   }, [isOpen, contentType, initialArea, initialBedType])
-
-  const handleTestApiKey = async () => {
-    if (!apiKey.trim() && !hasServerEnvKey) {
-      toast.error('Vui lòng nhập khóa API Gemini để kiểm tra')
-      return
-    }
-
-    setIsTestingKey(true)
-    try {
-      const res = await fetch(`/api/properties/${propertyId}/ai/config`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          apiKey: apiKey.trim() || undefined,
-          model: selectedModel,
-        }),
-      })
-
-      const data = await res.json()
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Khóa API không hợp lệ')
-      }
-
-      toast.success(
-        apiKey.trim()
-          ? 'Kết nối Google Gemini thành công! Khóa API cá nhân hợp lệ.'
-          : 'Kết nối Google Gemini thành công! Khóa API hệ thống (.env) hợp lệ.'
-      )
-      if (typeof window !== 'undefined' && apiKey.trim()) {
-        localStorage.setItem(`digistay_ai_key_${propertyId}`, apiKey.trim())
-        localStorage.setItem('digistay_ai_model', selectedModel)
-      }
-    } catch (err: any) {
-      toast.error(err.message || 'Không thể xác thực khóa API Gemini')
-    } finally {
-      setIsTestingKey(false)
-    }
-  }
-
-  const handleSaveApiKey = () => {
-    if (typeof window !== 'undefined') {
-      if (apiKey.trim()) {
-        localStorage.setItem(`digistay_ai_key_${propertyId}`, apiKey.trim())
-        localStorage.setItem('digistay_ai_model', selectedModel)
-        toast.success('Đã lưu cấu hình API Key vào trình duyệt!')
-      } else {
-        localStorage.removeItem(`digistay_ai_key_${propertyId}`)
-        toast.info('Đã xóa khóa cá nhân (sẽ dùng cấu hình hệ thống)')
-      }
-    }
-    setShowApiSettings(false)
-  }
 
   const handleGenerate = async () => {
     if (!keywords.trim()) {
@@ -203,8 +113,7 @@ export function AiWriterModal({
           tone,
           language,
           targetAudience: targetAudience.trim() || undefined,
-          apiKey: apiKey.trim() || undefined,
-          model: selectedModel,
+          model: 'gemini-3.1-flash-lite',
         }),
       })
 
@@ -242,12 +151,9 @@ export function AiWriterModal({
           }
         : undefined,
     })
-
-    toast.success('Đã tự động điền nội dung AI vào biểu mẫu!')
+    toast.success('Đã áp dụng nội dung vào biểu mẫu!')
     onClose()
   }
-
-  const isConfiguredWithKey = Boolean(apiKey.trim() || hasServerEnvKey)
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="lg">
@@ -261,7 +167,7 @@ export function AiWriterModal({
               <h3 className="font-semibold text-fg flex items-center gap-2">
                 Trợ lý AI viết nội dung tự động
                 <Badge variant="outline" className="text-acc border-acc/30 text-xs font-normal">
-                  Gemini & AI
+                  Gemini 3.1 Flash-Lite
                 </Badge>
               </h3>
               <p className="text-xs text-muted">
@@ -272,143 +178,14 @@ export function AiWriterModal({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setShowApiSettings((prev) => !prev)}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
-              showApiSettings
-                ? 'bg-acc/10 text-acc border-acc/30'
-                : 'bg-panel text-muted hover:text-fg border-line'
-            }`}
-          >
-            <Settings2 className="w-3.5 h-3.5" />
-            {isConfiguredWithKey ? 'Cấu hình API' : 'Thiết lập API Key'}
-          </button>
+          <Badge variant="outline" className="text-emerald-600 bg-emerald-500/10 border-emerald-500/20 text-xs font-medium flex items-center gap-1.5 py-1 px-2.5">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            Hệ thống AI sẵn sàng
+          </Badge>
         </div>
       </ModalHeader>
 
       <ModalBody className="space-y-4 py-4 max-h-[70vh] overflow-y-auto">
-        {/* API Settings Section */}
-        {showApiSettings && (
-          <div className="p-4 rounded-xl border border-line bg-panel space-y-3 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-fg flex items-center gap-1.5">
-                <Key className="w-3.5 h-3.5 text-acc" />
-                Cài đặt Khóa Google Gemini API
-              </span>
-              <a
-                href="https://aistudio.google.com/app/apikey"
-                target="_blank"
-                rel="noreferrer"
-                className="text-xs text-acc hover:underline inline-flex items-center gap-1"
-              >
-                Nhận API Key miễn phí <ExternalLink className="w-3 h-3" />
-              </a>
-            </div>
-
-            {hasServerEnvKey && (
-              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-700 dark:text-emerald-300">
-                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
-                <span>
-                  Hệ thống đã nhận diện khóa <strong>GEMINI_API_KEY</strong> từ file <code>.env</code> ({maskedServerKey || '****'}). Bạn không cần nhập gì thêm, AI tự động dùng key này!
-                </span>
-              </div>
-            )}
-
-            <div className="space-y-1">
-              <div className="relative">
-                <Input
-                  type={showKeyText ? 'text' : 'password'}
-                  placeholder={
-                    hasServerEnvKey
-                      ? `Đang dùng key hệ thống .env (${maskedServerKey || '****'}). Nhập key riêng nếu muốn thay đổi.`
-                      : 'Dán khóa Gemini API Key vào đây (bắt đầu bằng AIzaSy...)'
-                  }
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  className="pr-10 text-xs font-mono"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowKeyText(!showKeyText)}
-                  className="absolute right-3 top-2.5 text-muted hover:text-fg transition-colors"
-                >
-                  {showKeyText ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              <p className="text-[11px] text-muted">
-                Google cấp miễn phí 15 yêu cầu/phút không giới hạn thời gian. Khóa được bảo mật trong phiên làm việc của bạn.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <Select
-                label="Model Gemini"
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-              >
-                <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite (Khuyên dùng - Siêu nhanh & Tối ưu)</option>
-                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-                <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash-Lite</option>
-                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-              </Select>
-
-              <div className="flex items-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleTestApiKey}
-                  isLoading={isTestingKey}
-                  disabled={!apiKey.trim() && !hasServerEnvKey}
-                  className="w-full text-xs"
-                >
-                  Kiểm tra kết nối
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={handleSaveApiKey}
-                  className="w-full text-xs bg-acc text-acc-fg hover:bg-acc/90"
-                >
-                  Lưu thiết lập
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* API Status Banner */}
-        <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-ink/5 border border-line text-xs">
-          <div className="flex items-center gap-2">
-            {apiKey.trim() ? (
-              <>
-                <CheckCircle2 className="w-4 h-4 text-ok" />
-                <span className="text-fg font-medium">Đang sử dụng API Key cá nhân ({selectedModel})</span>
-              </>
-            ) : hasServerEnvKey ? (
-              <>
-                <CheckCircle2 className="w-4 h-4 text-ok" />
-                <span className="text-fg font-medium">Đã kết nối Gemini API hệ thống .env ({selectedModel})</span>
-              </>
-            ) : (
-              <>
-                <AlertTriangle className="w-4 h-4 text-warn" />
-                <span className="text-muted">Chưa cài API Key (Đang dùng Heuristic Copywriting Engine)</span>
-              </>
-            )}
-          </div>
-          {!isConfiguredWithKey && !showApiSettings && (
-            <button
-              type="button"
-              onClick={() => setShowApiSettings(true)}
-              className="text-acc font-medium hover:underline"
-            >
-              Cài đặt Key
-            </button>
-          )}
-        </div>
-
         {/* Keywords and options */}
         <div className="space-y-3">
           <Textarea
