@@ -169,7 +169,7 @@ export async function generateHospitalityContent(input: GenerateContentInput): P
   return generateHeuristicContent(input)
 }
 
-export const DEFAULT_GEMINI_MODEL = 'gemini-3.1-flash-lite'
+export const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash'
 
 /**
  * Validates a Google Gemini API Key by making a minimal ping request.
@@ -180,7 +180,7 @@ export async function testGeminiApiKey(apiKey: string, model = DEFAULT_GEMINI_MO
   }
 
   const trimmed = apiKey.trim()
-  const candidateModels = [model, 'gemini-2.5-flash', 'gemini-2.0-flash-lite']
+  const candidateModels = Array.from(new Set([model, 'gemini-2.5-flash', 'gemini-3.1-flash-lite', 'gemini-1.5-flash']))
 
   for (const m of candidateModels) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${trimmed}`
@@ -221,7 +221,7 @@ export async function testGeminiApiKey(apiKey: string, model = DEFAULT_GEMINI_MO
 async function callGeminiApi(input: GenerateContentInput, apiKey: string): Promise<GenerateContentOutput | null> {
   const prompt = buildAiPrompt(input)
   const targetModel = input.model || DEFAULT_GEMINI_MODEL
-  const candidateModels = [targetModel, 'gemini-2.5-flash', 'gemini-2.0-flash-lite']
+  const candidateModels = Array.from(new Set([targetModel, 'gemini-2.5-flash', 'gemini-3.1-flash-lite', 'gemini-1.5-flash']))
 
   for (const m of candidateModels) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`

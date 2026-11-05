@@ -7,6 +7,7 @@
 
 import { prisma } from '@/lib/db'
 import { invalidatePublicSite } from '@/lib/public-site/site'
+import { DEFAULT_GEMINI_MODEL } from '@/lib/ai/content-generator'
 import type { DynamicPricingStatus } from '@prisma/client'
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -193,6 +194,111 @@ export function evaluatePricingRule(params: {
   }
 }
 
+interface PricingBatchInput {
+  targetDate: string
+  dayOfWeek: string
+  occupancyRate: number
+  leadDays: number
+  holiday: string | null
+  currentPrice: number
+}
+
+interface PricingBatchOutput {
+  targetDate: string
+  suggestedPrice: number
+  percentageChange: number
+  reasoningVi: string
+  reasoningEn: string
+}
+
+/**
+ * Batches occupancy and calendar parameters to Google Gemini to formulate intelligent,
+ * revenue-maximizing pricing recommendations with human-expert reasoning.
+ */
+async function batchAnalyzePricingWithGemini(
+  hotelName: string,
+  roomTypeName: string,
+  basePrice: number,
+  items: PricingBatchInput[],
+  apiKey: string,
+  model = DEFAULT_GEMINI_MODEL
+): Promise<Map<string, PricingBatchOutput>> {
+  const result = new Map<string, PricingBatchOutput>()
+  if (items.length === 0) return result
+
+  const prompt = `Bạn là Giám đốc Quản trị Doanh thu Khách sạn (Hotel Revenue Director) AI.
+Nhiệm vụ: Phân tích danh sách các ngày sau cho khách sạn "${hotelName}", hạng phòng "${roomTypeName}", giá cơ sở ${basePrice.toLocaleString('vi-VN')} VNĐ để đưa ra chiến lược tối ưu RevPAR.
+
+Danh sách ngày cần định giá:
+${JSON.stringify(items, null, 2)}
+
+Yêu cầu:
+1. Đánh giá tính co giãn của cầu dựa trên: tỷ lệ lấp đầy (occupancyRate), số ngày đặt trước (leadDays), cuối tuần/ngày thường, và dịp lễ (holiday).
+2. Đưa ra percentageChange hợp lý (từ -25% đến +35%), suggestedPrice (làm tròn đến hàng nghìn VNĐ).
+3. Viết giải thích ngắn gọn, chuyên nghiệp và có căn cứ dữ liệu rõ ràng cho cả reasoningVi và reasoningEn.
+4. Trả về DUY NHẤT một JSON array hợp lệ (không kèm markdown):
+[
+  {
+    "targetDate": "YYYY-MM-DD",
+    "suggestedPrice": number,
+    "percentageChange": number,
+    "reasoningVi": "string",
+    "reasoningEn": "string"
+  }
+]`
+
+  const candidateModels = Array.from(new Set([model, 'gemini-2.5-flash', 'gemini-3.1-flash-lite', 'gemini-1.5-flash']))
+
+  for (const m of candidateModels) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            temperature: 0.3,
+          },
+        }),
+      })
+
+      if (!response.ok) {
+        if (response.status === 404 && m !== candidateModels[candidateModels.length - 1]) {
+          continue
+        }
+        break
+      }
+
+      const json = await response.json()
+      let candidateText = json.candidates?.[0]?.content?.parts?.[0]?.text
+      if (!candidateText) continue
+
+      candidateText = candidateText.trim()
+      if (candidateText.startsWith('```json')) {
+        candidateText = candidateText.replace(/^```json\s*/, '').replace(/\s*```$/, '')
+      } else if (candidateText.startsWith('```')) {
+        candidateText = candidateText.replace(/^```\s*/, '').replace(/\s*```$/, '')
+      }
+
+      const parsed: PricingBatchOutput[] = JSON.parse(candidateText)
+      if (Array.isArray(parsed)) {
+        for (const p of parsed) {
+          if (p.targetDate && typeof p.suggestedPrice === 'number') {
+            result.set(p.targetDate, p)
+          }
+        }
+        return result
+      }
+    } catch (err) {
+      console.warn(`[Dynamic Pricing AI] Failed with model ${m}:`, err)
+    }
+  }
+
+  return result
+}
+
 /**
  * Computes forward occupancy and generates AI dynamic pricing suggestions for a property
  */
@@ -207,6 +313,13 @@ export async function generateDynamicPricingSuggestions(
   const daysAhead = Math.min(Math.max(options?.daysAhead ?? 30, 7), 60)
   const now = new Date()
   const todayVn = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+
+  const property = await prisma.property.findUnique({
+    where: { id: propertyId },
+    select: { name: true },
+  })
+  const propertyName = property?.name || 'Khách sạn'
+  const geminiKey = options?.apiKey || process.env.GEMINI_API_KEY
 
   // 1. Fetch Room Types with pricing and active rooms count
   const roomTypes = await prisma.roomType.findMany({
@@ -252,6 +365,17 @@ export async function generateDynamicPricingSuggestions(
 
     const totalRooms = rt.rooms.length > 0 ? rt.rooms.length : rt.totalRooms || 1
 
+    const candidateDays: Array<{
+      targetDate: Date
+      targetDateStr: string
+      currentPrice: number
+      occupancyRate: number
+      leadDays: number
+      isWeekend: boolean
+      holiday: HolidayInfo | null
+      ruleRec: PricingRuleRecommendation
+    }> = []
+
     for (let dayOffset = 0; dayOffset < daysAhead; dayOffset++) {
       const targetDate = new Date(todayVn.getTime() + dayOffset * DAY_MS)
       const isWeekend = isWeekendNight(targetDate)
@@ -269,7 +393,7 @@ export async function generateDynamicPricingSuggestions(
 
       const occupancyRate = Math.min(1.0, bookedRooms / totalRooms)
 
-      const rec = evaluatePricingRule({
+      const ruleRec = evaluatePricingRule({
         currentPrice,
         occupancyRate,
         isWeekend,
@@ -277,17 +401,61 @@ export async function generateDynamicPricingSuggestions(
         leadDays: dayOffset,
       })
 
-      // Only generate actionable suggestions (non-zero change)
-      if (rec.percentageChange !== 0) {
+      // Collect candidates with non-zero potential or notable factors
+      if (ruleRec.percentageChange !== 0 || isWeekend || holiday || occupancyRate > 0.5) {
+        const targetDateStr = `${targetDate.getUTCFullYear()}-${String(targetDate.getUTCMonth() + 1).padStart(2, '0')}-${String(targetDate.getUTCDate()).padStart(2, '0')}`
+        candidateDays.push({
+          targetDate,
+          targetDateStr,
+          currentPrice,
+          occupancyRate,
+          leadDays: dayOffset,
+          isWeekend,
+          holiday,
+          ruleRec,
+        })
+      }
+    }
+
+    let aiResults = new Map<string, PricingBatchOutput>()
+    if (geminiKey && candidateDays.length > 0) {
+      const dayNames = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy']
+      const batchInput: PricingBatchInput[] = candidateDays.slice(0, 30).map((d) => ({
+        targetDate: d.targetDateStr,
+        dayOfWeek: `${dayNames[d.targetDate.getUTCDay()]}${d.isWeekend ? ' (Cuối tuần)' : ''}`,
+        occupancyRate: Math.round(d.occupancyRate * 100) / 100,
+        leadDays: d.leadDays,
+        holiday: d.holiday?.nameVi || null,
+        currentPrice: d.currentPrice,
+      }))
+
+      aiResults = await batchAnalyzePricingWithGemini(
+        propertyName,
+        rt.name,
+        priceRow.weekdayPrice,
+        batchInput,
+        geminiKey,
+        options?.model
+      )
+    }
+
+    for (const item of candidateDays) {
+      const ai = aiResults.get(item.targetDateStr)
+      const suggestedPrice = ai ? ai.suggestedPrice : item.ruleRec.suggestedPrice
+      const percentageChange = ai ? ai.percentageChange : item.ruleRec.percentageChange
+      const reasoningVi = ai ? ai.reasoningVi : item.ruleRec.reasoningVi
+      const reasoningEn = ai ? ai.reasoningEn : item.ruleRec.reasoningEn
+
+      if (percentageChange !== 0) {
         suggestionsToSave.push({
           propertyId,
           roomTypeId: rt.id,
-          targetDate,
-          currentPrice,
-          suggestedPrice: rec.suggestedPrice,
-          percentageChange: rec.percentageChange,
-          reasoningVi: rec.reasoningVi,
-          reasoningEn: rec.reasoningEn,
+          targetDate: item.targetDate,
+          currentPrice: item.currentPrice,
+          suggestedPrice,
+          percentageChange,
+          reasoningVi,
+          reasoningEn,
         })
       }
     }
