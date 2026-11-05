@@ -176,7 +176,7 @@ jobs:
       # --------------------------------------------------------------
       - name: Fetch the reviewed VPS deploy script
         if: steps.target.outputs.skip != 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ steps.target.outputs.sha }}
           sparse-checkout: docker/vps
