@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { signIn } from 'next-auth/react'
+import { getSession, signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { inkButton, textLink } from '@/components/marketing/styles'
@@ -33,6 +33,7 @@ export function LoginForm({ google }: { google: boolean }) {
   const [sendingCode, setSendingCode] = React.useState(false)
   // Set when the account has two-factor on: the code step replaces the form.
   const [challenge, setChallenge] = React.useState<string | null>(null)
+  const [rawCallback, setRawCallback] = React.useState<string | null>(null)
   const [next, setNext] = React.useState('/workspaces')
   // Back from verifying the email on the sign-up page (?verified=1).
   const [verified, setVerified] = React.useState(false)
@@ -42,7 +43,9 @@ export function LoginForm({ google }: { google: boolean }) {
   // from the address bar and history.
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    setNext(afterLogin(params.get('callbackUrl')))
+    const raw = params.get('callbackUrl')
+    setRawCallback(raw)
+    setNext(afterLogin(raw))
     setVerified(params.get('verified') === '1')
     const fromGoogle = params.get(TWO_FACTOR_QUERY)
     if (fromGoogle) setChallenge(fromGoogle)
@@ -56,9 +59,17 @@ export function LoginForm({ google }: { google: boolean }) {
     }
   }, [t])
 
-  const goToApp = () => {
-    router.push(next)
-    router.refresh()
+  const goToApp = async () => {
+    try {
+      const session = await getSession()
+      const role = session?.user?.role
+      const target = afterLogin(rawCallback, role)
+      router.push(target)
+      router.refresh()
+    } catch {
+      router.push(next)
+      router.refresh()
+    }
   }
 
   const missing = { username: !form.username.trim(), password: !form.password }

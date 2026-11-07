@@ -123,6 +123,10 @@ export default function WorkspacesPage() {
       return
     }
     const [list, me] = await Promise.all([listRes.json(), meRes.json()])
+    if (me.success && me.data?.role === 'SUPER_ADMIN' && list.success && list.data?.length === 0) {
+      router.replace('/admin')
+      return
+    }
     if (list.success) setWorkspaces(list.data)
     if (me.success) setUser(me.data)
   }, [router])

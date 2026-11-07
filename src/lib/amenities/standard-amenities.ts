@@ -27,3 +27,4 @@ export const DEFAULT_AMENITIES: StandardAmenity[] = [
   { name: 'Phòng họp', slug: 'meeting', icon: 'Users', category: 'service' },
   { name: 'Sân vườn', slug: 'garden', icon: 'TreePine', category: 'entertainment' },
 ]
+
