@@ -287,10 +287,22 @@ export default function CustomersPage() {
               {accounts.data.rows.map((account) => (
                 <li key={account.id} className="flex items-start gap-3 py-3">
                   <div className="min-w-0 flex-1 space-y-1">
-                    <p className="truncate font-medium text-fg">
-                      {account.name || account.email}
-                      {account.username && <span className="ml-2 text-xs font-normal text-muted">@{account.username}</span>}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate font-medium text-fg">
+                        {account.name || account.email}
+                        {account.username && <span className="ml-2 text-xs font-normal text-muted">@{account.username}</span>}
+                      </p>
+                      {account.plan && (
+                        <span className="inline-flex items-center gap-1.5">
+                          <Pill tone={stateTone[account.plan.state]}>
+                            {planName(account.plan)}
+                          </Pill>
+                          <span className="text-xs text-muted">
+                            {account.plan.trial ? `(${t('plans.trial')})` : `(${t('plans.paid')})`} · {t('customers.endsOn', { date: labels.date(account.plan.periodEnd) })}
+                          </span>
+                        </span>
+                      )}
+                    </div>
                     <p className="truncate text-sm text-muted">
                       {account.email}
                       {account.phone && ` · ${account.phone}`}

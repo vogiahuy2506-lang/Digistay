@@ -88,7 +88,9 @@
   "plans": {
     "starter": "Starter",
     "growth": "Growth",
-    "business": "Business"
+    "business": "Business",
+    "trial": "Dùng thử",
+    "paid": "Trả phí"
   },
   "billing": {
     "MONTH": "Tháng",
@@ -162,10 +164,16 @@
     "empty": "Không có tài khoản nào khớp.",
     "actions": {
       "menu": "Thao tác với tài khoản",
+      "setPlan": "Gán / Đổi gói cước",
       "lock": "Khoá tài khoản",
       "unlock": "Mở khoá",
       "resetTwoFactor": "Đặt lại 2FA",
       "activity": "Xem nhật ký"
+    },
+    "userPlan": {
+      "title": "Gán gói cước cho {email}",
+      "lead": "Gói cước sẽ được gán cho tài khoản này và tự động áp dụng cho tất cả {count} workspace do tài khoản sở hữu.",
+      "done": "Đã cập nhật gói cước cho {email}"
     },
     "lock": {
       "title": "Khoá tài khoản {email}?",

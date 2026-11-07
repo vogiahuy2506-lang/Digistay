@@ -3,7 +3,7 @@ import { prisma, prismaWithDeleted } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { createWorkspaceSchema, validationMessage } from '@/lib/validations'
 import { generateSlug } from '@/lib/utils'
-import { trialFields } from '@/lib/billing/subscription'
+import { inheritedOrTrialFields } from '@/lib/billing/subscription'
 
 export async function GET() {
   try {
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    
+
     // Validate input
     const validation = createWorkspaceSchema.safeParse(body)
     if (!validation.success) {
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
     const baseSlug = customSlug || generateSlug(name)
     let slug = baseSlug
     let counter = 1
-    
+
     // Check if slug already exists and make it unique (a deleted workspace
     // keeps its slug until it is purged, src/lib/deletion)
     while (await prismaWithDeleted.workspace.findUnique({ where: { slug } })) {
@@ -139,8 +139,8 @@ export async function POST(request: NextRequest) {
         logo: logo || null,
         ownerId: session.user.id,
         settings: Object.keys(settings).length > 0 ? (settings as any) : undefined,
-        // Every new workspace starts with the trial (src/lib/billing).
-        subscription: { create: trialFields() },
+        // Inherits the owner's active plan if available, or starts a trial
+        subscription: { create: await inheritedOrTrialFields(session.user.id, prisma) },
       },
       include: {
         owner: {

@@ -4,7 +4,7 @@
  * or here on first read for a workspace that has none yet (made by an older
  * release, between the migration and the deploy).
  */
-import { Prisma, type PrismaClient, type Subscription } from '@prisma/client'
+import { Prisma, type BillingPeriod, type PrismaClient, type Subscription } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { sendAfterResponse } from '@/lib/email/outbox'
 import { isPlanId, planById, type Plan, type PlanId } from '@/lib/marketing/plans'
@@ -16,6 +16,38 @@ type Db = PrismaClient | Prisma.TransactionClient
 /** A new workspace's trial, for `workspace.create({ data: { subscription: { create: trialFields() } } })`. */
 export function trialFields(now = new Date()) {
   return { plan: TRIAL_PLAN, trial: true, periodStart: now, periodEnd: trialEndFrom(now) }
+}
+
+/**
+ * If the owner already has an active subscription in one of their workspaces,
+ * inherit it for newly created workspaces; otherwise start the default trial.
+ */
+export async function inheritedOrTrialFields(userId: string, db: Db = prisma, now = new Date()) {
+  const activeSub = await db.subscription.findFirst({
+    where: {
+      workspace: { ownerId: userId, deletedAt: null },
+      periodEnd: { gt: now },
+    },
+    orderBy: [
+      { trial: 'asc' }, // Prefer paid active subscriptions over trials
+      { periodEnd: 'desc' },
+    ],
+  })
+
+  if (activeSub) {
+    return {
+      plan: activeSub.plan,
+      trial: activeSub.trial,
+      billing: activeSub.billing,
+      periodStart: now,
+      periodEnd: activeSub.periodEnd,
+    }
+  }
+
+  return {
+    ...trialFields(now),
+    billing: null as BillingPeriod | null,
+  }
 }
 
 export async function ensureSubscription(workspaceId: string, db: Db = prisma, now = new Date()): Promise<Subscription> {

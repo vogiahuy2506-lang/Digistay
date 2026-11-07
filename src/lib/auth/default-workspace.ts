@@ -6,7 +6,7 @@
 import { randomBytes } from 'crypto'
 import { prisma, prismaWithDeleted } from '@/lib/db'
 import { generateSlug } from '@/lib/utils'
-import { trialFields } from '@/lib/billing/subscription'
+import { inheritedOrTrialFields } from '@/lib/billing/subscription'
 
 /** "Workspace của An": the app speaks Vietnamese, not "An's Workspace". */
 export function defaultWorkspaceName(name: string) {
@@ -24,7 +24,7 @@ export async function createDefaultWorkspace(userId: string, name: string) {
       slug,
       ownerId: userId,
       description: 'Không gian làm việc mặc định',
-      subscription: { create: trialFields() },
+      subscription: { create: await inheritedOrTrialFields(userId, prisma) },
     },
   })
 }

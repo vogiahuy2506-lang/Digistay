@@ -88,7 +88,9 @@
   "plans": {
     "starter": "Starter",
     "growth": "Growth",
-    "business": "Business"
+    "business": "Business",
+    "trial": "Trial",
+    "paid": "Paid"
   },
   "billing": {
     "MONTH": "Monthly",
@@ -162,10 +164,16 @@
     "empty": "No account matches.",
     "actions": {
       "menu": "Account actions",
+      "setPlan": "Assign / Change plan",
       "lock": "Lock account",
       "unlock": "Unlock",
       "resetTwoFactor": "Reset 2FA",
       "activity": "View activity"
+    },
+    "userPlan": {
+      "title": "Assign plan to {email}",
+      "lead": "This plan will be assigned to this account and automatically applied to all {count} workspace(s) owned by this account.",
+      "done": "Plan updated for {email}"
     },
     "lock": {
       "title": "Lock {email}?",

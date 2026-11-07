@@ -41,7 +41,7 @@ function stateWhere(state: SubscriptionStateName, now: Date): Prisma.WorkspaceWh
   }
 }
 
-function planView(sub: Subscription | null, now: Date) {
+export function planView(sub: Subscription | null, now = new Date()) {
   if (!sub) return null
   const state = subscriptionState(sub, now)
   return {
