@@ -36,8 +36,8 @@ BEGIN
   SELECT id INTO v_workspace_id FROM workspaces WHERE slug = 'nhphuc-resort';
 
   -- Gán quyền ADMIN trong workspace
-  INSERT INTO workspace_members (id, "workspaceId", "userId", role, "createdAt", "updatedAt")
-  VALUES ('wm_nhphuc_01', v_workspace_id, v_user_id, 'ADMIN', NOW(), NOW())
+  INSERT INTO workspace_members (id, "workspaceId", "userId", role, "joinedAt")
+  VALUES ('wm_nhphuc_01', v_workspace_id, v_user_id, 'ADMIN', NOW())
   ON CONFLICT ("workspaceId", "userId") DO UPDATE SET role = 'ADMIN';
 
   -- 3. Property
@@ -76,9 +76,9 @@ BEGIN
   SELECT id INTO v_property_id FROM properties WHERE subdomain = 'nhphuc';
 
   -- 4. WebsiteSettings & Policy
-  INSERT INTO website_settings (id, "propertyId", "primaryColor", "secondaryColor", "metaTitle", "metaDescription", "layout")
-  VALUES ('ws_set_' || v_property_id, v_property_id, '#0ea5e9', '#10b981', 'Digistay Riverside Boutique Resort Đà Nẵng', 'Khu nghỉ dưỡng 4 sao phong cách Boutique ven sông Hàn, Đà Nẵng', 'modern')
-  ON CONFLICT ("propertyId") DO UPDATE SET "primaryColor" = '#0ea5e9';
+  INSERT INTO website_settings (id, "propertyId", "primaryColor", "secondaryColor", "metaTitle", "metaDescription", layout, "isPublished", "publishedAt", "createdAt", "updatedAt")
+  VALUES ('ws_set_' || v_property_id, v_property_id, '#0ea5e9', '#10b981', 'Digistay Riverside Boutique Resort Đà Nẵng', 'Khu nghỉ dưỡng 4 sao phong cách Boutique ven sông Hàn, Đà Nẵng', 'modern', true, NOW(), NOW(), NOW())
+  ON CONFLICT ("propertyId") DO UPDATE SET "primaryColor" = '#0ea5e9', "isPublished" = true;
 
   INSERT INTO policies (id, "propertyId", "checkInTime", "checkOutTime", "childrenAllowed", "minChildAge", "petsAllowed", "smokingAllowed", "onlineDepositPercent", "createdAt", "updatedAt")
   VALUES ('pol_' || v_property_id, v_property_id, '14:00', '12:00', true, 0, true, false, 50, NOW(), NOW())
@@ -179,3 +179,4 @@ BEGIN
 
   RAISE NOTICE 'Hoàn tất khởi tạo dữ liệu demo cho tài khoản nhphuc!';
 END $$;
+
