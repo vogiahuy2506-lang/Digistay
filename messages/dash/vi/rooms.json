@@ -161,7 +161,7 @@
       "featuredCount": "{count} nổi bật",
       "choose": "Chọn tiện ích cho cơ sở",
       "search": "Tìm kiếm...",
-      "empty": "Chưa có tiện ích. Chạy <code>npx tsx prisma/seed-amenities.ts</code>",
+      "empty": "Chưa có tiện ích nào. Bạn có thể nhấn 'Thêm tiện ích riêng' ở trên để tạo tiện ích cho cơ sở.",
       "addCustom": "Thêm tiện ích riêng",
       "addCustomTitle": "Tạo tiện ích riêng của cơ sở",
       "customName": "Tên tiện ích",

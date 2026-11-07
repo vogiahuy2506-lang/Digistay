@@ -460,9 +460,7 @@ export default function ServicesPage() {
           ) : amenities.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed border-line rounded-lg">
               <p className="text-sm text-muted">
-                {t.rich('amenities.empty', {
-                  code: (chunks) => <code className="bg-fg/5 px-2 py-0.5 rounded text-xs">{chunks}</code>,
-                })}
+                {t('amenities.empty')}
               </p>
             </div>
           ) : (

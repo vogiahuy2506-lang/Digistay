@@ -161,7 +161,7 @@
       "featuredCount": "{count} featured",
       "choose": "Choose the property’s amenities",
       "search": "Search...",
-      "empty": "No amenities yet. Run <code>npx tsx prisma/seed-amenities.ts</code>",
+      "empty": "No amenities yet. You can click 'Add custom amenity' above to create one.",
       "addCustom": "Add custom amenity",
       "addCustomTitle": "Create a custom amenity for this property",
       "customName": "Amenity name",

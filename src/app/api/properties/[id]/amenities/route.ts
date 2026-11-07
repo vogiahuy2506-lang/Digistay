@@ -48,8 +48,41 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Không có quyền' }, { status: 403 })
     }
 
-    const [allAmenities, selected] = await Promise.all([
-      prisma.amenity.findMany({
+    let allAmenities = await prisma.amenity.findMany({
+      where: {
+        OR: [
+          { slug: { not: { startsWith: 'custom-' } } },
+          { properties: { some: { propertyId: params.id } } },
+        ],
+      },
+      orderBy: [{ category: 'asc' }, { name: 'asc' }],
+    })
+
+    if (allAmenities.length === 0) {
+      const DEFAULT_AMENITIES = [
+        { name: 'Wifi miễn phí', slug: 'wifi', icon: 'Wifi', category: 'internet' },
+        { name: 'Bãi đỗ xe', slug: 'parking', icon: 'Car', category: 'parking' },
+        { name: 'Nhà hàng', slug: 'restaurant', icon: 'Utensils', category: 'food' },
+        { name: 'Hồ bơi', slug: 'pool', icon: 'Waves', category: 'entertainment' },
+        { name: 'Phòng gym', slug: 'gym', icon: 'Dumbbell', category: 'entertainment' },
+        { name: 'Bar & Cafe', slug: 'cafe', icon: 'Coffee', category: 'food' },
+        { name: 'Spa & Massage', slug: 'spa', icon: 'Sun', category: 'entertainment' },
+        { name: 'An ninh 24/7', slug: 'security', icon: 'Shield', category: 'security' },
+        { name: 'Điều hòa', slug: 'ac', icon: 'Snowflake', category: 'room' },
+        { name: 'TV', slug: 'tv', icon: 'Tv', category: 'room' },
+        { name: 'Mini bar', slug: 'minibar', icon: 'Coffee', category: 'room' },
+        { name: 'Giặt ủi', slug: 'laundry', icon: 'Shirt', category: 'service' },
+        { name: 'Đưa đón sân bay', slug: 'airport', icon: 'Plane', category: 'service' },
+        { name: 'Cho phép thú cưng', slug: 'pet', icon: 'Dog', category: 'policy' },
+        { name: 'Cho phép hút thuốc', slug: 'smoking', icon: 'Cigarette', category: 'policy' },
+        { name: 'Lễ tân 24/7', slug: 'frontdesk', icon: 'ConciergeBell', category: 'service' },
+        { name: 'Bữa sáng miễn phí', slug: 'breakfast', icon: 'Utensils', category: 'food' },
+        { name: 'Thang máy', slug: 'elevator', icon: 'ArrowUpDown', category: 'room' },
+        { name: 'Phòng họp', slug: 'meeting', icon: 'Users', category: 'service' },
+        { name: 'Sân vườn', slug: 'garden', icon: 'TreePine', category: 'entertainment' },
+      ]
+      await prisma.amenity.createMany({ data: DEFAULT_AMENITIES, skipDuplicates: true })
+      allAmenities = await prisma.amenity.findMany({
         where: {
           OR: [
             { slug: { not: { startsWith: 'custom-' } } },
@@ -57,18 +90,19 @@ export async function GET(
           ],
         },
         orderBy: [{ category: 'asc' }, { name: 'asc' }],
-      }),
-      prisma.propertyAmenity.findMany({
-        where: { propertyId: params.id },
-        select: {
-          amenityId: true,
-          isFeatured: true,
-          customName: true,
-          images: true,
-          sortOrder: true,
-        },
-      }),
-    ])
+      })
+    }
+
+    const selected = await prisma.propertyAmenity.findMany({
+      where: { propertyId: params.id },
+      select: {
+        amenityId: true,
+        isFeatured: true,
+        customName: true,
+        images: true,
+        sortOrder: true,
+      },
+    })
 
     const selectedMap = new Map(selected.map((s) => [s.amenityId, s]))
 
