@@ -357,6 +357,9 @@ export async function createBooking(input: NewBooking) {
     // The bell in the dashboard, beside the owner's email (src/lib/notifications.ts).
     await notifyNewBooking(tx, booking)
     return { booking, emailIds, quote }
+  }, {
+    maxWait: 10000, // Chờ tới 10s lấy connection từ pool khi có tải đột biến (flash sale / 100 concurrent)
+    timeout: 20000, // Timeout 20s đảm bảo hàng đợi lock được xử lý tuần tự không bị drop
   })
 
   // Outbound push to active OTA channels (fire-and-forget, non-blocking)
