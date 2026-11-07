@@ -104,6 +104,8 @@ const PUBLIC_HANDLERS: Record<string, string> = {
     "PayOS notifications; the HMAC signature, checked with that property's checksum key, is the credential; per-IP limit",
   'POST /api/webhooks/payos/digistay':
     "PayOS notifications for plan payments on Digistay's own account; the HMAC signature (Digistay's checksum key) is the credential; per-IP limit",
+  'POST /api/webhooks/channels/[channel]':
+    'OTA channel webhook notifications (Agoda, Booking.com, Airbnb...); validated by HMAC signature & webhook secret, per-IP rate limit',
   'GET /api/properties/public': 'public property site (name, address, contact, rooms)',
 }
 

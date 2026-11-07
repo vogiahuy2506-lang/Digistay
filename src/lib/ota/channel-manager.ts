@@ -19,8 +19,17 @@ import {
 const CONTEXT_TABLE = 'channel_accounts'
 const ALL_CHANNELS: OtaChannel[] = ['AGODA', 'BOOKING_COM', 'AIRBNB', 'TRAVELOKA', 'EXPEDIA']
 
-function channelContext(propertyId: string, channel: OtaChannel): string {
+export function channelContext(propertyId: string, channel: OtaChannel): string {
   return secretContext(CONTEXT_TABLE, propertyId, channel)
+}
+
+export function decryptChannelConfig(
+  propertyId: string,
+  channel: OtaChannel,
+  encryptedConfig: string
+): DecryptedChannelConfig {
+  const decrypted = decryptSecret(encryptedConfig, channelContext(propertyId, channel))
+  return JSON.parse(decrypted)
 }
 
 function getWebhookUrl(propertyId: string, channel: OtaChannel): string {
@@ -373,3 +382,4 @@ export async function disconnectPropertyChannelAccount(
 
   return true
 }
+

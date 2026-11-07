@@ -238,6 +238,16 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
     }
     const { updatedBooking, totalPaid, refunded } = result
 
+    // Outbound push to active OTA channels to release room allotment
+    import('@/lib/ota/sync-engine')
+      .then(({ syncRoomAvailabilityToChannels }) => {
+        syncRoomAvailabilityToChannels(booking.propertyId, {
+          startDate: booking.checkInDate,
+          endDate: booking.checkOutDate,
+        }).catch((e) => console.warn('[OTA Sync] Post-cancel sync error:', e))
+      })
+      .catch(() => {})
+
     return NextResponse.json({
       success: true,
       data: updatedBooking,

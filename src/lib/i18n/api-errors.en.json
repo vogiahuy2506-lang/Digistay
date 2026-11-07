@@ -843,5 +843,17 @@
   "Không thể ngắt kết nối kênh OTA": "Unable to disconnect OTA channel",
   "Mã khách sạn không được để trống": "Hotel ID must not be empty",
   "Bạn không có quyền kiểm tra kết nối cơ sở này": "You do not have permission to test connection for this property",
-  "Không thể kiểm tra kết nối với kênh lúc này": "Unable to test channel connection at this time"
+  "Không thể kiểm tra kết nối với kênh lúc này": "Unable to test channel connection at this time",
+  "Chưa đăng nhập": "Not signed in",
+  "Không thể tải nhật ký đồng bộ OTA": "Unable to load OTA sync logs",
+  "Bạn không có quyền đồng bộ kênh cơ sở này": "You do not have permission to sync channels for this property",
+  "Đã đồng bộ tồn kho và giá sang các kênh OTA thành công": "Inventory and rates successfully synced to OTA channels",
+  "Không thể đồng bộ sang kênh OTA lúc này": "Unable to sync to OTA channels at this time",
+  "Quá nhiều yêu cầu, vui lòng thử lại sau": "Too many requests, please try again later",
+  "Dữ liệu webhook không hợp lệ (Invalid JSON)": "Invalid webhook payload (Invalid JSON)",
+  "Thiếu mã định danh khách sạn (hotelIdentifier)": "Missing hotel identifier (hotelIdentifier)",
+  "Thiếu mã đơn hàng sàn (channelBookingId)": "Missing OTA booking ID (channelBookingId)",
+  "Đã hủy đơn thành công": "Booking successfully cancelled",
+  "Đã xử lý đơn OTA thành công": "OTA booking successfully processed",
+  "Lỗi xử lý webhook từ sàn OTA": "Error processing OTA webhook"
 }

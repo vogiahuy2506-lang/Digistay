@@ -217,7 +217,7 @@ export async function createBooking(input: NewBooking) {
   // takes no new bookings; its existing ones go on as usual.
   if (roomType.planLockedAt) throw new BookingError(ROOM_TYPE_PLAN_LOCKED, 409)
 
-  return prisma.$transaction(async (tx) => {
+  const created = await prisma.$transaction(async (tx) => {
     await lockRoomType(tx, roomType.id)
     // A discount code the guest typed: re-checked here under a row lock and
     // never trusted from the preview (POST /api/public/coupons/validate).
@@ -358,4 +358,17 @@ export async function createBooking(input: NewBooking) {
     await notifyNewBooking(tx, booking)
     return { booking, emailIds, quote }
   })
+
+  // Outbound push to active OTA channels (fire-and-forget, non-blocking)
+  import('@/lib/ota/sync-engine')
+    .then(({ syncRoomAvailabilityToChannels }) => {
+      syncRoomAvailabilityToChannels(created.booking.propertyId, {
+        roomTypeId: input.roomTypeId,
+        startDate: created.booking.checkInDate,
+        endDate: created.booking.checkOutDate,
+      }).catch((e) => console.warn('[OTA Sync] Post-create sync error:', e))
+    })
+    .catch(() => {})
+
+  return created
 }

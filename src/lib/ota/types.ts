@@ -118,3 +118,52 @@ export interface ChannelAccountDetail extends ChannelAccountSummary {
   autoAcceptBookings: boolean
   mappings: ChannelRoomMappingData[]
 }
+
+export type OtaWebhookAction = 'BOOKING_NEW' | 'BOOKING_MODIFY' | 'BOOKING_CANCEL'
+
+export interface OtaInboundBookingPayload {
+  action: OtaWebhookAction
+  channelBookingId: string
+  hotelIdentifier: string
+  channelRoomId?: string
+  channelRatePlanId?: string
+  checkInDate?: string // YYYY-MM-DD
+  checkOutDate?: string // YYYY-MM-DD
+  guestName?: string
+  guestEmail?: string
+  guestPhone?: string
+  numAdults?: number
+  numChildren?: number
+  totalAmount?: number
+  currency?: string
+  specialRequests?: string
+  cancellationReason?: string
+  metadata?: Record<string, any>
+}
+
+export interface ChannelSyncResult {
+  syncedChannels: number
+  syncedRooms: number
+  success: boolean
+  errors?: string[]
+  logs: {
+    channel: OtaChannel
+    action: string
+    status: 'SUCCESS' | 'FAILED'
+    message?: string
+  }[]
+}
+
+export interface ChannelSyncLogItem {
+  id: string
+  channel: OtaChannel
+  channelName: string
+  direction: ChannelSyncDirection
+  status: ChannelSyncStatus
+  createdAt: string
+  payload?: any
+  response?: any
+  errorMessage?: string | null
+}
+
+

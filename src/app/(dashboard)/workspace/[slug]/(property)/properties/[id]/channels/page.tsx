@@ -34,6 +34,12 @@ import {
   HelpCircle,
   Unplug,
   Percent,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Activity,
+  Clock,
+  History,
+  XCircle,
 } from 'lucide-react'
 import {
   OtaChannel,
@@ -74,6 +80,11 @@ export default function OtaChannelsPage() {
   const [rateMultiplierDefault, setRateMultiplierDefault] = React.useState(1.0)
   const [mappings, setMappings] = React.useState<ChannelRoomMappingData[]>([])
 
+  // Global Sync & Logs State
+  const [isSyncingAll, setIsSyncingAll] = React.useState(false)
+  const [logs, setLogs] = React.useState<any[]>([])
+  const [isLoadingLogs, setIsLoadingLogs] = React.useState(false)
+
   const fetchChannels = React.useCallback(async () => {
     try {
       setIsLoading(true)
@@ -92,9 +103,48 @@ export default function OtaChannelsPage() {
     }
   }, [propertyId])
 
+  const fetchLogs = React.useCallback(async () => {
+    try {
+      setIsLoadingLogs(true)
+      const res = await fetch(`/api/properties/${propertyId}/channels/logs?limit=20`)
+      const json = await res.json()
+      if (res.ok && json.success) {
+        setLogs(json.data.logs || [])
+      }
+    } catch {
+      // ignore
+    } finally {
+      setIsLoadingLogs(false)
+    }
+  }, [propertyId])
+
   React.useEffect(() => {
     fetchChannels()
-  }, [fetchChannels])
+    fetchLogs()
+  }, [fetchChannels, fetchLogs])
+
+  const handleSyncAllChannels = async () => {
+    try {
+      setIsSyncingAll(true)
+      const res = await fetch(`/api/properties/${propertyId}/channels/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+      const json = await res.json()
+      if (res.ok && json.success) {
+        toast.success(`Đã đồng bộ tồn kho và giá sang ${json.data.syncedChannels} kênh OTA thành công! (${json.data.syncedRooms} phòng)`)
+        fetchChannels()
+        fetchLogs()
+      } else {
+        toast.error(json.error || 'Không thể đồng bộ kênh OTA')
+      }
+    } catch {
+      toast.error('Lỗi khi gửi yêu cầu đồng bộ tồn kho')
+    } finally {
+      setIsSyncingAll(false)
+    }
+  }
 
   const handleOpenChannel = async (channel: OtaChannel) => {
     setSelectedChannel(channel)
@@ -276,16 +326,33 @@ export default function OtaChannelsPage() {
           </div>
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={fetchChannels}
-          isLoading={isLoading}
-          className="shrink-0 text-xs"
-        >
-          <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-          Làm mới trạng thái
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              fetchChannels()
+              fetchLogs()
+            }}
+            isLoading={isLoading}
+            className="text-xs"
+          >
+            <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+            Làm mới
+          </Button>
+
+          {canEdit && (
+            <Button
+              size="sm"
+              onClick={handleSyncAllChannels}
+              isLoading={isSyncingAll}
+              className="text-xs bg-acc text-acc-fg hover:bg-acc/90 shadow-xs"
+            >
+              <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+              Đồng bộ tất cả kênh ngay
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Channel Cards Grid */}
@@ -396,6 +463,151 @@ export default function OtaChannelsPage() {
                 </Card>
               )
             })}
+      </div>
+
+      {/* 2-Way Sync Logs Section */}
+      <div className="mt-10 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <History className="w-5 h-5 text-acc" />
+            <h3 className="font-semibold text-fg text-sm">
+              Nhật ký đồng bộ tự động 2 chiều (Sync History)
+            </h3>
+            <Badge variant="outline" className="text-xs border-line">
+              {logs.length} bản ghi gần nhất
+            </Badge>
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchLogs}
+            isLoading={isLoadingLogs}
+            className="text-xs"
+          >
+            <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+            Làm mới nhật ký
+          </Button>
+        </div>
+
+        <Card className="border-line overflow-hidden shadow-xs">
+          {isLoadingLogs ? (
+            <div className="p-6 space-y-3">
+              <Skeleton className="h-6 w-full" />
+              <Skeleton className="h-6 w-full" />
+              <Skeleton className="h-6 w-full" />
+            </div>
+          ) : logs.length === 0 ? (
+            <div className="py-12 text-center space-y-2">
+              <Activity className="w-8 h-8 mx-auto text-muted/40" />
+              <p className="text-xs text-muted">Chưa có giao dịch đồng bộ nào phát sinh.</p>
+              <p className="text-[11px] text-muted">
+                Khi có booking mới từ website hoặc các sàn OTA, hoặc khi bạn bấm &quot;Đồng bộ tất cả&quot;, lịch sử sẽ xuất hiện tại đây.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-ink/5 border-b border-line text-muted font-medium">
+                  <tr>
+                    <th className="py-3 px-4">Thời gian</th>
+                    <th className="py-3 px-4">Kênh OTA</th>
+                    <th className="py-3 px-4">Chiều đồng bộ</th>
+                    <th className="py-3 px-4">Trạng thái</th>
+                    <th className="py-3 px-4">Chi tiết hành động</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {logs.map((log) => {
+                    const isOutbound = String(log.direction).startsWith('OUTBOUND')
+                    const isCancel = log.direction === 'INBOUND_CANCELLATION'
+                    const isNewBooking = log.direction === 'INBOUND_BOOKING'
+
+                    return (
+                      <tr key={log.id} className="hover:bg-ink/[0.02] transition-colors">
+                        <td className="py-3 px-4 whitespace-nowrap text-muted font-mono text-[11px]">
+                          {new Date(log.createdAt).toLocaleString('vi-VN', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                          })}
+                        </td>
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <span className="font-semibold text-fg">
+                            {OTA_CHANNELS_META[log.channel as OtaChannel]?.name || log.channel}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          {isOutbound ? (
+                            <Badge
+                              variant="outline"
+                              className="text-blue-600 bg-blue-500/10 border-blue-500/20 text-[11px] flex items-center gap-1 w-fit"
+                            >
+                              <ArrowUpRight className="w-3 h-3" />
+                              Web ➔ Sàn (Tồn kho & Giá)
+                            </Badge>
+                          ) : isCancel ? (
+                            <Badge
+                              variant="outline"
+                              className="text-amber-600 bg-amber-500/10 border-amber-500/20 text-[11px] flex items-center gap-1 w-fit"
+                            >
+                              <XCircle className="w-3 h-3" />
+                              Sàn ➔ Web (Khách hủy đơn)
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant="outline"
+                              className="text-emerald-600 bg-emerald-500/10 border-emerald-500/20 text-[11px] flex items-center gap-1 w-fit"
+                            >
+                              <ArrowDownLeft className="w-3 h-3" />
+                              Sàn ➔ Web (Đơn đặt phòng)
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          {log.status === 'SUCCESS' ? (
+                            <Badge
+                              variant="outline"
+                              className="text-emerald-600 bg-emerald-500/10 border-emerald-500/20 text-[11px] flex items-center gap-1 w-fit"
+                            >
+                              <CheckCircle2 className="w-3 h-3" />
+                              Thành công
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant="outline"
+                              className="text-rose-600 bg-rose-500/10 border-rose-500/20 text-[11px] flex items-center gap-1 w-fit"
+                            >
+                              <AlertTriangle className="w-3 h-3" />
+                              Lỗi xử lý
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-muted max-w-xs truncate">
+                          {log.errorMessage ? (
+                            <span className="text-rose-600 font-mono text-[11px]">{log.errorMessage}</span>
+                          ) : isNewBooking && log.response?.bookingCode ? (
+                            <span>
+                              Mã đơn: <strong className="text-fg">{log.response.bookingCode}</strong>
+                              {log.response.isDuplicate && ' (Trùng lặp - Bỏ qua)'}
+                            </span>
+                          ) : isOutbound && log.payload?.preview ? (
+                            <span>Đã cập nhật {log.payload.itemsCount || 0} ngày (Hệ số giá {log.payload.rateMultiplier}x)</span>
+                          ) : (
+                            <span>Đã ghi nhận dữ liệu</span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
       </div>
 
       {/* Detail / Room Mapping Modal */}
