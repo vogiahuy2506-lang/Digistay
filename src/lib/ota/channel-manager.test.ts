@@ -162,7 +162,7 @@ describe('OTA Channel Manager Core (Task 55)', () => {
 
     const saved = await savePropertyChannelAccount('prop-1', 'AGODA', {
       hotelIdentifier: 'AGODA-555',
-      apiKey: 'api-secret-key-12345',
+      apiKey: 'replace-me-api-key',
       rateMultiplierDefault: 1.1,
       isActive: true,
       mappings: [
@@ -209,7 +209,7 @@ describe('OTA Channel Manager Core (Task 55)', () => {
     expect(resNoKey.message).toContain('API Key')
 
     // Valid credentials
-    const resOk = await testOtaChannelConnection('prop-1', 'AGODA', 'AGODA-123', 'agoda-valid-api-key')
+    const resOk = await testOtaChannelConnection('prop-1', 'AGODA', 'AGODA-123', 'replace-me-valid-key')
     expect(resOk.ok).toBe(true)
     expect(resOk.message).toContain('thành công')
     expect(resOk.latencyMs).toBeGreaterThanOrEqual(0)
