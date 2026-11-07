@@ -16,6 +16,7 @@ import {
 } from '@/components/ui'
 import { useCan } from '@/components/layout/workspace-context'
 import { toast } from '@/components/ui/toast'
+import { useTranslations } from 'next-intl'
 import {
   Share2,
   CheckCircle2,
@@ -24,22 +25,19 @@ import {
   Copy,
   Check,
   RefreshCw,
-  Power,
-  ShieldCheck,
-  Building2,
-  BedDouble,
   Sliders,
   Key,
   Webhook,
   HelpCircle,
   Unplug,
-  Percent,
   ArrowDownLeft,
   ArrowUpRight,
   Activity,
-  Clock,
   History,
   XCircle,
+  BedDouble,
+  Layers,
+  Zap,
 } from 'lucide-react'
 import {
   OtaChannel,
@@ -50,10 +48,11 @@ import {
 } from '@/lib/ota/types'
 
 function Skeleton({ className }: { className?: string }) {
-  return <div className={`animate-pulse bg-ink/10 rounded-lg ${className || ''}`} />
+  return <div className={`animate-pulse bg-fg/10 rounded-lg ${className || ''}`} />
 }
 
 export default function OtaChannelsPage() {
+  const t = useTranslations('dash.channels')
   const params = useParams<{ slug: string; id: string }>()
   const propertyId = params.id
   const canEdit = useCan('property_edit')
@@ -94,14 +93,14 @@ export default function OtaChannelsPage() {
         setChannels(json.data.channels)
         setPropertyName(json.data.propertyName)
       } else {
-        toast.error(json.error || 'Không thể tải danh sách kênh OTA')
+        toast.error(json.error || t('toast.loadFailed'))
       }
     } catch {
-      toast.error('Lỗi kết nối khi tải danh sách kênh OTA')
+      toast.error(t('toast.loadFailed'))
     } finally {
       setIsLoading(false)
     }
-  }, [propertyId])
+  }, [propertyId, t])
 
   const fetchLogs = React.useCallback(async () => {
     try {
@@ -133,14 +132,14 @@ export default function OtaChannelsPage() {
       })
       const json = await res.json()
       if (res.ok && json.success) {
-        toast.success(`Đã đồng bộ tồn kho và giá sang ${json.data.syncedChannels} kênh OTA thành công! (${json.data.syncedRooms} phòng)`)
+        toast.success(t('toast.syncAllSuccess'))
         fetchChannels()
         fetchLogs()
       } else {
-        toast.error(json.error || 'Không thể đồng bộ kênh OTA')
+        toast.error(json.error || t('toast.syncAllFailed'))
       }
     } catch {
-      toast.error('Lỗi khi gửi yêu cầu đồng bộ tồn kho')
+      toast.error(t('toast.syncAllFailed'))
     } finally {
       setIsSyncingAll(false)
     }
@@ -158,17 +157,17 @@ export default function OtaChannelsPage() {
         const detail: ChannelAccountDetail = json.data.channel
         setChannelDetail(detail)
         setHotelId(detail.hotelIdentifier || '')
-        setApiKey('') // Always blank for security (maskedApiKey displayed as placeholder)
+        setApiKey('')
         setApiSecret('')
         setWebhookSecret(detail.webhookSecret || '')
         setIsActive(detail.isActive)
         setRateMultiplierDefault(detail.rateMultiplierDefault || 1.0)
         setMappings(detail.mappings || [])
       } else {
-        toast.error(json.error || 'Không thể tải chi tiết kênh OTA')
+        toast.error(json.error || t('toast.detailLoadFailed'))
       }
     } catch {
-      toast.error('Lỗi khi tải chi tiết kênh OTA')
+      toast.error(t('toast.detailLoadFailed'))
     } finally {
       setIsLoadingDetail(false)
     }
@@ -184,14 +183,14 @@ export default function OtaChannelsPage() {
   const handleCopy = (text: string, fieldName: string) => {
     navigator.clipboard.writeText(text)
     setCopiedField(fieldName)
-    toast.success(`Đã sao chép ${fieldName} vào bộ nhớ tạm!`)
+    toast.success(t('modal.copied'))
     setTimeout(() => setCopiedField(null), 2000)
   }
 
   const handleTestConnection = async () => {
     if (!selectedChannel) return
     if (!hotelId.trim()) {
-      toast.error('Vui lòng nhập Mã khách sạn (Hotel ID / Property ID) để kiểm tra')
+      toast.error(t('modal.hotelIdPlaceholder'))
       return
     }
 
@@ -208,12 +207,12 @@ export default function OtaChannelsPage() {
 
       const json = await res.json()
       if (res.ok && json.success) {
-        toast.success(json.message || 'Kết nối thành công!')
+        toast.success(t('toast.testSuccess', { channel: OTA_CHANNELS_META[selectedChannel].name }))
       } else {
-        toast.error(json.error || json.message || 'Không thể kết nối đến sàn OTA')
+        toast.error(json.error || json.message || t('toast.testFailed'))
       }
     } catch {
-      toast.error('Lỗi mạng khi kiểm tra kết nối với sàn OTA')
+      toast.error(t('toast.testFailed'))
     } finally {
       setIsTesting(false)
     }
@@ -222,7 +221,7 @@ export default function OtaChannelsPage() {
   const handleSave = async () => {
     if (!selectedChannel) return
     if (!hotelId.trim()) {
-      toast.error('Vui lòng nhập Mã khách sạn (Hotel ID / Property ID)')
+      toast.error(t('modal.hotelIdPlaceholder'))
       return
     }
 
@@ -253,14 +252,14 @@ export default function OtaChannelsPage() {
 
       const json = await res.json()
       if (res.ok && json.success) {
-        toast.success(json.message || 'Đã lưu cấu hình kênh thành công!')
+        toast.success(t('toast.saveSuccess', { channel: OTA_CHANNELS_META[selectedChannel].name }))
         handleCloseModal()
         fetchChannels()
       } else {
-        toast.error(json.error || 'Không thể lưu cấu hình kênh')
+        toast.error(json.error || 'Failed to save')
       }
     } catch {
-      toast.error('Lỗi mạng khi lưu cấu hình kênh')
+      toast.error('Failed to save channel configuration')
     } finally {
       setIsSaving(false)
     }
@@ -268,7 +267,8 @@ export default function OtaChannelsPage() {
 
   const handleDisconnect = async () => {
     if (!selectedChannel) return
-    if (!confirm(`Bạn có chắc chắn muốn ngắt kết nối kênh ${OTA_CHANNELS_META[selectedChannel].name}? Tất cả ánh xạ phòng và tự động đồng bộ sẽ bị tạm dừng.`)) {
+    const channelName = OTA_CHANNELS_META[selectedChannel].name
+    if (!confirm(t('modal.disconnectConfirm', { channel: channelName }))) {
       return
     }
 
@@ -278,14 +278,14 @@ export default function OtaChannelsPage() {
       })
       const json = await res.json()
       if (res.ok && json.success) {
-        toast.success(json.message || 'Đã ngắt kết nối kênh')
+        toast.success(t('toast.disconnectSuccess', { channel: channelName }))
         handleCloseModal()
         fetchChannels()
       } else {
-        toast.error(json.error || 'Không thể ngắt kết nối kênh')
+        toast.error(json.error || 'Failed to disconnect')
       }
     } catch {
-      toast.error('Lỗi mạng khi ngắt kết nối kênh')
+      toast.error('Error disconnecting channel')
     }
   }
 
@@ -302,26 +302,26 @@ export default function OtaChannelsPage() {
   return (
     <PageContainer>
       <Header
-        title="Kênh bán phòng trực tuyến (OTA Channel Manager)"
-        description={`Quản lý kết nối các sàn Agoda, Booking.com, Airbnb, Traveloka, Expedia cho ${propertyName || 'cơ sở'}. Đồng bộ tồn kho và nhận đơn tự động 2 chiều.`}
+        title={t('title')}
+        description={`${t('description')} (${propertyName || t('propertyLabel')})`}
       />
 
-      {/* Info Architecture Alert */}
-      <div className="mb-6 p-4 rounded-xl border border-line bg-panel shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      {/* Top Architecture Banner */}
+      <div className="mb-6 p-4 rounded-box border border-line bg-panel shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-colors">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-acc/10 flex items-center justify-center text-acc shrink-0 mt-0.5">
+          <div className="w-10 h-10 rounded-ctl bg-acc/10 flex items-center justify-center text-acc shrink-0 mt-0.5">
             <Share2 className="w-5 h-5" />
           </div>
           <div className="space-y-1">
             <h4 className="text-sm font-semibold text-fg flex items-center gap-2">
-              Đồng bộ đa kênh tự động hai chiều (Zero Overbooking)
-              <Badge variant="outline" className="text-emerald-600 bg-emerald-500/10 border-emerald-500/20 text-xs">
-                AES-256-GCM Encrypted
-              </Badge>
+              <span>{t('card.twoWay')}</span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <Zap className="w-3 h-3" />
+                AES-256 Encrypted
+              </span>
             </h4>
             <p className="text-xs text-muted leading-relaxed">
-              Khi khách đặt phòng trên website riêng, Digistay sẽ lập tức trừ tồn kho trên các sàn OTA.
-              Ngược lại, khi có đơn mới từ Agoda hoặc Booking.com, phòng sẽ được tự động khóa trên website riêng để tránh bán trùng.
+              {t('modal.mappingBanner')}
             </p>
           </div>
         </div>
@@ -335,10 +335,10 @@ export default function OtaChannelsPage() {
               fetchLogs()
             }}
             isLoading={isLoading}
-            className="text-xs"
+            className="text-xs border-line bg-panel hover:bg-fg/5 text-fg"
           >
             <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-            Làm mới
+            {t('refreshLogs')}
           </Button>
 
           {canEdit && (
@@ -349,7 +349,7 @@ export default function OtaChannelsPage() {
               className="text-xs bg-acc text-acc-fg hover:bg-acc/90 shadow-xs"
             >
               <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-              Đồng bộ tất cả kênh ngay
+              {t('syncAll')}
             </Button>
           )}
         </div>
@@ -359,7 +359,7 @@ export default function OtaChannelsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {isLoading
           ? Array.from({ length: 5 }).map((_, i) => (
-              <Card key={i} className="p-5 space-y-4">
+              <Card key={i} className="p-5 space-y-4 bg-panel border-line">
                 <Skeleton className="h-6 w-3/4" />
                 <Skeleton className="h-14 w-full" />
                 <Skeleton className="h-9 w-full" />
@@ -367,39 +367,48 @@ export default function OtaChannelsPage() {
             ))
           : channels.map((item) => {
               const meta = OTA_CHANNELS_META[item.channel]
+              const isChannelActive = item.isActive
+              const isChannelConnected = Boolean(item.hotelIdentifier)
+
               return (
                 <Card
                   key={item.channel}
-                  className="flex flex-col justify-between border-line hover:border-acc/40 transition-all duration-200 shadow-xs"
+                  className="flex flex-col justify-between border-line hover:border-acc/40 transition-all duration-200 shadow-xs bg-panel group"
                 >
                   <CardContent className="p-5 space-y-4">
                     {/* Channel Top Header */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
                         <div
-                          className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white text-base shadow-xs"
+                          className="w-10 h-10 rounded-ctl flex items-center justify-center font-bold text-white text-base shadow-xs"
                           style={{ backgroundColor: meta.accentColor }}
                         >
                           {meta.name.slice(0, 1)}
                         </div>
                         <div>
-                          <h3 className="font-semibold text-fg text-sm">{meta.name}</h3>
-                          <span className="text-[11px] text-muted">Hoa hồng sàn ~{meta.defaultCommissionRate}%</span>
+                          <h3 className="font-semibold text-fg text-sm group-hover:text-acc transition-colors">
+                            {meta.name}
+                          </h3>
+                          <span className="text-[11px] text-muted">
+                            ~{meta.defaultCommissionRate}% commission
+                          </span>
                         </div>
                       </div>
 
-                      {item.isActive ? (
-                        <Badge
-                          variant="outline"
-                          className="text-emerald-600 bg-emerald-500/10 border-emerald-500/20 text-xs flex items-center gap-1"
-                        >
-                          <CheckCircle2 className="w-3 h-3" />
-                          Đang kết nối
-                        </Badge>
+                      {isChannelActive ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          {t('badge.connected')}
+                        </span>
+                      ) : isChannelConnected ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                          <AlertTriangle className="w-3.5 h-3.5" />
+                          {t('badge.inactive')}
+                        </span>
                       ) : (
-                        <Badge variant="outline" className="text-muted border-line text-xs">
-                          Chưa kích hoạt
-                        </Badge>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-fg/5 text-muted border border-line">
+                          {t('badge.notConnected')}
+                        </span>
                       )}
                     </div>
 
@@ -408,22 +417,22 @@ export default function OtaChannelsPage() {
                       {meta.shortDescription}
                     </p>
 
-                    {/* Metrics / Info */}
-                    <div className="p-3 rounded-lg bg-ink/5 border border-line space-y-2 text-xs">
+                    {/* Metrics / Info Box */}
+                    <div className="p-3 rounded-ctl bg-fg/[0.03] border border-line space-y-2 text-xs">
                       <div className="flex items-center justify-between">
-                        <span className="text-muted">Mã khách sạn:</span>
+                        <span className="text-muted">{t('modal.hotelId')}:</span>
                         <span className="font-mono font-medium text-fg">
-                          {item.hotelIdentifier || 'Chưa cấu hình'}
+                          {item.hotelIdentifier || '—'}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-muted">Ánh xạ hạng phòng:</span>
+                        <span className="text-muted">{t('modal.tabMapping')}:</span>
                         <span className="font-medium text-fg">
-                          {item.mappedRoomsCount}/{item.totalPropertyRoomsCount} phòng
+                          {t('card.mappedCount', { count: item.mappedRoomsCount })} ({item.mappedRoomsCount}/{item.totalPropertyRoomsCount})
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-muted">Lần đồng bộ gần nhất:</span>
+                        <span className="text-muted">{t('card.lastSync')}</span>
                         <span className="text-muted font-medium">
                           {item.lastSyncedAt
                             ? new Date(item.lastSyncedAt).toLocaleString('vi-VN', {
@@ -432,30 +441,30 @@ export default function OtaChannelsPage() {
                                 day: '2-digit',
                                 month: '2-digit',
                               })
-                            : 'Chưa có dữ liệu'}
+                            : t('card.never')}
                         </span>
                       </div>
                     </div>
                   </CardContent>
 
                   {/* Actions Footer */}
-                  <div className="p-4 border-t border-line bg-panel/50 flex items-center gap-2">
+                  <div className="p-4 border-t border-line bg-fg/[0.02] flex items-center gap-2">
                     <Button
-                      variant={item.isActive ? 'outline' : 'primary'}
+                      variant={isChannelActive ? 'outline' : 'primary'}
                       size="sm"
                       onClick={() => handleOpenChannel(item.channel)}
                       className="w-full text-xs"
                       disabled={!canEdit}
                     >
                       <Sliders className="w-3.5 h-3.5 mr-1.5" />
-                      {item.isActive ? 'Cấu hình & Ánh xạ phòng' : 'Kết nối kênh này'}
+                      {isChannelConnected ? t('card.configure') : t('card.connect')}
                     </Button>
                     <a
                       href={meta.portalUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="p-2 rounded-lg border border-line text-muted hover:text-fg hover:bg-ink/5 transition-colors"
-                      title={`Mở trang quản trị ${meta.name}`}
+                      className="p-2 rounded-ctl border border-line text-muted hover:text-fg hover:bg-fg/5 transition-colors"
+                      title={meta.name}
                     >
                       <ExternalLink className="w-4 h-4" />
                     </a>
@@ -471,10 +480,10 @@ export default function OtaChannelsPage() {
           <div className="flex items-center gap-2">
             <History className="w-5 h-5 text-acc" />
             <h3 className="font-semibold text-fg text-sm">
-              Nhật ký đồng bộ tự động 2 chiều (Sync History)
+              {t('logs.title')}
             </h3>
-            <Badge variant="outline" className="text-xs border-line">
-              {logs.length} bản ghi gần nhất
+            <Badge variant="outline" className="text-xs border-line bg-panel text-muted">
+              {logs.length}
             </Badge>
           </div>
 
@@ -483,14 +492,14 @@ export default function OtaChannelsPage() {
             size="sm"
             onClick={fetchLogs}
             isLoading={isLoadingLogs}
-            className="text-xs"
+            className="text-xs border-line bg-panel hover:bg-fg/5 text-fg"
           >
             <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-            Làm mới nhật ký
+            {t('refreshLogs')}
           </Button>
         </div>
 
-        <Card className="border-line overflow-hidden shadow-xs">
+        <Card className="border-line overflow-hidden shadow-xs bg-panel">
           {isLoadingLogs ? (
             <div className="p-6 space-y-3">
               <Skeleton className="h-6 w-full" />
@@ -500,21 +509,18 @@ export default function OtaChannelsPage() {
           ) : logs.length === 0 ? (
             <div className="py-12 text-center space-y-2">
               <Activity className="w-8 h-8 mx-auto text-muted/40" />
-              <p className="text-xs text-muted">Chưa có giao dịch đồng bộ nào phát sinh.</p>
-              <p className="text-[11px] text-muted">
-                Khi có booking mới từ website hoặc các sàn OTA, hoặc khi bạn bấm &quot;Đồng bộ tất cả&quot;, lịch sử sẽ xuất hiện tại đây.
-              </p>
+              <p className="text-xs text-muted">{t('logs.empty')}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-ink/5 border-b border-line text-muted font-medium">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-fg/[0.03] border-b border-line text-muted font-medium">
                   <tr>
-                    <th className="py-3 px-4">Thời gian</th>
-                    <th className="py-3 px-4">Kênh OTA</th>
-                    <th className="py-3 px-4">Chiều đồng bộ</th>
-                    <th className="py-3 px-4">Trạng thái</th>
-                    <th className="py-3 px-4">Chi tiết hành động</th>
+                    <th className="py-3 px-4">{t('logs.colTime')}</th>
+                    <th className="py-3 px-4">{t('logs.colChannel')}</th>
+                    <th className="py-3 px-4">{t('logs.colDirection')}</th>
+                    <th className="py-3 px-4">{t('logs.colStatus')}</th>
+                    <th className="py-3 px-4">{t('logs.colDetails')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
@@ -524,7 +530,7 @@ export default function OtaChannelsPage() {
                     const isNewBooking = log.direction === 'INBOUND_BOOKING'
 
                     return (
-                      <tr key={log.id} className="hover:bg-ink/[0.02] transition-colors">
+                      <tr key={log.id} className="hover:bg-fg/[0.02] transition-colors">
                         <td className="py-3 px-4 whitespace-nowrap text-muted font-mono text-[11px]">
                           {new Date(log.createdAt).toLocaleString('vi-VN', {
                             hour: '2-digit',
@@ -542,62 +548,47 @@ export default function OtaChannelsPage() {
                         </td>
                         <td className="py-3 px-4 whitespace-nowrap">
                           {isOutbound ? (
-                            <Badge
-                              variant="outline"
-                              className="text-blue-600 bg-blue-500/10 border-blue-500/20 text-[11px] flex items-center gap-1 w-fit"
-                            >
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
                               <ArrowUpRight className="w-3 h-3" />
-                              Web ➔ Sàn (Tồn kho & Giá)
-                            </Badge>
+                              {t('logs.outbound')}
+                            </span>
                           ) : isCancel ? (
-                            <Badge
-                              variant="outline"
-                              className="text-amber-600 bg-amber-500/10 border-amber-500/20 text-[11px] flex items-center gap-1 w-fit"
-                            >
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                               <XCircle className="w-3 h-3" />
-                              Sàn ➔ Web (Khách hủy đơn)
-                            </Badge>
+                              {t('logs.inbound')} (Cancel)
+                            </span>
                           ) : (
-                            <Badge
-                              variant="outline"
-                              className="text-emerald-600 bg-emerald-500/10 border-emerald-500/20 text-[11px] flex items-center gap-1 w-fit"
-                            >
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                               <ArrowDownLeft className="w-3 h-3" />
-                              Sàn ➔ Web (Đơn đặt phòng)
-                            </Badge>
+                              {t('logs.inbound')} (Booking)
+                            </span>
                           )}
                         </td>
                         <td className="py-3 px-4 whitespace-nowrap">
                           {log.status === 'SUCCESS' ? (
-                            <Badge
-                              variant="outline"
-                              className="text-emerald-600 bg-emerald-500/10 border-emerald-500/20 text-[11px] flex items-center gap-1 w-fit"
-                            >
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                               <CheckCircle2 className="w-3 h-3" />
-                              Thành công
-                            </Badge>
+                              {t('logs.success')}
+                            </span>
                           ) : (
-                            <Badge
-                              variant="outline"
-                              className="text-rose-600 bg-rose-500/10 border-rose-500/20 text-[11px] flex items-center gap-1 w-fit"
-                            >
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
                               <AlertTriangle className="w-3 h-3" />
-                              Lỗi xử lý
-                            </Badge>
+                              {t('logs.failed')}
+                            </span>
                           )}
                         </td>
                         <td className="py-3 px-4 text-muted max-w-xs truncate">
                           {log.errorMessage ? (
-                            <span className="text-rose-600 font-mono text-[11px]">{log.errorMessage}</span>
+                            <span className="text-rose-600 dark:text-rose-400 font-mono text-[11px]">{log.errorMessage}</span>
                           ) : isNewBooking && log.response?.bookingCode ? (
                             <span>
-                              Mã đơn: <strong className="text-fg">{log.response.bookingCode}</strong>
-                              {log.response.isDuplicate && ' (Trùng lặp - Bỏ qua)'}
+                              Booking: <strong className="text-fg">{log.response.bookingCode}</strong>
+                              {log.response.isDuplicate && ' (Duplicate)'}
                             </span>
                           ) : isOutbound && log.payload?.preview ? (
-                            <span>Đã cập nhật {log.payload.itemsCount || 0} ngày (Hệ số giá {log.payload.rateMultiplier}x)</span>
+                            <span>Updated {log.payload.itemsCount || 0} dates ({log.payload.rateMultiplier}x)</span>
                           ) : (
-                            <span>Đã ghi nhận dữ liệu</span>
+                            <span>OK</span>
                           )}
                         </td>
                       </tr>
@@ -610,33 +601,33 @@ export default function OtaChannelsPage() {
         </Card>
       </div>
 
-      {/* Detail / Room Mapping Modal */}
+      {/* Configuration & Mapping Modal */}
       {selectedChannel && (
         <Modal isOpen={Boolean(selectedChannel)} onClose={handleCloseModal} size="xl">
           <ModalHeader className="border-b border-line pb-3">
             <div className="flex items-center justify-between w-full">
               <div className="flex items-center gap-3">
                 <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white text-base shadow-xs"
+                  className="w-9 h-9 rounded-ctl flex items-center justify-center font-bold text-white text-base shadow-xs"
                   style={{ backgroundColor: OTA_CHANNELS_META[selectedChannel].accentColor }}
                 >
                   {OTA_CHANNELS_META[selectedChannel].name.slice(0, 1)}
                 </div>
                 <div>
                   <h3 className="font-semibold text-fg flex items-center gap-2">
-                    Kết nối kênh {OTA_CHANNELS_META[selectedChannel].name}
+                    {t('modal.title', { channel: OTA_CHANNELS_META[selectedChannel].name })}
                     {isActive ? (
-                      <Badge variant="outline" className="text-emerald-600 bg-emerald-500/10 border-emerald-500/20 text-xs">
-                        Đang kích hoạt
-                      </Badge>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                        {t('badge.connected')}
+                      </span>
                     ) : (
-                      <Badge variant="outline" className="text-muted border-line text-xs">
-                        Tạm dừng
-                      </Badge>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-fg/5 text-muted border border-line">
+                        {t('badge.inactive')}
+                      </span>
                     )}
                   </h3>
                   <p className="text-xs text-muted">
-                    {OTA_CHANNELS_META[selectedChannel].shortDescription}
+                    {t('modal.subtitle')}
                   </p>
                 </div>
               </div>
@@ -649,9 +640,9 @@ export default function OtaChannelsPage() {
                   onClick={handleTestConnection}
                   isLoading={isTesting}
                   disabled={!hotelId.trim()}
-                  className="text-xs"
+                  className="text-xs border-line bg-panel hover:bg-fg/5 text-fg"
                 >
-                  Kiểm tra kết nối
+                  {isTesting ? t('modal.testingBtn') : t('modal.testBtn')}
                 </Button>
               </div>
             </div>
@@ -671,26 +662,26 @@ export default function OtaChannelsPage() {
                   <button
                     type="button"
                     onClick={() => setActiveTab('credentials')}
-                    className={`flex items-center gap-2 py-1.5 px-3 rounded-lg font-medium transition-colors ${
+                    className={`flex items-center gap-2 py-1.5 px-3 rounded-ctl font-medium transition-colors ${
                       activeTab === 'credentials'
                         ? 'bg-acc text-acc-fg'
-                        : 'text-muted hover:text-fg hover:bg-ink/5'
+                        : 'text-muted hover:text-fg hover:bg-fg/5'
                     }`}
                   >
                     <Key className="w-3.5 h-3.5" />
-                    1. Tài khoản & Khóa bảo mật (API Credentials)
+                    {t('modal.tabCredentials')}
                   </button>
                   <button
                     type="button"
                     onClick={() => setActiveTab('mapping')}
-                    className={`flex items-center gap-2 py-1.5 px-3 rounded-lg font-medium transition-colors ${
+                    className={`flex items-center gap-2 py-1.5 px-3 rounded-ctl font-medium transition-colors ${
                       activeTab === 'mapping'
                         ? 'bg-acc text-acc-fg'
-                        : 'text-muted hover:text-fg hover:bg-ink/5'
+                        : 'text-muted hover:text-fg hover:bg-fg/5'
                     }`}
                   >
                     <BedDouble className="w-3.5 h-3.5" />
-                    2. Ánh xạ Hạng phòng & Markup ({mappings.filter((m) => m.channelRoomId.trim().length > 0).length}/{mappings.length})
+                    {t('modal.tabMapping')} ({mappings.filter((m) => m.channelRoomId.trim().length > 0).length}/{mappings.length})
                   </button>
                 </div>
 
@@ -707,18 +698,18 @@ export default function OtaChannelsPage() {
                         value={hotelId}
                         onChange={(e) => setHotelId(e.target.value)}
                         placeholder={OTA_CHANNELS_META[selectedChannel].hotelIdPlaceholder}
-                        className="text-xs font-mono"
+                        className="text-xs font-mono bg-panel border-line text-fg"
                       />
                       <p className="text-[11px] text-muted">
-                        Mã định danh khách sạn do {OTA_CHANNELS_META[selectedChannel].name} cung cấp trong thư xác nhận hoặc trên thanh URL trang quản trị.
+                        {t('modal.hotelIdHelp', { channel: OTA_CHANNELS_META[selectedChannel].name })}
                       </p>
                     </div>
 
-                    {/* API Key / Username */}
+                    {/* API Key / Secret */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-fg">
-                          API Key / Tên tài khoản kết nối
+                          {t('modal.apiKey')}
                         </label>
                         <Input
                           type="password"
@@ -726,39 +717,33 @@ export default function OtaChannelsPage() {
                           onChange={(e) => setApiKey(e.target.value)}
                           placeholder={
                             channelDetail?.maskedApiKey
-                              ? `Đang dùng key đã lưu (${channelDetail.maskedApiKey})`
-                              : 'Nhập API Key hoặc Partner Username'
+                              ? `Key: ${channelDetail.maskedApiKey}`
+                              : t('modal.apiKeyPlaceholder')
                           }
-                          className="text-xs font-mono"
+                          className="text-xs font-mono bg-panel border-line text-fg"
                         />
-                        <p className="text-[11px] text-muted">
-                          Để trống nếu muốn giữ nguyên khóa đã mã hóa trước đó.
-                        </p>
                       </div>
 
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-fg">
-                          Secret Token / Mật khẩu kết nối
+                          {t('modal.apiSecret')}
                         </label>
                         <Input
                           type="password"
                           value={apiSecret}
                           onChange={(e) => setApiSecret(e.target.value)}
                           placeholder="••••••••••••••••"
-                          className="text-xs font-mono"
+                          className="text-xs font-mono bg-panel border-line text-fg"
                         />
-                        <p className="text-[11px] text-muted">
-                          Mã xác thực bí mật để ký kết các lệnh đồng bộ phòng tự động.
-                        </p>
                       </div>
                     </div>
 
                     {/* Webhook Configuration Box */}
-                    <div className="p-4 rounded-xl border border-line bg-ink/5 space-y-3 text-xs">
+                    <div className="p-4 rounded-box border border-line bg-fg/[0.03] space-y-3 text-xs">
                       <div className="flex items-center justify-between">
                         <span className="font-semibold text-fg flex items-center gap-1.5">
                           <Webhook className="w-3.5 h-3.5 text-acc" />
-                          Địa chỉ Webhook nhận đơn từ {OTA_CHANNELS_META[selectedChannel].name}
+                          {t('modal.webhookUrl', { channel: OTA_CHANNELS_META[selectedChannel].name })}
                         </span>
                         <a
                           href={OTA_CHANNELS_META[selectedChannel].helpDocUrl}
@@ -766,40 +751,40 @@ export default function OtaChannelsPage() {
                           rel="noreferrer"
                           className="text-[11px] text-acc hover:underline flex items-center gap-1"
                         >
-                          Hướng dẫn dán Webhook <ExternalLink className="w-3 h-3" />
+                          Docs <ExternalLink className="w-3 h-3" />
                         </a>
                       </div>
 
                       <p className="text-[11px] text-muted leading-relaxed">
-                        Sao chép đường dẫn này và dán vào phần <strong>Webhook / Push Notification</strong> trong trang quản trị đối tác của {OTA_CHANNELS_META[selectedChannel].name} để Digistay tự động nhận đơn đặt phòng ngay khi có khách đặt.
+                        {t('modal.webhookUrlHelp', { channel: OTA_CHANNELS_META[selectedChannel].name })}
                       </p>
 
                       <div className="flex items-center gap-2">
                         <Input
                           readOnly
                           value={channelDetail?.webhookUrl || ''}
-                          className="text-xs font-mono bg-panel select-all"
+                          className="text-xs font-mono bg-panel border-line text-fg select-all"
                         />
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
                           onClick={() => handleCopy(channelDetail?.webhookUrl || '', 'Webhook URL')}
-                          className="shrink-0 text-xs"
+                          className="shrink-0 text-xs border-line bg-panel hover:bg-fg/5 text-fg"
                         >
                           {copiedField === 'Webhook URL' ? (
-                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                           ) : (
                             <Copy className="w-3.5 h-3.5" />
                           )}
-                          Sao chép
+                          {copiedField === 'Webhook URL' ? t('modal.copied') : 'Copy'}
                         </Button>
                       </div>
 
                       <div className="flex items-center justify-between pt-1">
                         <span className="text-[11px] text-muted">
-                          Webhook Secret Key:{' '}
-                          <code className="text-fg font-mono bg-ink/10 px-1.5 py-0.5 rounded">
+                          {t('modal.webhookSecret')}:{' '}
+                          <code className="text-fg font-mono bg-fg/10 px-1.5 py-0.5 rounded">
                             {webhookSecret || '••••••••'}
                           </code>
                         </span>
@@ -808,18 +793,18 @@ export default function OtaChannelsPage() {
                           onClick={() => handleCopy(webhookSecret, 'Webhook Secret')}
                           className="text-[11px] text-acc hover:underline"
                         >
-                          Sao chép Secret
+                          Copy Secret
                         </button>
                       </div>
                     </div>
 
                     {/* Settings Toggles */}
-                    <div className="p-4 rounded-xl border border-line bg-panel space-y-3 text-xs">
+                    <div className="p-4 rounded-box border border-line bg-panel space-y-3 text-xs">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-medium text-fg">Kích hoạt đồng bộ kênh này</p>
+                          <p className="font-medium text-fg">{t('modal.activeToggle')}</p>
                           <p className="text-[11px] text-muted">
-                            Cho phép hệ thống đẩy tồn kho và nhận đơn tự động với {OTA_CHANNELS_META[selectedChannel].name}
+                            {t('modal.activeToggleDesc')}
                           </p>
                         </div>
                         <input
@@ -829,18 +814,6 @@ export default function OtaChannelsPage() {
                           className="w-4 h-4 rounded text-acc accent-acc cursor-pointer"
                         />
                       </div>
-
-                      <div className="border-t border-line pt-3 flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-fg">Tự động xác nhận đơn OTA (Auto-Confirm)</p>
-                          <p className="text-[11px] text-muted">
-                            Tự động chuyển trạng thái đơn sang ĐÃ XÁC NHẬN (CONFIRMED) và khóa phòng ngay khi nhận webhook
-                          </p>
-                        </div>
-                        <Badge variant="outline" className="text-emerald-600 bg-emerald-500/10 border-emerald-500/20 text-xs">
-                          Bật tự động
-                        </Badge>
-                      </div>
                     </div>
                   </div>
                 )}
@@ -848,42 +821,40 @@ export default function OtaChannelsPage() {
                 {/* TAB 2: ROOM MAPPING */}
                 {activeTab === 'mapping' && (
                   <div className="space-y-4">
-                    <div className="p-3 rounded-lg bg-acc/10 border border-acc/20 text-xs text-acc-fg space-y-1">
+                    <div className="p-3 rounded-ctl bg-acc/10 border border-acc/20 text-xs text-fg space-y-1">
                       <p className="font-medium flex items-center gap-1.5 text-acc">
                         <HelpCircle className="w-4 h-4" />
-                        Hướng dẫn ánh xạ hạng phòng:
+                        {t('modal.tabMapping')}
                       </p>
                       <p className="text-[11px] text-muted leading-relaxed">
-                        Nhập <strong>Mã phòng trên sàn OTA</strong> (Room ID) cho từng hạng phòng tương ứng trên Digistay.
-                        Bạn cũng có thể cài đặt <strong>Hệ số giá (Markup)</strong> để bù phí hoa hồng của sàn (ví dụ: đặt hệ số <code>1.15</code> để giá trên sàn tự động cao hơn 15% so với giá bán trên web riêng).
+                        {t('modal.mappingBanner', { channel: OTA_CHANNELS_META[selectedChannel].name })}
                       </p>
                     </div>
 
                     {/* Mapping Table */}
-                    <div className="overflow-x-auto border border-line rounded-xl">
+                    <div className="overflow-x-auto border border-line rounded-box bg-panel">
                       <table className="w-full text-xs text-left border-collapse">
-                        <thead className="bg-ink/5 border-b border-line text-muted font-medium">
+                        <thead className="bg-fg/[0.03] border-b border-line text-muted font-medium">
                           <tr>
-                            <th className="py-2.5 px-3">Hạng phòng Digistay</th>
+                            <th className="py-2.5 px-3">{t('modal.colRoomType')}</th>
                             <th className="py-2.5 px-3">
-                              Mã phòng trên {OTA_CHANNELS_META[selectedChannel].name} <span className="text-err">*</span>
+                              {t('modal.colOtaId')} <span className="text-err">*</span>
                             </th>
-                            <th className="py-2.5 px-3">Tên phòng đối soát trên sàn</th>
-                            <th className="py-2.5 px-3">Gói giá (Rate Plan)</th>
-                            <th className="py-2.5 px-3 w-28">Markup</th>
-                            <th className="py-2.5 px-3 text-center w-20">Đồng bộ</th>
+                            <th className="py-2.5 px-3">{t('modal.colOtaName')}</th>
+                            <th className="py-2.5 px-3">{t('modal.colMarkup')}</th>
+                            <th className="py-2.5 px-3 text-center w-20">{t('modal.colSync')}</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-line">
                           {mappings.length === 0 ? (
                             <tr>
-                              <td colSpan={6} className="py-8 text-center text-muted">
-                                Khách sạn chưa có hạng phòng nào được kích hoạt. Hãy tạo hạng phòng trước khi ánh xạ.
+                              <td colSpan={5} className="py-8 text-center text-muted">
+                                {t('modal.noRoomTypes')}
                               </td>
                             </tr>
                           ) : (
                             mappings.map((item) => (
-                              <tr key={item.roomTypeId} className="hover:bg-ink/5 transition-colors">
+                              <tr key={item.roomTypeId} className="hover:bg-fg/[0.02] transition-colors">
                                 <td className="py-2.5 px-3 font-medium text-fg whitespace-nowrap">
                                   <div className="flex items-center gap-1.5">
                                     <BedDouble className="w-3.5 h-3.5 text-muted" />
@@ -896,8 +867,8 @@ export default function OtaChannelsPage() {
                                     onChange={(e) =>
                                       updateMappingRow(item.roomTypeId, 'channelRoomId', e.target.value)
                                     }
-                                    placeholder="vd: AG_DLX_01"
-                                    className="text-xs font-mono h-8"
+                                    placeholder={t('modal.otaIdPlaceholder')}
+                                    className="text-xs font-mono h-8 bg-page border-line text-fg"
                                   />
                                 </td>
                                 <td className="py-2.5 px-3">
@@ -906,18 +877,8 @@ export default function OtaChannelsPage() {
                                     onChange={(e) =>
                                       updateMappingRow(item.roomTypeId, 'channelRoomName', e.target.value)
                                     }
-                                    placeholder="vd: Deluxe Ocean View"
-                                    className="text-xs h-8"
-                                  />
-                                </td>
-                                <td className="py-2.5 px-3">
-                                  <Input
-                                    value={item.channelRatePlanId || ''}
-                                    onChange={(e) =>
-                                      updateMappingRow(item.roomTypeId, 'channelRatePlanId', e.target.value)
-                                    }
-                                    placeholder="vd: STANDARD"
-                                    className="text-xs font-mono h-8"
+                                    placeholder={t('modal.otaNamePlaceholder')}
+                                    className="text-xs h-8 bg-page border-line text-fg"
                                   />
                                 </td>
                                 <td className="py-2.5 px-3">
@@ -935,14 +896,14 @@ export default function OtaChannelsPage() {
                                           parseFloat(e.target.value) || 1.0
                                         )
                                       }
-                                      className="text-xs font-mono h-8 w-20"
+                                      className="text-xs font-mono h-8 w-20 bg-page border-line text-fg"
                                     />
                                     <span className="text-[11px] text-muted">
                                       {item.rateMultiplier > 1
                                         ? `+${Math.round((item.rateMultiplier - 1) * 100)}%`
                                         : item.rateMultiplier < 1
                                         ? `-${Math.round((1 - item.rateMultiplier) * 100)}%`
-                                        : 'Gốc'}
+                                        : '1.0x'}
                                     </span>
                                   </div>
                                 </td>
@@ -975,18 +936,24 @@ export default function OtaChannelsPage() {
                 variant="outline"
                 size="sm"
                 onClick={handleDisconnect}
-                className="text-xs text-err border-err/30 hover:bg-err/10"
+                className="text-xs text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/10"
               >
                 <Unplug className="w-3.5 h-3.5 mr-1" />
-                Ngắt kết nối kênh
+                {t('modal.disconnectBtn')}
               </Button>
             ) : (
               <div />
             )}
 
             <div className="flex items-center gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={handleCloseModal} className="text-xs">
-                Đóng
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleCloseModal}
+                className="text-xs border-line bg-panel hover:bg-fg/5 text-fg"
+              >
+                {t('modal.closeBtn')}
               </Button>
               <Button
                 type="button"
@@ -996,7 +963,7 @@ export default function OtaChannelsPage() {
                 className="text-xs bg-acc text-acc-fg hover:bg-acc/90 shadow-xs"
               >
                 <Check className="w-3.5 h-3.5 mr-1.5" />
-                Lưu cấu hình & Ánh xạ
+                {isSaving ? t('modal.savingBtn') : t('modal.saveBtn')}
               </Button>
             </div>
           </ModalFooter>
