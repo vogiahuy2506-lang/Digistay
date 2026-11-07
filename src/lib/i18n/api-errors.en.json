@@ -829,5 +829,19 @@
   "Đã xóa dịch vụ khỏi đơn đặt phòng": "Service removed from booking",
   "Lỗi khi xóa dịch vụ": "Failed to remove service",
   "Đã tạo tiện ích riêng": "Custom amenity created",
-  "Lỗi khi tạo tiện ích riêng": "Failed to create custom amenity"
+  "Lỗi khi tạo tiện ích riêng": "Failed to create custom amenity",
+  "Không tìm thấy cơ sở hoặc bạn không có quyền": "Property not found or access denied",
+  "Không thể tải danh sách kênh OTA lúc này": "Unable to load OTA channel list at this time",
+  "Mã khách sạn (Hotel ID) không được để trống": "Hotel ID must not be empty",
+  "Kênh phân phối không hợp lệ": "Invalid distribution channel",
+  "Không thể tải thông tin kênh OTA": "Unable to load OTA channel details",
+  "Bạn không có quyền chỉnh sửa kênh cơ sở này": "You do not have permission to edit channels for this property",
+  "Đã cập nhật cấu hình kênh {0} thành công": "{0} channel settings updated successfully",
+  "Không thể lưu cấu hình kênh OTA": "Unable to save OTA channel settings",
+  "Bạn không có quyền ngắt kết nối kênh này": "You do not have permission to disconnect this channel",
+  "Đã ngắt kết nối kênh {0}": "{0} channel disconnected",
+  "Không thể ngắt kết nối kênh OTA": "Unable to disconnect OTA channel",
+  "Mã khách sạn không được để trống": "Hotel ID must not be empty",
+  "Bạn không có quyền kiểm tra kết nối cơ sở này": "You do not have permission to test connection for this property",
+  "Không thể kiểm tra kết nối với kênh lúc này": "Unable to test channel connection at this time"
 }

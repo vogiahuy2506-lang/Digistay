@@ -18,6 +18,7 @@ export type NavKey =
   | 'bankAccounts'
   | 'policies'
   | 'coupons'
+  | 'channels'
   | 'customers'
   | 'leads'
   | 'blog'
@@ -71,6 +72,7 @@ export function primaryNav(slug: string, propertyId?: string): NavItem[] {
     { key: 'menu', href: routes.propertyMenu(slug, id), can: ['services_manage'], group: 'property' },
     { key: 'policies', href: routes.propertyPolicies(slug, id), can: ['property_edit'], group: 'property' },
     { key: 'coupons', href: routes.propertyCoupons(slug, id), can: ['property_edit'], group: 'property' },
+    { key: 'channels', href: routes.propertyChannels(slug, id), can: ['property_edit'], group: 'property' },
     { key: 'leads', href: routes.propertyLeads(slug, id), can: ['property_edit'], group: 'property' },
     {
       key: 'blog',

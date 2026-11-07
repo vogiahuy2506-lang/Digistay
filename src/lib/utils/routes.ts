@@ -46,6 +46,7 @@ export const routes = {
   propertyMenu: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/menu`,
   propertyPolicies: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/policies`,
   propertyCoupons: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/coupons`,
+  propertyChannels: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/channels`,
   propertyCustomers: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/customers`,
   propertyCustomer: (slug: string, id: string, customerId: string) =>
     `/workspace/${slug}/properties/${id}/customers/${customerId}`,
