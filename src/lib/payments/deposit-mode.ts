@@ -26,6 +26,9 @@ export interface DepositModeRows {
   depositMode: DepositMode | null
   depositAccountId: string | null
   payos: { webhookConfirmedAt: Date | null } | null
+  sepay?: { propertyId: string } | null
+  momo?: { propertyId: string } | null
+  vnpay?: { propertyId: string } | null
   /** active accounts with QR, oldest first */
   bankAccounts: { id: string }[]
 }
@@ -35,6 +38,9 @@ export const DEPOSIT_MODE_SELECT = {
   depositMode: true,
   depositAccountId: true,
   payos: { select: { webhookConfirmedAt: true } },
+  sepay: { select: { propertyId: true } },
+  momo: { select: { propertyId: true } },
+  vnpay: { select: { propertyId: true } },
   bankAccounts: { where: { isActive: true, qrEnabled: true }, orderBy: { createdAt: 'asc' }, select: { id: true } },
 } satisfies Prisma.PropertySelect
 
@@ -45,11 +51,18 @@ export function depositAccountIdFrom(rows: Pick<DepositModeRows, 'depositAccount
   return ids[0] ?? null
 }
 
-/** How guests pay now: PAYOS, MANUAL, or null (no way to take a deposit online). */
+/** How guests pay now: PAYOS, SEPAY, MOMO, VNPAY, MANUAL, or null (no way to take a deposit online). */
 export function effectiveDepositMode(rows: DepositModeRows): DepositMode | null {
   const payos = Boolean(rows.payos?.webhookConfirmedAt)
-  const chosen = rows.depositMode ?? (payos ? 'PAYOS' : 'MANUAL')
+  const sepay = Boolean(rows.sepay)
+  const momo = Boolean(rows.momo)
+  const vnpay = Boolean(rows.vnpay)
+
+  const chosen = rows.depositMode ?? (payos ? 'PAYOS' : sepay ? 'SEPAY' : momo ? 'MOMO' : vnpay ? 'VNPAY' : 'MANUAL')
   if (chosen === 'PAYOS' && payos) return 'PAYOS'
+  if (chosen === 'SEPAY' && sepay) return 'SEPAY'
+  if (chosen === 'MOMO' && momo) return 'MOMO'
+  if (chosen === 'VNPAY' && vnpay) return 'VNPAY'
   return depositAccountIdFrom(rows) ? 'MANUAL' : null
 }
 
@@ -59,6 +72,9 @@ export interface DepositSettings {
   /** what guests get now (see effectiveDepositMode) */
   effectiveMode: DepositMode | null
   payosConnected: boolean
+  sepayConnected: boolean
+  momoConnected: boolean
+  vnpayConnected: boolean
   /** the account the manual QR names now */
   accountId: string | null
   /** Policy.onlineDepositPercent: 0 = no online deposit at all */
@@ -76,6 +92,9 @@ export async function depositSettingsOf(propertyId: string, db: Db = prisma): Pr
     mode: property.depositMode,
     effectiveMode: effectiveDepositMode(property),
     payosConnected: Boolean(property.payos?.webhookConfirmedAt),
+    sepayConnected: Boolean(property.sepay),
+    momoConnected: Boolean(property.momo),
+    vnpayConnected: Boolean(property.vnpay),
     accountId: depositAccountIdFrom(property),
     percent: property.policy?.onlineDepositPercent ?? 0,
     deadlineMinutes: property.policy?.depositDeadlineMinutes ?? 0,

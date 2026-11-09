@@ -13,6 +13,7 @@ import { apiError } from '@/lib/i18n/api-errors'
 import { useTaxLookup } from '@/lib/hooks/use-tax-lookup'
 import { HOLD_HEADER, browserHoldSession } from '@/lib/bookings/hold-session'
 import { trackMarketingEvent } from '@/components/marketing/MarketingTracking'
+import type { DepositMode } from '@/lib/payments/deposit-mode'
 import { Plus, Minus, Clock, ConciergeBell, Car, UtensilsCrossed, Shirt, Sparkles } from 'lucide-react'
 
 interface Service extends PricedService {
@@ -88,8 +89,8 @@ export function BookingForm({
   services: Service[]
   policies: { title: string; text: string }[]
   times: { checkIn: string; checkOut: string }
-  /** mode MANUAL: a VietQR transfer to the hotel's account that staff confirm (manual-deposit.ts) */
-  deposit: { percent: number; deadlineMinutes: number; mode?: 'PAYOS' | 'MANUAL' } | null
+  /** mode: which gateway or manual transfer takes the deposit */
+  deposit: { percent: number; deadlineMinutes: number; mode?: DepositMode } | null
   /** the hotel's VAT rate (%), included in its prices; null: none on its invoices */
   vatRate: number | null
   backPath: string

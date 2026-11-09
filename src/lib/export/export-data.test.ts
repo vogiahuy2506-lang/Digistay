@@ -36,3 +36,4 @@ describe('export-data utility', () => {
     expect(html).toContain('<th>Tên</th>')
   })
 })
+

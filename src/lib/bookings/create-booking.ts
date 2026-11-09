@@ -24,6 +24,7 @@ import { RoomError, assignRoomTx, normalizeRoomNumber, roomConflictMessage, type
 import { appSiteUrl } from '@/lib/public-site/paths'
 import { depositFor, quoteStay, ratesFrom, type PricedService } from '@/lib/pricing/quote'
 import { depositUrl } from '@/lib/payments/deposit-link'
+import type { DepositMode } from '@/lib/payments/deposit-mode'
 import { NO_PRICE_MESSAGE, ROOM_RATE_INCLUDE, propertyRateDefaults } from '@/lib/pricing/rates'
 import { ROOM_TYPE_PLAN_LOCKED } from '@/lib/billing/guard'
 import { couponUsability, discountFor, normalizeCouponCode } from '@/lib/marketing/coupons'
@@ -63,7 +64,7 @@ export interface NewBooking {
   /** the guest's hold (RoomLock id from /api/bookings/room-lock) */
   holdId?: string | null
   /** The hotel's online deposit (guest-deposit.ts): the email carries the link to pay it. */
-  deposit?: { percent: number; deadlineMinutes: number; mode?: 'PAYOS' | 'MANUAL' } | null
+  deposit?: { percent: number; deadlineMinutes: number; mode?: DepositMode } | null
   /** The language of the page the guest booked on: their emails follow it. Staff bookings: 'vi'. */
   locale?: Locale
   /** Discount code the guest typed (tasks 41-42): re-checked under a row lock, never trusted. */

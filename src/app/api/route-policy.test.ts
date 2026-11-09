@@ -102,6 +102,14 @@ const PUBLIC_HANDLERS: Record<string, string> = {
     "Mắt Bão tax-office status for plan invoices on Digistay's own account; the secret in the URL (DIGISTAY_MATBAO_WEBHOOK_SECRET) is the credential; per-IP limit",
   'POST /api/webhooks/payos/[propertyId]':
     "PayOS notifications; the HMAC signature, checked with that property's checksum key, is the credential; per-IP limit",
+  'POST /api/webhooks/sepay/[propertyId]':
+    "SePay bank transfer notifications; optional authentication token or transfer payload matching property",
+  'POST /api/webhooks/momo/[propertyId]':
+    "MoMo IPN notifications; the HMAC SHA256 signature checked with that property's secret key",
+  'GET /api/webhooks/vnpay/[propertyId]':
+    "VNPay IPN notifications (GET callback); checksum checked with property's hash secret",
+  'POST /api/webhooks/vnpay/[propertyId]':
+    "VNPay IPN notifications (POST callback); checksum checked with property's hash secret",
   'POST /api/webhooks/payos/digistay':
     "PayOS notifications for plan payments on Digistay's own account; the HMAC signature (Digistay's checksum key) is the credential; per-IP limit",
   'POST /api/webhooks/channels/[channel]':

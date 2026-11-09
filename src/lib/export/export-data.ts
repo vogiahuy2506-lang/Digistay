@@ -145,3 +145,4 @@ export function exportToExcel(
   const safeFilename = filename.endsWith('.xls') ? filename : `${filename}.xls`
   downloadFile(excelContent, safeFilename, 'application/vnd.ms-excel;charset=utf-8;')
 }
+

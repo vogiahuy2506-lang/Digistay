@@ -11,11 +11,15 @@ import { MOMO_CODE, VIETQR_BANKS, buildVietQr, findBank, isWallet, toBankName, w
 import { NoAccess } from '@/components/payment/no-access'
 import { useCan } from '@/components/layout/workspace-context'
 import { toast } from '@/components/ui/toast'
+import { cn } from '@/lib/utils'
 import { PayosCard } from './payos-card'
+import { SepayCard } from './sepay-card'
+import { MomoCard } from './momo-card'
+import { VnpayCard } from './vnpay-card'
 import { DepositModeCard } from './deposit-mode-card'
 import {
   Building, Plus, Trash2, Edit, QrCode, Copy,
-  AlertCircle, Download, Wallet
+  AlertCircle, Download, Wallet, CreditCard, ShieldCheck, Zap
 } from 'lucide-react'
 import { apiError } from '@/lib/i18n/api-errors'
 
@@ -57,6 +61,8 @@ export default function BankAccountsPage() {
   const [version, setVersion] = React.useState(0)
   // The account the manual deposit QR names now (marked on its card).
   const [depositAccountId, setDepositAccountId] = React.useState<string | null>(null)
+
+  const [activeTab, setActiveTab] = React.useState<'bank' | 'gateways' | 'deposit'>('bank')
 
   const [formData, setFormData] = React.useState({
     bankName: '',
@@ -252,56 +258,11 @@ export default function BankAccountsPage() {
   return (
     <PageContainer>
       <Header
-        title={t('title')}
-        description={t('description')}
+        title="Tài khoản ngân hàng & Cổng thanh toán"
+        description="Quản lý tài khoản nhận chuyển khoản VietQR và kết nối các cổng thanh toán tự động (PayOS, SePay, MoMo, VNPay)"
         actions={
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={addWallet}>
-              <Wallet className="w-4 h-4 mr-2" />
-              {t('addMomo')}
-            </Button>
-            <Button onClick={() => { resetForm(); setShowModal(true) }}>
-              <Plus className="w-4 h-4 mr-2" />
-              {t('add')}
-            </Button>
-          </div>
-        }
-      />
-
-      {/* Info Banner */}
-      <Card className="mb-6 bg-info-soft border-info/30">
-        <CardContent className="p-4 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 shrink-0 text-info mt-0.5" />
-          <div>
-            <p className="font-medium text-info">{t('infoTitle')}</p>
-            <p className="text-sm text-info">
-              {t('infoText')}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      <DepositModeCard
-        propertyId={propertyId}
-        accounts={accounts}
-        version={version}
-        onLoaded={(settings) => setDepositAccountId(settings.effectiveMode === 'MANUAL' ? settings.accountId : null)}
-      />
-
-      <PayosCard propertyId={propertyId} onChange={() => setVersion((v) => v + 1)} />
-
-      {/* Accounts List */}
-      {isLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-acc" />
-        </div>
-      ) : accounts.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Building className="w-12 h-12 text-muted mx-auto mb-4" />
-            <p className="text-muted mb-1">{t('empty')}</p>
-            <p className="text-sm text-muted mb-4">{t('emptyHint')}</p>
-            <div className="flex flex-wrap justify-center gap-2">
+          activeTab === 'bank' ? (
+            <div className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={addWallet}>
                 <Wallet className="w-4 h-4 mr-2" />
                 {t('addMomo')}
@@ -311,105 +272,226 @@ export default function BankAccountsPage() {
                 {t('add')}
               </Button>
             </div>
-          </CardContent>
-        </Card>
-      ) : (
+          ) : undefined
+        }
+      />
+
+      {/* Tabs navigation */}
+      <div className="flex border-b border-line gap-1 sm:gap-2 mb-6 overflow-x-auto">
+        <button
+          type="button"
+          onClick={() => setActiveTab('bank')}
+          className={cn(
+            'flex items-center gap-2 py-3 px-3 sm:px-4 border-b-2 font-medium text-sm transition-colors whitespace-nowrap',
+            activeTab === 'bank'
+              ? 'border-acc text-acc'
+              : 'border-transparent text-muted hover:text-fg'
+          )}
+        >
+          <Building className="w-4 h-4" />
+          <span>Tài khoản VietQR</span>
+          <Badge variant={activeTab === 'bank' ? 'acc' : 'outline'} className="text-xs">
+            {accounts.length}
+          </Badge>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('gateways')}
+          className={cn(
+            'flex items-center gap-2 py-3 px-3 sm:px-4 border-b-2 font-medium text-sm transition-colors whitespace-nowrap',
+            activeTab === 'gateways'
+              ? 'border-acc text-acc'
+              : 'border-transparent text-muted hover:text-fg'
+          )}
+        >
+          <Zap className="w-4 h-4" />
+          <span>Cổng thanh toán tự động</span>
+          <Badge variant="success" className="text-xs">
+            PayOS · SePay · MoMo · VNPay
+          </Badge>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('deposit')}
+          className={cn(
+            'flex items-center gap-2 py-3 px-3 sm:px-4 border-b-2 font-medium text-sm transition-colors whitespace-nowrap',
+            activeTab === 'deposit'
+              ? 'border-acc text-acc'
+              : 'border-transparent text-muted hover:text-fg'
+          )}
+        >
+          <ShieldCheck className="w-4 h-4" />
+          <span>Cấu hình nhận cọc</span>
+        </button>
+      </div>
+
+      {activeTab === 'gateways' && (
         <div className="space-y-4">
-          {accounts.map((account) => {
-            const wallet = isWallet(account.bankCode)
-            return (
-            <Card key={account.id}>
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-4 min-w-0">
-                    <div className="hidden sm:flex w-14 h-14 shrink-0 rounded-xl bg-fg/5 items-center justify-center">
-                      {wallet ? <Wallet className="w-7 h-7 text-muted" /> : <Building className="w-7 h-7 text-muted" />}
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="text-lg font-semibold text-fg break-words">{wallet ? t('momoWallet') : account.bankName}</h3>
-                      {!wallet && <p className="text-sm text-muted">{t('bankCode', { code: findBank(account.bankCode)?.code ?? account.bankCode })}</p>}
-                      <div className="flex flex-wrap items-center gap-2 mt-2">
-                        <Badge variant={account.isActive ? 'success' : 'gray'}>
-                          {account.isActive ? t('active') : t('inactive')}
-                        </Badge>
-                        {account.id === depositAccountId && <Badge variant="acc">{t('depositAccount')}</Badge>}
-                        {account.qrEnabled && (
-                          <Badge variant="outline" className="flex items-center gap-1">
-                            <QrCode className="w-3 h-3" />
-                            VietQR
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Button aria-label={tc('actions.edit')} variant="outline" size="sm" onClick={() => handleEdit(account)}>
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button aria-label={tc('actions.delete')} variant="outline" size="sm" onClick={() => handleDelete(account.id)}>
-                      <Trash2 className="w-4 h-4 text-err" />
-                    </Button>
-                  </div>
-                </div>
+          <Card className="mb-6 bg-acc-soft/30 border-acc/20">
+            <CardContent className="p-4 flex items-start gap-3">
+              <Zap className="w-5 h-5 shrink-0 text-acc mt-0.5" />
+              <div>
+                <p className="font-medium text-fg">Cổng thanh toán tự động & Đối soát tức thì</p>
+                <p className="text-sm text-muted mt-0.5">
+                  Khi khách đặt phòng trực tuyến, các cổng thanh toán sẽ tự động gửi Webhook thông báo để Digistay cập nhật trạng thái đặt phòng sang <strong>Đã nhận cọc</strong> ngay lập tức mà nhân viên không cần kiểm tra sao kê ngân hàng thủ công.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
-                <div className="mt-4 p-3 sm:p-4 bg-fg/[0.03] rounded-lg">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted">{wallet ? t('walletPhone') : t('accountNumber')}</p>
-                      <div className="flex items-center gap-2">
-                        <p className="font-mono text-lg font-semibold break-all">
-                          {wallet ? account.accountNumber : formatAccountNumber(account.accountNumber)}
-                        </p>
-                        <button
-                          onClick={() => copyToClipboard(account.accountNumber)}
-                          className="p-1 hover:bg-fg/10 rounded"
-                          aria-label={wallet ? t('copyWalletPhone') : t('copyAccountNumber')}
-                        >
-                          <Copy className="w-4 h-4 text-muted" />
-                        </button>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted">{t('accountHolder')}</p>
-                      <p className="font-semibold break-words">{toBankName(account.accountHolder)}</p>
-                    </div>
-                  </div>
-                </div>
+          <PayosCard propertyId={propertyId} onChange={() => setVersion((v) => v + 1)} />
+          <SepayCard propertyId={propertyId} onChange={() => setVersion((v) => v + 1)} />
+          <MomoCard propertyId={propertyId} onChange={() => setVersion((v) => v + 1)} />
+          <VnpayCard propertyId={propertyId} onChange={() => setVersion((v) => v + 1)} />
+        </div>
+      )}
 
-                {/* QR Preview */}
-                {account.qrEnabled && (
-                  <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-4">
-                    <div className="flex flex-col items-center gap-2">
-                      <VietQR
-                        bankCode={account.bankCode}
-                        accountNumber={account.accountNumber}
-                        accountHolder={account.accountHolder}
-                        description={qrContent(account)}
-                        size={120}
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => downloadAccountQr(account)}
-                        className="text-xs"
-                      >
-                        <Download className="w-3 h-3 mr-1" />
-                        {t('downloadQr')}
-                      </Button>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm text-muted">{t('transferContent')}</p>
-                      <p className="font-mono text-sm bg-fg/5 px-2 py-1 rounded mt-1 break-all">
-                        {qrContent(account)}
-                      </p>
-                    </div>
-                  </div>
-                )}
+      {activeTab === 'deposit' && (
+        <DepositModeCard
+          propertyId={propertyId}
+          accounts={accounts}
+          version={version}
+          onLoaded={(settings) => setDepositAccountId(settings.effectiveMode === 'MANUAL' ? settings.accountId : null)}
+        />
+      )}
+
+      {activeTab === 'bank' && (
+        <>
+          {/* Info Banner */}
+          <Card className="mb-6 bg-info-soft border-info/30">
+            <CardContent className="p-4 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 shrink-0 text-info mt-0.5" />
+              <div>
+                <p className="font-medium text-info">{t('infoTitle')}</p>
+                <p className="text-sm text-info">
+                  {t('infoText')}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Accounts List */}
+          {isLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-acc" />
+            </div>
+          ) : accounts.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <Building className="w-12 h-12 text-muted mx-auto mb-4" />
+                <p className="text-muted mb-1">{t('empty')}</p>
+                <p className="text-sm text-muted mb-4">{t('emptyHint')}</p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Button variant="outline" onClick={addWallet}>
+                    <Wallet className="w-4 h-4 mr-2" />
+                    {t('addMomo')}
+                  </Button>
+                  <Button onClick={() => { resetForm(); setShowModal(true) }}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    {t('add')}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
-            )
-          })}
-        </div>
+          ) : (
+            <div className="space-y-4">
+              {accounts.map((account) => {
+                const wallet = isWallet(account.bankCode)
+                return (
+                <Card key={account.id}>
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-4 min-w-0">
+                        <div className="hidden sm:flex w-14 h-14 shrink-0 rounded-xl bg-fg/5 items-center justify-center">
+                          {wallet ? <Wallet className="w-7 h-7 text-muted" /> : <Building className="w-7 h-7 text-muted" />}
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="text-lg font-semibold text-fg break-words">{wallet ? t('momoWallet') : account.bankName}</h3>
+                          {!wallet && <p className="text-sm text-muted">{t('bankCode', { code: findBank(account.bankCode)?.code ?? account.bankCode })}</p>}
+                          <div className="flex flex-wrap items-center gap-2 mt-2">
+                            <Badge variant={account.isActive ? 'success' : 'gray'}>
+                              {account.isActive ? t('active') : t('inactive')}
+                            </Badge>
+                            {account.id === depositAccountId && <Badge variant="acc">{t('depositAccount')}</Badge>}
+                            {account.qrEnabled && (
+                              <Badge variant="outline" className="flex items-center gap-1">
+                                <QrCode className="w-3 h-3" />
+                                VietQR
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Button aria-label={tc('actions.edit')} variant="outline" size="sm" onClick={() => handleEdit(account)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button aria-label={tc('actions.delete')} variant="outline" size="sm" onClick={() => handleDelete(account.id)}>
+                          <Trash2 className="w-4 h-4 text-err" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 p-3 sm:p-4 bg-fg/[0.03] rounded-lg">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-muted">{wallet ? t('walletPhone') : t('accountNumber')}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-mono text-lg font-semibold break-all">
+                              {wallet ? account.accountNumber : formatAccountNumber(account.accountNumber)}
+                            </p>
+                            <button
+                              onClick={() => copyToClipboard(account.accountNumber)}
+                              className="p-1 hover:bg-fg/10 rounded"
+                              aria-label={wallet ? t('copyWalletPhone') : t('copyAccountNumber')}
+                            >
+                              <Copy className="w-4 h-4 text-muted" />
+                            </button>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted">{t('accountHolder')}</p>
+                          <p className="font-semibold break-words">{toBankName(account.accountHolder)}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* QR Preview */}
+                    {account.qrEnabled && (
+                      <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                        <div className="flex flex-col items-center gap-2">
+                          <VietQR
+                            bankCode={account.bankCode}
+                            accountNumber={account.accountNumber}
+                            accountHolder={account.accountHolder}
+                            description={qrContent(account)}
+                            size={120}
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => downloadAccountQr(account)}
+                            className="text-xs"
+                          >
+                            <Download className="w-3 h-3 mr-1" />
+                            {t('downloadQr')}
+                          </Button>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm text-muted">{t('transferContent')}</p>
+                          <p className="font-mono text-sm bg-fg/5 px-2 py-1 rounded mt-1 break-all">
+                            {qrContent(account)}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+                )
+              })}
+            </div>
+          )}
+        </>
       )}
 
       {/* Add/Edit Modal */}

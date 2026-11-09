@@ -473,8 +473,11 @@ model Property {
   siteVersions     SiteVersion[]
   bankAccounts     BankAccount[]
   payos            PropertyPayos?
+  sepay            PropertySepay?
+  momo             PropertyMomo?
+  vnpay            PropertyVnpay?
   /// How a guest pays the online deposit (Policy.onlineDepositPercent): MANUAL, a VietQR to
-  /// depositAccount that staff confirm; PAYOS, the hotel's PayOS, confirmed by webhook. null: PAYOS
+  /// depositAccount that staff confirm; PAYOS, SEPAY, MOMO, VNPAY confirmed by webhook. null: PAYOS
   /// when PayOS is connected, else MANUAL (src/lib/payments/deposit-mode.ts).
   depositMode      DepositPaymentMode?
   /// The receiving account (bank or MoMo wallet) the manual QR names; null: the oldest active one.
@@ -1311,6 +1314,9 @@ enum PaymentStatus {
 enum DepositPaymentMode {
   MANUAL // VietQR to the hotel's own account or MoMo wallet; staff confirm the money
   PAYOS // the hotel's PayOS; the webhook confirms it
+  SEPAY // SePay bank webhook confirms it
+  MOMO // MoMo IPN confirms it
+  VNPAY // VNPay IPN confirms it
 }
 
 enum PaymentGateway {
@@ -1384,6 +1390,63 @@ model PropertyPayos {
   updatedAt DateTime @updatedAt
 
   @@map("property_payos")
+}
+
+/// The property's own SePay account: receives real-time bank transfer notifications.
+/// Keys are encrypted with src/lib/security/secret-box.ts.
+model PropertySepay {
+  propertyId    String   @id
+  property      Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  /// encrypted
+  apiKey        String
+  /// encrypted
+  webhookToken  String?
+  accountNumber String?
+  bankCode      String?
+  connectedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("property_sepay")
+}
+
+/// The property's own MoMo Business gateway account.
+/// Keys are encrypted with src/lib/security/secret-box.ts.
+model PropertyMomo {
+  propertyId    String   @id
+  property      Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  partnerCode   String
+  /// encrypted
+  accessKey     String
+  /// encrypted
+  secretKey     String
+  /// SANDBOX or PRODUCTION
+  environment   String   @default("SANDBOX")
+  connectedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("property_momo")
+}
+
+/// The property's own VNPay payment gateway account.
+/// Keys are encrypted with src/lib/security/secret-box.ts.
+model PropertyVnpay {
+  propertyId    String   @id
+  property      Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tmnCode       String
+  /// encrypted
+  hashSecret    String
+  /// SANDBOX or PRODUCTION
+  environment   String   @default("SANDBOX")
+  connectedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("property_vnpay")
 }
 
 /// The property's own Mắt Bão e-invoice account (Part 6): invoices are issued

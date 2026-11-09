@@ -10,7 +10,7 @@ type Props = { params: Promise<{ id: string }> }
 /** mode and/or the receiving account of the manual QR; accountId null: the oldest active one. */
 const settingsSchema = z
   .object({
-    mode: z.enum(['MANUAL', 'PAYOS'], { errorMap: () => ({ message: 'Cách nhận cọc không hợp lệ' }) }).optional(),
+    mode: z.enum(['MANUAL', 'PAYOS', 'SEPAY', 'MOMO', 'VNPAY'], { errorMap: () => ({ message: 'Cách nhận cọc không hợp lệ' }) }).optional(),
     accountId: z.string().min(1).nullable().optional(),
   })
   .refine((v) => v.mode !== undefined || v.accountId !== undefined, 'Không có gì để lưu')
@@ -63,6 +63,33 @@ export async function PUT(request: NextRequest, props: Props) {
     if (!payos?.webhookConfirmedAt) {
       return NextResponse.json(
         { success: false, error: 'Chưa kết nối PayOS: kết nối PayOS trước khi chọn xác nhận tự động' },
+        { status: 400 }
+      )
+    }
+  }
+  if (mode === 'SEPAY') {
+    const sepay = await prisma.propertySepay.findUnique({ where: { propertyId: id }, select: { propertyId: true } })
+    if (!sepay) {
+      return NextResponse.json(
+        { success: false, error: 'Chưa kết nối SePay: kết nối SePay trước khi chọn phương thức này' },
+        { status: 400 }
+      )
+    }
+  }
+  if (mode === 'MOMO') {
+    const momo = await prisma.propertyMomo.findUnique({ where: { propertyId: id }, select: { propertyId: true } })
+    if (!momo) {
+      return NextResponse.json(
+        { success: false, error: 'Chưa kết nối Ví MoMo: kết nối MoMo trước khi chọn phương thức này' },
+        { status: 400 }
+      )
+    }
+  }
+  if (mode === 'VNPAY') {
+    const vnpay = await prisma.propertyVnpay.findUnique({ where: { propertyId: id }, select: { propertyId: true } })
+    if (!vnpay) {
+      return NextResponse.json(
+        { success: false, error: 'Chưa kết nối Cổng VNPay: kết nối VNPay trước khi chọn phương thức này' },
         { status: 400 }
       )
     }
