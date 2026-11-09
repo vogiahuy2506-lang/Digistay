@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { Globe, Search, Sparkles, ShieldCheck, ArrowRight, ExternalLink, Activity, Share2, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Globe, Search, Sparkles, ShieldCheck, ArrowRight, ExternalLink, Activity, Share2, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
 import {
   Modal,
   ModalHeader,
@@ -47,6 +47,7 @@ interface WebsiteSettingsModalProps {
   }
   onChange: (updated: Record<string, unknown>) => void
   onSaveDomain: (patch: Record<string, unknown>, toastMsg?: string) => void
+  onTogglePublish?: (nextPublished: boolean) => Promise<boolean>
   availableCoupons: Array<{
     id: string
     code: string
@@ -67,12 +68,27 @@ export function WebsiteSettingsModal({
   settings,
   onChange,
   onSaveDomain,
+  onTogglePublish,
   availableCoupons,
 }: WebsiteSettingsModalProps) {
   const t = useTranslations('dash.website')
   const tc = useTranslations('dash.common')
   const router = useRouter()
   const [activeTab, setActiveTab] = React.useState('domain')
+  const [isTogglingPublish, setIsTogglingPublish] = React.useState(false)
+
+  const handleTogglePublish = async (nextState: boolean) => {
+    if (onTogglePublish) {
+      setIsTogglingPublish(true)
+      try {
+        await onTogglePublish(nextState)
+      } finally {
+        setIsTogglingPublish(false)
+      }
+    } else {
+      onChange({ isPublished: nextState })
+    }
+  }
 
   const publicUrl = subdomain ? `https://${subdomain}.digistay.vn` : ''
 
@@ -461,15 +477,19 @@ export function WebsiteSettingsModal({
                   <label htmlFor="publish-toggle-input" className="text-sm font-medium text-fg block cursor-pointer">
                     Công khai website cho du khách
                   </label>
-                  <p className="text-xs text-muted">Bật để cho phép mọi người truy cập vào website của bạn</p>
+                  <p className="text-xs text-muted">Bật để cho phép mọi người truy cập vào website của bạn ngay lập tức</p>
                 </div>
-                <input
-                  id="publish-toggle-input"
-                  type="checkbox"
-                  checked={settings.isPublished}
-                  onChange={(e) => onChange({ isPublished: e.target.checked })}
-                  className="h-5 w-5 rounded border-line text-acc focus:ring-acc cursor-pointer"
-                />
+                <div className="flex items-center gap-2">
+                  {isTogglingPublish && <Loader2 className="w-4 h-4 animate-spin text-acc" />}
+                  <input
+                    id="publish-toggle-input"
+                    type="checkbox"
+                    disabled={isTogglingPublish}
+                    checked={settings.isPublished}
+                    onChange={(e) => handleTogglePublish(e.target.checked)}
+                    className="h-5 w-5 rounded border-line text-acc focus:ring-acc cursor-pointer disabled:opacity-50"
+                  />
+                </div>
               </div>
             </div>
           </TabsContent>

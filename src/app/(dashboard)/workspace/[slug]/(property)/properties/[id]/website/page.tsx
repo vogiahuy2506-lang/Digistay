@@ -1362,6 +1362,8 @@ export default function WebsiteBuilderPage() {
   const [showSettingsModal, setShowSettingsModal] = React.useState(false)
   const [showHistory, setShowHistory] = React.useState(false)
   const [propertyData, setPropertyData] = React.useState<any>(null)
+  const [isPublishing, setIsPublishing] = React.useState(false)
+  const savedSnapshotRef = React.useRef<string | null>(null)
   // What the site shows (real rooms, prices, photos...), for the preview.
   const [site, setSite] = React.useState<PreviewSite | null>(null)
   // No layout saved yet: the blocks are the default layout the site shows.
@@ -1426,6 +1428,10 @@ export default function WebsiteBuilderPage() {
         if (blocksData.data.settings) {
           setSettings(blocksData.data.settings)
         }
+        savedSnapshotRef.current = JSON.stringify({
+          blocks: saved.length === 0 && preview?.defaultBlocks.length ? blocksFromDefaults(preview.defaultBlocks) : saved,
+          settings: blocksData.data.settings,
+        })
       }
 
       // Fetch active coupons for exit-intent popup (task 43)
@@ -1500,6 +1506,7 @@ export default function WebsiteBuilderPage() {
         return false
       }
       if (next) setSettings(next)
+      savedSnapshotRef.current = JSON.stringify({ blocks, settings: next ?? settings })
       setUsingDefaults(false)
       toast.success(successMessage)
       return true
@@ -1521,11 +1528,74 @@ export default function WebsiteBuilderPage() {
     void fetchWebsiteData()
   }
 
+  const handleTogglePublish = async (nextPublished: boolean): Promise<boolean> => {
+    if (!settings) return false
+    setIsPublishing(true)
+    try {
+      const res = await fetch('/api/website/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          propertyId,
+          settings: {
+            ...settings,
+            isPublished: nextPublished,
+          },
+        }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data?.success) {
+        toast.error(apiError(data?.error) || t('toast.saveFailed'))
+        return false
+      }
+      setSettings((curr) => (curr ? { ...curr, isPublished: nextPublished } : curr))
+      if (savedSnapshotRef.current) {
+        try {
+          const parsed = JSON.parse(savedSnapshotRef.current)
+          parsed.settings = { ...(parsed.settings || {}), isPublished: nextPublished }
+          savedSnapshotRef.current = JSON.stringify(parsed)
+        } catch {}
+      }
+      toast.success(
+        nextPublished
+          ? 'Đã xuất bản website thành công! Du khách có thể truy cập ngay.'
+          : 'Đã hủy công khai website. Website hiện ở chế độ xem trước riêng tư.'
+      )
+      return true
+    } catch (err) {
+      console.error('Failed to toggle publish:', err)
+      toast.error(t('toast.offline'))
+      return false
+    } finally {
+      setIsPublishing(false)
+    }
+  }
+
   const togglePublish = () => {
     if (!settings) return
-    const publish = !settings.isPublished
-    void handleSave({ ...settings, isPublished: publish }, publish ? t('toast.published') : t('toast.unpublished'))
+    void handleTogglePublish(!settings.isPublished)
   }
+
+  const currentSnapshot = React.useMemo(() => {
+    if (!settings) return null
+    return JSON.stringify({ blocks, settings })
+  }, [blocks, settings])
+
+  const hasUnsavedChanges = Boolean(
+    savedSnapshotRef.current && currentSnapshot && savedSnapshotRef.current !== currentSnapshot
+  )
+
+  React.useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault()
+        e.returnValue = 'Bạn có thay đổi trên website chưa được lưu. Bạn có chắc muốn rời đi?'
+        return e.returnValue
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [hasUnsavedChanges])
 
   const addBlock = (type: string, name: string) => {
     const blockTypeInfo = blockTypes.find(b => b.type === type)
@@ -1712,7 +1782,12 @@ export default function WebsiteBuilderPage() {
           <Button 
             variant="ghost" 
             size="sm"
-            onClick={() => router.push(routes.property(slug, propertyId))}
+            onClick={() => {
+              if (hasUnsavedChanges && !window.confirm('Bạn có thay đổi trên website chưa được lưu. Bạn có chắc muốn rời đi?')) {
+                return
+              }
+              router.push(routes.property(slug, propertyId))
+            }}
             className="gap-2"
           >
             <ChevronRight className="w-4 h-4 rotate-180" />
@@ -1865,6 +1940,43 @@ export default function WebsiteBuilderPage() {
             </button>
           </div>
           
+          {/* Quick Publish Toggle / Status */}
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-line bg-fg/[0.03]">
+            <span
+              className={cn(
+                'w-2 h-2 rounded-full shrink-0',
+                settings?.isPublished ? 'bg-emerald-500 animate-pulse' : 'bg-neutral-400'
+              )}
+            />
+            <span className="text-xs font-medium text-fg hidden sm:inline">
+              {settings?.isPublished ? 'Đã xuất bản' : 'Chưa công khai'}
+            </span>
+            <button
+              type="button"
+              onClick={() => settings && handleTogglePublish(!settings.isPublished)}
+              disabled={isPublishing || !settings}
+              title={
+                settings?.isPublished
+                  ? 'Bấm để hủy công khai (chuyển về riêng tư)'
+                  : 'Bấm để công khai website cho du khách ngay'
+              }
+              className={cn(
+                'ml-1 text-[11px] font-semibold px-2 py-0.5 rounded-md transition-all flex items-center gap-1 disabled:opacity-50 cursor-pointer',
+                settings?.isPublished
+                  ? 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
+                  : 'bg-acc text-white hover:bg-acc/90 shadow-sm'
+              )}
+            >
+              {isPublishing ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : settings?.isPublished ? (
+                'Hủy xuất bản'
+              ) : (
+                'Xuất bản ngay'
+              )}
+            </button>
+          </div>
+
           <Button 
             variant="outline"
             size="sm"
@@ -1882,8 +1994,14 @@ export default function WebsiteBuilderPage() {
             onClick={() => handleSave()}
             disabled={isSaving}
             size="sm"
-            className="gap-2 shadow-lg"
+            className={cn("gap-2 shadow-lg relative", hasUnsavedChanges && "ring-2 ring-acc/50 ring-offset-1")}
           >
+            {hasUnsavedChanges && (
+              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-acc opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-acc"></span>
+              </span>
+            )}
             {isSaving ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
@@ -2219,6 +2337,7 @@ export default function WebsiteBuilderPage() {
           settings={settings}
           onChange={(patch) => setSettings((curr) => (curr ? { ...curr, ...patch } as any : curr))}
           onSaveDomain={(patch, msg) => handleSave({ ...settings, ...(patch as any) }, msg)}
+          onTogglePublish={handleTogglePublish}
           availableCoupons={availableCoupons}
         />
       )}
