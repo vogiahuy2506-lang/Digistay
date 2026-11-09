@@ -21,6 +21,15 @@ import { ROOM_RATE_INCLUDE, propertyRateDefaults } from '@/lib/pricing/rates'
 export const PUBLIC_SITE_TTL_SECONDS = 300
 export const publicSiteTag = (propertyId: string) => `public-site:${propertyId}`
 
+export const DEFAULT_STARTER_AMENITIES = [
+  { id: 'def-wifi', slug: 'wifi', name: 'Wifi tốc độ cao miễn phí', icon: 'wifi', category: 'internet', isFeatured: true, customName: null, images: [], sortOrder: 0 },
+  { id: 'def-ac', slug: 'ac', name: 'Điều hòa không khí', icon: 'snowflake', category: 'room', isFeatured: true, customName: null, images: [], sortOrder: 1 },
+  { id: 'def-parking', slug: 'parking', name: 'Bãi đỗ xe an toàn', icon: 'car', category: 'transport', isFeatured: false, customName: null, images: [], sortOrder: 2 },
+  { id: 'def-desk', slug: 'front-desk', name: 'Lễ tân phục vụ 24/7', icon: 'concierge', category: 'service', isFeatured: false, customName: null, images: [], sortOrder: 3 },
+  { id: 'def-clean', slug: 'housekeeping', name: 'Dọn phòng hàng ngày', icon: 'sparkles', category: 'service', isFeatured: false, customName: null, images: [], sortOrder: 4 },
+  { id: 'def-water', slug: 'free-water', name: 'Nước uống miễn phí', icon: 'glass-water', category: 'dining', isFeatured: false, customName: null, images: [], sortOrder: 5 },
+]
+
 /** Drops the property's cached site; never fails the request that changed it. */
 export function invalidatePublicSite(propertyId: string | null | undefined) {
   if (!propertyId) return
@@ -113,6 +122,11 @@ export async function loadSiteProps(propertyId: string) {
     }
   }
 
+  // If both property-level and room-level amenities are empty, provide standard starter amenities
+  if (siteAmenities.length === 0) {
+    siteAmenities = [...DEFAULT_STARTER_AMENITIES]
+  }
+
   return {
     property: {
       id: property.id,
@@ -138,22 +152,26 @@ export async function loadSiteProps(propertyId: string) {
       alt: i.alt,
     })),
     amenities: siteAmenities,
-    roomTypes: property.roomTypes.map((rt) => ({
-      id: rt.id,
-      name: rt.name,
-      description: rt.description,
-      area: rt.area,
-      bedType: rt.bedType,
-      maxAdults: rt.maxAdults,
-      maxChildren: rt.maxChildren,
-      totalRooms: rt.totalRooms,
-      image: rt.images[0]?.url ?? null,
-      fromPrice: ratesFrom(rt.pricing[0], defaults)?.weekdayPrice ?? null,
-      weekendPrice: ratesFrom(rt.pricing[0], defaults)?.weekendPrice ?? null,
-      amenities: rt.amenities.filter((a) => a.amenity).map((a) => a.amenity.name),
-      amenitySlugs: rt.amenities.filter((a) => a.amenity).map((a) => a.amenity.slug),
-      translations: rt.translations,
-    })),
+    roomTypes: property.roomTypes.map((rt) => {
+      const roomAmenities = rt.amenities.filter((a) => a.amenity).map((a) => a.amenity.name)
+      const roomAmenitySlugs = rt.amenities.filter((a) => a.amenity).map((a) => a.amenity.slug)
+      return {
+        id: rt.id,
+        name: rt.name,
+        description: rt.description,
+        area: rt.area,
+        bedType: rt.bedType,
+        maxAdults: rt.maxAdults,
+        maxChildren: rt.maxChildren,
+        totalRooms: rt.totalRooms,
+        image: rt.images[0]?.url ?? null,
+        fromPrice: ratesFrom(rt.pricing[0], defaults)?.weekdayPrice ?? null,
+        weekendPrice: ratesFrom(rt.pricing[0], defaults)?.weekendPrice ?? null,
+        amenities: roomAmenities.length > 0 ? roomAmenities : siteAmenities.slice(0, 4).map((a) => a.name),
+        amenitySlugs: roomAmenitySlugs.length > 0 ? roomAmenitySlugs : siteAmenities.slice(0, 4).map((a) => a.slug),
+        translations: rt.translations,
+      }
+    }),
     services: property.extraServices.map((s) => ({
       id: s.id,
       name: s.name,
@@ -226,8 +244,27 @@ export type SiteProps = NonNullable<Awaited<ReturnType<typeof loadSiteProps>>>
  * turned off stay off, all of them included: an empty choice is not
  * "everything" (it used to bring back the full default layout).
  */
-export function siteBlocks<T extends { isEnabled: boolean }>(rows: T[], propertyType: string) {
-  return rows.length > 0 ? rows.filter((b) => b.isEnabled) : defaultBlocksForProperty(propertyType)
+export function siteBlocks<T extends { isEnabled: boolean; type?: string }>(rows: T[], propertyType: string) {
+  if (rows.length === 0) return defaultBlocksForProperty(propertyType)
+  const enabled = rows.filter((b) => b.isEnabled)
+  // Ensure AMENITIES is not accidentally lost if an existing property had saved blocks before AMENITIES was supported
+  if (!rows.some((b: any) => b.type === 'AMENITIES')) {
+    const defaultAmenityBlock = {
+      id: 'default-amenities',
+      type: 'AMENITIES',
+      name: 'Tiện ích',
+      config: { title: 'Tiện ích khách sạn' },
+      isEnabled: true,
+      sortOrder: 2.5,
+    } as unknown as T
+    const roomsIdx = enabled.findIndex((b: any) => b.type === 'ROOMS')
+    if (roomsIdx >= 0) {
+      enabled.splice(roomsIdx + 1, 0, defaultAmenityBlock)
+    } else {
+      enabled.push(defaultAmenityBlock)
+    }
+  }
+  return enabled
 }
 
 /**

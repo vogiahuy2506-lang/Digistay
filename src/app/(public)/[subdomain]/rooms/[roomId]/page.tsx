@@ -14,6 +14,7 @@ import { SiteHeader, type SiteSection } from '../../_components/SiteHeader'
 import { SiteLink } from '../../_components/site-base'
 import { Container, bedLabel, roomMeta } from '../../_components/site-ui'
 import { getIcon } from '@/lib/amenity-icons'
+import { DEFAULT_STARTER_AMENITIES } from '@/lib/public-site/site'
 import { formatVnd } from '@/lib/bookings/display'
 import { responsiveImage } from '@/lib/media/image-url'
 import { BookingBox } from './BookingBox'
@@ -281,7 +282,22 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
                     })}
                   </ul>
                 </section>
-              ) : null}
+              ) : (
+                <section>
+                  <h2 className="font-site text-h3 text-fg">{t('room.amenities')}</h2>
+                  <ul className="mt-5 grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3">
+                    {DEFAULT_STARTER_AMENITIES.slice(0, 4).map((amenity) => {
+                      const Icon = getIcon(amenity.icon)
+                      return (
+                        <li key={amenity.id} className="flex items-center gap-3 border-b border-line py-3 text-body text-fg">
+                          <Icon className="h-4 w-4 shrink-0 text-acc" aria-hidden="true" />
+                          {amenityName(amenity.slug, amenity.name, lang)}
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </section>
+              )}
 
               {policies.length > 0 && (
                 <section>

@@ -27,7 +27,7 @@ const SECTIONS: Record<string, SiteSection> = {
 export function siteSections(blockTypes: string[]): SiteSection[] {
   const types = new Set(blockTypes)
   return Object.entries(SECTIONS)
-    .filter(([type]) => types.size === 0 || types.has(type))
+    .filter(([type]) => types.size === 0 || types.has(type) || type === 'AMENITIES')
     .map(([, s]) => s)
 }
 
