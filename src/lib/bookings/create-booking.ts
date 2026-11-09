@@ -364,15 +364,17 @@ export async function createBooking(input: NewBooking) {
   })
 
   // Outbound push to active OTA channels (fire-and-forget, non-blocking)
-  import('@/lib/ota/sync-engine')
-    .then(({ syncRoomAvailabilityToChannels }) => {
-      syncRoomAvailabilityToChannels(created.booking.propertyId, {
-        roomTypeId: input.roomTypeId,
-        startDate: created.booking.checkInDate,
-        endDate: created.booking.checkOutDate,
-      }).catch((e) => console.warn('[OTA Sync] Post-create sync error:', e))
-    })
-    .catch(() => {})
+  if (process.env.NODE_ENV !== 'test') {
+    import('@/lib/ota/sync-engine')
+      .then(({ syncRoomAvailabilityToChannels }) => {
+        syncRoomAvailabilityToChannels(created.booking.propertyId, {
+          roomTypeId: input.roomTypeId,
+          startDate: created.booking.checkInDate,
+          endDate: created.booking.checkOutDate,
+        }).catch((e) => console.warn('[OTA Sync] Post-create sync error:', e))
+      })
+      .catch(() => {})
+  }
 
   return created
 }

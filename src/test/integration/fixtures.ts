@@ -20,7 +20,18 @@ export async function resetDatabase() {
   `
   if (rows.length === 0) return
   const tables = rows.map((r) => `"public"."${r.tablename}"`).join(', ')
-  await prisma.$executeRawUnsafe(`TRUNCATE ${tables} RESTART IDENTITY CASCADE`)
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await prisma.$executeRawUnsafe(`TRUNCATE ${tables} RESTART IDENTITY CASCADE`)
+      return
+    } catch (err: any) {
+      if (attempt < 3 && (err?.code === '40P01' || err?.message?.includes('deadlock'))) {
+        await new Promise((r) => setTimeout(r, 100 * attempt))
+        continue
+      }
+      throw err
+    }
+  }
 }
 
 /** Publishes the property's website: guests see it and can book (src/lib/public-site/visibility.ts). */
