@@ -6,6 +6,13 @@ import { z } from 'zod'
 import { generateHospitalityContent } from '@/lib/ai/content-generator'
 import { AiContentType, AiLanguage, AiTone } from '@/lib/ai/types'
 
+const imageSchema = z.object({
+  url: z.string().min(1),
+  base64: z.string().optional(),
+  caption: z.string().optional(),
+  name: z.string().optional(),
+})
+
 const generateSchema = z.object({
   contentType: z.enum(['ROOM_DESCRIPTION', 'BLOG_POST'] as [AiContentType, ...AiContentType[]]),
   keywords: z.string().min(1, 'Vui lòng nhập ít nhất vài từ khóa'),
@@ -18,6 +25,7 @@ const generateSchema = z.object({
   topic: z.string().optional(),
   apiKey: z.string().optional(),
   model: z.string().optional(),
+  images: z.array(imageSchema).optional(),
 })
 
 export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }) {

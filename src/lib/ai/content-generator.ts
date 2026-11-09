@@ -53,29 +53,31 @@ export function generateHeuristicContent(input: GenerateContentInput): GenerateC
     ? `Tận hưởng kỳ nghỉ thư thái tại ${titleVi}${areaPartVi}${bedPartVi}. Không gian được thiết kế theo phong cách ${TONE_DESCRIPTIONS_VI[tone].toLowerCase()}, mang lại sự yên bình và tái tạo năng lượng.`
     : `Khám phá những trải nghiệm đặc sắc và tiện nghi chuẩn mực tại ${propName}, nơi từng khoảnh khắc đều được chăm chút trọn vẹn.`
 
+  // Image markdown helpers
+  const images = input.images || []
+  const img1Vi = images[0] ? `\n\n![${images[0].caption || titleVi}](${images[0].url})\n*${images[0].caption || `Không gian tuyệt đẹp tại ${propName}`}*\n\n` : '\n\n'
+  const img2Vi = images[1] ? `\n\n![${images[1].caption || 'Chi tiết tiện nghi & không gian'}](${images[1].url})\n*${images[1].caption || 'Góc thư giãn thanh lịch, tràn ngập ánh sáng tự nhiên'}*\n\n` : '\n\n'
+  const img3Vi = images[2] ? `\n\n![${images[2].caption || 'Trải nghiệm trọn vẹn'}](${images[2].url})\n*${images[2].caption || 'Tận hưởng từng khoảnh khắc đáng nhớ trong kỳ nghỉ'}*\n\n` : ''
+
   const fullDescVi = isRoom
     ? `## Trải Nghiệm Nghỉ Dưỡng Tại ${titleVi}
-
-Chào đón bạn đến với không gian nghỉ dưỡng lý tưởng tại **${propName}**. ${titleVi} được thiết kế hài hòa giữa nét thẩm mỹ hiện đại và cảm giác ấm cúng thân thuộc.
+${img1Vi}Chào đón bạn đến với không gian nghỉ dưỡng lý tưởng tại **${propName}**. ${titleVi} được thiết kế hài hòa giữa nét thẩm mỹ hiện đại và cảm giác ấm cúng thân thuộc.
 
 ### Điểm Nhấn Không Gian & Tiện Nghi
 - **Không gian tối ưu**: Diện tích${areaPartVi || ' thoáng đãng'} ngập tràn ánh sáng tự nhiên.
 - **Giấc ngủ êm ái**: Nệm cao cấp cùng bộ chăn ga tiêu chuẩn khách sạn giúp bạn có giấc ngủ sâu trọn vẹn.
 - **Tiện nghi nổi bật**: ${keywordListVi}.
 - **Phòng tắm thư giãn**: Trang bị vòi sen áp lực cao cùng bộ đồ dùng vệ sinh hữu cơ cao cấp.
-
-### Dành Cho Kỳ Nghỉ Của Bạn
-Cho dù bạn đang tìm kiếm chốn dừng chân sau ngày dài khám phá hay không gian riêng tư cho chuyến công tác, ${titleVi} sẽ là điểm tựa hoàn hảo cho mọi hành trình.`
+${img2Vi}### Dành Cho Kỳ Nghỉ Của Bạn
+Cho dù bạn đang tìm kiếm chốn dừng chân sau ngày dài khám phá hay không gian riêng tư cho chuyến công tác, ${titleVi} sẽ là điểm tựa hoàn hảo cho mọi hành trình.${img3Vi}`
     : `## ${titleVi}
-
-Một kỳ nghỉ đáng nhớ không chỉ nằm ở điểm đến, mà còn là cảm giác được chăm sóc chu đáo trong từng chi tiết. Tại **${propName}**, chúng tôi kiến tạo không gian sống dung hòa giữa sự tiện nghi và sự bình yên.
+${img1Vi}Một kỳ nghỉ đáng nhớ không chỉ nằm ở điểm đến, mà còn là cảm giác được chăm sóc chu đáo trong từng chi tiết. Tại **${propName}**, chúng tôi kiến tạo không gian sống dung hòa giữa sự tiện nghi và sự bình yên.
 
 ### Những Trải Nghiệm Không Thể Bỏ Lỡ
 - **Ẩm thực bản địa tinh tế**: Thưởng thức các món ngon được chế biến từ nguyên liệu tươi ngon nhất.
 - **Không gian thư giãn**: Hòa mình vào thiên nhiên và tận hưởng những phút giây thảnh thơi.
 - **Tiện ích đa dạng**: ${keywordListVi}.
-
-Hãy để chuyến đi của bạn trở thành kỷ niệm khó quên với sự đồng hành ấm áp từ đội ngũ chúng tôi.`
+${img2Vi}Hãy để chuyến đi của bạn trở thành kỷ niệm khó quên với sự đồng hành ấm áp từ đội ngũ chúng tôi.${img3Vi}`
 
   const metaTitleVi = `${titleVi} | ${propName}`.slice(0, 60)
   const metaDescVi = shortDescVi.slice(0, 155)
@@ -88,29 +90,29 @@ Hãy để chuyến đi của bạn trở thành kỷ niệm khó quên với s�
     ? `Experience peaceful relaxation in our ${titleEn}${areaPartEn}${bedPartEn}. Thoughtfully styled with a ${TONE_DESCRIPTIONS_EN[tone].toLowerCase()} vibe for an unforgettable stay.`
     : `Discover signature hospitality, comfort, and local charms at ${propName}, where every moment is thoughtfully curated.`
 
+  const img1En = images[0] ? `\n\n![${images[0].caption || titleEn}](${images[0].url})\n*${images[0].caption || `Captivating ambiance at ${propName}`}*\n\n` : '\n\n'
+  const img2En = images[1] ? `\n\n![${images[1].caption || 'Refined living space'}](${images[1].url})\n*${images[1].caption || 'Elegantly curated spaces with comforting natural light'}*\n\n` : '\n\n'
+  const img3En = images[2] ? `\n\n![${images[2].caption || 'Unforgettable stay'}](${images[2].url})\n*${images[2].caption || 'Cherish every relaxing moment of your getaway'}*\n\n` : ''
+
   const fullDescEn = isRoom
     ? `## Welcome to ${titleEn}
-
-Discover pure comfort at **${propName}**. The ${titleEn} seamlessly blends contemporary aesthetics with the soothing warmth of authentic hospitality.
+${img1En}Discover pure comfort at **${propName}**. The ${titleEn} seamlessly blends contemporary aesthetics with the soothing warmth of authentic hospitality.
 
 ### Key Features & Amenities
 - **Refined Living Space**: Thoughtfully arranged${areaPartEn || ' generous layout'} with natural light.
 - **Restful Sleep**: Plush hotel-grade mattress and crisp linens ensuring a rejuvenating night.
 - **Highlighted Features**: ${keywordListEn}.
 - **Rejuvenating Bath**: High-pressure rain shower paired with organic bath amenities.
-
-### Perfect For Your Getaway
-Whether you are visiting for a relaxing weekend retreat or a productive business trip, ${titleEn} offers the sanctuary you need.`
+${img2En}### Perfect For Your Getaway
+Whether you are visiting for a relaxing weekend retreat or a productive business trip, ${titleEn} offers the sanctuary you need.${img3En}`
     : `## ${titleEn}
-
-A memorable vacation is defined by the details that make you feel truly cared for. At **${propName}**, we offer the ideal balance between modern convenience and mindful tranquility.
+${img1En}A memorable vacation is defined by the details that make you feel truly cared for. At **${propName}**, we offer the ideal balance between modern convenience and mindful tranquility.
 
 ### What Awaits You
 - **Authentic Culinary Flavors**: Savor delightful dishes made with fresh seasonal ingredients.
 - **Serene Environment**: Unwind in a calm sanctuary away from daily rush.
 - **Comfort & Highlights**: ${keywordListEn}.
-
-Let us make your stay extraordinary from the moment you step through our doors.`
+${img2En}Let us make your stay extraordinary from the moment you step through our doors.${img3En}`
 
   const metaTitleEn = `${titleEn} | ${propName}`.slice(0, 60)
   const metaDescEn = shortDescEn.slice(0, 155)
@@ -223,6 +225,26 @@ async function callGeminiApi(input: GenerateContentInput, apiKey: string): Promi
   const targetModel = input.model || DEFAULT_GEMINI_MODEL
   const candidateModels = Array.from(new Set([targetModel, 'gemini-2.5-flash', 'gemini-3.1-flash-lite', 'gemini-1.5-flash']))
 
+  // Prepare multimodal parts (text prompt + inline image data)
+  const parts: any[] = [{ text: prompt }]
+  if (input.images && input.images.length > 0) {
+    for (const img of input.images) {
+      if (img.base64 && img.base64.includes('base64,')) {
+        const [header, data] = img.base64.split('base64,')
+        const mimeMatch = header.match(/data:([^;]+);/)
+        const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg'
+        if (data && data.trim()) {
+          parts.push({
+            inlineData: {
+              mimeType,
+              data: data.trim(),
+            },
+          })
+        }
+      }
+    }
+  }
+
   for (const m of candidateModels) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`
 
@@ -230,7 +252,7 @@ async function callGeminiApi(input: GenerateContentInput, apiKey: string): Promi
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
+        contents: [{ parts }],
         generationConfig: {
           responseMimeType: 'application/json',
           temperature: 0.7,
@@ -293,6 +315,29 @@ async function callOpenAiApi(input: GenerateContentInput, apiKey: string): Promi
 
 function buildAiPrompt(input: GenerateContentInput): string {
   const toneDesc = input.tone ? TONE_DESCRIPTIONS_VI[input.tone] : TONE_DESCRIPTIONS_VI.COZY
+
+  let imagePrompt = ''
+  if (input.images && input.images.length > 0) {
+    const imgList = input.images
+      .map(
+        (img, idx) =>
+          `- Hình ${idx + 1}: ${img.caption ? `Mô tả: "${img.caption}", ` : ''}Đường dẫn ảnh: ${img.url}`
+      )
+      .join('\n')
+
+    imagePrompt = `
+- HÌNH ẢNH MINH HỌA DO NGƯỜI DÙNG CUNG CẤP (${input.images.length} hình):
+${imgList}
+
+YÊU CẦU ĐẶC BIỆT VỀ HÌNH ẢNH:
+1. Bạn có đính kèm các hình ảnh thực tế được người dùng tải lên. Hãy quan sát kỹ từng hình (bối cảnh, màu sắc, bố cục, góc chụp, món ăn hoặc tiện nghi).
+2. Tự động chèn TẤT CẢ các hình ảnh này vào các vị trí hợp lý nhất trong bài viết 'fullDescription' (và phiên bản tiếng Anh 'english.fullDescription') bằng cú pháp Markdown:
+   ![Mô tả chi tiết nội dung bức ảnh](ĐƯỜNG_DẪN_ẢNH)
+   *Chú thích ngắn gọn, cảm xúc dưới ảnh*
+3. Phân bổ các hình ảnh trải đều trong bài viết (sau lời mở đầu, xen kẽ giữa các phần tiện ích/ẩm thực/trải nghiệm), tuyệt đối không gom tất cả ảnh vào một chỗ.
+4. Tận dụng chi tiết thực tế bạn quan sát được từ ảnh để miêu tả bài viết thật chân thực, sống động và hấp dẫn du khách.`
+  }
+
   return `Bạn là chuyên gia viết nội dung quảng bá khách sạn (Hospitality Copywriter & SEO Specialist) hàng đầu.
 Nhiệm vụ: Viết đoạn văn mô tả phòng hoặc bài viết tiếp thị khách sạn dựa trên các thông số sau:
 
@@ -305,6 +350,7 @@ Nhiệm vụ: Viết đoạn văn mô tả phòng hoặc bài viết tiếp th�
 - Đối tượng khách hàng mục tiêu: ${input.targetAudience || 'Khách du lịch, cặp đôi, gia đình, khách công tác'}
 - Phong cách & Tone giọng: ${toneDesc}
 - Ngôn ngữ: ${input.language === 'vi' ? 'Tiếng Việt' : input.language === 'en' ? 'Tiếng Anh' : 'Song ngữ (Tiếng Việt và Tiếng Anh)'}
+${imagePrompt}
 
 Yêu cầu nội dung:
 1. Viết tự nhiên, cuốn hút, giàu hình ảnh và cảm xúc, mang tính thuyết phục cao (CRO). Tránh các cụm từ sáo rỗng hoặc lặp từ.

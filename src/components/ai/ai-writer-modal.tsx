@@ -16,9 +16,17 @@ import {
   Check,
   Wand2,
   CheckCircle2,
+  Camera,
+  Upload,
+  Trash2,
+  Loader2,
+  Eye,
+  FileCode,
 } from 'lucide-react'
 import { toast } from '@/components/ui/toast'
 import { AiContentType, AiLanguage, AiTone, GenerateContentOutput } from '@/lib/ai/types'
+import { prepareImage, uploadPhoto } from '@/lib/media/upload-client'
+import { BlogContent } from '@/components/blog/blog-content'
 
 export interface AiWriterApplyData {
   title: string
@@ -26,6 +34,8 @@ export interface AiWriterApplyData {
   fullDescription: string
   metaTitle?: string
   metaDescription?: string
+  coverImage?: string
+  images?: string[]
   english?: {
     title: string
     shortDescription: string
@@ -33,6 +43,14 @@ export interface AiWriterApplyData {
     metaTitle?: string
     metaDescription?: string
   }
+}
+
+interface AttachedImage {
+  id: string
+  url: string
+  base64?: string
+  caption?: string
+  name: string
 }
 
 interface AiWriterModalProps {
@@ -73,6 +91,12 @@ export function AiWriterModal({
   const [isGenerating, setIsGenerating] = React.useState(false)
   const [result, setResult] = React.useState<GenerateContentOutput | null>(null)
   const [previewTab, setPreviewTab] = React.useState<'vi' | 'en'>('vi')
+  const [viewMode, setViewMode] = React.useState<'rendered' | 'raw'>('rendered')
+
+  // Attached images state
+  const [attachedImages, setAttachedImages] = React.useState<AttachedImage[]>([])
+  const [isUploadingImages, setIsUploadingImages] = React.useState(false)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   // Reset or preset keywords when opened
   React.useEffect(() => {
@@ -91,6 +115,54 @@ export function AiWriterModal({
       })
     }
   }, [isOpen, contentType, initialArea, initialBedType])
+
+  const handleFilesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+
+    if (attachedImages.length + files.length > 5) {
+      toast.error('Bạn chỉ có thể đính kèm tối đa 5 hình ảnh để AI phân tích tốt nhất.')
+      return
+    }
+
+    setIsUploadingImages(true)
+    try {
+      for (const file of files) {
+        // Prepare base64 for vision perception
+        const base64 = await prepareImage(file, 1600)
+        // Upload to server to get permanent public URL
+        const uploadedUrl = await uploadPhoto(file, { propertyId })
+
+        setAttachedImages((prev) => [
+          ...prev,
+          {
+            id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            url: uploadedUrl,
+            base64,
+            caption: '',
+            name: file.name,
+          },
+        ])
+      }
+      toast.success(`Đã tải lên ${files.length} hình ảnh thành công`)
+    } catch (err: any) {
+      console.error('Image upload failed:', err)
+      toast.error(err.message || 'Không thể tải ảnh lên lúc này')
+    } finally {
+      setIsUploadingImages(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleRemoveImage = (id: string) => {
+    setAttachedImages((prev) => prev.filter((img) => img.id !== id))
+  }
+
+  const handleUpdateCaption = (id: string, caption: string) => {
+    setAttachedImages((prev) =>
+      prev.map((img) => (img.id === id ? { ...img, caption } : img))
+    )
+  }
 
   const handleGenerate = async () => {
     if (!keywords.trim()) {
@@ -114,6 +186,12 @@ export function AiWriterModal({
           language,
           targetAudience: targetAudience.trim() || undefined,
           model: 'gemini-3.1-flash-lite',
+          images: attachedImages.map((img) => ({
+            url: img.url,
+            base64: img.base64,
+            caption: img.caption?.trim() || undefined,
+            name: img.name,
+          })),
         }),
       })
 
@@ -124,7 +202,8 @@ export function AiWriterModal({
 
       setResult(data.data)
       setPreviewTab('vi')
-      toast.success('Đã tạo nội dung AI thành công!')
+      setViewMode('rendered')
+      toast.success('Đã tạo nội dung AI thành công kèm phân tích hình ảnh!')
     } catch (err: any) {
       toast.error(err.message || 'Đã có lỗi xảy ra khi tạo nội dung bằng AI')
     } finally {
@@ -141,6 +220,8 @@ export function AiWriterModal({
       fullDescription: result.fullDescription,
       metaTitle: result.metaTitle,
       metaDescription: result.metaDescription,
+      coverImage: attachedImages[0]?.url,
+      images: attachedImages.map((img) => img.url),
       english: result.english
         ? {
             title: result.english.title,
@@ -221,12 +302,95 @@ export function AiWriterModal({
             </Select>
           </div>
 
-          <div className="flex justify-end">
+          {/* Đính kèm hình ảnh để AI phân tích */}
+          <div className="space-y-2.5 p-3.5 rounded-xl border border-line bg-page/70">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Camera className="w-4 h-4 text-acc" />
+                <label className="text-xs sm:text-sm font-semibold text-fg">
+                  Hình ảnh đính kèm (AI tự động phân tích & chèn vào bài viết)
+                </label>
+              </div>
+              <span className="text-xs text-muted tabular-nums">
+                {attachedImages.length}/5 ảnh
+              </span>
+            </div>
+
+            <p className="text-xs text-muted leading-relaxed">
+              Tải lên ảnh chụp thực tế (không gian phòng, tiện nghi, ẩm thực, cảnh quan...). Trợ lý AI Vision sẽ <strong>nhìn và phân tích bối cảnh bức ảnh</strong>, sau đó tự động chèn ảnh vào các vị trí phù hợp trong bài viết kèm chú thích sinh động.
+            </p>
+
+            {/* Danh sách ảnh đã đính kèm */}
+            {attachedImages.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
+                {attachedImages.map((img, idx) => (
+                  <div key={img.id} className="relative group rounded-lg border border-line bg-panel overflow-hidden p-1.5 space-y-1.5 shadow-2xs">
+                    <div className="relative aspect-video rounded-md overflow-hidden bg-fg/5">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={img.base64 || img.url} alt={img.name} className="w-full h-full object-cover" />
+                      <span className="absolute top-1 left-1 bg-black/60 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                        #{idx + 1}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(img.id)}
+                        className="absolute top-1 right-1 p-1 rounded-full bg-black/60 hover:bg-err text-white transition-colors"
+                        title="Xóa ảnh này"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={img.caption || ''}
+                      onChange={(e) => handleUpdateCaption(img.id, e.target.value)}
+                      placeholder="Ghi chú cho AI (vd: Hồ bơi hoàng hôn)"
+                      className="w-full text-[11px] px-1.5 py-1 rounded border border-line/60 bg-page text-fg placeholder:text-muted/70 focus:outline-none focus:border-acc"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Nút bấm tải ảnh */}
+            {attachedImages.length < 5 && (
+              <div className="pt-1">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/png,image/webp,image/avif"
+                  className="hidden"
+                  onChange={handleFilesSelected}
+                />
+                <button
+                  type="button"
+                  disabled={isUploadingImages}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full py-2.5 px-3 rounded-lg border border-dashed border-line hover:border-acc/70 hover:bg-acc/5 text-xs font-medium text-fg flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                >
+                  {isUploadingImages ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-acc" />
+                      Đang xử lý & tải ảnh lên...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4 text-acc" />
+                      <span>Thêm hình ảnh thực tế (Tối đa 5 ảnh)</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end pt-1">
             <Button
               type="button"
               onClick={handleGenerate}
-              isLoading={isGenerating}
-              disabled={isGenerating || !keywords.trim()}
+              isLoading={isGenerating || isUploadingImages}
+              disabled={isGenerating || isUploadingImages || !keywords.trim()}
               className="bg-acc text-acc-fg hover:bg-acc/90 shadow-sm"
             >
               <Wand2 className="w-4 h-4 mr-2" />
@@ -238,38 +402,68 @@ export function AiWriterModal({
         {/* AI Result Section */}
         {result && (
           <div className="mt-4 pt-4 border-t border-line space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-acc" />
                 Kết quả tạo bởi {result.modelUsed}
               </span>
 
-              {result.english && (
+              <div className="flex items-center gap-2">
+                {/* Switch between rendered view and raw markdown */}
                 <div className="flex items-center gap-1 bg-ink/5 p-0.5 rounded-lg border border-line text-xs">
                   <button
                     type="button"
-                    onClick={() => setPreviewTab('vi')}
-                    className={`px-2.5 py-1 rounded-md transition-colors ${
-                      previewTab === 'vi'
+                    onClick={() => setViewMode('rendered')}
+                    className={`px-2 py-0.5 rounded-md flex items-center gap-1 transition-colors ${
+                      viewMode === 'rendered'
                         ? 'bg-panel shadow-xs font-medium text-fg'
                         : 'text-muted hover:text-fg'
                     }`}
                   >
-                    Tiếng Việt
+                    <Eye className="w-3 h-3" />
+                    Xem bài viết có ảnh
                   </button>
                   <button
                     type="button"
-                    onClick={() => setPreviewTab('en')}
-                    className={`px-2.5 py-1 rounded-md transition-colors ${
-                      previewTab === 'en'
+                    onClick={() => setViewMode('raw')}
+                    className={`px-2 py-0.5 rounded-md flex items-center gap-1 transition-colors ${
+                      viewMode === 'raw'
                         ? 'bg-panel shadow-xs font-medium text-fg'
                         : 'text-muted hover:text-fg'
                     }`}
                   >
-                    English
+                    <FileCode className="w-3 h-3" />
+                    Mã Markdown
                   </button>
                 </div>
-              )}
+
+                {result.english && (
+                  <div className="flex items-center gap-1 bg-ink/5 p-0.5 rounded-lg border border-line text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewTab('vi')}
+                      className={`px-2.5 py-1 rounded-md transition-colors ${
+                        previewTab === 'vi'
+                          ? 'bg-panel shadow-xs font-medium text-fg'
+                          : 'text-muted hover:text-fg'
+                      }`}
+                    >
+                      Tiếng Việt
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewTab('en')}
+                      className={`px-2.5 py-1 rounded-md transition-colors ${
+                        previewTab === 'en'
+                          ? 'bg-panel shadow-xs font-medium text-fg'
+                          : 'text-muted hover:text-fg'
+                      }`}
+                    >
+                      English
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Vietnamese Preview */}
@@ -284,10 +478,16 @@ export function AiWriterModal({
                   <p className="text-sm text-fg/90">{result.shortDescription}</p>
                 </div>
                 <div>
-                  <span className="text-xs font-medium text-muted">Mô tả đầy đủ (Markdown)</span>
-                  <div className="text-xs text-muted font-mono whitespace-pre-wrap bg-panel p-3 rounded-lg border border-line max-h-48 overflow-y-auto">
-                    {result.fullDescription}
-                  </div>
+                  <span className="text-xs font-medium text-muted">Nội dung chi tiết</span>
+                  {viewMode === 'rendered' ? (
+                    <div className="bg-panel p-4 rounded-lg border border-line max-h-64 overflow-y-auto">
+                      <BlogContent content={result.fullDescription} />
+                    </div>
+                  ) : (
+                    <div className="text-xs text-muted font-mono whitespace-pre-wrap bg-panel p-3 rounded-lg border border-line max-h-64 overflow-y-auto">
+                      {result.fullDescription}
+                    </div>
+                  )}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1 border-t border-line/60">
                   <div>
@@ -314,10 +514,16 @@ export function AiWriterModal({
                   <p className="text-sm text-fg/90">{result.english.shortDescription}</p>
                 </div>
                 <div>
-                  <span className="text-xs font-medium text-muted">English Full Markdown</span>
-                  <div className="text-xs text-muted font-mono whitespace-pre-wrap bg-panel p-3 rounded-lg border border-line max-h-48 overflow-y-auto">
-                    {result.english.fullDescription}
-                  </div>
+                  <span className="text-xs font-medium text-muted">English Full Content</span>
+                  {viewMode === 'rendered' ? (
+                    <div className="bg-panel p-4 rounded-lg border border-line max-h-64 overflow-y-auto">
+                      <BlogContent content={result.english.fullDescription} />
+                    </div>
+                  ) : (
+                    <div className="text-xs text-muted font-mono whitespace-pre-wrap bg-panel p-3 rounded-lg border border-line max-h-64 overflow-y-auto">
+                      {result.english.fullDescription}
+                    </div>
+                  )}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1 border-t border-line/60">
                   <div>

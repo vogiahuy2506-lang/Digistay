@@ -123,6 +123,7 @@ export default function BlogManagementPage() {
       slug: prev.slugEdited ? prev.slug : finishPostSlug(slugFromTitle(data.title)),
       summary: data.shortDescription,
       content: data.fullDescription,
+      coverImage: prev.coverImage || data.coverImage || '',
       metaTitle: data.metaTitle || prev.metaTitle,
       metaDescription: data.metaDescription || prev.metaDescription,
     }))

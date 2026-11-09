@@ -64,5 +64,41 @@ describe('AI Content Generator', () => {
     expect(result.title).toBe('Standard Room')
     expect(result.modelUsed).toBe('heuristic-engine-v1')
   })
+
+  it('automatically embeds attached images with markdown formatting and captions', () => {
+    const input: GenerateContentInput = {
+      contentType: 'BLOG_POST',
+      topic: 'Kinh nghiệm nghỉ dưỡng tại Đà Nẵng',
+      keywords: 'bãi biển Mỹ Khê, ngắm hoàng hôn, ẩm thực miền Trung',
+      tone: 'LUXURY',
+      language: 'bilingual',
+      propertyName: 'Digistay Riverside Đà Nẵng',
+      images: [
+        {
+          url: 'https://images.digistay.vn/pool-sunset.jpg',
+          caption: 'Hồ bơi vô cực ngắm hoàng hôn sông Hàn',
+          name: 'pool-sunset.jpg',
+        },
+        {
+          url: 'https://images.digistay.vn/seafood-platter.jpg',
+          caption: 'Đại tiệc hải sản tươi ngon đặc sản',
+          name: 'seafood.jpg',
+        },
+      ],
+    }
+
+    const result = generateHeuristicContent(input)
+
+    // Vietnamese markdown checks
+    expect(result.fullDescription).toContain('https://images.digistay.vn/pool-sunset.jpg')
+    expect(result.fullDescription).toContain('Hồ bơi vô cực ngắm hoàng hôn sông Hàn')
+    expect(result.fullDescription).toContain('https://images.digistay.vn/seafood-platter.jpg')
+    expect(result.fullDescription).toContain('Đại tiệc hải sản tươi ngon đặc sản')
+
+    // English markdown checks
+    expect(result.english).toBeDefined()
+    expect(result.english?.fullDescription).toContain('https://images.digistay.vn/pool-sunset.jpg')
+    expect(result.english?.fullDescription).toContain('https://images.digistay.vn/seafood-platter.jpg')
+  })
 })
 

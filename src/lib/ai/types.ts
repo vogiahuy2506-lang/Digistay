@@ -4,6 +4,13 @@ export type AiTone = 'LUXURY' | 'COZY' | 'MODERN' | 'ROMANTIC' | 'FAMILY'
 
 export type AiLanguage = 'vi' | 'en' | 'bilingual'
 
+export interface AiImageInput {
+  url: string
+  base64?: string
+  caption?: string
+  name?: string
+}
+
 export interface GenerateContentInput {
   contentType: AiContentType
   keywords: string
@@ -17,6 +24,7 @@ export interface GenerateContentInput {
   topic?: string
   apiKey?: string
   model?: string
+  images?: AiImageInput[]
 }
 
 export interface ContentLocalizedOutput {
