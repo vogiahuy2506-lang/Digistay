@@ -321,7 +321,7 @@ export default function OtaChannelsPage() {
               </span>
             </h4>
             <p className="text-xs text-muted leading-relaxed">
-              {t('modal.mappingBanner')}
+              {t('modal.mappingBanner', { channel: 'các sàn OTA' })}
             </p>
           </div>
         </div>
@@ -688,6 +688,24 @@ export default function OtaChannelsPage() {
                 {/* TAB 1: CREDENTIALS */}
                 {activeTab === 'credentials' && (
                   <div className="space-y-4">
+                    {/* Prevent aggressive Chrome / 1Password autofill into API credentials */}
+                    <input
+                      type="text"
+                      name="prevent_autofill_username"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      aria-hidden="true"
+                      className="sr-only opacity-0 w-0 h-0 pointer-events-none absolute"
+                    />
+                    <input
+                      type="password"
+                      name="prevent_autofill_password"
+                      tabIndex={-1}
+                      autoComplete="new-password"
+                      aria-hidden="true"
+                      className="sr-only opacity-0 w-0 h-0 pointer-events-none absolute"
+                    />
+
                     {/* Hotel Identifier */}
                     <div className="space-y-1">
                       <label className="text-xs font-semibold text-fg">
@@ -695,6 +713,9 @@ export default function OtaChannelsPage() {
                         <span className="text-err">*</span>
                       </label>
                       <Input
+                        name={`ota_${selectedChannel}_hotel_id`}
+                        id={`ota_${selectedChannel}_hotel_id`}
+                        autoComplete="off"
                         value={hotelId}
                         onChange={(e) => setHotelId(e.target.value)}
                         placeholder={OTA_CHANNELS_META[selectedChannel].hotelIdPlaceholder}
@@ -712,7 +733,10 @@ export default function OtaChannelsPage() {
                           {t('modal.apiKey')}
                         </label>
                         <Input
+                          name={`ota_${selectedChannel}_api_key`}
+                          id={`ota_${selectedChannel}_api_key`}
                           type="password"
+                          autoComplete="new-password"
                           value={apiKey}
                           onChange={(e) => setApiKey(e.target.value)}
                           placeholder={
@@ -729,7 +753,10 @@ export default function OtaChannelsPage() {
                           {t('modal.apiSecret')}
                         </label>
                         <Input
+                          name={`ota_${selectedChannel}_api_secret`}
+                          id={`ota_${selectedChannel}_api_secret`}
                           type="password"
+                          autoComplete="new-password"
                           value={apiSecret}
                           onChange={(e) => setApiSecret(e.target.value)}
                           placeholder="••••••••••••••••"

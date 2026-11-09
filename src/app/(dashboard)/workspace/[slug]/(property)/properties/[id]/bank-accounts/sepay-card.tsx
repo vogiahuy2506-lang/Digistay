@@ -179,8 +179,14 @@ export function SepayCard({
               </div>
             </div>
 
+            {/* Prevent browser autofill */}
+            <input type="text" name="prevent_autofill_user" tabIndex={-1} autoComplete="off" aria-hidden="true" className="sr-only opacity-0 w-0 h-0 pointer-events-none absolute" />
+            <input type="password" name="prevent_autofill_pass" tabIndex={-1} autoComplete="new-password" aria-hidden="true" className="sr-only opacity-0 w-0 h-0 pointer-events-none absolute" />
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Input
+                name="sepay_api_key"
+                id="sepay_api_key"
                 label="SePay API Key *"
                 type="password"
                 placeholder="Nhập API Key từ SePay"
@@ -189,6 +195,8 @@ export function SepayCard({
                 autoComplete="new-password"
               />
               <Input
+                name="sepay_webhook_token"
+                id="sepay_webhook_token"
                 label="Webhook Token (Tùy chọn)"
                 type="password"
                 placeholder="Khóa bí mật xác thực webhook"
@@ -197,16 +205,22 @@ export function SepayCard({
                 autoComplete="new-password"
               />
               <Input
+                name="sepay_account_number"
+                id="sepay_account_number"
                 label="Số tài khoản ngân hàng SePay (Tùy chọn)"
                 placeholder="Ví dụ: 0123456789"
                 value={form.accountNumber}
                 onChange={(e) => setForm({ ...form, accountNumber: e.target.value })}
+                autoComplete="off"
               />
               <Input
+                name="sepay_bank_code"
+                id="sepay_bank_code"
                 label="Mã ngân hàng (Tùy chọn)"
                 placeholder="Ví dụ: MB, VCB, TCB"
                 value={form.bankCode}
                 onChange={(e) => setForm({ ...form, bankCode: e.target.value })}
+                autoComplete="off"
               />
             </div>
 

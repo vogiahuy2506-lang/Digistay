@@ -133,13 +133,20 @@ export function PayosCard({ propertyId, onChange }: { propertyId: string; /** co
               <li>{t('step2')}</li>
               <li>{t('step3')}</li>
             </ol>
+            {/* Prevent browser autofill */}
+            <input type="text" name="prevent_autofill_user" tabIndex={-1} autoComplete="off" aria-hidden="true" className="sr-only opacity-0 w-0 h-0 pointer-events-none absolute" />
+            <input type="password" name="prevent_autofill_pass" tabIndex={-1} autoComplete="new-password" aria-hidden="true" className="sr-only opacity-0 w-0 h-0 pointer-events-none absolute" />
             <Input
+              name="payos_client_id"
+              id="payos_client_id"
               label="Client ID"
               value={form.clientId}
               onChange={(e) => setForm({ ...form, clientId: e.target.value })}
               autoComplete="off"
             />
             <Input
+              name="payos_api_key"
+              id="payos_api_key"
               label="API Key"
               type="password"
               value={form.apiKey}
@@ -147,6 +154,8 @@ export function PayosCard({ propertyId, onChange }: { propertyId: string; /** co
               autoComplete="new-password"
             />
             <Input
+              name="payos_checksum_key"
+              id="payos_checksum_key"
               label="Checksum Key"
               type="password"
               value={form.checksumKey}

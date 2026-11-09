@@ -279,8 +279,14 @@ export function EinvoiceCard({
             <p className="text-sm text-muted">
               {t('formHint', { example: `${yearPrefix}TAA` })}
             </p>
+            {/* Prevent browser autofill */}
+            <input type="text" name="prevent_autofill_user" tabIndex={-1} autoComplete="off" aria-hidden="true" className="sr-only opacity-0 w-0 h-0 pointer-events-none absolute" />
+            <input type="password" name="prevent_autofill_pass" tabIndex={-1} autoComplete="new-password" aria-hidden="true" className="sr-only opacity-0 w-0 h-0 pointer-events-none absolute" />
+
             <div className="grid grid-cols-2 gap-3">
               <Select
+                name="matbao_environment"
+                id="matbao_environment"
                 label={t('environment')}
                 value={form.environment}
                 onChange={(e) => setForm({ ...form, environment: e.target.value })}
@@ -289,14 +295,25 @@ export function EinvoiceCard({
                   { value: 'PRODUCTION', label: t('envProduction') },
                 ]}
               />
-              <Input label={t('taxCode')} value={form.taxCode} onChange={(e) => setForm({ ...form, taxCode: e.target.value })} />
               <Input
+                name="matbao_tax_code"
+                id="matbao_tax_code"
+                label={t('taxCode')}
+                value={form.taxCode}
+                onChange={(e) => setForm({ ...form, taxCode: e.target.value })}
+                autoComplete="off"
+              />
+              <Input
+                name="matbao_username"
+                id="matbao_username"
                 label={t('username')}
                 value={form.username}
                 onChange={(e) => setForm({ ...form, username: e.target.value })}
                 autoComplete="off"
               />
               <Input
+                name="matbao_password"
+                id="matbao_password"
                 label={t('password')}
                 type="password"
                 value={form.password}
@@ -304,12 +321,22 @@ export function EinvoiceCard({
                 placeholder={status.connected ? t('passwordKeep') : ''}
                 autoComplete="new-password"
               />
-              <Input label={t('template')} value={form.templateCode} onChange={(e) => setForm({ ...form, templateCode: e.target.value })} />
               <Input
+                name="matbao_template_code"
+                id="matbao_template_code"
+                label={t('template')}
+                value={form.templateCode}
+                onChange={(e) => setForm({ ...form, templateCode: e.target.value })}
+                autoComplete="off"
+              />
+              <Input
+                name="matbao_series"
+                id="matbao_series"
                 label={t('series')}
                 value={form.series}
                 onChange={(e) => setForm({ ...form, series: e.target.value.toUpperCase() })}
                 placeholder={`${yearPrefix}TAA`}
+                autoComplete="off"
               />
               <Select
                 label={t('vatRate')}

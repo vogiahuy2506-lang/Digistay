@@ -185,14 +185,23 @@ export function MomoCard({
               </ol>
             </div>
 
+            {/* Prevent browser autofill */}
+            <input type="text" name="prevent_autofill_user" tabIndex={-1} autoComplete="off" aria-hidden="true" className="sr-only opacity-0 w-0 h-0 pointer-events-none absolute" />
+            <input type="password" name="prevent_autofill_pass" tabIndex={-1} autoComplete="new-password" aria-hidden="true" className="sr-only opacity-0 w-0 h-0 pointer-events-none absolute" />
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Input
+                name="momo_partner_code"
+                id="momo_partner_code"
                 label="Partner Code *"
                 placeholder="Ví dụ: MOMO12345"
                 value={form.partnerCode}
                 onChange={(e) => setForm({ ...form, partnerCode: e.target.value })}
+                autoComplete="off"
               />
               <Select
+                name="momo_environment"
+                id="momo_environment"
                 label="Môi trường hoạt động *"
                 value={form.environment}
                 onChange={(e) => setForm({ ...form, environment: e.target.value as 'SANDBOX' | 'PRODUCTION' })}
@@ -202,6 +211,8 @@ export function MomoCard({
                 ]}
               />
               <Input
+                name="momo_access_key"
+                id="momo_access_key"
                 label="Access Key *"
                 type="password"
                 placeholder="Nhập Access Key MoMo"
@@ -210,6 +221,8 @@ export function MomoCard({
                 autoComplete="new-password"
               />
               <Input
+                name="momo_secret_key"
+                id="momo_secret_key"
                 label="Secret Key *"
                 type="password"
                 placeholder="Nhập Secret Key MoMo"
