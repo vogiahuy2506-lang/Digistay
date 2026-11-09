@@ -57,6 +57,7 @@ export function HeroBlock({ block, property, images, amenities, hasMap }: Props)
         <div>
           <Eyebrow>
             {propertyTypeLabel(property.type, t)} · {property.city}
+            {Boolean(property.starRating) && property.starRating! > 0 && ` · ${'★'.repeat(property.starRating!)}`}
           </Eyebrow>
           <h1 className="font-site text-[44px] leading-[52px] sm:text-[64px] sm:leading-[72px] lg:text-display text-fg">
             {title}

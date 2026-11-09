@@ -26,6 +26,8 @@ export const loadSiteFrame = cache((subdomain: string) =>
       ward: true,
       district: true,
       phone: true,
+      hotline: true,
+      logo: true,
       address: true,
       coverImage: true,
       websiteBlocks: { where: { isEnabled: true }, select: { type: true } },

@@ -89,6 +89,7 @@ export interface HotelSchemaInput {
   /** From the hotel's policy; null when it has none. */
   checkInTime?: string | null
   checkOutTime?: string | null
+  starRating?: number | null
   /** Amenity names in this language. */
   amenities: string[]
   /** Nightly prices of the room types (weekday and weekend), for priceRange. */
@@ -128,6 +129,7 @@ export function hotelJsonLd(input: HotelSchemaInput): Json {
     geo: hasGeo ? { '@type': 'GeoCoordinates', latitude: input.latitude, longitude: input.longitude } : undefined,
     image: schemaImages(input.images),
     logo: absoluteImageUrl(input.logo) ?? undefined,
+    starRating: input.starRating && input.starRating > 0 ? { '@type': 'Rating', ratingValue: input.starRating, bestRating: 5 } : undefined,
     checkinTime: lodging ? schemaTime(input.checkInTime) : undefined,
     checkoutTime: lodging ? schemaTime(input.checkOutTime) : undefined,
     amenityFeature: input.amenities

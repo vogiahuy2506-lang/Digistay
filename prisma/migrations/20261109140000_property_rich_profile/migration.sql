@@ -20,3 +20,4 @@ ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "businessName" TEXT;
 ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "taxCode" TEXT;
 ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "businessLicense" TEXT;
 ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "invoiceAddress" TEXT;
+

@@ -90,8 +90,9 @@ export default async function PublicPropertyPage({ params }: PageProps) {
     longitude: p.longitude,
     logo: p.logo,
     images: [p.coverImage, ...site.images.map((i) => i.url)],
-    checkInTime: policy?.checkInTime,
-    checkOutTime: policy?.checkOutTime,
+    checkInTime: policy?.checkInTime ?? p.checkInTime,
+    checkOutTime: policy?.checkOutTime ?? p.checkOutTime,
+    starRating: p.starRating,
     amenities: site.amenities.map((a) => a.name),
     prices: site.roomTypes.flatMap((r) => [r.fromPrice, r.weekendPrice]),
   })

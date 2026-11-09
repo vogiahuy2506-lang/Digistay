@@ -23,6 +23,8 @@ export interface SiteHotel {
     district: string | null
     phone: string | null
     address: string | null
+    logo?: string | null
+    coverImage?: string | null
   }
   sections: SiteSection[]
 }

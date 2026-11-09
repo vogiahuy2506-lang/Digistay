@@ -10,7 +10,7 @@ export interface SiteSection {
 }
 
 interface Props {
-  property: { name: string; type: string; city: string; phone: string | null }
+  property: { name: string; type: string; city: string; phone: string | null; logo?: string | null }
   /** Sections of the home page shown in the menu (labels from site.sections). */
   sections: SiteSection[]
   /** On the home page the menu scrolls; elsewhere it links back to it. */
@@ -29,11 +29,18 @@ export function SiteHeader({ property, sections, onHome = true }: Props) {
       <Container className="flex h-16 sm:h-20 items-center gap-3 sm:gap-6">
         {/* Phones: the name on up to two lines and the controls tighter; it
             used to be cut to "Khách sạn…" beside EN, "Đặt phòng" and the menu. */}
-        <SiteLink path="/" className="min-w-0 shrink focus:outline-none focus-visible:underline">
-          <span className="block font-site text-[17px] leading-[1.15] sm:text-[24px] text-fg text-balance line-clamp-2 [overflow-wrap:anywhere]">{property.name}</span>
-          <span className="block text-[10px] uppercase tracking-[0.18em] text-muted truncate">
-            {propertyTypeLabel(property.type, t)} · {property.city}
-          </span>
+        <SiteLink path="/" className="min-w-0 shrink flex items-center gap-2.5 sm:gap-3 focus:outline-none focus-visible:underline">
+          {property.logo && (
+            <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg overflow-hidden border border-line bg-page shrink-0 shadow-sm">
+              <img src={property.logo} alt={property.name} className="w-full h-full object-contain p-0.5" />
+            </div>
+          )}
+          <div className="min-w-0">
+            <span className="block font-site text-[17px] leading-[1.15] sm:text-[22px] text-fg text-balance line-clamp-2 [overflow-wrap:anywhere]">{property.name}</span>
+            <span className="block text-[10px] uppercase tracking-[0.18em] text-muted truncate">
+              {propertyTypeLabel(property.type, t)} · {property.city}
+            </span>
+          </div>
         </SiteLink>
 
         {sections.length > 0 && (

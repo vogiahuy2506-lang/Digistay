@@ -69,6 +69,8 @@ export default async function HotelSiteLayout({
             district: frame.district,
             phone: frame.phone,
             address: frame.address,
+            logo: frame.logo,
+            coverImage: frame.coverImage,
           },
           sections: siteSections(frame.websiteBlocks.map((b) => b.type)),
         }
