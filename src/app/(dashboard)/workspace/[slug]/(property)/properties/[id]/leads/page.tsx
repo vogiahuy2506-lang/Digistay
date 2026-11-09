@@ -5,7 +5,8 @@ import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Header, PageContainer } from '@/components/layout'
 import { useCan } from '@/components/layout/workspace-context'
-import { Badge, Button, Input, Modal, ModalBody, ModalFooter } from '@/components/ui'
+import { Badge, Button, ExportDropdown, Input, Modal, ModalBody, ModalFooter } from '@/components/ui'
+import { exportToCsv, exportToExcel } from '@/lib/export/export-data'
 import { toast } from '@/components/ui/toast'
 import { apiError } from '@/lib/i18n/api-errors'
 import {
@@ -65,7 +66,6 @@ export default function LeadsPage() {
   const [source, setSource] = React.useState<'all' | 'EXIT_POPUP' | 'CONTACT_FORM' | 'OTHER'>('all')
   const [page, setPage] = React.useState(1)
   const [pagination, setPagination] = React.useState({ page: 1, totalPages: 1, total: 0 })
-  const [exporting, setExporting] = React.useState(false)
 
   // Edit / Note modal
   const [editingLead, setEditingLead] = React.useState<Lead | null>(null)
@@ -114,35 +114,93 @@ export default function LeadsPage() {
     void load()
   }, [load])
 
-  const handleExportCsv = async () => {
-    if (!propertyId || exporting) return
-    setExporting(true)
+  const sourceLabels: Record<string, string> = {
+    EXIT_POPUP: 'Popup giữ chân',
+    CONTACT_FORM: 'Form liên hệ',
+    OTHER: 'Khác',
+  }
+
+  const fetchAllLeadsForExport = async (): Promise<Lead[]> => {
+    if (!propertyId) return []
     try {
       const params = new URLSearchParams()
-      params.set('export', 'csv')
+      params.set('export', 'json')
       if (debouncedQuery) params.set('q', debouncedQuery)
       if (source !== 'all') params.set('source', source)
 
       const url = `/api/properties/${propertyId}/leads?${params.toString()}`
       const res = await fetch(url)
-      if (!res.ok) throw new Error('Export failed')
-
-      const blob = await res.blob()
-      const downloadUrl = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = downloadUrl
-      const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
-      link.download = `leads-${propertyId}-${today}.csv`
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      window.URL.revokeObjectURL(downloadUrl)
-      toast.success(t('exportSuccess'))
-    } catch {
-      toast.error(t('exportError'))
-    } finally {
-      setExporting(false)
+      const data = await res.json()
+      if (res.ok && data.success && Array.isArray(data.data)) {
+        return data.data
+      }
+    } catch (e) {
+      console.error(e)
     }
+    return leads ?? []
+  }
+
+  const handleExportCsv = async () => {
+    if (!propertyId) return
+    const rows = await fetchAllLeadsForExport()
+    if (!rows.length) return
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+    const headers = ['Thời gian', 'Email', 'Họ tên', 'Số điện thoại', 'Nguồn', 'Mã ưu đãi', 'Trang chuyển hướng', 'Ghi chú']
+    const data = rows.map((r) => {
+      const meta = (r.metadata as Record<string, unknown> | null) ?? {}
+      const couponCode = meta.couponCode ? String(meta.couponCode) : ''
+      const page = meta.page ? String(meta.page) : ''
+      const d = new Date(r.createdAt)
+      const dateStr = Number.isNaN(d.getTime()) ? '' : d.toLocaleString('vi-VN')
+      return [
+        dateStr,
+        r.email,
+        r.name ?? '—',
+        r.phone ?? '—',
+        sourceLabels[r.source] ?? r.source,
+        couponCode || '—',
+        page || '—',
+        r.notes ?? '',
+      ]
+    })
+    exportToCsv(`leads-${propertyId}-${today}.csv`, headers, data)
+  }
+
+  const handleExportExcel = async () => {
+    if (!propertyId) return
+    const rows = await fetchAllLeadsForExport()
+    if (!rows.length) return
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+    const headers = ['Thời gian', 'Email', 'Họ tên', 'Số điện thoại', 'Nguồn', 'Mã ưu đãi', 'Trang chuyển hướng', 'Ghi chú']
+    const data = rows.map((r) => {
+      const meta = (r.metadata as Record<string, unknown> | null) ?? {}
+      const couponCode = meta.couponCode ? String(meta.couponCode) : ''
+      const page = meta.page ? String(meta.page) : ''
+      const d = new Date(r.createdAt)
+      const dateStr = Number.isNaN(d.getTime()) ? '' : d.toLocaleString('vi-VN')
+      return [
+        dateStr,
+        r.email,
+        r.name ?? '—',
+        r.phone ?? '—',
+        sourceLabels[r.source] ?? r.source,
+        couponCode || '—',
+        page || '—',
+        r.notes ?? '',
+      ]
+    })
+    exportToExcel(
+      `leads-${propertyId}-${today}.xls`,
+      'DANH SÁCH KHÁCH HÀNG TIỀM NĂNG (LEADS)',
+      headers,
+      data,
+      [
+        { label: 'Tổng số leads', value: rows.length },
+        { label: 'Từ Popup giữ chân', value: rows.filter((r) => r.source === 'EXIT_POPUP').length },
+        { label: 'Từ Form liên hệ', value: rows.filter((r) => r.source === 'CONTACT_FORM').length },
+        { label: 'Ngày xuất file', value: new Date().toLocaleDateString('vi-VN') },
+      ]
+    )
   }
 
   const openEdit = (lead: Lead) => {
@@ -235,14 +293,10 @@ export default function LeadsPage() {
           description={t('description')}
           actions={
             leads && leads.length > 0 ? (
-              <Button
-                variant="secondary"
-                onClick={handleExportCsv}
-                disabled={exporting}
-              >
-                <Download className="w-4 h-4 mr-2" aria-hidden="true" />
-                {exporting ? t('exporting') : t('exportCsv')}
-              </Button>
+              <ExportDropdown
+                onExportExcel={handleExportExcel}
+                onExportCsv={handleExportCsv}
+              />
             ) : undefined
           }
         />

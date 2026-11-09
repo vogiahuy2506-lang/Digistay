@@ -29,7 +29,10 @@ import {
   Tabs,
   TabsList,
   TabsTrigger,
+  ExportDropdown,
+  toast,
 } from '@/components/ui'
+import { exportToCsv, exportToExcel } from '@/lib/export/export-data'
 import { BookingActions, BookingDetailContent, useBooking } from '@/components/bookings/booking-detail'
 import { BookingsViews } from '@/components/bookings/bookings-views'
 import { useCan } from '@/components/layout/workspace-context'
@@ -178,6 +181,118 @@ export default function BookingsPage() {
 
   const newBookingHref = routes.propertyBookingNew(params.slug, propertyId)
 
+  const fetchAllBookingsForExport = async (): Promise<BookingRow[]> => {
+    try {
+      const query = new URLSearchParams({
+        propertyId,
+        page: '1',
+        limit: '1000',
+      })
+      if (tab !== 'ALL') query.set('status', tab)
+      if (q) query.set('q', q)
+      if (source) query.set('source', source)
+      if (payment) query.set('paymentStatus', payment)
+
+      const res = await fetch(`/api/bookings?${query}`)
+      const data = await res.json()
+      if (data.success && Array.isArray(data.data)) {
+        return data.data
+      }
+      return rows
+    } catch {
+      return rows
+    }
+  }
+
+  const handleExportCsv = async () => {
+    const listData = await fetchAllBookingsForExport()
+    if (!listData.length) {
+      toast.warning('Không có dữ liệu đặt phòng để xuất')
+      return
+    }
+    const headers = [
+      'Mã đặt phòng',
+      'Tên khách hàng',
+      'Số điện thoại',
+      'Hạng phòng / Số phòng',
+      'Ngày nhận phòng',
+      'Ngày trả phòng',
+      'Số đêm',
+      'Tổng tiền (VNĐ)',
+      'Tiền cọc (VNĐ)',
+      'Trạng thái thanh toán',
+      'Trạng thái đặt phòng',
+      'Nguồn đặt',
+    ]
+    const exportRows = listData.map((b) => {
+      const roomsText = (b.bookingItems || []).map((i) => i.roomNumber ? `${i.roomTypeName || ''} (${i.roomNumber})` : (i.roomTypeName || '')).join(', ')
+      const nights = nightsBetween(b.checkInDate, b.checkOutDate)
+      return [
+        b.bookingCode,
+        b.guestName,
+        b.guestPhone,
+        roomsText,
+        labels.date(b.checkInDate),
+        labels.date(b.checkOutDate),
+        nights,
+        b.totalAmount,
+        b.depositAmount,
+        labels.paymentStatus(b.paymentStatus),
+        labels.bookingStatus(b.status),
+        b.source,
+      ]
+    })
+    exportToCsv(`dat-phong-${propertyId}-${new Date().toISOString().slice(0, 10)}`, headers, exportRows)
+    toast.success('Đã xuất file CSV thành công')
+  }
+
+  const handleExportExcel = async () => {
+    const listData = await fetchAllBookingsForExport()
+    if (!listData.length) {
+      toast.warning('Không có dữ liệu đặt phòng để xuất')
+      return
+    }
+    const headers = [
+      'Mã đặt phòng',
+      'Tên khách hàng',
+      'Số điện thoại',
+      'Hạng phòng / Số phòng',
+      'Ngày nhận phòng',
+      'Ngày trả phòng',
+      'Số đêm',
+      'Tổng tiền',
+      'Tiền cọc',
+      'Trạng thái thanh toán',
+      'Trạng thái đặt phòng',
+      'Nguồn đặt',
+    ]
+    const exportRows = listData.map((b) => {
+      const roomsText = (b.bookingItems || []).map((i) => i.roomNumber ? `${i.roomTypeName || ''} (${i.roomNumber})` : (i.roomTypeName || '')).join(', ')
+      const nights = nightsBetween(b.checkInDate, b.checkOutDate)
+      return [
+        b.bookingCode,
+        b.guestName,
+        b.guestPhone,
+        roomsText,
+        labels.date(b.checkInDate),
+        labels.date(b.checkOutDate),
+        nights,
+        b.totalAmount.toLocaleString('vi-VN') + ' đ',
+        b.depositAmount.toLocaleString('vi-VN') + ' đ',
+        labels.paymentStatus(b.paymentStatus),
+        labels.bookingStatus(b.status),
+        b.source,
+      ]
+    })
+    const totalAmount = listData.reduce((acc, b) => acc + (b.totalAmount || 0), 0)
+    const summaryMeta = [
+      { label: 'Tổng số đơn', value: listData.length },
+      { label: 'Tổng doanh thu', value: totalAmount.toLocaleString('vi-VN') + ' đ' },
+    ]
+    exportToExcel(`dat-phong-${propertyId}-${new Date().toISOString().slice(0, 10)}`, 'Danh sách Đơn đặt phòng & Khách lưu trú', headers, exportRows, summaryMeta)
+    toast.success('Đã xuất file Excel thành công')
+  }
+
   return (
     // Wider than the other pages for the table, but capped: on a 2560 px
     // screen the columns drifted a whole screen apart.
@@ -186,12 +301,19 @@ export default function BookingsPage() {
         eyebrow={labels.longDate(new Date())}
         title={tc('nav.bookings')}
         actions={
-          canCreate && (
-            <Button onClick={() => router.push(newBookingHref)}>
-              <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />
-              {t('list.create')}
-            </Button>
-          )
+          <div className="flex items-center gap-2">
+            <ExportDropdown
+              onExportExcel={handleExportExcel}
+              onExportCsv={handleExportCsv}
+              disabled={loading || rows.length === 0}
+            />
+            {canCreate && (
+              <Button onClick={() => router.push(newBookingHref)}>
+                <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />
+                {t('list.create')}
+              </Button>
+            )}
+          </div>
         }
       />
 

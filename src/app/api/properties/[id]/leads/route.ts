@@ -54,7 +54,16 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
       ...(source !== 'all' ? { source } : {}),
     }
 
-    // CSV export mode
+    // Export all leads (JSON or CSV)
+    if (search.get('export') === 'json' || search.get('all') === '1') {
+      const rows = await prisma.lead.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        take: 5000,
+      })
+      return NextResponse.json({ success: true, data: rows })
+    }
+
     if (search.get('export') === 'csv') {
       const rows = await prisma.lead.findMany({
         where,

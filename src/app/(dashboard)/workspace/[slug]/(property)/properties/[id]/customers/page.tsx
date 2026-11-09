@@ -6,9 +6,10 @@ import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { Header, PageContainer } from '@/components/layout'
 import { useCan } from '@/components/layout/workspace-context'
-import { Badge, Button, Modal } from '@/components/ui'
+import { Badge, Button, ExportDropdown, Modal } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
 import { formatVnd } from '@/lib/bookings/display'
+import { exportToCsv, exportToExcel } from '@/lib/export/export-data'
 import {
   Users,
   Search,
@@ -265,23 +266,121 @@ export default function CustomersPage() {
 
   const numFormat = (n: number) => n.toLocaleString(locale === 'en' ? 'en-US' : 'vi-VN')
 
+  const fetchAllForExport = async (): Promise<Customer[]> => {
+    try {
+      const q = new URLSearchParams({
+        limit: '1000',
+        page: '1',
+        ...(debouncedQuery && { q: debouncedQuery }),
+        ...(selectedTag !== 'all' && { tag: selectedTag }),
+        sort: sortBy,
+      })
+      const res = await fetch(`/api/properties/${propertyId}/customers?${q.toString()}`)
+      const data = await res.json()
+      if (data.success && Array.isArray(data.data.customers)) {
+        return data.data.customers
+      }
+      return customers || []
+    } catch {
+      return customers || []
+    }
+  }
+
+  const handleExportCsv = async () => {
+    const list = await fetchAllForExport()
+    if (!list.length) {
+      toast.warning('Không có dữ liệu để xuất')
+      return
+    }
+    const headers = [
+      'Họ và tên',
+      'Số điện thoại',
+      'Email',
+      'Thẻ / Nhãn',
+      'Số lượt ở',
+      'Tổng chi tiêu (VNĐ)',
+      'Lần ở gần nhất',
+      'Ghi chú',
+      'Ngày tạo',
+    ]
+    const rows = list.map((c) => [
+      c.name,
+      c.phone,
+      c.email,
+      (c.tags || []).join(', '),
+      c.totalStays,
+      c.totalSpent,
+      formatDate(c.lastStayAt),
+      c.notes || '',
+      formatDate(c.createdAt),
+    ])
+    exportToCsv(`khach-hang-${propertyId}-${new Date().toISOString().slice(0, 10)}`, headers, rows)
+    toast.success('Đã xuất file CSV thành công')
+  }
+
+  const handleExportExcel = async () => {
+    const list = await fetchAllForExport()
+    if (!list.length) {
+      toast.warning('Không có dữ liệu để xuất')
+      return
+    }
+    const headers = [
+      'Họ và tên',
+      'Số điện thoại',
+      'Email',
+      'Thẻ / Nhãn',
+      'Số lượt ở',
+      'Tổng chi tiêu',
+      'Lần ở gần nhất',
+      'Ghi chú',
+      'Ngày tạo',
+    ]
+    const rows = list.map((c) => [
+      c.name,
+      c.phone,
+      c.email,
+      (c.tags || []).join(', '),
+      c.totalStays,
+      c.totalSpent.toLocaleString('vi-VN') + ' đ',
+      formatDate(c.lastStayAt),
+      c.notes || '',
+      formatDate(c.createdAt),
+    ])
+    const summaryMeta = [
+      { label: 'Tổng khách hàng', value: summary.totalCustomers },
+      { label: 'Khách VIP', value: summary.vipCount },
+      { label: 'Tổng lượt lưu trú', value: summary.totalStays },
+      { label: 'Tổng doanh thu', value: summary.totalRevenue.toLocaleString('vi-VN') + ' đ' },
+    ]
+    exportToExcel(`khach-hang-${propertyId}-${new Date().toISOString().slice(0, 10)}`, 'Danh sách Khách hàng', headers, rows, summaryMeta)
+    toast.success('Đã xuất file Excel thành công')
+  }
+
   return (
     <PageContainer>
       <Header
         title={t('title')}
         description={t('subtitle')}
         actions={
-          canEdit ? (
-            <Button
-              variant="outline"
-              onClick={handleSync}
-              disabled={syncing}
-              className="flex items-center gap-2"
-            >
-              <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-              <span>{syncing ? t('syncing') : t('sync')}</span>
-            </Button>
-          ) : undefined
+          <div className="flex items-center gap-2">
+            <ExportDropdown
+              onExportExcel={handleExportExcel}
+              onExportCsv={handleExportCsv}
+              disabled={loading || !customers || customers.length === 0}
+            />
+            {canEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSync}
+                disabled={syncing}
+                className="flex items-center gap-1.5"
+              >
+                <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+                <span>{syncing ? t('syncing') : t('sync')}</span>
+              </Button>
+            )}
+          </div>
         }
       />
 

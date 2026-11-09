@@ -6,7 +6,8 @@ import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { History, Lock, LockOpen, Mail, MoreVertical, RotateCw, ShieldCheck, Trash2, UserPlus, Users, XCircle } from 'lucide-react'
 import { TitleBlock } from '@/components/layout'
-import { Avatar, Button, Dropdown, DropdownDivider, DropdownItem, Loading, Modal, ModalBody, ModalFooter, toast } from '@/components/ui'
+import { Avatar, Button, Dropdown, DropdownDivider, DropdownItem, ExportDropdown, Loading, Modal, ModalBody, ModalFooter, toast } from '@/components/ui'
+import { exportToCsv, exportToExcel } from '@/lib/export/export-data'
 import { NoAccess } from '@/components/payment/no-access'
 import { useCan } from '@/components/layout/workspace-context'
 import { AccessEditor, type AccessValue, type EditorLimits } from '@/components/members/access-editor'
@@ -235,16 +236,113 @@ export default function MembersPage() {
     { key: 'activity', label: t('tabs.activity'), icon: <History className="h-4 w-4" aria-hidden="true" /> },
   ]
 
+  const handleExportCsv = () => {
+    if (!data) return
+    if (tab === 'invitations') {
+      const headers = ['Email', 'Vai trò', 'Phạm vi cơ sở', 'Trạng thái', 'Người gửi', 'Ngày tạo', 'Hết hạn']
+      const rows = invitations.map((inv) => [
+        inv.email,
+        labels.role(inv.role),
+        scopeText(inv.allProperties, inv.propertyIds),
+        inv.status,
+        nameOf(inv.sender),
+        labels.date(inv.createdAt),
+        labels.date(inv.expiresAt),
+      ])
+      exportToCsv(`loi-moi-thanh-vien-${params.slug}-${new Date().toISOString().slice(0, 10)}`, headers, rows)
+      toast.success('Đã xuất danh sách lời mời thành công (CSV)')
+      return
+    }
+
+    const headers = ['Họ và tên', 'Email', 'Vai trò', 'Quyền hạn', 'Cơ sở phụ trách', 'Trạng thái', 'Ngày tham gia']
+    const allMembers = [
+      [
+        nameOf(data.owner),
+        data.owner.email,
+        'Chủ sở hữu',
+        'Toàn quyền',
+        'Tất cả cơ sở',
+        'Đang hoạt động',
+        labels.date(data.owner.joinedAt),
+      ],
+      ...data.members.map((m) => [
+        nameOf(m.user),
+        m.user.email,
+        labels.role(m.role),
+        m.customPermissions ? 'Tùy chỉnh' : 'Theo vai trò',
+        scopeText(m.allProperties, m.propertyIds),
+        m.disabledAt ? 'Đã tạm khóa' : 'Đang hoạt động',
+        labels.date(m.joinedAt),
+      ]),
+    ]
+    exportToCsv(`thanh-vien-${params.slug}-${new Date().toISOString().slice(0, 10)}`, headers, allMembers)
+    toast.success('Đã xuất danh sách thành viên thành công (CSV)')
+  }
+
+  const handleExportExcel = () => {
+    if (!data) return
+    if (tab === 'invitations') {
+      const headers = ['Email', 'Vai trò', 'Phạm vi cơ sở', 'Trạng thái', 'Người gửi', 'Ngày tạo', 'Hết hạn']
+      const rows = invitations.map((inv) => [
+        inv.email,
+        labels.role(inv.role),
+        scopeText(inv.allProperties, inv.propertyIds),
+        inv.status,
+        nameOf(inv.sender),
+        labels.date(inv.createdAt),
+        labels.date(inv.expiresAt),
+      ])
+      exportToExcel(`loi-moi-thanh-vien-${params.slug}-${new Date().toISOString().slice(0, 10)}`, 'Danh sách Lời mời Thành viên', headers, rows)
+      toast.success('Đã xuất danh sách lời mời thành công (Excel)')
+      return
+    }
+
+    const headers = ['Họ và tên', 'Email', 'Vai trò', 'Quyền hạn', 'Cơ sở phụ trách', 'Trạng thái', 'Ngày tham gia']
+    const allMembers = [
+      [
+        nameOf(data.owner),
+        data.owner.email,
+        'Chủ sở hữu',
+        'Toàn quyền',
+        'Tất cả cơ sở',
+        'Đang hoạt động',
+        labels.date(data.owner.joinedAt),
+      ],
+      ...data.members.map((m) => [
+        nameOf(m.user),
+        m.user.email,
+        labels.role(m.role),
+        m.customPermissions ? 'Tùy chỉnh' : 'Theo vai trò',
+        scopeText(m.allProperties, m.propertyIds),
+        m.disabledAt ? 'Đã tạm khóa' : 'Đang hoạt động',
+        labels.date(m.joinedAt),
+      ]),
+    ]
+    const summaryMeta = [
+      { label: 'Tổng thành viên', value: data.members.length + 1 },
+      { label: 'Số ghế sử dụng', value: `${data.seats.used} / ${data.seats.limit ?? '∞'}` },
+    ]
+    exportToExcel(`thanh-vien-${params.slug}-${new Date().toISOString().slice(0, 10)}`, 'Danh sách Thành viên Workspace', headers, allMembers, summaryMeta)
+    toast.success('Đã xuất danh sách thành viên thành công (Excel)')
+  }
+
   return (
     <div>
       <TitleBlock
         title={t('title')}
         lead={t('lead')}
         actions={
-          <Button onClick={() => { setFormError(''); setEditing({ mode: 'invite' }) }} disabled={seatsFull}>
-            <UserPlus className="mr-1.5 h-4 w-4" aria-hidden="true" />
-            {t('invite')}
-          </Button>
+          <div className="flex items-center gap-2">
+            <ExportDropdown
+              onExportExcel={handleExportExcel}
+              onExportCsv={handleExportCsv}
+              disabled={!data || (tab === 'invitations' && invitations.length === 0)}
+            />
+            <Button onClick={() => { setFormError(''); setEditing({ mode: 'invite' }) }} disabled={seatsFull}>
+              <UserPlus className="mr-1.5 h-4 w-4" aria-hidden="true" />
+              {t('invite')}
+            </Button>
+          </div>
         }
       />
 
