@@ -244,27 +244,8 @@ export type SiteProps = NonNullable<Awaited<ReturnType<typeof loadSiteProps>>>
  * turned off stay off, all of them included: an empty choice is not
  * "everything" (it used to bring back the full default layout).
  */
-export function siteBlocks<T extends { isEnabled: boolean; type?: string }>(rows: T[], propertyType: string) {
-  if (rows.length === 0) return defaultBlocksForProperty(propertyType)
-  const enabled = rows.filter((b) => b.isEnabled)
-  // Ensure AMENITIES is not accidentally lost if an existing property had saved blocks before AMENITIES was supported
-  if (!rows.some((b: any) => b.type === 'AMENITIES')) {
-    const defaultAmenityBlock = {
-      id: 'default-amenities',
-      type: 'AMENITIES',
-      name: 'Tiện ích',
-      config: { title: 'Tiện ích khách sạn' },
-      isEnabled: true,
-      sortOrder: 2.5,
-    } as unknown as T
-    const roomsIdx = enabled.findIndex((b: any) => b.type === 'ROOMS')
-    if (roomsIdx >= 0) {
-      enabled.splice(roomsIdx + 1, 0, defaultAmenityBlock)
-    } else {
-      enabled.push(defaultAmenityBlock)
-    }
-  }
-  return enabled
+export function siteBlocks<T extends { isEnabled: boolean }>(rows: T[], propertyType: string) {
+  return rows.length > 0 ? rows.filter((b) => b.isEnabled) : defaultBlocksForProperty(propertyType)
 }
 
 /**
