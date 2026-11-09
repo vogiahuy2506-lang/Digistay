@@ -27,6 +27,7 @@ import { BookingActions, BookingDetailContent, useBooking } from '@/components/b
 import { SidePanel, SidePanelBody, SidePanelFooter, SidePanelHeader, BookingStatusBadge, Loading } from '@/components/ui'
 import { fetchBookingsAround, monthOccupancy as occupancyOfMonth, nightOccupancy, roomOn, toCsv } from '@/lib/bookings/calendar'
 import { planNumbers, roomPlan } from '@/lib/bookings/room-plan'
+import { isWeekendNight } from '@/lib/pricing/quote'
 import { format, addDays, parseISO } from 'date-fns'
 import { apiError } from '@/lib/i18n/api-errors'
 import { cn } from '@/lib/utils'
@@ -595,8 +596,7 @@ export default function CalendarPage() {
   }
 
   const isWeekend = (day: Date) => {
-    const d = day.getDay()
-    return d === 0 || d === 6
+    return isWeekendNight(day)
   }
 
   const ctl = 'h-9 sm:h-8 px-3 rounded-ctl border border-line bg-panel text-fg hover:bg-fg/[0.03] text-xs font-semibold transition-colors inline-flex items-center gap-1.5'
@@ -698,7 +698,7 @@ export default function CalendarPage() {
             {/* Days of Week Header (short names until there is room: the long ones wrapped onto 3 lines) */}
             <div className="hidden sm:grid grid-cols-7 border-b border-line bg-fg/[0.03] text-center text-xs font-bold text-muted divide-x divide-line">
               {(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const).map((day, i) => (
-                <div key={day} className={`py-2 ${i >= 5 ? 'text-acc' : ''}`}>
+                <div key={day} className={`py-2 ${i === 4 || i === 5 ? 'text-acc' : ''}`}>
                   <span className="hidden xl:inline">{t(`grid.weekdays.${day}`)}</span>
                   <span className="xl:hidden">{t(`grid.weekdaysShort.${day}`)}</span>
                 </div>

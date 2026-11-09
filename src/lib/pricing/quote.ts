@@ -10,7 +10,7 @@
  * - Surcharges per extra adult/child per night: the room type's when set,
  *   otherwise the property's "Bảng giá" (extra adults are those above the
  *   room's base occupancy).
- * - Weekend nights are those starting on a Saturday or Sunday, Vietnam time.
+ * - Weekend nights are those starting on a Friday or Saturday, Vietnam time ("Giá cuối tuần (Thứ 6 & Thứ 7)").
  * - Prices include VAT (Part 6): nothing is added on top.
  */
 
@@ -40,13 +40,25 @@ export function ratesFrom(row: PriceRow | null | undefined, propertyDefaults?: P
 const DAY = 24 * 60 * 60 * 1000
 const VN_OFFSET = 7 * 60 * 60 * 1000
 
+/**
+ * A night starting on date: returns true if it is a weekend night (Vietnam time).
+ * In Vietnamese hospitality and Digistay UI ("Giá cuối tuần (Thứ 6 & Thứ 7)"):
+ * - Friday night (day 5) and Saturday night (day 6) are weekend nights.
+ * - Sunday night (day 0) is a regular weekday night (guests check out Monday morning for work).
+ */
+export function isWeekendNight(date: Date): boolean {
+  const day = new Date(date.getTime() + VN_OFFSET).getUTCDay()
+  return day === 5 || day === 6
+}
+
 /** Nights between two dates, and how many start on a weekend (Vietnam time). */
 export function nightsOf(checkIn: Date, checkOut: Date) {
   const nights = Math.max(0, Math.round((checkOut.getTime() - checkIn.getTime()) / DAY))
   let weekend = 0
   for (let i = 0; i < nights; i++) {
-    const day = new Date(checkIn.getTime() + i * DAY + VN_OFFSET).getUTCDay()
-    if (day === 0 || day === 6) weekend++
+    if (isWeekendNight(new Date(checkIn.getTime() + i * DAY))) {
+      weekend++
+    }
   }
   return { nights, weekendNights: weekend, weekdayNights: nights - weekend }
 }

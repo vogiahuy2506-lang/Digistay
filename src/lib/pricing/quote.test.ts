@@ -28,12 +28,33 @@ describe('rates', () => {
 })
 
 describe('nights', () => {
-  it('weekend nights start on Saturday or Sunday in Vietnam time', () => {
-    // Fri 4 → Mon 7 Dec 2026: nights of Fri (weekday), Sat, Sun (weekend).
+  it('weekend nights are Friday and Saturday nights (Thứ 6 & Thứ 7) in Vietnam time', () => {
+    // Task 42: Đặt T6 13/11 → CN 15/11 (đêm T6 và đêm T7) phải tính là 2 đêm cuối tuần
+    expect(nightsOf(d('2026-11-13'), d('2026-11-15'))).toEqual({ nights: 2, weekdayNights: 0, weekendNights: 2 })
+
+    // Đặt CN 15/11 → T2 16/11 (đêm CN) là đêm ngày thường
+    expect(nightsOf(d('2026-11-15'), d('2026-11-16'))).toEqual({ nights: 1, weekdayNights: 1, weekendNights: 0 })
+
+    // Fri 4 → Mon 7 Dec 2026: nights of Fri (weekend), Sat (weekend), Sun (weekday).
     expect(nightsOf(d('2026-12-04'), d('2026-12-07'))).toEqual({ nights: 3, weekdayNights: 1, weekendNights: 2 })
-    // 23:00 UTC on Fri is 06:00 Saturday in Vietnam.
-    expect(nightsOf(d('2026-12-04T23:00:00Z'), d('2026-12-05T23:00:00Z')).weekendNights).toBe(1)
     expect(nightsOf(d('2026-12-04'), d('2026-12-04')).nights).toBe(0)
+  })
+
+  it('calculates exact quote for weekend stay (T6 13/11 -> CN 15/11: 2 đêm × 700.000 = 1.400.000 đ)', () => {
+    const testRates = { weekdayPrice: 600_000, weekendPrice: 700_000, extraAdultPrice: 0, extraChildPrice: 0 }
+    const quote = quoteStay({
+      rates: testRates,
+      checkIn: d('2026-11-13'),
+      checkOut: d('2026-11-15'),
+      numAdults: 2,
+      numChildren: 0,
+      baseOccupancy: 2,
+    })
+    // 2 weekend nights @ 700k = 1,400,000đ (instead of 1,300,000đ with old Sunday bug)
+    expect(quote.weekdayNights).toBe(0)
+    expect(quote.weekendNights).toBe(2)
+    expect(quote.basePrice).toBe(1_400_000)
+    expect(quote.total).toBe(1_400_000)
   })
 })
 
