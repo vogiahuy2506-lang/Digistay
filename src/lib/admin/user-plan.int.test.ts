@@ -29,9 +29,17 @@ describe('User-level plan assignment and inheritance', () => {
     const { owner, workspace } = await createTenant()
 
     const futureEnd = new Date(Date.now() + 180 * DAY)
-    await prisma.subscription.update({
+    await prisma.subscription.upsert({
       where: { workspaceId: workspace.id },
-      data: {
+      create: {
+        workspaceId: workspace.id,
+        plan: 'business',
+        trial: false,
+        billing: 'YEAR',
+        periodStart: new Date(),
+        periodEnd: futureEnd,
+      },
+      update: {
         plan: 'business',
         trial: false,
         billing: 'YEAR',
