@@ -1,3 +1,4 @@
+-- fixed-after-failed-deploy: revert accidental whitespace change from commit 78f73fa
 -- AlterTable
 ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "slogan" TEXT;
 ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "starRating" INTEGER;
