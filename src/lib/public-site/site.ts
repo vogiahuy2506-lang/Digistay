@@ -63,7 +63,7 @@ export async function loadSiteProps(propertyId: string) {
   })
   if (!property) return null
   // The same rates a booking is charged (src/lib/pricing/quote.ts).
-  const [defaults, publishedReviews] = await Promise.all([
+    const [defaults, publishedReviews] = await Promise.all([
     propertyRateDefaults(prisma, propertyId),
     prisma.review.findMany({
       where: { propertyId, isPublished: true },
@@ -74,6 +74,44 @@ export async function loadSiteProps(propertyId: string) {
   ])
 
   const blocks = siteBlocks(property.websiteBlocks, property.type)
+
+  let siteAmenities = property.amenities
+    .filter((pa) => pa.amenity)
+    .map((pa) => ({
+      id: pa.amenity.id,
+      slug: pa.amenity.slug,
+      name: pa.customName || pa.amenity.name,
+      icon: pa.amenity.icon,
+      category: pa.amenity.category,
+      isFeatured: pa.isFeatured,
+      customName: pa.customName,
+      images: pa.images,
+      sortOrder: pa.sortOrder,
+    }))
+
+  // Fallback: If property has not specifically configured property-level amenities yet,
+  // collect unique amenities from its active room types so the hotel website displays them!
+  if (siteAmenities.length === 0) {
+    const seen = new Set<string>()
+    for (const rt of property.roomTypes) {
+      for (const rta of rt.amenities) {
+        if (rta.amenity && !seen.has(rta.amenity.id)) {
+          seen.add(rta.amenity.id)
+          siteAmenities.push({
+            id: rta.amenity.id,
+            slug: rta.amenity.slug,
+            name: rta.amenity.name,
+            icon: rta.amenity.icon,
+            category: rta.amenity.category,
+            isFeatured: false,
+            customName: null,
+            images: [],
+            sortOrder: siteAmenities.length,
+          })
+        }
+      }
+    }
+  }
 
   return {
     property: {
@@ -99,17 +137,7 @@ export async function loadSiteProps(propertyId: string) {
       thumbnail: i.thumbnail,
       alt: i.alt,
     })),
-    amenities: property.amenities.map((pa) => ({
-      id: pa.amenity.id,
-      slug: pa.amenity.slug,
-      name: pa.customName || pa.amenity.name,
-      icon: pa.amenity.icon,
-      category: pa.amenity.category,
-      isFeatured: pa.isFeatured,
-      customName: pa.customName,
-      images: pa.images,
-      sortOrder: pa.sortOrder,
-    })),
+    amenities: siteAmenities,
     roomTypes: property.roomTypes.map((rt) => ({
       id: rt.id,
       name: rt.name,
@@ -122,8 +150,8 @@ export async function loadSiteProps(propertyId: string) {
       image: rt.images[0]?.url ?? null,
       fromPrice: ratesFrom(rt.pricing[0], defaults)?.weekdayPrice ?? null,
       weekendPrice: ratesFrom(rt.pricing[0], defaults)?.weekendPrice ?? null,
-      amenities: rt.amenities.map((a) => a.amenity.name),
-      amenitySlugs: rt.amenities.map((a) => a.amenity.slug),
+      amenities: rt.amenities.filter((a) => a.amenity).map((a) => a.amenity.name),
+      amenitySlugs: rt.amenities.filter((a) => a.amenity).map((a) => a.amenity.slug),
       translations: rt.translations,
     })),
     services: property.extraServices.map((s) => ({
@@ -216,7 +244,7 @@ export function localizeSiteProps(site: SiteProps, locale: Locale, amenityName: 
     amenities: site.amenities.map((a) => ({ ...a, name: a.customName ? a.customName : amenityName(a.slug, a.name) })),
     roomTypes: site.roomTypes.map((rt) => ({
       ...localizeRow(rt, ['name', 'description'], locale),
-      amenities: rt.amenities.map((name, i) => amenityName(rt.amenitySlugs[i], name)),
+      amenities: rt.amenities.map((name, i) => amenityName(rt.amenitySlugs?.[i], name)),
     })),
     services: site.services.map((s) => localizeRow(s, ['name', 'description'], locale)),
     menuItems: localizeMenuItems(site.menuItems, locale),

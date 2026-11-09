@@ -70,6 +70,10 @@ export function AmenitiesBlock({ block, amenities, images }: Props) {
     return () => window.removeEventListener('keydown', onKey)
   }, [activeAmenity])
 
+  if (amenities.length === 0) {
+    return null
+  }
+
   return (
     <Section id="amenities" className="bg-fg/[0.02]">
       <div>
@@ -132,51 +136,47 @@ export function AmenitiesBlock({ block, amenities, images }: Props) {
         )}
 
         {/* Ruled / Categorized list of all amenities */}
-        <div className={photo && photoAmenities.length === 0 ? 'grid gap-10 lg:grid-cols-[minmax(0,440px)_1fr] lg:gap-16' : ''}>
+        <div className={photo && photoAmenities.length === 0 ? 'grid gap-10 lg:grid-cols-2 lg:gap-16 items-start' : ''}>
           <div>
-            {amenities.length === 0 ? (
-              <p className="mt-8 text-body text-muted">{t('empty')}</p>
-            ) : (
-              <ul className={`border-t border-line ${photo && photoAmenities.length === 0 ? '' : 'sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-x-10'}`}>
-                {amenities.map((amenity) => {
-                  const Icon = getIcon(amenity.icon)
-                  const hasPhotos = Array.isArray(amenity.images) && amenity.images.length > 0
-                  return (
-                    <li
-                      key={amenity.id}
-                      className="flex items-center justify-between gap-3 border-b border-line py-3.5 text-body text-fg"
-                    >
-                      <span className="flex items-center gap-3 min-w-0">
-                        <Icon className="h-4 w-4 shrink-0 text-acc" aria-hidden="true" />
-                        <span className="truncate">{amenity.name}</span>
-                      </span>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        {hasPhotos && (
-                          <button
-                            type="button"
-                            onClick={() => openLightbox(amenity, 0)}
-                            className="inline-flex items-center gap-1 text-xs text-muted hover:text-acc transition-colors cursor-pointer"
-                            title={t('viewPhotos')}
-                          >
-                            <Camera className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">{amenity.images!.length}</span>
-                          </button>
-                        )}
-                        {amenity.isFeatured && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-acc bg-acc/10 px-2 py-0.5 rounded border border-acc/20">
-                            ⭐ {t('featured')}
-                          </span>
-                        )}
-                      </div>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
+            <ul className={`border-t border-line ${photo && photoAmenities.length === 0 ? 'sm:grid sm:grid-cols-2 sm:gap-x-8' : 'sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-x-10'}`}>
+              {amenities.map((amenity) => {
+                const Icon = getIcon(amenity.icon)
+                const hasPhotos = Array.isArray(amenity.images) && amenity.images.length > 0
+                return (
+                  <li
+                    key={amenity.id}
+                    className="flex items-center justify-between gap-3 border-b border-line py-3.5 text-body text-fg"
+                  >
+                    <span className="flex items-center gap-3 min-w-0">
+                      <Icon className="h-4 w-4 shrink-0 text-acc" aria-hidden="true" />
+                      <span className="truncate">{amenity.name}</span>
+                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {hasPhotos && (
+                        <button
+                          type="button"
+                          onClick={() => openLightbox(amenity, 0)}
+                          className="inline-flex items-center gap-1 text-xs text-muted hover:text-acc transition-colors cursor-pointer"
+                          title={t('viewPhotos')}
+                        >
+                          <Camera className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">{amenity.images!.length}</span>
+                        </button>
+                      )}
+                      {amenity.isFeatured && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-acc bg-acc/10 px-2 py-0.5 rounded border border-acc/20">
+                          ⭐ {t('featured')}
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
           </div>
           {photo && photoAmenities.length === 0 && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img {...responsiveImage(photo.url, '(min-width: 1024px) 50vw, 100vw')} alt={photo.alt ?? title} loading="lazy" className="h-full min-h-[320px] w-full object-cover" />
+            <img {...responsiveImage(photo.url, '(min-width: 1024px) 50vw, 100vw')} alt={photo.alt ?? title} loading="lazy" className="h-full min-h-[320px] w-full rounded-xl object-cover shadow-sm" />
           )}
         </div>
       </div>

@@ -6,6 +6,7 @@ import { generateSlug, generateSubdomain } from '@/lib/utils'
 import { planResponse } from '@/lib/billing/guard'
 import { accessibleProperties, checkAccess, propertyScope } from '@/lib/auth/access'
 import { locationColumns, resolveLocation } from '@/lib/vn-admin/location'
+import { DEFAULT_AMENITIES } from '@/lib/amenities/standard-amenities'
 
 export async function GET(request: NextRequest) {
   try {
@@ -184,6 +185,34 @@ export async function POST(request: NextRequest) {
         propertyId: property.id,
       },
     })
+
+    // Assign essential starter amenities so website immediately has amenities displayed
+    try {
+      let starterAmenities = await prisma.amenity.findMany({
+        where: { slug: { in: ['wifi', 'parking', 'ac', 'frontdesk'] } },
+        select: { id: true },
+      })
+      if (starterAmenities.length === 0) {
+        await prisma.amenity.createMany({ data: DEFAULT_AMENITIES, skipDuplicates: true })
+        starterAmenities = await prisma.amenity.findMany({
+          where: { slug: { in: ['wifi', 'parking', 'ac', 'frontdesk'] } },
+          select: { id: true },
+        })
+      }
+      if (starterAmenities.length > 0) {
+        await prisma.propertyAmenity.createMany({
+          data: starterAmenities.map((a, idx) => ({
+            propertyId: property.id,
+            amenityId: a.id,
+            isFeatured: idx === 0, // Mark first amenity (Wifi) as featured
+            sortOrder: idx,
+          })),
+          skipDuplicates: true,
+        })
+      }
+    } catch (e) {
+      console.warn('Failed to assign initial amenities to new property:', e)
+    }
 
     // Log activity
     await prisma.activityLog.create({

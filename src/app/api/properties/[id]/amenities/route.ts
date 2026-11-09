@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { slugify } from '@/lib/utils'
 import { invalidatePublicSite } from '@/lib/public-site/site'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
-import { accessibleProperties } from '@/lib/auth/access'
+import { accessibleProperties, can, checkPropertyAccess, NO_PERMISSION } from '@/lib/auth/access'
 import { DEFAULT_AMENITIES } from '@/lib/amenities/standard-amenities'
 
 const amenityItemSchema = z.object({
@@ -53,6 +53,7 @@ export async function GET(
       where: {
         OR: [
           { slug: { not: { startsWith: 'custom-' } } },
+          { slug: { startsWith: `custom-${params.id}-` } },
           { properties: { some: { propertyId: params.id } } },
         ],
       },
@@ -65,6 +66,7 @@ export async function GET(
         where: {
           OR: [
             { slug: { not: { startsWith: 'custom-' } } },
+            { slug: { startsWith: `custom-${params.id}-` } },
             { properties: { some: { propertyId: params.id } } },
           ],
         },
@@ -126,12 +128,10 @@ export async function PUT(
       )
     }
 
-    const property = await prisma.property.findFirst({
-      where: { id: params.id, ...accessibleProperties(session.user.id, 'property_edit') },
-      select: { id: true },
-    })
-    if (!property) {
-      return NextResponse.json({ success: false, error: 'Không có quyền' }, { status: 403 })
+    const access = await checkPropertyAccess(session.user.id, params.id, null)
+    if (!access.ok) return access.response
+    if (!can(access.access, 'services_manage', params.id) && !can(access.access, 'property_edit', params.id)) {
+      return NextResponse.json({ success: false, error: NO_PERMISSION }, { status: 403 })
     }
     const locked = await lockedResponseForProperty(params.id)
     if (locked) return locked
@@ -194,12 +194,10 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Vui lòng đăng nhập' }, { status: 401 })
     }
 
-    const property = await prisma.property.findFirst({
-      where: { id: params.id, ...accessibleProperties(session.user.id, 'property_edit') },
-      select: { id: true },
-    })
-    if (!property) {
-      return NextResponse.json({ success: false, error: 'Không có quyền' }, { status: 403 })
+    const access = await checkPropertyAccess(session.user.id, params.id, null)
+    if (!access.ok) return access.response
+    if (!can(access.access, 'services_manage', params.id) && !can(access.access, 'property_edit', params.id)) {
+      return NextResponse.json({ success: false, error: NO_PERMISSION }, { status: 403 })
     }
     const locked = await lockedResponseForProperty(params.id)
     if (locked) return locked

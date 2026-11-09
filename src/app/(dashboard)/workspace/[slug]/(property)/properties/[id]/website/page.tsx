@@ -408,6 +408,7 @@ const websiteTemplates: WebsiteTemplate[] = [
     blocks: [
       { type: 'HERO', name: 'Banner Hero', isEnabled: true },
       { type: 'ROOMS', name: 'Danh sách phòng', isEnabled: true },
+      { type: 'AMENITIES', name: 'Tiện ích', isEnabled: true },
       { type: 'MAP', name: 'Bản đồ', isEnabled: true },
       { type: 'CONTACT', name: 'Liên hệ', isEnabled: true },
     ]

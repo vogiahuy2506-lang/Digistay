@@ -142,7 +142,41 @@ export default function RoomTypesPage() {
     maxOccupancy: '3',
     weekdayPrice: '',
     weekendPrice: '',
+    amenityIds: [] as string[],
   })
+
+  // Available amenities for selected property
+  const [availableAmenities, setAvailableAmenities] = React.useState<
+    { id: string; name: string; slug: string; icon: string | null; category: string }[]
+  >([])
+
+  const fetchAvailableAmenities = React.useCallback(async () => {
+    if (!selectedProperty) return
+    try {
+      const res = await fetch(`/api/properties/${selectedProperty}/amenities`)
+      const data = await res.json()
+      if (data.success && Array.isArray(data.data)) {
+        setAvailableAmenities(data.data)
+      }
+    } catch (err) {
+      console.error('Failed to fetch available amenities:', err)
+    }
+  }, [selectedProperty])
+
+  React.useEffect(() => {
+    if (selectedProperty) {
+      fetchAvailableAmenities()
+    }
+  }, [selectedProperty, fetchAvailableAmenities])
+
+  const toggleAmenity = (id: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      amenityIds: prev.amenityIds.includes(id)
+        ? prev.amenityIds.filter((x) => x !== id)
+        : [...prev.amenityIds, id],
+    }))
+  }
 
   // Fetch properties
   React.useEffect(() => {
@@ -290,6 +324,7 @@ export default function RoomTypesPage() {
       weekdayPrice: fields.weekdayPrice ? parseFloat(fields.weekdayPrice) : 0,
       weekendPrice: fields.weekendPrice ? parseFloat(fields.weekendPrice) : 0,
       translations: { en },
+      amenityIds: fields.amenityIds,
     }
   }
 
@@ -397,6 +432,7 @@ export default function RoomTypesPage() {
       maxOccupancy: roomType.maxOccupancy.toString(),
       weekdayPrice: roomType.pricing[0]?.weekdayPrice?.toString() || '',
       weekendPrice: roomType.pricing[0]?.weekendPrice?.toString() || '',
+      amenityIds: (roomType.amenities || []).map((a) => a.amenity?.id).filter(Boolean),
     })
     setIsEditModalOpen(true)
   }
@@ -415,6 +451,7 @@ export default function RoomTypesPage() {
       maxOccupancy: '3',
       weekdayPrice: '',
       weekendPrice: '',
+      amenityIds: [],
     })
   }
 
@@ -486,6 +523,51 @@ export default function RoomTypesPage() {
         <p className="text-small text-muted">{t('form.capacityHint')}</p>
       )}
     </fieldset>
+  )
+
+  const amenityFieldset = (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <label className="text-small font-medium text-fg flex items-center gap-1.5">
+          <span>Tiện ích phòng</span>
+          <FieldTooltip content="Chọn các tiện ích có trong hạng phòng này (Wifi, Điều hòa, TV, Nước uống, Bình đun nước...). Tiện ích sẽ hiển thị trên thẻ phòng, trang chi tiết và website khách sạn." />
+        </label>
+        {formData.amenityIds.length > 0 && (
+          <span className="text-xs text-acc font-semibold bg-acc/10 px-2.5 py-0.5 rounded-full border border-acc/20">
+            Đã chọn {formData.amenityIds.length} tiện ích
+          </span>
+        )}
+      </div>
+
+      {availableAmenities.length > 0 ? (
+        <div className="border border-line rounded-lg p-3 bg-fg/[0.01] max-h-48 overflow-y-auto space-y-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+            {availableAmenities.map((amenity) => {
+              const isSelected = formData.amenityIds.includes(amenity.id)
+              const Icon = getIcon(amenity.icon)
+              return (
+                <button
+                  key={amenity.id}
+                  type="button"
+                  onClick={() => toggleAmenity(amenity.id)}
+                  className={`flex items-center gap-2 p-2 rounded-md text-left text-xs transition-all border ${
+                    isSelected
+                      ? 'bg-acc/10 text-acc border-acc font-medium shadow-xs'
+                      : 'bg-panel text-fg border-line hover:border-fg/30'
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-acc' : 'text-muted'}`} />
+                  <span className="truncate flex-1">{amenityName(amenity.slug, amenity.name, labels.locale)}</span>
+                  {isSelected && <span className="text-acc text-xs font-bold shrink-0">✓</span>}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      ) : (
+        <p className="text-xs text-muted">Đang tải danh sách tiện ích...</p>
+      )}
+    </div>
   )
 
   return (
@@ -898,6 +980,7 @@ export default function RoomTypesPage() {
             />
           </div>
           {capacityFieldset}
+          {amenityFieldset}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <NumberInput
               label={t('form.weekdayPrice')}
@@ -1013,6 +1096,7 @@ export default function RoomTypesPage() {
             />
           </div>
           {capacityFieldset}
+          {amenityFieldset}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <NumberInput
               label={t('form.weekdayPrice')}

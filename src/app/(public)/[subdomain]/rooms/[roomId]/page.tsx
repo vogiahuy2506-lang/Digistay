@@ -57,6 +57,10 @@ const loadRoomPage = cache(async (propertyId: string, roomId: string) => {
       coverImage: true,
       policy: true,
       websiteBlocks: { where: { isEnabled: true }, select: { type: true } },
+      amenities: {
+        include: { amenity: true },
+        orderBy: [{ isFeatured: 'desc' }, { sortOrder: 'asc' }],
+      },
       roomTypes: {
         where: { id: roomId, isActive: true },
         include: {
@@ -246,11 +250,11 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
                 </dl>
               </section>
 
-              {room.amenities.length > 0 && (
+              {room.amenities.length > 0 ? (
                 <section>
                   <h2 className="font-site text-h3 text-fg">{t('room.amenities')}</h2>
                   <ul className="mt-5 grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3">
-                    {room.amenities.map(({ amenity }) => {
+                    {room.amenities.filter((a) => a.amenity).map(({ amenity }) => {
                       const Icon = getIcon(amenity.icon)
                       return (
                         <li key={amenity.id} className="flex items-center gap-3 border-b border-line py-3 text-body text-fg">
@@ -261,7 +265,23 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
                     })}
                   </ul>
                 </section>
-              )}
+              ) : property.amenities.length > 0 ? (
+                <section>
+                  <h2 className="font-site text-h3 text-fg">{t('sections.amenities')}</h2>
+                  <ul className="mt-5 grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3">
+                    {property.amenities.filter((pa) => pa.amenity).map((pa) => {
+                      const Icon = getIcon(pa.amenity.icon)
+                      const displayName = pa.customName || amenityName(pa.amenity.slug, pa.amenity.name, lang)
+                      return (
+                        <li key={pa.amenity.id} className="flex items-center gap-3 border-b border-line py-3 text-body text-fg">
+                          <Icon className="h-4 w-4 shrink-0 text-acc" aria-hidden="true" />
+                          <span>{displayName}</span>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </section>
+              ) : null}
 
               {policies.length > 0 && (
                 <section>

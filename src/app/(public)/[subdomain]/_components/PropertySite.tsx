@@ -153,6 +153,7 @@ export function PropertySite({ property, images, amenities, roomTypes, services,
     .filter(
       (t) =>
         types.has(t) &&
+        !(t === 'AMENITIES' && amenities.length === 0) &&
         !(t === 'GALLERY' && images.length === 0) &&
         !(t === 'RESTAURANT_MENU' && menuItems.length === 0) &&
         !(t === 'SERVICES' && services.length === 0)
