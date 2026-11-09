@@ -43,6 +43,9 @@ import { routes } from '@/lib/utils/routes'
 // The hotel site's font faces, for the preview (the same ones its layout loads).
 import { siteFontVariables } from '@/app/(public)/[subdomain]/fonts'
 import { PreviewBlock, PreviewHeader, type PreviewSite } from './site-preview'
+import { InspectableSection } from './inspectable-section'
+import { TemplateCard } from './template-card'
+import { HOTEL_LANDING_TEMPLATES, type HotelLandingTemplate } from '@/lib/public-site/landing-templates'
 import {
   Monitor, Smartphone, Eye, Save, Globe, Palette, Type, Image,
   Plus, Trash2, GripVertical, Settings, Layout, Search, ArrowRight,
@@ -1195,71 +1198,48 @@ function OptionalColor({
 // Template Selection Modal
 function TemplateModal({
   onSelect,
+  activeTemplateId,
   onClose
 }: {
-  onSelect: (template: WebsiteTemplate) => void
+  onSelect: (template: HotelLandingTemplate) => void
+  activeTemplateId?: string
   onClose: () => void
 }) {
   const t = useTranslations('dash.website.templates')
-  const text = useBlockText()
   return (
-    <Modal isOpen onClose={onClose} size="xl">
-        <ModalHeader onClose={onClose}>
-            <div className="w-10 h-10 shrink-0 rounded-xl bg-ink flex items-center justify-center shadow-lg">
-              <Wand2 className="w-5 h-5 text-on-ink" aria-hidden="true" />
-            </div>
-            <div className="min-w-0">
-              <h2 className="font-semibold text-fg">{t('choose')}</h2>
-              <p className="text-xs text-muted">{t('subtitle')}</p>
-            </div>
-        </ModalHeader>
+    <Modal isOpen onClose={onClose} size="2xl">
+      <ModalHeader onClose={onClose}>
+        <div className="w-10 h-10 shrink-0 rounded-xl bg-ink flex items-center justify-center shadow-lg">
+          <Wand2 className="w-5 h-5 text-on-ink" aria-hidden="true" />
+        </div>
+        <div className="min-w-0">
+          <h2 className="font-semibold text-fg">Chọn mẫu Landing Page khách sạn</h2>
+          <p className="text-xs text-muted">Bộ sưu tập mẫu giao diện tối ưu chuyển đổi (CRO) cho từng phân khúc lưu trú.</p>
+        </div>
+      </ModalHeader>
 
-        {/* Templates Grid */}
-        <ModalBody className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {websiteTemplates.map((template) => {
-              const TemplateIcon = template.icon
-              return (
-                <button
-                  key={template.id}
-                  type="button"
-                  onClick={() => onSelect(template)}
-                  className="p-4 rounded-xl border-2 border-line hover:border-acc hover:bg-acc-soft/30 transition-all text-left group"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-fg/5 flex items-center justify-center group-hover:bg-info-soft transition-all">
-                      <TemplateIcon className="w-7 h-7 text-muted group-hover:text-acc transition-colors" />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-fg group-hover:text-acc transition-colors">
-                        {t(`${template.key}.name`)}
-                      </h4>
-                      <p className="text-sm text-muted mt-1">{t(`${template.key}.description`)}</p>
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {template.blocks.slice(0, 4).map((b, i) => (
-                          <Badge key={i} className="text-xs bg-fg/5 text-muted border-0">
-                            {text.blockName(b)}
-                          </Badge>
-                        ))}
-                        {template.blocks.length > 4 && (
-                          <Badge className="text-xs bg-fg/5 text-muted border-0">
-                            +{template.blocks.length - 4}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-        </ModalBody>
+      {/* Templates Grid */}
+      <ModalBody className="p-4 max-h-[72vh] overflow-y-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {HOTEL_LANDING_TEMPLATES.map((template) => (
+            <TemplateCard
+              key={template.id}
+              template={template}
+              isActive={activeTemplateId === template.id}
+              onApply={onSelect}
+            />
+          ))}
+        </div>
+      </ModalBody>
 
-        <ModalFooter className="justify-center">
-          <p className="text-sm text-muted text-center">
-            {t('startBlank')}
-          </p>
-        </ModalFooter>
+      <ModalFooter className="justify-between">
+        <p className="text-xs text-muted">
+          Áp dụng mẫu sẽ cập nhật phong cách và bố cục chuẩn. Bạn có thể rê chuột chỉnh sửa trực tiếp từng phần.
+        </p>
+        <Button variant="outline" size="sm" onClick={onClose}>
+          Đóng
+        </Button>
+      </ModalFooter>
     </Modal>
   )
 }
@@ -1360,6 +1340,7 @@ export default function WebsiteBuilderPage() {
   const tc = useTranslations('dash.common')
   const tn = useTranslations('dash.common.nav')
   const theme = useTheme()
+  const text = useBlockText()
   // Owners, ADMIN and MANAGER (the blocks and settings APIs refuse anyone else; the sidebar hides it).
   const canEdit = useCan('website_manage')
 
@@ -1597,6 +1578,54 @@ export default function WebsiteBuilderPage() {
     setBlocks(newBlocks)
     pushHistory(newBlocks)
     setShowTemplateModal(false)
+  }
+
+  const applyLandingTemplate = (template: HotelLandingTemplate) => {
+    const newBlocks: Block[] = template.blocks.map((t, index) => {
+      const blockTypeInfo = blockTypes.find((b) => b.type === t.type)
+      return {
+        id: `block-${Date.now()}-${index}`,
+        type: t.type || '',
+        name: t.name || '',
+        isEnabled: t.isEnabled ?? true,
+        sortOrder: index,
+        config: {
+          ...(blockTypeInfo?.defaultConfig || {}),
+          ...(t.config || {}),
+        },
+      }
+    })
+    setBlocks(newBlocks)
+    pushHistory(newBlocks)
+    setUsingDefaults(false)
+
+    setSettings((curr) => {
+      if (!curr) return curr
+      return {
+        ...curr,
+        primaryColor: template.style.primaryColor,
+        secondaryColor: template.style.secondaryColor,
+        accentColor: template.style.accentColor,
+        buttonColor: template.style.buttonColor,
+        headingColor: template.style.headingColor,
+        fontFamily: template.style.fontFamily,
+        headingFont: template.style.headingFont,
+        layout: template.id,
+      }
+    })
+
+    setShowTemplateModal(false)
+    toast.success(`Đã áp dụng mẫu "${template.name}"`)
+  }
+
+  const moveBlock = (blockId: string, direction: 'up' | 'down') => {
+    const index = blocks.findIndex((b) => b.id === blockId)
+    if (index === -1) return
+    const targetIndex = direction === 'up' ? index - 1 : index + 1
+    if (targetIndex < 0 || targetIndex >= blocks.length) return
+    const newBlocks = arrayMove(blocks, index, targetIndex)
+    setBlocks(newBlocks)
+    pushHistory(newBlocks)
   }
 
   // DnD handlers
@@ -1874,7 +1903,66 @@ export default function WebsiteBuilderPage() {
       >
         {/* Block Manager Sidebar */}
         <div id="builder-panel" className={cn('space-y-4 lg:min-h-0 lg:overflow-y-auto lg:pr-1 lg:pb-2', !panelOpen && 'lg:hidden')}>
-          <div className="space-y-4">
+          {/* Tab Selector between Templates & Blocks */}
+          <div className="flex items-center gap-1 p-1 bg-fg/5 rounded-xl border border-line/60" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'templates'}
+              onClick={() => setActiveTab('templates')}
+              className={cn(
+                'flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold transition-all',
+                activeTab === 'templates'
+                  ? 'bg-panel text-fg shadow-sm border border-line/60'
+                  : 'text-muted hover:text-fg'
+              )}
+            >
+              <Wand2 className="w-3.5 h-3.5 text-acc" />
+              <span>Mẫu Landing Page</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-label="Khối"
+              aria-selected={activeTab === 'blocks'}
+              onClick={() => setActiveTab('blocks')}
+              className={cn(
+                'flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold transition-all',
+                activeTab === 'blocks'
+                  ? 'bg-panel text-fg shadow-sm border border-line/60'
+                  : 'text-muted hover:text-fg'
+              )}
+            >
+              <LayoutGrid className="w-3.5 h-3.5 text-acc" />
+              <span>Cấu trúc & Khối ({blocks.length})</span>
+            </button>
+          </div>
+
+          {activeTab === 'templates' ? (
+            <div className="space-y-3">
+              <div className="p-3 bg-acc-soft/40 rounded-xl border border-acc/20">
+                <div className="flex items-center gap-1.5 text-acc font-semibold text-xs">
+                  <Sparkles className="w-4 h-4 shrink-0" />
+                  <span>Mẫu giao diện thiết kế sẵn</span>
+                </div>
+                <p className="text-[11px] text-muted mt-1 leading-relaxed">
+                  Bấm &quot;Áp dụng mẫu này&quot; để tự động cấu hình bố cục, màu sắc và phông chữ chuẩn CRO. Sau đó, bạn có thể rê chuột vào website bên phải để nhấp và chỉnh sửa từng phần trực tiếp.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {HOTEL_LANDING_TEMPLATES.map((tmpl) => (
+                  <TemplateCard
+                    key={tmpl.id}
+                    template={tmpl}
+                    isActive={settings?.layout === tmpl.id}
+                    onApply={applyLandingTemplate}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
@@ -1973,6 +2061,7 @@ export default function WebsiteBuilderPage() {
                 </div>
               </div>
             </div>
+          )}
         </div>
 
         {/* Preview: the hotel's site in a browser frame, as tall as the window from lg up */}
@@ -2051,25 +2140,29 @@ export default function WebsiteBuilderPage() {
                       compact={previewMode === 'mobile'}
                     />
                   )}
-                  {site && (isDragging ? previewBlocks : blocks).filter(b => b.isEnabled).map((block, index) => {
+                  {site && (isDragging ? previewBlocks : blocks).filter(b => b.isEnabled).map((block, index, arr) => {
                     const isBeingDragged = isDragging && activeId === block.id
 
                     return (
-                      <div
+                      <InspectableSection
                         key={block.id}
-                        className={`
-                          relative border-2 transition-all duration-300
-                          ${isBeingDragged
-                            ? 'border-info/40 bg-info-soft opacity-50'
-                            : 'border-transparent hover:border-acc/40'
-                          }
-                        `}
+                        id={block.id}
+                        type={block.type}
+                        name={block.name || text.blockName(block)}
+                        isEnabled={block.isEnabled}
+                        index={index}
+                        total={arr.length}
+                        isSelected={selectedBlockId === block.id}
+                        isBeingDragged={isBeingDragged}
+                        compact={previewMode === 'mobile'}
+                        onEdit={() => setSelectedBlockId(block.id)}
+                        onToggle={() => toggleBlock(block.id)}
+                        onMoveUp={index > 0 ? () => moveBlock(block.id, 'up') : undefined}
+                        onMoveDown={index < arr.length - 1 ? () => moveBlock(block.id, 'down') : undefined}
+                        onRemove={() => removeBlock(block.id)}
                       >
                         <PreviewBlock block={block} site={site} compact={previewMode === 'mobile'} />
-                        <span className="absolute right-2 top-2 rounded-ctl bg-fg/70 px-1.5 py-0.5 text-[11px] font-medium text-page shadow" aria-hidden="true">
-                          #{index + 1}
-                        </span>
-                      </div>
+                      </InspectableSection>
                     )
                   })}
 
@@ -2099,7 +2192,8 @@ export default function WebsiteBuilderPage() {
       {/* Template Selection Modal */}
       {showTemplateModal && (
         <TemplateModal
-          onSelect={applyTemplate}
+          onSelect={applyLandingTemplate}
+          activeTemplateId={settings?.layout}
           onClose={() => setShowTemplateModal(false)}
         />
       )}
