@@ -92,7 +92,7 @@ function formatDateTime(date: Date, locale: EmailLocale): string {
 /**
  * Base layout wraps all email content with branded header/footer.
  */
-function baseLayout(props: {
+export function baseLayout(props: {
   previewText?: string
   bodyHtml: string
   locale?: EmailLocale
@@ -105,25 +105,43 @@ function baseLayout(props: {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="color-scheme" content="light only" />
+  <meta name="format-detection" content="telephone=no, date=no, address=no, email=no" />
   ${previewText ? `<meta name="x-apple-notification-preview" content="${escapeHtml(previewText)}" />` : ''}
   <title>${brand}</title>
+  <style>
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    @media only screen and (max-width: 600px) {
+      .email-container { width: 100% !important; max-width: 100% !important; border-radius: 0 !important; }
+      .email-content { padding: 24px 18px !important; }
+      .email-header { padding: 24px 18px 20px !important; }
+      .email-footer { padding: 20px 18px !important; }
+    }
+  </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: ${BRAND.bg}; font-family: ${BRAND.fontFamily}; color: ${BRAND.text}; -webkit-font-smoothing: antialiased;">
+<body style="margin: 0; padding: 0; background-color: ${BRAND.bg}; font-family: ${BRAND.fontFamily}; color: ${BRAND.text}; -webkit-font-smoothing: antialiased; word-break: break-word;">
   ${previewText ? `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:${BRAND.bg};">${escapeHtml(previewText)}</div>` : ''}
 
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: ${BRAND.bg}; padding: 32px 16px;">
     <tr>
       <td align="center">
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 560px; background-color: ${BRAND.surface}; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.04);">
+        <!--[if (gte mso 9)|(IE)]>
+        <table align="center" border="0" cellspacing="0" cellpadding="0" width="580">
+        <tr>
+        <td align="center" valign="top" width="580">
+        <![endif]-->
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="email-container" style="max-width: 580px; background-color: ${BRAND.surface}; border: 1px solid ${BRAND.border}; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);">
 
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, ${BRAND.primary} 0%, ${BRAND.primaryLight} 100%); padding: 32px 32px 28px; text-align: center;">
-              <div style="display: inline-block; background: rgba(255,255,255,0.18); border-radius: 12px; padding: 10px 14px; margin-bottom: 12px;">
+            <td class="email-header" style="background: linear-gradient(135deg, ${BRAND.primary} 0%, #bd3c22 45%, ${BRAND.primaryLight} 100%); padding: 32px 32px 28px; text-align: center;">
+              <div style="display: inline-block; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.25); border-radius: 12px; padding: 10px 18px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
                 <span style="color: #ffffff; font-size: 20px; font-weight: 700; letter-spacing: 0.5px;">🏨 ${brand}</span>
               </div>
-              <div style="color: rgba(255,255,255,0.85); font-size: 13px; font-weight: 400;">
+              <div style="color: rgba(255,255,255,0.9); font-size: 13px; font-weight: 400; letter-spacing: 0.2px;">
                 ${escapeHtml(t('tagline'))}
               </div>
             </td>
@@ -131,23 +149,28 @@ function baseLayout(props: {
 
           <!-- Body -->
           <tr>
-            <td style="padding: 36px 32px 24px;">
+            <td class="email-content" style="padding: 36px 32px 28px;">
               ${bodyHtml}
             </td>
           </tr>
 
           <!-- Footer -->
           <tr>
-            <td style="background-color: ${BRAND.bg}; padding: 24px 32px; border-top: 1px solid ${BRAND.border}; text-align: center;">
-              <p style="margin: 0 0 8px; color: ${BRAND.textMuted}; font-size: 12px;">
+            <td class="email-footer" style="background-color: ${BRAND.bg}; padding: 24px 32px; border-top: 1px solid ${BRAND.border}; text-align: center;">
+              <p style="margin: 0 0 8px; color: ${BRAND.textMuted}; font-size: 12px; line-height: 1.5;">
                 ${escapeHtml(t('automated'))}
               </p>
-              <p style="margin: 0; color: ${BRAND.textMuted}; font-size: 12px;">
+              <p style="margin: 0; color: ${BRAND.textMuted}; font-size: 12px; line-height: 1.5;">
                 ${escapeHtml(t('rights', { year: String(new Date().getFullYear()) }))}
               </p>
             </td>
           </tr>
         </table>
+        <!--[if (gte mso 9)|(IE)]>
+        </td>
+        </tr>
+        </table>
+        <![endif]-->
       </td>
     </tr>
   </table>
@@ -1083,5 +1106,352 @@ export function opsAlertTemplate(
     html: baseLayout({ previewText: findings[0]?.title ?? 'Cảnh báo vận hành', bodyHtml }),
     text: findings.map((f) => [`${label(f.severity)}: ${f.title}`, ...f.lines.map((l) => `  - ${l}`)].join('\n')).join('\n\n'),
     subject: `[Digistay] ${critical > 0 ? `${critical} nghiêm trọng, ` : ''}${findings.length} cảnh báo: ${findings[0]?.title ?? ''}`.slice(0, 200),
+  }
+}
+
+// ============================================
+//  Owner / Front desk booking notifications
+// ============================================
+
+export interface OwnerNewBookingData {
+  ownerEmail: string
+  ownerName?: string
+  bookingCode: string
+  guestName: string
+  guestPhone: string
+  guestEmail: string
+  propertyName: string
+  checkIn: string
+  checkOut: string
+  manageUrl: string
+  fromWebsite?: boolean
+}
+
+export function ownerNewBookingTemplate(data: OwnerNewBookingData): { html: string; text: string; subject: string } {
+  const subject = data.fromWebsite
+    ? `Yêu cầu đặt phòng mới từ website #${data.bookingCode} - ${data.propertyName}`
+    : `Đơn đặt phòng mới #${data.bookingCode} - ${data.propertyName}`
+
+  const text = [
+    ...(data.fromWebsite ? ['Khách đặt qua website, đang chờ bạn xác nhận.'] : []),
+    `Đơn đặt phòng: ${data.bookingCode}`,
+    `Khách: ${data.guestName} · ${data.guestPhone} · ${data.guestEmail}`,
+    `Ngày: ${data.checkIn.slice(0, 10)} - ${data.checkOut.slice(0, 10)}`,
+    `Xem đơn: ${data.manageUrl}`,
+  ].join('\n')
+
+  const title = data.fromWebsite ? '⚡ Yêu cầu đặt phòng mới từ website' : '🛎️ Đơn đặt phòng mới'
+  const badgeText = data.fromWebsite ? 'ĐANG CHỜ BẠN XÁC NHẬN' : 'ĐÃ ĐƯỢC TẠO TRÊN HỆ THỐNG'
+  const badgeBg = data.fromWebsite ? '#fef3c7' : '#ecfdf5'
+  const badgeColor = data.fromWebsite ? '#92400e' : '#065f46'
+  const badgeBorder = data.fromWebsite ? '#fcd34d' : '#a7f3d0'
+
+  const bodyHtml = `
+    <div style="margin-bottom: 20px;">
+      <span style="display: inline-block; background-color: ${badgeBg}; color: ${badgeColor}; border: 1px solid ${badgeBorder}; border-radius: 9999px; padding: 4px 12px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">
+        ${badgeText}
+      </span>
+      <h1 style="margin: 12px 0 6px; font-size: 22px; font-weight: 700; color: ${BRAND.text};">
+        ${title}
+      </h1>
+      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: ${BRAND.textMuted};">
+        ${data.fromWebsite
+          ? `Khách hàng vừa gửi yêu cầu đặt phòng trực tiếp qua website của <strong>${escapeHtml(data.propertyName)}</strong>. Vui lòng kiểm tra và phản hồi sớm.`
+          : `Bạn có một đơn đặt phòng mới tại <strong>${escapeHtml(data.propertyName)}</strong>.`
+        }
+      </p>
+    </div>
+
+    <!-- Booking Code Card -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
+      <tr>
+        <td align="center" style="background: linear-gradient(135deg, ${BRAND.primary} 0%, ${BRAND.primaryLight} 100%); border-radius: 12px; padding: 16px 20px; box-shadow: 0 4px 12px rgba(169, 49, 25, 0.15);">
+          <div style="font-size: 11px; color: rgba(255,255,255,0.85); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; margin-bottom: 4px;">
+            MÃ ĐẶT PHÒNG
+          </div>
+          <div style="font-size: 26px; color: #ffffff; font-weight: 800; letter-spacing: 2px; font-family: 'Courier New', monospace; line-height: 1.2;">
+            #${escapeHtml(data.bookingCode)}
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Guest Information Card -->
+    <div style="background-color: ${BRAND.bg}; border: 1px solid ${BRAND.border}; border-radius: 12px; padding: 18px 20px; margin: 18px 0;">
+      <div style="font-size: 12px; font-weight: 700; color: ${BRAND.primary}; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">
+        👤 Thông tin khách hàng
+      </div>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="font-size: 13px;">
+        <tr>
+          <td style="padding: 5px 0; color: ${BRAND.textMuted}; width: 35%;">Họ và tên:</td>
+          <td style="padding: 5px 0; color: ${BRAND.text}; font-weight: 600;">${escapeHtml(data.guestName)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: ${BRAND.textMuted};">Số điện thoại:</td>
+          <td style="padding: 5px 0; color: ${BRAND.text}; font-weight: 600;">
+            <a href="tel:${escapeHtml(data.guestPhone)}" style="color: ${BRAND.primary}; text-decoration: none;">${escapeHtml(data.guestPhone)}</a>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: ${BRAND.textMuted};">Email liên hệ:</td>
+          <td style="padding: 5px 0; color: ${BRAND.text};">
+            <a href="mailto:${escapeHtml(data.guestEmail)}" style="color: ${BRAND.primary}; text-decoration: none;">${escapeHtml(data.guestEmail)}</a>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Stay Information Card -->
+    <div style="background-color: ${BRAND.surface}; border: 1px solid ${BRAND.border}; border-radius: 12px; padding: 18px 20px; margin: 18px 0;">
+      <div style="font-size: 12px; font-weight: 700; color: ${BRAND.textMuted}; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">
+        📅 Chi tiết kỳ lưu trú
+      </div>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="font-size: 13px;">
+        <tr>
+          <td style="padding: 5px 0; color: ${BRAND.textMuted}; width: 35%;">Khách sạn:</td>
+          <td style="padding: 5px 0; color: ${BRAND.text}; font-weight: 600;">${escapeHtml(data.propertyName)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: ${BRAND.textMuted};">Ngày nhận - trả:</td>
+          <td style="padding: 5px 0; color: ${BRAND.text}; font-weight: 600;">${escapeHtml(data.checkIn.slice(0, 10))} đến ${escapeHtml(data.checkOut.slice(0, 10))}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Action Button -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 28px 0 10px;">
+      <tr>
+        <td align="center">
+          <a href="${escapeHtml(data.manageUrl)}" style="display: inline-block; background: ${BRAND.text}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-size: 15px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+            Mở đơn đặt phòng để xử lý →
+          </a>
+        </td>
+      </tr>
+    </table>
+  `
+
+  return {
+    html: baseLayout({
+      previewText: `Đơn #${data.bookingCode} - ${data.guestName} (${data.propertyName})`,
+      bodyHtml,
+      locale: 'vi',
+    }),
+    text,
+    subject,
+  }
+}
+
+export interface TransferClaimedData {
+  toEmail: string
+  toName?: string
+  bookingCode: string
+  guestName: string
+  guestPhone: string
+  propertyName: string
+  amount: number
+  claimedAt: string
+  account: string
+  holdUntil: string | null
+  manageUrl: string
+}
+
+export function transferClaimedTemplate(data: TransferClaimedData): { html: string; text: string; subject: string } {
+  const amount = `${Math.round(data.amount).toLocaleString('vi-VN')} ₫`
+  const subject = `Khách báo đã chuyển khoản cọc #${data.bookingCode} - ${data.propertyName}`
+  const text = [
+    `Khách ${data.guestName} (${data.guestPhone}) báo đã chuyển khoản ${amount} tiền cọc cho đơn ${data.bookingCode} lúc ${data.claimedAt}.`,
+    `Tài khoản nhận: ${data.account}`,
+    `Nội dung chuyển khoản: ${data.bookingCode}`,
+    ...(data.holdUntil ? [`Phòng được giữ đến ${data.holdUntil}; quá hạn mà đơn chưa được xác nhận thì đơn tự huỷ.`] : []),
+    'Kiểm tra tài khoản; khi tiền về, mở đơn và bấm "Xác nhận đã nhận tiền".',
+    `Xem đơn: ${data.manageUrl}`,
+  ].join('\n')
+
+  const bodyHtml = `
+    <div style="margin-bottom: 20px;">
+      <span style="display: inline-block; background-color: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; border-radius: 9999px; padding: 4px 12px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">
+        💳 XÁC NHẬN CHUYỂN KHOẢN TIỀN CỌC
+      </span>
+      <h1 style="margin: 12px 0 6px; font-size: 22px; font-weight: 700; color: ${BRAND.text};">
+        Khách báo đã chuyển cọc #${escapeHtml(data.bookingCode)}
+      </h1>
+      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: ${BRAND.textMuted};">
+        Khách hàng <strong>${escapeHtml(data.guestName)}</strong> vừa thông báo đã thực hiện chuyển khoản tiền cọc cho đơn đặt phòng tại <strong>${escapeHtml(data.propertyName)}</strong>.
+      </p>
+    </div>
+
+    <!-- Amount Banner -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
+      <tr>
+        <td align="center" style="background: linear-gradient(135deg, #f3eee9 0%, ${BRAND.bg} 100%); border: 1px solid ${BRAND.border}; border-radius: 12px; padding: 20px;">
+          <div style="font-size: 11px; color: ${BRAND.textMuted}; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; margin-bottom: 4px;">
+            SỐ TIỀN CỌC BÁO CHUYỂN
+          </div>
+          <div style="font-size: 32px; color: ${BRAND.primary}; font-weight: 800; line-height: 1.2;">
+            ${escapeHtml(amount)}
+          </div>
+          <div style="font-size: 12px; color: ${BRAND.textMuted}; margin-top: 4px;">
+            Mã đơn: #${escapeHtml(data.bookingCode)} · ${escapeHtml(data.claimedAt)}
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Transfer Details Card -->
+    <div style="background-color: ${BRAND.surface}; border: 1px solid ${BRAND.border}; border-radius: 12px; padding: 18px 20px; margin: 18px 0;">
+      <div style="font-size: 12px; font-weight: 700; color: ${BRAND.textMuted}; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">
+        🏦 Thông tin đối soát ngân hàng
+      </div>
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="font-size: 13px;">
+        <tr>
+          <td style="padding: 5px 0; color: ${BRAND.textMuted}; width: 35%;">Tài khoản nhận:</td>
+          <td style="padding: 5px 0; color: ${BRAND.text}; font-weight: 600;">${escapeHtml(data.account)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: ${BRAND.textMuted};">Nội dung chuyển:</td>
+          <td style="padding: 5px 0; color: ${BRAND.primary}; font-weight: 700; font-family: 'Courier New', monospace;">${escapeHtml(data.bookingCode)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 5px 0; color: ${BRAND.textMuted};">Khách gửi:</td>
+          <td style="padding: 5px 0; color: ${BRAND.text}; font-weight: 500;">
+            ${escapeHtml(data.guestName)} · <a href="tel:${escapeHtml(data.guestPhone)}" style="color: ${BRAND.primary}; text-decoration: none;">${escapeHtml(data.guestPhone)}</a>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    ${data.holdUntil ? `
+    <!-- Hold Until Warning -->
+    <div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 14px 16px; margin: 18px 0;">
+      <p style="margin: 0; font-size: 13px; color: #92400e; line-height: 1.5;">
+        ⏱️ <strong>Thời hạn giữ phòng:</strong> Phòng được giữ đến <strong>${escapeHtml(data.holdUntil)}</strong>. Quá hạn trên nếu chưa được xác nhận, đơn sẽ tự động bị huỷ.
+      </p>
+    </div>
+    ` : ''}
+
+    <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px; margin: 18px 0; font-size: 13px; color: #166534; line-height: 1.5;">
+      💡 Vui lòng kiểm tra tài khoản ngân hàng. Khi tiền đã vào tài khoản, bấm nút bên dưới và chọn <strong>&quot;Xác nhận đã nhận tiền&quot;</strong> để xác nhận đặt phòng cho khách.
+    </div>
+
+    <!-- Action Button -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 28px 0 10px;">
+      <tr>
+        <td align="center">
+          <a href="${escapeHtml(data.manageUrl)}" style="display: inline-block; background: ${BRAND.primary}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-size: 15px; font-weight: 600; box-shadow: 0 4px 12px rgba(169, 49, 25, 0.2);">
+            Kiểm tra đơn & Xác nhận tiền cọc →
+          </a>
+        </td>
+      </tr>
+    </table>
+  `
+
+  return {
+    html: baseLayout({
+      previewText: `Khách báo chuyển ${amount} cọc đơn #${data.bookingCode}`,
+      bodyHtml,
+      locale: 'vi',
+    }),
+    text,
+    subject,
+  }
+}
+
+// ============================================
+//  Billing & Workspace Plan Email Template
+// ============================================
+
+export interface BillingEmailTemplateProps {
+  subject: string
+  title: string
+  badgeText?: string
+  badgeType?: 'success' | 'warning' | 'danger' | 'info'
+  leadText: string
+  details?: { label: string; value: string }[]
+  ctaUrl?: string
+  ctaText?: string
+  rawLines?: string[]
+}
+
+export function billingEmailTemplate(props: BillingEmailTemplateProps): { html: string; text: string; subject: string } {
+  const {
+    subject,
+    title,
+    badgeText,
+    badgeType = 'info',
+    leadText,
+    details = [],
+    ctaUrl,
+    ctaText = 'Xem chi tiết',
+    rawLines,
+  } = props
+
+  const badgeConfig = {
+    success: { bg: '#ecfdf5', color: '#065f46', border: '#a7f3d0' },
+    warning: { bg: '#fffbeb', color: '#92400e', border: '#fcd34d' },
+    danger: { bg: '#fef2f2', color: '#991b1b', border: '#fecaca' },
+    info: { bg: '#eff6ff', color: '#1e40af', border: '#bfdbfe' },
+  }[badgeType]
+
+  const text = rawLines ? rawLines.join('\n') : [
+    title,
+    '',
+    leadText,
+    ...(details.length > 0 ? ['', ...details.map((d) => `${d.label}: ${d.value}`)] : []),
+    ...(ctaUrl ? ['', `${ctaText}: ${ctaUrl}`] : []),
+  ].join('\n')
+
+  const bodyHtml = `
+    <div style="margin-bottom: 20px;">
+      ${badgeText ? `
+      <span style="display: inline-block; background-color: ${badgeConfig.bg}; color: ${badgeConfig.color}; border: 1px solid ${badgeConfig.border}; border-radius: 9999px; padding: 4px 12px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">
+        ${escapeHtml(badgeText)}
+      </span>
+      ` : ''}
+      <h1 style="margin: 12px 0 8px; font-size: 22px; font-weight: 700; color: ${BRAND.text};">
+        ${escapeHtml(title)}
+      </h1>
+      <p style="margin: 0; font-size: 15px; line-height: 1.6; color: ${BRAND.textMuted};">
+        ${escapeHtml(leadText)}
+      </p>
+    </div>
+
+    ${details.length > 0 ? `
+    <div style="background-color: ${BRAND.bg}; border: 1px solid ${BRAND.border}; border-radius: 12px; padding: 18px 20px; margin: 20px 0;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="font-size: 13px;">
+        ${details.map((d, i) => `
+        <tr>
+          <td style="padding: 7px 0; color: ${BRAND.textMuted}; width: 38%; ${i > 0 ? `border-top: 1px solid ${BRAND.border};` : ''}">
+            ${escapeHtml(d.label)}:
+          </td>
+          <td style="padding: 7px 0; color: ${BRAND.text}; font-weight: 600; ${i > 0 ? `border-top: 1px solid ${BRAND.border};` : ''}">
+            ${escapeHtml(d.value)}
+          </td>
+        </tr>
+        `).join('')}
+      </table>
+    </div>
+    ` : ''}
+
+    ${ctaUrl ? `
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 28px 0 10px;">
+      <tr>
+        <td align="center">
+          <a href="${escapeHtml(ctaUrl)}" style="display: inline-block; background: ${badgeType === 'danger' ? BRAND.primaryDark : BRAND.primary}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-size: 15px; font-weight: 600; box-shadow: 0 4px 12px rgba(169, 49, 25, 0.2);">
+            ${escapeHtml(ctaText)} →
+          </a>
+        </td>
+      </tr>
+    </table>
+    ` : ''}
+  `
+
+  return {
+    html: baseLayout({
+      previewText: title,
+      bodyHtml,
+      locale: 'vi',
+    }),
+    text,
+    subject,
   }
 }

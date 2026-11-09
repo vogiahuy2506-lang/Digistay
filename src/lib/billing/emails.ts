@@ -7,6 +7,7 @@
 import type { Prisma } from '@prisma/client'
 import { prisma, prismaWithDeleted } from '@/lib/db'
 import { queueEmail } from '@/lib/email/outbox'
+import { billingEmailTemplate } from '@/lib/email/templates'
 import { formatVnd } from '@/lib/bookings/display'
 import { planById } from '@/lib/marketing/plans'
 import { appOrigin } from '@/lib/public-site/site-host'
@@ -37,9 +38,30 @@ async function recipients(workspaceId: string, extraUserId: string | null, db: D
   return { workspace, to }
 }
 
-function message(subject: string, lines: string[]) {
+function message(
+  subject: string,
+  lines: string[],
+  options?: {
+    title?: string
+    badgeText?: string
+    badgeType?: 'success' | 'warning' | 'danger' | 'info'
+    ctaUrl?: string
+    ctaText?: string
+    details?: { label: string; value: string }[]
+  }
+) {
   const text = lines.join('\n')
-  return { subject, text, html: escapeHtml(text).replace(/\n/g, '<br/>') }
+  return billingEmailTemplate({
+    subject,
+    title: options?.title ?? subject.replace(/^\[Digistay\]\s*/, ''),
+    badgeText: options?.badgeText,
+    badgeType: options?.badgeType ?? 'info',
+    leadText: lines[0] ?? '',
+    details: options?.details,
+    ctaUrl: options?.ctaUrl,
+    ctaText: options?.ctaText ?? 'Xem chi tiết',
+    rawLines: lines,
+  })
 }
 
 /** The receipt of a paid plan payment; returns the queued ids. */
@@ -47,14 +69,31 @@ export async function queueSubscriptionPaid(paymentId: string, db: Db = prisma):
   const payment = await db.subscriptionPayment.findUniqueOrThrow({ where: { id: paymentId } })
   const { workspace, to } = await recipients(payment.workspaceId, payment.createdById, db)
   const plan = planById(payment.plan)
-  const body = message(`[Digistay] Đã nhận thanh toán gói ${capital(plan.id)} cho ${workspace.name}`, [
-    `Digistay đã nhận ${formatVnd(payment.amount)} cho gói ${capital(plan.id)} (${payment.billing === 'YEAR' ? 'theo năm' : 'theo tháng'}) của workspace ${workspace.name}.`,
-    `Gói có hiệu lực từ ${vnDate(payment.periodStart ?? new Date())} đến ${vnDate(payment.periodEnd ?? new Date())}.`,
-    `Mã giao dịch: ${payment.orderCode}${payment.reference ? ` · Tham chiếu ngân hàng: ${payment.reference}` : ''}`,
-    `Giới hạn: ${plan.properties} cơ sở, ${plan.rooms} phòng, ${plan.staff} tài khoản nhân viên, ${plan.invoices} hoá đơn điện tử mỗi tháng.`,
-    '',
-    `Xem gói và lịch sử thanh toán: ${billingUrl(workspace.slug)}`,
-  ])
+  const body = message(
+    `[Digistay] Đã nhận thanh toán gói ${capital(plan.id)} cho ${workspace.name}`,
+    [
+      `Digistay đã nhận ${formatVnd(payment.amount)} cho gói ${capital(plan.id)} (${payment.billing === 'YEAR' ? 'theo năm' : 'theo tháng'}) của workspace ${workspace.name}.`,
+      `Gói có hiệu lực từ ${vnDate(payment.periodStart ?? new Date())} đến ${vnDate(payment.periodEnd ?? new Date())}.`,
+      `Mã giao dịch: ${payment.orderCode}${payment.reference ? ` · Tham chiếu ngân hàng: ${payment.reference}` : ''}`,
+      `Giới hạn: ${plan.properties} cơ sở, ${plan.rooms} phòng, ${plan.staff} tài khoản nhân viên, ${plan.invoices} hoá đơn điện tử mỗi tháng.`,
+      '',
+      `Xem gói và lịch sử thanh toán: ${billingUrl(workspace.slug)}`,
+    ],
+    {
+      title: `Đã nhận thanh toán gói ${capital(plan.id)}`,
+      badgeText: 'THANH TOÁN THÀNH CÔNG',
+      badgeType: 'success',
+      details: [
+        { label: 'Gói dịch vụ', value: `Gói ${capital(plan.id)} (${payment.billing === 'YEAR' ? 'Theo năm' : 'Theo tháng'})` },
+        { label: 'Số tiền', value: formatVnd(payment.amount) },
+        { label: 'Hiệu lực', value: `${vnDate(payment.periodStart ?? new Date())} - ${vnDate(payment.periodEnd ?? new Date())}` },
+        { label: 'Mã giao dịch', value: payment.orderCode },
+        { label: 'Hạn mức', value: `${plan.properties} cơ sở · ${plan.rooms} phòng · ${plan.staff} nhân viên · ${plan.invoices} HĐĐT/tháng` },
+      ],
+      ctaUrl: billingUrl(workspace.slug),
+      ctaText: 'Xem gói và lịch sử thanh toán',
+    }
+  )
   const ids: string[] = []
   for (const user of to) ids.push(await queueEmail('subscription_paid', { to: { email: user.email, name: user.name ?? undefined }, ...body }, payment.id, db))
   return ids
@@ -89,7 +128,17 @@ export async function queueSubscriptionReminder(
     ended: `${what} của workspace ${workspace.name} đã hết hạn ngày ${end}. Bạn còn dùng bình thường đến ${lockDay}; sau ngày đó workspace chỉ còn xem và website ngừng nhận đặt phòng online.`,
     locked: `Workspace ${workspace.name} đã chuyển sang chỉ xem vì chưa gia hạn: không tạo hay sửa được dữ liệu, website ngừng nhận đặt phòng online. Dữ liệu vẫn được giữ nguyên.`,
   }[kind]
-  const body = message(subject, [lead, '', `Chọn gói và thanh toán bằng mã QR: ${billingUrl(workspace.slug)}`])
+  const body = message(
+    subject,
+    [lead, '', `Chọn gói và thanh toán bằng mã QR: ${billingUrl(workspace.slug)}`],
+    {
+      title: what,
+      badgeText: kind === 'locked' ? 'ĐÃ KHOÁ TRUY CẬP' : kind === 'ended' ? 'ĐÃ HẾT HẠN' : 'NHẮC HẠN GÓI DỊCH VỤ',
+      badgeType: kind === 'locked' ? 'danger' : kind === 'ended' ? 'warning' : 'info',
+      ctaUrl: billingUrl(workspace.slug),
+      ctaText: 'Chọn gói và gia hạn ngay',
+    }
+  )
   const ids: string[] = []
   for (const user of to) ids.push(await queueEmail('subscription_reminder', { to: { email: user.email, name: user.name ?? undefined }, ...body }, workspaceId, db))
   return ids
@@ -115,7 +164,17 @@ export async function queueUsageAlert(
     facts.level === 100
       ? `Workspace ${workspace.name} đã phát hành đủ ${facts.limit} hoá đơn điện tử ${plan} cho phép trong tháng này. Từ giờ đến hết tháng không phát hành thêm được, trừ khi nâng cấp gói.`
       : `Workspace ${workspace.name} đã phát hành ${facts.used} trên ${facts.limit} hoá đơn điện tử ${plan} cho phép trong tháng này. Hết số này thì không phát hành thêm được cho đến tháng sau.`
-  const body = message(subject, [lead, '', `Xem mức dùng và nâng cấp gói: ${billingUrl(workspace.slug)}`])
+  const body = message(
+    subject,
+    [lead, '', `Xem mức dùng và nâng cấp gói: ${billingUrl(workspace.slug)}`],
+    {
+      title: 'Hạn mức hoá đơn điện tử',
+      badgeText: facts.level === 100 ? 'ĐÃ DÙNG HẾT 100%' : 'CẢNH BÁO MỨC DÙNG 80%',
+      badgeType: facts.level === 100 ? 'danger' : 'warning',
+      ctaUrl: billingUrl(workspace.slug),
+      ctaText: 'Xem mức dùng và nâng cấp gói',
+    }
+  )
   return queueEmail('plan_usage', { to: { email: to[0].email, name: to[0].name ?? undefined }, ...body }, workspaceId, db)
 }
 
@@ -151,17 +210,35 @@ export function subscriptionInvoiceMessage(input: {
   amount: number
 }) {
   const number = input.einvoiceNumber ? ` số ${input.einvoiceNumber}` : ''
-  return message(`[Digistay] Hoá đơn điện tử${number} cho ${input.workspace.name}`, [
-    input.buyer ? `Kính gửi ${input.buyer},` : 'Kính gửi Quý khách,',
-    '',
-    `Digistay gửi hoá đơn điện tử cho khoản thanh toán của workspace ${input.workspace.name} (file PDF đính kèm).`,
-    `Nội dung: ${input.line}`,
-    `Tổng tiền: ${formatVnd(input.amount)}`,
-    ...(input.templateCode && input.series ? [`Mẫu số ${input.templateCode} · Ký hiệu ${input.series}${number ? ` ·${number.replace(' số', ' Số')}` : ''}`] : []),
-    `Mã tra cứu: ${input.lookupCode}`,
-    '',
-    `Xem gói và các hoá đơn: ${billingUrl(input.workspace.slug)}`,
-  ])
+  return message(
+    `[Digistay] Hoá đơn điện tử${number} cho ${input.workspace.name}`,
+    [
+      input.buyer ? `Kính gửi ${input.buyer},` : 'Kính gửi Quý khách,',
+      '',
+      `Digistay gửi hoá đơn điện tử cho khoản thanh toán của workspace ${input.workspace.name} (file PDF đính kèm).`,
+      `Nội dung: ${input.line}`,
+      `Tổng tiền: ${formatVnd(input.amount)}`,
+      ...(input.templateCode && input.series ? [`Mẫu số ${input.templateCode} · Ký hiệu ${input.series}${number ? ` ·${number.replace(' số', ' Số')}` : ''}`] : []),
+      `Mã tra cứu: ${input.lookupCode}`,
+      '',
+      `Xem gói và các hoá đơn: ${billingUrl(input.workspace.slug)}`,
+    ],
+    {
+      title: `Hoá đơn điện tử${number}`,
+      badgeText: 'HOÁ ĐƠN ĐIỆN TỬ HỢP LỆ',
+      badgeType: 'success',
+      details: [
+        { label: 'Nội dung', value: input.line },
+        { label: 'Tổng tiền', value: formatVnd(input.amount) },
+        ...(input.templateCode ? [{ label: 'Mẫu số', value: input.templateCode }] : []),
+        ...(input.series ? [{ label: 'Ký hiệu', value: input.series }] : []),
+        ...(input.einvoiceNumber ? [{ label: 'Số hoá đơn', value: input.einvoiceNumber }] : []),
+        { label: 'Mã tra cứu', value: input.lookupCode },
+      ],
+      ctaUrl: billingUrl(input.workspace.slug),
+      ctaText: 'Xem gói và các hoá đơn',
+    }
+  )
 }
 
 function capital(id: string): string {

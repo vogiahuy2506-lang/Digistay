@@ -6,6 +6,7 @@
 import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { queueEmail } from '@/lib/email/outbox'
+import { billingEmailTemplate } from '@/lib/email/templates'
 import { planById } from '@/lib/marketing/plans'
 import { appOrigin } from '@/lib/public-site/site-host'
 import { escapeHtml } from '@/lib/utils/escape-html'
@@ -32,9 +33,28 @@ async function owner(workspaceId: string, db: Db) {
   })
 }
 
-function message(subject: string, lines: string[]) {
+function message(
+  subject: string,
+  lines: string[],
+  options?: {
+    title?: string
+    badgeText?: string
+    badgeType?: 'success' | 'warning' | 'danger' | 'info'
+    ctaUrl?: string
+    ctaText?: string
+  }
+) {
   const text = lines.join('\n')
-  return { subject, text, html: escapeHtml(text).replace(/\n/g, '<br/>') }
+  return billingEmailTemplate({
+    subject,
+    title: options?.title ?? subject.replace(/^\[Digistay\]\s*/, ''),
+    badgeText: options?.badgeText ?? 'CẢNH BÁO TÀI NGUYÊN',
+    badgeType: options?.badgeType ?? 'warning',
+    leadText: lines[0] ?? '',
+    ctaUrl: options?.ctaUrl,
+    ctaText: options?.ctaText ?? 'Xem chi tiết',
+    rawLines: lines,
+  })
 }
 
 /** "3/1 cơ sở, 40/15 phòng": used over the limit, per kind over. */

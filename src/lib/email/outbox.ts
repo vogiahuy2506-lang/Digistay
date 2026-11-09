@@ -31,6 +31,10 @@ import {
   depositReceivedTemplate,
   postStaySurveyTemplate,
   workspaceInviteTemplate,
+  ownerNewBookingTemplate,
+  transferClaimedTemplate,
+  type OwnerNewBookingData,
+  type TransferClaimedData,
   type AbandonedCartTemplateProps,
   type BookingConfirmationTemplateProps,
   type DepositExpiredTemplateProps,
@@ -97,54 +101,12 @@ export function queuePostStaySurvey(data: PostStaySurveyTemplateProps, bookingId
   return queueEmail('post_stay_survey', { to: { email: data.guestEmail, name: data.guestName }, ...postStaySurveyTemplate(data) }, bookingId, db)
 }
 
-export interface OwnerNewBookingData {
-  ownerEmail: string
-  ownerName?: string
-  bookingCode: string
-  guestName: string
-  guestPhone: string
-  guestEmail: string
-  propertyName: string
-  checkIn: string
-  checkOut: string
-  /** the booking in the dashboard */
-  manageUrl: string
-  /** A request from the hotel's website, waiting for the hotel to confirm. */
-  fromWebsite?: boolean
-}
+export type { OwnerNewBookingData, TransferClaimedData }
 
 /** To the hotel's owner, in Vietnamese whatever the guest's language. */
 export function queueOwnerNewBooking(data: OwnerNewBookingData, bookingId: string, db?: Db) {
-  const subject = data.fromWebsite
-    ? `Yêu cầu đặt phòng mới từ website #${data.bookingCode} - ${data.propertyName}`
-    : `Đơn đặt phòng mới #${data.bookingCode} - ${data.propertyName}`
-  const text = [
-    ...(data.fromWebsite ? ['Khách đặt qua website, đang chờ bạn xác nhận.'] : []),
-    `Đơn đặt phòng: ${data.bookingCode}`,
-    `Khách: ${data.guestName} · ${data.guestPhone} · ${data.guestEmail}`,
-    `Ngày: ${data.checkIn.slice(0, 10)} - ${data.checkOut.slice(0, 10)}`,
-    `Xem đơn: ${data.manageUrl}`,
-  ].join('\n')
-  // The guest's name and contact come from a public form: escape them for the HTML part.
-  const html = escapeHtml(text).replace(/\n/g, '<br/>')
-  return queueEmail('owner_new_booking', { to: { email: data.ownerEmail, name: data.ownerName }, subject, text, html }, bookingId, db)
-}
-
-export interface TransferClaimedData {
-  toEmail: string
-  toName?: string
-  bookingCode: string
-  guestName: string
-  guestPhone: string
-  propertyName: string
-  amount: number
-  /** "HH:mm dd/mm/yyyy", Vietnam time */
-  claimedAt: string
-  /** where the money should be: "Vietcombank 0123456789 (NGUYEN VAN A)" */
-  account: string
-  /** the room is held until then, in the same format; null: no deadline */
-  holdUntil: string | null
-  manageUrl: string
+  const mail = ownerNewBookingTemplate(data)
+  return queueEmail('owner_new_booking', { to: { email: data.ownerEmail, name: data.ownerName }, subject: mail.subject, text: mail.text, html: mail.html }, bookingId, db)
 }
 
 /**
@@ -153,19 +115,8 @@ export interface TransferClaimedData {
  * the new-booking notice.
  */
 export function queueTransferClaimed(data: TransferClaimedData, bookingId: string, db?: Db) {
-  const amount = `${Math.round(data.amount).toLocaleString('vi-VN')} ₫`
-  const subject = `Khách báo đã chuyển khoản cọc #${data.bookingCode} - ${data.propertyName}`
-  const text = [
-    `Khách ${data.guestName} (${data.guestPhone}) báo đã chuyển khoản ${amount} tiền cọc cho đơn ${data.bookingCode} lúc ${data.claimedAt}.`,
-    `Tài khoản nhận: ${data.account}`,
-    `Nội dung chuyển khoản: ${data.bookingCode}`,
-    ...(data.holdUntil ? [`Phòng được giữ đến ${data.holdUntil}; quá hạn mà đơn chưa được xác nhận thì đơn tự huỷ.`] : []),
-    'Kiểm tra tài khoản; khi tiền về, mở đơn và bấm "Xác nhận đã nhận tiền".',
-    `Xem đơn: ${data.manageUrl}`,
-  ].join('\n')
-  // The guest's name and phone come from a public form: escape them for the HTML part.
-  const html = escapeHtml(text).replace(/\n/g, '<br/>')
-  return queueEmail('transfer_claimed', { to: { email: data.toEmail, name: data.toName }, subject, text, html }, bookingId, db)
+  const mail = transferClaimedTemplate(data)
+  return queueEmail('transfer_claimed', { to: { email: data.toEmail, name: data.toName }, subject: mail.subject, text: mail.text, html: mail.html }, bookingId, db)
 }
 
 export type DepositReceivedData = DepositReceivedTemplateProps & { guestEmail: string }

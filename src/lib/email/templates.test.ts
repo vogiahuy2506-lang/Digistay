@@ -18,6 +18,9 @@ import {
   passwordChangedTemplate,
   welcomeEmailTemplate,
   workspaceInviteTemplate,
+  ownerNewBookingTemplate,
+  transferClaimedTemplate,
+  billingEmailTemplate,
   type BookingConfirmationTemplateProps,
 } from './templates'
 import { emailLocale } from './i18n'
@@ -332,6 +335,81 @@ describe('account emails', () => {
     const mail = opsAlertTemplate([{ severity: 'critical', title: 'DB', lines: [] }])
     expect(mail.html).toContain('<html lang="vi">')
     expect(mail.html).toContain('Mọi quyền được bảo lưu.')
+  })
+
+  it('owner new booking notice from website and direct', () => {
+    const data = {
+      ownerEmail: 'owner@sen.vn',
+      ownerName: 'Chủ khách sạn',
+      bookingCode: 'DS1001',
+      guestName: 'Nguyễn Văn <A>',
+      guestPhone: '0901234567',
+      guestEmail: 'a@example.com',
+      propertyName: 'Khách sạn Sen',
+      checkIn: '2026-12-25T07:00:00.000Z',
+      checkOut: '2026-12-27T05:00:00.000Z',
+      manageUrl: 'https://digistay.vn/workspace/sen/properties/p1/bookings/b1',
+      fromWebsite: true,
+    }
+    const mail = ownerNewBookingTemplate(data)
+    expect(mail.subject).toBe('Yêu cầu đặt phòng mới từ website #DS1001 - Khách sạn Sen')
+    expect(mail.text).toContain('Khách đặt qua website, đang chờ bạn xác nhận.')
+    expect(mail.text).toContain('Đơn đặt phòng: DS1001')
+    expect(mail.text).toContain('Xem đơn: https://digistay.vn/workspace/sen/properties/p1/bookings/b1')
+    expect(mail.html).toContain('ĐANG CHỜ BẠN XÁC NHẬN')
+    expect(mail.html).toContain('#DS1001')
+    expect(mail.html).toContain('Nguyễn Văn &lt;A&gt;')
+    expect(mail.html).not.toContain('<A>')
+    expect(mail.html).toContain('href="https://digistay.vn/workspace/sen/properties/p1/bookings/b1"')
+
+    const direct = ownerNewBookingTemplate({ ...data, fromWebsite: false })
+    expect(direct.subject).toBe('Đơn đặt phòng mới #DS1001 - Khách sạn Sen')
+    expect(direct.text).not.toContain('Khách đặt qua website')
+  })
+
+  it('transfer claimed notification to owner and desk', () => {
+    const data = {
+      toEmail: 'owner@sen.vn',
+      toName: 'Lễ tân Sen',
+      bookingCode: 'DS1002',
+      guestName: 'Trần Thị <B>',
+      guestPhone: '0987654321',
+      propertyName: 'Khách sạn Sen',
+      amount: 500_000,
+      claimedAt: '15:30 24/12/2026',
+      account: 'Vietcombank 0123456789 (SEN HOTEL)',
+      holdUntil: '17:30 24/12/2026',
+      manageUrl: 'https://digistay.vn/manage/b2',
+    }
+    const mail = transferClaimedTemplate(data)
+    expect(mail.subject).toBe('Khách báo đã chuyển khoản cọc #DS1002 - Khách sạn Sen')
+    expect(mail.text).toContain('500.000 ₫')
+    expect(mail.text).toContain('Phòng được giữ đến 17:30 24/12/2026')
+    expect(mail.html).toContain('500.000 ₫')
+    expect(mail.html).toContain('Vietcombank 0123456789 (SEN HOTEL)')
+    expect(mail.html).toContain('Trần Thị &lt;B&gt;')
+    expect(mail.html).not.toContain('<B>')
+    expect(mail.html).toContain('href="https://digistay.vn/manage/b2"')
+  })
+
+  it('billing email template formats structured cards and links', () => {
+    const mail = billingEmailTemplate({
+      subject: '[Digistay] Thông báo gia hạn',
+      title: 'Gói Pro của bạn sắp hết hạn',
+      badgeText: 'SẮP HẾT HẠN',
+      badgeType: 'warning',
+      leadText: 'Gói dịch vụ của bạn sẽ hết hạn sau 7 ngày nữa.',
+      details: [{ label: 'Gói hiện tại', value: 'Gói Pro' }, { label: 'Ngày hết hạn', value: '31/12/2026' }],
+      ctaUrl: 'https://digistay.vn/billing',
+      ctaText: 'Gia hạn gói ngay',
+    })
+    expect(mail.subject).toBe('[Digistay] Thông báo gia hạn')
+    expect(mail.text).toContain('Gói Pro của bạn sắp hết hạn')
+    expect(mail.text).toContain('Gói hiện tại: Gói Pro')
+    expect(mail.html).toContain('SẮP HẾT HẠN')
+    expect(mail.html).toContain('Gói hiện tại:')
+    expect(mail.html).toContain('31/12/2026')
+    expect(mail.html).toContain('href="https://digistay.vn/billing"')
   })
 })
 
