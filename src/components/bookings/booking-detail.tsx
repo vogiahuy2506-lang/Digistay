@@ -24,6 +24,7 @@ import { CheckOutDialog } from './check-out-dialog'
 import { CancelDialog } from './cancel-dialog'
 import { CheckInDialog } from './check-in-dialog'
 import { AddServiceDialog } from './add-service-dialog'
+import { RecordPaymentDialog } from './record-payment-dialog'
 import { buildPrintHtml, nightsBetween, remainingAmount } from '@/lib/bookings/display'
 import { addDays as addDay, nightStart, roomPlan, spanOnNight, vnDay } from '@/lib/bookings/room-plan'
 import { useDashLabels } from '@/lib/i18n/dash'
@@ -294,6 +295,7 @@ export function BookingDetailContent({ booking, onChanged }: { booking: BookingD
   const canMoveFrom = editable && moveDays.length > 0 && (parts.length > 1 || !!booking.bookingItems[0]?.roomId)
 
   const [showAddService, setShowAddService] = React.useState(false)
+  const [showRecordPayment, setShowRecordPayment] = React.useState(false)
   const [deletingServiceIndex, setDeletingServiceIndex] = React.useState<number | null>(null)
   const canManageServices = editable && booking.status !== 'CANCELLED' && booking.status !== 'NO_SHOW'
 
@@ -473,7 +475,15 @@ export function BookingDetailContent({ booking, onChanged }: { booking: BookingD
           tone={remaining > 0 && booking.status !== 'CANCELLED' ? 'warn' : undefined}
         />
 
-        <h4 className="mt-4 mb-2 text-small font-medium text-fg">{t('money.payments')}</h4>
+        <div className="mt-4 mb-2 flex items-center justify-between">
+          <h4 className="text-small font-medium text-fg">{t('money.payments')}</h4>
+          {editable && booking.status !== 'CANCELLED' && remaining > 0 && (
+            <Button size="sm" variant="outline" onClick={() => setShowRecordPayment(true)}>
+              <Plus className="w-3.5 h-3.5 mr-1" />
+              Ghi nhận thanh toán
+            </Button>
+          )}
+        </div>
         {booking.payments.length === 0 ? (
           <p className="text-small text-muted">{t('money.noPayments')}</p>
         ) : (
@@ -510,6 +520,17 @@ export function BookingDetailContent({ booking, onChanged }: { booking: BookingD
           bookingId={booking.id}
           isOpen={showAddService}
           onClose={() => setShowAddService(false)}
+          onDone={onChanged}
+        />
+      )}
+
+      {showRecordPayment && (
+        <RecordPaymentDialog
+          bookingId={booking.id}
+          bookingCode={booking.bookingCode}
+          remainingAmount={remaining}
+          isOpen={showRecordPayment}
+          onClose={() => setShowRecordPayment(false)}
           onDone={onChanged}
         />
       )}
@@ -869,10 +890,11 @@ export function BookingActions({
   const tc = useTranslations('dash.common')
   const labels = useDashLabels()
   const [busy, setBusy] = React.useState<ActionKey | null>(null)
-  const [dialog, setDialog] = React.useState<'cancel' | 'extend' | 'noshow' | 'checkin' | 'checkout' | null>(null)
+  const [dialog, setDialog] = React.useState<'cancel' | 'extend' | 'noshow' | 'checkin' | 'checkout' | 'payment' | null>(null)
   const [extendDate, setExtendDate] = React.useState('')
   const [dialogError, setDialogError] = React.useState('')
 
+  const remaining = remainingAmount(booking)
   const s = booking.status
   const canCheckIn = s === 'PENDING' || s === 'CONFIRMED'
   const canCheckOut = s === 'CHECKED_IN'
@@ -952,6 +974,11 @@ export function BookingActions({
           {t('actions.printSlip')}
         </Button>
       )}
+      {canManage && remaining > 0 && booking.status !== 'CANCELLED' && (
+        <Button variant="outline" onClick={() => setDialog('payment')} disabled={!!busy}>
+          Thu tiền
+        </Button>
+      )}
       {canManage && canExtend && (
         <Button variant="outline" onClick={openExtend} disabled={!!busy}>
           {t('actions.extend')}
@@ -982,6 +1009,11 @@ export function BookingActions({
             onClick={() => run('email', 'send-confirmation', undefined, () => t('actions.confirmationSent'))}
           >
             {t('actions.sendConfirmation')}
+          </DropdownItem>
+        )}
+        {canManage && remaining > 0 && booking.status !== 'CANCELLED' && (
+          <DropdownItem onClick={() => setDialog('payment')}>
+            Ghi nhận thanh toán
           </DropdownItem>
         )}
         {canManage && canNoShow && (
@@ -1019,6 +1051,18 @@ export function BookingActions({
         onClose={() => setDialog(null)}
         onDone={(message) => {
           toast.success(message)
+          setDialog(null)
+          onChanged()
+        }}
+      />
+
+      <RecordPaymentDialog
+        bookingId={booking.id}
+        bookingCode={booking.bookingCode}
+        remainingAmount={remaining}
+        isOpen={dialog === 'payment'}
+        onClose={() => setDialog(null)}
+        onDone={() => {
           setDialog(null)
           onChanged()
         }}

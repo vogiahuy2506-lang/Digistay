@@ -282,6 +282,8 @@ export async function POST(request: NextRequest) {
         )
       }
 
+      const isImmediateStaffPayment = isStaff && !viaPayos
+
       const created = await tx.payment.create({
         data: {
           bookingId,
@@ -290,21 +292,21 @@ export async function POST(request: NextRequest) {
           fee,
           netAmount,
           method: viaPayos ? 'QR_VIETQR' : method,
-          status: method === 'CASH' ? 'PAID' : 'PENDING',
+          status: isImmediateStaffPayment ? 'PAID' : 'PENDING',
           bankCode: bankAccount?.bankCode,
           bankAccount: bankAccount?.accountNumber,
           accountHolder: bankAccount?.accountHolder,
           transferContent: viaPayos ? null : transferContent,
           qrCodeUrl: qrString, // store the QR string; UI can render it
-          paidAt: method === 'CASH' ? new Date() : null,
+          paidAt: isImmediateStaffPayment ? new Date() : null,
           expiresAt: viaPayos ? null : expiresAt,
           ...(viaPayos && { paymentGateway: 'PAYOS' as const, gatewayOrderCode: String(newOrderCode()) }),
         },
       })
 
-      // Cash is money in hand: deposit and payment status follow the
-      // amount (it used to mark the booking PAID whatever the amount).
-      if (method === 'CASH') {
+      // Immediate staff payment (CASH, direct transfer, card, desk QR) is money received:
+      // deposit and payment status follow the amount into cashbook and revenue reports.
+      if (isImmediateStaffPayment) {
         await syncBookingPayments(tx, bookingId)
       }
 

@@ -30,6 +30,22 @@ const checkOutSchema = z.object({
       }
     })
     .optional(),
+  payment: z
+    .object({
+      action: z.enum(['collect', 'debt']),
+      method: z.enum(['CASH', 'BANK_TRANSFER', 'CARD', 'QR_VIETQR']).optional(),
+      amount: z.number().min(0).optional(),
+      debtReason: z.string().trim().max(500).optional(),
+    })
+    .superRefine((v, ctx) => {
+      if (v.action === 'collect' && !v.method) {
+        ctx.addIssue({ code: 'custom', message: 'Vui lòng chọn hình thức thanh toán khi thu tiền' })
+      }
+      if (v.action === 'debt' && (!v.debtReason || v.debtReason.length < 3)) {
+        ctx.addIssue({ code: 'custom', message: 'Bắt buộc ghi rõ lý do công nợ khi trả phòng còn nợ tiền' })
+      }
+    })
+    .optional(),
 })
 
 type Session = { user: { id: string } }
@@ -162,7 +178,65 @@ export async function POST(
           totalAmount: current.totalAmount + lateFee,
         },
       })
+
+      // Task 45: If staff collects payment at check-out, record Payment and sync
+      if (parsed.data.payment?.action === 'collect' && parsed.data.payment.method) {
+        const collectAmount = parsed.data.payment.amount ?? 0
+        if (collectAmount > 0) {
+          const createdPayment = await tx.payment.create({
+            data: {
+              bookingId: id,
+              propertyId: booking.propertyId,
+              amount: collectAmount,
+              netAmount: collectAmount,
+              fee: 0,
+              method: parsed.data.payment.method,
+              status: 'PAID',
+              paidAt: now,
+              transferContent: `DS${booking.bookingCode}-CHECKOUT`,
+            },
+          })
+          await tx.activityLog.create({
+            data: {
+              userId: session.user.id,
+              propertyId: booking.propertyId,
+              action: 'CREATE',
+              entityType: 'PAYMENT',
+              entityId: createdPayment.id,
+              metadata: {
+                bookingCode: booking.bookingCode,
+                method: parsed.data.payment.method,
+                amount: collectAmount,
+                type: 'CHECK_OUT_PAYMENT',
+              },
+            },
+          })
+        }
+      }
+
+      // If staff checked out with debt recorded
+      if (parsed.data.payment?.action === 'debt' && parsed.data.payment.debtReason) {
+        await tx.activityLog.create({
+          data: {
+            userId: session.user.id,
+            propertyId: booking.propertyId,
+            action: 'UPDATE',
+            entityType: 'BOOKING',
+            entityId: id,
+            changes: {
+              debtCheckout: true,
+              debtReason: parsed.data.payment.debtReason,
+            },
+            metadata: {
+              bookingCode: booking.bookingCode,
+              debtReason: parsed.data.payment.debtReason,
+            },
+          },
+        })
+      }
+
       // A booking paid in full owes the late fee: PAID becomes PARTIAL.
+      // Or if payment was collected, updates to PAID.
       await syncBookingPayments(tx, id)
       // Task 49: Cập nhật hồ sơ khách hàng (Mini CRM)
       await syncCustomerProfileFromBooking(tx, id).catch((err) => console.error('[crm] check-out sync error:', err))
