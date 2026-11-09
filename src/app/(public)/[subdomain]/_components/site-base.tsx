@@ -41,19 +41,25 @@ interface SiteBase {
   /** The visitor's light / dark choice when the page was rendered. */
   theme: ThemePreference
   hotel: SiteHotel | null
+  preview?: boolean
 }
 
 const SiteBaseContext = React.createContext<SiteBase | null>(null)
 
-export function SiteBaseProvider({ locale, bases, switchHref, theme, hotel, children }: SiteBase & { children: React.ReactNode }) {
-  const value = React.useMemo(() => ({ locale, bases, switchHref, theme, hotel }), [locale, bases, switchHref, theme, hotel])
+export function SiteBaseProvider({ locale, bases, switchHref, theme, hotel, preview, children }: SiteBase & { children: React.ReactNode }) {
+  const value = React.useMemo(() => ({ locale, bases, switchHref, theme, hotel, preview }), [locale, bases, switchHref, theme, hotel, preview])
   return <SiteBaseContext.Provider value={value}>{children}</SiteBaseContext.Provider>
 }
 
-function useSiteBase(): SiteBase {
+export function useSiteBase(): SiteBase {
   const site = React.useContext(SiteBaseContext)
   if (site === null) throw new Error('used outside SiteBaseProvider')
   return site
+}
+
+/** Returns true if the site is in unpublished preview mode. */
+export function useIsPreview(): boolean {
+  return Boolean(useSiteBase().preview)
 }
 
 /** The hotel whose site this is (see SiteHotel). */

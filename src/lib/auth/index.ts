@@ -12,12 +12,27 @@ import { createDefaultWorkspace } from './default-workspace'
 
 export { getServerSession }
 
+const useSecureCookies = process.env.NODE_ENV === 'production' && !process.env.NEXTAUTH_URL?.startsWith('http://')
+const cookieDomain = process.env.COOKIE_DOMAIN || (process.env.NODE_ENV === 'production' ? '.digistay.vn' : undefined)
+
 export const authOptions: NextAuthOptions = {
   // Stores no OAuth tokens: see ./adapter.ts
   adapter: createAuthAdapter(prisma) as any,
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  cookies: {
+    sessionToken: {
+      name: `${useSecureCookies ? '__Secure-' : ''}next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: useSecureCookies,
+        ...(cookieDomain ? { domain: cookieDomain } : {}),
+      },
+    },
   },
   pages: {
     signIn: '/login',

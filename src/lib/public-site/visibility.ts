@@ -36,8 +36,11 @@ export async function siteVisibility(property: {
   websiteSettings: { isPublished: boolean } | null
 }): Promise<'public' | 'preview' | null> {
   if (property.websiteSettings?.isPublished) return 'public'
-  const userId = (await auth())?.user?.id
-  const access = userId ? await getAccess(property.workspaceId, userId) : null
+  const session = await auth()
+  const user = session?.user
+  if (!user?.id) return null
+  if (user.role === 'SUPER_ADMIN') return 'preview'
+  const access = await getAccess(property.workspaceId, user.id)
   return access && seesProperty(access, property.id) ? 'preview' : null
 }
 

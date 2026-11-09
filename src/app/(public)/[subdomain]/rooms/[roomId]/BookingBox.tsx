@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation'
 import { Minus, Plus } from 'lucide-react'
 import { formatVnd } from '@/lib/bookings/display'
 import { quoteStay, type Rates } from '@/lib/pricing/quote'
-import { useSiteHref } from '../../_components/site-base'
+import { useIsPreview, useSiteHref } from '../../_components/site-base'
 import { useLocale, useTranslations } from 'next-intl'
+import { cn } from '@/lib/utils'
 
 function vnDay(offsetDays = 0): string {
   return new Date(Date.now() + 7 * 3600 * 1000 + offsetDays * 86400 * 1000).toISOString().slice(0, 10)
@@ -33,6 +34,7 @@ export function BookingBox({ rates, baseOccupancy, maxAdults, maxChildren, check
   const locale = useLocale()
   const router = useRouter()
   const href = useSiteHref()
+  const isPreview = useIsPreview()
   const [checkIn, setCheckIn] = useState(initialIn || vnDay(0))
   const [checkOut, setCheckOut] = useState(initialOut || vnDay(1))
   const [adults, setAdults] = useState(Math.max(1, Math.min(initialAdults ?? 2, maxAdults)))
@@ -161,15 +163,30 @@ export function BookingBox({ rates, baseOccupancy, maxAdults, maxChildren, check
         </dl>
       )}
 
+      {isPreview && (
+        <div className="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs font-semibold text-center flex items-center justify-center gap-1.5">
+          <span aria-hidden="true">⚠️</span>
+          <span>Chưa xuất bản, không nhận đơn</span>
+        </div>
+      )}
+
       <button
         type="button"
         onClick={book}
-        disabled={!validDates}
-        className="mt-6 flex h-[52px] w-full items-center justify-center rounded-ctl bg-ink text-body font-medium text-on-ink hover:bg-ink/90 disabled:opacity-60 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-acc focus-visible:ring-offset-2"
+        disabled={!validDates || isPreview}
+        title={isPreview ? 'Chưa xuất bản, không nhận đơn' : undefined}
+        className={cn(
+          "mt-6 flex h-[52px] w-full items-center justify-center rounded-ctl text-body font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-acc focus-visible:ring-offset-2",
+          isPreview
+            ? "bg-fg/10 text-muted cursor-not-allowed border border-line"
+            : "bg-ink text-on-ink hover:bg-ink/90 disabled:opacity-60"
+        )}
       >
-        {t('bookingBox.book')}
+        {isPreview ? 'Chưa xuất bản, không nhận đơn' : t('bookingBox.book')}
       </button>
-      <p className="mt-3 text-center text-xs text-muted">{t('bookingBox.noChargeYet')}</p>
+      <p className="mt-3 text-center text-xs text-muted">
+        {isPreview ? 'Website đang ở chế độ xem trước nội bộ' : t('bookingBox.noChargeYet')}
+      </p>
     </div>
   )
 }

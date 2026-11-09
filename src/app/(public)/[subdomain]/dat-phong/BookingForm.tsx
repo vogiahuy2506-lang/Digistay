@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { formatVnd } from '@/lib/bookings/display'
 import { depositFor, quoteStay, type PricedService, type Rates } from '@/lib/pricing/quote'
 import { cn } from '@/lib/utils'
-import { SiteLink, useSiteHref } from '../_components/site-base'
+import { SiteLink, useIsPreview, useSiteHref } from '../_components/site-base'
 import { Container } from '../_components/site-ui'
 import { StaySummary, type SummaryLine } from '../_components/booking/StaySummary'
 import { apiError } from '@/lib/i18n/api-errors'
@@ -101,6 +101,7 @@ export function BookingForm({
   const lang = locale === 'en' ? 'en' : 'vi'
   const router = useRouter()
   const href = useSiteHref()
+  const isPreview = useIsPreview()
   const [guest, setGuest] = React.useState({ name: '', phone: '', email: '', note: '' })
   const [qty, setQty] = React.useState<Record<string, number>>({})
   const [invoice, setInvoice] = React.useState(false)
@@ -450,6 +451,12 @@ export function BookingForm({
         </details>
 
         <form ref={formRef} onSubmit={submit} noValidate className="flex min-w-0 flex-col gap-8 lg:gap-10">
+          {isPreview && (
+            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-sm font-semibold flex items-center gap-2">
+              <span aria-hidden="true">⚠️</span>
+              <span>Website đang ở chế độ xem trước (Chưa xuất bản). Hiện không nhận đơn đặt phòng thật.</span>
+            </div>
+          )}
           {problemText && (
             <p role="alert" className="border border-err/25 bg-err-soft px-4 py-3 text-[14px] leading-[1.55] text-fg">
               ⚠ {problemText}
@@ -778,14 +785,26 @@ export function BookingForm({
 
           {tried && errorCount > 0 && <p role="alert" className="bg-err-soft px-4 py-3 text-[14px] font-medium text-err">⚠ {tf('summary', { count: errorCount })}</p>}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-            <button type="submit" disabled={blocked} className="h-14 bg-ink px-9 text-[15px] font-medium text-on-ink transition-colors hover:bg-ink/90 disabled:bg-muted">
-              {sending
-                ? tf('sending')
-                : wait > 0
-                  ? tf('retryIn', { time: `${Math.floor(wait / 60)}:${String(wait % 60).padStart(2, '0')}` })
-                  : deposit
-                    ? tf('submitDeposit', { amount: money(depositAmount) })
-                    : tf('submitHotel')}
+            <button
+              type="submit"
+              disabled={blocked || isPreview}
+              title={isPreview ? 'Chưa xuất bản, không nhận đơn' : undefined}
+              className={cn(
+                "h-14 px-9 text-[15px] font-medium transition-colors",
+                isPreview
+                  ? "bg-fg/10 text-muted cursor-not-allowed border border-line"
+                  : "bg-ink text-on-ink hover:bg-ink/90 disabled:bg-muted"
+              )}
+            >
+              {isPreview
+                ? 'Chưa xuất bản, không nhận đơn'
+                : sending
+                  ? tf('sending')
+                  : wait > 0
+                    ? tf('retryIn', { time: `${Math.floor(wait / 60)}:${String(wait % 60).padStart(2, '0')}` })
+                    : deposit
+                      ? tf('submitDeposit', { amount: money(depositAmount) })
+                      : tf('submitHotel')}
             </button>
             <p className="max-w-[400px] text-[13px] leading-[1.55] text-muted">{tf('agree')}</p>
           </div>

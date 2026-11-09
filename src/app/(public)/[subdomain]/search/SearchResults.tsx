@@ -7,7 +7,7 @@ import { formatVnd } from '@/lib/bookings/display'
 import { nightsOf } from '@/lib/pricing/quote'
 import { cn } from '@/lib/utils'
 import { responsiveImage } from '@/lib/media/image-url'
-import { SiteLink, useSiteHref } from '../_components/site-base'
+import { SiteLink, useIsPreview, useSiteHref } from '../_components/site-base'
 import { Container, PhotoPlaceholder, bedLabel } from '../_components/site-ui'
 import { stayDate } from '../_components/booking/StaySummary'
 
@@ -62,6 +62,7 @@ export function SearchResults({
   const lang = locale === 'en' ? 'en' : 'vi'
   const router = useRouter()
   const href = useSiteHref()
+  const isPreview = useIsPreview()
   const [form, setForm] = React.useState<StayQuery>(initial)
   const [query, setQuery] = React.useState<StayQuery>(initial)
   const [results, setResults] = React.useState<Result[] | null>(null)
@@ -362,12 +363,22 @@ export function SearchResults({
                         <p className="mb-3 text-[13px] font-semibold text-acc">
                           ● {r.availableRooms === 1 ? t('booking.search.lastOne') : t('booking.search.left', { count: r.availableRooms })}
                         </p>
-                        <SiteLink
-                          path={`/dat-phong?room=${r.id}&${queryString(query)}`}
-                          className="flex h-[50px] items-center justify-center bg-ink text-[15px] font-medium text-on-ink transition-colors hover:bg-ink/90"
-                        >
-                          {t('booking.search.book')}
-                        </SiteLink>
+                        {isPreview ? (
+                          <button
+                            type="button"
+                            disabled
+                            className="flex h-[50px] w-full items-center justify-center bg-fg/10 text-[14px] font-medium text-muted cursor-not-allowed border border-line"
+                          >
+                            Chưa xuất bản, không nhận đơn
+                          </button>
+                        ) : (
+                          <SiteLink
+                            path={`/dat-phong?room=${r.id}&${queryString(query)}`}
+                            className="flex h-[50px] items-center justify-center bg-ink text-[15px] font-medium text-on-ink transition-colors hover:bg-ink/90"
+                          >
+                            {t('booking.search.book')}
+                          </SiteLink>
+                        )}
                       </>
                     )}
                   </div>

@@ -106,8 +106,13 @@ export default async function HotelSiteLayout({
       className={`${siteFontVariables} min-h-screen bg-page text-fg font-site-body antialiased dark:[color-scheme:dark]`}
       style={style}
     >
-      {preview && <p className="bg-ink px-4 py-2 text-center text-small text-on-ink">{t('preview')}</p>}
-      <SiteBaseProvider locale={locale} bases={bases} switchHref={switchHref} theme={theme} hotel={hotel}>
+      {preview && (
+        <div className="sticky top-0 z-50 bg-amber-500 text-amber-950 px-4 py-2.5 text-center text-xs font-semibold shadow-md flex items-center justify-center gap-2">
+          <span aria-hidden="true">⚠️</span>
+          <span>Bản xem trước: Website đang ở chế độ xem trước (Chưa công khai cho du khách). Không nhận đơn đặt phòng thật.</span>
+        </div>
+      )}
+      <SiteBaseProvider locale={locale} bases={bases} switchHref={switchHref} theme={theme} hotel={hotel} preview={preview}>
         {!preview && (
           <MarketingTracking
             facebookPixelId={settings?.facebookPixelId}

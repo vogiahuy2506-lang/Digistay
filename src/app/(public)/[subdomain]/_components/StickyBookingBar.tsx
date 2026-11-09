@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { Phone, Calendar, ArrowRight } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useSiteHotel, useSiteHref } from './site-base'
+import { useIsPreview, useSiteHotel, useSiteHref } from './site-base'
 import { usePathname } from 'next/navigation'
 
 /**
@@ -43,7 +43,8 @@ export function StickyBookingBar() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [isBookingFlow])
 
-  if (isBookingFlow || !hotel) return null
+  const isPreview = useIsPreview()
+  if (isBookingFlow || !hotel || isPreview) return null
 
   const phone = hotel.property.phone
   const cleanPhone = phone?.replace(/[^\d+]/g, '')
