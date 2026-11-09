@@ -118,11 +118,43 @@ export const updatePropertySchema = z.object({
   address: z.string().min(5, 'Địa chỉ phải có ít nhất 5 ký tự').optional(),
   ...propertyLocationFields,
   country: z.string().optional(),
-  postalCode: z.string().optional(),
-  phone: z.string().optional(),
-  email: z.string().email('Email không hợp lệ').optional().or(z.literal('')),
-  website: z.string().url('Website không hợp lệ').optional().or(z.literal('')),
-  description: z.string().max(2000, 'Mô tả không được quá 2000 ký tự').optional(),
+  postalCode: z.string().optional().nullable(),
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
+  phone: z.string().optional().nullable().or(z.literal('')),
+  hotline: z.string().optional().nullable().or(z.literal('')),
+  receptionPhone: z.string().optional().nullable().or(z.literal('')),
+  email: z.string().email('Email không hợp lệ').optional().nullable().or(z.literal('')),
+  website: z.string().url('Website không hợp lệ').optional().nullable().or(z.literal('')),
+  logo: z.string().optional().nullable().or(z.literal('')),
+  coverImage: z.string().optional().nullable().or(z.literal('')),
+  slogan: z.string().max(255, 'Slogan không được quá 255 ký tự').optional().nullable().or(z.literal('')),
+  starRating: z.number().int().min(1).max(5).optional().nullable(),
+  description: z.string().max(4000, 'Mô tả không được quá 4000 ký tự').optional().nullable().or(z.literal('')),
+
+  // Socials
+  zalo: z.string().optional().nullable().or(z.literal('')),
+  whatsapp: z.string().optional().nullable().or(z.literal('')),
+  telegram: z.string().optional().nullable().or(z.literal('')),
+  facebook: z.string().optional().nullable().or(z.literal('')),
+  instagram: z.string().optional().nullable().or(z.literal('')),
+  tiktok: z.string().optional().nullable().or(z.literal('')),
+  youtube: z.string().optional().nullable().or(z.literal('')),
+
+  // Location & Operations
+  googleMapsUrl: z.string().optional().nullable().or(z.literal('')),
+  directionsGuide: z.string().max(2000, 'Hướng dẫn chỉ đường không được quá 2000 ký tự').optional().nullable().or(z.literal('')),
+  checkInTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Giờ nhận phòng không hợp lệ (HH:mm)').optional().nullable(),
+  checkOutTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Giờ trả phòng không hợp lệ (HH:mm)').optional().nullable(),
+  wifiName: z.string().max(100).optional().nullable().or(z.literal('')),
+  wifiPassword: z.string().max(100).optional().nullable().or(z.literal('')),
+
+  // Business & Legal
+  businessName: z.string().max(200).optional().nullable().or(z.literal('')),
+  taxCode: z.string().max(50).optional().nullable().or(z.literal('')),
+  businessLicense: z.string().max(100).optional().nullable().or(z.literal('')),
+  invoiceAddress: z.string().max(300).optional().nullable().or(z.literal('')),
+
   isActive: z.boolean().optional(),
 })
 

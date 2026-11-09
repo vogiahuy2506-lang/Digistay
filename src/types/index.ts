@@ -101,6 +101,27 @@ export interface PropertyWithDetails {
   website: string | null
   logo: string | null
   coverImage: string | null
+  slogan?: string | null
+  starRating?: number | null
+  hotline?: string | null
+  receptionPhone?: string | null
+  zalo?: string | null
+  whatsapp?: string | null
+  telegram?: string | null
+  facebook?: string | null
+  instagram?: string | null
+  tiktok?: string | null
+  youtube?: string | null
+  googleMapsUrl?: string | null
+  directionsGuide?: string | null
+  checkInTime?: string | null
+  checkOutTime?: string | null
+  wifiName?: string | null
+  wifiPassword?: string | null
+  businessName?: string | null
+  taxCode?: string | null
+  businessLicense?: string | null
+  invoiceAddress?: string | null
   description: string | null
   subdomain: string
   isActive: boolean

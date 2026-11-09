@@ -443,17 +443,44 @@ model Property {
   latitude     Float?
   longitude    Float?
 
-  // Contact
-  phone   String?
-  email   String?
-  website String?
+  // Contact & Socials
+  phone          String?
+  hotline        String?
+  receptionPhone String?
+  email          String?
+  website        String?
+  zalo           String?
+  whatsapp       String?
+  telegram       String?
+  facebook       String?
+  instagram      String?
+  tiktok         String?
+  youtube        String?
 
   // Branding
   logo         String?
   coverImage   String?
+  slogan       String?
+  starRating   Int?
   description  String? @db.Text
   /// The hotel's own texts in English: { en: { name?, description?, ... } }. Empty: the Vietnamese shows (src/lib/i18n/content.ts).
   translations Json?
+
+  // Location & Navigation details
+  googleMapsUrl   String?
+  directionsGuide String? @db.Text
+
+  // Operations & Guest Amenities
+  checkInTime  String? @default("14:00")
+  checkOutTime String? @default("12:00")
+  wifiName     String?
+  wifiPassword String?
+
+  // Business & Legal
+  businessName    String?
+  taxCode         String?
+  businessLicense String?
+  invoiceAddress  String?
 
   // Subdomain
   subdomain String  @unique

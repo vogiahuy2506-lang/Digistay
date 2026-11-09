@@ -1,0 +1,22 @@
+-- AlterTable
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "slogan" TEXT;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "starRating" INTEGER;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "hotline" TEXT;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "receptionPhone" TEXT;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "zalo" TEXT;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "whatsapp" TEXT;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "telegram" TEXT;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "facebook" TEXT;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "instagram" TEXT;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "tiktok" TEXT;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "youtube" TEXT;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "googleMapsUrl" TEXT;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "directionsGuide" TEXT;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "checkInTime" TEXT DEFAULT '14:00';
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "checkOutTime" TEXT DEFAULT '12:00';
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "wifiName" TEXT;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "wifiPassword" TEXT;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "businessName" TEXT;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "taxCode" TEXT;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "businessLicense" TEXT;
+ALTER TABLE "properties" ADD COLUMN IF NOT EXISTS "invoiceAddress" TEXT;

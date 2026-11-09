@@ -12,7 +12,7 @@ import { purgeAt, sameName } from '@/lib/deletion/rules'
 import { can, checkPropertyAccess } from '@/lib/auth/access'
 
 /** The editable fields, and the description in English. */
-const patchSchema = updatePropertySchema.extend({ translations: translationsInput(['description'], 2000) })
+const patchSchema = updatePropertySchema.extend({ translations: translationsInput(['description', 'slogan', 'directionsGuide'], 4000) })
 
 export async function GET(
   request: NextRequest,
@@ -164,6 +164,20 @@ export async function PATCH(
         },
       },
     })
+
+    // Sync checkInTime and checkOutTime to Policy if provided
+    if (fields.checkInTime || fields.checkOutTime) {
+      const existingPolicy = await prisma.policy.findUnique({ where: { propertyId: id } })
+      if (existingPolicy) {
+        await prisma.policy.update({
+          where: { propertyId: id },
+          data: {
+            ...(fields.checkInTime && { checkInTime: fields.checkInTime }),
+            ...(fields.checkOutTime && { checkOutTime: fields.checkOutTime }),
+          },
+        })
+      }
+    }
 
     // Log activity
     invalidatePublicSite(id)

@@ -28,10 +28,17 @@ export function FooterBlock({ property, sections = [] }: Props) {
           <div>
             <p className="text-label uppercase text-muted">{t('blocks.footer.contact')}</p>
             <ul className="mt-4 space-y-2 text-small text-fg">
-              {property.phone && (
+              {(property.hotline || property.phone) && (
                 <li>
-                  <a href={`tel:${property.phone.replace(/[^\d+]/g, '')}`} className="hover:text-acc">
-                    {property.phone}
+                  <a href={`tel:${(property.hotline || property.phone)!.replace(/[^\d+]/g, '')}`} className="hover:text-acc">
+                    {property.hotline ? `Hotline: ${property.hotline}` : property.phone}
+                  </a>
+                </li>
+              )}
+              {property.receptionPhone && (
+                <li>
+                  <a href={`tel:${property.receptionPhone.replace(/[^\d+]/g, '')}`} className="hover:text-acc">
+                    Lễ tân: {property.receptionPhone}
                   </a>
                 </li>
               )}
@@ -40,6 +47,50 @@ export function FooterBlock({ property, sections = [] }: Props) {
                   <a href={`mailto:${property.email}`} className="hover:text-acc break-all">
                     {property.email}
                   </a>
+                </li>
+              )}
+              {(property.zalo || property.whatsapp || property.telegram || property.facebook) && (
+                <li className="flex flex-wrap gap-3 pt-1">
+                  {property.zalo && (
+                    <a
+                      href={property.zalo.startsWith('http') ? property.zalo : `https://zalo.me/${property.zalo.replace(/[^0-9]/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-medium text-acc hover:underline"
+                    >
+                      Zalo
+                    </a>
+                  )}
+                  {property.whatsapp && (
+                    <a
+                      href={property.whatsapp.startsWith('http') ? property.whatsapp : `https://wa.me/${property.whatsapp.replace(/[^0-9]/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-medium text-acc hover:underline"
+                    >
+                      WhatsApp
+                    </a>
+                  )}
+                  {property.telegram && (
+                    <a
+                      href={property.telegram.startsWith('http') ? property.telegram : `https://t.me/${property.telegram.replace(/^@/, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-medium text-acc hover:underline"
+                    >
+                      Telegram
+                    </a>
+                  )}
+                  {property.facebook && (
+                    <a
+                      href={property.facebook}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-medium text-acc hover:underline"
+                    >
+                      Facebook
+                    </a>
+                  )}
                 </li>
               )}
             </ul>

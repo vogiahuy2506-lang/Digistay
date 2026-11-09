@@ -2,12 +2,16 @@
 
 import * as React from 'react'
 import { useTranslations } from 'next-intl'
-import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Textarea } from '@/components/ui'
+import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Textarea, Select } from '@/components/ui'
 import { EnglishCopy } from '@/components/ui/english-copy'
 import { toast } from '@/components/ui/toast'
 import { apiError } from '@/lib/i18n/api-errors'
 import { ProvinceWardFields } from '@/components/address/province-ward-fields'
 import { propertyProvince } from '@/lib/vn-admin/provinces'
+import { PhotoUploadButton } from '@/components/ui/photo-upload'
+import { ExternalLink, Star } from 'lucide-react'
+import { useParams, useRouter } from 'next/navigation'
+import { routes } from '@/lib/utils/routes'
 
 export interface EditableProperty {
   id: string
@@ -18,7 +22,20 @@ export interface EditableProperty {
   provinceCode?: string | null
   wardCode?: string | null
   phone: string | null
+  hotline?: string | null
+  receptionPhone?: string | null
   email: string | null
+  logo?: string | null
+  coverImage?: string | null
+  starRating?: number | null
+  zalo?: string | null
+  whatsapp?: string | null
+  telegram?: string | null
+  facebook?: string | null
+  wifiName?: string | null
+  wifiPassword?: string | null
+  taxCode?: string | null
+  businessName?: string | null
   description: string | null
   translations?: { en?: { description?: string } } | null
 }
@@ -37,6 +54,10 @@ export function EditPropertyModal({
 }) {
   const t = useTranslations('dash.property')
   const tc = useTranslations('dash.common')
+  const params = useParams<{ slug: string }>()
+  const router = useRouter()
+  const slug = params?.slug
+
   // The saved province, by code or (older rows) by name; a city that is not
   // one of the 34 leaves the picker empty and is kept unless one is chosen.
   const savedProvince = propertyProvince(property)
@@ -49,7 +70,15 @@ export function EditPropertyModal({
       provinceCode: savedProvince?.code ?? '',
       wardCode: savedWardCode,
       phone: property.phone ?? '',
+      hotline: property.hotline ?? '',
+      receptionPhone: property.receptionPhone ?? '',
       email: property.email ?? '',
+      zalo: property.zalo ?? '',
+      whatsapp: property.whatsapp ?? '',
+      telegram: property.telegram ?? '',
+      facebook: property.facebook ?? '',
+      wifiName: property.wifiName ?? '',
+      wifiPassword: property.wifiPassword ?? '',
       description: property.description ?? '',
       enDescription: property.translations?.en?.description ?? '',
     }),
@@ -114,7 +143,46 @@ export function EditPropertyModal({
             <Input label={t('form.address')} value={form.address} onChange={set('address')} required minLength={5} />
             <Input label={t('form.phone')} type="tel" value={form.phone} onChange={set('phone')} />
           </div>
-          <Input label={t('form.email')} type="email" value={form.email} onChange={set('email')} />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input label="Hotline 24/7" type="tel" placeholder="0901234567" value={form.hotline} onChange={set('hotline')} />
+            <Input label={t('form.email')} type="email" value={form.email} onChange={set('email')} />
+          </div>
+
+          <div className="p-3 rounded-ctl border border-line bg-raised/30 space-y-3">
+            <p className="text-xs font-semibold text-fg uppercase tracking-wider">Kênh Chat & Mạng xã hội</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input label="Số Zalo / Link Zalo" placeholder="0901234567" value={form.zalo} onChange={set('zalo')} />
+              <Input label="WhatsApp" placeholder="+84901234567" value={form.whatsapp} onChange={set('whatsapp')} />
+              <Input label="Telegram" placeholder="@hotel_support" value={form.telegram} onChange={set('telegram')} />
+              <Input label="Facebook Fanpage" placeholder="https://facebook.com/..." value={form.facebook} onChange={set('facebook')} />
+            </div>
+          </div>
+
+          <div className="p-3 rounded-ctl border border-line bg-raised/30 space-y-3">
+            <p className="text-xs font-semibold text-fg uppercase tracking-wider">Wi-Fi cho khách</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input label="Tên Wi-Fi (SSID)" placeholder="Digistay_Guest" value={form.wifiName} onChange={set('wifiName')} />
+              <Input label="Mật khẩu Wi-Fi" placeholder="12345678" value={form.wifiPassword} onChange={set('wifiPassword')} />
+            </div>
+          </div>
+
+          {slug && (
+            <div className="flex items-center justify-between p-3 rounded-ctl bg-acc-soft/40 border border-acc/20 text-xs">
+              <span className="text-fg">Cần cài đặt logo, giờ check-in/out, GPS, MST hay giấy phép?</span>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose()
+                  router.push(routes.propertySettings(slug, property.id))
+                }}
+                className="font-medium text-acc hover:underline flex items-center gap-1 shrink-0 ml-2"
+              >
+                Mở trang Cài đặt đầy đủ <ExternalLink className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
           <Textarea
             label={t('form.description')}
             value={form.description}

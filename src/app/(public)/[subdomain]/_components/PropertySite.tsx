@@ -41,9 +41,26 @@ export interface PublicProperty {
   district: string | null
   country: string
   phone: string | null
+  hotline?: string | null
+  receptionPhone?: string | null
   email: string | null
   logo: string | null
   coverImage: string | null
+  slogan?: string | null
+  starRating?: number | null
+  zalo?: string | null
+  whatsapp?: string | null
+  telegram?: string | null
+  facebook?: string | null
+  instagram?: string | null
+  tiktok?: string | null
+  youtube?: string | null
+  googleMapsUrl?: string | null
+  directionsGuide?: string | null
+  wifiName?: string | null
+  wifiPassword?: string | null
+  checkInTime?: string | null
+  checkOutTime?: string | null
   latitude: number | null
   longitude: number | null
 }

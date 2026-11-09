@@ -16,6 +16,7 @@ export type NavKey =
   | 'reports'
   | 'cashbook'
   | 'bankAccounts'
+  | 'propertySettings'
   | 'policies'
   | 'coupons'
   | 'channels'
@@ -28,7 +29,15 @@ export type NavKey =
   | 'settings'
 
 /** The sidebar's sections, in order; 'main' has no heading (dash.common.nav.groups.<group>). */
-export const NAV_GROUPS = ['main', 'operations', 'property', 'finance', 'workspace'] as const
+export const NAV_GROUPS = [
+  'main',
+  'operations',
+  'property',
+  'marketing',
+  'finance',
+  'hotelSettings',
+  'workspace',
+] as const
 export type NavGroup = (typeof NAV_GROUPS)[number]
 
 export interface NavItem {
@@ -49,7 +58,7 @@ export function primaryNav(slug: string, propertyId?: string): NavItem[] {
     return [{ key: 'properties', href: routes.workspace(slug), can: null, group: 'main' }]
   }
   const id = propertyId
-  // Grouped like the work: the day at the desk, what the hotel sells, the money.
+  // Grouped logically: Front desk/daily ops, Rooms & services, Sales & marketing, Finance, Hotel settings.
   return [
     { key: 'overview', href: routes.property(slug, id), can: null, group: 'main' },
     // One entry for the bookings and their calendar: the pages switch between the list,
@@ -70,23 +79,24 @@ export function primaryNav(slug: string, propertyId?: string): NavItem[] {
     { key: 'rooms', href: routes.propertyRooms(slug, id), can: ['rooms_manage', 'rooms_status'], group: 'property' },
     { key: 'services', href: routes.propertyServices(slug, id), can: ['services_manage'], group: 'property' },
     { key: 'menu', href: routes.propertyMenu(slug, id), can: ['services_manage'], group: 'property' },
-    { key: 'policies', href: routes.propertyPolicies(slug, id), can: ['property_edit'], group: 'property' },
-    { key: 'coupons', href: routes.propertyCoupons(slug, id), can: ['property_edit'], group: 'property' },
-    { key: 'channels', href: routes.propertyChannels(slug, id), can: ['property_edit'], group: 'property' },
-    { key: 'leads', href: routes.propertyLeads(slug, id), can: ['property_edit'], group: 'property' },
+    { key: 'channels', href: routes.propertyChannels(slug, id), can: ['property_edit'], group: 'marketing' },
+    { key: 'website', href: routes.propertyWebsite(slug, id), can: ['website_manage'], group: 'marketing' },
+    { key: 'coupons', href: routes.propertyCoupons(slug, id), can: ['property_edit'], group: 'marketing' },
+    { key: 'leads', href: routes.propertyLeads(slug, id), can: ['property_edit'], group: 'marketing' },
     {
       key: 'blog',
       href: routes.propertyBlog(slug, id),
       also: [routes.propertyBlogNew(slug, id)],
       can: ['property_edit'],
-      group: 'property',
+      group: 'marketing',
     },
-    { key: 'website', href: routes.propertyWebsite(slug, id), can: ['website_manage'], group: 'property' },
     { key: 'payments', href: routes.propertyPayments(slug, id), can: ['payments_manage'], group: 'finance' },
     { key: 'invoices', href: routes.propertyInvoices(slug, id), can: ['invoices_manage'], group: 'finance' },
     { key: 'cashbook', href: routes.propertyDailyReport(slug, id), can: ['cashbook_view'], group: 'finance' },
     { key: 'reports', href: routes.propertyReports(slug, id), can: ['revenue_view'], group: 'finance' },
-    { key: 'bankAccounts', href: routes.propertyBankAccounts(slug, id), can: ['payment_settings'], group: 'finance' },
+    { key: 'propertySettings', href: routes.propertySettings(slug, id), can: ['property_edit'], group: 'hotelSettings' },
+    { key: 'policies', href: routes.propertyPolicies(slug, id), can: ['property_edit'], group: 'hotelSettings' },
+    { key: 'bankAccounts', href: routes.propertyBankAccounts(slug, id), can: ['payment_settings'], group: 'hotelSettings' },
   ]
 }
 

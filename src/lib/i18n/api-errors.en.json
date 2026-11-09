@@ -873,5 +873,10 @@
   "Vui lòng nhập Hash Secret": "Please enter Hash Secret",
   "Đã kết nối Cổng VNPay thành công": "Connected VNPay successfully",
   "Không thể kết nối Cổng VNPay": "Unable to connect VNPay",
-  "Đã hủy kết nối Cổng VNPay": "Disconnected VNPay"
+  "Đã hủy kết nối Cổng VNPay": "Disconnected VNPay",
+  "Slogan không được quá 255 ký tự": "Slogan must not exceed 255 characters",
+  "Mô tả không được quá 4000 ký tự": "Description must not exceed 4000 characters",
+  "Hướng dẫn chỉ đường không được quá 2000 ký tự": "Directions guide must not exceed 2000 characters",
+  "Giờ nhận phòng không hợp lệ (HH:mm)": "Invalid check-in time (HH:mm)",
+  "Giờ trả phòng không hợp lệ (HH:mm)": "Invalid check-out time (HH:mm)"
 }

@@ -6,6 +6,7 @@ import { PageContainer } from '@/components/layout'
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Modal, ModalBody, ModalFooter, ModalHeader, Input, Select } from '@/components/ui'
 import {
   ArrowLeft, MapPin, Phone, Mail, Globe, Plus, Pencil, Trash2, ExternalLink, Newspaper,
+  Hotel, MessageCircle, Wifi, Clock, FileText, Send, Share2, Star,
 } from 'lucide-react'
 import { toast } from '@/components/ui/toast'
 import { routes } from '@/lib/utils/routes'
@@ -31,8 +32,28 @@ interface Property {
   provinceCode: string | null
   wardCode: string | null
   phone: string | null
+  hotline?: string | null
+  receptionPhone?: string | null
   email: string | null
   website: string | null
+  logo?: string | null
+  coverImage?: string | null
+  slogan?: string | null
+  starRating?: number | null
+  zalo?: string | null
+  whatsapp?: string | null
+  telegram?: string | null
+  facebook?: string | null
+  instagram?: string | null
+  tiktok?: string | null
+  youtube?: string | null
+  googleMapsUrl?: string | null
+  wifiName?: string | null
+  wifiPassword?: string | null
+  checkInTime?: string | null
+  checkOutTime?: string | null
+  businessName?: string | null
+  taxCode?: string | null
   subdomain: string
   description: string | null
   translations?: { en?: { description?: string } } | null
@@ -241,14 +262,30 @@ export default function PropertyDetailPage() {
           beside it (xl): at tablet width they took it and broke it over two lines.
           The status is a badge after the address, not a fourth button-sized pill. */}
       <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-4 mb-6">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-[22px] leading-8 font-semibold tracking-tight text-fg">{property.name}</h1>
-          <p className="mt-1 flex flex-wrap items-center gap-2 text-small text-muted">
-            <span className="break-all">{property.subdomain}</span>
-            <Badge variant={property.isActive ? 'success' : 'gray'}>
-              {property.isActive ? tp('status.active') : tp('status.inactive')}
-            </Badge>
-          </p>
+        <div className="min-w-0 flex-1 flex items-start gap-3">
+          {property.logo && (
+            <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-line bg-page shrink-0 shadow-sm mt-0.5">
+              <Image src={property.logo} alt={property.name} fill className="object-contain p-0.5" />
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-[22px] leading-8 font-semibold tracking-tight text-fg">{property.name}</h1>
+              {Boolean(property.starRating) && property.starRating! > 0 && (
+                <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                  <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                  {property.starRating} sao
+                </span>
+              )}
+            </div>
+            {property.slogan && <p className="text-xs text-muted italic mt-0.5">{property.slogan}</p>}
+            <p className="mt-1 flex flex-wrap items-center gap-2 text-small text-muted">
+              <span className="break-all">{property.subdomain}</span>
+              <Badge variant={property.isActive ? 'success' : 'gray'}>
+                {property.isActive ? tp('status.active') : tp('status.inactive')}
+              </Badge>
+            </p>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 xl:justify-end">
           <Button variant="outline" onClick={() => window.open(`/${property.subdomain}`, '_blank')}>
@@ -259,9 +296,9 @@ export default function PropertyDetailPage() {
             <Globe className="w-4 h-4 mr-2" />
             {t('websiteBuilder')}
           </Button>
-          <Button variant="outline" onClick={() => router.push(routes.propertyBlog(slug, propertyId))}>
-            <Newspaper className="w-4 h-4 mr-2" />
-            {tc('nav.blog')}
+          <Button variant="outline" onClick={() => router.push(routes.propertySettings(slug, propertyId))}>
+            <Hotel className="w-4 h-4 mr-2 text-acc" />
+            Thông tin chi tiết
           </Button>
           <Button variant="outline" onClick={() => setShowEditModal(true)}>
             <Pencil className="w-4 h-4 mr-2" />
@@ -328,8 +365,16 @@ export default function PropertyDetailPage() {
             {/* Info */}
             <div>
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>{t('overview.info')}</CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => router.push(routes.propertySettings(slug, propertyId))}
+                    className="text-xs text-acc hover:underline"
+                  >
+                    Xem tất cả &gt;
+                  </Button>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-start gap-3">
@@ -337,15 +382,33 @@ export default function PropertyDetailPage() {
                     <div>
                       <p className="text-sm font-medium text-fg">{t('overview.address')}</p>
                       <p className="text-sm text-muted">{formatAddress(property)}</p>
+                      {property.googleMapsUrl && (
+                        <a
+                          href={property.googleMapsUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-acc hover:underline inline-flex items-center gap-1 mt-0.5"
+                        >
+                          Mở bản đồ Google Maps <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
                     </div>
                   </div>
 
-                  {property.phone && (
+                  {(property.hotline || property.phone || property.receptionPhone) && (
                     <div className="flex items-start gap-3">
                       <Phone className="w-5 h-5 text-muted mt-0.5" />
-                      <div>
+                      <div className="space-y-0.5">
                         <p className="text-sm font-medium text-fg">{t('overview.phone')}</p>
-                        <p className="text-sm text-muted">{property.phone}</p>
+                        {property.hotline && (
+                          <p className="text-sm text-fg">Hotline: <span className="font-semibold">{property.hotline}</span></p>
+                        )}
+                        {property.phone && property.phone !== property.hotline && (
+                          <p className="text-sm text-muted">ĐT: {property.phone}</p>
+                        )}
+                        {property.receptionPhone && (
+                          <p className="text-xs text-muted">Lễ tân: {property.receptionPhone}</p>
+                        )}
                       </div>
                     </div>
                   )}
@@ -356,6 +419,74 @@ export default function PropertyDetailPage() {
                       <div>
                         <p className="text-sm font-medium text-fg">{t('overview.email')}</p>
                         <p className="text-sm text-muted">{property.email}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {(property.zalo || property.whatsapp || property.telegram || property.facebook) && (
+                    <div className="flex items-start gap-3">
+                      <MessageCircle className="w-5 h-5 text-muted mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-fg">Kênh chat & Mạng xã hội</p>
+                        <div className="flex flex-wrap gap-2 mt-1.5">
+                          {property.zalo && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-blue-500/10 text-blue-600 font-medium">
+                              Zalo: {property.zalo}
+                            </span>
+                          )}
+                          {property.whatsapp && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-emerald-500/10 text-emerald-600 font-medium">
+                              WhatsApp: {property.whatsapp}
+                            </span>
+                          )}
+                          {property.telegram && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-sky-500/10 text-sky-600 font-medium">
+                              Telegram: {property.telegram}
+                            </span>
+                          )}
+                          {property.facebook && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-indigo-500/10 text-indigo-600 font-medium">
+                              Fanpage Facebook
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {(property.wifiName || property.wifiPassword) && (
+                    <div className="flex items-start gap-3">
+                      <Wifi className="w-5 h-5 text-muted mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-fg">Wi-Fi khách sạn</p>
+                        <p className="text-xs text-muted">
+                          Tên: <span className="font-semibold text-fg">{property.wifiName || '(Chưa đặt)'}</span>
+                          {property.wifiPassword && (
+                            <> · Pass: <span className="font-mono font-medium text-fg">{property.wifiPassword}</span></>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {(property.checkInTime || property.checkOutTime) && (
+                    <div className="flex items-start gap-3">
+                      <Clock className="w-5 h-5 text-muted mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-fg">Giờ nhận / trả phòng</p>
+                        <p className="text-xs text-muted">
+                          Nhận phòng: <span className="font-semibold text-fg">{property.checkInTime || '14:00'}</span> · Trả phòng: <span className="font-semibold text-fg">{property.checkOutTime || '12:00'}</span>
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {property.taxCode && (
+                    <div className="flex items-start gap-3">
+                      <FileText className="w-5 h-5 text-muted mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-fg">Mã số thuế</p>
+                        <p className="text-xs font-mono text-muted">{property.taxCode}</p>
                       </div>
                     </div>
                   )}
