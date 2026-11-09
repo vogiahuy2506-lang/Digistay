@@ -1,5 +1,5 @@
 export { Button } from './button'
-export { Input, Textarea, Select } from './input'
+export { Input, Textarea, Select, FieldChrome, FieldTooltip } from './input'
 export { NumberInput } from './number-input'
 export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './card'
 export { Badge, BookingStatusBadge, PaymentStatusBadge } from './badge'

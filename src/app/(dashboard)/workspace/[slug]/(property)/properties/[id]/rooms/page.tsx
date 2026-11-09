@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
-import { Card, CardContent, Button, Badge, Modal, ModalBody, ModalFooter, Input, Select, Textarea, Tabs, TabsList, TabsTrigger, NumberInput } from '@/components/ui'
+import { Card, CardContent, Button, Badge, Modal, ModalBody, ModalFooter, Input, Select, Textarea, Tabs, TabsList, TabsTrigger, NumberInput, FieldTooltip } from '@/components/ui'
 import { toast } from '@/components/ui/toast'
 import {
   Plus, Bed, Edit, Image, BedDouble, Wrench, X, AlertCircle, DoorOpen, Sparkles,
@@ -420,19 +420,14 @@ export default function RoomTypesPage() {
 
   // Capacity, in both dialogs: what the hotel site checks guests against.
   const capacityFieldset = (
-    <fieldset className="space-y-3 rounded-box border border-line p-3">
-      <legend className="px-1 text-small font-medium text-fg">{t('form.capacity')}</legend>
+    <fieldset className="space-y-3 rounded-box border border-line p-3.5 bg-fg/[0.01]">
+      <legend className="px-1 text-small font-semibold text-fg flex items-center gap-1.5">
+        <span>{t('form.capacity')}</span>
+      </legend>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Input
-          label={t('form.maxOccupancy')}
-          type="number"
-          value={formData.maxOccupancy}
-          onChange={(e) => setFormData({ ...formData, maxOccupancy: e.target.value })}
-          min="1"
-          max="20"
-        />
-        <Input
           label={t('form.baseOccupancy')}
+          tooltip={t('form.baseOccupancyTooltip')}
           type="number"
           value={formData.baseOccupancy}
           onChange={(e) => setFormData({ ...formData, baseOccupancy: e.target.value })}
@@ -440,7 +435,17 @@ export default function RoomTypesPage() {
           max="10"
         />
         <Input
+          label={t('form.maxOccupancy')}
+          tooltip={t('form.maxOccupancyTooltip')}
+          type="number"
+          value={formData.maxOccupancy}
+          onChange={(e) => setFormData({ ...formData, maxOccupancy: e.target.value })}
+          min="1"
+          max="20"
+        />
+        <Input
           label={t('form.maxAdults')}
+          tooltip={t('form.maxAdultsTooltip')}
           type="number"
           value={formData.maxAdults}
           onChange={(e) => setFormData({ ...formData, maxAdults: e.target.value })}
@@ -449,6 +454,7 @@ export default function RoomTypesPage() {
         />
         <Input
           label={t('form.maxChildren')}
+          tooltip={t('form.maxChildrenTooltip')}
           type="number"
           value={formData.maxChildren}
           onChange={(e) => setFormData({ ...formData, maxChildren: e.target.value })}
@@ -456,6 +462,22 @@ export default function RoomTypesPage() {
           max="10"
         />
       </div>
+
+      {/* Realtime summary explanation for user */}
+      <div className="p-2.5 rounded-lg bg-panel border border-line/70 text-xs space-y-1">
+        <p className="font-semibold text-fg flex items-center gap-1.5">
+          <span>{t('form.capacitySummary')}</span>
+        </p>
+        <p className="text-muted leading-relaxed">
+          {t('form.capacitySummaryText', {
+            base: formData.baseOccupancy || '2',
+            max: formData.maxOccupancy || '3',
+            adults: formData.maxAdults || '2',
+            children: formData.maxChildren || '1',
+          })}
+        </p>
+      </div>
+
       {formProblem ? (
         <p className="text-small text-err" role="alert">
           {t(`form.problem.${formProblem}`)}
@@ -804,6 +826,7 @@ export default function RoomTypesPage() {
         <ModalBody className="space-y-4">
           <Input
             label={t('form.name')}
+            tooltip={t('form.nameTooltip')}
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             placeholder={t('form.namePlaceholder')}
@@ -811,7 +834,10 @@ export default function RoomTypesPage() {
           />
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-small font-medium text-fg">{t('form.description')}</label>
+              <label className="text-small font-medium text-fg flex items-center gap-1.5">
+                <span>{t('form.description')}</span>
+                <FieldTooltip content={t('form.descriptionTooltip')} />
+              </label>
               <button
                 type="button"
                 onClick={() => setIsAiModalOpen(true)}
@@ -846,6 +872,7 @@ export default function RoomTypesPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
               label={t('form.bedType')}
+              tooltip={t('form.bedTypeTooltip')}
               value={formData.bedType}
               onChange={(e) => setFormData({ ...formData, bedType: e.target.value })}
             >
@@ -855,6 +882,7 @@ export default function RoomTypesPage() {
             </Select>
             <Input
               label={t('form.area')}
+              tooltip={t('form.areaTooltip')}
               type="number"
               value={formData.area}
               onChange={(e) => setFormData({ ...formData, area: e.target.value })}
@@ -864,6 +892,7 @@ export default function RoomTypesPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <NumberInput
               label={t('form.totalRooms')}
+              tooltip={t('form.totalRoomsTooltip')}
               value={formData.totalRooms}
               onValueChange={(v) => setFormData({ ...formData, totalRooms: v })}
             />
@@ -872,12 +901,14 @@ export default function RoomTypesPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <NumberInput
               label={t('form.weekdayPrice')}
+              tooltip={t('form.weekdayPriceTooltip')}
               value={formData.weekdayPrice}
               onValueChange={(v) => setFormData({ ...formData, weekdayPrice: v })}
               placeholder="500000"
             />
             <NumberInput
               label={t('form.weekendPrice')}
+              tooltip={t('form.weekendPriceTooltip')}
               value={formData.weekendPrice}
               onValueChange={(v) => setFormData({ ...formData, weekendPrice: v })}
               placeholder="650000"
@@ -911,13 +942,17 @@ export default function RoomTypesPage() {
           )}
           <Input
             label={t('form.name')}
+            tooltip={t('form.nameTooltip')}
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             required
           />
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-small font-medium text-fg">{t('form.description')}</label>
+              <label className="text-small font-medium text-fg flex items-center gap-1.5">
+                <span>{t('form.description')}</span>
+                <FieldTooltip content={t('form.descriptionTooltip')} />
+              </label>
               <button
                 type="button"
                 onClick={() => setIsAiModalOpen(true)}
@@ -951,6 +986,7 @@ export default function RoomTypesPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
               label={t('form.bedType')}
+              tooltip={t('form.bedTypeTooltip')}
               value={formData.bedType}
               onChange={(e) => setFormData({ ...formData, bedType: e.target.value })}
             >
@@ -960,6 +996,7 @@ export default function RoomTypesPage() {
             </Select>
             <Input
               label={t('form.area')}
+              tooltip={t('form.areaTooltip')}
               type="number"
               value={formData.area}
               onChange={(e) => setFormData({ ...formData, area: e.target.value })}
@@ -968,6 +1005,7 @@ export default function RoomTypesPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <NumberInput
               label={t('form.totalRooms')}
+              tooltip={t('form.totalRoomsTooltip')}
               value={formData.totalRooms}
               onValueChange={(v) => setFormData({ ...formData, totalRooms: v })}
               disabled={!!selectedRoomType && roomsOf(selectedRoomType.id).length > 0}
@@ -978,11 +1016,13 @@ export default function RoomTypesPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <NumberInput
               label={t('form.weekdayPrice')}
+              tooltip={t('form.weekdayPriceTooltip')}
               value={formData.weekdayPrice}
               onValueChange={(v) => setFormData({ ...formData, weekdayPrice: v })}
             />
             <NumberInput
               label={t('form.weekendPrice')}
+              tooltip={t('form.weekendPriceTooltip')}
               value={formData.weekendPrice}
               onValueChange={(v) => setFormData({ ...formData, weekendPrice: v })}
             />
