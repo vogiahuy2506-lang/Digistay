@@ -336,7 +336,11 @@ export default function CustomersPage() {
                     <tr key={row.id} className="border-b border-line/70 align-top last:border-0 hover:bg-fg/[0.02]">
                       <td className="py-3 pr-3">
                         <div className="flex items-center gap-1.5">
-                          <Link href={`/admin/customers/${row.id}`} className="font-medium text-fg hover:underline">
+                          <Link
+                            href={`/admin/customers/${row.id}`}
+                            title="Xem chi tiết workspace"
+                            className="font-semibold text-fg hover:text-acc hover:underline"
+                          >
                             {row.name}
                           </Link>
                           <Link

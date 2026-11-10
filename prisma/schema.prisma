@@ -341,6 +341,30 @@ model PlatformPlan {
   @@map("platform_plans")
 }
 
+/// Voucher khuyến mãi toàn hệ thống Digistay (Task 50).
+/// Dùng để giảm giá khi khách hàng đăng ký hoặc gia hạn các gói dịch vụ Digistay.
+model PlatformVoucher {
+  id              String       @id @default(cuid())
+  code            String       @unique
+  name            String
+  discountType    DiscountType @default(PERCENT)
+  discountValue   Float
+  maxDiscount     Float?
+  minOrderAmount  Float?
+  startDate       DateTime     @default(now())
+  endDate         DateTime
+  usageLimit      Int?
+  usageCount      Int          @default(0)
+  applicablePlans String?      // Danh sách mã gói (phân cách bằng dấu phẩy, vd: "starter,growth,business") hoặc null = tất cả gói
+  isActive        Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  deletedAt       DateTime?
+
+  @@index([isActive, startDate, endDate])
+  @@map("platform_vouchers")
+}
+
 model WorkspaceMember {
   id          String        @id @default(cuid())
   workspaceId String

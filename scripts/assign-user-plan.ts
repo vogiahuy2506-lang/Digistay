@@ -59,6 +59,8 @@ async function main() {
         { username: targetUser },
         { email: targetUser },
         { email: { equals: targetUser, mode: 'insensitive' } },
+        { email: { contains: targetUser, mode: 'insensitive' } },
+        { name: { contains: targetUser, mode: 'insensitive' } },
       ],
     },
     include: {

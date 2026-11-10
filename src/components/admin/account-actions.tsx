@@ -76,7 +76,7 @@ export function UserPlanModal({
   const [trial, setTrial] = React.useState(current?.trial ?? false)
   const defaultDate =
     current && Date.parse(current.periodEnd) > Date.now()
-      ? new Date(Date.parse(current.periodEnd))
+      ? new Date(Date.parse(current.periodEnd) + 365 * DAY_MS)
       : new Date(Date.now() + 365 * DAY_MS)
   const [end, setEnd] = React.useState(vnDay(defaultDate))
   const [note, setNote] = React.useState('')

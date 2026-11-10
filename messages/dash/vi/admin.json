@@ -7,6 +7,7 @@
       "customers": "Khách hàng",
       "orders": "Đơn hàng gói",
       "plans": "Bảng giá gói",
+      "vouchers": "Mã giảm giá",
       "activity": "Nhật ký",
       "system": "Hệ thống"
     }
@@ -277,5 +278,68 @@
     "notePlaceholder": "VD: khách xin thêm 7 ngày dùng thử; bù 3 ngày sự cố 20/10",
     "confirm": "Lưu gói",
     "done": "Đã cập nhật gói"
+  },
+  "vouchers": {
+    "title": "Mã giảm giá nền tảng",
+    "lead": "Tạo và quản lý các mã voucher khuyến mãi khi khách hàng đăng ký hoặc gia hạn gói cước Digistay.",
+    "create": "Tạo mã giảm giá mới",
+    "kpis": {
+      "total": "Tổng số voucher",
+      "active": "Đang hoạt động",
+      "used": "Lượt đã áp dụng"
+    },
+    "tabs": {
+      "all": "Tất cả",
+      "active": "Đang hoạt động",
+      "expired": "Đã hết hạn",
+      "inactive": "Tạm dừng"
+    },
+    "columns": {
+      "code": "Mã voucher",
+      "discount": "Mức giảm",
+      "plans": "Gói áp dụng",
+      "usage": "Đã dùng / Giới hạn",
+      "period": "Thời hạn",
+      "status": "Trạng thái",
+      "actions": "Thao tác"
+    },
+    "empty": "Chưa có mã giảm giá nào.",
+    "allPlans": "Tất cả các gói",
+    "unlimited": "Không giới hạn",
+    "active": "Hoạt động",
+    "expired": "Hết hạn",
+    "paused": "Tạm dừng",
+    "modal": {
+      "title": "Tạo mã giảm giá mới",
+      "code": "Mã voucher (viết liền, không dấu)",
+      "codePlaceholder": "VD: DIGISTAY2026, SUMMER50",
+      "name": "Tên chương trình khuyến mãi",
+      "namePlaceholder": "VD: Khuyến mãi mừng mùa hè 2026",
+      "type": "Hình thức giảm",
+      "typePercent": "Giảm theo phần trăm (%)",
+      "typeFixed": "Giảm số tiền cố định (VNĐ)",
+      "valuePercent": "Phần trăm giảm (%)",
+      "valueFixed": "Số tiền giảm (VNĐ)",
+      "maxDiscount": "Mức giảm tối đa (VNĐ, để trống nếu không giới hạn)",
+      "minOrderAmount": "Giá trị đơn tối thiểu (VNĐ)",
+      "endDate": "Ngày hết hạn (cuối ngày)",
+      "usageLimit": "Giới hạn số lượt dùng (để trống nếu không giới hạn)",
+      "plans": "Gói cước áp dụng",
+      "quick": {
+        "d30": "+30 ngày",
+        "d90": "+90 ngày",
+        "d365": "+1 năm"
+      },
+      "submit": "Tạo mã voucher",
+      "success": "Đã tạo mã giảm giá {code} thành công"
+    },
+    "actions": {
+      "activate": "Kích hoạt",
+      "deactivate": "Tạm dừng",
+      "delete": "Xóa voucher",
+      "deleteConfirm": "Bạn có chắc chắn muốn xóa mã voucher {code}?",
+      "deleteSuccess": "Đã xóa mã voucher",
+      "toggleSuccess": "Đã cập nhật trạng thái voucher"
+    }
   }
 }

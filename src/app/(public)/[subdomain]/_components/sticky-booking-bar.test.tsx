@@ -96,3 +96,4 @@ describe('StickyBookingBar', () => {
     expect(aside).toBeNull()
   })
 })
+

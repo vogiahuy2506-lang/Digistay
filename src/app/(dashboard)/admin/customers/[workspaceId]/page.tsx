@@ -61,9 +61,12 @@ function PlanForm({ detail, onClose, onSaved }: { detail: Detail; onClose: () =>
   const current = detail.plan
   const [plan, setPlan] = React.useState<string>(current?.plan ?? 'growth')
   const [trial, setTrial] = React.useState(current?.trial ?? true)
-  // From the current end while it is ahead, else from today.
+  // From the current end while it is ahead, else from today + 30 days.
   const base = Math.max(Date.now(), current ? Date.parse(current.periodEnd) : 0)
-  const [end, setEnd] = React.useState(vnDay(new Date(base)))
+  const defaultEnd = current && Date.parse(current.periodEnd) > Date.now()
+    ? new Date(Date.parse(current.periodEnd) + 30 * DAY_MS)
+    : new Date(Date.now() + 30 * DAY_MS)
+  const [end, setEnd] = React.useState(vnDay(defaultEnd))
   const [note, setNote] = React.useState('')
   const [busy, setBusy] = React.useState(false)
   const [error, setError] = React.useState('')

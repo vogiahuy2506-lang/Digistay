@@ -166,24 +166,25 @@ Tài liệu này phân rã chi tiết yêu cầu kỹ thuật, giải pháp, fil
 
 ---
 
-### Task 50 [P1]: Hoàn thiện tính năng Superadmin
-* **Hiện trạng**: Trang Admin còn 3 lỗi:
-  1. Nút "Đổi gói / gia hạn" và menu "Thao tác với tài khoản" trong trang chi tiết workspace bấm không phản hồi.
-  2. Bấm tên workspace trong danh sách khách hàng không mở trang chi tiết.
-  3. Chưa có trang tạo voucher, tạo/sửa gói dịch vụ (`/admin/vouchers`, `/admin/plans` bị 404).
-* **Giải pháp kỹ thuật**:
-  1. Sửa handler click và state mở dialog đổi gói/gia hạn trong `/admin/customers/[workspaceId]`.
-  2. Bọc tên workspace bằng `Link` dẫn tới `/admin/customers/${ws.id}`.
-  3. Xây dựng 2 trang quản trị mới:
-     - `/admin/vouchers`: Quản lý voucher khuyến mãi toàn hệ thống.
-     - `/admin/plans`: Quản lý danh sách gói cước và giá bán.
-  4. Cấp gói nội bộ cho tài khoản anh Thống.
-  5. Script dọn dẹp các workspace test rác (QA B, QA Test, "ád"...).
+### Task 50 [P1]: Hoàn thiện tính năng Superadmin [ĐÃ HOÀN THÀNH 10/11/2026]
+* **Hiện trạng & Lỗi đã xử lý**:
+  1. Ngày kết thúc mặc định trong modal `PlanForm` ở trang chi tiết workspace bị trùng ngày hiện tại (nhỏ hơn `min = ngày mai`), khiến submit lỗi hoặc không phản hồi. Đã sửa default date tự động cộng 30 ngày và tối ưu quick buttons.
+  2. Bọc và làm nổi bật link tên workspace trong danh sách khách hàng (`/admin/customers`) mở trực tiếp `/admin/customers/[workspaceId]`.
+  3. Hoàn thiện 2 trang quản trị cốt lõi:
+     - `/admin/plans`: Quản lý danh sách gói cước và giá bán động (Task 49).
+     - `/admin/vouchers`: Quản lý voucher khuyến mãi toàn hệ thống (Task 50), hỗ trợ tạo voucher % hoặc số tiền cố định, giới hạn lượt dùng, thời hạn, gói áp dụng, bật/tắt, xóa voucher.
+  4. Script cấp gói cước nội bộ `scripts/assign-user-plan.ts` hỗ trợ tìm kiếm linh hoạt theo email, username, họ tên (anh Thống hoặc nhân sự nội bộ).
+  5. Script `scripts/cleanup-test-workspaces.ts` dọn dẹp các workspace test rác an toàn có cờ bảo vệ chống xóa nhầm đơn đã thanh toán.
 * **File can thiệp**:
-  - `src/app/(dashboard)/admin/customers/page.tsx`
-  - `src/app/(dashboard)/admin/customers/[workspaceId]/page.tsx`
+  - `prisma/schema.prisma` & migration `20261110200000_platform_vouchers`
+  - `src/app/api/admin/vouchers/route.ts` & `src/app/api/admin/vouchers/[id]/route.ts`
   - `src/app/(dashboard)/admin/vouchers/page.tsx`
-  - `src/app/(dashboard)/admin/plans/page.tsx`
+  - `src/components/admin/admin-frame.tsx`
+  - `src/app/(dashboard)/admin/customers/[workspaceId]/page.tsx`
+  - `src/app/(dashboard)/admin/customers/page.tsx`
+  - `src/components/admin/account-actions.tsx`
+  - `scripts/assign-user-plan.ts` & `scripts/cleanup-test-workspaces.ts`
+  - `messages/dash/vi/admin.json` & `messages/dash/en/admin.json`
 
 ---
 

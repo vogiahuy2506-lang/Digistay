@@ -7,6 +7,7 @@
       "customers": "Customers",
       "orders": "Plan orders",
       "plans": "Pricing plans",
+      "vouchers": "Vouchers",
       "activity": "Activity log",
       "system": "System"
     }
@@ -277,5 +278,68 @@
     "notePlaceholder": "E.g. customer asked for 7 more trial days; 3 days made up for the outage on 20/10",
     "confirm": "Save plan",
     "done": "Plan updated"
+  },
+  "vouchers": {
+    "title": "Platform Promotional Vouchers",
+    "lead": "Create and manage system-wide discount vouchers for Digistay subscription signups and renewals.",
+    "create": "Create voucher",
+    "kpis": {
+      "total": "Total vouchers",
+      "active": "Active",
+      "used": "Total uses"
+    },
+    "tabs": {
+      "all": "All",
+      "active": "Active",
+      "expired": "Expired",
+      "inactive": "Paused"
+    },
+    "columns": {
+      "code": "Voucher code",
+      "discount": "Discount",
+      "plans": "Applicable plans",
+      "usage": "Used / Limit",
+      "period": "Validity",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "empty": "No vouchers created yet.",
+    "allPlans": "All plans",
+    "unlimited": "Unlimited",
+    "active": "Active",
+    "expired": "Expired",
+    "paused": "Paused",
+    "modal": {
+      "title": "Create new voucher",
+      "code": "Voucher code (letters, numbers, hyphens)",
+      "codePlaceholder": "E.g. DIGISTAY2026, SUMMER50",
+      "name": "Promotion campaign name",
+      "namePlaceholder": "E.g. Summer 2026 Special Offer",
+      "type": "Discount type",
+      "typePercent": "Percentage discount (%)",
+      "typeFixed": "Fixed amount (VND)",
+      "valuePercent": "Discount percent (%)",
+      "valueFixed": "Discount amount (VND)",
+      "maxDiscount": "Max discount cap (VND, leave empty for none)",
+      "minOrderAmount": "Minimum order amount (VND)",
+      "endDate": "Expiration date (end of day)",
+      "usageLimit": "Usage limit (leave empty for unlimited)",
+      "plans": "Applicable subscription plans",
+      "quick": {
+        "d30": "+30 days",
+        "d90": "+90 days",
+        "d365": "+1 year"
+      },
+      "submit": "Create voucher",
+      "success": "Voucher {code} created successfully"
+    },
+    "actions": {
+      "activate": "Activate",
+      "deactivate": "Pause",
+      "delete": "Delete voucher",
+      "deleteConfirm": "Are you sure you want to delete voucher {code}?",
+      "deleteSuccess": "Voucher deleted",
+      "toggleSuccess": "Voucher status updated"
+    }
   }
 }
