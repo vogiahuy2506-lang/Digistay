@@ -323,20 +323,67 @@ model SubscriptionInvoice {
   @@map("subscription_invoices")
 }
 
-/// Bảng cấu hình giá và hạn mức các gói cước Digistay (Task 49).
-/// Cho phép Superadmin điều chỉnh giá bán và quyền lợi trực tiếp từ Admin.
+/// Bảng cấu hình giá và hạn mức các gói cước Digistay (Phân hệ Super Admin 2.0).
+/// Hỗ trợ tạo gói tuỳ chỉnh (Custom Plans), gói riêng cho khách VIP và kiểm soát 8 nhóm hạn mức.
 model PlatformPlan {
-  id          String   @id // 'starter' | 'growth' | 'business'
-  name        String
-  price       Int      // VND / tháng (chưa VAT)
-  properties  Int      // Số cơ sở tối đa
-  rooms       Int      // Số phòng tối đa
-  staff       Int      // Số tài khoản nhân viên tối đa
-  invoices    Int      @default(0) // Số hoá đơn Mắt Bão tặng kèm
-  description String?
-  isActive    Boolean  @default(true)
-  updatedAt   DateTime @updatedAt
-  createdAt   DateTime @default(now())
+  id                    String   @id // Mã gói duy nhất, vd: 'starter', 'growth', 'business', 'vip-homestay'
+  name                  String   // Tên gói hiển thị
+  description           String?  @db.Text
+  
+  // 1. Định giá & Chu kỳ
+  price                 Int      // Giá tháng (VND, chưa VAT)
+  priceYearly           Int?     // Giá năm (VND, null thì mặc định price * 10)
+  trialDays             Int      @default(14)
+
+  // 2. Quy mô & Cơ sở vật chất
+  properties            Int      @default(1)    // Số cơ sở tối đa (-1: không giới hạn)
+  rooms                 Int      @default(15)   // Số phòng tối đa (-1: không giới hạn)
+  maxRoomTypes          Int      @default(5)    // Số loại phòng mỗi cơ sở (-1: không giới hạn)
+  staff                 Int      @default(3)    // Số tài khoản nhân viên (-1: không giới hạn)
+
+  // 3. Đặt phòng & Doanh số
+  maxMonthlyBookings    Int      @default(-1)   // Số đơn đặt phòng / tháng (-1: không giới hạn)
+  transactionFeePercent Float    @default(0)    // % Phí hoa hồng giao dịch nền tảng
+
+  // 4. Website Khách sạn & Nhận diện Thương hiệu
+  hasCustomDomain       Boolean  @default(false)// Gắn tên miền riêng
+  allowRemoveDigistayBranding Boolean @default(false)// Gỡ nhãn "Powered by Digistay"
+  hasMultiLanguage      Boolean  @default(true) // Website song ngữ
+  maxCustomPages        Int      @default(5)    // Số bài viết/trang tuỳ chỉnh (-1: không giới hạn)
+  allowCustomTrackingCode Boolean @default(false)// Chèn mã GA4, FB Pixel, GTM
+
+  // 5. Trí tuệ Nhân tạo & Tự động hoá
+  monthlyAiContentQuota Int      @default(30)   // Số lượt tạo nội dung AI / tháng
+  hasChatbotAi          Boolean  @default(true) // Bật/tắt Trợ lý AI Chatbot
+  monthlyChatbotMessages Int     @default(200)  // Số tin nhắn chatbot / tháng (-1: không giới hạn)
+  hasAiSmartPricing     Boolean  @default(false)// Định giá phòng thông minh AI
+
+  // 6. Kênh Bán phòng & OTA
+  hasOtaIcalSync        Boolean  @default(true) // Đồng bộ lịch iCal (.ics)
+  maxIcalFeeds          Int      @default(5)    // Số liên kết iCal tối đa (-1: không giới hạn)
+  hasDirectApiChannels  Boolean  @default(false)// Kết nối API OTA trực tiếp (Agoda, Booking.com)
+
+  // 7. Tài chính, Sổ quỹ & Báo cáo
+  hasPayOsOnlineDeposit Boolean  @default(true) // Thanh toán cọc tự động VietQR PayOS
+  hasCashbookReports    Boolean  @default(true) // Quản lý sổ quỹ thu chi
+  hasAdvancedAnalytics  Boolean  @default(true) // Báo cáo tài chính chuyên sâu
+  allowDataExport       Boolean  @default(true) // Xuất file Excel / CSV
+  invoices              Int      @default(0)    // Số hoá đơn Mắt Bão tặng kèm
+
+  // 8. Lưu trữ & Hỗ trợ SLA
+  maxStorageMb          Int      @default(1024) // Dung lượng lưu trữ ảnh (MB)
+  maxImageUploadSizeMb  Int      @default(10)   // Kích thước tối đa mỗi file ảnh (MB)
+  supportPriority       String   @default("STANDARD") // STANDARD, PRIORITY, DEDICATED
+  hasDedicatedOnboarding Boolean @default(false)// Hỗ trợ onboarding 1-1
+
+  // Phân loại & Hiển thị
+  isPublic              Boolean  @default(true) // true: Bán công khai / false: Gói riêng tư (Custom/VIP)
+  isActive              Boolean  @default(true) // Đang mở bán hay đã tạm dừng
+  isFeatured            Boolean  @default(false)// Huy hiệu khuyên dùng
+  displayOrder          Int      @default(0)
+
+  updatedAt             DateTime @updatedAt
+  createdAt             DateTime @default(now())
 
   @@map("platform_plans")
 }

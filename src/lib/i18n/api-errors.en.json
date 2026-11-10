@@ -913,5 +913,18 @@
   "Lỗi gửi email xác nhận": "Error sending confirmation email",
   "Đã xác nhận đơn đặt phòng và gửi email cho khách": "Booking confirmed and confirmation email sent to guest",
   "Đã xác nhận đơn đặt phòng thành công": "Booking confirmed successfully",
-  "Lỗi khi xác nhận đơn đặt phòng": "Error confirming booking"
+  "Lỗi khi xác nhận đơn đặt phòng": "Error confirming booking",
+  "Mã gói không hợp lệ": "Invalid plan code",
+  "Mã gói phải có ít nhất 2 ký tự": "Plan code must be at least 2 characters",
+  "Mã gói tối đa 50 ký tự": "Plan code cannot exceed 50 characters",
+  "Mã gói chỉ gồm chữ thường không dấu, số và gạch ngang (vd: vip-resort-2026)": "Plan code must contain only lowercase letters, numbers, and hyphens (e.g. vip-resort-2026)",
+  "Tên gói ít nhất 2 ký tự": "Plan name must be at least 2 characters",
+  "Giá tháng không âm": "Monthly price cannot be negative",
+  "Giá năm không âm": "Yearly price cannot be negative",
+  "Dữ liệu gói cước không hợp lệ": "Invalid plan data",
+  "Mã gói \"{0}\" đã tồn tại. Vui lòng chọn mã khác.": "Plan code \"{0}\" already exists. Please choose another code.",
+  "Không thể xóa gói cốt lõi của hệ thống ({0}). Bạn có thể chuyển trạng thái sang \"Tạm dừng\" nếu không muốn bán nữa.": "Cannot delete core system plan ({0}). You can set its status to \"Inactive\" instead.",
+  "Không thể xóa gói \"{0}\" vì hiện có {1} workspace đang sử dụng. Hãy chuyển các workspace sang gói khác trước khi xóa.": "Cannot delete plan \"{0}\" because {1} workspace(s) are currently using it. Please switch those workspaces to another plan before deleting.",
+  "Đã xóa gói \"{0}\" thành công.": "Plan \"{0}\" deleted successfully.",
+  "Không tìm thấy gói \"{0}\" để xóa.": "Plan \"{0}\" not found to delete."
 }

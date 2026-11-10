@@ -192,7 +192,7 @@ export async function customerDetail(workspaceId: string, now = new Date()) {
 }
 
 export interface PlanInput {
-  plan: PlanId
+  plan: string
   /** Still a trial (a longer one), or a plan given without payment. */
   trial: boolean
   periodEnd: Date
@@ -207,7 +207,8 @@ export interface PlanInput {
  * over the old ones at once (overage.ts).
  */
 export async function setPlan(admin: PlatformAdmin, workspaceId: string, input: PlanInput, now = new Date()) {
-  if (!isPlanId(input.plan)) throw new AdminActionError('Gói không hợp lệ')
+  const isKnownPlan = isPlanId(input.plan) || (await prisma.platformPlan.findUnique({ where: { id: input.plan } }))
+  if (!isKnownPlan) throw new AdminActionError('Gói không hợp lệ')
   const latest = new Date(now.getTime() + MAX_PLAN_YEARS * 365 * DAY_MS)
   if (input.periodEnd.getTime() <= now.getTime() || input.periodEnd.getTime() > latest.getTime()) {
     throw new AdminActionError(PLAN_END_INVALID)

@@ -6,7 +6,7 @@ import { AdminActionError } from '@/lib/admin/users'
 import { PLAN_IDS } from '@/lib/marketing/plans'
 
 const body = z.object({
-  plan: z.enum(PLAN_IDS),
+  plan: z.string().trim().min(2, 'Mã gói không hợp lệ'),
   trial: z.boolean(),
   /** The last day of the period (Vietnam time): it ends at the day's end. */
   periodEnd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày hết hạn không hợp lệ'),
