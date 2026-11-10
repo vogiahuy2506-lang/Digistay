@@ -67,8 +67,8 @@ flowchart TD
 
 ### PHÂN HỆ 1: ENGINE QUẢN LÝ GÓI ĐỘNG & GÓI TÙY CHỈNH (CUSTOM PLANS)
 
-#### 1. Cấu trúc dữ liệu linh hoạt (`SubscriptionPlan`)
-Hệ thống lưu trữ toàn bộ gói cước vào cơ sở dữ liệu thay vì hằng số code:
+#### 1. Cấu trúc Mô hình Dữ liệu Đa tầng (`SubscriptionPlan`)
+Hệ thống mở rộng toàn diện bảng `subscription_plans` trong cơ sở dữ liệu với 8 nhóm giới hạn và công tắc tính năng chuyên sâu:
 
 ```prisma
 model SubscriptionPlan {
@@ -77,21 +77,50 @@ model SubscriptionPlan {
   name            String      // "Gói Starter", "Gói Tăng Trưởng", "Gói Đối Tác VIP"
   description     String?     @db.Text
   
-  // Định giá
+  // 1. Định giá & Chu kỳ thanh toán
   priceMonthly    Float       // Giá tháng (VNĐ)
   priceYearly     Float       // Giá năm (VNĐ)
+  trialDays       Int         @default(14)   // Số ngày dùng thử mặc định
   
-  // Hạn mức tài nguyên hệ thống (Quotas)
-  maxProperties   Int         @default(1)    // Số cơ sở tối đa được tạo
-  maxRooms        Int         @default(15)   // Số phòng tối đa quản lý
-  maxStaff        Int         @default(3)    // Số tài khoản nhân viên
-  monthlyAiQuota  Int         @default(30)   // Lượt tạo bài viết / dùng AI mỗi tháng
-  
-  // Công tắc tính năng linh hoạt (Feature Flags)
-  hasCustomDomain Boolean     @default(false)// Cho phép dùng tên miền riêng (.vn, .com)
-  hasChatbotAi    Boolean     @default(true) // Cho phép bật Trợ lý ảo AI trên website
-  hasOtaIcalSync  Boolean     @default(true) // Cho phép đồng bộ lịch 2 chiều với Airbnb/Booking
-  hasAdvancedReports Boolean  @default(true) // Báo cáo tài chính chuyên sâu & sổ quỹ
+  // 2. Quy mô & Cơ sở vật chất (Inventory & Scale Limits)
+  maxProperties   Int         @default(1)    // Số cơ sở tối đa (-1: không giới hạn)
+  maxRooms        Int         @default(15)   // Số phòng vật lý tối đa toàn workspace (-1: không giới hạn)
+  maxRoomTypes    Int         @default(5)    // Số hạng phòng tối đa mỗi cơ sở (-1: không giới hạn)
+  maxStaff        Int         @default(3)    // Số tài khoản nhân sự tối đa (-1: không giới hạn)
+
+  // 3. Đặt phòng & Doanh số (Booking & Traffic Quotas)
+  maxMonthlyBookings Int      @default(-1)   // Số đơn đặt phòng tối đa/tháng (-1: không giới hạn)
+  transactionFeePercent Float @default(0)    // % Phí giao dịch hoa hồng nền tảng (0%: miễn phí)
+
+  // 4. Website Khách sạn & Nhận diện Thương hiệu (Website & Branding)
+  hasCustomDomain Boolean     @default(false)// Sử dụng tên miền riêng của khách sạn (.vn, .com)
+  allowRemoveDigistayBranding Boolean @default(false)// Gỡ nhãn "Powered by Digistay" ở chân trang (White-label)
+  hasMultiLanguage Boolean    @default(true) // Website song ngữ (Việt - Anh)
+  maxCustomPages  Int         @default(5)    // Số bài viết blog / trang tĩnh tối đa (-1: không giới hạn)
+  allowCustomTrackingCode Boolean @default(false)// Cho phép chèn mã tiếp thị (GA4, Facebook Pixel, Google Tag Manager)
+
+  // 5. Trí tuệ Nhân tạo & Tự động hóa (AI & Automation Limits)
+  monthlyAiContentQuota Int   @default(30)   // Số lượt tạo nội dung marketing / bài viết AI Gemini mỗi tháng
+  hasChatbotAi    Boolean     @default(true) // Bật/tắt Trợ lý ảo AI Chatbot tư vấn phòng 24/7
+  monthlyChatbotMessages Int  @default(200)  // Số tin nhắn AI Chatbot trả lời khách mỗi tháng (-1: không giới hạn)
+  hasAiSmartPricing Boolean   @default(false)// Gợi ý định giá thông minh theo ngày/mùa vụ bằng AI
+
+  // 6. Kênh Bán phòng & Kết nối OTA (Channel Distribution)
+  hasOtaIcalSync  Boolean     @default(true) // Cho phép đồng bộ lịch 2 chiều chuẩn iCalendar (.ics)
+  maxIcalFeeds    Int         @default(5)    // Số liên kết đồng bộ iCal tối đa (-1: không giới hạn)
+  hasDirectApiChannels Boolean @default(false)// Mở khóa kết nối 2 chiều API trực tiếp (Agoda, Booking.com)
+
+  // 7. Tài chính, Sổ quỹ & Báo cáo (Finance & Analytics)
+  hasPayOsOnlineDeposit Boolean @default(true) // Khách quét mã VietQR PayOS cọc tự động
+  hasCashbookReports Boolean  @default(true) // Quản lý Sổ quỹ thu - chi hằng ngày
+  hasAdvancedAnalytics Boolean @default(true)// Báo cáo doanh thu chuyên sâu, công suất phòng & nguồn đơn
+  allowDataExport Boolean     @default(true) // Cho phép xuất dữ liệu ra file Excel / CSV
+
+  // 8. Lưu trữ Đa phương tiện & Hỗ trợ (Storage & Support SLA)
+  maxStorageMb    Int         @default(1024) // Dung lượng lưu trữ ảnh/media (MB) (ví dụ: 1024MB = 1GB, 5120MB = 5GB)
+  maxImageUploadSizeMb Int    @default(10)   // Dung lượng tối đa mỗi file ảnh tải lên (MB)
+  supportPriority String      @default("STANDARD") // "STANDARD" (email 24h), "PRIORITY" (Zalo 2h), "DEDICATED" (1-1)
+  hasDedicatedOnboarding Boolean @default(false) // Dịch vụ hỗ trợ thiết lập website và nhập phòng 1-1
   
   // Phân loại & Quyền riêng tư
   isPublic        Boolean     @default(true) // true: Hiện công khai trên bảng giá / false: Gói riêng (Private/Custom)
@@ -106,16 +135,30 @@ model SubscriptionPlan {
 }
 ```
 
-#### 2. Tính năng nổi bật trên Giao diện Quản lý Gói:
+#### 2. Chi tiết 8 Nhóm Giới hạn & Công tắc Tính năng trên Giao diện Admin
+
+| Nhóm giới hạn | Các trường cấu hình chi tiết | Mục đích kinh doanh & Vận hành |
+| :--- | :--- | :--- |
+| **1. Quy mô & Phòng** | • Số cơ sở tối đa (`maxProperties`)<br>• Số phòng tối đa (`maxRooms`)<br>• Số hạng phòng tối đa (`maxRoomTypes`)<br>• Số tài khoản nhân sự (`maxStaff`) | Phân loại phân khúc khách sạn (Homestay nhỏ, Khách sạn boutique, Chuỗi resort lớn). Nhập `-1` là không giới hạn. |
+| **2. Đặt phòng & Doanh số** | • Giới hạn đơn đặt/tháng (`maxMonthlyBookings`)<br>• Phí giao dịch hoa hồng (`transactionFeePercent`) | Cho phép tạo gói Freemium / Giá rẻ thu % hoa hồng hoặc gói trả phí trọn gói 0% phí giao dịch. |
+| **3. Thương hiệu Website** | • Tên miền riêng (`hasCustomDomain`)<br>• Gỡ logo Digistay (`allowRemoveDigistayBranding`)<br>• Đa ngôn ngữ (`hasMultiLanguage`)<br>• Số bài blog (`maxCustomPages`)<br>• Mã tiếp thị (`allowCustomTrackingCode`) | Bán tính năng cao cấp (White-labeling và gắn Google Tag Manager/Facebook Pixel chỉ cho gói Growth/Business trở lên). |
+| **4. Trí tuệ Nhân tạo (AI)** | • Lượt sinh bài viết Gemini (`monthlyAiContentQuota`)<br>• Bật Chatbot AI (`hasChatbotAi`)<br>• Hạn mức tin nhắn Chatbot (`monthlyChatbotMessages`)<br>• Gợi ý giá AI (`hasAiSmartPricing`) | Kiểm soát chi phí Google Gemini API nền tảng, tạo đòn bẩy nâng cấp gói cao để có nhiều lượt AI hơn. |
+| **5. Kết nối OTA Sàn** | • Đồng bộ iCal (`hasOtaIcalSync`)<br>• Số lượng link iCal (`maxIcalFeeds`)<br>• API sàn trực tiếp (`hasDirectApiChannels`) | Định vị giá trị: gói Starter có 2 link iCal, gói Growth có 10 link, gói Business không giới hạn. |
+| **6. Tài chính & Báo cáo** | • Nhận cọc VietQR PayOS (`hasPayOsOnlineDeposit`)<br>• Sổ quỹ tiền mặt (`hasCashbookReports`)<br>• Phân tích nâng cao (`hasAdvancedAnalytics`)<br>• Xuất Excel/CSV (`allowDataExport`) | Kiểm soát tính năng quản trị kế toán nội bộ và trích xuất báo cáo doanh thu. |
+| **7. Dung lượng Lưu trữ** | • Dung lượng tổng Media (`maxStorageMb`)<br>• Dung lượng tối đa mỗi ảnh (`maxImageUploadSizeMb`) | Kiểm soát dung lượng lưu trữ Cloudinary, tránh khách sạn tải ảnh quá nặng làm chậm website. |
+| **8. Dịch vụ Hỗ trợ & SLA** | • Cấp độ hỗ trợ (`supportPriority`: Standard / Priority / Dedicated)<br>• Hỗ trợ Setup 1-1 (`hasDedicatedOnboarding`) | Đóng gói dịch vụ chăm sóc VIP cho các chuỗi khách sạn lớn. |
+
+#### 3. Trải nghiệm Quản lý Gói trên Giao diện (Plans UI Experience)
 * **Tạo Gói Cước Mới Tùy Ý (Create New Plan)**:
-  - Điền tên gói, giá theo tháng, giá theo năm.
-  - Kéo thanh trượt hoặc nhập số lượng: Số cơ sở, Số phòng, Số nhân viên, Lượt AI.
-  - Bật/tắt các công tắc tính năng (Tên miền riêng, Chatbot AI, Đồng bộ OTA).
-  - Chọn `Công khai`: Gói sẽ tự động hiển thị trên Landing Page Bảng giá (`/pricing`) và trang Checkout mà không cần sửa code.
+  - Form chia thành các tab trực quan: *Thông tin cơ bản*, *Quy mô & Hạn mức*, *Website & Thương hiệu*, *AI & Tự động hóa*, *OTA & Tài chính*.
+  - Mọi trường số đều có tùy chọn tick *"Không giới hạn (Unlimited)"* (lưu giá trị `-1`).
+  - Chọn `Công khai (Public)`: Tự động xuất hiện trên trang Bảng giá (`/pricing`) và trang Thanh toán mua gói (`/billing/checkout`) của toàn hệ thống.
 * **Tạo Gói Tùy Chỉnh Riêng Biệt (Custom / Private Plan)**:
-  - Bật tùy chọn `Gói riêng (Private Plan)`: Gói sẽ **không hiển thị** trên bảng giá chung.
-  - Cung cấp tính năng **Gán gói cước trực tiếp cho một khách hàng / workspace bất kỳ**: Super Admin chỉ cần chọn Workspace của khách hàng và chọn Gói tùy chỉnh này để kích hoạt.
-  - Sinh link đăng ký riêng (`https://digistay.vn/pricing/checkout?plan=custom-phuquoc&token=xxx`) gửi cho đối tác lớn thanh toán đúng mức giá đã đàm phán.
+  - Bật tùy chọn `Gói riêng (Private Plan)`: Gói sẽ **hoàn toàn ẩn** khỏi bảng giá chung để không ảnh hưởng khách lẻ.
+  - **Gán gói cước trực tiếp cho một khách hàng / workspace bất kỳ**: Super Admin chỉ cần vào chi tiết Workspace, chọn Gói tùy chỉnh này và bấm "Kích hoạt gói ngay".
+  - **Sinh liên kết thanh toán riêng**: Hệ thống sinh URL bảo mật gửi cho đối tác (ví dụ: `https://digistay.vn/billing/checkout?plan=custom-vinpearl-2026&token=xxx`), khách hàng mở link là thấy đúng tên gói, mức giá và danh sách đặc quyền đã đàm phán riêng để quét VietQR PayOS.
+* **Cơ chế Ghi đè Hạn mức Thủ công (Limit Overrides per Workspace)**:
+  - Super Admin có thể "thưởng" thêm cho một Workspace (ví dụ: cộng thêm +50 phòng, +100 lượt AI) mà không cần đổi gói của họ. Các hạn mức ghi đè sẽ được ưu tiên áp dụng.
 
 ---
 
