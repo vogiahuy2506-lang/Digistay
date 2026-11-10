@@ -25,6 +25,7 @@ interface JobRow {
 interface Status {
   checkedAt: string
   health: { version: string; schema: string; redis: string }
+  payos?: { configured: boolean; webhookUrl: string }
   problems: Problem[]
   alerts: { key: string; severity: string; title: string; firstSeenAt: string; lastSentAt: string | null; resolvedAt: string | null }[]
   alertRecipients: string[]
@@ -121,6 +122,39 @@ export default function SystemPage() {
   }, [load])
 
   const [actionMessage, setActionMessage] = React.useState('')
+  const [webhookStatus, setWebhookStatus] = React.useState<{ loading: boolean; message: string | null; error: boolean }>({
+    loading: false,
+    message: null,
+    error: false,
+  })
+
+  const confirmWebhook = async () => {
+    setWebhookStatus({ loading: true, message: null, error: false })
+    try {
+      const res = await fetch('/api/admin/system/confirm-webhook', { method: 'POST' })
+      const json = await res.json().catch(() => null)
+      if (res.ok && json?.success) {
+        setWebhookStatus({
+          loading: false,
+          message: `Đã xác nhận webhook với PayOS thành công! (Tài khoản: ${json.data?.accountName || json.data?.accountNumber || 'OK'})`,
+          error: false,
+        })
+      } else {
+        setWebhookStatus({
+          loading: false,
+          message: json?.error || 'Không xác nhận được webhook với PayOS',
+          error: true,
+        })
+      }
+    } catch {
+      setWebhookStatus({
+        loading: false,
+        message: 'Lỗi mạng khi kết nối PayOS',
+        error: true,
+      })
+    }
+  }
+
   /** Retry a failed plan invoice, or email an issued one again (POST /api/admin/plan-invoices/[id]). */
   const act = async (id: string, action: 'retry' | 'resend') => {
     setActionMessage(t('planInvoices.working'))
@@ -205,7 +239,36 @@ export default function SystemPage() {
                 <p className="text-muted">{t('health.alertRecipients')}</p>
                 <p className="text-fg">{status.alertRecipients.length ? status.alertRecipients.join(', ') : <span className="text-err">{t('health.noRecipients')}</span>}</p>
               </div>
+              <div>
+                <p className="text-muted">PayOS Bán gói</p>
+                <Pill tone={status.payos?.configured ? 'ok' : 'warn'}>
+                  {status.payos?.configured ? 'Đã cấu hình' : 'Chưa cấu hình (DIGISTAY_PAYOS_*)'}
+                </Pill>
+              </div>
             </div>
+            {status.payos?.configured && (
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line/60 pt-3 text-xs">
+                <div>
+                  <span className="text-muted">Webhook URL: </span>
+                  <code className="rounded bg-fg/[0.05] px-1.5 py-0.5 font-mono text-fg">{status.payos.webhookUrl}</code>
+                </div>
+                <div className="flex items-center gap-2">
+                  {webhookStatus.message && (
+                    <span className={`text-xs ${webhookStatus.error ? 'font-medium text-err' : 'font-medium text-ok'}`}>
+                      {webhookStatus.message}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    disabled={webhookStatus.loading}
+                    onClick={confirmWebhook}
+                    className="rounded-ctl border border-line bg-panel px-3 py-1 font-medium text-fg hover:bg-fg/[0.03] disabled:opacity-50"
+                  >
+                    {webhookStatus.loading ? 'Đang xác nhận…' : 'Xác nhận Webhook với PayOS'}
+                  </button>
+                </div>
+              </div>
+            )}
           </Section>
 
           <Section title={t('problems.title')} aside={<Pill tone={status.problems.length ? 'bad' : 'ok'}>{status.problems.length || t('problems.none')}</Pill>}>

@@ -8,6 +8,7 @@ import { prisma, prismaWithDeleted } from '@/lib/db'
 import { missingMigrations, redisState } from './health-checks'
 import { alertRecipients, findProblems } from './alerts'
 import { platformAdmin } from '@/lib/admin/guard'
+import { platformPayosConfigured, platformWebhookUrl } from '@/lib/billing/platform-payos'
 
 export const SYSTEM_JOBS = ['payos-reconcile', 'subscription-jobs', 'einvoice-jobs', 'email-outbox', 'purge-deleted', 'ops-alerts', 'backup'] as const
 const DAY = 24 * 60 * 60 * 1000
@@ -66,6 +67,10 @@ export async function systemStatus(now = new Date()) {
       version: process.env.APP_VERSION || 'dev',
       schema: missing === null ? 'unknown' : missing.length === 0 ? 'ok' : `missing ${missing.length}`,
       redis,
+    },
+    payos: {
+      configured: platformPayosConfigured(),
+      webhookUrl: platformWebhookUrl(),
     },
     problems,
     alerts,

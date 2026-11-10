@@ -1,4 +1,5 @@
 {
+  "Không xác nhận được webhook với PayOS": "Could not confirm webhook with PayOS",
   "Đã xảy ra lỗi khi lấy gợi ý giá": "An error occurred while fetching pricing suggestions",
   "Đã phân tích và cập nhật {0} gợi ý định giá": "Analyzed and updated {0} pricing suggestions",
   "Đã xảy ra lỗi khi tạo gợi ý giá": "An error occurred while generating pricing suggestions",
