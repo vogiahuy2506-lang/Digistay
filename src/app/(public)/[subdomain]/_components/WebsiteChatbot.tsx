@@ -13,6 +13,7 @@ import {
   ArrowRight,
 } from 'lucide-react'
 import { useLocale } from 'next-intl'
+import { useSiteHref } from './site-base'
 import type { ChatRoomCard } from '@/lib/ai/chatbot'
 
 interface ChatMessage {
@@ -32,6 +33,7 @@ interface WebsiteChatbotProps {
 export function WebsiteChatbot({ propertyId, hotelName }: WebsiteChatbotProps) {
   const locale = useLocale()
   const isEn = locale === 'en'
+  const siteHref = useSiteHref()
 
   const [isOpen, setIsOpen] = React.useState(false)
   const [isMinimized, setIsMinimized] = React.useState(false)
@@ -332,7 +334,7 @@ export function WebsiteChatbot({ propertyId, hotelName }: WebsiteChatbotProps) {
                               </div>
 
                               <a
-                                href={card.bookingUrl}
+                                href={siteHref(card.bookingPath || card.bookingUrl)}
                                 className="w-full py-1.5 px-3 rounded-lg bg-acc text-acc-fg font-medium text-xs flex items-center justify-center gap-1 hover:bg-acc/90 shadow-xs transition-colors"
                               >
                                 <span>{isEn ? 'Book this room now' : 'Đặt phòng này ngay'}</span>

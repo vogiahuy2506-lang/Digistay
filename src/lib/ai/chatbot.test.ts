@@ -78,5 +78,11 @@ describe('Hotel AI Chatbot Grounding & Logic', () => {
     expect(res.reply).toContain('Deluxe Ocean View')
     expect(res.reply).toContain('Family Suite')
   })
+
+  it('provides polite fallback when online booking is not available or paused', () => {
+    const pausedReply = `Dạ hiện khách sạn chưa mở nhận đặt trực tuyến qua website, quý khách vui lòng liên hệ hotline: **${MOCK_KB.phone}** để được phục vụ chu đáo nhất ạ!`
+    expect(pausedReply).toContain('chưa mở nhận đặt trực tuyến qua website')
+    expect(pausedReply).toContain(MOCK_KB.phone)
+  })
 })
 

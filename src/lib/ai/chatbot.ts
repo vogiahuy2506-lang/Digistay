@@ -335,13 +335,30 @@ export async function answerHotelChatbotQuestion(params: {
   // Check if visitor is asking to find or book a room
   const parsedStay = parseStayDatesFromText(params.message)
   if (parsedStay.isRoomInquiry) {
-    const { cards } = await searchAvailableRoomsForChat(params.propertyId, {
+    const { cards, isOnlineBookingPaused } = await searchAvailableRoomsForChat(params.propertyId, {
       checkIn: parsedStay.checkIn,
       checkOut: parsedStay.checkOut,
       adults: parsedStay.adults,
       children: parsedStay.children,
       locale: isEn ? 'en' : 'vi',
     })
+
+    if (isOnlineBookingPaused) {
+      const phone = kb.phone || 'hotline'
+      const reply = isEn
+        ? `Our hotel has not opened online booking on the website yet. Please contact our hotline at **${phone}** for the best assistance and room reservations!`
+        : `Dạ hiện khách sạn chưa mở nhận đặt trực tuyến qua website, quý khách vui lòng liên hệ hotline: **${phone}** để được phục vụ chu đáo nhất ạ!`
+
+      const suggestions = isEn
+        ? ['What is the check-in time?', 'Are pets allowed?', 'Breakfast options?']
+        : ['Giờ nhận và trả phòng?', 'Khách sạn có cho mang thú cưng không?', 'Thực đơn ăn uống?']
+
+      return {
+        reply,
+        suggestions,
+        modelUsed: 'live-inventory-assistant',
+      }
+    }
 
     if (cards.length > 0) {
       const checkInFormatted = parsedStay.checkIn.split('-').reverse().join('/')

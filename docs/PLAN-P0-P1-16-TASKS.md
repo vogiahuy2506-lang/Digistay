@@ -206,16 +206,16 @@ Tài liệu này phân rã chi tiết yêu cầu kỹ thuật, giải pháp, fil
 
 ---
 
-### Task 52 [P1]: Chatbot AI trả lời đúng phòng trống theo thời gian thực
-* **Hiện trạng**: Hỏi "Cuối tuần này (14-15/11) còn phòng cho 2 người lớn không" -> Bot trả lời sai "đã hết phòng" và parse nhầm ngày thành 13-15/11, trong khi thực tế khách sạn còn phòng trống.
-* **Giải pháp kỹ thuật**:
-  1. Đồng bộ hàm truy vấn tồn kho giữa Chatbot và Booking Engine: Sử dụng chung hàm `findAvailableRooms(propertyId, checkIn, checkOut, adults)`.
-  2. Cải thiện bộ trích xuất ngày tiếng Việt trong Chatbot: Nhận diện chuẩn "cuối tuần này", "thứ bảy tuần sau", "14-15/11" (check-in 14/11, check-out 15/11).
-  3. Nếu cơ sở chưa kích hoạt nhận đặt phòng online: Bot phản hồi lịch sự *"Dạ hiện khách sạn chưa mở nhận đặt trực tuyến qua website, quý khách vui lòng liên hệ hotline: [SĐT] để được phục vụ chu đáo nhất ạ!"*.
-  4. Đính kèm nút/link đặt phòng trực tiếp trong tin nhắn bot.
+### Task 52 [P1]: Chatbot AI trả lời đúng phòng trống theo thời gian thực [ĐÃ HOÀN THÀNH 10/11/2026]
+* **Hiện trạng & Lỗi đã xử lý**:
+  1. Hỏi "Cuối tuần này (14-15/11) còn phòng cho 2 người lớn không" -> Bộ trích xuất ngày bị match trước bởi từ khóa "cuối tuần" nhảy sang Thứ 6 (13/11) đến Chủ Nhật (15/11) thay vì 14-15/11, và regex cũ thiếu pattern ngày rút gọn `14-15/11`. Đã nâng cấp parser ưu tiên các pattern ngày tường minh (`14-15/11`, `14 đến 15/11`, `14 - 15 tháng 11`, `thứ 7 tuần sau`, `thứ bảy tuần sau`) trước khi xét từ khóa tương đối ("cuối tuần", "ngày mai").
+  2. Đồng bộ truy vấn tồn kho thời gian thực với Booking Engine qua `roomsTakenByType` và định giá chuẩn xác `quoteStay`.
+  3. Xử lý trường hợp cơ sở chưa kích hoạt nhận đặt phòng online (chưa xuất bản web, hết hạn gói khóa read-only, hoặc chưa có phòng): Bot phản hồi lịch thiệp *"Dạ hiện khách sạn chưa mở nhận đặt trực tuyến qua website, quý khách vui lòng liên hệ hotline: [SĐT] để được phục vụ chu đáo nhất ạ!"*.
+  4. Chuẩn hóa link đặt phòng trực tiếp trên thẻ phòng (`roomCards`): Sử dụng tham số chuẩn `room=${rt.id}` (và `roomTypeId`) kết hợp hook `useSiteHref()` điều hướng chính xác vào bước điền thông tin đặt phòng trên cả subdomain riêng lẫn domain chính.
 * **File can thiệp**:
-  - `src/lib/ai/chatbot.ts`
-  - `src/app/api/public/chatbot/message/route.ts`
+  - `src/lib/ai/room-finder.ts` & `src/lib/ai/room-finder.test.ts`
+  - `src/lib/ai/chatbot.ts` & `src/lib/ai/chatbot.test.ts`
+  - `src/app/(public)/[subdomain]/_components/WebsiteChatbot.tsx`
 
 ---
 

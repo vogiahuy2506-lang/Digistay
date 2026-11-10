@@ -3,6 +3,7 @@ import { ROOM_RATE_INCLUDE, propertyRateDefaults } from '@/lib/pricing/rates'
 import { roomsTakenByType } from '@/lib/bookings/occupancy'
 import { quoteStay, ratesFrom } from '@/lib/pricing/quote'
 import { localized } from '@/lib/i18n/content'
+import { isWorkspaceLocked } from '@/lib/billing/guard'
 
 export interface ChatRoomCard {
   id: string
@@ -16,6 +17,7 @@ export interface ChatRoomCard {
   totalPrice: number
   numNights: number
   bookingUrl: string
+  bookingPath?: string
 }
 
 export interface ExtractedStayQuery {
@@ -47,94 +49,237 @@ export function parseStayDatesFromText(text: string, referenceDate = new Date())
 
   // Detection triggers
   const roomInquiryKeywords = [
-    'phòng', 'đặt phòng', 'thuê phòng', 'tìm phòng', 'còn phòng', 'giá phòng',
-    'room', 'book', 'booking', 'stay', 'available', 'reservation', 'cuối tuần',
+    'phòng', 'đặt phòng', 'thuê phòng', 'tìm phòng', 'còn phòng', 'giá phòng', 'hết phòng',
+    'trống', 'còn chỗ', 'chỗ ở', 'nghỉ dưỡng', 'check in', 'check-in', 'checkin', 'checkout', 'check out',
+    'room', 'book', 'booking', 'stay', 'available', 'reservation', 'cuối tuần', 'weekend',
   ]
-  const isRoomInquiry = roomInquiryKeywords.some((kw) => q.includes(kw))
+  let isRoomInquiry = roomInquiryKeywords.some((kw) => q.includes(kw))
+
+  const refYear = referenceDate.getFullYear()
+  const refMonth = referenceDate.getMonth()
+  const refDay = referenceDate.getDate()
+  const dayOfWeek = referenceDate.getDay() // 0 = Sun, 1 = Mon, ..., 6 = Sat
 
   let checkInDate = addDays(referenceDate, 1)
   let checkOutDate = addDays(checkInDate, 1)
   let hasExplicitDates = false
 
-  // 1. "hôm nay", "tối nay", "today", "tonight"
-  if (q.includes('hôm nay') || q.includes('tối nay') || q.includes('today') || q.includes('tonight')) {
-    checkInDate = referenceDate
-    checkOutDate = addDays(referenceDate, 1)
-    hasExplicitDates = true
-  }
-  // 2. "ngày mai", "tomorrow"
-  else if (q.includes('ngày mai') || q.includes('mai') || q.includes('tomorrow')) {
-    checkInDate = addDays(referenceDate, 1)
-    checkOutDate = addDays(referenceDate, 2)
-    hasExplicitDates = true
-  }
-  // 3. "cuối tuần sau", "next weekend"
-  else if (q.includes('cuối tuần sau') || q.includes('next weekend')) {
-    const dayOfWeek = referenceDate.getDay() // 0 = Sun, 5 = Fri, 6 = Sat
-    const daysUntilNextFriday = ((5 - dayOfWeek + 7) % 7 || 7) + 7
-    checkInDate = addDays(referenceDate, daysUntilNextFriday)
-    checkOutDate = addDays(checkInDate, 2)
-    hasExplicitDates = true
-  }
-  // 4. "cuối tuần này", "cuối tuần", "this weekend", "weekend"
-  else if (q.includes('cuối tuần') || q.includes('weekend')) {
-    const dayOfWeek = referenceDate.getDay()
-    let daysUntilFriday = (5 - dayOfWeek + 7) % 7
-    if (dayOfWeek === 5) daysUntilFriday = 0 // Today is Friday
-    if (dayOfWeek === 6) daysUntilFriday = -1 // Today is Saturday
+  // Regex Patterns for Explicit Date Ranges (evaluated first to avoid keywords overriding explicit dates)
+  // Pattern 1: Explicit 2 dates with months (e.g., "14/11 - 15/11", "từ 14/11 đến 15/11", "14/11/2026 - 15/11/2026")
+  const p1 = /(?:^|[\s(\[])(?:từ\s*|ngày\s*)?(\d{1,2})[/-](\d{1,2})(?:[/-](\d{4}))?\s*(?:đến|tới|to|-)\s*(\d{1,2})[/-](\d{1,2})(?:[/-](\d{4}))?/
+  // Pattern 2: Shared month range (e.g., "14-15/11", "14 - 15/11", "14 đến 15/11", "(14-15/11)")
+  const p2 = /(?:^|[\s(\[])(?:từ\s*|ngày\s*)?(\d{1,2})\s*(?:đến|tới|to|-)\s*(\d{1,2})[/-](\d{1,2})(?:[/-](\d{4}))?/
+  // Pattern 3: Shared month with "tháng" (e.g., "14-15 tháng 11", "14 đến 15 tháng 11")
+  const p3 = /(?:^|[\s(\[])(?:từ\s*|ngày\s*)?(\d{1,2})\s*(?:đến|tới|to|-)\s*(\d{1,2})\s*(?:tháng|thg)\s*(\d{1,2})(?:\s*(?:năm)?\s*(\d{4}))?/
+  // Pattern 4: Both dates have "tháng" (e.g., "30 tháng 11 đến 2 tháng 12")
+  const p4 = /(?:^|[\s(\[])(?:từ\s*|ngày\s*)?(\d{1,2})\s*(?:tháng|thg)\s*(\d{1,2})\s*(?:đến|tới|to|-)\s*(\d{1,2})\s*(?:tháng|thg)\s*(\d{1,2})(?:\s*(?:năm)?\s*(\d{4}))?/
 
-    const friday = addDays(referenceDate, daysUntilFriday)
-    checkInDate = dayOfWeek === 6 ? referenceDate : friday
-    checkOutDate = addDays(friday, 2) // Sunday
-    if (checkOutDate <= checkInDate) {
-      checkOutDate = addDays(checkInDate, 1)
+  const m1 = q.match(p1)
+  const m2 = q.match(p2)
+  const m3 = q.match(p3)
+  const m4 = q.match(p4)
+
+  if (m1) {
+    const y1 = m1[3] ? parseInt(m1[3], 10) : refYear
+    const y2 = m1[6] ? parseInt(m1[6], 10) : (m1[3] ? parseInt(m1[3], 10) : refYear)
+    const d1 = parseInt(m1[1], 10)
+    const mo1 = parseInt(m1[2], 10) - 1
+    const d2 = parseInt(m1[4], 10)
+    const mo2 = parseInt(m1[5], 10) - 1
+
+    let parsedIn = new Date(y1, mo1, d1)
+    let parsedOut = new Date(y2, mo2, d2)
+    if (!m1[3] && parsedIn < new Date(refYear, refMonth, refDay)) {
+      parsedIn = new Date(refYear + 1, mo1, d1)
+      parsedOut = new Date(refYear + 1, mo2, d2)
     }
-    hasExplicitDates = true
-  }
-  // 5. Explicit date range regex: "từ 15/11 đến 17/11" or "15/11 - 17/11" or "15/11"
-  else {
-    const rangeMatch = q.match(/(\d{1,2})[/-](\d{1,2})(?:[/-](\d{4}))?\s*(?:đến|-|to)\s*(\d{1,2})[/-](\d{1,2})(?:[/-](\d{4}))?/)
-    if (rangeMatch) {
-      const year = referenceDate.getFullYear()
-      const d1 = parseInt(rangeMatch[1], 10)
-      const m1 = parseInt(rangeMatch[2], 10) - 1
-      const y1 = rangeMatch[3] ? parseInt(rangeMatch[3], 10) : year
+    if (!isNaN(parsedIn.getTime()) && !isNaN(parsedOut.getTime())) {
+      checkInDate = parsedIn
+      checkOutDate = parsedOut > parsedIn ? parsedOut : addDays(parsedIn, 1)
+      hasExplicitDates = true
+      isRoomInquiry = true
+    }
+  } else if (m2) {
+    const year = m2[4] ? parseInt(m2[4], 10) : refYear
+    const mo = parseInt(m2[3], 10) - 1
+    const d1 = parseInt(m2[1], 10)
+    const d2 = parseInt(m2[2], 10)
 
-      const d2 = parseInt(rangeMatch[4], 10)
-      const m2 = parseInt(rangeMatch[5], 10) - 1
-      const y2 = rangeMatch[6] ? parseInt(rangeMatch[6], 10) : year
+    let parsedIn = new Date(year, mo, d1)
+    let parsedOut = new Date(year, mo, d2)
+    if (!m2[4] && parsedIn < new Date(refYear, refMonth, refDay)) {
+      parsedIn = new Date(refYear + 1, mo, d1)
+      parsedOut = new Date(refYear + 1, mo, d2)
+    }
+    if (!isNaN(parsedIn.getTime()) && !isNaN(parsedOut.getTime())) {
+      checkInDate = parsedIn
+      checkOutDate = parsedOut > parsedIn ? parsedOut : addDays(parsedIn, 1)
+      hasExplicitDates = true
+      isRoomInquiry = true
+    }
+  } else if (m3) {
+    const year = m3[4] ? parseInt(m3[4], 10) : refYear
+    const mo = parseInt(m3[3], 10) - 1
+    const d1 = parseInt(m3[1], 10)
+    const d2 = parseInt(m3[2], 10)
 
-      const parsedIn = new Date(y1, m1, d1)
-      const parsedOut = new Date(y2, m2, d2)
-      if (!isNaN(parsedIn.getTime()) && !isNaN(parsedOut.getTime()) && parsedOut > parsedIn) {
-        checkInDate = parsedIn
-        checkOutDate = parsedOut
+    let parsedIn = new Date(year, mo, d1)
+    let parsedOut = new Date(year, mo, d2)
+    if (!m3[4] && parsedIn < new Date(refYear, refMonth, refDay)) {
+      parsedIn = new Date(refYear + 1, mo, d1)
+      parsedOut = new Date(refYear + 1, mo, d2)
+    }
+    if (!isNaN(parsedIn.getTime()) && !isNaN(parsedOut.getTime())) {
+      checkInDate = parsedIn
+      checkOutDate = parsedOut > parsedIn ? parsedOut : addDays(parsedIn, 1)
+      hasExplicitDates = true
+      isRoomInquiry = true
+    }
+  } else if (m4) {
+    const year = m4[5] ? parseInt(m4[5], 10) : refYear
+    const d1 = parseInt(m4[1], 10)
+    const mo1 = parseInt(m4[2], 10) - 1
+    const d2 = parseInt(m4[3], 10)
+    const mo2 = parseInt(m4[4], 10) - 1
+
+    let parsedIn = new Date(year, mo1, d1)
+    let parsedOut = new Date(year, mo2, d2)
+    if (!m4[5] && parsedIn < new Date(refYear, refMonth, refDay)) {
+      parsedIn = new Date(refYear + 1, mo1, d1)
+      parsedOut = new Date(refYear + 1, mo2, d2)
+    }
+    if (!isNaN(parsedIn.getTime()) && !isNaN(parsedOut.getTime())) {
+      checkInDate = parsedIn
+      checkOutDate = parsedOut > parsedIn ? parsedOut : addDays(parsedIn, 1)
+      hasExplicitDates = true
+      isRoomInquiry = true
+    }
+  } else {
+    // Single explicit date
+    const pSingle1 = /(?:^|[\s(\[])(?:từ\s*|ngày\s*|vào\s*|tối\s*|đêm\s*)?(\d{1,2})[/-](\d{1,2})(?:[/-](\d{4}))?/
+    const pSingle2 = /(?:^|[\s(\[])(?:từ\s*|ngày\s*|vào\s*|tối\s*|đêm\s*)?(\d{1,2})\s*(?:tháng|thg)\s*(\d{1,2})(?:\s*(?:năm)?\s*(\d{4}))?/
+
+    const s1 = q.match(pSingle1)
+    const s2 = q.match(pSingle2)
+
+    if (s1) {
+      const year = s1[3] ? parseInt(s1[3], 10) : refYear
+      const d = parseInt(s1[1], 10)
+      const mo = parseInt(s1[2], 10) - 1
+      let parsed = new Date(year, mo, d)
+      if (!s1[3] && parsed < new Date(refYear, refMonth, refDay)) {
+        parsed = new Date(refYear + 1, mo, d)
+      }
+      if (!isNaN(parsed.getTime())) {
+        checkInDate = parsed
+        checkOutDate = addDays(parsed, 1)
         hasExplicitDates = true
+        isRoomInquiry = true
+      }
+    } else if (s2) {
+      const year = s2[3] ? parseInt(s2[3], 10) : refYear
+      const d = parseInt(s2[1], 10)
+      const mo = parseInt(s2[2], 10) - 1
+      let parsed = new Date(year, mo, d)
+      if (!s2[3] && parsed < new Date(refYear, refMonth, refDay)) {
+        parsed = new Date(refYear + 1, mo, d)
+      }
+      if (!isNaN(parsed.getTime())) {
+        checkInDate = parsed
+        checkOutDate = addDays(parsed, 1)
+        hasExplicitDates = true
+        isRoomInquiry = true
       }
     } else {
-      const singleDateMatch = q.match(/(?:ngày|vào|on)?\s*(\d{1,2})[/-](\d{1,2})(?:[/-](\d{4}))?/)
-      if (singleDateMatch) {
-        const year = referenceDate.getFullYear()
-        const d = parseInt(singleDateMatch[1], 10)
-        const m = parseInt(singleDateMatch[2], 10) - 1
-        const y = singleDateMatch[3] ? parseInt(singleDateMatch[3], 10) : year
-        const parsed = new Date(y, m, d)
-        if (!isNaN(parsed.getTime())) {
-          checkInDate = parsed
-          checkOutDate = addDays(parsed, 1)
-          hasExplicitDates = true
+      // Relative date phrases
+      if (q.includes('cuối tuần sau') || q.includes('next weekend')) {
+        const daysUntilNextFriday = ((5 - dayOfWeek + 7) % 7 || 7) + 7
+        checkInDate = addDays(referenceDate, daysUntilNextFriday)
+        checkOutDate = addDays(checkInDate, 2)
+        hasExplicitDates = true
+      } else if (
+        q.includes('thứ bảy tuần sau') ||
+        q.includes('thứ 7 tuần sau') ||
+        q.includes('t7 tuần sau') ||
+        q.includes('next saturday')
+      ) {
+        const daysUntilNextSat = ((6 - dayOfWeek + 7) % 7 || 7) + 7
+        checkInDate = addDays(referenceDate, daysUntilNextSat)
+        checkOutDate = addDays(checkInDate, 1)
+        hasExplicitDates = true
+      } else if (
+        q.includes('thứ sáu tuần sau') ||
+        q.includes('thứ 6 tuần sau') ||
+        q.includes('t6 tuần sau') ||
+        q.includes('next friday')
+      ) {
+        const daysUntilNextFri = ((5 - dayOfWeek + 7) % 7 || 7) + 7
+        checkInDate = addDays(referenceDate, daysUntilNextFri)
+        checkOutDate = addDays(checkInDate, 1)
+        hasExplicitDates = true
+      } else if (
+        q.includes('thứ bảy tuần này') ||
+        q.includes('thứ 7 tuần này') ||
+        q.includes('t7 tuần này') ||
+        q.includes('this saturday')
+      ) {
+        const daysUntilSat = (6 - dayOfWeek + 7) % 7
+        checkInDate = addDays(referenceDate, daysUntilSat === 0 ? 0 : daysUntilSat)
+        checkOutDate = addDays(checkInDate, 1)
+        hasExplicitDates = true
+      } else if (
+        q.includes('thứ sáu tuần này') ||
+        q.includes('thứ 6 tuần này') ||
+        q.includes('t6 tuần này') ||
+        q.includes('this friday')
+      ) {
+        const daysUntilFri = (5 - dayOfWeek + 7) % 7
+        checkInDate = addDays(referenceDate, daysUntilFri === 0 ? 0 : daysUntilFri)
+        checkOutDate = addDays(checkInDate, 1)
+        hasExplicitDates = true
+      } else if (q.includes('cuối tuần') || q.includes('weekend')) {
+        let daysUntilFriday = (5 - dayOfWeek + 7) % 7
+        if (dayOfWeek === 5) daysUntilFriday = 0 // Today is Friday
+        if (dayOfWeek === 6) daysUntilFriday = -1 // Today is Saturday
+
+        const friday = addDays(referenceDate, daysUntilFriday)
+        checkInDate = dayOfWeek === 6 ? referenceDate : friday
+        checkOutDate = addDays(friday, 2) // Sunday
+        if (checkOutDate <= checkInDate) {
+          checkOutDate = addDays(checkInDate, 1)
         }
+        hasExplicitDates = true
+      } else if (q.includes('ngày mốt') || q.includes('ngày kia') || q.includes('the day after tomorrow')) {
+        checkInDate = addDays(referenceDate, 2)
+        checkOutDate = addDays(referenceDate, 3)
+        hasExplicitDates = true
+      } else if (q.includes('ngày mai') || q.includes('mai') || q.includes('tomorrow')) {
+        checkInDate = addDays(referenceDate, 1)
+        checkOutDate = addDays(referenceDate, 2)
+        hasExplicitDates = true
+      } else if (q.includes('hôm nay') || q.includes('tối nay') || q.includes('today') || q.includes('tonight')) {
+        checkInDate = referenceDate
+        checkOutDate = addDays(referenceDate, 1)
+        hasExplicitDates = true
       }
     }
   }
 
   // Adults count extraction
   let adults = 2
-  const adultsMatch = q.match(/(\d+)\s*(?:người lớn|người|khách|bạn|adults?|guests?|pax)/)
+  const adultsMatch = q.match(/(\d+)\s*(?:người lớn|ng lớn|nguoi lon|lớn|người|khách|bạn|adults?|guests?|pax)/)
   if (adultsMatch) {
     const count = parseInt(adultsMatch[1], 10)
     if (count > 0 && count <= 20) adults = count
-  } else if (q.includes('phòng đơn') || q.includes('1 người') || q.includes('cho mình tôi') || q.includes('single')) {
+  } else if (
+    q.includes('phòng đơn') ||
+    q.includes('1 người') ||
+    q.includes('một người') ||
+    q.includes('cho mình tôi') ||
+    q.includes('cho mình') ||
+    q.includes('một mình') ||
+    q.includes('single')
+  ) {
     adults = 1
   } else if (q.includes('gia đình') || q.includes('family')) {
     adults = 4
@@ -142,7 +287,7 @@ export function parseStayDatesFromText(text: string, referenceDate = new Date())
 
   // Children count extraction
   let children = 0
-  const childrenMatch = q.match(/(\d+)\s*(?:trẻ em|trẻ nhỏ|em bé|bé|children|kids?)/)
+  const childrenMatch = q.match(/(\d+)\s*(?:trẻ em|trẻ nhỏ|em bé|bé|nhỏ|trẻ|children|kids?)/)
   if (childrenMatch) {
     const count = parseInt(childrenMatch[1], 10)
     if (count >= 0 && count <= 10) children = count
@@ -171,7 +316,7 @@ export async function searchAvailableRoomsForChat(
     locale?: 'vi' | 'en'
     subdomain?: string
   }
-): Promise<{ cards: ChatRoomCard[]; totalAvailable: number }> {
+): Promise<{ cards: ChatRoomCard[]; totalAvailable: number; isOnlineBookingPaused?: boolean }> {
   try {
     const checkIn = new Date(`${params.checkIn}T00:00:00+07:00`)
     const checkOut = new Date(`${params.checkOut}T00:00:00+07:00`)
@@ -190,7 +335,7 @@ export async function searchAvailableRoomsForChat(
           property: { isActive: true },
         },
         include: {
-          property: { select: { planLockedAt: true, subdomain: true } },
+          property: { select: { planLockedAt: true, subdomain: true, workspaceId: true } },
           images: {
             where: { isPrimary: true },
             take: 1,
@@ -206,11 +351,33 @@ export async function searchAvailableRoomsForChat(
       propertyRateDefaults(prisma, propertyId),
       prisma.property.findUnique({
         where: { id: propertyId },
-        select: { subdomain: true },
+        select: {
+          subdomain: true,
+          isActive: true,
+          planLockedAt: true,
+          workspaceId: true,
+          websiteSettings: { select: { isPublished: true } },
+        },
       }),
     ])
 
-    const subdomain = params.subdomain || property?.subdomain || ''
+    // Check if hotel exists, is active, or has an overage plan lock
+    if (!property || !property.isActive || property.planLockedAt) {
+      return { cards: [], totalAvailable: 0, isOnlineBookingPaused: true }
+    }
+
+    // Check workspace lock (e.g. trial/subscription expired past grace period)
+    const locked = await isWorkspaceLocked(property.workspaceId).catch(() => false)
+    if (locked) {
+      return { cards: [], totalAvailable: 0, isOnlineBookingPaused: true }
+    }
+
+    // If hotel has no active room types with pricing configured
+    if (roomTypes.length === 0) {
+      return { cards: [], totalAvailable: 0, isOnlineBookingPaused: true }
+    }
+
+    const subdomain = params.subdomain || property.subdomain || ''
     const cards: ChatRoomCard[] = []
     let totalAvailable = 0
 
@@ -236,6 +403,7 @@ export async function searchAvailableRoomsForChat(
       })
 
       const queryParams = new URLSearchParams({
+        room: rt.id,
         roomTypeId: rt.id,
         checkIn: params.checkIn,
         checkOut: params.checkOut,
@@ -244,9 +412,10 @@ export async function searchAvailableRoomsForChat(
       }).toString()
 
       // Direct booking URL on the hotel's site
+      const bookingPath = `/dat-phong?${queryParams}`
       const bookingUrl = subdomain
         ? `/${subdomain}/dat-phong?${queryParams}`
-        : `/search?${queryParams}`
+        : `/dat-phong?${queryParams}`
 
       cards.push({
         id: rt.id,
@@ -260,6 +429,7 @@ export async function searchAvailableRoomsForChat(
         totalPrice: quote.total,
         numNights: quote.nights,
         bookingUrl,
+        bookingPath,
       })
     }
 
