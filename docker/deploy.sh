@@ -53,7 +53,7 @@ if [[ "$HEAD_SHA" != "$SHA" ]]; then
   exit 1
 fi
 
-for f in .env .env.production; do
+for f in .env; do
   if [[ ! -f "$f" ]]; then
     log "FATAL: $APP_DIR/$f is missing"
     exit 1
