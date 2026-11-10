@@ -878,5 +878,13 @@
   "Mô tả không được quá 4000 ký tự": "Description must not exceed 4000 characters",
   "Hướng dẫn chỉ đường không được quá 2000 ký tự": "Directions guide must not exceed 2000 characters",
   "Giờ nhận phòng không hợp lệ (HH:mm)": "Invalid check-in time (HH:mm)",
-  "Giờ trả phòng không hợp lệ (HH:mm)": "Invalid check-out time (HH:mm)"
+  "Giờ trả phòng không hợp lệ (HH:mm)": "Invalid check-out time (HH:mm)",
+  "Vui lòng chọn hình thức thanh toán khi thu tiền": "Please select a payment method when collecting payment",
+  "Bắt buộc ghi rõ lý do công nợ khi trả phòng còn nợ tiền": "A debt reason is required when checking out with an outstanding balance",
+  "Không thể xác nhận đơn đặt phòng đã hủy": "Cannot confirm a cancelled booking",
+  "Đơn đặt phòng đang trong kỳ lưu trú hoặc đã hoàn thành": "The booking is currently in-stay or already completed",
+  "Lỗi gửi email xác nhận": "Error sending confirmation email",
+  "Đã xác nhận đơn đặt phòng và gửi email cho khách": "Booking confirmed and confirmation email sent to guest",
+  "Đã xác nhận đơn đặt phòng thành công": "Booking confirmed successfully",
+  "Lỗi khi xác nhận đơn đặt phòng": "Error confirming booking"
 }

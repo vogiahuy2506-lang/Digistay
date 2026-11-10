@@ -1,5 +1,6 @@
 import { PrismaClient, BedType, WorkspaceRole } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import { seedDemoHotel } from '../scripts/seed-demo-hotel'
 
 const prisma = new PrismaClient()
 
@@ -436,6 +437,9 @@ async function main() {
   }
 
   console.log('Added amenities to property')
+
+  // Seed comprehensive demo hotel (khach-san-demo.digistay.vn)
+  await seedDemoHotel()
 
   console.log('Seed completed!')
 }

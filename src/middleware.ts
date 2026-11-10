@@ -27,6 +27,11 @@ export async function middleware(request: NextRequest) {
   const root = rootDomain()
   const sub = subdomainOf(host, root)
 
+  // Static files in /public (images, media, fonts, icons) must be served directly, not rewritten to hotel site pages
+  if (/\.(?:png|jpg|jpeg|gif|webp|svg|ico|mp4|webm|woff2?|ttf|css|js|map)$/i.test(path)) {
+    return NextResponse.next()
+  }
+
   if (sub) {
     const { locale, rest } = splitLocale(path)
     return toSite(request, `/${sub}${rest === '/' ? '' : rest}`, locale, '', rest)

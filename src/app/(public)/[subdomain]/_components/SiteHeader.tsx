@@ -32,7 +32,15 @@ export function SiteHeader({ property, sections, onHome = true }: Props) {
         <SiteLink path="/" className="min-w-0 shrink flex items-center gap-2.5 sm:gap-3 focus:outline-none focus-visible:underline">
           {property.logo && (
             <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg overflow-hidden border border-line bg-page shrink-0 shadow-sm">
-              <img src={property.logo} alt={property.name} className="w-full h-full object-contain p-0.5" />
+              <img
+                src={property.logo}
+                alt={property.name}
+                className="w-full h-full object-contain p-0.5"
+                onError={(e) => {
+                  const parent = e.currentTarget.parentElement
+                  if (parent) parent.style.display = 'none'
+                }}
+              />
             </div>
           )}
           <div className="min-w-0">

@@ -28,6 +28,18 @@ describe('middleware (property subdomains)', () => {
       expect(res.headers.get('location')).toBeNull()
     }
   })
+
+  it('does not rewrite static public assets on hotel subdomains', async () => {
+    for (const url of [
+      'https://khach-san-demo.digistay.vn/marketing/logo.png',
+      'https://khach-san-demo.digistay.vn/icon.png',
+      'https://khach-san-demo.digistay.vn/marketing/hero-hoi-an-1280.jpg',
+    ]) {
+      const res = await run(url)
+      expect(res.headers.get('x-middleware-rewrite')).toBeNull()
+      expect(res.headers.get('x-middleware-next')).toBe('1')
+    }
+  })
 })
 
 describe('middleware (hotel site language)', () => {
