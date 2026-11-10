@@ -156,7 +156,7 @@ describe('Dynamic Plans Engine', () => {
   })
 
   it('filters private plans when includePrivate is false', async () => {
-    vi.mocked(prisma.platformPlan.findMany).mockImplementation(async (args?: any) => {
+    (vi.mocked(prisma.platformPlan.findMany) as any).mockImplementation(async (args?: any) => {
       if (args?.where?.isPublic === true) {
         return [
           { id: 'starter', name: 'Starter', price: 199_000, isPublic: true, isActive: true },

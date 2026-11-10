@@ -9,6 +9,8 @@ import { missingMigrations, redisState } from './health-checks'
 import { alertRecipients, findProblems } from './alerts'
 import { platformAdmin } from '@/lib/admin/guard'
 import { platformPayosConfigured, platformWebhookUrl } from '@/lib/billing/platform-payos'
+import os from 'os'
+import fs from 'fs'
 
 export const SYSTEM_JOBS = ['payos-reconcile', 'subscription-jobs', 'einvoice-jobs', 'email-outbox', 'purge-deleted', 'ops-alerts', 'backup'] as const
 const DAY = 24 * 60 * 60 * 1000
@@ -61,8 +63,64 @@ export async function systemStatus(now = new Date()) {
     }),
   ])
 
+  // Hardware & OS metrics
+  let disk = { totalGb: 0, usedGb: 0, freeGb: 0, percent: 0 }
+  try {
+    const s = fs.statfsSync('.')
+    const totalGb = Math.round((s.blocks * s.bsize) / (1024 ** 3))
+    const freeGb = Math.round((s.bfree * s.bsize) / (1024 ** 3))
+    const usedGb = Math.max(0, totalGb - freeGb)
+    const percent = totalGb > 0 ? Math.round((usedGb / totalGb) * 100) : 0
+    disk = { totalGb, usedGb, freeGb, percent }
+  } catch {
+    // Non-fatal
+  }
+
+  const memory = {
+    totalMb: Math.round(os.totalmem() / (1024 * 1024)),
+    freeMb: Math.round(os.freemem() / (1024 * 1024)),
+    usedMb: Math.round((os.totalmem() - os.freemem()) / (1024 * 1024)),
+    percent: Math.round(((os.totalmem() - os.freemem()) / os.totalmem()) * 100),
+  }
+
+  const cpu = {
+    cores: os.cpus().length,
+    model: os.cpus()[0]?.model || 'Processor',
+    loadAvg: os.loadavg(),
+  }
+
+  const uptime = Math.round(process.uptime())
+
+  // Database metrics
+  let dbMetrics = {
+    size: 'N/A',
+    activeConnections: 1,
+  }
+  try {
+    const [sizeRow, connRow] = await Promise.all([
+      prisma.$queryRaw<{ size: string }[]>`SELECT pg_size_pretty(pg_database_size(current_database())) as size`.catch(() => null),
+      prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) as count FROM pg_stat_activity WHERE datname = current_database()`.catch(() => null),
+    ])
+    if (sizeRow && sizeRow[0]?.size) {
+      dbMetrics.size = sizeRow[0].size
+    }
+    if (connRow && connRow[0]?.count != null) {
+      dbMetrics.activeConnections = Number(connRow[0].count)
+    }
+  } catch {
+    // Non-fatal
+  }
+
   return {
     checkedAt: now,
+    hardware: {
+      disk,
+      memory,
+      cpu,
+      uptimeSeconds: uptime,
+      nodeVersion: process.version,
+    },
+    database: dbMetrics,
     health: {
       version: process.env.APP_VERSION || 'dev',
       schema: missing === null ? 'unknown' : missing.length === 0 ? 'ok' : `missing ${missing.length}`,

@@ -926,5 +926,7 @@
   "Không thể xóa gói cốt lõi của hệ thống ({0}). Bạn có thể chuyển trạng thái sang \"Tạm dừng\" nếu không muốn bán nữa.": "Cannot delete core system plan ({0}). You can set its status to \"Inactive\" instead.",
   "Không thể xóa gói \"{0}\" vì hiện có {1} workspace đang sử dụng. Hãy chuyển các workspace sang gói khác trước khi xóa.": "Cannot delete plan \"{0}\" because {1} workspace(s) are currently using it. Please switch those workspaces to another plan before deleting.",
   "Đã xóa gói \"{0}\" thành công.": "Plan \"{0}\" deleted successfully.",
-  "Không tìm thấy gói \"{0}\" để xóa.": "Plan \"{0}\" not found to delete."
+  "Không tìm thấy gói \"{0}\" để xóa.": "Plan \"{0}\" not found to delete.",
+  "Mã tiến trình không hợp lệ": "Invalid job name",
+  "Lỗi khi kích hoạt tiến trình": "Error triggering the job"
 }
