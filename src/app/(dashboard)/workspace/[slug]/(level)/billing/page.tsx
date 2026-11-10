@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { Alert, AlertDescription, Badge, Button, Loading } from '@/components/ui'
 import { TitleBlock } from '@/components/layout'
@@ -15,6 +15,7 @@ import { PurchaseDialog } from './purchase-dialog'
 import { planName, vnDate, type Billing, type BillingData, type ChangeKind, type ChangeView, type LimitKey, type State } from './types'
 import { NoAccess } from '@/components/payment/no-access'
 import { useCan } from '@/components/layout/workspace-context'
+import { routes } from '@/lib/utils/routes'
 
 const STATE_TONE: Record<State, 'success' | 'warning' | 'danger' | 'secondary'> = {
   trial: 'secondary',
@@ -35,6 +36,7 @@ export default function BillingPage() {
   const t = useTranslations('dash.billing')
   const locale = useLocale() === 'en' ? 'en' : 'vi'
   const search = useSearchParams()
+  const router = useRouter()
   const { workspace, loading: wsLoading } = useWorkspace()
   const allowed = useCan('billing_manage')
   const workspaceId = workspace?.id
@@ -148,7 +150,7 @@ export default function BillingPage() {
         <Alert className="mt-6">
           <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
             <span>{t('checkout.resume', { plan: planName(data.pending.plan), amount: formatVnd(data.pending.amount, locale) })}</span>
-            <Button size="sm" variant="secondary" onClick={() => setResume(data.pending)}>
+            <Button size="sm" variant="secondary" onClick={() => router.push(routes.billingCheckout(workspace!.slug, data.pending!.plan, data.pending!.billing))}>
               {t('checkout.resumeOpen')}
             </Button>
           </AlertDescription>
@@ -213,7 +215,7 @@ export default function BillingPage() {
                   size="lg"
                   variant={isCurrent || change.kind === 'downgrade' || change.blocked ? 'secondary' : 'primary'}
                   disabled={!data.checkoutReady || Boolean(change.blocked)}
-                  onClick={() => setBuying({ plan: p.id, billing })}
+                  onClick={() => router.push(routes.billingCheckout(workspace!.slug, p.id, billing))}
                 >
                   {action(p, change)}
                 </Button>

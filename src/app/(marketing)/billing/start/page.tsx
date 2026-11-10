@@ -33,7 +33,7 @@ export default async function BillingStartPage({ searchParams }: { searchParams:
     select: { name: true, slug: true },
     orderBy: { createdAt: 'asc' },
   })
-  if (workspaces.length === 1) redirect(`/workspace/${workspaces[0].slug}/billing?${query}`)
+  if (workspaces.length === 1) redirect(`/workspace/${workspaces[0].slug}/billing/checkout?${query}`)
 
   const t = await getTranslations('dash.billing.start')
   const nav = await getTranslations('marketing.nav')
@@ -48,7 +48,7 @@ export default async function BillingStartPage({ searchParams }: { searchParams:
             <ul className="mt-8 border-t border-line">
               {workspaces.map((w) => (
                 <li key={w.slug} className="border-b border-line">
-                  <Link href={`/workspace/${w.slug}/billing?${query}`} className="flex items-center justify-between gap-4 py-4 text-[16px] font-medium text-fg hover:underline">
+                  <Link href={`/workspace/${w.slug}/billing/checkout?${query}`} className="flex items-center justify-between gap-4 py-4 text-[16px] font-medium text-fg hover:underline">
                     {w.name}
                     <span aria-hidden>→</span>
                   </Link>

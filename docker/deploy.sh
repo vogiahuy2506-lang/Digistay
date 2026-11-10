@@ -133,6 +133,9 @@ log "deploying $SHA (previous: ${PREV_TAG:-none})"
 export APP_TAG="$SHA"
 
 log "1/5 building $IMAGE_REPO:$SHA (the old app keeps serving)"
+# Prune old build cache and dangling images before build to ensure sufficient disk space
+docker builder prune -f --keep-storage 2GB >/dev/null 2>&1 || true
+docker image prune -f >/dev/null 2>&1 || true
 docker compose build app
 
 # Backing services (postgres, redis, ...): everything except the app itself
@@ -160,6 +163,8 @@ if wait_for_version "$SHA"; then
     | { grep -vxE "$SHA|${PREV_TAG:-<none>}|latest" || true; } \
     | while read -r tag; do docker image rm "$IMAGE_REPO:$tag" >/dev/null 2>&1 || true; done
   docker image prune -f >/dev/null
+  docker builder prune -f --keep-storage 2GB >/dev/null 2>&1 || true
+  docker container prune -f >/dev/null 2>&1 || true
   log "deploy OK: $SHA is live"
   if ! reload_nginx; then
     log "deploy FAILED at the nginx step: the app is live, fix docker/nginx/ and redeploy"

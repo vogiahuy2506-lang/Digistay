@@ -60,6 +60,8 @@ export const routes = {
   members: (slug: string) => `/workspace/${slug}/members`,
   settings: (slug: string) => `/workspace/${slug}/settings`,
   billing: (slug: string) => `/workspace/${slug}/billing`,
+  billingCheckout: (slug: string, plan?: string, billing?: string) =>
+    `/workspace/${slug}/billing/checkout${plan ? `?plan=${plan}&billing=${billing ?? 'MONTH'}` : ''}`,
 
   // Public
   publicSite: (subdomain: string) => `/${subdomain}`,
