@@ -219,17 +219,28 @@ Tài liệu này phân rã chi tiết yêu cầu kỹ thuật, giải pháp, fil
 
 ---
 
-### Task 53 [P1]: Tích hợp AI thật (Google Gemini) viết bài & mô tả phòng
-* **Hiện trạng**: Tính năng AI đang trả về nhãn "HEURISTIC-ENGINE-V1" ghép từ mẫu có sẵn chứ chưa gọi API Gemini thật; ô từ khóa bị điền sẵn text mẫu gây khó nhập.
-* **Giải pháp kỹ thuật**:
-  1. Tích hợp trực tiếp Google Gemini API qua `@google/genai` với model `gemini-2.5-flash`.
-  2. Xóa bỏ text placeholder điền sẵn trong ô nhập từ khóa.
-  3. Thiết lập prompt thông minh tạo mô tả phòng và bài viết blog chuẩn SEO, hấp dẫn, đậm chất hospitality.
-  4. Quản lý hạn ngạch (quota) lượt dùng AI theo từng gói dịch vụ.
+### Task 53 [P1]: Tích hợp AI thật (Google Gemini) viết bài & mô tả phòng [ĐÃ HOÀN THÀNH 10/11/2026]
+* **Hiện trạng & Lỗi đã xử lý**:
+  1. Tích hợp trực tiếp Google Gemini API chính thức với model `gemini-2.5-flash` (tương thích `gemini-1.5-flash` và `gemini-2.0-flash`), loại bỏ định danh model hư cấu `gemini-3.1-flash-lite` gây lỗi 404.
+  2. Bổ sung `GEMINI_API_KEY` vào `.env.production.template` để triển khai đồng bộ lên VPS môi trường Docker production.
+  3. Xóa bỏ hoàn toàn text điền sẵn mẫu (hardcoded state) trong ô nhập từ khóa của `AiWriterModal`, ô nhập bắt đầu trống với placeholder gợi ý trực quan, người dùng không cần phải xóa text trước khi gõ.
+  4. Nâng cấp bộ parse JSON phản hồi từ Gemini tự động trích xuất khối JSON chuẩn xác ngay cả khi model trả về markdown fence hoặc phần giới thiệu.
+  5. Xây dựng module quản lý hạn ngạch AI (`src/lib/ai/quota.ts`) kiểm soát lượt sinh nội dung hàng tháng theo từng gói cước:
+     - Dùng thử (Trial): 15 lượt / tháng
+     - Gói Starter: 30 lượt / tháng
+     - Gói Growth: 100 lượt / tháng
+     - Gói Business / Pro: 300 lượt / tháng
+     - Tự động ghi nhận `ActivityLog` và hiển thị trực quan số lượt còn lại trên giao diện modal AI.
 * **File can thiệp**:
-  - `src/lib/ai/content-generator.ts`
+  - `src/lib/ai/quota.ts`
+  - `src/lib/ai/content-generator.ts` & `src/lib/ai/content-generator.test.ts`
+  - `src/lib/ai/chatbot.ts`
+  - `src/lib/pricing/dynamic-pricing.ts`
+  - `src/app/api/properties/[id]/ai/generate-content/route.ts`
+  - `src/app/api/properties/[id]/ai/config/route.ts`
   - `src/components/ai/ai-writer-modal.tsx`
-  - `src/app/api/ai/generate/route.ts`
+  - `src/lib/i18n/api-errors.en.json`
+  - `.env.production.template`
 
 ---
 

@@ -1,8 +1,20 @@
 import { describe, it, expect } from 'vitest'
-import { generateHeuristicContent, generateHospitalityContent } from './content-generator'
+import { generateHeuristicContent, generateHospitalityContent, DEFAULT_GEMINI_MODEL } from './content-generator'
 import { GenerateContentInput } from './types'
+import { AI_MONTHLY_LIMITS } from './quota'
 
 describe('AI Content Generator', () => {
+  it('has default Gemini model configured as gemini-2.5-flash', () => {
+    expect(DEFAULT_GEMINI_MODEL).toBe('gemini-2.5-flash')
+  })
+
+  it('enforces monthly limits across plans', () => {
+    expect(AI_MONTHLY_LIMITS.trial).toBe(15)
+    expect(AI_MONTHLY_LIMITS.starter).toBe(30)
+    expect(AI_MONTHLY_LIMITS.growth).toBe(100)
+    expect(AI_MONTHLY_LIMITS.business).toBe(300)
+  })
+
   it('generates high-converting room copy with bilingual output', () => {
     const input: GenerateContentInput = {
       contentType: 'ROOM_DESCRIPTION',
@@ -50,19 +62,26 @@ describe('AI Content Generator', () => {
   })
 
   it('falls back seamlessly to heuristic engine when no external API key is configured', async () => {
+    const origGemini = process.env.GEMINI_API_KEY
+    const origOpenAi = process.env.OPENAI_API_KEY
     delete process.env.GEMINI_API_KEY
     delete process.env.OPENAI_API_KEY
 
-    const input: GenerateContentInput = {
-      contentType: 'ROOM_DESCRIPTION',
-      roomName: 'Standard Room',
-      keywords: 'tiện nghi cơ bản, giá tốt',
-      tone: 'MODERN',
-    }
+    try {
+      const input: GenerateContentInput = {
+        contentType: 'ROOM_DESCRIPTION',
+        roomName: 'Standard Room',
+        keywords: 'tiện nghi cơ bản, giá tốt',
+        tone: 'MODERN',
+      }
 
-    const result = await generateHospitalityContent(input)
-    expect(result.title).toBe('Standard Room')
-    expect(result.modelUsed).toBe('heuristic-engine-v1')
+      const result = await generateHospitalityContent(input)
+      expect(result.title).toBe('Standard Room')
+      expect(result.modelUsed).toBe('heuristic-engine-v1')
+    } finally {
+      if (origGemini) process.env.GEMINI_API_KEY = origGemini
+      if (origOpenAi) process.env.OPENAI_API_KEY = origOpenAi
+    }
   })
 
   it('automatically embeds attached images with markdown formatting and captions', () => {

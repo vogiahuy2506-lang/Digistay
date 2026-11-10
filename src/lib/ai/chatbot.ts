@@ -425,7 +425,7 @@ QUY TẮC BẮT BUỘC (ANTI-HALLUCINATION GUARDRAILS):
       })
 
       const targetModel = params.model || DEFAULT_GEMINI_MODEL
-      const candidateModels = Array.from(new Set([targetModel, 'gemini-2.5-flash', 'gemini-3.1-flash-lite', 'gemini-1.5-flash']))
+      const candidateModels = Array.from(new Set([targetModel, 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash']))
 
       for (const m of candidateModels) {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${geminiKey}`

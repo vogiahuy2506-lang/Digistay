@@ -1,4 +1,5 @@
 {
+  "Đã hết lượt tạo nội dung AI trong tháng này.": "Monthly AI content generation quota has been exhausted.",
   "Thời gian dùng thử đã hết hạn (đang trong 7 ngày ân hạn). Dashboard ở chế độ chỉ xem, không thể tạo thêm cơ sở, phòng hoặc đơn mới tại quầy. Vui lòng nâng cấp gói để tiếp tục.": "Your free trial has expired (currently in 7-day grace period). Dashboard is in view-only mode, and creating new properties, rooms, or desk bookings is disabled. Please upgrade your plan to continue.",
   "Mã voucher phải có ít nhất 3 ký tự": "Voucher code must have at least 3 characters",
   "Mã voucher tối đa 30 ký tự": "Voucher code must not exceed 30 characters",

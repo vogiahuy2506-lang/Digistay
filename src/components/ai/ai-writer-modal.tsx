@@ -96,25 +96,22 @@ export function AiWriterModal({
   // Attached images state
   const [attachedImages, setAttachedImages] = React.useState<AttachedImage[]>([])
   const [isUploadingImages, setIsUploadingImages] = React.useState(false)
+  const [quota, setQuota] = React.useState<{ used: number; limit: number; remaining: number } | null>(null)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
-  // Reset or preset keywords when opened
+  // Load current monthly quota when modal opens
   React.useEffect(() => {
     if (isOpen) {
-      setKeywords((current) => {
-        if (current) return current
-        if (contentType === 'ROOM_DESCRIPTION') {
-          const suggestions = [
-            initialArea ? `${initialArea}m²` : '',
-            initialBedType ? `giường ${initialBedType.toLowerCase()}` : '',
-            'view hồ bơi, yên tĩnh, bồn tắm nằm cao cấp, ban công thoáng mát',
-          ].filter(Boolean)
-          return suggestions.join(', ')
-        }
-        return 'món ăn địa phương, hải sản tươi sống, mở cửa đến đêm, giá bình dân'
-      })
+      fetch(`/api/properties/${propertyId}/ai/config`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.success && data?.data?.quota) {
+            setQuota(data.data.quota)
+          }
+        })
+        .catch(() => {})
     }
-  }, [isOpen, contentType, initialArea, initialBedType])
+  }, [isOpen, propertyId])
 
   const handleFilesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
@@ -185,7 +182,7 @@ export function AiWriterModal({
           tone,
           language,
           targetAudience: targetAudience.trim() || undefined,
-          model: 'gemini-3.1-flash-lite',
+          model: 'gemini-2.5-flash',
           images: attachedImages.map((img) => ({
             url: img.url,
             base64: img.base64,
@@ -201,6 +198,9 @@ export function AiWriterModal({
       }
 
       setResult(data.data)
+      if (data.data?.quota) {
+        setQuota(data.data.quota)
+      }
       setPreviewTab('vi')
       setViewMode('rendered')
       toast.success('Đã tạo nội dung AI thành công kèm phân tích hình ảnh!')
@@ -248,7 +248,7 @@ export function AiWriterModal({
               <h3 className="font-semibold text-fg flex items-center gap-2">
                 Trợ lý AI viết nội dung tự động
                 <Badge variant="outline" className="text-acc border-acc/30 text-xs font-normal">
-                  Gemini 3.1 Flash-Lite
+                  Google Gemini 2.5 Flash
                 </Badge>
               </h3>
               <p className="text-xs text-muted">
@@ -259,10 +259,17 @@ export function AiWriterModal({
             </div>
           </div>
 
-          <Badge variant="outline" className="text-emerald-600 bg-emerald-500/10 border-emerald-500/20 text-xs font-medium flex items-center gap-1.5 py-1 px-2.5">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            Hệ thống AI sẵn sàng
-          </Badge>
+          <div className="flex items-center gap-2">
+            {quota && (
+              <Badge variant="outline" className="text-acc bg-acc/10 border-acc/20 text-xs font-medium">
+                Còn {quota.remaining}/{quota.limit} lượt AI
+              </Badge>
+            )}
+            <Badge variant="outline" className="text-emerald-600 bg-emerald-500/10 border-emerald-500/20 text-xs font-medium flex items-center gap-1.5 py-1 px-2.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              Hệ thống AI sẵn sàng
+            </Badge>
+          </div>
         </div>
       </ModalHeader>
 
@@ -405,7 +412,7 @@ export function AiWriterModal({
             <div className="flex items-center justify-between flex-wrap gap-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-acc" />
-                Kết quả tạo bởi {result.modelUsed}
+                Kết quả tạo bởi {result.modelUsed.includes('gemini') ? `Google Gemini (${result.modelUsed})` : result.modelUsed}
               </span>
 
               <div className="flex items-center gap-2">

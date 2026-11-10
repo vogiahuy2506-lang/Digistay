@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { accessibleProperties } from '@/lib/auth/access'
 import { testGeminiApiKey } from '@/lib/ai/content-generator'
+import { checkAiMonthlyQuota } from '@/lib/ai/quota'
 
 export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
   const params = await props.params
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
 
     const property = await prisma.property.findFirst({
       where: { id: params.id, ...accessibleProperties(session.user.id) },
-      select: { id: true },
+      select: { id: true, workspaceId: true },
     })
     if (!property) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy cơ sở' }, { status: 403 })
@@ -23,6 +24,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
     const envKey = process.env.GEMINI_API_KEY
     const hasEnvKey = Boolean(envKey && envKey.trim().length > 0)
     const masked = hasEnvKey ? `${envKey!.slice(0, 6)}...${envKey!.slice(-4)}` : null
+    const quota = await checkAiMonthlyQuota(property.workspaceId)
 
     return NextResponse.json({
       success: true,
@@ -30,7 +32,8 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
         hasEnvKey,
         maskedKey: masked,
         provider: 'GEMINI',
-        defaultModel: 'gemini-3.1-flash-lite',
+        defaultModel: 'gemini-2.5-flash',
+        quota,
       },
     })
   } catch (error) {
@@ -61,7 +64,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
       return NextResponse.json({ success: false, error: 'Vui lòng cung cấp khóa API' }, { status: 400 })
     }
 
-    const model = (body?.model && typeof body.model === 'string') ? body.model : 'gemini-3.1-flash-lite'
+    const model = (body?.model && typeof body.model === 'string') ? body.model : 'gemini-2.5-flash'
     const testResult = await testGeminiApiKey(keyToTest, model)
 
     if (!testResult.ok) {

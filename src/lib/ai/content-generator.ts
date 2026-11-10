@@ -182,7 +182,7 @@ export async function testGeminiApiKey(apiKey: string, model = DEFAULT_GEMINI_MO
   }
 
   const trimmed = apiKey.trim()
-  const candidateModels = Array.from(new Set([model, 'gemini-2.5-flash', 'gemini-3.1-flash-lite', 'gemini-1.5-flash']))
+  const candidateModels = Array.from(new Set([model, 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash']))
 
   for (const m of candidateModels) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${trimmed}`
@@ -223,7 +223,7 @@ export async function testGeminiApiKey(apiKey: string, model = DEFAULT_GEMINI_MO
 async function callGeminiApi(input: GenerateContentInput, apiKey: string): Promise<GenerateContentOutput | null> {
   const prompt = buildAiPrompt(input)
   const targetModel = input.model || DEFAULT_GEMINI_MODEL
-  const candidateModels = Array.from(new Set([targetModel, 'gemini-2.5-flash', 'gemini-3.1-flash-lite', 'gemini-1.5-flash']))
+  const candidateModels = Array.from(new Set([targetModel, 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash']))
 
   // Prepare multimodal parts (text prompt + inline image data)
   const parts: any[] = [{ text: prompt }]
@@ -386,7 +386,19 @@ function parseAiJsonResponse(text: string, modelUsed: string): GenerateContentOu
     cleaned = cleaned.replace(/^```\s*/, '').replace(/\s*```$/, '')
   }
 
-  const parsed = JSON.parse(cleaned)
+  let parsed: any
+  try {
+    parsed = JSON.parse(cleaned)
+  } catch {
+    const firstBrace = cleaned.indexOf('{')
+    const lastBrace = cleaned.lastIndexOf('}')
+    if (firstBrace >= 0 && lastBrace > firstBrace) {
+      parsed = JSON.parse(cleaned.slice(firstBrace, lastBrace + 1))
+    } else {
+      throw new Error('Dữ liệu phản hồi từ AI không đúng định dạng JSON yêu cầu.')
+    }
+  }
+
   return {
     title: parsed.title || '',
     shortDescription: parsed.shortDescription || '',

@@ -5,6 +5,7 @@ import { accessibleProperties } from '@/lib/auth/access'
 import { z } from 'zod'
 import { generateHospitalityContent } from '@/lib/ai/content-generator'
 import { AiContentType, AiLanguage, AiTone } from '@/lib/ai/types'
+import { checkAiMonthlyQuota, recordAiContentGenerated } from '@/lib/ai/quota'
 
 const imageSchema = z.object({
   url: z.string().min(1),
@@ -38,10 +39,24 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
 
     const property = await prisma.property.findFirst({
       where: { id: params.id, ...accessibleProperties(session.user.id) },
-      select: { id: true, name: true },
+      select: { id: true, name: true, workspaceId: true },
     })
     if (!property) {
       return NextResponse.json({ success: false, error: 'Không tìm thấy cơ sở' }, { status: 403 })
+    }
+
+    // Check monthly AI generation quota
+    const quota = await checkAiMonthlyQuota(property.workspaceId)
+    if (!quota.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: quota.message || 'Đã hết lượt tạo nội dung AI trong tháng này.',
+          code: 'AI_QUOTA_EXCEEDED',
+          data: { quota },
+        },
+        { status: 403 }
+      )
     }
 
     const body = await request.json().catch(() => null)
@@ -57,9 +72,26 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
 
     const generated = await generateHospitalityContent(input)
 
+    // Record usage log
+    await recordAiContentGenerated({
+      userId: session.user.id,
+      workspaceId: property.workspaceId,
+      propertyId: property.id,
+      contentType: input.contentType,
+      modelUsed: generated.modelUsed,
+      title: generated.title,
+    }).catch((err) => console.warn('[recordAiContentGenerated failed]:', err))
+
     return NextResponse.json({
       success: true,
-      data: generated,
+      data: {
+        ...generated,
+        quota: {
+          used: quota.used + 1,
+          limit: quota.limit,
+          remaining: Math.max(0, quota.remaining - 1),
+        },
+      },
     })
   } catch (error) {
     console.error('[API AI Generate Content Error]:', error)
