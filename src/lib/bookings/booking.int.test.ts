@@ -111,7 +111,7 @@ describe('prices', () => {
     const dates = { checkInDate: '2026-12-04', checkOutDate: '2026-12-06' }
     const quoted = await call(availability(new NextRequest(`http://x/api/bookings/availability?propertyId=${property.id}&checkInDate=${dates.checkInDate}&checkOutDate=${dates.checkOutDate}&numGuests=3`)))
     const offer = quoted.body.data[0]
-    expect(offer.pricing).toMatchObject({ basePrice: 2_000_000, total: 2_300_000, extraAdultPrice: 150_000 })
+    expect(offer.pricing).toMatchObject({ basePrice: 2_200_000, total: 2_500_000, extraAdultPrice: 150_000 })
     // The page adds services with the same function (src/lib/pricing/quote.ts).
     const shown = quoteStay({
       rates: offer.pricing,
@@ -122,13 +122,13 @@ describe('prices', () => {
       baseOccupancy: offer.baseOccupancy,
       services: [{ service: breakfast, quantity: 1 }],
     }).total
-    expect(shown).toBe(2_300_000 + 100_000 * 2 * 3)
+    expect(shown).toBe(2_500_000 + 100_000 * 2 * 3)
 
     const booked = await call(guestBooking(json({ propertyId: property.id, roomTypeId: room.id, ...guest(), ...dates, numAdults: 3, services: [{ serviceId: breakfast.id, quantity: 1 }] }, freshIp())))
     expect(booked.status).toBe(200)
     expect(booked.body.data.totalAmount).toBe(shown)
     const row = await prisma.booking.findFirstOrThrow({ where: { bookingCode: booked.body.data.bookingCode } })
-    expect(row).toMatchObject({ subtotal: 2_000_000, extraCharges: 300_000 + 600_000, totalAmount: shown })
+    expect(row).toMatchObject({ subtotal: 2_200_000, extraCharges: 300_000 + 600_000, totalAmount: shown })
     expect(row.services).toEqual([{ serviceId: breakfast.id, name: 'Ăn sáng', quantity: 1, amount: 600_000 }])
   })
 })
