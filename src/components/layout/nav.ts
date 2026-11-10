@@ -91,7 +91,6 @@ export function primaryNav(slug: string, propertyId?: string): NavItem[] {
       group: 'marketing',
     },
     { key: 'payments', href: routes.propertyPayments(slug, id), can: ['payments_manage'], group: 'finance' },
-    { key: 'invoices', href: routes.propertyInvoices(slug, id), can: ['invoices_manage'], group: 'finance' },
     { key: 'cashbook', href: routes.propertyDailyReport(slug, id), can: ['cashbook_view'], group: 'finance' },
     { key: 'reports', href: routes.propertyReports(slug, id), can: ['revenue_view'], group: 'finance' },
     { key: 'propertySettings', href: routes.propertySettings(slug, id), can: ['property_edit'], group: 'hotelSettings' },

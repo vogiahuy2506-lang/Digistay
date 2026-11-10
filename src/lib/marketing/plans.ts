@@ -87,7 +87,7 @@ export const COMPARE = [
   {
     group: 'money',
     rows: [
-      { id: 'einvoice', cells: { starter: false, growth: 'invoices', business: 'invoices' } },
+      { id: 'einvoice', cells: all },
       { id: 'revenue', cells: all },
       { id: 'cashbook', cells: all },
     ],

@@ -271,25 +271,23 @@ Tài liệu này phân rã chi tiết yêu cầu kỹ thuật, giải pháp, fil
 
 ---
 
-### Task 55 [P1]: Bỏ tính năng xuất hóa đơn điện tử cho khách sạn (Chỉ giữ Mắt Bão xuất hóa đơn khi mua gói Digistay)
-* **Hiện trạng & Quyết định**:
-  - Không triển khai tích hợp xuất hóa đơn điện tử Mắt Bão cho các khách sạn/chủ cơ sở (để đơn giản hóa vận hành, tránh phức tạp về chữ ký số, thuế suất và pháp lý của từng khách sạn lẻ).
-  - **Chỉ giữ lại Mắt Bão ở cấp nền tảng Digistay** (`src/lib/billing/einvoice.ts`): Tự động phát hành hóa đơn điện tử GTGT cho khách hàng khi họ mua/gia hạn gói phần mềm Digistay (Starter, Growth, Business) qua tài khoản Mắt Bão của công ty Digistay.
-* **Giải pháp kỹ thuật**:
-  1. **Ẩn / Gỡ bỏ tính năng xuất hóa đơn điện tử phía khách sạn**:
-     - Ẩn mục "Hóa đơn điện tử" trên Sidebar điều hướng của cơ sở khách sạn (`src/components/layout/nav.ts` hoặc cấu hình menu cơ sở).
-     - Loại bỏ các ô nhập cấu hình Mắt Bão của từng khách sạn trong phần cài đặt / tích hợp thanh toán.
-     - Dọn dẹp nội dung giới thiệu tính năng "Xuất hóa đơn điện tử cho khách lưu trú" trên Landing Page (`src/app/(public)/page.tsx`), trang Tính năng và Bảng giá (`/pricing`).
-  2. **Bảo toàn và duy trì module Mắt Bão cho Gói cước Digistay (Platform)**:
-     - Duy trì module `src/lib/billing/einvoice.ts` và bảng `SubscriptionInvoice`.
-     - Khi khách mua gói: form thanh toán cho phép khách chọn lấy hóa đơn "Cá nhân" (CCCD) hoặc "Doanh nghiệp" (MST) -> Sau khi PayOS báo thanh toán thành công, hệ thống tự động gọi Mắt Bão của Digistay để phát hành hóa đơn và gửi email file PDF/link tra cứu hóa đơn cho khách.
-     - Superadmin tiếp tục theo dõi, xuất lại hoặc kiểm tra hóa đơn gói tại `/admin/system` (mục "Hóa đơn gói").
+### Task 55 [P1]: Bỏ tính năng xuất hóa đơn điện tử cho khách sạn (Chỉ giữ Mắt Bão xuất hóa đơn khi mua gói Digistay) [ĐÃ HOÀN THÀNH 10/11/2026]
+* **Hiện trạng & Giải pháp đã thực hiện**:
+  1. **Ẩn menu Hóa đơn điện tử phía khách sạn**:
+     - Loại bỏ mục `{ key: 'invoices', href: routes.propertyInvoices(slug, id), can: ['invoices_manage'], group: 'finance' }` khỏi Sidebar điều hướng cơ sở trong [`src/components/layout/nav.ts`](file:///d:/workInProcess/Digistay/src/components/layout/nav.ts). Tất cả vai trò (Chủ, Quản lý, Lễ tân) không còn thấy mục HĐĐT khách sạn trên thanh điều hướng.
+     - Cập nhật unit test điều hướng [`src/components/layout/nav.test.ts`](file:///d:/workInProcess/Digistay/src/components/layout/nav.test.ts).
+     - Thêm banner thông báo chính sách rõ ràng trên trang [`properties/[id]/invoices/page.tsx`](file:///d:/workInProcess/Digistay/src/app/(dashboard)/workspace/[slug]/(property)/properties/[id]/invoices/page.tsx) trong trường hợp người dùng truy cập trực tiếp bằng URL.
+  2. **Dọn dẹp nội dung Marketing & Bảng giá**:
+     - Cập nhật [`messages/vi.json`](file:///d:/workInProcess/Digistay/messages/vi.json) và [`messages/en.json`](file:///d:/workInProcess/Digistay/messages/en.json): Chuyển khối tính năng tài chính từ "Đối soát PayOS và hoá đơn điện tử" sang "Đối soát PayOS và quản lý dòng tiền", tập trung vào kiểm soát cọc tự động 24/7, sổ quỹ và báo cáo doanh thu.
+     - Cập nhật câu hỏi thường gặp FAQ: Khẳng định rõ Digistay xuất hóa đơn điện tử GTGT qua Mắt Bão khi khách hàng mua/gia hạn các gói phần mềm Digistay.
+     - Cập nhật bảng so sánh tính năng [`src/lib/marketing/plans.ts`](file:///d:/workInProcess/Digistay/src/lib/marketing/plans.ts): Dòng `einvoice` đổi thành "Hoá đơn VAT gói Digistay" (áp dụng cho mọi gói thanh toán).
+  3. **Bảo toàn 100% module Mắt Bão cho Gói cước phần mềm Digistay**:
+     - Giữ nguyên toàn bộ logic phát hành HĐĐT tự động của nền tảng tại [`src/lib/billing/einvoice.ts`](file:///d:/workInProcess/Digistay/src/lib/billing/einvoice.ts), bảng `SubscriptionInvoice`, webhook Mắt Bão nền tảng và trang quản trị hóa đơn gói `/admin/system`.
 * **File can thiệp**:
-  - `src/components/layout/nav.ts` (ẩn menu Hóa đơn điện tử khỏi cơ sở)
+  - `src/components/layout/nav.ts` & `src/components/layout/nav.test.ts`
   - `src/app/(dashboard)/workspace/[slug]/(property)/properties/[id]/invoices/page.tsx`
-  - `src/app/(public)/page.tsx`
-  - `src/app/(public)/pricing/page.tsx`
-  - `src/lib/billing/einvoice.ts` (giữ nguyên hoạt động cho hóa đơn gói)
+  - `src/lib/marketing/plans.ts`
+  - `messages/vi.json` & `messages/en.json`
 
 ---
 

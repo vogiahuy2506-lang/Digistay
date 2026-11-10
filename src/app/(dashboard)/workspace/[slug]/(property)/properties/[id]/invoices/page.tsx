@@ -554,6 +554,17 @@ export default function InvoicesPage() {
           }
         />
 
+        {/* Thông báo tinh gọn: HĐĐT trực tiếp khách sạn đã tạm ngừng, chuyển sang hoá đơn VAT mua gói */}
+        <div className="mb-6 p-4 rounded-ctl border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <div className="space-y-1 text-xs">
+            <p className="font-semibold text-sm">Thông báo về tính năng Xuất hóa đơn điện tử cơ sở</p>
+            <p className="leading-relaxed">
+              Tính năng tích hợp xuất hóa đơn điện tử Mắt Bão của từng khách sạn lẻ đã tạm ngừng để tối ưu hóa quy trình vận hành và pháp lý chữ ký số. Digistay duy trì xuất hóa đơn điện tử GTGT hợp lệ tự động cho khách hàng khi mua hoặc gia hạn các gói phần mềm Digistay.
+            </p>
+          </div>
+        </div>
+
         {selectedProperty && <EinvoiceCard key={selectedProperty} propertyId={selectedProperty} onStatus={setEinvoice} />}
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4 mb-6">

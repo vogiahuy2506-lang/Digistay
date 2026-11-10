@@ -666,11 +666,11 @@
           "alt": "The bookings list by status in the management pages"
         },
         "money": {
-          "title": "PayOS reconciliation and e-invoices",
-          "desc": "Each transfer is matched to its booking, and the invoice is issued from that booking.",
-          "p1": "Automatic PayOS reconciliation",
-          "p2": "Mắt Bão e-invoices: issue, adjust, replace",
-          "p3": "Invoices emailed to guests",
+          "title": "PayOS reconciliation and cash flow",
+          "desc": "Deposits paid through PayOS are automatically matched to each hotel booking.",
+          "p1": "Automatic 24/7 PayOS VietQR reconciliation",
+          "p2": "Track deposits and remaining balance",
+          "p3": "Cashbook records and transparent revenue reporting",
           "alt": "Payments matched to their bookings"
         }
       },
@@ -714,8 +714,8 @@
           "a": "A workspace holds several properties: {starter} on Starter, {growth} on Growth, {business} on Business. You can buy more."
         },
         "q5": {
-          "q": "Does Digistay issue e-invoices?",
-          "a": "Yes, through Mắt Bão: issue, adjust and replace invoices, and email them to guests."
+          "q": "Does Digistay issue VAT invoices when purchasing a software plan?",
+          "a": "Yes. Digistay automatically issues a VAT e-invoice via Mắt Bão right after your subscription payment succeeds."
         },
         "q6": {
           "q": "Can front desk staff see revenue?",
@@ -775,7 +775,7 @@
           "site": "Hotel website",
           "booking": "Direct booking",
           "operations": "Operations",
-          "money": "Invoices and reports",
+          "money": "Payments and reports",
           "account": "Accounts and security"
         },
         "rows": {
@@ -789,7 +789,7 @@
           "bookings": "Bookings and room calendar",
           "walkIn": "Walk-in guests",
           "checkInOut": "Check-in / check-out, late check-out fees",
-          "einvoice": "Mắt Bão e-invoices",
+          "einvoice": "Digistay plan VAT e-invoice",
           "revenue": "Revenue reports",
           "cashbook": "Daily cash book",
           "properties": "Several properties in one workspace",

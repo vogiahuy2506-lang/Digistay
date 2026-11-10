@@ -666,11 +666,11 @@
           "alt": "Danh sách đặt phòng theo trạng thái trong trang quản lý"
         },
         "money": {
-          "title": "Đối soát PayOS và hoá đơn điện tử",
-          "desc": "Khoản chuyển khoản được khớp với đơn đặt phòng; hoá đơn phát hành từ chính đơn đó.",
-          "p1": "Đối soát PayOS tự động",
-          "p2": "Hoá đơn điện tử Mắt Bão: phát hành, điều chỉnh, thay thế",
-          "p3": "Gửi hoá đơn cho khách qua email",
+          "title": "Đối soát PayOS và quản lý dòng tiền",
+          "desc": "Khoản thanh toán đặt cọc qua PayOS được khớp tự động vào đơn đặt phòng của khách sạn.",
+          "p1": "Đối soát PayOS VietQR tự động 24/7",
+          "p2": "Theo dõi thanh toán cọc và số dư còn lại",
+          "p3": "Ghi nhận sổ quỹ và báo cáo doanh thu minh bạch",
           "alt": "Danh sách thanh toán đã khớp với đặt phòng"
         }
       },
@@ -714,8 +714,8 @@
           "a": "Một workspace chứa nhiều cơ sở: {starter} ở gói Starter, {growth} ở gói Growth, {business} ở gói Business. Cần thêm thì mua thêm cơ sở."
         },
         "q5": {
-          "q": "Digistay có xuất hoá đơn điện tử không?",
-          "a": "Có, qua Mắt Bão: phát hành, điều chỉnh, thay thế hoá đơn và gửi email cho khách."
+          "q": "Digistay có xuất hoá đơn VAT khi mua gói phần mềm không?",
+          "a": "Có. Digistay tự động phát hành hóa đơn điện tử GTGT qua Mắt Bão ngay sau khi thanh toán mua hoặc gia hạn gói phần mềm thành công."
         },
         "q6": {
           "q": "Nhân viên lễ tân có xem được doanh thu không?",
@@ -775,7 +775,7 @@
           "site": "Website khách sạn",
           "booking": "Đặt phòng trực tiếp",
           "operations": "Vận hành",
-          "money": "Hoá đơn và báo cáo",
+          "money": "Thanh toán và báo cáo",
           "account": "Tài khoản và bảo mật"
         },
         "rows": {
@@ -789,7 +789,7 @@
           "bookings": "Quản lý đặt phòng và lịch phòng",
           "walkIn": "Khách tại quầy",
           "checkInOut": "Nhận / trả phòng, phí trả phòng muộn",
-          "einvoice": "Hoá đơn điện tử Mắt Bão",
+          "einvoice": "Hoá đơn VAT gói Digistay",
           "revenue": "Báo cáo doanh thu",
           "cashbook": "Sổ quỹ hằng ngày",
           "properties": "Nhiều cơ sở trong một workspace",
