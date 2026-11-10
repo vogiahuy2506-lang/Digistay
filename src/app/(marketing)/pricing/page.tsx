@@ -6,6 +6,7 @@ import { MarketingHeader } from '@/components/marketing/MarketingHeader'
 import { frame, inkButton, lineButton, sectionTitle, softText } from '@/components/marketing/styles'
 import { formatVnd } from '@/lib/bookings/display'
 import { ADDON_IDS, ADDON_PRICES, COMPARE, PLANS, YEARLY_MONTHS, yearlyPrice, type Cell, type Plan } from '@/lib/marketing/plans'
+import { getPlatformPlans } from '@/lib/plans/dynamic-plans'
 import { cn } from '@/lib/utils'
 import { ComparePicker, CompareCell, type CompareGroupView } from './ComparePicker'
 import { PlanCards } from './PlanCards'
@@ -38,10 +39,11 @@ export default async function PricingPage() {
         ? t('compare.propertiesCell', { count: p.properties })
         : c
 
-  const planNames = PLANS.map((p) => tp(`${p.id}.name`))
+  const plans = await getPlatformPlans()
+  const planNames = plans.map((p) => tp(`${p.id}.name`))
   const groups: CompareGroupView[] = COMPARE.map((g) => ({
     title: t(`compare.groups.${g.group}`),
-    rows: g.rows.map((r) => ({ label: t(`compare.rows.${r.id}`), cells: PLANS.map((p) => cell(p, r.cells[p.id])) })),
+    rows: g.rows.map((r) => ({ label: t(`compare.rows.${r.id}`), cells: plans.map((p) => cell(p, r.cells[p.id])) })),
   }))
 
   return (
@@ -52,7 +54,7 @@ export default async function PricingPage() {
         <section className={cn(frame, 'pt-10 lg:pt-14')}>
           <PlanCards
             title={t('title')}
-            plans={PLANS.map((p) => ({
+            plans={plans.map((p) => ({
               id: p.id,
               name: tp(`${p.id}.name`),
               fit: tp(`${p.id}.fit`),
@@ -132,7 +134,7 @@ export default async function PricingPage() {
               {groups.map((g) => (
                 <tbody key={g.title}>
                   <tr className="bg-page">
-                    <th colSpan={1 + PLANS.length} scope="colgroup" className="border-b border-line/70 px-7 pb-3 pt-5 text-left text-label font-semibold uppercase text-muted">
+                    <th colSpan={1 + plans.length} scope="colgroup" className="border-b border-line/70 px-7 pb-3 pt-5 text-left text-label font-semibold uppercase text-muted">
                       {g.title}
                     </th>
                   </tr>

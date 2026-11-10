@@ -35,6 +35,7 @@ import { platformPayos, platformPayosConfigured } from './platform-payos'
 import { queueSubscriptionPaid } from './emails'
 import { issueAfterResponse, prepareSubscriptionInvoice, type InvoiceBuyer } from './einvoice'
 import { reconcileOverageSoon } from './overage'
+import { getPlatformPlanPrice } from '@/lib/plans/dynamic-plans'
 
 /** How long a plan's QR can be paid. */
 export const CHECKOUT_TTL_SEC = 30 * 60
@@ -128,7 +129,7 @@ export async function createCheckout(input: {
   if (!platformPayosConfigured()) throw new BillingError(PAYOS_NOT_READY, 503)
   const { sub, change } = await quoteChange(input.workspaceId, input.plan, input.billing)
   if (change.blocked) throw new BillingError(changeBlockMessage(change.blocked, change, sub), 409)
-  const amount = priceFor(input.plan, input.billing)
+  const amount = await getPlatformPlanPrice(input.plan, input.billing)
   const waiting = await prisma.subscriptionPayment.findMany({
     where: { workspaceId: input.workspaceId, status: 'PENDING' },
     select: { id: true, orderCode: true },

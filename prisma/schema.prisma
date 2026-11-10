@@ -323,6 +323,24 @@ model SubscriptionInvoice {
   @@map("subscription_invoices")
 }
 
+/// Bảng cấu hình giá và hạn mức các gói cước Digistay (Task 49).
+/// Cho phép Superadmin điều chỉnh giá bán và quyền lợi trực tiếp từ Admin.
+model PlatformPlan {
+  id          String   @id // 'starter' | 'growth' | 'business'
+  name        String
+  price       Int      // VND / tháng (chưa VAT)
+  properties  Int      // Số cơ sở tối đa
+  rooms       Int      // Số phòng tối đa
+  staff       Int      // Số tài khoản nhân viên tối đa
+  invoices    Int      @default(0) // Số hoá đơn Mắt Bão tặng kèm
+  description String?
+  isActive    Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+
+  @@map("platform_plans")
+}
+
 model WorkspaceMember {
   id          String        @id @default(cuid())
   workspaceId String

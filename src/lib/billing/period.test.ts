@@ -6,8 +6,8 @@ const DAY = 86_400_000
 
 describe('priceFor', () => {
   it('is the monthly price, or ten months for a year', () => {
-    expect(priceFor('starter', 'MONTH')).toBe(2_000)
-    expect(priceFor('growth', 'YEAR')).toBe(50_000)
+    expect(priceFor('starter', 'MONTH')).toBe(199_000)
+    expect(priceFor('growth', 'YEAR')).toBe(3_990_000)
   })
 })
 

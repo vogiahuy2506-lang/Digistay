@@ -88,7 +88,7 @@ describe('PlanLimitPrompt', () => {
     const offer = document.querySelector('[data-testid="plan-offer"]')?.textContent ?? ''
     expect(offer).toContain('Gói Business: tối đa 10 cơ sở')
     // formatVnd keeps the amount and ₫ together with a no-break space.
-    expect(offer).toMatch(/10\.000\s₫\/tháng/)
+    expect(offer).toMatch(/799\.000\s₫\/tháng/)
 
     act(() => button('Nâng cấp gói')!.click())
     expect(navigation.push).toHaveBeenCalledWith('/workspace/khach-san-a/billing')

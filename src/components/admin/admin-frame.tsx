@@ -4,7 +4,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { ArrowLeft, Building2, History, LayoutDashboard, Moon, Receipt, Server, ShieldCheck, Sun } from 'lucide-react'
+import { ArrowLeft, Building2, CreditCard, History, LayoutDashboard, Moon, Receipt, Server, ShieldCheck, Sun } from 'lucide-react'
 import { Logo } from '@/components/marketing/Logo'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/components/layout/theme-root'
@@ -14,6 +14,7 @@ const NAV = [
   { href: '/admin', key: 'overview', icon: LayoutDashboard },
   { href: '/admin/customers', key: 'customers', icon: Building2 },
   { href: '/admin/orders', key: 'orders', icon: Receipt },
+  { href: '/admin/plans', key: 'plans', icon: CreditCard },
   { href: '/admin/activity', key: 'activity', icon: History },
   { href: '/admin/system', key: 'system', icon: Server },
 ] as const

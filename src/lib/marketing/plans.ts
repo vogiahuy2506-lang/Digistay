@@ -24,9 +24,9 @@ export interface Plan {
 }
 
 export const PLANS: Plan[] = [
-  { id: 'starter', price: 2_000, properties: 1, rooms: 15, staff: 3, invoices: 0 },
-  { id: 'growth', price: 5_000, properties: 3, rooms: 60, staff: 10, invoices: 100 },
-  { id: 'business', price: 10_000, properties: 10, rooms: 300, staff: 30, invoices: 500 },
+  { id: 'starter', price: 199_000, properties: 1, rooms: 15, staff: 3, invoices: 0 },
+  { id: 'growth', price: 399_000, properties: 3, rooms: 60, staff: 10, invoices: 100 },
+  { id: 'business', price: 799_000, properties: 10, rooms: 300, staff: 30, invoices: 500 },
 ]
 
 export const isPlanId = (value: unknown): value is PlanId => typeof value === 'string' && (PLAN_IDS as readonly string[]).includes(value)
@@ -43,13 +43,13 @@ export type AddonId = (typeof ADDON_IDS)[number]
 
 /**
  * VND per unit (the unit is in the messages: a property a month, a year...).
- * Shown on the pricing page only: add-ons cannot be bought yet. Test prices too.
+ * Shown on the pricing page only: add-ons cannot be bought yet.
  */
 export const ADDON_PRICES: Record<AddonId, number> = {
-  property: 1_000,
-  staff: 500,
-  domain: 1_000,
-  invoices: 1_000,
+  property: 99_000,
+  staff: 29_000,
+  domain: 49_000,
+  invoices: 500,
 }
 
 /** A cell of the comparison table: in the plan or not, or the plan's own limit. */

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAccess } from '@/lib/auth/access'
 import { PLANS, PLAN_IDS, YEARLY_MONTHS } from '@/lib/marketing/plans'
+import { getPlatformPlans } from '@/lib/plans/dynamic-plans'
 import { workspacePlan } from '@/lib/billing/subscription'
 import { workspaceUsage } from '@/lib/billing/limits'
 import { platformPayosConfigured } from '@/lib/billing/platform-payos'
@@ -27,7 +28,7 @@ export async function GET(_request: NextRequest, props: { params: Promise<{ id: 
   // One clock for every read: a workspace's first read makes its trial, and two
   // reads with their own `now` racing to make it showed "15 days" of a 14-day trial.
   const now = new Date()
-  const [current, usage, workspace, payments, buyer, me, overage] = await Promise.all([
+  const [current, usage, workspace, payments, buyer, me, overage, dynamicPlans] = await Promise.all([
     workspacePlan(id, prisma, now),
     workspaceUsage(id),
     prisma.workspace.findUnique({ where: { id }, select: { id: true, name: true, slug: true } }),
@@ -35,6 +36,7 @@ export async function GET(_request: NextRequest, props: { params: Promise<{ id: 
     einvoice ? lastBuyer(id) : null,
     prisma.user.findUnique({ where: { id: access.userId }, select: { email: true } }),
     overageView(id, now),
+    getPlatformPlans(),
   ])
   const waiting = payments.find((p) => p.status === 'PENDING' && (!p.expiresAt || p.expiresAt.getTime() > Date.now()))
   const sub = current.subscription
@@ -86,7 +88,7 @@ export async function GET(_request: NextRequest, props: { params: Promise<{ id: 
       usage,
       // Over the plan: the 7-day grace, then what is locked (src/lib/billing/overage.ts)
       overage,
-      plans: PLANS,
+      plans: dynamicPlans,
       yearlyMonths: YEARLY_MONTHS,
       trialDays: TRIAL_DAYS,
       graceDays: GRACE_DAYS,
