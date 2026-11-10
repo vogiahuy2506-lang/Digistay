@@ -1,15 +1,23 @@
 {
   "frame": {
     "title": "Quản trị Digistay",
-    "back": "Về workspace của tôi",
+    "back": "Về workspace",
+    "searchPlaceholder": "Tìm kiếm nhanh (Ctrl + K)...",
+    "systemHealthy": "Hạ tầng ổn định",
     "nav": {
       "overview": "Tổng quan",
       "customers": "Khách hàng",
       "orders": "Đơn hàng gói",
-      "plans": "Bảng giá gói",
+      "plans": "Quản lý gói cước",
       "vouchers": "Mã giảm giá",
-      "activity": "Nhật ký",
-      "system": "Hệ thống"
+      "activity": "Nhật ký kiểm toán",
+      "system": "Sức khỏe hệ thống",
+      "platformSettings": "Cấu hình nền tảng"
+    },
+    "groups": {
+      "platform": "TỔNG QUAN NỀN TẢNG",
+      "billing": "KINH DOANH & GÓI CƯỚC",
+      "system": "HẠ TẦNG & HỆ THỐNG"
     }
   },
   "overview": {

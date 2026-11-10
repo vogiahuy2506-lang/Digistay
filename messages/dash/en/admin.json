@@ -1,15 +1,23 @@
 {
   "frame": {
-    "title": "Digistay admin",
-    "back": "Back to my workspaces",
+    "title": "Digistay Operator",
+    "back": "Back to workspace",
+    "searchPlaceholder": "Quick search (Ctrl + K)...",
+    "systemHealthy": "Infra Healthy",
     "nav": {
       "overview": "Overview",
       "customers": "Customers",
       "orders": "Plan orders",
-      "plans": "Pricing plans",
+      "plans": "Plans & Custom Plans",
       "vouchers": "Vouchers",
-      "activity": "Activity log",
-      "system": "System"
+      "activity": "Audit log",
+      "system": "System health",
+      "platformSettings": "Platform settings"
+    },
+    "groups": {
+      "platform": "PLATFORM OVERVIEW",
+      "billing": "PLANS & BILLING",
+      "system": "INFRASTRUCTURE & OPS"
     }
   },
   "overview": {
