@@ -36,6 +36,7 @@ yarn-error.log*
 # rotated). gitleaks also scans every PR and push to main.
 .env
 .env.*
+.envvps
 !.env.example
 !.env.*.example
 !.env.production.template
