@@ -1,3 +1,6 @@
+'use client'
+
+import * as React from 'react'
 import { Menu, Phone } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { LanguageSwitch, SiteLink, SiteThemeToggle } from './site-base'
@@ -17,6 +20,21 @@ interface Props {
   onHome?: boolean
 }
 
+function HotelLogo({ src, alt }: { src: string; alt: string }) {
+  const [error, setError] = React.useState(false)
+  if (error) return null
+  return (
+    <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg overflow-hidden border border-line bg-page shrink-0 shadow-sm">
+      <img
+        src={src}
+        alt={alt}
+        className="w-full h-full object-contain p-0.5"
+        onError={() => setError(true)}
+      />
+    </div>
+  )
+}
+
 /** Hotel website header (redesign 3a): wordmark, section menu, phone, "Đặt phòng". */
 export function SiteHeader({ property, sections, onHome = true }: Props) {
   const t = useTranslations('site')
@@ -30,19 +48,7 @@ export function SiteHeader({ property, sections, onHome = true }: Props) {
         {/* Phones: the name on up to two lines and the controls tighter; it
             used to be cut to "Khách sạn…" beside EN, "Đặt phòng" and the menu. */}
         <SiteLink path="/" className="min-w-0 shrink flex items-center gap-2.5 sm:gap-3 focus:outline-none focus-visible:underline">
-          {property.logo && (
-            <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg overflow-hidden border border-line bg-page shrink-0 shadow-sm">
-              <img
-                src={property.logo}
-                alt={property.name}
-                className="w-full h-full object-contain p-0.5"
-                onError={(e) => {
-                  const parent = e.currentTarget.parentElement
-                  if (parent) parent.style.display = 'none'
-                }}
-              />
-            </div>
-          )}
+          {property.logo && <HotelLogo src={property.logo} alt={property.name} />}
           <div className="min-w-0">
             <span className="block font-site text-[17px] leading-[1.15] sm:text-[22px] text-fg text-balance line-clamp-2 [overflow-wrap:anywhere]">{property.name}</span>
             <span className="block text-[10px] uppercase tracking-[0.18em] text-muted truncate">

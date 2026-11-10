@@ -1,3 +1,5 @@
+'use client'
+
 import { blockText } from '@/lib/i18n/content'
 import { HeroBlock } from './blocks/HeroBlock'
 import { RoomsBlock } from './blocks/RoomsBlock'
