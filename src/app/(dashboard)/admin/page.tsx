@@ -175,22 +175,22 @@ export default function AdminOverviewPage() {
           <Section title={to('quickActions.title')}>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <Link
-                href="/admin/customers"
+                href="/admin/plans"
                 className="group relative flex flex-col justify-between rounded-ctl border border-line bg-surface p-4 transition-all hover:border-acc/40 hover:bg-fg/[0.02]"
               >
                 <div>
                   <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-ctl bg-acc/10 text-acc">
-                    <Building2 className="h-5 w-5" aria-hidden="true" />
+                    <CreditCard className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <h3 className="text-sm font-semibold text-fg group-hover:text-acc">
-                    {to('quickActions.customers')}
+                    Quản lý Gói & Custom Plans
                   </h3>
                   <p className="mt-1 text-xs text-muted leading-relaxed">
-                    {to('quickActions.customersDesc')}
+                    Điều chỉnh giá, hạn mức 8 nhóm và tạo gói VIP riêng cho khách hàng.
                   </p>
                 </div>
                 <div className="mt-3 flex items-center gap-1 text-xs font-medium text-acc">
-                  <span>Mở danh sách</span>
+                  <span>Cấu hình gói</span>
                   <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
                 </div>
               </Link>
