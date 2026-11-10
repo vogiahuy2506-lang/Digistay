@@ -531,6 +531,70 @@ async function main() {
     })
   }
 
+  // 14. Bài viết cẩm nang & tin tức (Blog Posts)
+  const nhphucBlogPosts = [
+    {
+      title: 'Top 5 điểm ngắm Cầu Rồng phun lửa và phun nước đẹp nhất Đà Nẵng',
+      slug: 'top-5-diem-ngam-cau-rong-da-nang',
+      summary: 'Khám phá những vị trí ngắm trọn vẹn khoảnh khắc Cầu Rồng phun lửa vào mỗi tối cuối tuần cùng Digistay Riverside Boutique Resort.',
+      content: `Cầu Rồng là một trong những biểu tượng nổi tiếng nhất của thành phố biển Đà Nẵng. Vào mỗi 21h00 thứ Bảy và Chủ Nhật hàng tuần, du khách sẽ được chiêm ngưỡng màn trình diễn phun lửa và phun nước ấn tượng.
+1. Quầy bar tầng thượng tại Digistay Riverside Boutique Resort: Tầm nhìn trực diện ôm trọn dòng sông Hàn và Cầu Rồng mà không phải chen lấn.
+2. Phố đi bộ Bạch Đằng: Trải nghiệm không khí nhộn nhịp, gần gũi với người dân địa phương.
+3. Cầu Tình Yêu & Tượng Cá Chép Hóa Rồng: Góc check-in lãng mạn bậc nhất dành cho các cặp đôi.
+4. Du thuyền ngắm cảnh sông Hàn: Chiêm ngưỡng vẻ đẹp lung linh của thành phố từ trên mặt nước.
+5. Đường Trần Hưng Đạo (Bờ Đông sông Hàn): Điểm đứng ngay sát đầu Rồng để cảm nhận rõ nhất hơi thở của màn phun lửa.`,
+      coverImage: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800&h=500&fit=crop',
+      authorName: 'Digistay Đà Nẵng Guide',
+      isPublished: true,
+      publishedAt: new Date(),
+    },
+    {
+      title: 'Cẩm nang khám phá ẩm thực Đà Nẵng: Mì Quảng, Bánh tráng cuốn thịt heo',
+      slug: 'cam-nang-am-thuc-da-nang-mi-quang',
+      summary: 'Khám phá hương vị đậm đà khó quên của ẩm thực miền Trung qua các món ăn đặc sản trứ danh.',
+      content: `Ẩm thực Đà Nẵng luôn níu chân du khách bởi hương vị đậm đà khó quên:
+- Mì Quảng: Sợi mì dai mềm kết hợp nước dùng đậm vị tôm, thịt hoặc gà, ăn kèm bánh đa giòn rụm và rau sống tươi xanh.
+- Bánh tráng cuốn thịt heo Đại Lộc: Thịt heo hai đầu da luộc chín tới, cuốn cùng bánh tráng phơi sương và chấm mắm nêm đậm đà.
+- Bún chả cá: Vị ngọt thanh từ bí đỏ, cà chua và chả cá tươi giòn.
+- Bánh xèo miền Trung: Vỏ bánh vàng ươm, giòn rụm nhân tôm thịt tươi ngon chấm cùng nước tương đậu phộng béo bùi.`,
+      coverImage: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&h=500&fit=crop',
+      authorName: 'Ban Biên Tập Digistay',
+      isPublished: true,
+      publishedAt: new Date(),
+    },
+  ]
+
+  for (const post of nhphucBlogPosts) {
+    await prisma.blogPost.upsert({
+      where: {
+        propertyId_slug: {
+          propertyId: property.id,
+          slug: post.slug,
+        },
+      },
+      update: {
+        title: post.title,
+        summary: post.summary,
+        content: post.content,
+        coverImage: post.coverImage,
+        isPublished: true,
+        publishedAt: post.publishedAt,
+      },
+      create: {
+        propertyId: property.id,
+        title: post.title,
+        slug: post.slug,
+        summary: post.summary,
+        content: post.content,
+        coverImage: post.coverImage,
+        authorName: post.authorName,
+        isPublished: true,
+        publishedAt: post.publishedAt,
+      },
+    })
+  }
+  console.log(`✅ Bài viết tin tức: ${nhphucBlogPosts.length} bài đã xuất bản`)
+
   console.log(`\n🎉 ĐÃ TẠO THÀNH CÔNG WORKSPACE DEMO HOÀN CHỈNH CHO: ${user.username}`)
   console.log(`-----------------------------------------------------------------`)
   console.log(`- Tài khoản: ${user.username} (${user.email})`)

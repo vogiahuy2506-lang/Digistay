@@ -38,6 +38,14 @@ export default function PublicSiteError({
           <RefreshCw className="w-4 h-4" />
           {t('retry')}
         </button>
+        {error.digest && (
+          <p className="text-[11px] font-mono text-muted/70 mt-4">Mã lỗi: ERR-{error.digest}</p>
+        )}
+        {process.env.NODE_ENV !== 'production' && error.message && (
+          <p className="text-xs text-red-600 font-mono mt-2 break-all text-left bg-red-50 dark:bg-red-950/30 p-2.5 rounded-lg border border-red-200 dark:border-red-900/50">
+            {error.message}
+          </p>
+        )}
       </div>
     </div>
   )

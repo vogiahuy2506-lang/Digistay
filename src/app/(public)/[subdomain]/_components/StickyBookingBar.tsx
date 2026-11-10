@@ -19,12 +19,14 @@ export function StickyBookingBar() {
   const [visible, setVisible] = React.useState(false)
 
   // Don't show sticky bar on dedicated booking or confirmation pages
-  const isBookingFlow =
-    pathname.includes('/dat-phong') ||
-    pathname.includes('/thanh-toan') ||
-    pathname.includes('/dat-coc') ||
-    pathname.includes('/xac-nhan') ||
-    pathname.includes('/hoa-don')
+  const isBookingFlow = Boolean(
+    pathname &&
+      (pathname.includes('/dat-phong') ||
+        pathname.includes('/thanh-toan') ||
+        pathname.includes('/dat-coc') ||
+        pathname.includes('/xac-nhan') ||
+        pathname.includes('/hoa-don'))
+  )
 
   React.useEffect(() => {
     if (isBookingFlow) {
@@ -48,7 +50,11 @@ export function StickyBookingBar() {
 
   const phone = hotel.property.phone
   const cleanPhone = phone?.replace(/[^\d+]/g, '')
-  const isHome = pathname === '/' || pathname.endsWith(`/${hotel.property.name}`) || !pathname.includes('/')
+  const isHome =
+    !pathname ||
+    pathname === '/' ||
+    (hotel.property.name ? pathname.endsWith(`/${hotel.property.name}`) : false) ||
+    !pathname.includes('/')
 
   return (
     <aside
