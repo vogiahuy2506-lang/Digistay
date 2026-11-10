@@ -21,7 +21,18 @@ export async function signOutToHome() {
   } catch {
     // Storage blocked: nothing depends on it.
   }
-  await signOut({ callbackUrl: '/' })
+  try {
+    await signOut({ redirect: false })
+  } catch {
+    // Network or NextAuth error: proceed to reload
+  }
+  if (typeof window !== 'undefined') {
+    if (window.location.pathname === '/') {
+      window.location.reload()
+    } else {
+      window.location.href = '/'
+    }
+  }
 }
 
 /**
@@ -113,7 +124,15 @@ export function MarketingAccount({ email, labels }: { email: string; labels: Mar
             {labels.profile}
           </Link>
           <div className="my-1.5 border-t border-line" role="separator" />
-          <button role="menuitem" type="button" className={cn(item, 'text-err')} onClick={signOutToHome}>
+          <button
+            role="menuitem"
+            type="button"
+            className={cn(item, 'text-err')}
+            onClick={async () => {
+              setOpen(false)
+              await signOutToHome()
+            }}
+          >
             <LogOut className="h-4 w-4" aria-hidden />
             {labels.signOut}
           </button>
