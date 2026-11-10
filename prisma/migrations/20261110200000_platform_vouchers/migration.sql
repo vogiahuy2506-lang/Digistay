@@ -25,3 +25,4 @@ CREATE UNIQUE INDEX "platform_vouchers_code_key" ON "platform_vouchers"("code");
 
 -- CreateIndex
 CREATE INDEX "platform_vouchers_isActive_startDate_endDate_idx" ON "platform_vouchers"("isActive", "startDate", "endDate");
+

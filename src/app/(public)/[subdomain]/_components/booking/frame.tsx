@@ -43,6 +43,7 @@ export async function loadBookingFrame(subdomain: string, { guestLink = false } 
     where: site ? { id: site.propertyId } : { subdomain, isActive: true },
     select: {
       id: true,
+      workspaceId: true,
       name: true,
       type: true,
       city: true,

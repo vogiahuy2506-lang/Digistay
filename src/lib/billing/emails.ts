@@ -99,7 +99,7 @@ export async function queueSubscriptionPaid(paymentId: string, db: Db = prisma):
   return ids
 }
 
-export type ReminderKind = 'soon30' | 'soon7' | 'soon1' | 'ended' | 'locked'
+export type ReminderKind = 'soon30' | 'soon7' | 'soon3' | 'soon1' | 'ended' | 'locked'
 
 /** One reminder around the end of the period; returns the queued ids. */
 export async function queueSubscriptionReminder(
@@ -115,6 +115,7 @@ export async function queueSubscriptionReminder(
   const subject = {
     soon30: `[Digistay] ${what} của ${workspace.name} còn 30 ngày`,
     soon7: `[Digistay] ${what} của ${workspace.name} còn 7 ngày`,
+    soon3: `[Digistay] ${what} của ${workspace.name} còn 3 ngày`,
     soon1: `[Digistay] ${what} của ${workspace.name} hết hạn ngày mai`,
     ended: `[Digistay] ${what} của ${workspace.name} đã hết hạn`,
     locked: `[Digistay] ${workspace.name} đang bị khoá vì chưa gia hạn`,
@@ -124,19 +125,20 @@ export async function queueSubscriptionReminder(
   const lead = {
     soon30: `${what} của workspace ${workspace.name} hết hạn ngày ${end}.${early}`,
     soon7: `${what} của workspace ${workspace.name} hết hạn ngày ${end}.${early}`,
-    soon1: `${what} của workspace ${workspace.name} hết hạn ngày ${end}.${early}`,
+    soon3: `${what} của workspace ${workspace.name} hết hạn vào ngày ${end} (còn 3 ngày).${early}`,
+    soon1: `${what} của workspace ${workspace.name} hết hạn ngày mai (${end}).${early}`,
     ended: `${what} của workspace ${workspace.name} đã hết hạn ngày ${end}. Bạn còn dùng bình thường đến ${lockDay}; sau ngày đó workspace chỉ còn xem và website ngừng nhận đặt phòng online.`,
     locked: `Workspace ${workspace.name} đã chuyển sang chỉ xem vì chưa gia hạn: không tạo hay sửa được dữ liệu, website ngừng nhận đặt phòng online. Dữ liệu vẫn được giữ nguyên.`,
   }[kind]
   const body = message(
     subject,
-    [lead, '', `Chọn gói và thanh toán bằng mã QR: ${billingUrl(workspace.slug)}`],
+    [lead, '', `Chọn gói và thanh toán bằng mã QR (1-Click): ${billingUrl(workspace.slug)}`],
     {
       title: what,
       badgeText: kind === 'locked' ? 'ĐÃ KHOÁ TRUY CẬP' : kind === 'ended' ? 'ĐÃ HẾT HẠN' : 'NHẮC HẠN GÓI DỊCH VỤ',
       badgeType: kind === 'locked' ? 'danger' : kind === 'ended' ? 'warning' : 'info',
       ctaUrl: billingUrl(workspace.slug),
-      ctaText: 'Chọn gói và gia hạn ngay',
+      ctaText: 'Chọn gói và gia hạn ngay (1-Click)',
     }
   )
   const ids: string[] = []

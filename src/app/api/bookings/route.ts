@@ -6,7 +6,7 @@ import { ROOM_SEGMENT_SELECT, withRoomTypeNames } from '@/lib/bookings/room-type
 import { z } from 'zod'
 import { sendAfterResponse } from '@/lib/email/outbox'
 import { BookingError, createBooking } from '@/lib/bookings/create-booking'
-import { lockedResponseForProperty } from '@/lib/billing/guard'
+import { lockedResponseForProperty, trialGraceResponse } from '@/lib/billing/guard'
 import { accessibleProperties, checkPropertyAccess } from '@/lib/auth/access'
 
 const MAX_LIMIT = 100
@@ -214,6 +214,8 @@ export async function POST(request: NextRequest) {
     if (!access.ok) return access.response
     const locked = await lockedResponseForProperty(access.property.id)
     if (locked) return locked
+    const graceBlocked = await trialGraceResponse(access.property.workspaceId)
+    if (graceBlocked) return graceBlocked
 
     const checkIn = new Date(data.checkInDate)
     const checkOut = new Date(data.checkOutDate)

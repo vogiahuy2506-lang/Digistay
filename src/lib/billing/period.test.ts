@@ -48,11 +48,13 @@ describe('dueReminder', () => {
     expect(dueReminder(sub(), new Date(end.getTime() - 10 * DAY))).toBeNull()
   })
 
-  it('sends the 7-day one, then the 1-day one, each once', () => {
+  it('sends the 7-day, 3-day, and 1-day reminders, each once', () => {
     expect(dueReminder(sub(), new Date(end.getTime() - 6 * DAY))).toBe('soon7')
     expect(dueReminder(sub({ soon7: 'x' }), new Date(end.getTime() - 6 * DAY))).toBeNull()
-    expect(dueReminder(sub({ soon7: 'x' }), new Date(end.getTime() - 0.5 * DAY))).toBe('soon1')
-    expect(dueReminder(sub({ soon7: 'x', soon1: 'x' }), new Date(end.getTime() - 0.5 * DAY))).toBeNull()
+    expect(dueReminder(sub({ soon7: 'x' }), new Date(end.getTime() - 2.5 * DAY))).toBe('soon3')
+    expect(dueReminder(sub({ soon7: 'x', soon3: 'x' }), new Date(end.getTime() - 2.5 * DAY))).toBeNull()
+    expect(dueReminder(sub({ soon7: 'x', soon3: 'x' }), new Date(end.getTime() - 0.5 * DAY))).toBe('soon1')
+    expect(dueReminder(sub({ soon7: 'x', soon3: 'x', soon1: 'x' }), new Date(end.getTime() - 0.5 * DAY))).toBeNull()
   })
 
   it('skips the 7-day one when the 1-day one is already due', () => {

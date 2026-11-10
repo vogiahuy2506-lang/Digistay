@@ -188,18 +188,21 @@ Tài liệu này phân rã chi tiết yêu cầu kỹ thuật, giải pháp, fil
 
 ---
 
-### Task 51 [P1]: Xử lý hết hạn dùng thử (7 ngày ân hạn website)
-* **Hiện trạng**: Cần quy định rõ ràng hành vi khi hết hạn dùng thử để không làm gián đoạn khách đang ở hoặc khách đặt phòng online.
-* **Giải pháp kỹ thuật**:
+### Task 51 [P1]: Xử lý hết hạn dùng thử (7 ngày ân hạn website) [ĐÃ HOÀN THÀNH 10/11/2026]
+* **Hiện trạng & Giải pháp đã hoàn thành**:
   1. Khi hết hạn dùng thử:
-     - Dashboard chuyển sang chế độ **Chỉ xem (View-only)**: Không tạo thêm cơ sở, phòng, đơn mới tại quầy.
-     - Website khách sạn vẫn tiếp tục hoạt động nhận khách trong **7 ngày ân hạn (Grace Period)**.
-     - Sau 7 ngày nếu không gia hạn, website mới tạm dừng nhận khách. Dữ liệu được bảo lưu 100%.
-  2. Hệ thống Cron tự động gửi email nhắc hạn trước **3 ngày** và **1 ngày**, trong email có sẵn nút gia hạn 1-click.
+     - Dashboard chuyển sang chế độ **Chỉ xem (View-only)**: Chặn tạo thêm cơ sở mới (`POST /api/properties`), tạo thêm phòng (`POST /api/properties/[id]/room-types`), tạo đơn mới tại quầy (`POST /api/bookings`) trả về mã 402 với thông báo rõ ràng `TRIAL_EXPIRED_READONLY`.
+     - Website khách sạn (`[subdomain].digistay.vn` và `POST /api/public/bookings`) vẫn tiếp tục hoạt động nhận khách bình thường trong **7 ngày ân hạn (Grace Period)**.
+     - Sau 7 ngày nếu không gia hạn (`state === 'locked'`), website chuyển sang trạng thái tạm dừng nhận khách online (thông báo khách gọi điện thoại trực tiếp). Toàn bộ dữ liệu được bảo lưu 100%.
+  2. Hệ thống Cron tự động gửi email nhắc hạn đa tầng trước **7 ngày**, **3 ngày** (`soon3`) và **1 ngày** (`soon1`), trong email có sẵn nút gia hạn 1-click dẫn thẳng vào thanh toán PayOS.
 * **File can thiệp**:
-  - `src/lib/billing/subscription.ts`
-  - `src/lib/billing/jobs.ts`
+  - `src/lib/billing/period.ts` & `src/lib/billing/period.test.ts`
+  - `src/lib/billing/guard.ts`
   - `src/lib/billing/emails.ts`
+  - `src/app/api/bookings/route.ts`
+  - `src/app/(public)/[subdomain]/dat-phong/page.tsx`
+  - `src/app/(public)/[subdomain]/_components/booking/frame.tsx`
+  - `src/lib/i18n/api-errors.en.json`
 
 ---
 

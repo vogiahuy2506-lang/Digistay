@@ -15,8 +15,8 @@ import { YEARLY_MONTHS, planById, type PlanId } from '@/lib/marketing/plans'
 export const TRIAL_PLAN: PlanId = 'growth'
 export const TRIAL_DAYS = 14
 export const GRACE_DAYS = 7
-/** Reminders before the end, in days (30 for yearly plans only). */
-export const REMIND_BEFORE_DAYS = [30, 7, 1] as const
+/** Reminders before the end, in days (30 for yearly plans, 7, 3, 1). */
+export const REMIND_BEFORE_DAYS = [30, 7, 3, 1] as const
 /** Renewing the same plan is open this many days before the end; the first reminder says so. */
 export const RENEW_WINDOW_DAYS: Record<BillingPeriod, number> = { MONTH: 7, YEAR: 30 }
 /** A yearly plan cannot move to a monthly one while this many days or more are left. */
@@ -93,16 +93,17 @@ export function subscriptionState(sub: { trial: boolean; periodEnd: Date }, now 
 export function dueReminder(
   sub: { trial: boolean; billing?: BillingPeriod | null; periodEnd: Date; reminders: unknown; nextPlan?: string | null },
   now = new Date(),
-): 'soon30' | 'soon7' | 'soon1' | 'ended' | 'locked' | null {
+): 'soon30' | 'soon7' | 'soon3' | 'soon1' | 'ended' | 'locked' | null {
   if (sub.nextPlan) return null
   const sent = (sub.reminders && typeof sub.reminders === 'object' ? sub.reminders : {}) as Record<string, unknown>
   const { state, daysLeft } = subscriptionState(sub, now)
   if (state === 'locked') return sent.locked ? null : 'locked'
   if (state === 'grace') return sent.ended ? null : 'ended'
-  // Only the closest one: a trial that starts with 14 days gets "7 days" once, then "1 day".
+  // Only the closest one: e.g. 7 days once, then 3 days, then 1 day.
   if (daysLeft <= 1) return sent.soon1 ? null : 'soon1'
-  if (daysLeft <= 7) return sent.soon7 || sent.soon1 ? null : 'soon7'
-  if (daysLeft <= 30 && !sub.trial && sub.billing === 'YEAR') return sent.soon30 || sent.soon7 || sent.soon1 ? null : 'soon30'
+  if (daysLeft <= 3) return sent.soon3 || sent.soon1 ? null : 'soon3'
+  if (daysLeft <= 7) return sent.soon7 || sent.soon3 || sent.soon1 ? null : 'soon7'
+  if (daysLeft <= 30 && !sub.trial && sub.billing === 'YEAR') return sent.soon30 || sent.soon7 || sent.soon3 || sent.soon1 ? null : 'soon30'
   return null
 }
 

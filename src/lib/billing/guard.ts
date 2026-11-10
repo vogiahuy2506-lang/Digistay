@@ -30,10 +30,21 @@ export const ROOM_TYPE_PLAN_LOCKED =
   'Hạng phòng này đang bị khoá vì workspace dùng vượt giới hạn gói nên không nhận đơn mới. Nâng cấp gói hoặc giảm bớt phòng trong Gói & thanh toán để mở lại.'
 /** A guest (403): that room type cannot be booked online for now. */
 export const ROOM_TYPE_NOT_BOOKABLE = 'Hạng phòng này hiện không nhận đặt phòng online. Vui lòng chọn hạng phòng khác hoặc liên hệ trực tiếp khách sạn.'
+export const TRIAL_EXPIRED_READONLY =
+  'Thời gian dùng thử đã hết hạn (đang trong 7 ngày ân hạn). Dashboard ở chế độ chỉ xem, không thể tạo thêm cơ sở, phòng hoặc đơn mới tại quầy. Vui lòng nâng cấp gói để tiếp tục.'
 
 /** Whether the workspace is read-only now. */
 export async function isWorkspaceLocked(workspaceId: string): Promise<boolean> {
   return (await workspacePlan(workspaceId)).state === 'locked'
+}
+
+/** 402 when the workspace's trial has expired and is in its 7-day grace period (view-only on dashboard). */
+export async function trialGraceResponse(workspaceId: string): Promise<NextResponse | null> {
+  const plan = await workspacePlan(workspaceId)
+  if (plan.state === 'grace' && plan.subscription.trial) {
+    return NextResponse.json({ success: false, error: TRIAL_EXPIRED_READONLY, code: 'TRIAL_EXPIRED_READONLY' }, { status: 402 })
+  }
+  return null
 }
 
 /** 402 when the workspace is read-only, else null: `const blocked = await lockedResponse(id); if (blocked) return blocked`. */
@@ -66,6 +77,10 @@ async function propertyLock(propertyId: string): Promise<{ workspaceId: string; 
 export async function planResponse(workspaceId: string, kind: LimitKind, adding: number): Promise<NextResponse | null> {
   const locked = await lockedResponse(workspaceId)
   if (locked) return locked
+  if (adding > 0) {
+    const graceBlocked = await trialGraceResponse(workspaceId)
+    if (graceBlocked) return graceBlocked
+  }
   return limitResponse(workspaceId, kind, adding)
 }
 
@@ -73,7 +88,12 @@ export async function planResponse(workspaceId: string, kind: LimitKind, adding:
 export async function planResponseForProperty(propertyId: string, kind: LimitKind, adding: number): Promise<NextResponse | null> {
   const found = await propertyLock(propertyId)
   if (!found) return null
-  return found.response ?? limitResponse(found.workspaceId, kind, adding)
+  if (found.response) return found.response
+  if (adding > 0) {
+    const graceBlocked = await trialGraceResponse(found.workspaceId)
+    if (graceBlocked) return graceBlocked
+  }
+  return limitResponse(found.workspaceId, kind, adding)
 }
 
 async function limitResponse(workspaceId: string, kind: LimitKind, adding: number): Promise<NextResponse | null> {

@@ -9,6 +9,7 @@ import { HOLD_COOKIE, holdSessionId } from '@/lib/bookings/hold-session'
 import { onlineDepositOf } from '@/lib/payments/guest-deposit'
 import { ROOM_RATE_INCLUDE, propertyRateDefaults } from '@/lib/pricing/rates'
 import { ratesFrom } from '@/lib/pricing/quote'
+import { isWorkspaceLocked } from '@/lib/billing/guard'
 import { BookingFooter, BookingHeader, BookingSteps, loadBookingFrame } from '../_components/booking/frame'
 import { SiteLink } from '../_components/site-base'
 import { Container, roomMeta } from '../_components/site-ui'
@@ -114,6 +115,7 @@ export default async function BookingPage({ params, searchParams }: PageProps) {
     })
   }
 
+  const isLocked = await isWorkspaceLocked(frame.property.workspaceId)
   const back = `/search?${new URLSearchParams({ ...(checkIn && { checkIn }), ...(checkOut && { checkOut }), adults: String(adults), children: String(children) })}`
 
   return (
@@ -121,7 +123,19 @@ export default async function BookingPage({ params, searchParams }: PageProps) {
       <BookingHeader frame={frame} />
       <main>
         <BookingSteps current={2} deposit={!!deposit} />
-        {bookable ? (
+        {isLocked ? (
+          <Container className="pt-12">
+            <div className="max-w-[640px] border border-line bg-panel p-6 lg:p-8">
+              <p className="text-[17px] font-semibold text-fg">Khách sạn đang tạm ngừng nhận đặt phòng online</p>
+              <p className="mt-2 text-sm text-muted">
+                Vui lòng liên hệ trực tiếp khách sạn{frame.property.phone ? ` qua số điện thoại ${frame.property.phone}` : ''} để được hỗ trợ.
+              </p>
+              <SiteLink path="/" className="mt-5 inline-flex h-[46px] items-center bg-ink px-5 text-[14px] font-medium text-on-ink">
+                Về trang chủ
+              </SiteLink>
+            </div>
+          </Container>
+        ) : bookable ? (
           <BookingForm
             property={{ id: propertyId, name: frame.property.name, phone: frame.property.phone }}
             room={{
