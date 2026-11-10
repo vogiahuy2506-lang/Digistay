@@ -114,3 +114,4 @@ describe('POST /api/admin/system/trigger-job', () => {
     expect(json.success).toBe(true)
   })
 })
+

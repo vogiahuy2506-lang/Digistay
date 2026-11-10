@@ -388,7 +388,7 @@ export default function AdminSystemPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-base font-bold text-fg">Trung tâm Điều khiển Tiến trình Tự động (Cronjobs)</h2>
-                <p className="text-xs text-muted">Bấm "Chạy ngay" để kích hoạt thủ công bất kỳ tác vụ nào khi cần kiểm tra hoặc bảo trì.</p>
+                <p className="text-xs text-muted">Bấm &quot;Chạy ngay&quot; để kích hoạt thủ công bất kỳ tác vụ nào khi cần kiểm tra hoặc bảo trì.</p>
               </div>
             </div>
 

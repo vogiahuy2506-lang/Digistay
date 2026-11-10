@@ -1,5 +1,8 @@
 -- AlterTable platform_plans with extended quota and feature limit fields
 ALTER TABLE "platform_plans"
+ALTER COLUMN "properties" SET DEFAULT 1,
+ALTER COLUMN "rooms" SET DEFAULT 15,
+ALTER COLUMN "staff" SET DEFAULT 3,
 ADD COLUMN IF NOT EXISTS "priceYearly" INTEGER,
 ADD COLUMN IF NOT EXISTS "trialDays" INTEGER NOT NULL DEFAULT 14,
 ADD COLUMN IF NOT EXISTS "maxRoomTypes" INTEGER NOT NULL DEFAULT 5,
@@ -102,3 +105,4 @@ UPDATE "platform_plans" SET
   "isFeatured" = false,
   "displayOrder" = 3
 WHERE "id" = 'business';
+
