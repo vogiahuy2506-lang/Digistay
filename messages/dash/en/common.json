@@ -131,7 +131,7 @@
     "USER": "Staff"
   },
   "bookingStatus": {
-    "PENDING": "Awaiting payment",
+    "PENDING": "Awaiting confirmation",
     "CONFIRMED": "Confirmed",
     "CHECKED_IN": "Checked in",
     "CHECKED_OUT": "Checked out",

@@ -24,6 +24,7 @@ function positiveInt(value: string | null, fallback: number): number {
 
 const createBookingSchema = z.object({
   propertyId: z.string(),
+  source: z.enum(['WALK_IN', 'PHONE', 'DIRECT', 'OTA', 'AGENT']).optional().default('WALK_IN'),
   guestName: z.string().min(2, 'Tên khách phải có ít nhất 2 ký tự'),
   // Optional for staff: a walk-in may have none (then no confirmation email).
   guestEmail: z.string().trim().email('Email không hợp lệ').optional().or(z.literal('')),
@@ -223,6 +224,7 @@ export async function POST(request: NextRequest) {
     const { booking, emailIds } = await createBooking({
       propertyId: data.propertyId,
       roomTypeId: data.roomTypeId,
+      source: data.source,
       guestName: data.guestName,
       guestEmail: data.guestEmail ?? '',
       guestPhone: data.guestPhone,

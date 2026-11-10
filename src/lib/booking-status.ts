@@ -18,7 +18,7 @@ export interface StatusMeta {
 }
 
 export const bookingStatusMeta: Record<BookingStatus, StatusMeta> = {
-  PENDING: { label: 'Chờ thanh toán', tone: 'warn', needsAction: true },
+  PENDING: { label: 'Chờ xác nhận', tone: 'warn', needsAction: true },
   CONFIRMED: { label: 'Đã xác nhận', tone: 'info' },
   CHECKED_IN: { label: 'Đã nhận phòng', tone: 'ok' },
   CHECKED_OUT: { label: 'Đã trả phòng', tone: 'plain' },

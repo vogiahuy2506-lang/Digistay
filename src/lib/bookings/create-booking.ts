@@ -14,7 +14,7 @@
  *   language and links to the site's pages in it; the owner's is Vietnamese.
  * - Never creates a payment: a guest cannot record money (Part 1).
  */
-import type { Prisma } from '@prisma/client'
+import type { BookingSource, Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import type { Locale } from '@/i18n/locales'
 import { emailLocale } from '@/lib/email/i18n'
@@ -59,6 +59,8 @@ export interface NewBooking {
   roomId?: string | null
   vat?: { company?: string | null; taxCode?: string | null; address?: string | null; email?: string | null }
   services?: { serviceId: string; quantity: number }[]
+  /** Booking source (WALK_IN, PHONE, DIRECT, etc.) */
+  source?: BookingSource | null
   /** the staff member; null for a guest */
   createdById?: string | null
   /** the guest's hold (RoomLock id from /api/bookings/room-lock) */
@@ -315,7 +317,7 @@ export async function createBooking(input: NewBooking) {
         totalAmount: Math.max(0, Math.round(quote.total) - discount),
         ...(couponId && { couponId, couponCode: appliedCouponCode }),
         depositAmount: 0,
-        source: 'DIRECT',
+        source: input.source ?? (input.createdById ? 'WALK_IN' : 'DIRECT'),
         createdById: input.createdById ?? null,
         locale: input.locale ?? 'vi',
         vatCompany: input.vat?.company || null,

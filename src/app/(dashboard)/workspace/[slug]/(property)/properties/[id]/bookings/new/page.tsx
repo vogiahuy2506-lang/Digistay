@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
-import { AlertCircle, ArrowLeft, Banknote, Bed, Check, Clock, CreditCard, Landmark, Plus, RefreshCw, Users } from 'lucide-react'
+import { AlertCircle, ArrowLeft, Banknote, Bed, Check, Clock, CreditCard, Landmark, Phone, Plus, RefreshCw, Users } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Header, PageContainer } from '@/components/layout'
 import { Button } from '@/components/ui'
@@ -90,6 +90,7 @@ export default function WalkinBookingPage() {
   const [roomId, setRoomId] = React.useState('')
 
   const [guest, setGuest] = React.useState({ name: '', phone: '', email: '', note: '' })
+  const [source, setSource] = React.useState<'WALK_IN' | 'PHONE'>('WALK_IN')
   const [method, setMethod] = React.useState<Method>('NONE')
   const [scope, setScope] = React.useState<'full' | 'deposit'>('full')
   const [isSubmitting, setIsSubmitting] = React.useState(false)
@@ -175,6 +176,7 @@ export default function WalkinBookingPage() {
   const resetForm = () => {
     setSelectedTypeId(null)
     setGuest({ name: '', phone: '', email: '', note: '' })
+    setSource('WALK_IN')
     setMethod('NONE')
     setScope('full')
     setError('')
@@ -213,6 +215,7 @@ export default function WalkinBookingPage() {
         body: JSON.stringify({
           propertyId,
           roomTypeId: selected.id,
+          source,
           guestName: guest.name.trim(),
           guestPhone: guest.phone.trim(),
           guestEmail: guest.email.trim(),
@@ -482,6 +485,38 @@ export default function WalkinBookingPage() {
                     <dd className="font-medium text-fg tabular-nums">{dayMonth(checkOutDate)}{stayTimes ? ` · ${stayTimes.checkOut}` : ''}</dd>
                   </div>
                 </dl>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-small font-medium text-fg block">Nguồn đặt phòng</label>
+                <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Nguồn đặt phòng">
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={source === 'WALK_IN'}
+                    onClick={() => setSource('WALK_IN')}
+                    className={cn(
+                      'h-9 rounded-ctl border text-xs font-medium transition-colors flex items-center justify-center gap-1.5',
+                      source === 'WALK_IN' ? 'border-acc bg-acc-soft text-fg' : 'border-line bg-panel text-muted hover:text-fg'
+                    )}
+                  >
+                    <Users className="w-3.5 h-3.5" aria-hidden="true" />
+                    Tại quầy (Walk-in)
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={source === 'PHONE'}
+                    onClick={() => setSource('PHONE')}
+                    className={cn(
+                      'h-9 rounded-ctl border text-xs font-medium transition-colors flex items-center justify-center gap-1.5',
+                      source === 'PHONE' ? 'border-acc bg-acc-soft text-fg' : 'border-line bg-panel text-muted hover:text-fg'
+                    )}
+                  >
+                    <Phone className="w-3.5 h-3.5" aria-hidden="true" />
+                    Gọi điện (Phone)
+                  </button>
+                </div>
               </div>
 
               <fieldset className="space-y-2">

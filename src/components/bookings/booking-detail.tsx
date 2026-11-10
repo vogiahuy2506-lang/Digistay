@@ -854,7 +854,7 @@ function MoveFrom({ booking, days, onClose, onDone }: { booking: BookingDetailDa
   )
 }
 
-type ActionKey = 'checkin' | 'checkout' | 'noshow' | 'cancel' | 'extend' | 'email'
+type ActionKey = 'checkin' | 'checkout' | 'noshow' | 'cancel' | 'extend' | 'email' | 'confirm'
 
 async function postAction(bookingId: string, path: string, body?: unknown) {
   const res = await fetch(`/api/bookings/${bookingId}/${path}`, {
@@ -896,7 +896,8 @@ export function BookingActions({
 
   const remaining = remainingAmount(booking)
   const s = booking.status
-  const canCheckIn = s === 'PENDING' || s === 'CONFIRMED'
+  const canConfirm = s === 'PENDING'
+  const canCheckIn = s === 'CONFIRMED'
   const canCheckOut = s === 'CHECKED_IN'
   const canExtend = s === 'CONFIRMED' || s === 'CHECKED_IN'
   const canNoShow = s === 'PENDING' || s === 'CONFIRMED'
@@ -947,21 +948,27 @@ export function BookingActions({
 
   const primary = !canManage
     ? null
-    : canCheckIn
+    : canConfirm
       ? {
-          label: t('actions.checkIn'),
-          key: 'checkin' as const,
-          // Confirmed in the dialog, with the room (check-in-dialog.tsx); it was one click.
-          run: () => setDialog('checkin'),
+          label: 'Xác nhận đơn',
+          key: 'confirm' as const,
+          run: () => run('confirm', 'confirm', undefined, (d) => apiError(d.message) || 'Đã xác nhận đơn đặt phòng'),
         }
-      : canCheckOut
+      : canCheckIn
         ? {
-            label: t('actions.checkOut'),
-            key: 'checkout' as const,
-            // The late fee is decided in the dialog (check-out-dialog.tsx).
-            run: () => setDialog('checkout'),
+            label: t('actions.checkIn'),
+            key: 'checkin' as const,
+            // Confirmed in the dialog, with the room (check-in-dialog.tsx); it was one click.
+            run: () => setDialog('checkin'),
           }
-        : null
+        : canCheckOut
+          ? {
+              label: t('actions.checkOut'),
+              key: 'checkout' as const,
+              // The late fee is decided in the dialog (check-out-dialog.tsx).
+              run: () => setDialog('checkout'),
+            }
+          : null
 
   return (
     <>
@@ -972,6 +979,11 @@ export function BookingActions({
       ) : (
         <Button variant="outline" className="flex-1" onClick={print}>
           {t('actions.printSlip')}
+        </Button>
+      )}
+      {canManage && canConfirm && (
+        <Button variant="outline" onClick={() => setDialog('checkin')} disabled={!!busy}>
+          {t('actions.checkIn')}
         </Button>
       )}
       {canManage && remaining > 0 && booking.status !== 'CANCELLED' && (
@@ -1001,6 +1013,14 @@ export function BookingActions({
         {primary && (
           <DropdownItem onClick={print} className="sm:hidden">
             {t('actions.printSlip')}
+          </DropdownItem>
+        )}
+        {canManage && canConfirm && (
+          <DropdownItem
+            disabled={busy === 'confirm'}
+            onClick={() => run('confirm', 'confirm', undefined, (d) => apiError(d.message) || 'Đã xác nhận đơn đặt phòng')}
+          >
+            Xác nhận đơn
           </DropdownItem>
         )}
         {canManage && (
