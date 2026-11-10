@@ -10,7 +10,7 @@ Tài liệu này phân rã chi tiết yêu cầu kỹ thuật, giải pháp, fil
 | :--- | :--- | :--- |
 | **Giai đoạn 1: Sửa lỗi khẩn cấp P0 (Luồng cốt lõi)** | **Task 41 - 47** | Đảm bảo xuất bản web tức thì, tính giá phòng chính xác, chặn lộ mật khẩu, thu tiền check-out, nguồn đơn chuẩn và khách sạn demo hoạt động. |
 | **Giai đoạn 2: Quản trị, Gói cước & Bán hàng P1** | **Task 48 - 51** | Tích hợp PayOS mua gói, cập nhật bảng giá thật, hoàn thiện trang Superadmin (gói, voucher) và xử lý ân hạn dùng thử. |
-| **Giai đoạn 3: Tính năng nâng cao P1 (AI, OTA, Invoice)** | **Task 52 - 56** | Chatbot hỏi đáp phòng thật, tích hợp AI Gemini thật, nhãn OTA & đồng bộ iCal, chốt hóa đơn điện tử và kiểm thử luồng PayOS thật. |
+| **Giai đoạn 3: Tính năng nâng cao P1 (AI, OTA, Gói cước)** | **Task 52 - 56** | Chatbot hỏi đáp phòng thật, tích hợp AI Gemini thật, nhãn OTA & đồng bộ iCal, bỏ xuất hóa đơn điện tử cho khách sạn (chỉ giữ Mắt Bão xuất hóa đơn khi mua gói Digistay) và kiểm thử luồng PayOS thật. |
 
 ---
 
@@ -243,15 +243,25 @@ Tài liệu này phân rã chi tiết yêu cầu kỹ thuật, giải pháp, fil
 
 ---
 
-### Task 55 [P1]: Hóa đơn điện tử: Chốt phương án phát hành thật hoặc ẩn
-* **Hiện trạng**: Cần thống nhất hướng đi giữa việc làm video phát hành thật với Mắt Bão hay ẩn khỏi giao diện để tránh người dùng hiểu lầm.
-* **Đề xuất & Kế hoạch**:
-  - **Phương án A (Khuyến nghị)**: Đã có sẵn module Mắt Bão hoàn chỉnh (đầy đủ test suite 27 bài test pass trong `matbao.int.test.ts`), chỉ cần nhập tài khoản sandbox thật để quay video demo và hỗ trợ xuất thật cho khách sạn có nhu cầu.
-  - **Phương án B**: Thêm feature flag `ENABLE_EINVOICE=false` để ẩn mục Hóa đơn khỏi Sidebar, Landing page và Bảng giá nếu chưa muốn mở rộng trong tháng này.
+### Task 55 [P1]: Bỏ tính năng xuất hóa đơn điện tử cho khách sạn (Chỉ giữ Mắt Bão xuất hóa đơn khi mua gói Digistay)
+* **Hiện trạng & Quyết định**:
+  - Không triển khai tích hợp xuất hóa đơn điện tử Mắt Bão cho các khách sạn/chủ cơ sở (để đơn giản hóa vận hành, tránh phức tạp về chữ ký số, thuế suất và pháp lý của từng khách sạn lẻ).
+  - **Chỉ giữ lại Mắt Bão ở cấp nền tảng Digistay** (`src/lib/billing/einvoice.ts`): Tự động phát hành hóa đơn điện tử GTGT cho khách hàng khi họ mua/gia hạn gói phần mềm Digistay (Starter, Growth, Business) qua tài khoản Mắt Bão của công ty Digistay.
+* **Giải pháp kỹ thuật**:
+  1. **Ẩn / Gỡ bỏ tính năng xuất hóa đơn điện tử phía khách sạn**:
+     - Ẩn mục "Hóa đơn điện tử" trên Sidebar điều hướng của cơ sở khách sạn (`src/components/layout/nav.ts` hoặc cấu hình menu cơ sở).
+     - Loại bỏ các ô nhập cấu hình Mắt Bão của từng khách sạn trong phần cài đặt / tích hợp thanh toán.
+     - Dọn dẹp nội dung giới thiệu tính năng "Xuất hóa đơn điện tử cho khách lưu trú" trên Landing Page (`src/app/(public)/page.tsx`), trang Tính năng và Bảng giá (`/pricing`).
+  2. **Bảo toàn và duy trì module Mắt Bão cho Gói cước Digistay (Platform)**:
+     - Duy trì module `src/lib/billing/einvoice.ts` và bảng `SubscriptionInvoice`.
+     - Khi khách mua gói: form thanh toán cho phép khách chọn lấy hóa đơn "Cá nhân" (CCCD) hoặc "Doanh nghiệp" (MST) -> Sau khi PayOS báo thanh toán thành công, hệ thống tự động gọi Mắt Bão của Digistay để phát hành hóa đơn và gửi email file PDF/link tra cứu hóa đơn cho khách.
+     - Superadmin tiếp tục theo dõi, xuất lại hoặc kiểm tra hóa đơn gói tại `/admin/system` (mục "Hóa đơn gói").
 * **File can thiệp**:
-  - `src/components/layout/nav.ts`
+  - `src/components/layout/nav.ts` (ẩn menu Hóa đơn điện tử khỏi cơ sở)
+  - `src/app/(dashboard)/workspace/[slug]/(property)/properties/[id]/invoices/page.tsx`
   - `src/app/(public)/page.tsx`
-  - `src/lib/einvoice/matbao.ts`
+  - `src/app/(public)/pricing/page.tsx`
+  - `src/lib/billing/einvoice.ts` (giữ nguyên hoạt động cho hóa đơn gói)
 
 ---
 
@@ -293,7 +303,7 @@ flowchart TD
         T52[Task 52: Chatbot hỏi phòng trống chuẩn]
         T53[Task 53: Tích hợp Gemini AI thật]
         T54[Task 54: Gắn nhãn OTA & Đồng bộ iCal]
-        T55[Task 55: Chốt luồng Hóa đơn điện tử]
+        T55[Task 55: Bỏ HĐĐT khách sạn, giữ HĐĐT gói Digistay]
         T56[Task 56: Test thực tế PayOS nhận cọc 2k]
     end
 
