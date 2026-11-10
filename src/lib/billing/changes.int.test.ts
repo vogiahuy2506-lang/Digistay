@@ -233,13 +233,13 @@ describe('plan e-invoices', () => {
     signInAs(t.owner)
     const payment = await buyAndPay(t.workspace.id, 'growth', 'MONTH', company)
     const pending = await prisma.subscriptionInvoice.findUniqueOrThrow({ where: { paymentId: payment.id } })
-    expect(pending).toMatchObject({ status: 'PENDING', buyerType: 'company', taxCode: '0312345678', email: t.owner.email, amount: 5_000, vatCode: -1 })
+    expect(pending).toMatchObject({ status: 'PENDING', buyerType: 'company', taxCode: '0312345678', email: t.owner.email, amount: 399_000, vatCode: -1 })
 
     expect(await runSubscriptionInvoiceJobs()).toMatchObject({ issued: 1, emailed: 1 })
     const issued = await prisma.subscriptionInvoice.findUniqueOrThrow({ where: { paymentId: payment.id } })
     expect(issued).toMatchObject({ status: 'ISSUED', lookupCode: `DSG${payment.orderCode}`, series: 'C26TDG', environment: 'DEMO', emailStatus: 'SENT' })
     expect(issued.einvoiceNumber).toBeTruthy()
-    expect(matbao.createCalls[0]).toMatchObject({ MaTraCuu: `DSG${payment.orderCode}`, NMua_MST: '0312345678', NMua_Ten: 'Công ty TNHH Mây', TgTTTBSo: 5_000 })
+    expect(matbao.createCalls[0]).toMatchObject({ MaTraCuu: `DSG${payment.orderCode}`, NMua_MST: '0312345678', NMua_Ten: 'Công ty TNHH Mây', TgTTTBSo: 399_000 })
     const [to, message, attachments] = mail.mock.calls[0] as unknown as [{ email: string }, { subject: string }, { filename: string; content: Buffer }[]]
     expect(to.email).toBe(t.owner.email)
     expect(message.subject).toMatch(/Hoá đơn điện tử/)
