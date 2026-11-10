@@ -1,80 +1,103 @@
-# KẾ HOẠCH NÂNG CẤP & TÁI CẤU TRÚC TOÀN DIỆN SUPER ADMIN (SUPER ADMIN 2.0)
+# KẾ HOẠCH NÂNG CẤP & TÁI CẤU TRÚC TOÀN DIỆN SUPER ADMIN (PLATFORM CONSOLE 2.0)
 
 > **Tài liệu chiến lược & Lộ trình kỹ thuật**  
-> **Dự án**: Digistay - Nền tảng Quản trị & Website Khách Sạn Trực Tuyến  
+> **Dự án**: Digistay Platform Management Console  
 > **Ngày cập nhật**: 10/11/2026  
-> **Mục tiêu**: Lột xác hoàn toàn giao diện (UI/UX) theo chuẩn Enterprise SaaS và nâng cấp bộ tính năng quản trị tối thượng, xóa bỏ triệt để các hạn chế hiện tại (đặc biệt là quản lý gói cước động & tạo gói tùy chỉnh).
+> **Định hướng cốt lõi**: Định vị lại Super Admin thành **Bảng điều khiển Quản trị Nền tảng (Platform Operator Console)** đích thực. Tập trung 100% vào:
+> 1. **Giao diện hiện đại (Modern SaaS UI/UX)**: Sidebar cố định chuẩn Stripe/Vercel, Dark/Light theme, thanh tìm kiếm toàn cầu.
+> 2. **Động hóa toàn diện Gói cước (Dynamic & Custom Plans Engine)**: Xóa bỏ 3 gói cứng cũ, cho phép Super Admin tự tạo gói mới, tạo gói tùy chỉnh (Custom / VIP Plan) và cấu hình công tắc tính năng linh hoạt.
+> 3. **Cấu hình Nền tảng Toàn cầu (Global Platform Settings)**: Quản lý biến môi trường, API keys (PayOS, Mắt Bão, Gemini AI, Cloudinary, SMTP) trực tiếp trên Web UI không cần SSH vào VPS.
+> 4. **Giám sát Hạ tầng, Máy chủ & Tài nguyên (Infrastructure & Health)**: Đo lường CPU/RAM/Disk VPS, Postgres, Redis, Trigger Cronjob 1-click.
+> 5. **Bảo mật, Phân quyền Admin Nội bộ & Tường lửa (Security, RBAC & IP Blacklist)**.
 
 ---
 
-## I. BỐI CẢNH & NHỮNG ĐIỂM BẤT TIỆN LỚN CẦN GIẢI QUYẾT
+## I. NHỮNG ĐIỂM BẤT TIỆN LỚN CỦA PHÂN HỆ HIỆN TẠI
 
-### 1. Vấn đề cốt lõi về Quản lý Gói cước (Plans Engine)
-* **Hiện tại**: Hệ thống bị gắn chặt cứng vào 3 định danh gói (`starter`, `growth`, `business`) trong mã nguồn TypeScript (`PLAN_IDS = ['starter', 'growth', 'business'] as const`).
-* **Hậu quả bất tiện**:
-  - Super Admin **không thể tự tạo thêm gói mới** (ví dụ: *Gói Dùng thử VIP 30 ngày*, *Gói Homestay Mini*, *Gói Chuỗi Khách Sạn 20 Cơ Sở*...).
-  - **Không thể tạo gói cước tùy chỉnh (Custom / Enterprise Plan)** riêng cho một đối tác hoặc chuỗi khách sạn đặc thù đàm phán giá và hạn mức riêng.
-  - Không thể bật/tắt linh hoạt các tính năng (feature flags: tên miền riêng, chatbot AI, đồng bộ iCal, v.v.) theo từng gói mà phải sửa code.
+### 1. Sự bất tiện trong Quản lý Gói cước (Plans Engine)
+* **Bị trói cứng vào 3 gói tĩnh**: Mã nguồn hiện tại ép buộc chỉ có 3 định danh gói `starter`, `growth`, `business`. Super Admin chỉ có thể chỉnh sửa giá tiền hoặc giới hạn phòng của 3 gói này mà **không thể tự tạo thêm bất kỳ gói mới nào**.
+* **Không thể tạo Gói Tùy Chỉnh (Custom / Enterprise Plan)**:
+  - Khi có một đối tác lớn, chuỗi khách sạn hoặc khách VIP muốn đàm phán một gói riêng (ví dụ: *"Gói Đối Tác 2026: 50 cơ sở, 500 phòng, tặng kèm 1000 lượt AI"* với giá thỏa thuận riêng), Super Admin hoàn toàn **bó tay**, không có cách nào tạo gói đó trên hệ thống.
+* **Không có công tắc tính năng (Feature Flags)**: Không thể chủ động bật/tắt quyền dùng Tên miền riêng, Chatbot AI, Đồng bộ iCal OTA... cho từng gói cước.
 
-### 2. Vấn đề về Giao diện & Trải nghiệm (UI/UX)
-* **Header tab ngang lỗi thời**: `AdminFrame` dùng thanh tab ngang trượt ngang (`overflow-x-auto`). Khi thêm nhiều mục, thanh tab bị tràn mép, chữ bị che khuất trên laptop và tablet, không hiển thị trực quan cấu trúc trang.
-* **Trang Hệ thống (`/admin/system`) quá thô sơ**: Dùng chữ và viền đơn sắc dạng báo cáo kỹ thuật thô, không có biểu đồ trạng thái, không thể hiện được đẳng cấp của một SaaS chuyên nghiệp.
-* **Thiếu thanh tìm kiếm thông minh toàn cầu (Universal Search)**: Khi cần tìm một khách sạn, một chủ cơ sở, một mã đơn PayOS hay một voucher, admin phải vào từng trang riêng để gõ tìm kiếm.
-* **Chưa có tính năng Đăng nhập hộ (Impersonation)**: Mỗi khi khách hàng cần hỗ trợ kỹ thuật, Super Admin không thể bấm vào xem Dashboard dưới góc nhìn của khách sạn đó mà phải hỏi mật khẩu hoặc đoán lỗi.
+### 2. Sự bất tiện về Cấu hình Hệ thống (Configuration Management)
+* Muốn đổi API Key PayOS, đổi mật khẩu Mắt Bão, cập nhật Gemini API Key hay cấu hình Email SMTP thì Super Admin đều phải:
+  - Mở terminal SSH vào VPS (`/opt/digistay/.env`).
+  - Dùng lệnh nano/vim sửa file thủ công, rồi chạy lại docker.
+  - Quá rủi ro, dễ gõ sai định dạng làm crash toàn bộ app, và người không rành dòng lệnh không thể thao tác được.
+
+### 3. Giao diện cũ kỹ, thiếu chuyên nghiệp (UI/UX)
+* Thanh tab ngang trượt ngang (`admin-frame.tsx`) bị tràn màn hình, khó quan sát.
+* Trang hệ thống (`/admin/system`) hiển thị text thô sơ dạng log không có đồ họa trực quan.
+* Thiếu bảng điều khiển kiểm soát tài nguyên máy chủ (dung lượng ổ cứng VPS, RAM, CPU).
 
 ---
 
-## II. MA TRẬN SO SÁNH: TÍNH NĂNG HIỆN CÓ VS TÍNH NĂNG CẦN CÓ (SUPER ADMIN 2.0)
+## II. MA TRẬN SO SÁNH: TÍNH NĂNG HIỆN CÓ VS SUPER ADMIN 2.0
 
-| Phân hệ chức năng | Hiện trạng (v1.0) | Đề xuất Super Admin 2.0 (Mới & Nâng cấp) |
+| Phân hệ chức năng | Hiện trạng (v1.0) | Đề xuất Super Admin 2.0 (Platform Console) |
 | :--- | :--- | :--- |
-| **Giao diện & Bố cục** | Header ngang trượt tab hẹp, thiếu sidebar, layout rời rạc. | **Sidebar cố định chuẩn SaaS Enterprise** (Collapsible, icon Lucide sắc nét, Dark/Light mode chuẩn token, badge cảnh báo đỏ). |
-| **Tìm kiếm toàn cầu** | Không có (chỉ tìm trong từng bảng). | **Universal Search Bar (`Ctrl + K`)**: Gõ tìm tức thì Khách sạn, Email chủ, Mã đơn PayOS, Mã voucher, Subdomain. |
-| **Quản lý Gói cước** | Cố định 3 gói (chỉ sửa được giá tiền và giới hạn phòng của 3 gói này). | **Engine Gói Động & Gói Tùy Chỉnh (Custom Plans)**: Tạo gói mới không giới hạn, bật/tắt Feature Flags, tạo Gói Riêng (Private) gán cho khách VIP. |
-| **Hỗ trợ Khách hàng (CSKH)** | Không có tính năng đăng nhập hộ. | **Impersonation ("Xem dưới danh nghĩa khách")**: 1-click vào thẳng Dashboard khách sạn để hỗ trợ, có banner cảnh báo thoát admin. |
-| **Quản lý Cơ sở (Properties)** | Chỉ xem danh sách gom theo Workspace. | **Trang quản lý tập trung toàn bộ Khách sạn (`/admin/properties`)**: Lọc theo tỉnh/thành, subdomain, tên miền riêng, trạng thái live, preview 1-click. |
-| **Giám sát Đơn đặt phòng** | Chỉ xem đơn mua gói phần mềm của khách sạn. | **All Bookings Monitor (`/admin/bookings`)**: Theo dõi dòng đơn khách du lịch đặt phòng toàn sàn, tổng GMV, cảnh báo đơn cọc PayOS lỗi. |
-| **Báo cáo & Tăng trưởng** | Chỉ có 4 ô KPI tĩnh đơn giản. | **Analytics Dashboard trực quan**: Biểu đồ doanh thu MRR/ARR, tỷ lệ chuyển đổi Trial → Paid, phân bổ gói cước, số phòng đang vận hành. |
-| **Giám sát Hạ tầng** | Trang text thô sơ, khó đọc. | **System Health Dashboard**: Thẻ trạng thái Postgres, Redis latency, PayOS Webhook, hạn ngạch Gemini AI, dung lượng ảnh Cloudinary, Backup DB. |
-| **Kiểm toán & Lịch sử** | Bảng activity log cơ bản. | **Audit Log chuyên sâu**: Lưu vết mọi can thiệp của Admin (tặng ngày dùng thử, đổi gói, khóa tài khoản, impersonation) kèm IP và lý do. |
+| **Giao diện & Bố cục** | Header ngang trượt tab hẹp, dễ tràn viền. | **Sidebar cố định chuẩn SaaS Enterprise**: Collapsible, icon Lucide sắc nét, tối ưu diện tích làm việc, Dark/Light mode chuẩn token Digistay. |
+| **Quản lý Gói cước** | Cố định 3 gói (`starter`, `growth`, `business`). Không tạo được gói mới. | **Engine Gói Động & Gói Tùy Chỉnh (Dynamic & Custom Plans)**: Tạo không giới hạn gói mới, tạo gói VIP/Private cho khách hàng đàm phán riêng, công tắc tính năng linh hoạt. |
+| **Cấu hình Nền tảng** | Sửa thủ công trong file `.env` qua SSH terminal. | **Trung tâm Cấu hình Nền tảng (`/admin/platform-settings`)**: Quản lý PayOS, Mắt Bão, Gemini AI, Cloudinary, SMTP, Hotline trực tiếp trên giao diện với AES-256 mã hóa an toàn. |
+| **Giám sát Hạ tầng VPS** | Chỉ kiểm tra ping version cơ bản. | **Infrastructure Monitor (`/admin/infrastructure`)**: Đo lường CPU, RAM, Disk Usage ổ đĩa VPS (chống đầy ổ cứng), dung lượng Postgres DB, Redis latency. |
+| **Điều khiển Cronjob** | Chỉ hiển thị lịch sử chạy dạng text. | **Cronjob & Worker Control Center**: Hiển thị trạng thái các tiến trình nền, kèm nút **"Kích hoạt chạy bù ngay (Trigger Now)"** 1-click khi có sự cố. |
+| **Bảo mật & Tường lửa** | Chỉ có rate limit ngầm trong code. | **Security & Firewall Center (`/admin/security`)**: Danh sách IP Blacklist (chặn spammer/bot), chặn từ khóa subdomain nhạy cảm, cảnh báo brute-force. |
+| **Phân quyền Admin Nội bộ** | Chỉ có 1 role `SUPER_ADMIN`. | **RBAC Admin Nội bộ (`/admin/team`)**: Quản lý tài khoản ban quản trị, phân quyền theo chức năng (`Super Admin`, `Kế toán/Billing`, `Hạ tầng/DevOps`). |
+| **Voucher & Khuyến mãi** | Đã có CRUD cơ bản ở Task 50. | **Campaign & Voucher Engine**: Thống kê số tiền chiết khấu đã tài trợ, giới hạn số lần dùng toàn sàn, tỷ lệ áp dụng thành công. |
 
 ---
 
-## III. THIẾT KẾ CHI TIẾT TÍNH NĂNG TRỌNG TÂM: QUẢN LÝ GÓI ĐỘNG & GÓI TÙY CHỈNH
+## III. THIẾT KẾ CHI TIẾT CÁC PHÂN HỆ ĐỘT PHÁ CỦA SUPER ADMIN 2.0
 
-### 1. Cấu trúc Mô hình Dữ liệu Mới (`SubscriptionPlan`)
-Chuyển đổi từ hằng số tĩnh (`PLANS`) sang bảng cơ sở dữ liệu `subscription_plans`:
+```mermaid
+flowchart TD
+    SA[Super Admin Platform Console 2.0] --> NAV[Khung Giao Diện Sidebar SaaS]
+    
+    NAV --> M1[1. Quản Trị Gói Cước Động & Gói Tùy Chỉnh]
+    NAV --> M2[2. Trung Tâm Cấu Hình Nền Tảng Toàn Cầu]
+    NAV --> M3[3. Giám Sát Hạ Tầng, VPS & Tiến Trình Nền]
+    NAV --> M4[4. Doanh Thu Nền Tảng & Đơn Mua Gói]
+    NAV --> M5[5. Trung Tâm Bảo Mật, Tường Lửa & IP Blacklist]
+    NAV --> M6[6. Quản Lý Đội Ngũ Admin Nội Bộ & RBAC]
+    NAV --> M7[7. Chiến Dịch Khuyến Mãi & Voucher]
+```
+
+---
+
+### PHÂN HỆ 1: ENGINE QUẢN LÝ GÓI ĐỘNG & GÓI TÙY CHỈNH (CUSTOM PLANS)
+
+#### 1. Cấu trúc dữ liệu linh hoạt (`SubscriptionPlan`)
+Hệ thống lưu trữ toàn bộ gói cước vào cơ sở dữ liệu thay vì hằng số code:
 
 ```prisma
 model SubscriptionPlan {
   id              String      @id @default(cuid())
-  code            String      @unique // e.g. "starter", "growth", "business", "vip-homestay", "custom-vinpearl"
-  name            String      // Tên hiển thị: "Gói Starter", "Gói Doanh Nghiệp VIP"
+  code            String      @unique // e.g. "starter", "growth", "business", "vip-homestay", "custom-phuquoc"
+  name            String      // "Gói Starter", "Gói Tăng Trưởng", "Gói Đối Tác VIP"
   description     String?     @db.Text
-  priceMonthly    Float       // Giá thuê bao tháng (VNĐ)
-  priceYearly     Float       // Giá thuê bao năm (VNĐ)
   
-  // Hạn mức tài nguyên (Resource Limits)
-  maxProperties   Int         @default(1)    // Số cơ sở tối đa
-  maxRooms        Int         @default(15)   // Số phòng tối đa
-  maxStaff        Int         @default(3)    // Số nhân viên tối đa
-  monthlyAiQuota  Int         @default(30)   // Lượt tạo nội dung AI / tháng
+  // Định giá
+  priceMonthly    Float       // Giá tháng (VNĐ)
+  priceYearly     Float       // Giá năm (VNĐ)
   
-  // Công tắc tính năng (Feature Flags)
-  hasCustomDomain Boolean     @default(false)// Cho phép dùng tên miền riêng
-  hasChatbotAi    Boolean     @default(true) // Cho phép bật AI Chatbot
-  hasOtaIcalSync  Boolean     @default(true) // Cho phép đồng bộ iCal OTA
-  hasDailyReports Boolean     @default(true) // Báo cáo nâng cao & sổ quỹ
+  // Hạn mức tài nguyên hệ thống (Quotas)
+  maxProperties   Int         @default(1)    // Số cơ sở tối đa được tạo
+  maxRooms        Int         @default(15)   // Số phòng tối đa quản lý
+  maxStaff        Int         @default(3)    // Số tài khoản nhân viên
+  monthlyAiQuota  Int         @default(30)   // Lượt tạo bài viết / dùng AI mỗi tháng
   
-  // Thuộc tính hiển thị & Phân loại
-  isPublic        Boolean     @default(true) // Hiện công khai trên bảng giá website hay là Gói Riêng (Private/Custom)
-  isActive        Boolean     @default(true) // Đang kinh doanh hay đã ngừng nhận đăng ký mới
-  isFeatured      Boolean     @default(false)// Gắn nhãn "Phổ biến nhất" / "Được khuyên dùng"
-  displayOrder    Int         @default(0)    // Thứ tự sắp xếp trên bảng giá
+  // Công tắc tính năng linh hoạt (Feature Flags)
+  hasCustomDomain Boolean     @default(false)// Cho phép dùng tên miền riêng (.vn, .com)
+  hasChatbotAi    Boolean     @default(true) // Cho phép bật Trợ lý ảo AI trên website
+  hasOtaIcalSync  Boolean     @default(true) // Cho phép đồng bộ lịch 2 chiều với Airbnb/Booking
+  hasAdvancedReports Boolean  @default(true) // Báo cáo tài chính chuyên sâu & sổ quỹ
   
-  // Liên kết
-  workspaces      Workspace[] // Các workspace đang áp dụng gói này
-  orders          PlanOrder[] // Các đơn hàng mua gói này
+  // Phân loại & Quyền riêng tư
+  isPublic        Boolean     @default(true) // true: Hiện công khai trên bảng giá / false: Gói riêng (Private/Custom)
+  isActive        Boolean     @default(true) // true: Đang mở đăng ký / false: Đã dừng bán
+  isFeatured      Boolean     @default(false)// Gắn nhãn "Nổi bật / Khuyên dùng"
+  displayOrder    Int         @default(0)    // Thứ tự hiển thị
   
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
@@ -83,116 +106,145 @@ model SubscriptionPlan {
 }
 ```
 
-### 2. Giao diện Quản lý Gói cước (Super Admin Plans UI)
-* **Lưới thẻ gói trực quan (Grid Cards)**:
-  - Hiển thị từng gói kèm giá tiền, hạn mức phòng/cơ sở/nhân viên, số workspace hiện đang dùng gói.
-  - Huy hiệu phân biệt: `Công khai (Public)` vs `Gói tùy chỉnh (Custom / Private)`.
-  - Nút bật/tắt trạng thái kinh doanh nhanh chóng (`Active / Inactive`).
-* **Modal "Tạo gói cước mới" / "Tạo gói tùy chỉnh"**:
-  - **Thông tin chung**: Tên gói, Mã gói (`slug`), Mô tả ngắn, Thứ tự hiển thị.
-  - **Định giá**: Giá theo tháng (VNĐ) và Giá theo năm (VNĐ hoặc tự động tính -2 tháng).
-  - **Hạn mức**: Số cơ sở tối đa, Số phòng tối đa, Số nhân sự tối đa, Hạn ngạch AI Gemini/tháng.
-  - **Bộ chọn tính năng (Feature Switches)**: Checkbox bật/tắt Tên miền riêng, Chatbot AI, Đồng bộ iCal, Hóa đơn VAT, v.v.
-  - **Phân loại**:
-    - `Gói công khai`: Hiện lên trang Bảng giá (`/pricing`) cho mọi khách hàng tự mua.
-    - `Gói tùy chỉnh (Custom Private)`: Ẩn khỏi bảng giá chung. Super Admin gán trực tiếp cho một Workspace cụ thể, hoặc cấp link mua gói riêng có mã bảo mật.
-* **Gán gói tùy chỉnh cho Khách hàng**:
-  - Tại trang chi tiết Workspace (`/admin/customers/[workspaceId]`), Super Admin có thể chọn bất kỳ gói nào (kể cả gói Custom) hoặc chỉnh tay hạn mức riêng (Overriding limits) mà không cần can thiệp database.
+#### 2. Tính năng nổi bật trên Giao diện Quản lý Gói:
+* **Tạo Gói Cước Mới Tùy Ý (Create New Plan)**:
+  - Điền tên gói, giá theo tháng, giá theo năm.
+  - Kéo thanh trượt hoặc nhập số lượng: Số cơ sở, Số phòng, Số nhân viên, Lượt AI.
+  - Bật/tắt các công tắc tính năng (Tên miền riêng, Chatbot AI, Đồng bộ OTA).
+  - Chọn `Công khai`: Gói sẽ tự động hiển thị trên Landing Page Bảng giá (`/pricing`) và trang Checkout mà không cần sửa code.
+* **Tạo Gói Tùy Chỉnh Riêng Biệt (Custom / Private Plan)**:
+  - Bật tùy chọn `Gói riêng (Private Plan)`: Gói sẽ **không hiển thị** trên bảng giá chung.
+  - Cung cấp tính năng **Gán gói cước trực tiếp cho một khách hàng / workspace bất kỳ**: Super Admin chỉ cần chọn Workspace của khách hàng và chọn Gói tùy chỉnh này để kích hoạt.
+  - Sinh link đăng ký riêng (`https://digistay.vn/pricing/checkout?plan=custom-phuquoc&token=xxx`) gửi cho đối tác lớn thanh toán đúng mức giá đã đàm phán.
+
+---
+
+### PHÂN HỆ 2: TRUNG TÂM CẤU HÌNH NỀN TẢNG TOÀN CẦU (`/admin/platform-settings`)
+
+Loại bỏ việc phải SSH vào VPS để chỉnh sửa cấu hình. Toàn bộ cấu hình quan trọng được quản lý tập trung và bảo mật:
+
+1. **Cấu hình Cổng thanh toán PayOS Nền tảng** (Thu tiền bán gói phần mềm):
+   - `PayOS Client ID`, `API Key`, `Checksum Key`.
+   - Trạng thái kiểm tra kết nối PayOS tự động (Ping Test 1-click).
+   - Hiển thị URL Webhook tiếp nhận thanh toán gói.
+2. **Cấu hình Xuất hóa đơn GTGT Mắt Bão Nền tảng** (Xuất hóa đơn điện tử khi khách mua gói):
+   - Môi trường (Demo / Thật), MST công ty Digistay, Tài khoản, Mật khẩu (mã hóa AES-256).
+   - Ký hiệu hóa đơn (Series), Mẫu số hóa đơn.
+3. **Cấu hình Google Gemini AI Nền tảng**:
+   - `GEMINI_API_KEY` của hệ thống.
+   - Chọn Model mặc định (`gemini-2.5-flash`, `gemini-1.5-flash`).
+   - Nút kiểm tra trạng thái hoạt động của Gemini API.
+4. **Cấu hình Dịch vụ Lưu trữ & Email SMTP**:
+   - Cloudinary: Cloud Name, API Key, API Secret.
+   - SMTP Server: Host, Port, Username, Password, Sender Name, Sender Email.
+   - Nút "Gửi email thử nghiệm" để kiểm tra đường truyền gửi thư.
+5. **Thông tin Nền tảng & Pháp lý**:
+   - Hotline hỗ trợ Digistay, Email hỗ trợ, Địa chỉ công ty, Tên công ty pháp lý.
+
+---
+
+### PHÂN HỆ 3: GIÁM SÁT HẠ TẦNG, VPS & TIẾN TRÌNH NỀN (`/admin/infrastructure`)
+
+Chuyển đổi trang kỹ thuật cũ thành Bảng điều khiển Sức khỏe Hạ tầng cao cấp:
+
+1. **Giám sát Máy chủ VPS (Server Metrics)**:
+   - **Dung lượng Ổ đĩa (Disk Usage)**: % dung lượng ổ cứng đã dùng trên VPS, cảnh báo đỏ khi ổ cứng vượt 80% (ngăn chặn sự cố Docker bị đứng do đầy log).
+   - **Tài nguyên RAM & CPU**: Mức độ sử dụng bộ nhớ và tải CPU tức thời.
+   - **Thời gian Uptime**: Số ngày/giờ hệ thống đã vận hành liên tục không gián đoạn.
+2. **Giám sát Cơ sở dữ liệu & Bộ nhớ đệm**:
+   - **PostgreSQL**: Kích thước database, số lượng kết nối đang mở (active pool connections), thời gian bản backup gần nhất.
+   - **Redis Cache**: Trạng thái kết nối, độ trễ ping (ms), tỷ lệ cache hit rate, số lượng key đang lưu trữ.
+3. **Trung tâm Điều khiển Tiến trình Tự động (Cronjobs & Background Workers)**:
+   - Danh sách các job định kỳ:
+     - Nhắc giỏ hàng bỏ quên (`abandoned-cart`)
+     - Cảnh báo và xử lý gói hết hạn / ân hạn (`subscription-status`)
+     - Quét và giải phóng phòng khóa tạm quá hạn (`expired-locks`)
+     - Dọn dẹp dữ liệu đã xóa quá 30 ngày (`purge-deleted`)
+   - Nút **"Kích hoạt chạy ngay (Trigger Now)"** cho từng job để Super Admin có thể xử lý tức thì khi cần bảo trì.
+
+---
+
+### PHÂN HỆ 4: TRUNG TÂM BẢO MẬT, TƯỜNG LỬA & IP BLACKLIST (`/admin/security`)
+
+Các công cụ chuyên dụng để Super Admin bảo vệ nền tảng khỏi tấn công và lạm dụng:
+
+1. **Danh sách Chặn IP (IP Blacklist & Firewall)**:
+   - Danh sách các IP bị cấm truy cập hệ thống kèm lý do (spam đặt phòng ảo, cố tình quét lỗ hổng, spam OTP đăng ký).
+   - Nút "Thêm IP vào danh sách chặn" và "Bỏ chặn".
+2. **Quản lý Subdomain Nhạy cảm (Reserved Subdomains Blacklist)**:
+   - Danh sách các tên miền con bị cấm đăng ký để tránh giả mạo (ví dụ: `admin`, `api`, `payos`, `bank`, `support`, `root`, `auth`, `digistay`...).
+   - Cho phép Super Admin bổ sung các từ khóa cấm mới.
+3. **Cảnh báo Bảo mật Thời gian Thực**:
+   - Thống kê các lượt thử mật khẩu sai liên tiếp, các yêu cầu vượt ngưỡng Rate Limit bị hệ thống chặn đứng.
+
+---
+
+### PHÂN HỆ 5: QUẢN LÝ ĐỘI NGŨ ADMIN NỘI BỘ & PHÂN QUYỀN RBAC (`/admin/team`)
+
+1. **Danh sách Nhân sự Quản trị Digistay**:
+   - Hiển thị danh sách các tài khoản có quyền truy cập vào cổng Super Admin.
+   - Tình trạng kích hoạt xác thực 2 lớp (2FA).
+2. **Phân quyền Vai trò Quản trị (Admin Roles)**:
+   - `SUPER_ADMIN`: Toàn quyền tối cao (Cấu hình hệ thống, sửa gói, quản lý team).
+   - `BILLING_ADMIN`: Chỉ quản lý đơn hàng mua gói, hóa đơn Mắt Bão và voucher khuyến mãi.
+   - `OPS_ADMIN`: Giám sát sức khỏe hạ tầng, kiểm tra log, kích hoạt cronjob.
+3. **Thao tác nhanh**: Thêm nhân viên quản trị mới, cấp/thu hồi quyền, reset 2FA cho nhân sự nội bộ.
 
 ---
 
 ## IV. THIẾT KẾ GIAO DIỆN MỚI (SUPER ADMIN 2.0 UI/UX DESIGN SYSTEM)
 
-### 1. Bố cục Khung làm việc (Sidebar Layout)
-* **Bên trái: Sidebar Cố định (Fixed Navigation)**
-  - Logo Digistay & Huy hiệu phát sáng: `SUPER ADMIN PLATFORM`.
-  - Danh mục được nhóm logic:
-    - **TỔNG QUAN**:
-      - 📊 `Tổng quan & Tăng trưởng` (`/admin`)
-      - 📈 `Phân tích Doanh thu (SaaS MRR)` (`/admin/analytics`)
-    - **QUẢN TRỊ KHÁCH HÀNG & CƠ SỞ**:
-      - 🏢 `Danh sách Workspace & Chủ` (`/admin/customers`)
-      - 🏨 `Tất cả Khách sạn & Website` (`/admin/properties`)
-      - 🛎️ `Giám sát Đơn đặt phòng` (`/admin/bookings`)
+### 1. Bố cục Khung làm việc (Sidebar Layout Hiện Đại)
+* **Sidebar cố định bên trái (Fixed Navigation)**:
+  - Độ rộng chuẩn 260px (hỗ trợ thu gọn về 72px với icon tooltip).
+  - Logo Digistay phối màu sang trọng kèm nhãn phát sáng tím `PLATFORM OPERATOR`.
+  - Phân nhóm điều hướng mạch lạc:
+    - **TỔNG QUAN NỀN TẢNG**:
+      - 📊 `Dashboard Tổng quan` (`/admin`)
+      - 📈 `Doanh thu & Đơn mua gói` (`/admin/orders`)
     - **KINH DOANH & GÓI CƯỚC**:
-      - 💳 `Quản lý Gói cước & Tùy chỉnh` (`/admin/plans`)
-      - 🧾 `Đơn hàng thanh toán gói` (`/admin/orders`)
-      - 🎟️ `Voucher & Khuyến mãi` (`/admin/vouchers`)
+      - 💳 `Quản lý Gói & Gói Tùy Chỉnh` (`/admin/plans`)
+      - 🎟️ `Chiến dịch Voucher` (`/admin/vouchers`)
     - **HẠ TẦNG & HỆ THỐNG**:
-      - 🖥️ `Sức khỏe Hệ thống (Health & Jobs)` (`/admin/system`)
-      - 📜 `Nhật ký Hoạt động (Audit Logs)` (`/admin/activity`)
-  - Chân Sidebar: Hồ sơ Admin, Nút chuyển Dark/Light mode, Nút "Thoát về Workspace".
-* **Ở trên: Topbar Thông Minh (Universal Topbar)**
+      - 🖥️ `Sức khỏe Hạ tầng & Server` (`/admin/infrastructure`)
+      - ⚙️ `Cấu hình Nền tảng Toàn cầu` (`/admin/platform-settings`)
+    - **BẢO MẬT & VẬN HÀNH**:
+      - 🛡️ `Bảo mật & Tường lửa IP` (`/admin/security`)
+      - 👥 `Đội ngũ Admin Nội bộ` (`/admin/team`)
+      - 📜 `Nhật ký Kiểm toán Toàn sàn` (`/admin/activity`)
+* **Thanh Header trên cùng (Smart Operator Topbar)**:
   - Thanh tìm kiếm thông minh `Universal Search` với phím tắt `Ctrl + K`.
-  - Trạng thái kết nối nhanh (Redis OK, DB OK, PayOS OK).
-  - Chuông thông báo sự cố hệ thống hoặc đơn hàng quá hạn chưa xử lý.
-* **Khu vực Nội dung (Content Canvas)**:
-  - Khung rộng `max-w-7xl`, nền phân tầng `bg-page` và thẻ `bg-panel` hiện đại, bo góc mềm mại (`rounded-box`), viền tinh tế (`border-line`).
+  - Đèn báo tín hiệu sức khỏe dịch vụ: `Postgres: OK` 🟢 | `Redis: OK` 🟢 | `PayOS: OK` 🟢.
+  - Nút chuyển nhanh Dark/Light theme và nút "Thoát về Workspace".
 
 ---
 
-## V. CÁC TÍNH NĂNG MỚI NỔI BẬT KHÁC
-
-### 1. Tính năng "Đăng nhập hộ" (Impersonation)
-* **Mục đích**: Hỗ trợ kỹ thuật và chăm sóc khách hàng tức thì không cần xin mật khẩu.
-* **Cách vận hành**:
-  1. Trên dòng thông tin bất kỳ Workspace nào tại `/admin/customers`, có nút **"Truy cập Workspace" (Impersonate)**.
-  2. Hệ thống mã hóa một phiên tạm thời an toàn (thời hạn 2 giờ, lưu nhật ký `IMPERSONATION_STARTED`).
-  3. Mở thẳng Dashboard của khách sạn đó với một **Banner màu cam cố định ở đỉnh màn hình**:
-     > ⚠️ *Bạn đang đăng nhập dưới danh nghĩa: **Khách sạn Biển Nhớ** (hoangphuc@gmail.com). Mọi thao tác đều được ghi lại trong nhật ký kiểm toán. [Quay lại Super Admin]*
-  4. Bấm nút "Quay lại Super Admin" để lập tức hủy phiên tạm và trở về trang quản trị tối cao.
-
-### 2. Giám sát Toàn bộ Khách sạn (`/admin/properties`)
-* Tra cứu danh sách toàn bộ khách sạn đang tạo trên hệ thống.
-* Bộ lọc đa chiều:
-  - Trạng thái: Đã xuất bản (Live) / Đang soạn thảo (Draft) / Đang khóa (Locked do nợ cước).
-  - Tỉnh / Thành phố: Đà Lạt, Nha Trang, Vũng Tàu, Đà Nẵng, Hà Nội, TP.HCM...
-  - Tên miền: Có tên miền riêng / Dùng subdomain Digistay.
-* Tác vụ nhanh:
-  - 1-Click mở link xem trực tiếp website của khách sạn (`nhphuc.digistay.vn` hoặc `tenmienrieng.vn`).
-  - Khóa tạm thời website nếu khách sạn có dấu hiệu lừa đảo / nợ cước.
-
-### 3. Giám sát Đơn đặt phòng Toàn sàn (`/admin/bookings`)
-* Thống kê tổng số đêm phòng và tổng doanh thu đặt phòng (GMV) toàn nền tảng.
-* Tìm kiếm đơn phòng theo mã đơn (ví dụ `BK-2026-XXXX`), tên khách, số điện thoại hoặc cơ sở lưu trú.
-* Hỗ trợ gỡ lỗi giao dịch: Xem chi tiết trạng thái thanh toán PayOS cọc của khách, lịch sử webhook để hỗ trợ chủ cơ sở khi khách thắc mắc tiền cọc.
-
-### 4. Bảng điều khiển Sức khỏe Hệ thống (`/admin/system` 2.0)
-* Giao diện thẻ trực quan thay thế bảng chữ đơn điệu:
-  - **Database Postgres**: Tình trạng kết nối, số connection hoạt động, kích thước DB, thời gian backup gần nhất.
-  - **Redis Cache**: Tỷ lệ bộ nhớ, ping latency, số khóa rate limit đang lưu.
-  - **Google Gemini AI**: Số lượt tạo nội dung và hỏi chatbot trong tháng, trạng thái API Key.
-  - **Cổng PayOS**: Tình trạng Webhook nền tảng, danh sách giao dịch gần nhất.
-  - **Hàng đợi Email & Cronjob**: Trạng thái các tiến trình chạy nền (nhắc giỏ hàng bỏ quên, nhắc thanh toán gói, dọn dẹp dữ liệu quá 30 ngày).
-
----
-
-## VI. LỘ TRÌNH THỰC HIỆN CHI TIẾT (4 SPRINT)
+## V. LỘ TRÌNH TRIỂN KHAI CHI TIẾT (4 SPRINT)
 
 ```mermaid
 flowchart TD
-    subgraph Sprint 1: Khung Layout & Giao diện Sidebar Mới
-        S1_1[Thiết kế AdminSidebarLayout chuẩn SaaS]
+    subgraph Sprint 1: Khung Sidebar Layout & Design System Mới
+        S1_1[Xây dựng AdminSidebarLayout chuẩn SaaS]
         S1_2[Universal Search Bar Ctrl+K]
-        S1_3[Chuyển đổi theme & responsive hoàn chỉnh]
+        S1_3[Chuyển đổi theme & responsive hoàn hảo]
     end
 
     subgraph Sprint 2: Engine Gói Động & Gói Tùy Chỉnh
         S2_1[Tạo model SubscriptionPlan & Migration DB]
         S2_2[API CRUD gói cước động & Feature Flags]
         S2_3[Giao diện /admin/plans mới: Thẻ gói & Modal tạo gói Custom]
-        S2_4[Chức năng gán gói Custom cho Workspace tại /admin/customers]
+        S2_4[Chức năng gán gói Custom cho Workspace]
     end
 
-    subgraph Sprint 3: Impersonation & Quản trị Cơ sở Toàn sàn
-        S3_1[Cơ chế bảo mật phiên tạm Impersonate & Banner cảnh báo]
-        S3_2[Trang quản lý toàn bộ cơ sở /admin/properties]
-        S3_3[Trang giám sát đơn đặt phòng toàn sàn /admin/bookings]
+    subgraph Sprint 3: Trung Tâm Cấu Hình Nền Tảng & Hạ Tầng
+        S3_1[Trang Cấu hình Nền tảng /admin/platform-settings: PayOS, Mắt Bão, AI, SMTP]
+        S3_2[Trang Giám sát Hạ tầng /admin/infrastructure: CPU/RAM/Disk, Postgres, Redis]
+        S3_3[Trigger thủ công các tiến trình Cronjob]
     end
 
-    subgraph Sprint 4: Nâng cấp Overview & System Health
-        S4_1[Làm mới Dashboard /admin với biểu đồ MRR & tăng trưởng]
-        S4_2[Làm mới /admin/system với thẻ đo lường Postgres/Redis/PayOS/AI]
+    subgraph Sprint 4: Bảo Mật, Đội Ngũ Admin & Kiểm Toán
+        S4_1[Trang Bảo mật & IP Blacklist /admin/security]
+        S4_2[Trang Đội ngũ Admin Nội bộ & Phân quyền /admin/team]
         S4_3[Kiểm thử toàn diện, verify 100% test suite & build production]
     end
 
@@ -203,15 +255,14 @@ flowchart TD
 
 ---
 
-## VII. TIÊU CHÍ NGHIỆM THU (SUCCESS CRITERIA)
+## VI. TIÊU CHÍ NGHIỆM THU (SUCCESS CRITERIA)
 
-1. **Giao diện hiện đại**: Super Admin sở hữu thanh Sidebar cố định chuyên nghiệp, sang trọng, tương thích tốt trên cả máy tính để bàn, laptop và thiết bị di động.
-2. **Linh hoạt tối đa về gói cước**:
-   - Super Admin có thể tạo gói cước mới tùy ý trực tiếp trên giao diện chỉ trong 30 giây.
-   - Hỗ trợ tạo gói Tùy chỉnh (Custom Private Plan) và gán ngay cho khách hàng cụ thể.
-   - Bảng giá công khai (`/pricing`) và trang Mua gói (`/billing/checkout`) tự động cập nhật đồng bộ từ cơ sở dữ liệu.
-3. **Hiệu suất hỗ trợ khách hàng**:
-   - Tính năng "Đăng nhập hộ" (Impersonation) hoạt động trơn tru, giúp kỹ thuật viên và CSKH kiểm tra lỗi của khách sạn trong vòng 5 giây.
-4. **Độ ổn định & An toàn**:
-   - Đảm bảo 100% unit tests và integration tests vượt qua (`0 failed`).
-   - Mọi hành động can thiệp của Super Admin đều được ghi nhận vào nhật ký kiểm toán `ActivityLog`.
+1. **Trải nghiệm giao diện đột phá**: Bố cục Sidebar sang trọng, hiện đại, xóa bỏ hoàn toàn thanh tab ngang cũ, thao tác mượt mà và trực quan.
+2. **Tự do tuyệt đối về gói cước**:
+   - Super Admin tạo gói cước mới hoặc gói tùy chỉnh (Custom Plan) trong vòng 30 giây ngay trên giao diện web.
+   - Tự do cấu hình giá, hạn mức cơ sở/phòng/nhân viên/AI và bật/tắt các công tắc tính năng.
+   - Gán gói tùy chỉnh cho bất kỳ khách hàng nào chỉ với 1 click.
+3. **Vận hành không chạm dòng lệnh**:
+   - Toàn bộ cấu hình API PayOS, Mắt Bão, Gemini AI, SMTP được quản lý trực tiếp trên giao diện, không cần SSH vào VPS.
+4. **An toàn tuyệt đối**:
+   - Đảm bảo 100% test suite tiếp tục vượt qua (`0 failed`), bảo toàn tương thích dữ liệu hiện có.
