@@ -244,17 +244,30 @@ Tài liệu này phân rã chi tiết yêu cầu kỹ thuật, giải pháp, fil
 
 ---
 
-### Task 54 [P1]: Gắn nhãn "Sắp ra mắt" kênh OTA & Triển khai đồng bộ iCal
-* **Hiện trạng**: Kết nối API trực tiếp sàn (Agoda, Booking, Traveloka, Expedia) cần đăng ký đối tác kỹ thuật phức tạp chưa thể xong trước 30/11.
-* **Giải pháp kỹ thuật**:
-  1. Gắn nhãn badge **"Sắp ra mắt (Coming Soon)"** trên thẻ các kênh Agoda, Booking.com, Traveloka, Expedia và tạm khóa nút kết nối API trực tiếp.
-  2. Triển khai phương thức **Đồng bộ lịch chuẩn iCalendar (`.ics`)**:
-     - Cho phép xuất link lịch phòng Digistay (Export iCal URL) để dán vào Airbnb / Booking.com.
-     - Cho phép nhập link lịch từ Airbnb / Booking.com (Import iCal URL) vào Digistay để tự động khóa phòng khi có khách đặt trên sàn.
+### Task 54 [P1]: Gắn nhãn "Sắp ra mắt" kênh OTA & Triển khai đồng bộ iCal [ĐÃ HOÀN THÀNH 10/11/2026]
+* **Hiện trạng & Giải pháp đã thực hiện**:
+  1. Gắn nhãn badge **"Sắp ra mắt"** trên thẻ các kênh direct API (`AGODA`, `BOOKING_COM`, `TRAVELOKA`, `EXPEDIA`), tạm khóa nút kết nối API trực tiếp kèm tooltip hướng dẫn dùng đồng bộ lịch iCal trong khi chờ đối tác chứng thực API chính thức.
+  2. Kênh `AIRBNB`: Gắn nhãn **"Hỗ trợ qua iCal (.ics)"** kèm nút tắt chuyển nhanh đến phần Đồng bộ iCal.
+  3. Xây dựng model `IcalSyncFeed` và migration cơ sở dữ liệu `20261110210000_ical_sync_feeds` liên kết `Property` và `RoomType`.
+  4. Triển khai engine đồng bộ lịch 2 chiều chuẩn RFC 5545 (`src/lib/ota/ical-sync.ts`):
+     - **Export iCal**: Sinh nội dung `.ics` chuẩn chứa các đơn đặt phòng hiện có (`Booking`) và các khoảng khóa/bảo trì (`RoomLock`) qua endpoint công khai an toàn `/api/channels/ical/export/[token]`.
+     - **Import iCal**: Tải và phân tích cú pháp `.ics` (unfolding multi-line, UID, DTSTART, DTEND, SUMMARY) từ link sàn (Airbnb, Booking.com, v.v.), tự động tạo các bản ghi `RoomLock` (`type: 'BLOCKED'`) để trừ phòng trống trên toàn bộ website đặt phòng trực tiếp và trợ lý ảo AI chatbot, ngăn chặn 100% tình trạng trùng phòng (overbooking).
+  5. Cung cấp bộ API quản trị CRUD và kích hoạt đồng bộ thủ công:
+     - `GET/POST /api/properties/[id]/channels/ical`
+     - `PUT/DELETE /api/properties/[id]/channels/ical/[feedId]`
+     - `POST /api/properties/[id]/channels/ical/[feedId]/sync`
+  6. Xây dựng giao diện khu vực **Đồng bộ lịch chuẩn iCalendar (.ics)** trên trang Kênh OTA: bảng quản lý các feed theo loại phòng, sao chép Export URL 1-click, trạng thái lần đồng bộ cuối, và modal tạo liên kết iCal mới.
 * **File can thiệp**:
+  - `prisma/schema.prisma`
+  - `prisma/migrations/20261110210000_ical_sync_feeds/migration.sql`
+  - `src/lib/ota/ical-sync.ts` & `src/lib/ota/ical-sync.test.ts`
+  - `src/app/api/channels/ical/export/[token]/route.ts`
+  - `src/app/api/properties/[id]/channels/ical/route.ts`
+  - `src/app/api/properties/[id]/channels/ical/[feedId]/route.ts`
+  - `src/app/api/properties/[id]/channels/ical/[feedId]/sync/route.ts`
   - `src/app/(dashboard)/workspace/[slug]/(property)/properties/[id]/channels/page.tsx`
-  - `src/app/api/channels/ical/route.ts`
-  - `src/lib/ota/ical-sync.ts`
+  - `src/app/api/route-policy.test.ts`
+  - `src/lib/i18n/api-errors.en.json`
 
 ---
 

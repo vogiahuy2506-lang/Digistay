@@ -92,3 +92,4 @@ export async function recordAiContentGenerated(params: {
     },
   })
 }
+

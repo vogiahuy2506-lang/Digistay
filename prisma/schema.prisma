@@ -580,6 +580,7 @@ model Property {
   // AI & Channel Manager (tasks 51-60)
   dynamicPricingSuggestions DynamicPricingSuggestion[]
   channelAccounts           ChannelAccount[]
+  icalSyncFeeds             IcalSyncFeed[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -633,6 +634,7 @@ model RoomType {
   amenities                  RoomTypeAmenity[]
   dynamicPricingSuggestions  DynamicPricingSuggestion[]
   channelRoomMappings        ChannelRoomMapping[]
+  icalSyncFeeds              IcalSyncFeed[]
 
   isActive     Boolean   @default(true)
   /// Locked because the workspace is over its plan's room limit (src/lib/billing/overage.ts): no new bookings into it
@@ -2109,5 +2111,30 @@ model ChannelSyncLog {
 
   @@index([channelAccountId, createdAt])
   @@map("channel_sync_logs")
+}
+
+model IcalSyncFeed {
+  id           String    @id @default(cuid())
+  propertyId   String
+  property     Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  roomTypeId   String
+  roomType     RoomType  @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+
+  name         String
+  channel      String    @default("AIRBNB") // AIRBNB, BOOKING_COM, AGODA, OTHER
+  importUrl    String?
+  exportToken  String    @unique @default(cuid())
+
+  isActive     Boolean   @default(true)
+  lastSyncedAt DateTime?
+  lastError    String?
+  eventsCount  Int       @default(0)
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([propertyId])
+  @@index([roomTypeId])
+  @@map("ical_sync_feeds")
 }
 
