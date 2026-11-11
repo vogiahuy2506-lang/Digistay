@@ -59,6 +59,9 @@
     },
     "shortcuts": {
       "title": "Phím tắt Quản trị Nền tảng",
+      "customers": "Quản lý Khách hàng & Workspace",
+      "customersDesc": "Xem danh sách cơ sở lưu trú, gia hạn gói, kiểm tra hạn mức và khóa / mở khóa tài khoản.",
+      "customersAction": "Danh sách khách hàng",
       "plans": "Quản lý Gói & Custom Plans",
       "plansDesc": "Điều chỉnh giá, hạn mức 8 nhóm tính năng và tạo gói VIP / Private cho khách hàng.",
       "plansAction": "Cấu hình gói cước",

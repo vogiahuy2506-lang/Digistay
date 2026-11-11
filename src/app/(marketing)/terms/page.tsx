@@ -1,12 +1,13 @@
 import type { Metadata } from 'next'
-import { getTranslations } from 'next-intl/server'
-import { LegalPending } from '@/components/marketing/LegalPending'
+import { getLocale } from 'next-intl/server'
+import { LegalDocViewer } from '@/components/marketing/LegalDocViewer'
+import { LEGAL_DOCS } from '@/lib/marketing/legal-docs'
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations('marketing.meta')
-  return { title: t('termsTitle'), robots: { index: false } }
+  const locale = (await getLocale()) === 'en' ? 'en' : 'vi'
+  return { title: `${LEGAL_DOCS.terms[locale].title} · Digistay` }
 }
 
 export default function TermsPage() {
-  return <LegalPending title="terms" />
+  return <LegalDocViewer slug="terms" />
 }

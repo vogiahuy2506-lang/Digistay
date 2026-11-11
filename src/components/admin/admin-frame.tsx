@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import {
+  Building2,
   ChevronLeft,
   ChevronRight,
   Command,
@@ -49,6 +50,7 @@ const NAV_GROUPS: NavGroupDef[] = [
     groupKey: 'platform',
     items: [
       { href: '/admin', key: 'overview', icon: LayoutDashboard },
+      { href: '/admin/customers', key: 'customers', icon: Building2 },
       { href: '/admin/orders', key: 'orders', icon: Receipt },
     ],
   },
@@ -113,6 +115,7 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
     const q = searchQuery.toLowerCase()
     const allItems: { title: string; href: string; icon: any; category: string }[] = [
       { title: 'Dashboard Tổng quan & Tăng trưởng', href: '/admin', icon: LayoutDashboard, category: 'Nền tảng' },
+      { title: 'Quản lý Khách hàng & Workspace lưu trú', href: '/admin/customers', icon: Building2, category: 'Khách hàng' },
       { title: 'Quản lý Đơn hàng thanh toán gói cước', href: '/admin/orders', icon: Receipt, category: 'Kinh doanh' },
       { title: 'Quản lý Gói cước & Tạo gói Tùy chỉnh (Custom Plans)', href: '/admin/plans', icon: CreditCard, category: 'Gói cước' },
       { title: 'Chiến dịch Voucher & Mã giảm giá', href: '/admin/vouchers', icon: Ticket, category: 'Khuyến mãi' },

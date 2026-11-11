@@ -177,6 +177,27 @@ export default function AdminOverviewPage() {
           <Section title={to('shortcuts.title')}>
             <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
               <Link
+                href="/admin/customers"
+                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-4.5 transition-all hover:border-sky-500/40 hover:bg-fg/[0.02] shadow-2xs"
+              >
+                <div>
+                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-sky-500/10 text-sky-500">
+                    <Building2 className="h-5 w-5" aria-hidden="true" />
+                  </div>
+                  <h3 className="text-sm font-semibold text-fg group-hover:text-sky-500 transition-colors">
+                    {to('shortcuts.customers')}
+                  </h3>
+                  <p className="mt-1 text-xs text-muted leading-relaxed">
+                    {to('shortcuts.customersDesc')}
+                  </p>
+                </div>
+                <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-sky-500">
+                  <span>{to('shortcuts.customersAction')}</span>
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                </div>
+              </Link>
+
+              <Link
                 href="/admin/plans"
                 className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-4.5 transition-all hover:border-primary/40 hover:bg-fg/[0.02] shadow-2xs"
               >
@@ -198,8 +219,29 @@ export default function AdminOverviewPage() {
               </Link>
 
               <Link
+                href="/admin/orders"
+                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-4.5 transition-all hover:border-emerald-500/40 hover:bg-fg/[0.02] shadow-2xs"
+              >
+                <div>
+                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
+                    <Receipt className="h-5 w-5" aria-hidden="true" />
+                  </div>
+                  <h3 className="text-sm font-semibold text-fg group-hover:text-emerald-500 transition-colors">
+                    {to('shortcuts.orders')}
+                  </h3>
+                  <p className="mt-1 text-xs text-muted leading-relaxed">
+                    {to('shortcuts.ordersDesc')}
+                  </p>
+                </div>
+                <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-emerald-500">
+                  <span>{to('shortcuts.ordersAction')}</span>
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                </div>
+              </Link>
+
+              <Link
                 href="/admin/platform-settings"
-                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-4.5 transition-all hover:border-primary/40 hover:bg-fg/[0.02] shadow-2xs"
+                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-4.5 transition-all hover:border-indigo-500/40 hover:bg-fg/[0.02] shadow-2xs"
               >
                 <div>
                   <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-500">
@@ -220,7 +262,7 @@ export default function AdminOverviewPage() {
 
               <Link
                 href="/admin/security"
-                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-4.5 transition-all hover:border-primary/40 hover:bg-fg/[0.02] shadow-2xs"
+                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-4.5 transition-all hover:border-rose-500/40 hover:bg-fg/[0.02] shadow-2xs"
               >
                 <div>
                   <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-rose-500/10 text-rose-500">
@@ -240,29 +282,8 @@ export default function AdminOverviewPage() {
               </Link>
 
               <Link
-                href="/admin/team"
-                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-4.5 transition-all hover:border-primary/40 hover:bg-fg/[0.02] shadow-2xs"
-              >
-                <div>
-                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-purple-500/10 text-purple-500">
-                    <Users className="h-5 w-5" aria-hidden="true" />
-                  </div>
-                  <h3 className="text-sm font-semibold text-fg group-hover:text-purple-500 transition-colors">
-                    {to('shortcuts.team')}
-                  </h3>
-                  <p className="mt-1 text-xs text-muted leading-relaxed">
-                    {to('shortcuts.teamDesc')}
-                  </p>
-                </div>
-                <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-purple-500">
-                  <span>{to('shortcuts.teamAction')}</span>
-                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
-                </div>
-              </Link>
-
-              <Link
                 href="/admin/system"
-                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-4.5 transition-all hover:border-primary/40 hover:bg-fg/[0.02] shadow-2xs"
+                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-4.5 transition-all hover:border-amber-500/40 hover:bg-fg/[0.02] shadow-2xs"
               >
                 <div>
                   <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
@@ -277,27 +298,6 @@ export default function AdminOverviewPage() {
                 </div>
                 <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-amber-500">
                   <span>{to('shortcuts.systemAction')}</span>
-                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
-                </div>
-              </Link>
-
-              <Link
-                href="/admin/orders"
-                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-4.5 transition-all hover:border-primary/40 hover:bg-fg/[0.02] shadow-2xs"
-              >
-                <div>
-                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
-                    <Receipt className="h-5 w-5" aria-hidden="true" />
-                  </div>
-                  <h3 className="text-sm font-semibold text-fg group-hover:text-emerald-500 transition-colors">
-                    {to('shortcuts.orders')}
-                  </h3>
-                  <p className="mt-1 text-xs text-muted leading-relaxed">
-                    {to('shortcuts.ordersDesc')}
-                  </p>
-                </div>
-                <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-emerald-500">
-                  <span>{to('shortcuts.ordersAction')}</span>
                   <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
                 </div>
               </Link>

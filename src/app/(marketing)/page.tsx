@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { BrowserFrame } from '@/components/marketing/BrowserFrame'
+import { DigisoLogo } from '@/components/marketing/DigisoLogo'
 import { Faq } from '@/components/marketing/Faq'
 import { HeroVideo } from '@/components/marketing/HeroVideo'
 import { MarketingHeader } from '@/components/marketing/MarketingHeader'
@@ -238,29 +239,30 @@ export default async function HomePage() {
                 </div>
               </div>
 
-              {/* Product 2: Founder AI */}
+              {/* Product 2: DIGISO Parent Company */}
               <div className="flex flex-col justify-between rounded-xl border border-line bg-page p-6 group hover:border-primary/50 transition-colors">
                 <div>
                   <div className="flex items-center justify-between gap-3 mb-3">
-                    <span className="font-serif text-lg font-semibold text-fg group-hover:text-primary transition-colors">
-                      {t('ecosystem.founderAiName')}
-                    </span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
-                      SOLOPRENEUR AI
+                    <DigisoLogo size="sm" />
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
+                      CHỦ QUẢN NỀN TẢNG
                     </span>
                   </div>
-                  <p className="text-xs sm:text-[13px] leading-relaxed text-muted">
-                    {t('ecosystem.founderAiDesc')}
+                  <h3 className="font-serif text-base font-semibold text-fg group-hover:text-primary transition-colors">
+                    {t('ecosystem.digisoName')}
+                  </h3>
+                  <p className="mt-2 text-xs sm:text-[13px] leading-relaxed text-muted">
+                    {t('ecosystem.digisoDesc')}
                   </p>
                 </div>
                 <div className="mt-6">
                   <a
-                    href="https://founderai.biz"
+                    href="https://digiso.vn"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
                   >
-                    <span>{t('ecosystem.founderAiAction')}</span>
+                    <span>{t('ecosystem.digisoAction')}</span>
                     <span aria-hidden="true">↗</span>
                   </a>
                 </div>

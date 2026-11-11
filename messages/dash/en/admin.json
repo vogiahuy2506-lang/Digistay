@@ -59,6 +59,9 @@
     },
     "shortcuts": {
       "title": "Platform Operator Shortcuts",
+      "customers": "Customers & Workspaces",
+      "customersDesc": "Inspect workspaces, extend subscriptions, manage quota limits, and lock / unlock accounts.",
+      "customersAction": "Manage customers",
       "plans": "Plans & Custom Plans",
       "plansDesc": "Adjust pricing, 8 feature group limits, and generate VIP / Private custom plans for clients.",
       "plansAction": "Configure plans",

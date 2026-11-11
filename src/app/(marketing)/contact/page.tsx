@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { getLocale, getTranslations } from 'next-intl/server'
+import { DigisoLogo } from '@/components/marketing/DigisoLogo'
 import { MarketingHeader } from '@/components/marketing/MarketingHeader'
 import { frame, softText } from '@/components/marketing/styles'
 import { cn } from '@/lib/utils'
@@ -16,23 +17,19 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * Digistay's own contact details. Only what is decided shows: the hotline
- * and street address are not, and a row reading "Đang cập nhật" looked
- * unfinished (a made-up number could be a real person's). Fill them in
- * here once they exist.
+ * Digistay & DIGISO contact details.
  */
 const CONTACT = {
   company: 'Công ty TNHH Giải pháp số DIGISO',
   taxId: '0316725362',
-  email: 'hello@digistay.vn',
-  corpEmail: 'info@digiso.vn',
+  email: 'info@digiso.vn',
   hotline: '0877 909 606',
   hours: '8:30 – 17:00 (Thứ 2 – Thứ 6)',
   address: 'Phòng I.101B, Tòa nhà A, Khu Công nghệ Phần mềm ĐHQG-HCM, Đường Võ Trường Toản, Khu phố 3, Phường Linh Xuân, TP. Hồ Chí Minh',
-  founderAiUrl: 'https://founderai.biz',
+  digisoUrl: 'https://digiso.vn',
 }
 
-/** Contact page (Claude Design "Digistay Lien He"). Synchronized with DIGISO & Founder AI ecosystem details. */
+/** Contact page (Claude Design "Digistay Lien He"). Synchronized with DIGISO corporate profile. */
 export default async function ContactPage() {
   const t = await getTranslations('marketing.contact')
   const info: { label: string; value: React.ReactNode }[] = [
@@ -52,15 +49,9 @@ export default async function ContactPage() {
     {
       label: t('emailLabel'),
       value: (
-        <div className="flex flex-wrap gap-x-3 gap-y-1">
-          <a href={`mailto:${CONTACT.email}`} className="text-primary hover:underline">
-            {CONTACT.email}
-          </a>
-          <span className="text-muted">·</span>
-          <a href={`mailto:${CONTACT.corpEmail}`} className="text-primary hover:underline">
-            {CONTACT.corpEmail}
-          </a>
-        </div>
+        <a href={`mailto:${CONTACT.email}`} className="text-primary hover:underline font-medium">
+          {CONTACT.email}
+        </a>
       ),
     },
     { label: t('addressLabel'), value: t('addressValue') },
@@ -82,19 +73,22 @@ export default async function ContactPage() {
             ))}
           </dl>
 
-          {/* Affiliated DIGISO Ecosystem Card */}
-          <div className="mt-8 rounded-box border border-line bg-panel p-5 space-y-2.5">
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <h2 className="text-xs font-bold uppercase tracking-wider text-muted">
-                {t('ecosystemTitle')}
-              </h2>
+          {/* DIGISO Corporate Profile Card */}
+          <div className="mt-8 rounded-box border border-line bg-panel p-5 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <DigisoLogo size="sm" />
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
+                CHỦ QUẢN NỀN TẢNG
+              </span>
             </div>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-muted">
+              {t('ecosystemTitle')}
+            </h2>
             <p className="text-xs leading-relaxed text-muted">
               {t('ecosystemDesc')}
             </p>
             <a
-              href={CONTACT.founderAiUrl}
+              href={CONTACT.digisoUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline pt-1"
