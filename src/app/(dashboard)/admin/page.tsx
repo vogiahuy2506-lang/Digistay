@@ -178,7 +178,7 @@ export default function AdminOverviewPage() {
             <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
               <Link
                 href="/admin/customers"
-                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-4.5 transition-all hover:border-sky-500/40 hover:bg-fg/[0.02] shadow-2xs"
+                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-5 transition-all hover:border-sky-500/40 hover:bg-fg/[0.02] shadow-2xs"
               >
                 <div>
                   <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-sky-500/10 text-sky-500">
@@ -199,7 +199,7 @@ export default function AdminOverviewPage() {
 
               <Link
                 href="/admin/plans"
-                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-4.5 transition-all hover:border-primary/40 hover:bg-fg/[0.02] shadow-2xs"
+                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-5 transition-all hover:border-primary/40 hover:bg-fg/[0.02] shadow-2xs"
               >
                 <div>
                   <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -220,7 +220,7 @@ export default function AdminOverviewPage() {
 
               <Link
                 href="/admin/orders"
-                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-4.5 transition-all hover:border-emerald-500/40 hover:bg-fg/[0.02] shadow-2xs"
+                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-5 transition-all hover:border-emerald-500/40 hover:bg-fg/[0.02] shadow-2xs"
               >
                 <div>
                   <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
@@ -241,7 +241,7 @@ export default function AdminOverviewPage() {
 
               <Link
                 href="/admin/platform-settings"
-                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-4.5 transition-all hover:border-indigo-500/40 hover:bg-fg/[0.02] shadow-2xs"
+                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-5 transition-all hover:border-indigo-500/40 hover:bg-fg/[0.02] shadow-2xs"
               >
                 <div>
                   <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-500">
@@ -262,7 +262,7 @@ export default function AdminOverviewPage() {
 
               <Link
                 href="/admin/security"
-                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-4.5 transition-all hover:border-rose-500/40 hover:bg-fg/[0.02] shadow-2xs"
+                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-5 transition-all hover:border-rose-500/40 hover:bg-fg/[0.02] shadow-2xs"
               >
                 <div>
                   <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-rose-500/10 text-rose-500">
@@ -283,7 +283,7 @@ export default function AdminOverviewPage() {
 
               <Link
                 href="/admin/system"
-                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-4.5 transition-all hover:border-amber-500/40 hover:bg-fg/[0.02] shadow-2xs"
+                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-5 transition-all hover:border-amber-500/40 hover:bg-fg/[0.02] shadow-2xs"
               >
                 <div>
                   <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">

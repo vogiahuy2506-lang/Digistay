@@ -295,7 +295,7 @@ export function WebsiteSettingsModal({
             <div className="p-4 rounded-xl border border-line bg-fg/[0.02]">
               <div className="flex items-start gap-3">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-acc-soft text-acc">
-                  <Activity className="h-4.5 w-4.5" />
+                  <Activity className="h-5 w-5" />
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-fg">Mã đo lường Tiếp thị (Facebook Pixel & Google Tag)</h3>

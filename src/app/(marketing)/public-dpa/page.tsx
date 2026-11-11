@@ -11,3 +11,4 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function PublicDpaPage() {
   return <LegalDocViewer slug="public-dpa" />
 }
+

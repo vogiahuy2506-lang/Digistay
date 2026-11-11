@@ -768,3 +768,4 @@ export const LEGAL_DOCS: Record<string, { vi: LegalDoc; en: LegalDoc }> = {
     },
   },
 }
+

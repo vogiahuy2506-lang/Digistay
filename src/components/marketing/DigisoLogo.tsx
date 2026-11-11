@@ -14,23 +14,24 @@ export function DigisoLogo({
   size?: 'sm' | 'md' | 'lg'
   heightClass?: string
 }) {
-  const resolvedHeight = heightClass || (size === 'sm' ? 'h-5' : size === 'lg' ? 'h-8' : 'h-6')
+  const resolvedHeight = heightClass || (size === 'sm' ? 'h-6' : size === 'lg' ? 'h-9' : 'h-7')
   return (
     <span className={cn('inline-flex items-center', className)}>
       <Image
         src="/marketing/logo-digiso.png"
         alt="DIGISO Digital Solutions"
-        width={150}
-        height={38}
+        width={360}
+        height={340}
         className={cn(resolvedHeight, 'w-auto dark:hidden object-contain')}
       />
       <Image
         src="/marketing/logo-digiso-white.png"
         alt="DIGISO Digital Solutions"
-        width={150}
-        height={38}
+        width={360}
+        height={340}
         className={cn(resolvedHeight, 'w-auto hidden dark:block object-contain')}
       />
     </span>
   )
 }
+

@@ -11,3 +11,4 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function RefundPolicyPage() {
   return <LegalDocViewer slug="refund-policy" />
 }
+

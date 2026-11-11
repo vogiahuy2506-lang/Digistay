@@ -11,3 +11,4 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function RightsAndDutiesPage() {
   return <LegalDocViewer slug="rights-and-duties" />
 }
+

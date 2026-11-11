@@ -11,3 +11,4 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function ServiceDeliveryPolicyPage() {
   return <LegalDocViewer slug="service-delivery-policy" />
 }
+

@@ -46,7 +46,7 @@ export async function LegalDocViewer({ slug }: LegalDocViewerProps) {
         <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-10 lg:gap-14 items-start">
           {/* Left Sidebar: Document Switcher */}
           <aside className="space-y-6 lg:sticky lg:top-24">
-            <div className="rounded-box border border-line bg-panel p-4.5 space-y-4 shadow-2xs">
+            <div className="rounded-box border border-line bg-panel p-5 space-y-4 shadow-2xs">
               <div className="border-b border-line/70 pb-3">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-muted">
                   {isEn ? 'Transaction & Policies' : 'Chính sách & Giao dịch'}
@@ -95,25 +95,29 @@ export async function LegalDocViewer({ slug }: LegalDocViewerProps) {
             </div>
 
             {/* Entity Verification Card */}
-            <div className="rounded-box border border-line bg-panel p-4.5 space-y-2.5 text-xs text-muted shadow-2xs">
-              <DigisoLogo heightClass="h-5" />
-              <p className="font-semibold text-fg text-[12px]">{isEn ? LEGAL_COMPANY.nameEn : LEGAL_COMPANY.name}</p>
-              <p>
-                <span className="font-medium text-fg">{isEn ? 'Tax ID / License:' : 'Mã số thuế / GPKD:'}</span>{' '}
-                {LEGAL_COMPANY.taxId}
-              </p>
-              <p>
-                <span className="font-medium text-fg">{isEn ? 'Hotline:' : 'Hotline hỗ trợ:'}</span>{' '}
-                <a href={`tel:${LEGAL_COMPANY.hotline.replace(/\D/g, '')}`} className="text-primary hover:underline font-semibold">
-                  {LEGAL_COMPANY.hotline}
-                </a>
-              </p>
-              <p>
-                <span className="font-medium text-fg">Email:</span>{' '}
-                <a href={`mailto:${LEGAL_COMPANY.email}`} className="text-primary hover:underline">
-                  {LEGAL_COMPANY.email}
-                </a>
-              </p>
+            <div className="rounded-box border border-line bg-panel p-5 space-y-3 text-xs text-muted shadow-2xs">
+              <div className="flex items-center gap-2">
+                <DigisoLogo size="sm" />
+              </div>
+              <p className="font-semibold text-fg text-xs">{isEn ? LEGAL_COMPANY.nameEn : LEGAL_COMPANY.name}</p>
+              <div className="space-y-1.5 pt-2 border-t border-line/60">
+                <p>
+                  <span className="font-medium text-fg">{isEn ? 'Tax ID / License:' : 'Mã số thuế / GPKD:'}</span>{' '}
+                  {LEGAL_COMPANY.taxId}
+                </p>
+                <p>
+                  <span className="font-medium text-fg">{isEn ? 'Hotline:' : 'Hotline hỗ trợ:'}</span>{' '}
+                  <a href={`tel:${LEGAL_COMPANY.hotline.replace(/\D/g, '')}`} className="text-primary hover:underline font-semibold">
+                    {LEGAL_COMPANY.hotline}
+                  </a>
+                </p>
+                <p>
+                  <span className="font-medium text-fg">Email:</span>{' '}
+                  <a href={`mailto:${LEGAL_COMPANY.email}`} className="text-primary hover:underline">
+                    {LEGAL_COMPANY.email}
+                  </a>
+                </p>
+              </div>
             </div>
           </aside>
 
@@ -165,3 +169,4 @@ export async function LegalDocViewer({ slug }: LegalDocViewerProps) {
     </>
   )
 }
+
