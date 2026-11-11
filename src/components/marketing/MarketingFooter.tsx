@@ -40,10 +40,27 @@ export async function MarketingFooter() {
   return (
     <footer className="mt-24 border-t border-line lg:mt-32">
       <div className={cn(frame, 'pb-8 pt-12 lg:pt-14')}>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-10 text-[14px] sm:grid-cols-3 lg:grid-cols-[1.6fr_1fr_1fr_1fr] lg:gap-12">
-          <div className="col-span-2 sm:col-span-3 lg:col-span-1">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-10 text-[14px] sm:grid-cols-3 lg:grid-cols-[1.8fr_1fr_1fr_1fr] lg:gap-12">
+          <div className="col-span-2 sm:col-span-3 lg:col-span-1 space-y-3">
             <Logo />
-            <p className="mt-3 max-w-[300px] leading-[1.6] text-muted">{t('footer.tagline')}</p>
+            <p className="max-w-[340px] leading-[1.6] text-muted">{t('footer.tagline')}</p>
+            <div className="border-t border-line/70 pt-3 text-[12.5px] leading-relaxed text-muted space-y-1">
+              <p className="font-medium text-fg">{t('footer.company')}</p>
+              <p>{t('footer.taxCode')}</p>
+              <p>{t('footer.address')}</p>
+              <p>{t('footer.hotline')}</p>
+            </div>
+            <div className="pt-2 text-[12px] text-muted">
+              <span>{t('footer.ecosystem')} </span>
+              <a
+                href="https://founderai.biz"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-primary hover:underline inline-flex items-center gap-1"
+              >
+                {t('footer.founderAiLink')} ↗
+              </a>
+            </div>
           </div>
           {columns.map((c) => (
             <div key={c.title}>

@@ -601,7 +601,13 @@
       "legal": "Pháp lý",
       "terms": "Điều khoản sử dụng",
       "privacy": "Chính sách bảo mật",
-      "copyright": "© {year} Digistay"
+      "copyright": "© {year} Digistay · Công ty TNHH Giải pháp số DIGISO",
+      "company": "Công ty TNHH Giải pháp số DIGISO",
+      "taxCode": "MST: 0316725362 (Sở KH&ĐT TP.HCM cấp ngày 19/02/2021)",
+      "address": "Phòng I.101B, Tòa nhà A, Khu Công nghệ Phần mềm ĐHQG-HCM, Đường Võ Trường Toản, Khu phố 3, Phường Linh Xuân, TP. Hồ Chí Minh",
+      "hotline": "Hotline: 0877 909 606 (8:30 – 17:00, Thứ 2 - Thứ 6)",
+      "ecosystem": "Hệ sinh thái công nghệ DIGISO:",
+      "founderAiLink": "Founder AI (founderai.biz) — Đồng sáng lập cho doanh nghiệp một người"
     },
     "legal": {
       "pending": "Nội dung trang này đang được soạn và sẽ có trước khi Digistay mở đăng ký chính thức. Nếu bạn cần ngay, hãy liên hệ với chúng tôi.",
@@ -631,6 +637,7 @@
     },
     "home": {
       "eyebrow": "Cho khách sạn, homestay và resort tại Việt Nam",
+      "ecosystemBadge": "Thuộc hệ sinh thái công nghệ DIGISO · Cùng nền tảng Founder AI (founderai.biz)",
       "title": "Website đặt phòng và sổ quản lý của khách sạn, trong một tài khoản",
       "lead": "Tự dựng website có đặt phòng và đặt cọc qua PayOS, rồi quản lý đặt phòng, nhận trả phòng, hoá đơn và báo cáo ở cùng một nơi.",
       "register": "Đăng ký",
@@ -721,6 +728,18 @@
           "q": "Nhân viên lễ tân có xem được doanh thu không?",
           "a": "Không. Báo cáo doanh thu chỉ hiện với Chủ và Quản lý; Lễ tân xem và xử lý đặt phòng, nhận và trả phòng."
         }
+      },
+      "ecosystem": {
+        "tag": "HỆ SINH THÁI CÔNG NGHỆ DIGISO",
+        "title": "Nền tảng công nghệ tin cậy thuộc Công ty TNHH Giải pháp số DIGISO",
+        "lead": "Digistay và Founder AI là hai giải pháp công nghệ thuộc DIGISO (MST: 0316725362), đã hoàn tất thủ tục thông báo với Bộ Công Thương và đồng hành cùng hàng nghìn nhà kinh doanh trực tuyến.",
+        "founderAiName": "Founder AI — Đồng sáng lập cho doanh nghiệp một người",
+        "founderAiDesc": "Nền tảng All-in-One: Kéo thả Landing Page, Email Marketing hàng loạt, Chatbot tự động đa kênh Zalo/Facebook và CRM quản lý khách hàng 24/7.",
+        "founderAiAction": "Khám phá Founder AI (founderai.biz)",
+        "digistayName": "Digistay — Website & Vận hành lưu trú toàn diện",
+        "digistayDesc": "Giải pháp chuyên sâu cho khách sạn, homestay & resort: Tự dựng website direct booking không chiết khấu OTA, đối soát PayOS VietQR tự động và quản trị tập trung.",
+        "verifiedBadge": "Thương mại điện tử minh bạch",
+        "verifiedText": "Hệ thống vận hành theo quy chuẩn an toàn dữ liệu, hóa đơn điện tử hợp pháp và pháp lý minh bạch."
       },
       "cta": {
         "title": "Mở tài khoản và dựng website cho khách sạn của bạn",
@@ -821,6 +840,16 @@
           "a": "Bạn xuất được danh sách đặt phòng trước khi ngừng. Dữ liệu được giữ thêm 30 ngày rồi xoá."
         }
       },
+      "trust": {
+        "title": "Bảo chứng & Cam kết từ DIGISO",
+        "invoiceTitle": "Xuất hóa đơn GTGT điện tử tự động",
+        "invoiceDesc": "Công ty TNHH Giải pháp số DIGISO (MST: 0316725362) tự động phát hành HĐĐT Mắt Bão ngay sau khi thanh toán.",
+        "hotlineTitle": "Tư vấn & Hỗ trợ kỹ thuật trực tiếp",
+        "hotlineDesc": "Hotline chuyên trách 0877 909 606 (8:30 – 17:00, Thứ 2 - Thứ 6) hoặc email info@digiso.vn.",
+        "hotlineAction": "Gọi 0877 909 606",
+        "ecosystemTitle": "Tích hợp cùng hệ sinh thái Founder AI",
+        "ecosystemDesc": "Dễ dàng kết nối các công cụ Marketing tự động và CRM nuôi dưỡng khách từ Founder AI vào khách sạn của bạn."
+      },
       "cta": {
         "title": "Chưa chắc gói nào hợp?",
         "lead": "Gửi số cơ sở và số phòng của bạn, chúng tôi gợi ý gói phù hợp.",
@@ -831,9 +860,19 @@
     "contact": {
       "title": "Liên hệ",
       "lead": "Hỏi về gói dịch vụ, nhờ hỗ trợ kỹ thuật hoặc bàn chuyện hợp tác. Chúng tôi trả lời qua email hoặc điện thoại bạn để lại.",
-      "emailLabel": "Email",
-      "hotlineLabel": "Hotline",
-      "addressLabel": "Địa chỉ",
+      "companyLabel": "Đơn vị chủ quản",
+      "companyValue": "Công ty TNHH Giải pháp số DIGISO",
+      "taxIdLabel": "Mã số thuế / GPKD",
+      "taxIdValue": "0316725362 (Sở Kế hoạch và Đầu tư TP.HCM)",
+      "emailLabel": "Email tiếp nhận",
+      "hotlineLabel": "Hotline hỗ trợ",
+      "hotlineHours": "0877 909 606 · 8:30 – 17:00 (Thứ 2 – Thứ 6)",
+      "addressLabel": "Trụ sở chính",
+      "addressValue": "Phòng I.101B, Tòa nhà A, Khu Công nghệ Phần mềm ĐHQG-HCM, Đường Võ Trường Toản, Khu phố 3, Phường Linh Xuân, TP. Hồ Chí Minh",
+      "supportEmailValue": "hello@digistay.vn · info@digiso.vn",
+      "ecosystemTitle": "Cùng hệ sinh thái công nghệ DIGISO",
+      "ecosystemDesc": "Trải nghiệm thêm nền tảng Founder AI (founderai.biz) — Giải pháp đồng sáng lập AI cho doanh nghiệp một người, tự động hóa phễu bán hàng & chăm sóc khách hàng đa kênh.",
+      "exploreEcosystem": "Ghé thăm founderai.biz →",
       "form": {
         "name": "Họ và tên",
         "hotel": "Tên khách sạn",

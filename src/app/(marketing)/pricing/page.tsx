@@ -164,6 +164,60 @@ export default async function PricingPage() {
           <Faq reveal items={FAQ.map((q) => ({ q: t(`faq.${q}.q`), a: t(`faq.${q}.a`) }))} />
         </section>
 
+        {/* Enterprise Trust & DIGISO Guarantees */}
+        <section className={cn(frame, 'pt-20 lg:pt-28')}>
+          <div data-reveal className="rounded-box border border-line bg-panel p-6 sm:p-8 lg:p-10 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-line/70 pb-6">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-primary">
+                  DIGISO Digital Solutions Co., Ltd.
+                </span>
+                <h3 className="mt-1 font-serif text-[24px] sm:text-[28px] font-medium leading-[1.2] text-fg">
+                  {t('trust.title')}
+                </h3>
+              </div>
+              <a
+                href="tel:0877909606"
+                className={cn(lineButton, 'h-11 px-5 text-sm font-semibold text-primary hover:bg-primary/10 shrink-0 self-start sm:self-auto')}
+              >
+                {t('trust.hotlineAction')}
+              </a>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-2">
+              <div className="space-y-1.5">
+                <h4 className="text-sm font-semibold text-fg flex items-center gap-2">
+                  <span className="text-emerald-500">✓</span>
+                  {t('trust.invoiceTitle')}
+                </h4>
+                <p className="text-xs leading-relaxed text-muted">
+                  {t('trust.invoiceDesc')}
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <h4 className="text-sm font-semibold text-fg flex items-center gap-2">
+                  <span className="text-emerald-500">✓</span>
+                  {t('trust.hotlineTitle')}
+                </h4>
+                <p className="text-xs leading-relaxed text-muted">
+                  {t('trust.hotlineDesc')}
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <h4 className="text-sm font-semibold text-fg flex items-center gap-2">
+                  <span className="text-emerald-500">✓</span>
+                  {t('trust.ecosystemTitle')}
+                </h4>
+                <p className="text-xs leading-relaxed text-muted">
+                  {t('trust.ecosystemDesc')}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section className={cn(frame, 'pt-24 lg:pt-28')}>
           <div data-reveal="rise" className="grid gap-6 rounded-box bg-plain-soft px-6 py-9 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-12 lg:px-14 lg:py-14">
             <div>

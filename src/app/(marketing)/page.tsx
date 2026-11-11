@@ -70,6 +70,10 @@ export default async function HomePage() {
           {/* Darker toward the text (left on wide screens, bottom on phones) so white type stays readable */}
           <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-black/75 via-black/45 to-black/15 lg:bg-gradient-to-r lg:from-black/75 lg:via-black/40 lg:to-black/5" />
           <div className={cn(frame, 'flex min-h-[calc(100svh-69px)] flex-col justify-end pb-20 pt-24 lg:min-h-[calc(100svh-81px)] lg:pb-28 lg:pt-28')}>
+            <div className="hero-in mb-3.5 inline-flex items-center gap-2 self-start rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-[11px] font-medium tracking-wide text-white/90 backdrop-blur-xs">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>{t('ecosystemBadge')}</span>
+            </div>
             <p className="hero-in text-[11px] font-medium uppercase leading-[1.6] tracking-[0.16em] text-white/80 lg:text-[12px]">{t('eyebrow')}</p>
             <h1
               style={revealDelay(120)}
@@ -195,6 +199,74 @@ export default async function HomePage() {
                   : t(`faq.${q}.a` as 'faq.q1.a'),
             }))}
           />
+        </section>
+
+        {/* DIGISO Ecosystem & Trust Showcase */}
+        <section className={cn(frame, 'pt-24 lg:pt-36')}>
+          <div data-reveal className="rounded-box border border-line bg-panel p-6 sm:p-10 lg:p-12">
+            <div className="max-w-[780px]">
+              <span className="font-mono text-xs font-semibold uppercase tracking-wider text-primary">
+                {t('ecosystem.tag')}
+              </span>
+              <h2 className="mt-2.5 font-serif text-[28px] sm:text-[36px] font-medium leading-[1.2] tracking-[-0.015em] text-fg">
+                {t('ecosystem.title')}
+              </h2>
+              <p className={cn('mt-3 text-[15px] sm:text-[16px] leading-[1.7]', softText)}>
+                {t('ecosystem.lead')}
+              </p>
+            </div>
+
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-line/70">
+              {/* Product 1: Digistay */}
+              <div className="flex flex-col justify-between rounded-xl border border-line bg-page p-6">
+                <div>
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <span className="font-serif text-lg font-semibold text-fg">
+                      {t('ecosystem.digistayName')}
+                    </span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
+                      HOSPITALITY
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-[13px] leading-relaxed text-muted">
+                    {t('ecosystem.digistayDesc')}
+                  </p>
+                </div>
+                <div className="mt-6 flex items-center gap-2 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  <span>{t('ecosystem.verifiedBadge')}</span>
+                </div>
+              </div>
+
+              {/* Product 2: Founder AI */}
+              <div className="flex flex-col justify-between rounded-xl border border-line bg-page p-6 group hover:border-primary/50 transition-colors">
+                <div>
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <span className="font-serif text-lg font-semibold text-fg group-hover:text-primary transition-colors">
+                      {t('ecosystem.founderAiName')}
+                    </span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
+                      SOLOPRENEUR AI
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-[13px] leading-relaxed text-muted">
+                    {t('ecosystem.founderAiDesc')}
+                  </p>
+                </div>
+                <div className="mt-6">
+                  <a
+                    href="https://founderai.biz"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                  >
+                    <span>{t('ecosystem.founderAiAction')}</span>
+                    <span aria-hidden="true">↗</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* Call to action */}

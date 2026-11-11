@@ -167,14 +167,14 @@ export default function AdminOverviewPage() {
                 href="/admin/system"
                 className="inline-flex items-center gap-1 text-xs font-medium text-acc hover:underline"
               >
-                <span>Kiểm tra hạ tầng</span>
+                <span>{to('shortcuts.checkInfra')}</span>
                 <ChevronRight className="h-3 w-3" aria-hidden="true" />
               </Link>
             </div>
           </div>
 
           {/* Quick Management Shortcuts */}
-          <Section title="Phím tắt Quản trị Nền tảng">
+          <Section title={to('shortcuts.title')}>
             <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
               <Link
                 href="/admin/plans"
@@ -185,14 +185,14 @@ export default function AdminOverviewPage() {
                     <CreditCard className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <h3 className="text-sm font-semibold text-fg group-hover:text-primary transition-colors">
-                    Quản lý Gói & Custom Plans
+                    {to('shortcuts.plans')}
                   </h3>
                   <p className="mt-1 text-xs text-muted leading-relaxed">
-                    Điều chỉnh giá, hạn mức 8 nhóm tính năng và tạo gói VIP / Private cho khách hàng.
+                    {to('shortcuts.plansDesc')}
                   </p>
                 </div>
                 <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-primary">
-                  <span>Cấu hình gói cước</span>
+                  <span>{to('shortcuts.plansAction')}</span>
                   <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
                 </div>
               </Link>
@@ -206,14 +206,14 @@ export default function AdminOverviewPage() {
                     <Settings className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <h3 className="text-sm font-semibold text-fg group-hover:text-indigo-500 transition-colors">
-                    Cấu hình Nền tảng Toàn cầu
+                    {to('shortcuts.settings')}
                   </h3>
                   <p className="mt-1 text-xs text-muted leading-relaxed">
-                    Quản lý PayOS, HĐĐT Mắt Bão, Gemini AI, Email SMTP máy chủ và thông tin thương hiệu.
+                    {to('shortcuts.settingsDesc')}
                   </p>
                 </div>
                 <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-indigo-500">
-                  <span>Mở cấu hình</span>
+                  <span>{to('shortcuts.settingsAction')}</span>
                   <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
                 </div>
               </Link>
@@ -227,14 +227,14 @@ export default function AdminOverviewPage() {
                     <ShieldAlert className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <h3 className="text-sm font-semibold text-fg group-hover:text-rose-500 transition-colors">
-                    Bảo mật & Tường lửa IP
+                    {to('shortcuts.security')}
                   </h3>
                   <p className="mt-1 text-xs text-muted leading-relaxed">
-                    Chặn IP bot / spammer, bảo lưu tên miền con hệ thống và theo dõi cảnh báo phòng thủ.
+                    {to('shortcuts.securityDesc')}
                   </p>
                 </div>
                 <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-rose-500">
-                  <span>Trung tâm bảo mật</span>
+                  <span>{to('shortcuts.securityAction')}</span>
                   <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
                 </div>
               </Link>
@@ -248,14 +248,14 @@ export default function AdminOverviewPage() {
                     <Users className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <h3 className="text-sm font-semibold text-fg group-hover:text-purple-500 transition-colors">
-                    Đội ngũ Admin & RBAC
+                    {to('shortcuts.team')}
                   </h3>
                   <p className="mt-1 text-xs text-muted leading-relaxed">
-                    Phân quyền Super Admin / Admin, giám sát 2FA TOTP và hỗ trợ reset xác thực khẩn cấp.
+                    {to('shortcuts.teamDesc')}
                   </p>
                 </div>
                 <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-purple-500">
-                  <span>Quản lý nhân sự</span>
+                  <span>{to('shortcuts.teamAction')}</span>
                   <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
                 </div>
               </Link>
@@ -269,14 +269,14 @@ export default function AdminOverviewPage() {
                     <Server className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <h3 className="text-sm font-semibold text-fg group-hover:text-amber-500 transition-colors">
-                    Hạ tầng, VPS & Cronjobs
+                    {to('shortcuts.system')}
                   </h3>
                   <p className="mt-1 text-xs text-muted leading-relaxed">
-                    Đo lường CPU, RAM, Disk VPS, Redis, Postgres pool và nút kích hoạt chạy bù cronjob.
+                    {to('shortcuts.systemDesc')}
                   </p>
                 </div>
                 <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-amber-500">
-                  <span>Kiểm tra hạ tầng</span>
+                  <span>{to('shortcuts.systemAction')}</span>
                   <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
                 </div>
               </Link>
@@ -290,14 +290,14 @@ export default function AdminOverviewPage() {
                     <Receipt className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <h3 className="text-sm font-semibold text-fg group-hover:text-emerald-500 transition-colors">
-                    Đơn hàng & Doanh thu
+                    {to('shortcuts.orders')}
                   </h3>
                   <p className="mt-1 text-xs text-muted leading-relaxed">
-                    Theo dõi thanh toán PayOS gói cước, đối soát giao dịch và xuất hóa đơn điện tử.
+                    {to('shortcuts.ordersDesc')}
                   </p>
                 </div>
                 <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-emerald-500">
-                  <span>Mở đơn hàng</span>
+                  <span>{to('shortcuts.ordersAction')}</span>
                   <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
                 </div>
               </Link>

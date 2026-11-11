@@ -163,7 +163,7 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
               type="button"
               onClick={() => setIsCollapsed(true)}
               className="p-1.5 rounded-ctl text-muted hover:text-fg hover:bg-fg/5 transition-colors"
-              title="Thu gọn sidebar"
+              title={t('collapse')}
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -175,7 +175,7 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
           {isCollapsed ? (
             <div
               className="flex justify-center p-2 rounded-lg border border-primary/20 bg-primary/5 text-primary"
-              title="Super Admin - Quản trị toàn sàn"
+              title={`${t('role')} - ${t('roleSubtitle')}`}
             >
               <ShieldCheck className="w-4 h-4" />
             </div>
@@ -187,13 +187,13 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-fg">SUPER ADMIN</span>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-fg">{t('role')}</span>
                     <span className="relative flex h-2 w-2">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                       <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
                     </span>
                   </div>
-                  <p className="text-[10px] text-muted truncate">Quản trị toàn nền tảng</p>
+                  <p className="text-[10px] text-muted truncate">{t('roleSubtitle')}</p>
                 </div>
               </div>
             </div>
@@ -263,7 +263,7 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
                 type="button"
                 onClick={() => setIsCollapsed(false)}
                 className="w-full flex items-center justify-center p-2 rounded-lg text-muted hover:text-fg hover:bg-fg/5 transition-colors"
-                title="Mở rộng thanh điều hướng"
+                title={t('expand')}
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -271,8 +271,8 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
               {theme && (
                 <button
                   type="button"
-                  aria-label={dark ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}
-                  title={dark ? 'Chế độ sáng' : 'Chế độ tối'}
+                  aria-label={dark ? t('themeLight') : t('themeDark')}
+                  title={dark ? t('themeLight') : t('themeDark')}
                   onClick={() => theme.setPreference(dark ? 'light' : 'dark')}
                   className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition-colors hover:bg-fg/5 hover:text-fg"
                 >
@@ -288,15 +288,17 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
                   {theme && (
                     <button
                       type="button"
-                      aria-label={dark ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}
-                      title={dark ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}
+                      aria-label={dark ? t('themeLight') : t('themeDark')}
+                      title={dark ? t('themeLight') : t('themeDark')}
                       onClick={() => theme.setPreference(dark ? 'light' : 'dark')}
                       className="flex h-7 w-7 items-center justify-center rounded-lg border border-line text-muted transition-colors hover:bg-fg/5 hover:text-fg"
                     >
                       {dark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
                     </button>
                   )}
-                  <span className="text-[11px] text-muted font-medium">Giao diện</span>
+                  <span className="text-[11px] text-muted font-medium">
+                    {dark ? t('themeDark') : t('themeLight')}
+                  </span>
                 </div>
 
                 <div role="group" aria-label="Language switch" className="flex gap-0.5 rounded-lg border border-line p-0.5">
@@ -326,14 +328,14 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
               <Link
                 href="/profile"
                 className="flex items-center gap-2.5 w-full p-2 rounded-lg border border-line bg-fg/[0.02] hover:bg-fg/5 text-xs text-muted hover:text-fg transition-colors"
-                title="Hồ sơ tài khoản Super Admin"
+                title={t('profile')}
               >
                 <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-fg/10 text-fg">
                   <User className="h-3.5 w-3.5" />
                 </div>
                 <div className="min-w-0 flex-1 truncate text-left">
-                  <span className="block text-[11px] font-medium text-fg truncate">Hồ sơ Quản trị viên</span>
-                  <span className="block text-[10px] text-muted truncate">Cài đặt & Xác thực 2FA</span>
+                  <span className="block text-[11px] font-medium text-fg truncate">{t('profile')}</span>
+                  <span className="block text-[10px] text-muted truncate">Security & 2FA</span>
                 </div>
               </Link>
             </>

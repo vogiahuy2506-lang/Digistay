@@ -21,30 +21,50 @@ export async function generateMetadata(): Promise<Metadata> {
  * unfinished (a made-up number could be a real person's). Fill them in
  * here once they exist.
  */
-const CONTACT: { email: string; hotline: string | null; address: string | null } = {
+const CONTACT = {
+  company: 'Công ty TNHH Giải pháp số DIGISO',
+  taxId: '0316725362',
   email: 'hello@digistay.vn',
-  hotline: null,
-  address: null,
+  corpEmail: 'info@digiso.vn',
+  hotline: '0877 909 606',
+  hours: '8:30 – 17:00 (Thứ 2 – Thứ 6)',
+  address: 'Phòng I.101B, Tòa nhà A, Khu Công nghệ Phần mềm ĐHQG-HCM, Đường Võ Trường Toản, Khu phố 3, Phường Linh Xuân, TP. Hồ Chí Minh',
+  founderAiUrl: 'https://founderai.biz',
 }
 
-/** Contact page (Claude Design "Digistay Lien He"). */
+/** Contact page (Claude Design "Digistay Lien He"). Synchronized with DIGISO & Founder AI ecosystem details. */
 export default async function ContactPage() {
   const t = await getTranslations('marketing.contact')
   const info: { label: string; value: React.ReactNode }[] = [
-    { label: t('emailLabel'), value: <a href={`mailto:${CONTACT.email}`} className="hover:underline">{CONTACT.email}</a> },
-  ]
-  if (CONTACT.hotline) {
-    const hotline = CONTACT.hotline
-    info.push({
+    { label: t('companyLabel'), value: t('companyValue') },
+    { label: t('taxIdLabel'), value: t('taxIdValue') },
+    {
       label: t('hotlineLabel'),
       value: (
-        <a href={`tel:${hotline.replace(/[^\d+]/g, '')}`} className="hover:underline">
-          {hotline}
-        </a>
+        <div>
+          <a href={`tel:${CONTACT.hotline.replace(/[^\d+]/g, '')}`} className="font-semibold text-primary hover:underline">
+            {CONTACT.hotline}
+          </a>
+          <span className="ml-2 text-xs text-muted">({t('hotlineHours')})</span>
+        </div>
       ),
-    })
-  }
-  if (CONTACT.address) info.push({ label: t('addressLabel'), value: CONTACT.address })
+    },
+    {
+      label: t('emailLabel'),
+      value: (
+        <div className="flex flex-wrap gap-x-3 gap-y-1">
+          <a href={`mailto:${CONTACT.email}`} className="text-primary hover:underline">
+            {CONTACT.email}
+          </a>
+          <span className="text-muted">·</span>
+          <a href={`mailto:${CONTACT.corpEmail}`} className="text-primary hover:underline">
+            {CONTACT.corpEmail}
+          </a>
+        </div>
+      ),
+    },
+    { label: t('addressLabel'), value: t('addressValue') },
+  ]
 
   return (
     <>
@@ -55,14 +75,35 @@ export default async function ContactPage() {
           <p className={cn('mt-4 text-[16px] leading-[1.7] lg:text-[17px]', softText)}>{t('lead')}</p>
           <dl className="mt-8 border-t border-line">
             {info.map((row) => (
-              <div key={row.label} className="border-b border-line py-[18px]">
-                <dt className="text-label uppercase text-muted">{row.label}</dt>
-                <dd className="mt-1.5 text-[16px] font-medium text-fg">{row.value}</dd>
+              <div key={row.label} className="border-b border-line py-[16px]">
+                <dt className="text-label uppercase text-muted text-[11.5px] font-semibold">{row.label}</dt>
+                <dd className="mt-1 text-[15px] font-medium text-fg">{row.value}</dd>
               </div>
             ))}
           </dl>
+
+          {/* Affiliated DIGISO Ecosystem Card */}
+          <div className="mt-8 rounded-box border border-line bg-panel p-5 space-y-2.5">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <h2 className="text-xs font-bold uppercase tracking-wider text-muted">
+                {t('ecosystemTitle')}
+              </h2>
+            </div>
+            <p className="text-xs leading-relaxed text-muted">
+              {t('ecosystemDesc')}
+            </p>
+            <a
+              href={CONTACT.founderAiUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline pt-1"
+            >
+              {t('exploreEcosystem')}
+            </a>
+          </div>
         </div>
-        <div className="rounded-box border border-line bg-panel p-5 sm:p-7">
+        <div className="rounded-box border border-line bg-panel p-5 sm:p-7 shadow-2xs">
           <ContactForm />
         </div>
       </main>

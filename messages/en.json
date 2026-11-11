@@ -601,7 +601,13 @@
       "legal": "Legal",
       "terms": "Terms of use",
       "privacy": "Privacy policy",
-      "copyright": "© {year} Digistay"
+      "copyright": "© {year} Digistay · DIGISO Digital Solutions Co., Ltd.",
+      "company": "DIGISO Digital Solutions Co., Ltd.",
+      "taxCode": "Business License / Tax ID: 0316725362 (DPI Ho Chi Minh City)",
+      "address": "Room I.101B, Building A, VNU-HCM Software Park, Linh Xuan, Ho Chi Minh City, Vietnam",
+      "hotline": "Hotline: (+84) 0877 909 606 (Mon – Fri: 8:30 – 17:00)",
+      "ecosystem": "DIGISO Technology Ecosystem:",
+      "founderAiLink": "Founder AI (founderai.biz) — AI Co-Founder for Solopreneurs"
     },
     "legal": {
       "pending": "This page is being written and will be published before Digistay opens sign-ups. If you need it now, please contact us.",
@@ -631,6 +637,7 @@
     },
     "home": {
       "eyebrow": "For hotels, homestays and resorts in Vietnam",
+      "ecosystemBadge": "Part of DIGISO Technology Ecosystem · Alongside Founder AI (founderai.biz)",
       "title": "Your hotel's booking website and front desk, in one account",
       "lead": "Build your own website with online booking and PayOS deposits, then run bookings, check-in and check-out, invoices and reports in one place.",
       "register": "Sign up",
@@ -721,6 +728,18 @@
           "q": "Can front desk staff see revenue?",
           "a": "No. Revenue reports are only shown to Owners and Managers; the front desk sees and handles bookings, check-in and check-out."
         }
+      },
+      "ecosystem": {
+        "tag": "DIGISO TECHNOLOGY ECOSYSTEM",
+        "title": "Trusted Digital Infrastructure by DIGISO Digital Solutions Co., Ltd.",
+        "lead": "Digistay and Founder AI are core enterprise platforms within DIGISO (Tax ID: 0316725362), registered with the Ministry of Industry and Trade, powering thousands of online businesses.",
+        "founderAiName": "Founder AI — AI Co-Founder for Solopreneurs",
+        "founderAiDesc": "All-in-one platform: Drag-and-drop Landing Pages, bulk Email Marketing, multi-channel AI Chatbot on Zalo/Facebook, and 24/7 automated CRM.",
+        "founderAiAction": "Explore Founder AI (founderai.biz)",
+        "digistayName": "Digistay — Hotel Booking & Front Desk Management",
+        "digistayDesc": "Dedicated hospitality platform: Commission-free direct booking websites, automated 24/7 PayOS VietQR reconciliation, and unified operations.",
+        "verifiedBadge": "Ministry of Industry & Trade Registered",
+        "verifiedText": "Fully compliant with national e-commerce standards, data security protocols, and legally verified e-invoicing."
       },
       "cta": {
         "title": "Open an account and build your hotel's website",
@@ -821,6 +840,16 @@
           "a": "You can export your bookings before you stop. The data is kept for 30 more days, then deleted."
         }
       },
+      "trust": {
+        "title": "Enterprise Trust & Guarantees by DIGISO",
+        "invoiceTitle": "Automated VAT E-Invoices",
+        "invoiceDesc": "DIGISO Digital Solutions Co., Ltd. (Tax ID: 0316725362) automatically issues official Mat Bao VAT e-invoices upon checkout.",
+        "hotlineTitle": "Direct Support & Expert Consultation",
+        "hotlineDesc": "Dedicated phone line (+84) 0877 909 606 (8:30 – 17:00, Mon – Fri) or email info@digiso.vn.",
+        "hotlineAction": "Call 0877 909 606",
+        "ecosystemTitle": "Integrate with Founder AI Ecosystem",
+        "ecosystemDesc": "Seamlessly connect automated marketing workflows and CRM lead capture from Founder AI directly into your hotel."
+      },
       "cta": {
         "title": "Not sure which plan fits?",
         "lead": "Tell us how many properties and rooms you have and we'll suggest one.",
@@ -831,9 +860,19 @@
     "contact": {
       "title": "Contact",
       "lead": "Ask about plans, get technical help or talk partnerships. We reply by email or on the phone number you leave.",
-      "emailLabel": "Email",
-      "hotlineLabel": "Hotline",
-      "addressLabel": "Address",
+      "companyLabel": "Operating entity",
+      "companyValue": "DIGISO Digital Solutions Co., Ltd.",
+      "taxIdLabel": "Business License / Tax ID",
+      "taxIdValue": "0316725362 (DPI Ho Chi Minh City)",
+      "emailLabel": "Inquiries email",
+      "hotlineLabel": "Customer hotline",
+      "hotlineHours": "(+84) 0877 909 606 · 8:30 – 17:00 (Mon – Fri)",
+      "addressLabel": "Headquarters",
+      "addressValue": "Room I.101B, Building A, VNU-HCM Software Park, Vo Truong Toan St., Linh Xuan, Ho Chi Minh City, Vietnam",
+      "supportEmailValue": "hello@digistay.vn · info@digiso.vn",
+      "ecosystemTitle": "DIGISO Technology Ecosystem",
+      "ecosystemDesc": "Also discover Founder AI (founderai.biz) — AI Co-Founder for solopreneurs, marketing automation, multi-channel sales and CRM.",
+      "exploreEcosystem": "Visit founderai.biz →",
       "form": {
         "name": "Full name",
         "hotel": "Hotel name",
