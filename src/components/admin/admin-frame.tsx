@@ -2,12 +2,10 @@
 
 import * as React from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import {
-  ArrowLeft,
-  Building2,
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Command,
@@ -26,7 +24,7 @@ import {
   Ticket,
   Users,
   X,
-  Zap,
+  User,
 } from 'lucide-react'
 import { Logo } from '@/components/marketing/Logo'
 import { cn } from '@/lib/utils'
@@ -57,14 +55,14 @@ const NAV_GROUPS: NavGroupDef[] = [
   {
     groupKey: 'billing',
     items: [
-      { href: '/admin/plans', key: 'plans', icon: CreditCard },
+      { href: '/admin/plans', key: 'plans', icon: CreditCard, badge: 'VIP' },
       { href: '/admin/vouchers', key: 'vouchers', icon: Ticket },
     ],
   },
   {
     groupKey: 'system',
     items: [
-      { href: '/admin/platform-settings', key: 'platformSettings', icon: Settings },
+      { href: '/admin/platform-settings', key: 'platformSettings', icon: Settings, badge: 'API' },
       { href: '/admin/system', key: 'system', icon: Server },
     ],
   },
@@ -134,7 +132,7 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
       {/* 1. Desktop Fixed Sidebar */}
       <aside
         className={cn(
-          'hidden md:flex flex-col border-r border-line bg-panel/90 backdrop-blur sticky top-0 h-screen transition-all duration-200 z-40',
+          'hidden md:flex flex-col border-r border-line bg-panel sticky top-0 h-screen transition-all duration-200 z-40 select-none',
           isCollapsed ? 'w-20' : 'w-64'
         )}
       >
@@ -142,51 +140,76 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
         <div className="h-16 flex items-center justify-between px-4 border-b border-line shrink-0">
           <Link
             href="/admin"
-            className={cn('flex items-center gap-2.5 overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-acc rounded-ctl', isCollapsed && 'justify-center w-full')}
+            className={cn(
+              'flex items-center gap-2 overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-acc rounded-ctl',
+              isCollapsed && 'justify-center w-full'
+            )}
+            title="Digistay Platform Console"
           >
-            <Logo size="sm" />
-            {!isCollapsed && (
-              <span className="font-bold text-sm tracking-tight text-fg truncate">
-                DIGISTAY
-              </span>
+            {isCollapsed ? (
+              <Image src="/icon.png" alt="Digistay" width={28} height={28} className="h-7 w-7 rounded-lg" />
+            ) : (
+              <div className="flex items-center gap-2">
+                <Logo size="sm" />
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-primary/10 text-primary border border-primary/20">
+                  CONSOLE
+                </span>
+              </div>
             )}
           </Link>
+
           {!isCollapsed && (
             <button
               type="button"
               onClick={() => setIsCollapsed(true)}
-              className="p-1 rounded-ctl text-muted hover:text-fg hover:bg-fg/5 transition-colors"
-              title="Thu gọn thanh điều hướng"
+              className="p-1.5 rounded-ctl text-muted hover:text-fg hover:bg-fg/5 transition-colors"
+              title="Thu gọn sidebar"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
           )}
         </div>
 
-        {/* Superadmin Badge Pill */}
+        {/* Super Admin Status Banner */}
         <div className="p-3 border-b border-line shrink-0">
-          <div
-            className={cn(
-              'flex items-center gap-1.5 rounded-lg border border-acc/30 bg-acc/10 py-1.5 text-xs font-semibold text-acc transition-all',
-              isCollapsed ? 'justify-center px-1' : 'px-3'
-            )}
-            title="Super Admin Platform Console"
-          >
-            <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden="true" />
-            {!isCollapsed && <span className="tracking-wide uppercase text-[11px]">SUPER ADMIN</span>}
-          </div>
+          {isCollapsed ? (
+            <div
+              className="flex justify-center p-2 rounded-lg border border-primary/20 bg-primary/5 text-primary"
+              title="Super Admin - Quản trị toàn sàn"
+            >
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+          ) : (
+            <div className="rounded-lg border border-line bg-fg/[0.03] p-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <ShieldCheck className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-fg">SUPER ADMIN</span>
+                    <span className="relative flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-muted truncate">Quản trị toàn nền tảng</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Navigation Items (Grouped) */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-6">
+        <div className="flex-1 overflow-y-auto p-3 space-y-5">
           {NAV_GROUPS.map((group) => (
             <div key={group.groupKey} className="space-y-1">
               {!isCollapsed && (
-                <p className="px-3 text-[10px] font-semibold text-muted tracking-wider uppercase mb-1.5">
+                <p className="px-2.5 text-[10px] font-bold text-muted/80 tracking-wider uppercase mb-1.5">
                   {t(`groups.${group.groupKey}`)}
                 </p>
               )}
-              <ul className="space-y-1">
+              <ul className="space-y-0.5">
                 {group.items.map((item) => {
                   const active =
                     item.href === '/admin'
@@ -199,16 +222,30 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
                       <Link
                         href={item.href}
                         className={cn(
-                          'flex items-center gap-3 rounded-ctl px-3 py-2 text-xs font-medium transition-all group relative',
+                          'flex items-center justify-between rounded-lg px-2.5 py-2 text-xs font-medium transition-all group relative',
                           active
-                            ? 'bg-acc text-acc-fg font-semibold shadow-xs'
+                            ? 'bg-primary/10 text-primary font-semibold shadow-xs border-l-2 border-primary pl-2'
                             : 'text-muted hover:text-fg hover:bg-fg/5',
-                          isCollapsed && 'justify-center px-2 py-2.5'
+                          isCollapsed && 'justify-center px-2 py-2.5 border-l-0 pl-2'
                         )}
                         title={isCollapsed ? t(`nav.${item.key}`) : undefined}
                       >
-                        <Icon className={cn('h-4 w-4 shrink-0 transition-transform group-hover:scale-105', active ? 'text-acc-fg' : 'text-muted group-hover:text-fg')} aria-hidden="true" />
-                        {!isCollapsed && <span className="truncate">{t(`nav.${item.key}`)}</span>}
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <Icon
+                            className={cn(
+                              'h-4 w-4 shrink-0 transition-transform group-hover:scale-110',
+                              active ? 'text-primary' : 'text-muted group-hover:text-fg'
+                            )}
+                            aria-hidden="true"
+                          />
+                          {!isCollapsed && <span className="truncate">{t(`nav.${item.key}`)}</span>}
+                        </div>
+
+                        {!isCollapsed && item.badge && (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase bg-primary/10 text-primary border border-primary/20 shrink-0">
+                            {item.badge}
+                          </span>
+                        )}
                       </Link>
                     </li>
                   )
@@ -218,34 +255,51 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
           ))}
         </div>
 
-        {/* Sidebar Footer Controls */}
-        <div className="p-3 border-t border-line space-y-2 shrink-0 bg-fg/[0.01]">
+        {/* Sidebar Footer Controls (NO Back to workspace) */}
+        <div className="p-3 border-t border-line shrink-0 bg-fg/[0.01] space-y-2.5">
           {isCollapsed ? (
-            <button
-              type="button"
-              onClick={() => setIsCollapsed(false)}
-              className="w-full flex items-center justify-center p-2 rounded-ctl text-muted hover:text-fg hover:bg-fg/5 transition-colors"
-              title="Mở rộng thanh điều hướng"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
+            <div className="flex flex-col items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsCollapsed(false)}
+                className="w-full flex items-center justify-center p-2 rounded-lg text-muted hover:text-fg hover:bg-fg/5 transition-colors"
+                title="Mở rộng thanh điều hướng"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+
+              {theme && (
+                <button
+                  type="button"
+                  aria-label={dark ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}
+                  title={dark ? 'Chế độ sáng' : 'Chế độ tối'}
+                  onClick={() => theme.setPreference(dark ? 'light' : 'dark')}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition-colors hover:bg-fg/5 hover:text-fg"
+                >
+                  {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                </button>
+              )}
+            </div>
           ) : (
             <>
-              {/* Theme & Language Bar */}
+              {/* Theme & Language Controls */}
               <div className="flex items-center justify-between px-1">
-                {theme && (
-                  <button
-                    type="button"
-                    aria-label={dark ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}
-                    title={dark ? 'Chế độ sáng' : 'Chế độ tối'}
-                    onClick={() => theme.setPreference(dark ? 'light' : 'dark')}
-                    className="flex h-7 w-7 items-center justify-center rounded-ctl border border-line text-muted transition-colors hover:bg-fg/5 hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
-                  >
-                    {dark ? <Sun className="h-3.5 w-3.5" aria-hidden="true" /> : <Moon className="h-3.5 w-3.5" aria-hidden="true" />}
-                  </button>
-                )}
+                <div className="flex items-center gap-2">
+                  {theme && (
+                    <button
+                      type="button"
+                      aria-label={dark ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}
+                      title={dark ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}
+                      onClick={() => theme.setPreference(dark ? 'light' : 'dark')}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-line text-muted transition-colors hover:bg-fg/5 hover:text-fg"
+                    >
+                      {dark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+                    </button>
+                  )}
+                  <span className="text-[11px] text-muted font-medium">Giao diện</span>
+                </div>
 
-                <div role="group" aria-label="Language switch" className="flex gap-0.5 rounded-ctl border border-line p-0.5">
+                <div role="group" aria-label="Language switch" className="flex gap-0.5 rounded-lg border border-line p-0.5">
                   {(['vi', 'en'] as const).map((l) => (
                     <button
                       key={l}
@@ -257,8 +311,8 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
                         if (language.locale !== l && !language.pending) language.switchLanguage()
                       }}
                       className={cn(
-                        'h-6 rounded-[3px] px-1.5 text-[11px] font-semibold uppercase transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-acc',
-                        language.locale === l ? 'bg-ink text-on-ink' : 'text-muted hover:text-fg',
+                        'h-6 rounded-[4px] px-1.5 text-[10px] font-bold uppercase transition-colors',
+                        language.locale === l ? 'bg-primary text-white' : 'text-muted hover:text-fg',
                         language.pending && 'cursor-wait opacity-60'
                       )}
                     >
@@ -268,13 +322,19 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
                 </div>
               </div>
 
-              {/* Escape back to Workspace */}
+              {/* Profile Link */}
               <Link
-                href="/workspaces"
-                className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-ctl border border-line bg-panel hover:bg-fg/5 text-xs font-medium text-muted hover:text-fg transition-colors"
+                href="/profile"
+                className="flex items-center gap-2.5 w-full p-2 rounded-lg border border-line bg-fg/[0.02] hover:bg-fg/5 text-xs text-muted hover:text-fg transition-colors"
+                title="Hồ sơ tài khoản Super Admin"
               >
-                <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-                <span className="truncate">{t('back')}</span>
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-fg/10 text-fg">
+                  <User className="h-3.5 w-3.5" />
+                </div>
+                <div className="min-w-0 flex-1 truncate text-left">
+                  <span className="block text-[11px] font-medium text-fg truncate">Hồ sơ Quản trị viên</span>
+                  <span className="block text-[10px] text-muted truncate">Cài đặt & Xác thực 2FA</span>
+                </div>
               </Link>
             </>
           )}
@@ -290,44 +350,45 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
-              className="p-1.5 rounded-ctl border border-line text-muted hover:text-fg"
-              title="Menu"
+              className="p-2 rounded-ctl border border-line text-muted hover:text-fg hover:bg-fg/5"
+              aria-label="Mở menu quản trị"
             >
               <Menu className="w-5 h-5" />
             </button>
             <Logo size="sm" />
           </div>
 
-          {/* Universal Search Bar Trigger */}
-          <button
-            type="button"
-            onClick={() => setIsSearchOpen(true)}
-            className="hidden sm:flex items-center gap-3 px-3 py-1.5 rounded-ctl border border-line bg-fg/[0.03] text-muted hover:text-fg hover:border-acc/40 transition-colors w-64 md:w-80 text-xs text-left"
-          >
-            <Search className="w-3.5 h-3.5 shrink-0 text-muted" />
-            <span className="truncate flex-1">{t('searchPlaceholder')}</span>
-            <kbd className="hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-line bg-panel text-[10px] font-mono font-medium text-muted">
-              Ctrl K
-            </kbd>
-          </button>
+          {/* Desktop Search Trigger */}
+          <div className="hidden sm:flex items-center">
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen(true)}
+              className="flex items-center gap-3 px-3.5 py-1.5 rounded-lg border border-line bg-panel hover:bg-fg/5 text-xs text-muted transition-all shadow-2xs group"
+            >
+              <Search className="w-3.5 h-3.5 group-hover:text-primary transition-colors" />
+              <span>{t('searchPlaceholder')}</span>
+              <kbd className="inline-flex items-center gap-0.5 rounded border border-line bg-fg/5 px-1.5 py-0.5 font-mono text-[10px] text-muted">
+                Ctrl K
+              </kbd>
+            </button>
+          </div>
 
-          {/* Right Status & Actions */}
+          {/* Header Right Status Indicator */}
           <div className="flex items-center gap-3">
-            {/* System Health Badge */}
             <Link
               href="/admin/system"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-line bg-panel text-xs text-muted hover:text-fg hover:border-emerald-500/40 transition-colors shadow-2xs"
               title="Xem sức khỏe hạ tầng hệ thống"
             >
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="hidden sm:inline">{t('systemHealthy')}</span>
+              <span className="hidden sm:inline font-medium text-fg">{t('systemHealthy')}</span>
             </Link>
 
             {/* Mobile Search Button */}
             <button
               type="button"
               onClick={() => setIsSearchOpen(true)}
-              className="sm:hidden p-2 rounded-ctl border border-line text-muted hover:text-fg"
+              className="sm:hidden p-2 rounded-lg border border-line text-muted hover:text-fg"
               title="Tìm kiếm"
             >
               <Search className="w-4 h-4" />
@@ -341,20 +402,20 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      {/* 3. Mobile Navigation Drawer */}
+      {/* 3. Mobile Navigation Drawer (NO Back to workspace) */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-xs" onClick={() => setMobileMenuOpen(false)} />
-          <div className="relative w-72 max-w-[80vw] bg-page border-r border-line h-full flex flex-col p-4 z-10 shadow-xl">
+          <div className="relative w-72 max-w-[80vw] bg-panel border-r border-line h-full flex flex-col p-4 z-10 shadow-xl">
             <div className="flex items-center justify-between pb-4 border-b border-line">
               <div className="flex items-center gap-2">
                 <Logo size="sm" />
-                <span className="font-bold text-sm text-fg">DIGISTAY ADMIN</span>
+                <span className="font-bold text-xs text-primary px-1.5 py-0.5 rounded bg-primary/10">CONSOLE</span>
               </div>
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-1 rounded-ctl text-muted hover:text-fg"
+                className="p-1 rounded-lg text-muted hover:text-fg"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -363,7 +424,7 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
             <div className="flex-1 overflow-y-auto py-4 space-y-5">
               {NAV_GROUPS.map((group) => (
                 <div key={group.groupKey} className="space-y-1">
-                  <p className="px-3 text-[10px] font-semibold text-muted tracking-wider uppercase mb-1">
+                  <p className="px-3 text-[10px] font-bold text-muted/80 tracking-wider uppercase mb-1">
                     {t(`groups.${group.groupKey}`)}
                   </p>
                   <ul className="space-y-1">
@@ -378,9 +439,9 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
                           <Link
                             href={item.href}
                             className={cn(
-                              'flex items-center gap-3 rounded-ctl px-3 py-2 text-xs font-medium transition-colors',
+                              'flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition-colors',
                               active
-                                ? 'bg-acc text-acc-fg font-semibold'
+                                ? 'bg-primary/10 text-primary font-semibold'
                                 : 'text-muted hover:text-fg hover:bg-fg/5'
                             )}
                           >
@@ -395,13 +456,13 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
               ))}
             </div>
 
-            <div className="pt-4 border-t border-line space-y-3">
+            <div className="pt-3 border-t border-line">
               <Link
-                href="/workspaces"
-                className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-ctl border border-line bg-panel text-xs font-medium text-muted hover:text-fg"
+                href="/profile"
+                className="flex items-center gap-2 w-full p-2 rounded-lg border border-line bg-fg/[0.02] text-xs text-muted hover:text-fg"
               >
-                <ArrowLeft className="h-3.5 w-3.5" />
-                <span>{t('back')}</span>
+                <User className="h-4 w-4" />
+                <span>Hồ sơ Quản trị viên</span>
               </Link>
             </div>
           </div>
@@ -412,7 +473,7 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
       <Modal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} size="md">
         <ModalHeader className="border-b border-line pb-3">
           <div className="flex items-center gap-2">
-            <Command className="w-4 h-4 text-acc" />
+            <Command className="w-4 h-4 text-primary" />
             <h3 className="text-sm font-semibold text-fg">Tìm kiếm nhanh toàn hệ thống</h3>
           </div>
         </ModalHeader>
@@ -440,10 +501,10 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
                       setIsSearchOpen(false)
                       router.push(item.href)
                     }}
-                    className="w-full flex items-center justify-between p-2.5 rounded-ctl hover:bg-fg/5 text-left text-xs transition-colors group"
+                    className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-fg/5 text-left text-xs transition-colors group"
                   >
                     <div className="flex items-center gap-2.5">
-                      <Icon className="w-4 h-4 text-muted group-hover:text-acc transition-colors" />
+                      <Icon className="w-4 h-4 text-muted group-hover:text-primary transition-colors" />
                       <span className="font-medium text-fg">{item.title}</span>
                     </div>
                     <span className="text-[10px] text-muted font-mono bg-fg/5 px-2 py-0.5 rounded border border-line">

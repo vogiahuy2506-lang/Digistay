@@ -58,7 +58,12 @@ export class BillingError extends Error {
 
 const PLAN_CODE: Record<PlanId, string> = { starter: 'STARTER', growth: 'GROWTH', business: 'BUSINESS' }
 
-const planName = (id: string) => planById(id).id.charAt(0).toUpperCase() + planById(id).id.slice(1)
+const planName = (id: string) => {
+  if (isPlanId(id)) {
+    return planById(id).id.charAt(0).toUpperCase() + planById(id).id.slice(1)
+  }
+  return id
+}
 
 /** Why checkout refuses a purchase (period.ts planChange), said to the payer. */
 export function changeBlockMessage(block: ChangeBlock, change: PlanChange, sub: Pick<Subscription, 'periodEnd' | 'nextPlan' | 'nextBilling'>): string {
@@ -72,14 +77,15 @@ export function changeBlockMessage(block: ChangeBlock, change: PlanChange, sub: 
 }
 
 /** What buying `plan` / `billing` would do to the workspace's plan now. */
-export async function quoteChange(workspaceId: string, plan: PlanId, billing: BillingPeriod, now = new Date()) {
+export async function quoteChange(workspaceId: string, plan: string, billing: BillingPeriod, now = new Date()) {
   const sub = await startScheduledPlan(await ensureSubscription(workspaceId, prisma, now), prisma, now)
   return { sub, change: planChange(sub, { plan, billing }, now) }
 }
 
 /** What the payer's bank shows: ASCII, at most 25 characters. */
-export function checkoutDescription(plan: PlanId, billing: BillingPeriod): string {
-  return `DIGISTAY ${PLAN_CODE[plan]} ${billing === 'YEAR' ? 'NAM' : 'THANG'}`.slice(0, 25)
+export function checkoutDescription(plan: string, billing: BillingPeriod): string {
+  const code = (PLAN_CODE as Record<string, string>)[plan] || plan.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 10)
+  return `DIGISTAY ${code} ${billing === 'YEAR' ? 'NAM' : 'THANG'}`.slice(0, 25)
 }
 
 function payosMessage(error: unknown): string {
@@ -119,7 +125,7 @@ export async function cancelPlanLinks(orderCodes: string[], reason: string): Pro
  */
 export async function createCheckout(input: {
   workspaceId: string
-  plan: PlanId
+  plan: string
   billing: BillingPeriod
   userId: string
   returnUrl: string
@@ -274,7 +280,7 @@ export async function applySubscriptionPaid(input: {
  * and writes on the payment the period it pays for and how it was applied.
  */
 async function applyToSubscription(sub: Subscription, payment: SubscriptionPayment, paidAt: Date, tx: Prisma.TransactionClient) {
-  const plan = isPlanId(payment.plan) ? payment.plan : 'growth'
+  const plan = payment.plan
   const change = planChange(sub, { plan, billing: payment.billing }, paidAt)
   const waiting = sub.nextPlan && sub.nextPeriodEnd ? sub.nextPeriodEnd.getTime() - sub.periodEnd.getTime() : null
   let period: { periodStart: Date; periodEnd: Date }

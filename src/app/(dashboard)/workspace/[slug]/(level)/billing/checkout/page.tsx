@@ -30,12 +30,13 @@ export default function DedicatedCheckoutPage() {
   const slug = workspace?.slug
 
   // URL query params
-  const initialPlan = isPlanId(search.get('plan') ?? '') ? (search.get('plan') as PlanId) : 'growth'
+  const planQuery = search.get('plan') ?? ''
+  const initialPlan = planQuery || 'growth'
   const initialBilling: Billing = search.get('billing') === 'YEAR' ? 'YEAR' : 'MONTH'
 
   const [data, setData] = React.useState<BillingData | null>(null)
   const [error, setError] = React.useState('')
-  const [selectedPlan, setSelectedPlan] = React.useState<PlanId>(initialPlan)
+  const [selectedPlan, setSelectedPlan] = React.useState<string>(initialPlan)
   const [selectedBilling, setSelectedBilling] = React.useState<Billing>(initialBilling)
 
   // Payment & Buyer states
@@ -50,7 +51,8 @@ export default function DedicatedCheckoutPage() {
   // Load subscription info
   const load = React.useCallback(async () => {
     if (!workspaceId) return
-    const res = await fetch(`/api/workspaces/${workspaceId}/subscription`, { cache: 'no-store' }).catch(() => null)
+    const url = `/api/workspaces/${workspaceId}/subscription${initialPlan ? `?plan=${encodeURIComponent(initialPlan)}` : ''}`
+    const res = await fetch(url, { cache: 'no-store' }).catch(() => null)
     const json = await res?.json().catch(() => null)
     if (!res?.ok || !json?.success) {
       setError(apiError(json?.error) || t('notReady'))
@@ -63,10 +65,10 @@ export default function DedicatedCheckoutPage() {
     }
     if (d.pending) {
       setPayment(d.pending)
-      setSelectedPlan(d.pending.plan as PlanId)
+      setSelectedPlan(d.pending.plan)
       setSelectedBilling(d.pending.billing)
     }
-  }, [workspaceId, t])
+  }, [workspaceId, initialPlan, t])
 
   React.useEffect(() => {
     load()
@@ -166,7 +168,7 @@ export default function DedicatedCheckoutPage() {
 
   const currentPlan = data.plans.find((p) => p.id === selectedPlan) ?? data.plans[0]
   const amount = selectedBilling === 'YEAR' ? currentPlan.price * data.yearlyMonths : currentPlan.price
-  const change = data.changes[selectedPlan]?.[selectedBilling]
+  const change = (data.changes as Record<string, any>)[selectedPlan]?.[selectedBilling]
 
   // Time remaining
   const left = payment?.expiresAt ? Math.max(0, new Date(payment.expiresAt).getTime() - now) : null

@@ -273,7 +273,7 @@ export default function SecurityPage() {
   const totalViolations = blacklist.reduce((acc, cur) => acc + (cur.attemptCount || 1), 0)
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 space-y-8">
       {/* Toast Notification */}
       {message && (
         <div
@@ -293,22 +293,27 @@ export default function SecurityPage() {
       )}
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 flex items-center gap-2.5">
-            <ShieldAlert className="w-7 h-7 text-rose-500" />
-            Trung tâm Bảo mật & Tường lửa
-          </h1>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-            Quản trị IP Blacklist, chính sách tường lửa, tên miền con nhạy cảm và giám sát phòng thủ nền tảng
+          <div className="flex items-center gap-2">
+            <h1 className="font-serif text-2xl font-bold tracking-tight text-fg sm:text-3xl flex items-center gap-2.5">
+              <ShieldAlert className="w-7 h-7 text-rose-500" />
+              Trung tâm Bảo mật & Tường lửa
+            </h1>
+            <span className="rounded-full bg-rose-500/10 px-2.5 py-0.5 text-xs font-semibold text-rose-600 border border-rose-500/20">
+              Firewall & Guard
+            </span>
+          </div>
+          <p className="text-sm text-muted mt-1.5">
+            Quản trị IP Blacklist, chính sách tường lửa, bảo lưu tên miền con nhạy cảm và giám sát phòng thủ nền tảng
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           {activeTab === 'blacklist' && (
             <button
               onClick={() => setShowBlockModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-sm font-medium shadow-sm transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-medium shadow-sm transition-colors"
             >
               <Ban className="w-4 h-4" />
               Chặn địa chỉ IP
@@ -318,7 +323,7 @@ export default function SecurityPage() {
           {activeTab === 'subdomains' && (
             <button
               onClick={() => setShowAddSubdomainModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium shadow-sm transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium shadow-sm transition-colors"
             >
               <Plus className="w-4 h-4" />
               Bảo lưu tên miền con
@@ -330,7 +335,7 @@ export default function SecurityPage() {
               if (activeTab === 'blacklist') fetchBlacklist()
               else if (activeTab === 'subdomains') fetchSubdomains()
             }}
-            className="p-2 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            className="p-2 border border-line rounded-lg text-muted hover:text-fg hover:bg-fg/5 transition-colors"
             title="Làm mới"
           >
             <RefreshCw className="w-4 h-4" />
@@ -339,13 +344,13 @@ export default function SecurityPage() {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex border-b border-neutral-200 dark:border-neutral-800 gap-1">
+      <div className="flex border-b border-line gap-2 overflow-x-auto text-xs pb-3">
         <button
           onClick={() => setActiveTab('blacklist')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+          className={`flex items-center gap-2 px-3.5 py-2 font-medium rounded-lg transition-all ${
             activeTab === 'blacklist'
-              ? 'border-rose-600 text-rose-600 dark:border-rose-400 dark:text-rose-400'
-              : 'border-transparent text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200'
+              ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 font-semibold border border-rose-500/20 shadow-xs'
+              : 'text-muted hover:text-fg hover:bg-fg/5'
           }`}
         >
           <Ban className="w-4 h-4" />
@@ -354,10 +359,10 @@ export default function SecurityPage() {
 
         <button
           onClick={() => setActiveTab('subdomains')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+          className={`flex items-center gap-2 px-3.5 py-2 font-medium rounded-lg transition-all ${
             activeTab === 'subdomains'
-              ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
-              : 'border-transparent text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200'
+              ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-semibold border border-indigo-500/20 shadow-xs'
+              : 'text-muted hover:text-fg hover:bg-fg/5'
           }`}
         >
           <Globe className="w-4 h-4" />
@@ -366,10 +371,10 @@ export default function SecurityPage() {
 
         <button
           onClick={() => setActiveTab('monitoring')}
-          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+          className={`flex items-center gap-2 px-3.5 py-2 font-medium rounded-lg transition-all ${
             activeTab === 'monitoring'
-              ? 'border-emerald-600 text-emerald-600 dark:border-emerald-400 dark:text-emerald-400'
-              : 'border-transparent text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200'
+              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold border border-emerald-500/20 shadow-xs'
+              : 'text-muted hover:text-fg hover:bg-fg/5'
           }`}
         >
           <Activity className="w-4 h-4" />
@@ -382,16 +387,16 @@ export default function SecurityPage() {
         <div className="space-y-6">
           {/* Stats Bar */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-4 rounded-xl shadow-sm">
-              <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+            <div className="bg-panel border border-line p-4 rounded-xl shadow-xs">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted">
                 Tổng IP trong danh sách
               </span>
-              <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mt-1">
+              <div className="text-2xl font-bold text-fg mt-1">
                 {totalBlocked}
               </div>
             </div>
 
-            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-4 rounded-xl shadow-sm">
+            <div className="bg-panel border border-line p-4 rounded-xl shadow-xs">
               <span className="text-xs font-semibold uppercase tracking-wider text-rose-600 dark:text-rose-400">
                 Đang kích hoạt chặn
               </span>
@@ -400,11 +405,11 @@ export default function SecurityPage() {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-4 rounded-xl shadow-sm">
+            <div className="bg-panel border border-line p-4 rounded-xl shadow-xs">
               <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
                 Lượt tấn công bị chặn
               </span>
-              <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mt-1">
+              <div className="text-2xl font-bold text-fg mt-1">
                 {totalViolations}
               </div>
             </div>
@@ -412,28 +417,28 @@ export default function SecurityPage() {
 
           {/* Search bar */}
           <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-3 text-neutral-400" />
+            <Search className="w-4 h-4 absolute left-3 top-3 text-muted" />
             <input
               type="text"
               value={ipSearch}
               onChange={(e) => setIpSearch(e.target.value)}
               placeholder="Tìm theo địa chỉ IP hoặc lý do chặn..."
-              className="w-full pl-9 pr-4 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 text-neutral-900 dark:text-neutral-100"
+              className="w-full pl-9 pr-4 py-2 bg-panel border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 text-fg"
             />
           </div>
 
           {/* Blacklist Table */}
-          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden shadow-sm">
+          <div className="bg-panel border border-line rounded-xl overflow-hidden shadow-xs">
             {loadingBlacklist ? (
-              <div className="p-8 text-center text-sm text-neutral-500">Đang tải danh sách IP...</div>
+              <div className="p-8 text-center text-sm text-muted">Đang tải danh sách IP...</div>
             ) : filteredBlacklist.length === 0 ? (
-              <div className="p-8 text-center text-sm text-neutral-500">
+              <div className="p-8 text-center text-sm text-muted">
                 {ipSearch ? 'Không tìm thấy địa chỉ IP nào phù hợp' : 'Chưa có địa chỉ IP nào bị chặn'}
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-neutral-50 dark:bg-neutral-800/50 text-xs font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider border-b border-neutral-200 dark:border-neutral-800">
+                  <thead className="bg-fg/[0.02] text-xs font-semibold text-muted uppercase tracking-wider border-b border-line">
                     <tr>
                       <th className="px-6 py-3">Địa chỉ IP</th>
                       <th className="px-6 py-3">Lý do chặn</th>
@@ -443,28 +448,28 @@ export default function SecurityPage() {
                       <th className="px-6 py-3 text-right">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
+                  <tbody className="divide-y divide-line">
                     {filteredBlacklist.map((item) => (
-                      <tr key={item.id} className="hover:bg-neutral-50/50 dark:hover:bg-neutral-800/30 transition-colors">
-                        <td className="px-6 py-4 font-mono font-medium text-neutral-900 dark:text-neutral-100">
+                      <tr key={item.id} className="hover:bg-fg/[0.02] transition-colors">
+                        <td className="px-6 py-4 font-mono font-medium text-fg">
                           {item.ipAddress}
                         </td>
-                        <td className="px-6 py-4 text-neutral-600 dark:text-neutral-300">
+                        <td className="px-6 py-4 text-fg/80">
                           {item.reason}
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
                             {item.attemptCount} lần
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-neutral-500 text-xs">
+                        <td className="px-6 py-4 text-muted text-xs">
                           {item.expiresAt ? (
                             <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
                               <Clock className="w-3.5 h-3.5" />
                               {new Date(item.expiresAt).toLocaleString('vi-VN')}
                             </span>
                           ) : (
-                            <span className="text-neutral-500 font-medium">Vĩnh viễn</span>
+                            <span className="text-muted font-medium">Vĩnh viễn</span>
                           )}
                         </td>
                         <td className="px-6 py-4">
@@ -472,8 +477,8 @@ export default function SecurityPage() {
                             onClick={() => handleToggleIp(item.id, item.isActive)}
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${
                               item.isActive
-                                ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
-                                : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400'
+                                ? 'bg-rose-500/10 text-rose-600 border border-rose-500/20'
+                                : 'bg-fg/5 text-muted border border-line'
                             }`}
                           >
                             {item.isActive ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
@@ -483,7 +488,7 @@ export default function SecurityPage() {
                         <td className="px-6 py-4 text-right">
                           <button
                             onClick={() => handleUnblockIp(item.id, item.ipAddress)}
-                            className="text-neutral-400 hover:text-rose-600 dark:hover:text-rose-400 p-1 rounded transition-colors"
+                            className="text-muted hover:text-rose-600 p-1 rounded transition-colors"
                             title="Gỡ bỏ IP"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -503,67 +508,67 @@ export default function SecurityPage() {
       {activeTab === 'subdomains' && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-4 rounded-xl shadow-sm">
-              <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+            <div className="bg-panel border border-line p-4 rounded-xl shadow-xs">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted">
                 Tên miền con hệ thống cố định
               </span>
-              <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mt-1">
+              <div className="text-2xl font-bold text-fg mt-1">
                 {staticReserved.length}
               </div>
-              <p className="text-xs text-neutral-500 mt-1">Các từ khóa lõi như admin, app, auth, api, mail...</p>
+              <p className="text-xs text-muted mt-1">Các từ khóa lõi như admin, app, auth, api, mail...</p>
             </div>
 
-            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-4 rounded-xl shadow-sm">
-              <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+            <div className="bg-panel border border-line p-4 rounded-xl shadow-xs">
+              <span className="text-xs font-semibold uppercase tracking-wider text-indigo-500">
                 Tên miền con tùy chỉnh bổ sung
               </span>
-              <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">
+              <div className="text-2xl font-bold text-indigo-500 mt-1">
                 {customReserved.length}
               </div>
-              <p className="text-xs text-neutral-500 mt-1">Các từ khóa nhạy cảm bổ sung do Super Admin cấu hình</p>
+              <p className="text-xs text-muted mt-1">Các từ khóa nhạy cảm bổ sung do Super Admin cấu hình</p>
             </div>
           </div>
 
           {/* Search bar */}
           <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-3 text-neutral-400" />
+            <Search className="w-4 h-4 absolute left-3 top-3 text-muted" />
             <input
               type="text"
               value={subdomainSearch}
               onChange={(e) => setSubdomainSearch(e.target.value)}
               placeholder="Tìm kiếm tên miền con trong danh sách cấm..."
-              className="w-full pl-9 pr-4 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-neutral-900 dark:text-neutral-100"
+              className="w-full pl-9 pr-4 py-2 bg-panel border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-fg"
             />
           </div>
 
           {/* Custom Subdomains Section */}
-          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 shadow-sm space-y-4">
-            <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+          <div className="bg-panel border border-line rounded-xl p-5 shadow-xs space-y-4">
+            <h2 className="text-base font-semibold text-fg flex items-center gap-2">
               <Globe className="w-4 h-4 text-indigo-500" />
               Tên miền con tùy chỉnh ({filteredCustom.length})
             </h2>
 
             {loadingSubdomains ? (
-              <div className="text-sm text-neutral-500 py-4">Đang tải...</div>
+              <div className="text-sm text-muted py-4">Đang tải...</div>
             ) : filteredCustom.length === 0 ? (
-              <p className="text-sm text-neutral-500 py-2">
+              <p className="text-sm text-muted py-2">
                 Chưa có tên miền con tùy chỉnh nào. Bấm &quot;Bảo lưu tên miền con&quot; để thêm.
               </p>
             ) : (
-              <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
+              <div className="divide-y divide-line">
                 {filteredCustom.map((item) => (
                   <div key={item.id} className="py-3 flex items-center justify-between gap-4">
                     <div>
-                      <div className="font-mono font-semibold text-neutral-900 dark:text-neutral-100">
+                      <div className="font-mono font-semibold text-fg">
                         {item.subdomain}.digistay.vn
                       </div>
                       {item.reason && (
-                        <div className="text-xs text-neutral-500 mt-0.5">{item.reason}</div>
+                        <div className="text-xs text-muted mt-0.5">{item.reason}</div>
                       )}
                     </div>
                     <button
                       onClick={() => handleDeleteSubdomain(item.id, item.subdomain)}
-                      className="text-neutral-400 hover:text-rose-600 p-1.5 rounded transition-colors"
+                      className="text-muted hover:text-rose-600 p-1.5 rounded transition-colors"
                       title="Xóa tên miền cấm"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -575,8 +580,8 @@ export default function SecurityPage() {
           </div>
 
           {/* Static Subdomains Section */}
-          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 shadow-sm space-y-4">
-            <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+          <div className="bg-panel border border-line rounded-xl p-5 shadow-xs space-y-4">
+            <h2 className="text-base font-semibold text-fg flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-emerald-500" />
               Từ khóa cấm mặc định hệ sinh thái Digistay ({filteredStatic.length})
             </h2>
@@ -584,7 +589,7 @@ export default function SecurityPage() {
               {filteredStatic.map((s) => (
                 <span
                   key={s}
-                  className="px-2.5 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded font-mono text-xs border border-neutral-200 dark:border-neutral-700"
+                  className="px-2.5 py-1 bg-fg/5 text-fg rounded font-mono text-xs border border-line"
                 >
                   {s}
                 </span>
@@ -597,61 +602,61 @@ export default function SecurityPage() {
       {/* TAB 3: MONITORING & AUDIT */}
       {activeTab === 'monitoring' && (
         <div className="space-y-6">
-          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 shadow-sm space-y-6">
+          <div className="bg-panel border border-line rounded-xl p-6 shadow-xs space-y-6">
             <div>
-              <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+              <h2 className="text-base font-semibold text-fg flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-emerald-500" />
                 Hàng rào an ninh & Tuân thủ bảo mật
               </h2>
-              <p className="text-sm text-neutral-500 mt-1">
+              <p className="text-sm text-muted mt-1">
                 Tổng quan trạng thái các lớp phòng thủ đang bảo vệ hệ thống Digistay Cloud
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="border border-neutral-200 dark:border-neutral-800 p-4 rounded-lg flex items-start gap-3">
+              <div className="border border-line bg-fg/[0.02] p-4 rounded-lg flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
                 <div>
-                  <h3 className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
+                  <h3 className="font-semibold text-sm text-fg">
                     HTTPS & TLS 1.3
                   </h3>
-                  <p className="text-xs text-neutral-500 mt-0.5">
+                  <p className="text-xs text-muted mt-0.5">
                     Mã hóa đường truyền end-to-end, chứng chỉ SSL tự động gia hạn với HSTS kích hoạt.
                   </p>
                 </div>
               </div>
 
-              <div className="border border-neutral-200 dark:border-neutral-800 p-4 rounded-lg flex items-start gap-3">
+              <div className="border border-line bg-fg/[0.02] p-4 rounded-lg flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
                 <div>
-                  <h3 className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
+                  <h3 className="font-semibold text-sm text-fg">
                     Upstash Redis Rate Limiting
                   </h3>
-                  <p className="text-xs text-neutral-500 mt-0.5">
+                  <p className="text-xs text-muted mt-0.5">
                     Chống tấn công từ chối dịch vụ (DDoS) và ngăn chặn quét brute-force trên toàn bộ API.
                   </p>
                 </div>
               </div>
 
-              <div className="border border-neutral-200 dark:border-neutral-800 p-4 rounded-lg flex items-start gap-3">
+              <div className="border border-line bg-fg/[0.02] p-4 rounded-lg flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
                 <div>
-                  <h3 className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
+                  <h3 className="font-semibold text-sm text-fg">
                     Bảo mật Mật khẩu (bcrypt 12 rounds)
                   </h3>
-                  <p className="text-xs text-neutral-500 mt-0.5">
+                  <p className="text-xs text-muted mt-0.5">
                     Mật khẩu người dùng được băm an toàn theo tiêu chuẩn OWASP, không lưu trữ văn bản thô.
                   </p>
                 </div>
               </div>
 
-              <div className="border border-neutral-200 dark:border-neutral-800 p-4 rounded-lg flex items-start gap-3">
+              <div className="border border-line bg-fg/[0.02] p-4 rounded-lg flex items-start gap-3">
                 <KeyRound className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
                 <div>
-                  <h3 className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
+                  <h3 className="font-semibold text-sm text-fg">
                     Xác thực 2 yếu tố (2FA TOTP RFC 6238)
                   </h3>
-                  <p className="text-xs text-neutral-500 mt-0.5">
+                  <p className="text-xs text-muted mt-0.5">
                     Hỗ trợ Google Authenticator / Authy cho toàn bộ đội ngũ quản trị viên cấp cao.
                   </p>
                 </div>
@@ -663,16 +668,16 @@ export default function SecurityPage() {
 
       {/* MODAL: CHẶN IP */}
       {showBlockModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="bg-white dark:bg-neutral-900 rounded-xl max-w-md w-full p-6 shadow-2xl border border-neutral-200 dark:border-neutral-800 space-y-4">
-            <h3 className="text-lg font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="bg-panel rounded-xl max-w-md w-full p-6 shadow-2xl border border-line space-y-4">
+            <h3 className="text-lg font-bold text-fg flex items-center gap-2">
               <Ban className="w-5 h-5 text-rose-500" />
               Chặn địa chỉ IP
             </h3>
 
             <form onSubmit={handleBlockIp} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                <label className="block text-xs font-medium text-fg mb-1">
                   Địa chỉ IPv4 hoặc IPv6 *
                 </label>
                 <input
@@ -681,12 +686,12 @@ export default function SecurityPage() {
                   placeholder="Ví dụ: 103.21.244.1"
                   value={blockIpInput}
                   onChange={(e) => setBlockIpInput(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  className="w-full px-3 py-2 bg-page border border-line rounded-lg text-sm font-mono text-fg focus:outline-none focus:ring-2 focus:ring-rose-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                <label className="block text-xs font-medium text-fg mb-1">
                   Lý do chặn *
                 </label>
                 <input
@@ -695,18 +700,18 @@ export default function SecurityPage() {
                   placeholder="Ví dụ: Spam đặt phòng ảo, Quét mật khẩu brute-force"
                   value={blockReasonInput}
                   onChange={(e) => setBlockReasonInput(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  className="w-full px-3 py-2 bg-page border border-line rounded-lg text-sm text-fg focus:outline-none focus:ring-2 focus:ring-rose-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                <label className="block text-xs font-medium text-fg mb-1">
                   Thời hạn chặn
                 </label>
                 <select
                   value={blockDurationInput}
                   onChange={(e) => setBlockDurationInput(e.target.value as any)}
-                  className="w-full px-3 py-2 bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  className="w-full px-3 py-2 bg-page border border-line rounded-lg text-sm text-fg focus:outline-none focus:ring-2 focus:ring-rose-500"
                 >
                   <option value="permanent">Vĩnh viễn (cho đến khi gỡ thủ công)</option>
                   <option value="1h">1 Giờ</option>
@@ -719,7 +724,7 @@ export default function SecurityPage() {
                 <button
                   type="button"
                   onClick={() => setShowBlockModal(false)}
-                  className="px-4 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm font-medium hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 transition-colors"
+                  className="px-4 py-2 border border-line rounded-lg text-sm font-medium hover:bg-fg/5 text-muted hover:text-fg transition-colors"
                 >
                   Hủy
                 </button>
@@ -738,16 +743,16 @@ export default function SecurityPage() {
 
       {/* MODAL: THÊM TÊN MIỀN CON CẤM */}
       {showAddSubdomainModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="bg-white dark:bg-neutral-900 rounded-xl max-w-md w-full p-6 shadow-2xl border border-neutral-200 dark:border-neutral-800 space-y-4">
-            <h3 className="text-lg font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="bg-panel rounded-xl max-w-md w-full p-6 shadow-2xl border border-line space-y-4">
+            <h3 className="text-lg font-bold text-fg flex items-center gap-2">
               <Globe className="w-5 h-5 text-indigo-500" />
               Bảo lưu tên miền con
             </h3>
 
             <form onSubmit={handleAddSubdomain} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                <label className="block text-xs font-medium text-fg mb-1">
                   Tên miền con (Subdomain) *
                 </label>
                 <div className="flex items-center">
@@ -757,16 +762,16 @@ export default function SecurityPage() {
                     placeholder="ví dụ: payment, vip, partner"
                     value={newSubdomain}
                     onChange={(e) => setNewSubdomain(e.target.value.toLowerCase().trim())}
-                    className="w-full px-3 py-2 bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-l-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 bg-page border border-line rounded-l-lg text-sm font-mono text-fg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
-                  <span className="px-3 py-2 bg-neutral-200 dark:bg-neutral-700 text-xs font-mono rounded-r-lg border-y border-r border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300">
+                  <span className="px-3 py-2 bg-fg/10 text-xs font-mono rounded-r-lg border-y border-r border-line text-muted">
                     .digistay.vn
                   </span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                <label className="block text-xs font-medium text-fg mb-1">
                   Lý do bảo lưu
                 </label>
                 <input
@@ -774,7 +779,7 @@ export default function SecurityPage() {
                   placeholder="Ví dụ: Giữ chỗ cho phân hệ đối tác thanh toán"
                   value={newSubdomainReason}
                   onChange={(e) => setNewSubdomainReason(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 bg-page border border-line rounded-lg text-sm text-fg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
 
@@ -782,7 +787,7 @@ export default function SecurityPage() {
                 <button
                   type="button"
                   onClick={() => setShowAddSubdomainModal(false)}
-                  className="px-4 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm font-medium hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 transition-colors"
+                  className="px-4 py-2 border border-line rounded-lg text-sm font-medium hover:bg-fg/5 text-muted hover:text-fg transition-colors"
                 >
                   Hủy
                 </button>

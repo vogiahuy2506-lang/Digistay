@@ -8,9 +8,11 @@ import {
   Calendar,
   Check,
   CheckCircle2,
+  Copy,
   CreditCard,
   Crown,
   Edit3,
+  ExternalLink,
   Globe,
   HardDrive,
   Headphones,
@@ -228,6 +230,14 @@ export default function AdminPlansPage() {
   }, [plans])
 
   const isCorePlan = (id: string) => ['starter', 'growth', 'business'].includes(id)
+
+  const handleCopyPlanLink = (planId: string, planName: string) => {
+    const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/billing/checkout?plan=${planId}`
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(url)
+      toast.success(`Đã sao chép liên kết thanh toán riêng cho "${planName}"`)
+    }
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
@@ -519,6 +529,17 @@ export default function AdminPlansPage() {
                 </Button>
 
                 <div className="flex items-center gap-1.5">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleCopyPlanLink(plan.id, plan.name)}
+                    className="gap-1 text-xs text-muted hover:text-fg px-2"
+                    title="Sao chép link thanh toán trực tiếp"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Link</span>
+                  </Button>
+
                   {!isCorePlan(plan.id) && (
                     <Button
                       size="sm"

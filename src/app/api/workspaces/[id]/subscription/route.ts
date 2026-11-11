@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAccess } from '@/lib/auth/access'
-import { PLANS, PLAN_IDS, YEARLY_MONTHS } from '@/lib/marketing/plans'
+import { PLANS, PLAN_IDS, YEARLY_MONTHS, isPlanId, type Plan, type PlanId } from '@/lib/marketing/plans'
 import { getPlatformPlans } from '@/lib/plans/dynamic-plans'
 import { workspacePlan } from '@/lib/billing/subscription'
 import { workspaceUsage } from '@/lib/billing/limits'
@@ -19,11 +19,12 @@ import { overageView } from '@/lib/billing/overage'
  * downgrade, the payment still waiting (to show its QR again), past payments
  * and their e-invoices, and what the invoice step needs (src/lib/billing/einvoice.ts).
  */
-export async function GET(_request: NextRequest, props: { params: Promise<{ id: string }> }) {
+export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params
   const access = await requireAccess(id, 'billing_manage')
   if (!access.ok) return access.response
 
+  const planQuery = request.nextUrl.searchParams.get('plan')
   const einvoice = platformEinvoiceConfigured()
   // One clock for every read: a workspace's first read makes its trial, and two
   // reads with their own `now` racing to make it showed "15 days" of a 14-day trial.
@@ -38,10 +39,34 @@ export async function GET(_request: NextRequest, props: { params: Promise<{ id: 
     overageView(id, now),
     getPlatformPlans(),
   ])
+
+  let allPlans: any[] = dynamicPlans
+  if (planQuery && !dynamicPlans.some((p) => p.id === planQuery)) {
+    try {
+      const custom = await prisma.platformPlan.findUnique({ where: { id: planQuery } })
+      if (custom && custom.isActive) {
+        allPlans = [
+          ...dynamicPlans,
+          {
+            id: custom.id,
+            price: custom.price,
+            properties: custom.properties,
+            rooms: custom.rooms,
+            staff: custom.staff,
+            invoices: custom.invoices,
+          },
+        ]
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   const waiting = payments.find((p) => p.status === 'PENDING' && (!p.expiresAt || p.expiresAt.getTime() > Date.now()))
   const sub = current.subscription
+  const planIdsToQuote = Array.from(new Set([...PLAN_IDS, ...allPlans.map((p) => p.id)]))
   const changes = Object.fromEntries(
-    PLAN_IDS.map((plan) => [
+    planIdsToQuote.map((plan) => [
       plan,
       Object.fromEntries(
         (['MONTH', 'YEAR'] as const).map((billing) => {
@@ -68,7 +93,7 @@ export async function GET(_request: NextRequest, props: { params: Promise<{ id: 
     data: {
       workspace,
       subscription: {
-        plan: current.planId,
+        plan: isPlanId(current.planId) ? current.planId : (current.planId as unknown as PlanId),
         billing: current.subscription.billing,
         trial: current.subscription.trial,
         periodStart: current.subscription.periodStart.toISOString(),
@@ -81,14 +106,14 @@ export async function GET(_request: NextRequest, props: { params: Promise<{ id: 
       },
       // A paid downgrade waiting for the end of the period
       scheduled: sub.nextPlan
-        ? { plan: sub.nextPlan, billing: sub.nextBilling, startsAt: sub.periodEnd.toISOString(), endsAt: sub.nextPeriodEnd?.toISOString() ?? null }
+        ? { plan: isPlanId(sub.nextPlan) ? sub.nextPlan : (sub.nextPlan as unknown as PlanId), billing: sub.nextBilling, startsAt: sub.periodEnd.toISOString(), endsAt: sub.nextPeriodEnd?.toISOString() ?? null }
         : null,
-      changes,
+      changes: changes as any,
       limits: { properties: current.plan.properties, rooms: current.plan.rooms, staff: current.plan.staff, invoices: current.plan.invoices },
       usage,
       // Over the plan: the 7-day grace, then what is locked (src/lib/billing/overage.ts)
       overage,
-      plans: dynamicPlans,
+      plans: allPlans as unknown as Plan[],
       yearlyMonths: YEARLY_MONTHS,
       trialDays: TRIAL_DAYS,
       graceDays: GRACE_DAYS,

@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { requireAccess } from '@/lib/auth/access'
-import { PLAN_IDS } from '@/lib/marketing/plans'
+import { isPlanId } from '@/lib/marketing/plans'
 import { BillingError, createCheckout } from '@/lib/billing/checkout'
 import { invoiceBuyerSchema, platformEinvoiceConfigured } from '@/lib/billing/einvoice'
 import { paymentView } from '@/lib/billing/view'
 import { appOrigin } from '@/lib/public-site/site-host'
 
-const schema = z.object({ plan: z.enum(PLAN_IDS), billing: z.enum(['MONTH', 'YEAR']), invoice: z.unknown().optional() })
+const schema = z.object({ plan: z.string().trim().min(1), billing: z.enum(['MONTH', 'YEAR']), invoice: z.unknown().optional() })
 
 /**
  * POST /api/workspaces/[id]/subscription/checkout — a PayOS link and VietQR
@@ -23,6 +23,14 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
 
   const parsed = schema.safeParse(await request.json().catch(() => null))
   if (!parsed.success) return NextResponse.json({ success: false, error: 'Gói hoặc chu kỳ thanh toán không hợp lệ' }, { status: 400 })
+
+  const planId = parsed.data.plan
+  if (!isPlanId(planId)) {
+    const custom = await prisma.platformPlan.findUnique({ where: { id: planId }, select: { id: true, isActive: true } })
+    if (!custom || !custom.isActive) {
+      return NextResponse.json({ success: false, error: 'Gói dịch vụ không tồn tại hoặc đã ngừng cung cấp' }, { status: 400 })
+    }
+  }
 
   let invoiceBuyer
   if (platformEinvoiceConfigured()) {

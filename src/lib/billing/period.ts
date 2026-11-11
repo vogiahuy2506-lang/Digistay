@@ -10,7 +10,7 @@
  * so nothing is lost.
  */
 import type { BillingPeriod } from '@prisma/client'
-import { YEARLY_MONTHS, planById, type PlanId } from '@/lib/marketing/plans'
+import { YEARLY_MONTHS, planById, isPlanId, type PlanId } from '@/lib/marketing/plans'
 
 export const TRIAL_PLAN: PlanId = 'growth'
 export const TRIAL_DAYS = 14
@@ -139,7 +139,7 @@ export interface PlanChange {
  */
 export function planChange(
   sub: { plan: string; billing: BillingPeriod | null; trial: boolean; periodEnd: Date; nextPlan?: string | null; nextPeriodEnd?: Date | null },
-  target: { plan: PlanId; billing: BillingPeriod },
+  target: { plan: string; billing: BillingPeriod },
   now = new Date(),
 ): PlanChange {
   const t = now.getTime()
@@ -184,7 +184,9 @@ export function planChange(
     }
   }
 
-  const dearer = planById(target.plan).price > planById(sub.plan).price
+  const targetPrice = isPlanId(target.plan) ? planById(target.plan).price : 999_999_999
+  const subPrice = isPlanId(sub.plan) ? planById(sub.plan).price : 0
+  const dearer = targetPrice > subPrice
   if (billing === 'MONTH' && target.billing === 'YEAR') return fromNow(daysLeft)
   if (billing === 'YEAR' && target.billing === 'MONTH') {
     if (daysLeft >= YEAR_TO_MONTH_MIN_DAYS) return { ...after(sub.periodEnd), blocked: 'YEARLY_TO_MONTHLY' }

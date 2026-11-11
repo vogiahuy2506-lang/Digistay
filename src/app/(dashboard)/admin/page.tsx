@@ -18,8 +18,10 @@ import {
   Receipt,
   RefreshCw,
   Server,
+  Settings,
   ShieldAlert,
   ShieldCheck,
+  Users,
   UsersRound,
 } from 'lucide-react'
 import { Button } from '@/components/ui'
@@ -172,89 +174,131 @@ export default function AdminOverviewPage() {
           </div>
 
           {/* Quick Management Shortcuts */}
-          <Section title={to('quickActions.title')}>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Section title="Phím tắt Quản trị Nền tảng">
+            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
               <Link
                 href="/admin/plans"
-                className="group relative flex flex-col justify-between rounded-ctl border border-line bg-surface p-4 transition-all hover:border-acc/40 hover:bg-fg/[0.02]"
+                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-4.5 transition-all hover:border-primary/40 hover:bg-fg/[0.02] shadow-2xs"
               >
                 <div>
-                  <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-ctl bg-acc/10 text-acc">
+                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <CreditCard className="h-5 w-5" aria-hidden="true" />
                   </div>
-                  <h3 className="text-sm font-semibold text-fg group-hover:text-acc">
+                  <h3 className="text-sm font-semibold text-fg group-hover:text-primary transition-colors">
                     Quản lý Gói & Custom Plans
                   </h3>
                   <p className="mt-1 text-xs text-muted leading-relaxed">
-                    Điều chỉnh giá, hạn mức 8 nhóm và tạo gói VIP riêng cho khách hàng.
+                    Điều chỉnh giá, hạn mức 8 nhóm tính năng và tạo gói VIP / Private cho khách hàng.
                   </p>
                 </div>
-                <div className="mt-3 flex items-center gap-1 text-xs font-medium text-acc">
-                  <span>Cấu hình gói</span>
-                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-primary">
+                  <span>Cấu hình gói cước</span>
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
                 </div>
               </Link>
 
               <Link
-                href="/admin/orders"
-                className="group relative flex flex-col justify-between rounded-ctl border border-line bg-surface p-4 transition-all hover:border-acc/40 hover:bg-fg/[0.02]"
+                href="/admin/platform-settings"
+                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-4.5 transition-all hover:border-primary/40 hover:bg-fg/[0.02] shadow-2xs"
               >
                 <div>
-                  <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-ctl bg-ok/10 text-ok">
-                    <Receipt className="h-5 w-5" aria-hidden="true" />
+                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-500">
+                    <Settings className="h-5 w-5" aria-hidden="true" />
                   </div>
-                  <h3 className="text-sm font-semibold text-fg group-hover:text-ok">
-                    {to('quickActions.orders')}
+                  <h3 className="text-sm font-semibold text-fg group-hover:text-indigo-500 transition-colors">
+                    Cấu hình Nền tảng Toàn cầu
                   </h3>
                   <p className="mt-1 text-xs text-muted leading-relaxed">
-                    {to('quickActions.ordersDesc')}
+                    Quản lý PayOS, HĐĐT Mắt Bão, Gemini AI, Email SMTP máy chủ và thông tin thương hiệu.
                   </p>
                 </div>
-                <div className="mt-3 flex items-center gap-1 text-xs font-medium text-ok">
-                  <span>Mở đơn hàng</span>
-                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-indigo-500">
+                  <span>Mở cấu hình</span>
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
                 </div>
               </Link>
 
               <Link
-                href="/admin/activity"
-                className="group relative flex flex-col justify-between rounded-ctl border border-line bg-surface p-4 transition-all hover:border-acc/40 hover:bg-fg/[0.02]"
+                href="/admin/security"
+                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-4.5 transition-all hover:border-primary/40 hover:bg-fg/[0.02] shadow-2xs"
               >
                 <div>
-                  <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-ctl bg-info/10 text-info">
-                    <History className="h-5 w-5" aria-hidden="true" />
+                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-rose-500/10 text-rose-500">
+                    <ShieldAlert className="h-5 w-5" aria-hidden="true" />
                   </div>
-                  <h3 className="text-sm font-semibold text-fg group-hover:text-info">
-                    {to('quickActions.activity')}
+                  <h3 className="text-sm font-semibold text-fg group-hover:text-rose-500 transition-colors">
+                    Bảo mật & Tường lửa IP
                   </h3>
                   <p className="mt-1 text-xs text-muted leading-relaxed">
-                    {to('quickActions.activityDesc')}
+                    Chặn IP bot / spammer, bảo lưu tên miền con hệ thống và theo dõi cảnh báo phòng thủ.
                   </p>
                 </div>
-                <div className="mt-3 flex items-center gap-1 text-xs font-medium text-info">
-                  <span>Xem audit log</span>
-                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-rose-500">
+                  <span>Trung tâm bảo mật</span>
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                </div>
+              </Link>
+
+              <Link
+                href="/admin/team"
+                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-4.5 transition-all hover:border-primary/40 hover:bg-fg/[0.02] shadow-2xs"
+              >
+                <div>
+                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-purple-500/10 text-purple-500">
+                    <Users className="h-5 w-5" aria-hidden="true" />
+                  </div>
+                  <h3 className="text-sm font-semibold text-fg group-hover:text-purple-500 transition-colors">
+                    Đội ngũ Admin & RBAC
+                  </h3>
+                  <p className="mt-1 text-xs text-muted leading-relaxed">
+                    Phân quyền Super Admin / Admin, giám sát 2FA TOTP và hỗ trợ reset xác thực khẩn cấp.
+                  </p>
+                </div>
+                <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-purple-500">
+                  <span>Quản lý nhân sự</span>
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
                 </div>
               </Link>
 
               <Link
                 href="/admin/system"
-                className="group relative flex flex-col justify-between rounded-ctl border border-line bg-surface p-4 transition-all hover:border-acc/40 hover:bg-fg/[0.02]"
+                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-4.5 transition-all hover:border-primary/40 hover:bg-fg/[0.02] shadow-2xs"
               >
                 <div>
-                  <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-ctl bg-warn/10 text-warn">
+                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
                     <Server className="h-5 w-5" aria-hidden="true" />
                   </div>
-                  <h3 className="text-sm font-semibold text-fg group-hover:text-warn">
-                    {to('quickActions.system')}
+                  <h3 className="text-sm font-semibold text-fg group-hover:text-amber-500 transition-colors">
+                    Hạ tầng, VPS & Cronjobs
                   </h3>
                   <p className="mt-1 text-xs text-muted leading-relaxed">
-                    {to('quickActions.systemDesc')}
+                    Đo lường CPU, RAM, Disk VPS, Redis, Postgres pool và nút kích hoạt chạy bù cronjob.
                   </p>
                 </div>
-                <div className="mt-3 flex items-center gap-1 text-xs font-medium text-warn">
-                  <span>Xem trạng thái</span>
-                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-amber-500">
+                  <span>Kiểm tra hạ tầng</span>
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                </div>
+              </Link>
+
+              <Link
+                href="/admin/orders"
+                className="group relative flex flex-col justify-between rounded-lg border border-line bg-panel p-4.5 transition-all hover:border-primary/40 hover:bg-fg/[0.02] shadow-2xs"
+              >
+                <div>
+                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
+                    <Receipt className="h-5 w-5" aria-hidden="true" />
+                  </div>
+                  <h3 className="text-sm font-semibold text-fg group-hover:text-emerald-500 transition-colors">
+                    Đơn hàng & Doanh thu
+                  </h3>
+                  <p className="mt-1 text-xs text-muted leading-relaxed">
+                    Theo dõi thanh toán PayOS gói cước, đối soát giao dịch và xuất hóa đơn điện tử.
+                  </p>
+                </div>
+                <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-emerald-500">
+                  <span>Mở đơn hàng</span>
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
                 </div>
               </Link>
             </div>
@@ -301,7 +345,7 @@ export default function AdminOverviewPage() {
               className="lg:col-span-2"
             >
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <div className="rounded-ctl border border-line bg-surface p-3">
+                <div className="rounded-ctl border border-line bg-panel p-3">
                   <p className="text-xs text-muted">{t('states.trial')}</p>
                   <p className="mt-1 text-xl font-bold tabular-nums text-fg">
                     {data.customers.byState.trial}
