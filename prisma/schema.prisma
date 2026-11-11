@@ -412,6 +412,45 @@ model PlatformVoucher {
   @@map("platform_vouchers")
 }
 
+/// Cấu hình nền tảng toàn cầu (Phân hệ Super Admin 2.0).
+/// Lưu trữ cấu hình PayOS, Mắt Bão, Gemini, SMTP, và thông tin pháp lý nền tảng.
+model PlatformSetting {
+  key         String   @id // e.g. "payos", "matbao", "gemini", "smtp", "branding"
+  value       Json     // Dữ liệu cấu hình dạng JSON
+  description String?
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+
+  @@map("platform_settings")
+}
+
+/// Danh sách chặn IP & Tường lửa nền tảng (Phân hệ Super Admin 2.0).
+model IpBlacklist {
+  id           String    @id @default(cuid())
+  ipAddress    String    @unique
+  reason       String    // "Spam đặt phòng ảo", "Quét brute-force OTP", "Bot cào dữ liệu"
+  attemptCount Int       @default(1)
+  expiresAt    DateTime? // null = chặn vĩnh viễn
+  isActive     Boolean   @default(true)
+  createdById  String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([isActive])
+  @@map("ip_blacklist")
+}
+
+/// Tên miền con hệ thống cấm đăng ký (Phân hệ Super Admin 2.0).
+model ReservedSubdomain {
+  id        String   @id @default(cuid())
+  subdomain String   @unique // e.g. "admin", "api", "payos", "support", "root"
+  reason    String?  // Lý do bảo lưu
+  createdAt DateTime @default(now())
+
+  @@map("reserved_subdomains")
+}
+
 model WorkspaceMember {
   id          String        @id @default(cuid())
   workspaceId String

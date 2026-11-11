@@ -12,12 +12,15 @@
       "vouchers": "Mã giảm giá",
       "activity": "Nhật ký kiểm toán",
       "system": "Sức khỏe hệ thống",
-      "platformSettings": "Cấu hình nền tảng"
+      "platformSettings": "Cấu hình nền tảng",
+      "security": "Bảo mật & Tường lửa",
+      "team": "Đội ngũ Quản trị"
     },
     "groups": {
       "platform": "TỔNG QUAN NỀN TẢNG",
       "billing": "KINH DOANH & GÓI CƯỚC",
-      "system": "HẠ TẦNG & HỆ THỐNG"
+      "system": "HẠ TẦNG & CẤU HÌNH",
+      "security": "BẢO MẬT & PHÂN QUYỀN"
     }
   },
   "overview": {

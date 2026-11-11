@@ -20,9 +20,11 @@ import {
   Search,
   Server,
   Settings,
+  ShieldAlert,
   ShieldCheck,
   Sun,
   Ticket,
+  Users,
   X,
   Zap,
 } from 'lucide-react'
@@ -62,7 +64,15 @@ const NAV_GROUPS: NavGroupDef[] = [
   {
     groupKey: 'system',
     items: [
+      { href: '/admin/platform-settings', key: 'platformSettings', icon: Settings },
       { href: '/admin/system', key: 'system', icon: Server },
+    ],
+  },
+  {
+    groupKey: 'security',
+    items: [
+      { href: '/admin/security', key: 'security', icon: ShieldAlert },
+      { href: '/admin/team', key: 'team', icon: Users },
       { href: '/admin/activity', key: 'activity', icon: History },
     ],
   },
@@ -108,9 +118,11 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
       { title: 'Quản lý Đơn hàng thanh toán gói cước', href: '/admin/orders', icon: Receipt, category: 'Kinh doanh' },
       { title: 'Quản lý Gói cước & Tạo gói Tùy chỉnh (Custom Plans)', href: '/admin/plans', icon: CreditCard, category: 'Gói cước' },
       { title: 'Chiến dịch Voucher & Mã giảm giá', href: '/admin/vouchers', icon: Ticket, category: 'Khuyến mãi' },
-      { title: 'Sức khỏe Hệ thống, Redis, Postgres & Cronjobs', href: '/admin/system', icon: Server, category: 'Hạ tầng' },
+      { title: 'Cấu hình Nền tảng Toàn cầu (PayOS, Mắt Bão, Gemini, SMTP)', href: '/admin/platform-settings', icon: Settings, category: 'Cấu hình' },
+      { title: 'Sức khỏe Hạ tầng, VPS, Redis, Postgres & Cronjobs', href: '/admin/system', icon: Server, category: 'Hạ tầng' },
+      { title: 'Bảo mật, Tường lửa & IP Blacklist', href: '/admin/security', icon: ShieldAlert, category: 'Bảo mật' },
+      { title: 'Đội ngũ Quản trị Cấp cao & Phân quyền RBAC', href: '/admin/team', icon: Users, category: 'Nhân sự' },
       { title: 'Nhật ký Hoạt động & Kiểm toán (Audit Log)', href: '/admin/activity', icon: History, category: 'Bảo mật' },
-      { title: 'Quản lý Khách hàng & Workspace', href: '/admin/customers', icon: Building2, category: 'Khách hàng' },
     ]
     return allItems.filter(
       (item) => item.title.toLowerCase().includes(q) || item.category.toLowerCase().includes(q) || item.href.includes(q)

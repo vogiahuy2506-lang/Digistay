@@ -12,12 +12,15 @@
       "vouchers": "Vouchers",
       "activity": "Audit log",
       "system": "System health",
-      "platformSettings": "Platform settings"
+      "platformSettings": "Platform settings",
+      "security": "Firewall & Security",
+      "team": "Admin Team & RBAC"
     },
     "groups": {
       "platform": "PLATFORM OVERVIEW",
       "billing": "PLANS & BILLING",
-      "system": "INFRASTRUCTURE & OPS"
+      "system": "INFRASTRUCTURE & CONFIG",
+      "security": "SECURITY & RBAC"
     }
   },
   "overview": {

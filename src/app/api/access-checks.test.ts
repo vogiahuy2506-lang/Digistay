@@ -17,6 +17,7 @@ const EXEMPT: Record<string, string> = {
   'src/lib/auth/permissions.ts': 'the role presets themselves',
   'src/lib/auth/access.ts': 'the checks themselves: a preset member has what their role has',
   'src/app/(dashboard)/profile/page.tsx': "the user's platform role (User.role: SUPER_ADMIN), not a workspace's",
+  'src/lib/admin/team.ts': "platform operator roles (User.role: SUPER_ADMIN, ADMIN)",
 }
 
 const ROLE_CHECKS = [

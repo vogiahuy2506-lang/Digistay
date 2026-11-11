@@ -16,6 +16,7 @@
 
 # Misc
 .DS_Store
+.agents/skills/graphify/
 *.pem
 *.key
 *.p12
