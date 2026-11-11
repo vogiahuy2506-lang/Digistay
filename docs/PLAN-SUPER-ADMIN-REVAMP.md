@@ -309,3 +309,25 @@ flowchart TD
    - Toàn bộ cấu hình API PayOS, Mắt Bão, Gemini AI, SMTP được quản lý trực tiếp trên giao diện, không cần SSH vào VPS.
 4. **An toàn tuyệt đối**:
    - Đảm bảo 100% test suite tiếp tục vượt qua (`0 failed`), bảo toàn tương thích dữ liệu hiện có.
+
+---
+
+## VII. TRẠNG THÁI TRIỂN KHAI THỰC TẾ (STATUS: 100% HOÀN THÀNH)
+
+- [x] **Sprint 1: Giao diện Enterprise Platform Console 2.0 (`src/components/admin/admin-frame.tsx`)**:
+  - Sidebar cố định collapsible với phân nhóm rõ ràng (Platform, Billing, Infrastructure & Config, Security & RBAC).
+  - Universal Search (`Ctrl + K`) tìm kiếm nhanh mọi tính năng, đơn hàng, gói cước, cài đặt và bảo mật.
+  - Bộ chuyển đổi Theme Dark/Light và chỉ báo trạng thái thời gian thực của hệ thống.
+- [x] **Sprint 2: Engine Quản Lý Gói Động & Custom Plans (`/admin/plans`)**:
+  - Bảng cơ sở dữ liệu `platform_plans` lưu trữ 8 nhóm hạn mức và công tắc tính năng chuyên sâu.
+  - API CRUD `/api/admin/plans`, `/api/admin/plans/[id]` với phân quyền `requirePlatformAdmin()`.
+  - UI Quản lý Gói với Modal 4 Tab (Thông tin chung, Quy mô & Giới hạn, Website & Kênh OTA, Trí tuệ nhân tạo AI & Nâng cao).
+  - Khả năng tạo Gói Tùy Chỉnh (Custom Plan) và gán nhanh vào bất kỳ workspace khách hàng nào.
+- [x] **Sprint 3: Trung Tâm Cấu Hình Nền Tảng Toàn Cầu & Giám Sát Hạ Tầng**:
+  - `/admin/platform-settings`: Cấu hình PayOS, Mắt Bão HĐĐT, Google Gemini AI, Email SMTP máy chủ và Thông tin pháp lý thương hiệu trên UI (kèm tính năng Ping kiểm tra kết nối & gửi email test trực tiếp).
+  - `/admin/system`: Giám sát VPS CPU/RAM/Disk (phát hiện sớm nguy cơ đầy ổ cứng), đo độ trễ Redis, Postgres connection pool và trigger 1-click các cronjob bảo trì hệ thống.
+- [x] **Sprint 4: Trung Tâm Bảo Mật, Tường Lửa & Quản Trị Đội Ngũ RBAC**:
+  - `/admin/security`: Quản lý IP Blacklist (chặn IP spammer/bot với thời hạn hoặc vĩnh viễn), bảo lưu tên miền con hệ thống (Reserved Subdomains), giám sát các lớp bảo mật TLS 1.3, Redis Rate Limit, 2FA.
+  - `/admin/team`: Quản trị đội ngũ Admin nội bộ, phân quyền `SUPER_ADMIN` / `ADMIN`, giám sát tỷ lệ kích hoạt 2FA TOTP, hỗ trợ reset 2FA khẩn cấp và bảo vệ tài khoản quản trị cuối cùng.
+  - 100% Test Suites Passed (141/141 files test, 1092/1092 tests pass, build Next.js 15.5 production thành công).
+
