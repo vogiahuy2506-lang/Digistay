@@ -7,6 +7,7 @@ import { lockBooking, syncBookingPayments } from '@/lib/payments/booking-payment
 import { syncCustomerProfileFromBooking } from '@/lib/customers/sync-customer'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
 import { can, checkPropertyAccess } from '@/lib/auth/access'
+import { depositAccountIdFrom } from '@/lib/payments/deposit-mode'
 
 /**
  * Check-out. The late fee is a suggestion (src/lib/bookings/late-checkout.ts):
@@ -95,10 +96,35 @@ export async function GET(
       tiers: policy?.lateCheckoutTiers,
       subtotal: booking.subtotal,
     })
+
+    const property = await prisma.property.findUnique({
+      where: { id: booking.propertyId },
+      select: {
+        id: true,
+        city: true,
+        depositAccountId: true,
+        bankAccounts: {
+          where: { isActive: true, qrEnabled: true },
+          orderBy: { createdAt: 'asc' },
+          select: { id: true, bankCode: true, bankName: true, accountNumber: true, accountHolder: true },
+        },
+      },
+    })
+    const receivingAccountId = property ? depositAccountIdFrom(property) : null
+    let account = property?.bankAccounts.find((a) => a.id === receivingAccountId) ?? property?.bankAccounts[0] ?? null
+    if (!account && property) {
+      const anyAccount = await prisma.bankAccount.findFirst({
+        where: { propertyId: booking.propertyId, isActive: true },
+        select: { id: true, bankCode: true, bankName: true, accountNumber: true, accountHolder: true },
+      })
+      if (anyAccount) account = anyAccount
+    }
+
     return NextResponse.json({
       success: true,
       data: {
         status: booking.status,
+        bookingCode: booking.bookingCode,
         deadline: quote.deadline,
         hoursLate: quote.hoursLate,
         percent: quote.percent,
@@ -106,6 +132,14 @@ export async function GET(
         checkOutTime: policy?.checkOutTime ?? '12:00',
         /** still owed before any late fee (total less what is paid): the dialog reminds the desk to collect it */
         due: Math.max(0, booking.totalAmount - booking.depositAmount),
+        bankAccount: account
+          ? {
+              bankCode: account.bankCode,
+              bankName: account.bankName,
+              accountNumber: account.accountNumber,
+              accountHolder: account.accountHolder,
+            }
+          : null,
       },
     })
   } catch (error) {
