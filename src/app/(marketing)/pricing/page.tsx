@@ -5,8 +5,8 @@ import { Faq } from '@/components/marketing/Faq'
 import { MarketingHeader } from '@/components/marketing/MarketingHeader'
 import { frame, inkButton, lineButton, sectionTitle, softText } from '@/components/marketing/styles'
 import { formatVnd } from '@/lib/bookings/display'
-import { ADDON_IDS, ADDON_PRICES, COMPARE, PLANS, YEARLY_MONTHS, yearlyPrice, type Cell, type Plan } from '@/lib/marketing/plans'
-import { getPlatformPlans } from '@/lib/plans/dynamic-plans'
+import { ADDON_IDS, ADDON_PRICES, YEARLY_MONTHS } from '@/lib/marketing/plans'
+import { getAllPlatformPlans, type FullPlatformPlan } from '@/lib/plans/dynamic-plans'
 import { cn } from '@/lib/utils'
 import { ComparePicker, CompareCell, type CompareGroupView } from './ComparePicker'
 import { PlanCards } from './PlanCards'
@@ -23,50 +23,253 @@ export async function generateMetadata(): Promise<Metadata> {
 
 const FAQ = ['q1', 'q2', 'q3', 'q4', 'q5'] as const
 
-/** Plans, add-ons and the feature comparison (Claude Design "Digistay Bang Gia"). Sample content: src/lib/marketing/plans.ts. */
+/**
+ * Plans, add-ons and the 8-group feature comparison table.
+ * Synchronized with Super Admin's Platform Plans management (/admin/plans).
+ */
 export default async function PricingPage() {
   const t = await getTranslations('marketing.pricing')
   const tp = await getTranslations('marketing.plans')
   const locale = (await getLocale()) === 'en' ? 'en' : 'vi'
-  const n = new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'vi-VN')
+  const isEn = locale === 'en'
+  const n = new Intl.NumberFormat(isEn ? 'en-US' : 'vi-VN')
 
-  const limit = (p: Plan, k: 'properties' | 'rooms' | 'staff' | 'invoices') =>
-    k === 'invoices' && p.invoices === 0 ? tp('none') : n.format(p[k])
-  const cell = (p: Plan, c: Cell): string | boolean =>
-    c === 'invoices'
-      ? t('compare.invoicesCell', { count: n.format(p.invoices) })
-      : c === 'properties'
-        ? t('compare.propertiesCell', { count: p.properties })
-        : c
+  // Load active public plans from database (or fallback presets)
+  const fullPlans: FullPlatformPlan[] = await getAllPlatformPlans({ includePrivate: false, includeInactive: false })
+  const planNames = fullPlans.map((p) => p.name)
 
-  const plans = await getPlatformPlans()
-  const planNames = plans.map((p) => tp(`${p.id}.name`))
-  const groups: CompareGroupView[] = COMPARE.map((g) => ({
-    title: t(`compare.groups.${g.group}`),
-    rows: g.rows.map((r) => ({ label: t(`compare.rows.${r.id}`), cells: plans.map((p) => cell(p, r.cells[p.id])) })),
-  }))
+  // 8 Dynamic Feature Groups mirroring Super Admin's Platform Plans management
+  const groups: CompareGroupView[] = [
+    {
+      title: isEn ? '1. Scale & Core Capacity' : '1. Quy mô & Cơ sở vật chất',
+      rows: [
+        {
+          label: isEn ? 'Properties managed' : 'Số cơ sở lưu trú tối đa',
+          cells: fullPlans.map((p) => (p.properties === -1 ? (isEn ? 'Unlimited' : 'Không giới hạn') : `${p.properties} ${isEn ? 'properties' : 'cơ sở'}`)),
+        },
+        {
+          label: isEn ? 'Total rooms quota' : 'Số phòng tối đa toàn hệ thống',
+          cells: fullPlans.map((p) => (p.rooms === -1 ? (isEn ? 'Unlimited' : 'Không giới hạn') : `${n.format(p.rooms)} ${isEn ? 'rooms' : 'phòng'}`)),
+        },
+        {
+          label: isEn ? 'Room types per property' : 'Số loại phòng mỗi cơ sở',
+          cells: fullPlans.map((p) => (p.maxRoomTypes === -1 ? (isEn ? 'Unlimited' : 'Không giới hạn') : `${p.maxRoomTypes} ${isEn ? 'types' : 'loại'}`)),
+        },
+        {
+          label: isEn ? 'Staff & Manager accounts' : 'Tài khoản nhân viên quản lý',
+          cells: fullPlans.map((p) => (p.staff === -1 ? (isEn ? 'Unlimited' : 'Không giới hạn') : `${p.staff} ${isEn ? 'accounts' : 'tài khoản'}`)),
+        },
+        {
+          label: isEn ? 'Monthly booking volume' : 'Lượt đặt phòng tối đa / tháng',
+          cells: fullPlans.map((p) => (p.maxMonthlyBookings === -1 ? (isEn ? 'Unlimited' : 'Không giới hạn') : `${n.format(p.maxMonthlyBookings)} ${isEn ? 'bookings' : 'đơn/tháng'}`)),
+        },
+        {
+          label: isEn ? 'Platform transaction fee' : 'Phí hoa hồng giao dịch nền tảng',
+          cells: fullPlans.map((p) => `${p.transactionFeePercent}% (${isEn ? 'Commission-free' : 'Không chiết khấu'})`),
+        },
+      ],
+    },
+    {
+      title: isEn ? '2. Direct Booking Website & Branding' : '2. Website Khách sạn & Nhận diện thương hiệu',
+      rows: [
+        {
+          label: isEn ? 'Direct Booking Website Builder' : 'Trình dựng website đặt phòng trực tiếp',
+          cells: fullPlans.map(() => true),
+        },
+        {
+          label: isEn ? 'Free Subdomain (*.digistay.vn)' : 'Tên miền con miễn phí (*.digistay.vn)',
+          cells: fullPlans.map(() => true),
+        },
+        {
+          label: isEn ? 'Custom Domain support' : 'Tên miền riêng độc quyền (VD: khachsanabc.vn)',
+          cells: fullPlans.map((p) => p.hasCustomDomain),
+        },
+        {
+          label: isEn ? 'Remove Digistay branding' : 'Gỡ nhãn watermark "Powered by Digistay"',
+          cells: fullPlans.map((p) => p.allowRemoveDigistayBranding),
+        },
+        {
+          label: isEn ? 'Multi-language (Vietnamese & English)' : 'Website song ngữ (Tiếng Việt & Tiếng Anh)',
+          cells: fullPlans.map((p) => p.hasMultiLanguage),
+        },
+        {
+          label: isEn ? 'Custom content & blog pages' : 'Số bài viết & trang nội dung tùy chỉnh',
+          cells: fullPlans.map((p) => (p.maxCustomPages === -1 ? (isEn ? 'Unlimited' : 'Không giới hạn') : `${p.maxCustomPages} ${isEn ? 'pages' : 'trang'}`)),
+        },
+        {
+          label: isEn ? 'Marketing Tracking Pixel (FB Pixel, GA4, GTM)' : 'Chèn mã theo dõi quảng cáo (Facebook Pixel, GA4)',
+          cells: fullPlans.map((p) => p.allowCustomTrackingCode),
+        },
+      ],
+    },
+    {
+      title: isEn ? '3. Artificial Intelligence (AI & Automation)' : '3. Trí tuệ Nhân tạo & Tự động hoá (AI)',
+      rows: [
+        {
+          label: isEn ? 'AI Marketing content generator (Gemini)' : 'Tạo bài viết Marketing AI (Google Gemini)',
+          cells: fullPlans.map((p) => `${p.monthlyAiContentQuota} ${isEn ? 'articles/mo' : 'bài/tháng'}`),
+        },
+        {
+          label: isEn ? '24/7 AI Chatbot Assistant' : 'Trợ lý Chatbot AI tư vấn đặt phòng 24/7',
+          cells: fullPlans.map((p) => p.hasChatbotAi),
+        },
+        {
+          label: isEn ? 'AI Chatbot messages quota' : 'Số tin nhắn Chatbot AI tư vấn / tháng',
+          cells: fullPlans.map((p) => (p.monthlyChatbotMessages === -1 ? (isEn ? 'Unlimited' : 'Không giới hạn') : `${n.format(p.monthlyChatbotMessages)} ${isEn ? 'messages' : 'tin/tháng'}`)),
+        },
+        {
+          label: isEn ? 'AI Smart Dynamic Pricing' : 'Định giá phòng thông minh AI theo nhu cầu',
+          cells: fullPlans.map((p) => p.hasAiSmartPricing),
+        },
+      ],
+    },
+    {
+      title: isEn ? '4. Channel Management & OTA Calendar Sync' : '4. Kênh Bán phòng & Đồng bộ lịch OTA',
+      rows: [
+        {
+          label: isEn ? 'Two-way iCal Sync (.ics) for Airbnb, Agoda, Booking' : 'Đồng bộ lịch iCal (.ics) 2 chiều với Airbnb, Agoda, Booking.com',
+          cells: fullPlans.map((p) => p.hasOtaIcalSync),
+        },
+        {
+          label: isEn ? 'Connected iCal feeds limit' : 'Số luồng kết nối lịch iCal',
+          cells: fullPlans.map((p) => (p.maxIcalFeeds === -1 ? (isEn ? 'Unlimited' : 'Không giới hạn') : `${p.maxIcalFeeds} ${isEn ? 'feeds' : 'luồng'}`)),
+        },
+        {
+          label: isEn ? 'Direct 2-way API Channel Manager' : 'Kết nối API 2 chiều trực tiếp (Direct Channel Manager)',
+          cells: fullPlans.map((p) => p.hasDirectApiChannels),
+        },
+      ],
+    },
+    {
+      title: isEn ? '5. Online Payments & Automated Deposits' : '5. Thanh toán & Đặt cọc trực tuyến',
+      rows: [
+        {
+          label: isEn ? 'PayOS VietQR dynamic payment gateway' : 'Cổng thanh toán VietQR PayOS tự động 24/7',
+          cells: fullPlans.map((p) => p.hasPayOsOnlineDeposit),
+        },
+        {
+          label: isEn ? 'Instant automated booking deposit hold' : 'Nhận tiền cọc giữ phòng tự động tức thì',
+          cells: fullPlans.map(() => true),
+        },
+        {
+          label: isEn ? 'Real-time VietQR reconciliation' : 'Tự động đối soát giao dịch thời gian thực',
+          cells: fullPlans.map(() => true),
+        },
+      ],
+    },
+    {
+      title: isEn ? '6. Financial Cashbook & E-Invoices' : '6. Tài chính, Sổ quỹ & Hóa đơn điện tử',
+      rows: [
+        {
+          label: isEn ? 'Front-desk cashbook & cashflow tracking' : 'Quản lý sổ quỹ thu chi tiền mặt lễ tân',
+          cells: fullPlans.map((p) => p.hasCashbookReports),
+        },
+        {
+          label: isEn ? 'Advanced financial & revenue analytics' : 'Báo cáo phân tích doanh thu & công suất phòng chuyên sâu',
+          cells: fullPlans.map((p) => p.hasAdvancedAnalytics),
+        },
+        {
+          label: isEn ? 'Excel / CSV raw data export' : 'Xuất dữ liệu báo cáo ra file Excel / CSV',
+          cells: fullPlans.map((p) => p.allowDataExport),
+        },
+        {
+          label: isEn ? 'Mắt Bão VAT e-invoices included' : 'Hóa đơn điện tử GTGT Mắt Bão tặng kèm',
+          cells: fullPlans.map((p) => (p.invoices === 0 ? (isEn ? 'None' : 'Không có') : `${p.invoices} ${isEn ? 'invoices/mo' : 'hóa đơn/tháng'}`)),
+        },
+      ],
+    },
+    {
+      title: isEn ? '7. Storage & Media Uploads' : '7. Lưu trữ ảnh & Tài nguyên đa phương tiện',
+      rows: [
+        {
+          label: isEn ? 'High-speed cloud storage quota' : 'Dung lượng lưu trữ ảnh & media đám mây',
+          cells: fullPlans.map((p) => (p.maxStorageMb >= 1024 ? `${p.maxStorageMb / 1024} GB` : `${p.maxStorageMb} MB`)),
+        },
+        {
+          label: isEn ? 'Max single photo upload size' : 'Kích thước tải lên tối đa mỗi ảnh',
+          cells: fullPlans.map((p) => `${p.maxImageUploadSizeMb} MB`),
+        },
+      ],
+    },
+    {
+      title: isEn ? '8. Customer Support & SLA Commitment' : '8. Dịch vụ & Hỗ trợ kỹ thuật (SLA)',
+      rows: [
+        {
+          label: isEn ? 'Support priority level' : 'Cấp độ ưu tiên hỗ trợ kỹ thuật',
+          cells: fullPlans.map((p) =>
+            p.supportPriority === 'DEDICATED'
+              ? (isEn ? 'Dedicated 24/7' : 'Chuyên trách 24/7')
+              : p.supportPriority === 'PRIORITY'
+                ? (isEn ? 'Priority' : 'Ưu tiên phản hồi nhanh')
+                : (isEn ? 'Standard' : 'Tiêu chuẩn')
+          ),
+        },
+        {
+          label: isEn ? 'Dedicated 1-on-1 Onboarding specialist' : 'Chuyên viên hướng dẫn setup 1-1 ban đầu',
+          cells: fullPlans.map((p) => p.hasDedicatedOnboarding),
+        },
+        {
+          label: isEn ? 'Free trial period (No credit card required)' : 'Thời gian dùng thử miễn phí không ràng buộc',
+          cells: fullPlans.map((p) => `${p.trialDays} ${isEn ? 'days' : 'ngày'}`),
+        },
+      ],
+    },
+  ]
 
   return (
     <>
       <MarketingHeader active="pricing" />
       <main>
-        {/* Title, monthly / yearly switch and the plans */}
+        {/* Title, monthly / yearly switch and the dynamic plans */}
         <section className={cn(frame, 'pt-10 lg:pt-14')}>
           <PlanCards
             title={t('title')}
-            plans={plans.map((p) => ({
-              id: p.id,
-              name: tp(`${p.id}.name`),
-              fit: tp(`${p.id}.fit`),
-              monthly: formatVnd(p.price, locale),
-              yearly: formatVnd(yearlyPrice(p), locale),
-              saving: t('billing.saving', { amount: formatVnd(p.price * 12 - yearlyPrice(p), locale) }),
-              limits: (['properties', 'rooms', 'staff', 'invoices'] as const).map((k) => ({
-                label: tp(k),
-                value: limit(p, k),
-                muted: k === 'invoices' && p.invoices === 0,
-              })),
-            }))}
+            plans={fullPlans.map((p) => {
+              const yearlyP = p.priceYearly || p.price * 10
+              const annualSavings = p.price * 12 - yearlyP
+              return {
+                id: p.id,
+                name: p.name,
+                fit: p.description || (tp.has(`${p.id}.fit` as any) ? tp(`${p.id}.fit` as any) : ''),
+                monthly: formatVnd(p.price, locale),
+                yearly: formatVnd(yearlyP, locale),
+                saving: t('billing.saving', { amount: formatVnd(annualSavings, locale) }),
+                isFeatured: p.isFeatured,
+                trialDays: p.trialDays,
+                limits: [
+                  {
+                    label: isEn ? 'Properties' : 'Cơ sở lưu trú',
+                    value: p.properties === -1 ? (isEn ? 'Unlimited' : 'Không giới hạn') : `${p.properties} ${isEn ? 'properties' : 'cơ sở'}`,
+                    muted: false,
+                  },
+                  {
+                    label: isEn ? 'Rooms limit' : 'Quy mô phòng',
+                    value: p.rooms === -1 ? (isEn ? 'Unlimited' : 'Không giới hạn') : `${n.format(p.rooms)} ${isEn ? 'rooms' : 'phòng'}`,
+                    muted: false,
+                  },
+                  {
+                    label: isEn ? 'Staff accounts' : 'Tài khoản nhân sự',
+                    value: p.staff === -1 ? (isEn ? 'Unlimited' : 'Không giới hạn') : `${p.staff} ${isEn ? 'staff' : 'nhân viên'}`,
+                    muted: false,
+                  },
+                  {
+                    label: isEn ? 'Custom domain' : 'Tên miền riêng',
+                    value: p.hasCustomDomain ? (isEn ? 'Included' : 'Được hỗ trợ') : (isEn ? 'Subdomain only' : 'Tên miền con'),
+                    muted: !p.hasCustomDomain,
+                  },
+                  {
+                    label: isEn ? 'AI & Chatbot' : 'Trí tuệ nhân tạo AI',
+                    value: `${p.monthlyAiContentQuota} ${isEn ? 'AI articles/mo' : 'bài/tháng'}${p.hasChatbotAi ? ` · Chatbot` : ''}`,
+                    muted: false,
+                  },
+                  {
+                    label: isEn ? 'VAT E-invoices' : 'HĐĐT Mắt Bão',
+                    value: p.invoices === 0 ? (isEn ? 'Not included' : 'Không tặng kèm') : `${p.invoices} ${isEn ? 'invoices/mo' : 'hóa đơn/tháng'}`,
+                    muted: p.invoices === 0,
+                  },
+                ],
+              }
+            })}
             labels={{
               billing: t('billing.label'),
               monthly: t('billing.monthly'),
@@ -76,6 +279,7 @@ export default async function PricingPage() {
               perYear: tp('perYear'),
               fit: t('fit'),
               choose: t('choose'),
+              featured: isEn ? 'Most Popular' : 'Được tin dùng nhất',
             }}
           />
         </section>
@@ -109,7 +313,7 @@ export default async function PricingPage() {
           </ul>
         </section>
 
-        {/* Comparison */}
+        {/* 8-Group Full Comparison Matrix */}
         <section className={cn(frame, 'pt-24 lg:pt-28')}>
           <h2 data-reveal className={sectionTitle}>
             {t('compare.title')}
@@ -121,7 +325,7 @@ export default async function PricingPage() {
             <table className="w-full border-collapse text-[14.5px]">
               <thead>
                 <tr className="border-b border-ink">
-                  <th scope="col" className="w-[40%] px-7 py-[18px] text-left text-[13px] font-normal text-muted">
+                  <th scope="col" className="w-[36%] px-7 py-[18px] text-left text-[13px] font-normal text-muted">
                     {t('compare.feature')}
                   </th>
                   {planNames.map((name) => (
@@ -134,13 +338,13 @@ export default async function PricingPage() {
               {groups.map((g) => (
                 <tbody key={g.title}>
                   <tr className="bg-page">
-                    <th colSpan={1 + plans.length} scope="colgroup" className="border-b border-line/70 px-7 pb-3 pt-5 text-left text-label font-semibold uppercase text-muted">
+                    <th colSpan={1 + fullPlans.length} scope="colgroup" className="border-b border-line/70 px-7 pb-3 pt-5 text-left text-label font-semibold uppercase text-primary">
                       {g.title}
                     </th>
                   </tr>
                   {g.rows.map((r) => (
-                    <tr key={r.label} className="border-b border-line/70 last:border-b-0">
-                      <th scope="row" className="px-7 py-[15px] text-left font-normal">
+                    <tr key={r.label} className="border-b border-line/70 last:border-b-0 hover:bg-fg/[0.015] transition-colors">
+                      <th scope="row" className="px-7 py-[15px] text-left font-normal text-fg">
                         {r.label}
                       </th>
                       {r.cells.map((c, i) => (

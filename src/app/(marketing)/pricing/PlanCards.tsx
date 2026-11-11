@@ -13,15 +13,16 @@ export interface PlanCardView {
   yearly: string
   /** "Tiết kiệm 1.980.000 ₫ …", shown with the yearly price. */
   saving: string
+  isFeatured?: boolean
+  trialDays?: number
   limits: { label: string; value: string; muted: boolean }[]
 }
 
 type Billing = 'month' | 'year'
 
 /**
- * The page title, the monthly / yearly switch beside it, and the three plan
- * cards (Claude Design "Digistay Bang Gia"). Strings come formatted from the
- * page; the switch only picks which price each card shows.
+ * The page title, the monthly / yearly switch beside it, and the plan
+ * cards. Strings come formatted from the page; the switch only picks which price each card shows.
  */
 export function PlanCards({
   title,
@@ -30,7 +31,17 @@ export function PlanCards({
 }: {
   title: string
   plans: PlanCardView[]
-  labels: { billing: string; monthly: string; yearly: string; badge: string; perMonth: string; perYear: string; fit: string; choose: string }
+  labels: {
+    billing: string
+    monthly: string
+    yearly: string
+    badge: string
+    perMonth: string
+    perYear: string
+    fit: string
+    choose: string
+    featured?: string
+  }
 }) {
   const [billing, setBilling] = React.useState<Billing>('month')
 
@@ -68,22 +79,56 @@ export function PlanCards({
 
       <div className="mt-8 grid gap-4 lg:mt-10 lg:grid-cols-3 lg:gap-5">
         {plans.map((p, i) => (
-          <div key={p.id} data-reveal style={revealDelay(i * 100)} className="flex flex-col rounded-box border border-line bg-panel p-6 lg:p-8">
-            <h2 className="text-label font-medium uppercase text-muted">{p.name}</h2>
+          <div
+            key={p.id}
+            data-reveal
+            style={revealDelay(i * 100)}
+            className={cn(
+              'relative flex flex-col rounded-box border bg-panel p-6 lg:p-8 transition-all',
+              p.isFeatured
+                ? 'border-primary shadow-lg ring-1 ring-primary/40'
+                : 'border-line'
+            )}
+          >
+            {p.isFeatured && (
+              <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white shadow-xs">
+                {labels.featured || 'Phổ biến nhất'}
+              </span>
+            )}
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-label font-bold uppercase text-muted">{p.name}</h2>
+              {p.trialDays ? (
+                <span className="rounded bg-ok-soft px-2 py-0.5 text-[11px] font-semibold text-ok">
+                  {p.trialDays} ngày dùng thử
+                </span>
+              ) : null}
+            </div>
             <p className="mt-2 text-[14px] text-muted">
               {labels.fit} <span className="text-fg">{p.fit}</span>
             </p>
             {/* key: the price fades in again when the switch flips */}
             <p key={billing} className="swap-in mt-6 flex flex-wrap items-baseline gap-2">
-              <span className="text-[34px] font-semibold leading-none tracking-[-0.015em] tabular-nums">{billing === 'year' ? p.yearly : p.monthly}</span>
-              <span className="text-[14px] text-muted">{billing === 'year' ? labels.perYear : labels.perMonth}</span>
+              <span className="text-[34px] font-semibold leading-none tracking-[-0.015em] tabular-nums">
+                {billing === 'year' ? p.yearly : p.monthly}
+              </span>
+              <span className="text-[14px] text-muted">
+                {billing === 'year' ? labels.perYear : labels.perMonth}
+              </span>
             </p>
             {/* Same height either way, so the cards do not jump */}
             <p aria-live="polite" className="mt-2 h-5 text-[13px] font-medium text-ok">
               {billing === 'year' ? p.saving : ''}
             </p>
             {/* Signs up first when needed, then opens the plan's QR (/billing/start). */}
-            <Link href={`/billing/start?plan=${p.id}&billing=${billing === 'year' ? 'YEAR' : 'MONTH'}`} className={cn(inkButton, 'mt-5 h-12 text-[15px]')}>
+            <Link
+              href={`/billing/start?plan=${p.id}&billing=${billing === 'year' ? 'YEAR' : 'MONTH'}`}
+              className={cn(
+                p.isFeatured
+                  ? 'flex items-center justify-center rounded-ctl bg-primary text-white font-medium hover:bg-primary/90 shadow-xs'
+                  : inkButton,
+                'mt-5 h-12 text-[15px]'
+              )}
+            >
               {labels.choose}
             </Link>
             <dl className="mt-7 border-t border-line/70">
