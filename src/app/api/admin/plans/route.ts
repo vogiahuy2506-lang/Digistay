@@ -6,7 +6,7 @@ import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
-export const PlanSchema = z.object({
+const PlanSchema = z.object({
   id: z
     .string()
     .trim()

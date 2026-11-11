@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requirePlatformAdmin } from '@/lib/admin/guard'
 import { getPlatformPlanDetails } from '@/lib/plans/dynamic-plans'
-import { PlanSchema } from '../route'
 
 export const dynamic = 'force-dynamic'
 
