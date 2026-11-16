@@ -4,6 +4,7 @@ import {
   getAllPlatformSettings,
   savePlatformSetting,
   testGeminiPing,
+  testMatbaoPing,
   testSmtpEmail,
 } from '@/lib/admin/platform-settings'
 import { z } from 'zod'
@@ -16,10 +17,11 @@ const SaveSettingSchema = z.object({
 })
 
 const ActionSchema = z.object({
-  action: z.enum(['test_gemini', 'test_smtp']),
+  action: z.enum(['test_gemini', 'test_smtp', 'test_matbao']),
   customApiKey: z.string().optional(),
   targetEmail: z.string().email('Email nhận kiểm tra không hợp lệ').optional(),
   smtpConfig: z.any().optional(),
+  matbaoConfig: z.any().optional(),
 })
 
 export async function GET() {
@@ -61,7 +63,7 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const { action, customApiKey, targetEmail, smtpConfig } = parsed.data
+  const { action, customApiKey, targetEmail, smtpConfig, matbaoConfig } = parsed.data
 
   if (action === 'test_gemini') {
     const res = await testGeminiPing(customApiKey)
@@ -72,6 +74,11 @@ export async function POST(request: NextRequest) {
     const to = targetEmail || check.admin.email
     const res = await testSmtpEmail(to, smtpConfig)
     return NextResponse.json({ success: res.ok, message: res.message }, { status: res.ok ? 200 : 400 })
+  }
+
+  if (action === 'test_matbao') {
+    const res = await testMatbaoPing(matbaoConfig)
+    return NextResponse.json({ success: res.ok, message: res.message, data: res.templates }, { status: res.ok ? 200 : 400 })
   }
 
   return NextResponse.json({ success: false, error: 'Hành động không hợp lệ' }, { status: 400 })

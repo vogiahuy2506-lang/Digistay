@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db'
 import { realSetting } from '@/lib/billing/platform-payos'
 import nodemailer from 'nodemailer'
 import { PayOS } from '@payos/node'
+import { MatbaoClient, type MatbaoEnvironment } from '@/lib/einvoice/matbao-client'
 
 export interface PayosSettings {
   clientId: string
@@ -73,12 +74,12 @@ export async function getAllPlatformSettings(): Promise<AllPlatformSettings> {
   // 2. Mắt Bão
   const matbaoDb = map.get('matbao') || {}
   const matbao: MatbaoSettings = {
-    environment: matbaoDb.environment || (process.env.MATBAO_ENV === 'prod' ? 'prod' : 'demo'),
-    taxCode: matbaoDb.taxCode || process.env.MATBAO_TAX_CODE || '',
-    username: matbaoDb.username || process.env.MATBAO_USERNAME || '',
-    password: matbaoDb.password ? MASKED_SECRET : process.env.MATBAO_PASSWORD ? MASKED_SECRET : '',
-    invoiceSeries: matbaoDb.invoiceSeries || process.env.MATBAO_SERIES || '1C26TDS',
-    templateCode: matbaoDb.templateCode || process.env.MATBAO_TEMPLATE || '01GTKT0/001',
+    environment: matbaoDb.environment || (process.env.MATBAO_ENV === 'prod' || process.env.DIGISTAY_MATBAO_ENV === 'PRODUCTION' ? 'prod' : 'demo'),
+    taxCode: matbaoDb.taxCode || process.env.MATBAO_MST || process.env.MATBAO_TAX_CODE || process.env.DIGISTAY_MATBAO_TAX_CODE || '',
+    username: matbaoDb.username || process.env.MATBAO_USERNAME || process.env.DIGISTAY_MATBAO_USERNAME || '',
+    password: matbaoDb.password ? MASKED_SECRET : (process.env.MATBAO_PASSWORD || process.env.DIGISTAY_MATBAO_PASSWORD) ? MASKED_SECRET : '',
+    invoiceSeries: matbaoDb.invoiceSeries || process.env.MATBAO_SERIES || process.env.DIGISTAY_MATBAO_SERIES || 'C26MTT',
+    templateCode: matbaoDb.templateCode || process.env.MATBAO_TEMPLATE || process.env.DIGISTAY_MATBAO_TEMPLATE || '1',
   }
 
   // 3. Gemini
@@ -256,6 +257,67 @@ export async function testSmtpEmail(
     return { ok: true, message: `Đã gửi email thử nghiệm thành công tới ${targetEmail}!` }
   } catch (error: any) {
     return { ok: false, message: `Lỗi kiểm tra SMTP: ${error?.message || 'Không thể kết nối máy chủ mail'}` }
+  }
+}
+
+/**
+ * Tests connection to Mắt Bão e-invoice API and verifies credentials & templates.
+ */
+export async function testMatbaoPing(
+  overrideConfig?: Partial<MatbaoSettings>
+): Promise<{
+  ok: boolean
+  message: string
+  templates?: { templateCode: string; series: string; remaining: number }[]
+}> {
+  let environment = overrideConfig?.environment || (process.env.MATBAO_ENV === 'prod' || process.env.DIGISTAY_MATBAO_ENV === 'PRODUCTION' ? 'prod' : 'demo')
+  let taxCode = overrideConfig?.taxCode || process.env.MATBAO_MST || process.env.MATBAO_TAX_CODE || process.env.DIGISTAY_MATBAO_TAX_CODE || ''
+  let username = overrideConfig?.username || process.env.MATBAO_USERNAME || process.env.DIGISTAY_MATBAO_USERNAME || ''
+  let password = overrideConfig?.password && overrideConfig.password !== MASKED_SECRET
+    ? overrideConfig.password
+    : process.env.MATBAO_PASSWORD || process.env.DIGISTAY_MATBAO_PASSWORD || ''
+
+  if (!taxCode || !username || !password) {
+    const db = await getEffectiveSetting<MatbaoSettings>('matbao')
+    if (db) {
+      taxCode = db.taxCode || taxCode
+      username = db.username || username
+      password = (overrideConfig?.password && overrideConfig.password !== MASKED_SECRET ? overrideConfig.password : db.password) || password
+      environment = db.environment || environment
+    }
+  }
+
+  if (!taxCode || !username || !password) {
+    return { ok: false, message: 'Thiếu thông tin kết nối Mắt Bão (MST, tên tài khoản hoặc mật khẩu)' }
+  }
+
+  try {
+    const isProd =
+      String(environment).toLowerCase() === 'prod' ||
+      String(environment).toUpperCase() === 'PRODUCTION' ||
+      (Boolean(process.env.MATBAO_BASE_URL?.includes('api-hddt.matbao.in:11443')) && !process.env.MATBAO_BASE_URL?.includes('demo'))
+    const client = new MatbaoClient({
+      environment: (isProd ? 'PRODUCTION' : 'DEMO') as MatbaoEnvironment,
+      taxCode: taxCode.trim(),
+      username: username.trim(),
+      password: password.trim(),
+    })
+
+    await client.login(true)
+    const year = new Date().getFullYear()
+    const templates = await client.templates(year)
+    const active = templates.find((t) => t.remaining > 0) || templates[0]
+    const details = active
+      ? `Mẫu số: ${active.templateCode}, Ký hiệu: ${active.series} (còn ${active.remaining} số)`
+      : `Không tìm thấy ký hiệu hóa đơn khả dụng cho năm ${year}`
+
+    return {
+      ok: true,
+      message: `Đăng nhập Mắt Bão thành công! ${details}`,
+      templates,
+    }
+  } catch (error: any) {
+    return { ok: false, message: error?.message || 'Không thể kết nối đến máy chủ Mắt Bão' }
   }
 }
 

@@ -31,6 +31,7 @@ export default function PlatformSettingsPage() {
   const [savingKey, setSavingKey] = React.useState<string | null>(null)
   const [testingGemini, setTestingGemini] = React.useState(false)
   const [testingSmtp, setTestingSmtp] = React.useState(false)
+  const [testingMatbao, setTestingMatbao] = React.useState(false)
   const [testEmailTarget, setTestEmailTarget] = React.useState('')
   const [activeTab, setActiveTab] = React.useState<'payos' | 'matbao' | 'gemini' | 'smtp' | 'branding'>('payos')
 
@@ -126,6 +127,44 @@ export default function PlatformSettingsPage() {
       toast.error('Lỗi kết nối máy chủ mail')
     } finally {
       setTestingSmtp(false)
+    }
+  }
+
+  // Test Mắt Bão
+  const handleTestMatbao = async () => {
+    setTestingMatbao(true)
+    try {
+      const res = await fetch('/api/admin/platform-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'test_matbao',
+          matbaoConfig: settings?.matbao,
+        }),
+      })
+      const json = await res.json().catch(() => null)
+      if (res.ok && json?.success) {
+        toast.success(json.message)
+        if (json.data && Array.isArray(json.data) && json.data.length > 0 && settings) {
+          const active = json.data.find((t: any) => t.remaining > 0) || json.data[0]
+          if (active && (!settings.matbao.invoiceSeries || settings.matbao.invoiceSeries === '1C26TDS')) {
+            setSettings({
+              ...settings,
+              matbao: {
+                ...settings.matbao,
+                invoiceSeries: active.series,
+                templateCode: active.templateCode || '1',
+              },
+            })
+          }
+        }
+      } else {
+        toast.error(json?.message || 'Kiểm tra kết nối Mắt Bão thất bại')
+      }
+    } catch {
+      toast.error('Lỗi kết nối máy chủ')
+    } finally {
+      setTestingMatbao(false)
     }
   }
 
@@ -346,7 +385,19 @@ export default function PlatformSettingsPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end pt-4 border-t border-line">
+              <div className="flex items-center justify-between pt-4 border-t border-line">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleTestMatbao}
+                  disabled={testingMatbao}
+                  className="gap-1.5"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${testingMatbao ? 'animate-spin' : ''}`} />
+                  Kiểm tra kết nối Mắt Bão
+                </Button>
+
                 <Button
                   size="sm"
                   onClick={() => handleSaveSection('matbao')}

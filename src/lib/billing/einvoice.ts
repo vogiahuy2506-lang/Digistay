@@ -42,20 +42,31 @@ type Db = Prisma.TransactionClient | typeof prisma
 const REQUIRED = ['DIGISTAY_MATBAO_TAX_CODE', 'DIGISTAY_MATBAO_USERNAME', 'DIGISTAY_MATBAO_PASSWORD', 'DIGISTAY_MATBAO_SERIES'] as const
 
 export function platformEinvoiceConfigured(env: Record<string, string | undefined> = process.env): boolean {
-  return REQUIRED.every((key) => realSetting(env[key]))
+  if (env.DIGISTAY_MATBAO_TAX_CODE !== undefined) {
+    return REQUIRED.every((key) => realSetting(env[key]))
+  }
+  const taxCode = env.MATBAO_MST || env.MATBAO_TAX_CODE
+  const username = env.MATBAO_USERNAME
+  const password = env.MATBAO_PASSWORD
+  const series = env.MATBAO_SERIES || 'C26MTT'
+  return Boolean(realSetting(taxCode) && realSetting(username) && realSetting(password) && realSetting(series))
 }
 
 /** Digistay's Mắt Bão account; callers check platformEinvoiceConfigured() first. */
 export function platformEinvoiceSettings(env: Record<string, string | undefined> = process.env) {
   const vat = env.DIGISTAY_MATBAO_VAT?.trim() ? Number(env.DIGISTAY_MATBAO_VAT.trim()) : -1
+  const isProd =
+    env.DIGISTAY_MATBAO_ENV?.trim().toUpperCase() === 'PRODUCTION' ||
+    env.MATBAO_ENV?.trim().toLowerCase() === 'prod' ||
+    (Boolean(env.MATBAO_BASE_URL?.includes('api-hddt.matbao.in:11443')) && !env.MATBAO_BASE_URL?.includes('demo'))
+
   return {
-    // DEMO unless said otherwise: test payments must not make real invoices.
-    environment: (env.DIGISTAY_MATBAO_ENV?.trim().toUpperCase() === 'PRODUCTION' ? 'PRODUCTION' : 'DEMO') as MatbaoEnvironment,
-    taxCode: env.DIGISTAY_MATBAO_TAX_CODE?.trim() ?? '',
-    username: env.DIGISTAY_MATBAO_USERNAME?.trim() ?? '',
-    password: env.DIGISTAY_MATBAO_PASSWORD?.trim() ?? '',
-    templateCode: env.DIGISTAY_MATBAO_TEMPLATE?.trim() || '1',
-    series: env.DIGISTAY_MATBAO_SERIES?.trim().toUpperCase() ?? '',
+    environment: (isProd ? 'PRODUCTION' : 'DEMO') as MatbaoEnvironment,
+    taxCode: (env.DIGISTAY_MATBAO_TAX_CODE || env.MATBAO_MST || env.MATBAO_TAX_CODE)?.trim() ?? '',
+    username: (env.DIGISTAY_MATBAO_USERNAME || env.MATBAO_USERNAME)?.trim() ?? '',
+    password: (env.DIGISTAY_MATBAO_PASSWORD || env.MATBAO_PASSWORD)?.trim() ?? '',
+    templateCode: (env.DIGISTAY_MATBAO_TEMPLATE || env.MATBAO_TEMPLATE)?.trim() || '1',
+    series: (env.DIGISTAY_MATBAO_SERIES || env.MATBAO_SERIES || 'C26MTT')?.trim().toUpperCase() ?? '',
     vatCode: (isVatCode(vat) ? vat : -1) as VatCode,
   }
 }

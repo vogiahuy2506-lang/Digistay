@@ -68,6 +68,14 @@ const schema = z.object({
   DIGISTAY_MATBAO_SERIES: z.string().optional(),
   DIGISTAY_MATBAO_VAT: z.string().optional(),
   DIGISTAY_MATBAO_WEBHOOK_SECRET: z.string().optional(),
+  MATBAO_BASE_URL: z.string().optional(),
+  MATBAO_ENV: z.string().optional(),
+  MATBAO_MST: z.string().optional(),
+  MATBAO_TAX_CODE: z.string().optional(),
+  MATBAO_USERNAME: z.string().optional(),
+  MATBAO_PASSWORD: z.string().optional(),
+  MATBAO_TEMPLATE: z.string().optional(),
+  MATBAO_SERIES: z.string().optional(),
 
   // Email — optional; without RESEND_API_KEY the mailer just logs to
   // the console and reports sent=false to the caller.
