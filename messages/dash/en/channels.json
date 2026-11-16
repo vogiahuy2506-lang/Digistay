@@ -5,6 +5,7 @@
   "syncingAll": "Syncing...",
   "refreshLogs": "Refresh",
   "propertyLabel": "Property",
+  "otaPlatforms": "OTA platforms",
   "badge": {
     "connected": "Connected",
     "notConnected": "Not connected",

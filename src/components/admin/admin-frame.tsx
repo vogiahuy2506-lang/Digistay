@@ -13,6 +13,7 @@ import {
   CreditCard,
   History,
   LayoutDashboard,
+  LogOut,
   Menu,
   Moon,
   Receipt,
@@ -27,6 +28,7 @@ import {
   X,
   User,
 } from 'lucide-react'
+import { signOut, useSession } from 'next-auth/react'
 import { Logo } from '@/components/marketing/Logo'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/components/layout/theme-root'
@@ -81,6 +83,7 @@ const NAV_GROUPS: NavGroupDef[] = [
 /** The modern enterprise SaaS operator frame: Fixed Sidebar, Topbar with Universal Search, System Status, and Theme/Language controls. */
 export function AdminFrame({ children }: { children: React.ReactNode }) {
   const t = useTranslations('dash.admin.frame') as any
+  const { data: session } = useSession()
   const pathname = usePathname()
   const router = useRouter()
   const theme = useTheme()
@@ -91,6 +94,10 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
   const [isSearchOpen, setIsSearchOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState('')
+
+  const handleSignOut = () => {
+    signOut({ callbackUrl: '/login' })
+  }
 
   // Handle Ctrl+K shortcut for Universal Search
   React.useEffect(() => {
@@ -124,6 +131,7 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
       { title: 'Bảo mật, Tường lửa & IP Blacklist', href: '/admin/security', icon: ShieldAlert, category: 'Bảo mật' },
       { title: 'Đội ngũ Quản trị Cấp cao & Phân quyền RBAC', href: '/admin/team', icon: Users, category: 'Nhân sự' },
       { title: 'Nhật ký Hoạt động & Kiểm toán (Audit Log)', href: '/admin/activity', icon: History, category: 'Bảo mật' },
+      { title: 'Đăng xuất khỏi hệ thống (Sign Out)', href: '#logout', icon: LogOut, category: 'Tài khoản' },
     ]
     return allItems.filter(
       (item) => item.title.toLowerCase().includes(q) || item.category.toLowerCase().includes(q) || item.href.includes(q)
@@ -258,7 +266,7 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
           ))}
         </div>
 
-        {/* Sidebar Footer Controls (NO Back to workspace) */}
+        {/* Sidebar Footer Controls */}
         <div className="p-3 border-t border-line shrink-0 bg-fg/[0.01] space-y-2.5">
           {isCollapsed ? (
             <div className="flex flex-col items-center gap-2">
@@ -282,6 +290,31 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
                   {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                 </button>
               )}
+
+              <Link
+                href="/workspaces"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition-colors hover:bg-fg/5 hover:text-fg"
+                title={t('back') || 'Về workspace'}
+              >
+                <Building2 className="h-4 w-4" />
+              </Link>
+
+              <Link
+                href="/profile"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-muted transition-colors hover:bg-fg/5 hover:text-fg"
+                title={t('profile')}
+              >
+                <User className="h-4 w-4" />
+              </Link>
+
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-red-500/20 text-red-500 transition-colors hover:bg-red-500/10"
+                title={t('signOut') || 'Đăng xuất'}
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
             </div>
           ) : (
             <>
@@ -327,20 +360,47 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
                 </div>
               </div>
 
-              {/* Profile Link */}
-              <Link
-                href="/profile"
-                className="flex items-center gap-2.5 w-full p-2 rounded-lg border border-line bg-fg/[0.02] hover:bg-fg/5 text-xs text-muted hover:text-fg transition-colors"
-                title={t('profile')}
-              >
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-fg/10 text-fg">
-                  <User className="h-3.5 w-3.5" />
+              {/* User Profile Card & Actions */}
+              <div className="space-y-1.5 pt-1">
+                <Link
+                  href="/profile"
+                  className="flex items-center gap-2.5 w-full p-2 rounded-lg border border-line bg-fg/[0.02] hover:bg-fg/5 text-xs text-muted hover:text-fg transition-colors group"
+                  title={t('profile')}
+                >
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-[10px]">
+                    {session?.user?.name ? session.user.name.charAt(0).toUpperCase() : <User className="h-3.5 w-3.5" />}
+                  </div>
+                  <div className="min-w-0 flex-1 truncate text-left">
+                    <span className="block text-[11px] font-medium text-fg truncate">
+                      {session?.user?.name || session?.user?.email || t('profile')}
+                    </span>
+                    <span className="block text-[10px] text-muted truncate">
+                      {session?.user?.email || 'Quản trị viên Cấp cao'}
+                    </span>
+                  </div>
+                </Link>
+
+                <div className="flex items-center gap-1.5">
+                  <Link
+                    href="/workspaces"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg border border-line text-[11px] font-medium text-muted hover:text-fg hover:bg-fg/5 transition-colors"
+                    title={t('back') || 'Về workspace'}
+                  >
+                    <Building2 className="w-3.5 h-3.5" />
+                    <span className="truncate">{t('back') || 'Workspace'}</span>
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg border border-line text-[11px] font-medium text-red-500 hover:bg-red-500/10 hover:border-red-500/30 transition-colors"
+                    title={t('signOut') || 'Đăng xuất'}
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>{t('signOut') || 'Đăng xuất'}</span>
+                  </button>
                 </div>
-                <div className="min-w-0 flex-1 truncate text-left">
-                  <span className="block text-[11px] font-medium text-fg truncate">{t('profile')}</span>
-                  <span className="block text-[10px] text-muted truncate">Security & 2FA</span>
-                </div>
-              </Link>
+              </div>
             </>
           )}
         </div>
@@ -378,8 +438,8 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
             </button>
           </div>
 
-          {/* Header Right Status Indicator */}
-          <div className="flex items-center gap-3">
+          {/* Header Right Status Indicator & Actions */}
+          <div className="flex items-center gap-2 sm:gap-3">
             <Link
               href="/admin/system"
               className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-line bg-panel text-xs text-muted hover:text-fg hover:border-emerald-500/40 transition-colors shadow-2xs"
@@ -388,6 +448,25 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="hidden sm:inline font-medium text-fg">{t('systemHealthy')}</span>
             </Link>
+
+            <Link
+              href="/workspaces"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line bg-panel text-xs font-medium text-muted hover:text-fg hover:bg-fg/5 transition-colors shadow-2xs"
+              title={t('back') || 'Về workspace'}
+            >
+              <Building2 className="w-3.5 h-3.5" />
+              <span>{t('back') || 'Workspace'}</span>
+            </Link>
+
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line bg-panel text-xs font-medium text-muted hover:text-red-500 hover:border-red-500/30 hover:bg-red-500/5 transition-colors shadow-2xs"
+              title={t('signOut') || 'Đăng xuất'}
+            >
+              <LogOut className="w-3.5 h-3.5 text-red-500" />
+              <span>{t('signOut') || 'Đăng xuất'}</span>
+            </button>
 
             {/* Mobile Search Button */}
             <button
@@ -407,7 +486,7 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      {/* 3. Mobile Navigation Drawer (NO Back to workspace) */}
+      {/* 3. Mobile Navigation Drawer */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-xs" onClick={() => setMobileMenuOpen(false)} />
@@ -461,14 +540,29 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
               ))}
             </div>
 
-            <div className="pt-3 border-t border-line">
+            <div className="pt-3 border-t border-line space-y-1.5">
               <Link
                 href="/profile"
                 className="flex items-center gap-2 w-full p-2 rounded-lg border border-line bg-fg/[0.02] text-xs text-muted hover:text-fg"
               >
                 <User className="h-4 w-4" />
-                <span>Hồ sơ Quản trị viên</span>
+                <span>{t('profile') || 'Hồ sơ cá nhân'}</span>
               </Link>
+              <Link
+                href="/workspaces"
+                className="flex items-center gap-2 w-full p-2 rounded-lg border border-line bg-fg/[0.02] text-xs text-muted hover:text-fg"
+              >
+                <Building2 className="h-4 w-4" />
+                <span>{t('back') || 'Về workspace'}</span>
+              </Link>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="flex items-center gap-2 w-full p-2 rounded-lg border border-red-500/20 text-xs font-medium text-red-500 hover:bg-red-500/10 transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>{t('signOut') || 'Đăng xuất'}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -504,7 +598,11 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
                     type="button"
                     onClick={() => {
                       setIsSearchOpen(false)
-                      router.push(item.href)
+                      if (item.href === '#logout') {
+                        handleSignOut()
+                      } else {
+                        router.push(item.href)
+                      }
                     }}
                     className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-fg/5 text-left text-xs transition-colors group"
                   >

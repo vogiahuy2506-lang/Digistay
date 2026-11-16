@@ -30,7 +30,9 @@
     "pageOf": "Page {page}/{totalPages}",
     "panelLabel": "Booking {code}",
     "prevBooking": "Previous booking",
-    "nextBooking": "Next booking"
+    "nextBooking": "Next booking",
+    "exportResidence": "Export Residence",
+    "exportResidenceDesc": "Export staying guest list for local residence declaration"
   },
   "views": {
     "label": "Booking views",
@@ -319,6 +321,21 @@
     "earlyTime": "Early check-in: the hotel's check-in time is {time}.",
     "due": "Still to collect",
     "submit": "Check in",
-    "roomFailed": "Could not assign the room"
+    "roomFailed": "Could not assign the room",
+    "identitySection": "Guest Identification (Residence Registration)",
+    "idType": "ID Type",
+    "idTypeCccd": "Citizen ID / National ID",
+    "idTypePassport": "Passport",
+    "idTypeOther": "Other",
+    "idNumber": "ID Number",
+    "idNumberPlaceholder": "Enter Citizen ID or Passport number",
+    "nationality": "Nationality",
+    "birthDate": "Date of Birth",
+    "gender": "Gender",
+    "genderMale": "Male",
+    "genderFemale": "Female",
+    "genderOther": "Other",
+    "address": "Permanent Address",
+    "addressPlaceholder": "City, Province, Address..."
   }
 }

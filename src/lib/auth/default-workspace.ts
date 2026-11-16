@@ -8,9 +8,11 @@ import { prisma, prismaWithDeleted } from '@/lib/db'
 import { generateSlug } from '@/lib/utils'
 import { inheritedOrTrialFields } from '@/lib/billing/subscription'
 
-/** "Workspace của An": the app speaks Vietnamese, not "An's Workspace". */
+/** Default name for first workspace upon signup, avoiding "Workspace Workspace" duplication. */
 export function defaultWorkspaceName(name: string) {
-  return `Workspace của ${name}`
+  const clean = name.trim()
+  if (!clean) return 'Hệ thống lưu trú'
+  return clean.toLowerCase().startsWith('workspace') ? clean : `Hệ thống của ${clean}`
 }
 
 export async function createDefaultWorkspace(userId: string, name: string) {

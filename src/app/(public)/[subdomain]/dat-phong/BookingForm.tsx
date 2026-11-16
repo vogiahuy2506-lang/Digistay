@@ -755,7 +755,7 @@ export function BookingForm({
           {section(
             String(2 + (services.length > 0 ? 1 : 0) + (policies.length > 0 ? 1 : 0) + 2).padStart(2, '0'),
             tf('payment'),
-            <div className="flex items-start justify-between gap-6 border border-ink bg-panel p-5 ring-1 ring-ink lg:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 sm:gap-6 border border-ink bg-panel p-5 ring-1 ring-ink lg:p-6">
               <div className="flex gap-4">
                 <span aria-hidden className="mt-1 flex h-5 w-5 flex-none items-center justify-center rounded-full border border-ink">
                   <span className="h-2.5 w-2.5 rounded-full bg-ink" />
@@ -776,7 +776,7 @@ export function BookingForm({
                   </p>
                 </div>
               </div>
-              <p className="flex-none text-right">
+              <p className="flex-none sm:text-right pt-3 sm:pt-0 border-t sm:border-t-0 border-line/60">
                 <span className="block text-[12.5px] text-muted">{deposit ? tf('depositToday') : tf('payToday')}</span>
                 <span className="text-[18px] font-semibold tabular-nums">{money(depositAmount)}</span>
               </p>
@@ -790,7 +790,7 @@ export function BookingForm({
               disabled={blocked || isPreview}
               title={isPreview ? 'Chưa xuất bản, không nhận đơn' : undefined}
               className={cn(
-                "h-14 px-9 text-[15px] font-medium transition-colors",
+                "h-14 px-9 text-[15px] font-medium transition-colors w-full sm:w-auto",
                 isPreview
                   ? "bg-fg/10 text-muted cursor-not-allowed border border-line"
                   : "bg-ink text-on-ink hover:bg-ink/90 disabled:bg-muted"

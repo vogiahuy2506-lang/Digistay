@@ -31,12 +31,12 @@ function Stepper({
   const btn =
     'flex h-9 w-9 items-center justify-center rounded-full border border-line text-fg hover:border-muted disabled:opacity-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc'
   return (
-    <div className="px-4 py-3 sm:px-5">
-      <span className="block text-label uppercase text-muted">
+    <div className="px-2.5 py-3 sm:px-5">
+      <span className="block text-label uppercase text-muted truncate">
         {label}
         {hint && <span className="normal-case tracking-normal"> ({hint})</span>}
       </span>
-      <div className="mt-1.5 flex items-center gap-3">
+      <div className="mt-1.5 flex items-center gap-1.5 sm:gap-3">
         <button type="button" className={btn} onClick={() => onChange(value - 1)} disabled={value <= min} aria-label={t('decrease', { what: label.toLowerCase() })}>
           <Minus className="h-3.5 w-3.5" aria-hidden="true" />
         </button>
@@ -73,8 +73,8 @@ export function SearchBar() {
   }
 
   const dateField = (label: string, value: string, min: string, onChange: (v: string) => void) => (
-    <label className="block px-4 py-3 sm:px-5">
-      <span className="block text-label uppercase text-muted">{label}</span>
+    <label className="block px-2.5 py-3 sm:px-5">
+      <span className="block text-label uppercase text-muted truncate">{label}</span>
       <input
         type="date"
         required

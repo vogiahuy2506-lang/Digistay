@@ -228,7 +228,7 @@ export default function DedicatedCheckoutPage() {
               Xác nhận đơn hàng & Thông tin gói
             </h1>
             <p className="mt-1.5 text-sm text-muted">
-              Đăng ký gói dịch vụ cho Workspace: <strong className="text-fg">{data.workspace.name}</strong>
+              Đăng ký gói dịch vụ cho: <strong className="text-fg">{data.workspace.name}</strong>
             </p>
 
             {/* Plan selector pills */}

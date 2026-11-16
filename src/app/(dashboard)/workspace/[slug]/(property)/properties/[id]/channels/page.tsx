@@ -442,7 +442,7 @@ export default function OtaChannelsPage() {
               </span>
             </h4>
             <p className="text-xs text-muted leading-relaxed">
-              {t('modal.mappingBanner', { channel: 'các sàn OTA' })}
+              {t('modal.mappingBanner', { channel: t('otaPlatforms') })}
             </p>
           </div>
         </div>

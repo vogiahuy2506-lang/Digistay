@@ -13,6 +13,22 @@ export interface CheckInBooking {
   id: string
   bookingCode: string
   guestName: string
+  guestEmail?: string
+  guestPhone?: string
+  guestIdType?: string | null
+  guestIdNumber?: string | null
+  guestNationality?: string | null
+  guestBirthDate?: string | Date | null
+  guestGender?: string | null
+  guestAddress?: string | null
+  stayGuests?: Array<{
+    name: string
+    idType?: string
+    idNumber?: string
+    nationality?: string
+    birthDate?: string
+    gender?: string
+  }> | null
   checkInDate: string
   checkOutDate: string
   totalAmount: number
@@ -69,11 +85,36 @@ export function CheckInDialog({
   const [busy, setBusy] = React.useState(false)
   const [error, setError] = React.useState('')
 
+  const [idType, setIdType] = React.useState(booking.guestIdType || 'CCCD')
+  const [idNumber, setIdNumber] = React.useState(booking.guestIdNumber || '')
+  const [nationality, setNationality] = React.useState(booking.guestNationality || 'Việt Nam')
+  const [birthDate, setBirthDate] = React.useState(
+    booking.guestBirthDate
+      ? typeof booking.guestBirthDate === 'string'
+        ? booking.guestBirthDate.slice(0, 10)
+        : new Date(booking.guestBirthDate).toISOString().slice(0, 10)
+      : ''
+  )
+  const [gender, setGender] = React.useState(booking.guestGender || '')
+  const [address, setAddress] = React.useState(booking.guestAddress || '')
+
   React.useEffect(() => {
     if (!isOpen) return
     setError('')
     setTyped(current)
     setRoomId('')
+    setIdType(booking.guestIdType || 'CCCD')
+    setIdNumber(booking.guestIdNumber || '')
+    setNationality(booking.guestNationality || 'Việt Nam')
+    setBirthDate(
+      booking.guestBirthDate
+        ? typeof booking.guestBirthDate === 'string'
+          ? booking.guestBirthDate.slice(0, 10)
+          : new Date(booking.guestBirthDate).toISOString().slice(0, 10)
+        : ''
+    )
+    setGender(booking.guestGender || '')
+    setAddress(booking.guestAddress || '')
     if (!item || split) {
       setRooms({ listed: false, list: [] })
       return
@@ -145,7 +186,18 @@ export function CheckInDialog({
           return
         }
       }
-      const res = await fetch(`/api/bookings/${booking.id}/check-in`, { method: 'POST' })
+      const res = await fetch(`/api/bookings/${booking.id}/check-in`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guestIdType: idType,
+          guestIdNumber: idNumber.trim() || null,
+          guestNationality: nationality.trim() || null,
+          guestBirthDate: birthDate || null,
+          guestGender: gender || null,
+          guestAddress: address.trim() || null,
+        }),
+      })
       const data = await res.json()
       if (data.success) onDone(t('actions.checkedIn'))
       else setError(apiError(data.error) || t('actions.failed'))
@@ -157,7 +209,7 @@ export function CheckInDialog({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="sm">
+    <Modal isOpen={isOpen} onClose={onClose} size="md">
       <ModalHeader onClose={onClose}>
         <span className="font-semibold">{t('checkIn.title', { code: booking.bookingCode })}</span>
       </ModalHeader>
@@ -203,6 +255,66 @@ export function CheckInDialog({
             hint={t('checkIn.typedHint')}
           />
         )}
+
+        {/* Identity & Residence Section */}
+        <div className="rounded-card border border-border/70 bg-bg-card/50 p-3.5 space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+            {t('checkIn.identitySection')}
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Select
+              label={t('checkIn.idType')}
+              value={idType}
+              onChange={(e) => setIdType(e.target.value)}
+            >
+              <option value="CCCD">{t('checkIn.idTypeCccd')}</option>
+              <option value="PASSPORT">{t('checkIn.idTypePassport')}</option>
+              <option value="OTHER">{t('checkIn.idTypeOther')}</option>
+            </Select>
+
+            <Input
+              label={t('checkIn.idNumber')}
+              value={idNumber}
+              onChange={(e) => setIdNumber(e.target.value)}
+              placeholder={t('checkIn.idNumberPlaceholder')}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Input
+              type="date"
+              label={t('checkIn.birthDate')}
+              value={birthDate}
+              onChange={(e) => setBirthDate(e.target.value)}
+            />
+
+            <Select
+              label={t('checkIn.gender')}
+              value={gender}
+              onChange={(e) => setGender(e.target.value)}
+            >
+              <option value="">-- {t('checkIn.gender')} --</option>
+              <option value="MALE">{t('checkIn.genderMale')}</option>
+              <option value="FEMALE">{t('checkIn.genderFemale')}</option>
+              <option value="OTHER">{t('checkIn.genderOther')}</option>
+            </Select>
+
+            <Input
+              label={t('checkIn.nationality')}
+              value={nationality}
+              onChange={(e) => setNationality(e.target.value)}
+              placeholder="Việt Nam"
+            />
+          </div>
+
+          <Input
+            label={t('checkIn.address')}
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder={t('checkIn.addressPlaceholder')}
+          />
+        </div>
 
         {early && (
           <p className="rounded-ctl bg-warn-soft px-3 py-2 text-small text-fg">

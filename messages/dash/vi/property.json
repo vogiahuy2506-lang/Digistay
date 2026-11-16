@@ -79,7 +79,7 @@
   },
   "new": {
     "title": "Tạo cơ sở mới",
-    "description": "Thêm cơ sở kinh doanh vào workspace {workspace}",
+    "description": "Thêm cơ sở kinh doanh vào {workspace}",
     "phonePlaceholder": "VD: 024 1234 5678",
     "next": {
       "title": "Sau khi tạo cơ sở",

@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { ChevronLeft, ChevronRight, MoreHorizontal, Plus, Search } from 'lucide-react'
+import { ChevronLeft, ChevronRight, FileSpreadsheet, MoreHorizontal, Plus, Search } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Header, PageContainer } from '@/components/layout'
 import {
@@ -34,6 +34,7 @@ import {
 } from '@/components/ui'
 import { exportToCsv, exportToExcel } from '@/lib/export/export-data'
 import { BookingActions, BookingDetailContent, useBooking } from '@/components/bookings/booking-detail'
+import { ResidenceExportModal } from '@/components/bookings/residence-export-modal'
 import { BookingsViews } from '@/components/bookings/bookings-views'
 import { useCan } from '@/components/layout/workspace-context'
 import { paymentStatusMeta } from '@/lib/booking-status'
@@ -131,6 +132,7 @@ export default function BookingsPage() {
   const [error, setError] = React.useState('')
   const [reloadKey, setReloadKey] = React.useState(0)
   const [openId, setOpenId] = React.useState<string | null>(null)
+  const [isResidenceModalOpen, setIsResidenceModalOpen] = React.useState(false)
 
   // A new filter starts again from page 1.
   React.useEffect(() => setPage(1), [tab, q, source, payment])
@@ -301,7 +303,15 @@ export default function BookingsPage() {
         eyebrow={labels.longDate(new Date())}
         title={tc('nav.bookings')}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              onClick={() => setIsResidenceModalOpen(true)}
+              title={t('list.exportResidenceDesc')}
+            >
+              <FileSpreadsheet className="w-4 h-4 mr-1.5 text-acc" aria-hidden="true" />
+              {t('list.exportResidence')}
+            </Button>
             <ExportDropdown
               onExportExcel={handleExportExcel}
               onExportCsv={handleExportCsv}
@@ -585,6 +595,12 @@ export default function BookingsPage() {
           </SidePanelFooter>
         )}
       </SidePanel>
+
+      <ResidenceExportModal
+        propertyId={propertyId}
+        isOpen={isResidenceModalOpen}
+        onClose={() => setIsResidenceModalOpen(false)}
+      />
     </PageContainer>
   )
 }

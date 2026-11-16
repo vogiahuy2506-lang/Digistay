@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { lockedResponseForProperty } from '@/lib/billing/guard'
 import { can, checkPropertyAccess } from '@/lib/auth/access'
+import { syncCustomerProfileFromBooking } from '@/lib/customers/sync-customer'
 
 export async function POST(
   request: NextRequest,
@@ -40,12 +41,33 @@ export async function POST(
       }, { status: 400 })
     }
 
+    const body = await request.json().catch(() => ({}))
+    const {
+      guestIdType,
+      guestIdNumber,
+      guestNationality,
+      guestBirthDate,
+      guestGender,
+      guestAddress,
+      stayGuests,
+    } = body || {}
+
+    const parsedBirthDate = guestBirthDate ? new Date(guestBirthDate) : undefined
+    const validBirthDate = parsedBirthDate && !isNaN(parsedBirthDate.getTime()) ? parsedBirthDate : undefined
+
     const updatedBooking = await prisma.booking.update({
       where: { id },
       data: {
         status: 'CHECKED_IN',
         actualCheckIn: new Date(),
         checkedInBy: session.user.id,
+        ...(guestIdType !== undefined ? { guestIdType: guestIdType || 'CCCD' } : {}),
+        ...(guestIdNumber !== undefined ? { guestIdNumber: guestIdNumber?.trim() || null } : {}),
+        ...(guestNationality !== undefined ? { guestNationality: guestNationality?.trim() || 'Việt Nam' } : {}),
+        ...(validBirthDate !== undefined ? { guestBirthDate: validBirthDate } : {}),
+        ...(guestGender !== undefined ? { guestGender: guestGender || null } : {}),
+        ...(guestAddress !== undefined ? { guestAddress: guestAddress?.trim() || null } : {}),
+        ...(stayGuests !== undefined ? { stayGuests } : {}),
       },
       include: {
         bookingItems: true,
@@ -57,6 +79,13 @@ export async function POST(
         },
       },
     })
+
+    // Sync guest identity to customer profile
+    try {
+      await syncCustomerProfileFromBooking(prisma, id)
+    } catch (profileErr) {
+      console.warn('Sync customer profile on check-in warning:', profileErr)
+    }
 
     // Log activity
     await prisma.activityLog.create({

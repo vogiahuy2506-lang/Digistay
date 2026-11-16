@@ -185,7 +185,7 @@ export function DepositLive({
           <div className="flex flex-col gap-4 border-b-2 border-acc px-6 py-6 sm:flex-row sm:items-end sm:justify-between lg:px-8">
             <div>
               <p className="text-label uppercase text-muted">{t('amount')}</p>
-              <p className="mt-2 text-[36px] font-semibold leading-none tracking-[-0.02em] tabular-nums lg:text-[44px]">{money}</p>
+              <p className="mt-2 text-[28px] sm:text-[36px] font-semibold leading-none tracking-[-0.02em] tabular-nums lg:text-[44px]">{money}</p>
             </div>
             {left !== null && (
               <div className="sm:text-right">

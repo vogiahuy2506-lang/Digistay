@@ -16,6 +16,13 @@ const updateBookingSchema = z.object({
   guestEmail: z.string().email().optional(),
   guestPhone: z.string().min(10).optional(),
   guestNote: z.string().optional(),
+  guestIdType: z.string().optional().nullable(),
+  guestIdNumber: z.string().optional().nullable(),
+  guestNationality: z.string().optional().nullable(),
+  guestBirthDate: z.union([z.string(), z.date()]).optional().nullable(),
+  guestGender: z.string().optional().nullable(),
+  guestAddress: z.string().optional().nullable(),
+  stayGuests: z.any().optional().nullable(),
   status: z.enum(['PENDING', 'CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT', 'CANCELLED', 'NO_SHOW']).optional(),
   roomNumber: z.string().optional(),
 })
@@ -153,10 +160,14 @@ export async function PATCH(
           typed = true
         }
       }
+      const parsedBirth = data.guestBirthDate ? new Date(data.guestBirthDate) : undefined
+      const validBirth = parsedBirth && !isNaN(parsedBirth.getTime()) ? parsedBirth : undefined
+
       return tx.booking.update({
       where: { id },
       data: {
         ...data,
+        ...(data.guestBirthDate !== undefined ? { guestBirthDate: validBirth || null } : {}),
         ...(typed && {
           bookingItems: {
             updateMany: {

@@ -1088,11 +1088,18 @@ model Booking {
   propertyId String
   property   Property @relation(fields: [propertyId], references: [id])
 
-  // Guest info
-  guestName  String
-  guestEmail String
-  guestPhone String
-  guestNote  String?
+  // Guest info & Identity (Khai báo tạm trú)
+  guestName        String
+  guestEmail       String
+  guestPhone       String
+  guestNote        String?
+  guestIdType      String?   @default("CCCD") // "CCCD" | "PASSPORT" | "OTHER"
+  guestIdNumber    String?   // Số CCCD hoặc Hộ chiếu
+  guestNationality String?   @default("Việt Nam") // Quốc tịch
+  guestBirthDate   DateTime? // Ngày sinh
+  guestGender      String?   // "MALE" | "FEMALE" | "OTHER"
+  guestAddress     String?   // Nơi thường trú
+  stayGuests       Json?     // Khách cùng phòng: [{ name, idType, idNumber, nationality, birthDate, gender }]
 
   // Booking details
   checkInDate  DateTime
@@ -2027,9 +2034,13 @@ model CustomerProfile {
   propertyId String
   property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
-  email String
-  phone String
-  name  String
+  email       String
+  phone       String
+  name        String
+  idNumber    String?
+  nationality String?   @default("Việt Nam")
+  birthDate   DateTime?
+  gender      String?
   /// Ghi chú sở thích cá nhân, yêu cầu đặc biệt.
   notes String?
   /// VIP, Khách gia đình, Doanh nhân...

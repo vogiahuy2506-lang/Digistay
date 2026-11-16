@@ -22,7 +22,7 @@ export const PUBLIC_SITE_TTL_SECONDS = 300
 export const publicSiteTag = (propertyId: string) => `public-site:${propertyId}`
 
 export const DEFAULT_STARTER_AMENITIES = [
-  { id: 'def-wifi', slug: 'wifi', name: 'Wifi tốc độ cao miễn phí', icon: 'wifi', category: 'internet', isFeatured: true, customName: null, images: [], sortOrder: 0 },
+  { id: 'def-wifi', slug: 'wifi', name: 'Wifi miễn phí', icon: 'wifi', category: 'internet', isFeatured: true, customName: null, images: [], sortOrder: 0 },
   { id: 'def-ac', slug: 'ac', name: 'Điều hòa không khí', icon: 'snowflake', category: 'room', isFeatured: true, customName: null, images: [], sortOrder: 1 },
   { id: 'def-parking', slug: 'parking', name: 'Bãi đỗ xe an toàn', icon: 'car', category: 'transport', isFeatured: false, customName: null, images: [], sortOrder: 2 },
   { id: 'def-desk', slug: 'front-desk', name: 'Lễ tân phục vụ 24/7', icon: 'concierge', category: 'service', isFeatured: false, customName: null, images: [], sortOrder: 3 },

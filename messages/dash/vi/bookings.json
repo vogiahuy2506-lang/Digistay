@@ -30,7 +30,9 @@
     "pageOf": "Trang {page}/{totalPages}",
     "panelLabel": "Đặt phòng {code}",
     "prevBooking": "Đặt phòng trước",
-    "nextBooking": "Đặt phòng sau"
+    "nextBooking": "Đặt phòng sau",
+    "exportResidence": "Khai báo lưu trú",
+    "exportResidenceDesc": "Xuất file danh sách khách lưu trú để khai báo tạm trú công an"
   },
   "views": {
     "label": "Cách xem đặt phòng",
@@ -319,6 +321,21 @@
     "earlyTime": "Nhận phòng sớm: giờ nhận phòng của khách sạn là {time}.",
     "due": "Còn phải thu",
     "submit": "Nhận phòng",
-    "roomFailed": "Chưa xếp được phòng"
+    "roomFailed": "Chưa xếp được phòng",
+    "identitySection": "Giấy tờ khách lưu trú (khai báo tạm trú)",
+    "idType": "Loại giấy tờ",
+    "idTypeCccd": "CCCD / CMND",
+    "idTypePassport": "Hộ chiếu",
+    "idTypeOther": "Khác",
+    "idNumber": "Số giấy tờ",
+    "idNumberPlaceholder": "Nhập số CCCD hoặc hộ chiếu",
+    "nationality": "Quốc tịch",
+    "birthDate": "Ngày sinh",
+    "gender": "Giới tính",
+    "genderMale": "Nam",
+    "genderFemale": "Nữ",
+    "genderOther": "Khác",
+    "address": "Địa chỉ thường trú",
+    "addressPlaceholder": "Tỉnh/thành phố, địa chỉ thường trú..."
   }
 }

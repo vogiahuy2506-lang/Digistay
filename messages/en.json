@@ -1086,7 +1086,7 @@
       "usedChip": "Already used",
       "otherChip": "Sent to another email",
       "invalidChip": "Not found",
-      "title": "{sender} invited you to the {workspace} workspace",
+      "title": "{sender} invited you to {workspace}",
       "lead": "Accept to use the hotel's management pages as {role}.",
       "loginLead": "Sign in with the invited email to accept as {role}.",
       "acceptedTitle": "You've joined {workspace}",

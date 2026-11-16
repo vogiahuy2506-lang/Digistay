@@ -10,7 +10,7 @@ import { Card, CardHeader, CardTitle, CardContent, Button, Input, Badge } from '
 import { Alert, AlertDescription, AlertIcon } from '@/components/ui/alert'
 import {
   User, Mail, Phone, Camera,
-  Save, Lock, Shield, Check, Loader2, Eye, EyeOff
+  Save, Lock, Shield, Check, Loader2, Eye, EyeOff, LogOut
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { enGB, vi } from 'date-fns/locale'
@@ -426,6 +426,15 @@ export default function ProfilePage() {
                       : '-',
                   })}
                 </p>
+
+                <button
+                  type="button"
+                  onClick={() => signOut({ callbackUrl: '/login' })}
+                  className="w-full mt-2 flex items-center justify-center gap-2 px-3 py-2 rounded-ctl border border-red-500/20 text-xs font-medium text-red-500 hover:bg-red-500/10 hover:border-red-500/30 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>{tc('shell.signOut')}</span>
+                </button>
               </div>
             </CardContent>
           </Card>

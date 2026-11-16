@@ -1,4 +1,8 @@
 {
+  "Việt Nam": "Vietnam",
+  "Không tìm thấy cơ sở lưu trú": "Property not found",
+  "Chưa xếp": "Unassigned",
+  "Lỗi khi xuất danh sách lưu trú": "Error exporting residence list",
   "Gói dịch vụ không tồn tại hoặc đã ngừng cung cấp": "Plan does not exist or has been discontinued",
   "Không thể tải danh sách liên kết iCal": "Could not load iCal links list",
   "Loại phòng không hợp lệ": "Invalid room type",

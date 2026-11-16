@@ -79,7 +79,7 @@
   },
   "new": {
     "title": "Create a property",
-    "description": "Add a property to the {workspace} workspace",
+    "description": "Add a property to {workspace}",
     "phonePlaceholder": "e.g. 024 1234 5678",
     "next": {
       "title": "After creating the property",

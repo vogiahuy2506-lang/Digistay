@@ -42,6 +42,20 @@ export interface BookingDetailData {
   guestEmail: string
   guestPhone: string
   guestNote: string | null
+  guestIdType?: string | null
+  guestIdNumber?: string | null
+  guestNationality?: string | null
+  guestBirthDate?: string | null
+  guestGender?: string | null
+  guestAddress?: string | null
+  stayGuests?: Array<{
+    name: string
+    idType?: string
+    idNumber?: string
+    nationality?: string
+    birthDate?: string
+    gender?: string
+  }> | null
   checkInDate: string
   checkOutDate: string
   numAdults: number
@@ -363,6 +377,31 @@ export function BookingDetailContent({ booking, onChanged }: { booking: BookingD
             )}
           </Field>
           <Field label={t('guest.guests')}>{labels.guests(booking.numAdults, booking.numChildren)}</Field>
+          {booking.guestIdNumber && (
+            <Field label={booking.guestIdType === 'PASSPORT' ? 'Hộ chiếu' : 'CCCD / CMND'}>
+              <span className="font-mono text-fg">{booking.guestIdNumber}</span>
+              {booking.guestNationality && booking.guestNationality !== 'Việt Nam' && (
+                <span className="ml-2 text-muted">({booking.guestNationality})</span>
+              )}
+            </Field>
+          )}
+          {booking.guestBirthDate && (
+            <Field label="Ngày sinh">
+              <span className="tabular-nums">
+                {new Date(booking.guestBirthDate).toLocaleDateString('vi-VN')}
+              </span>
+              {booking.guestGender && (
+                <span className="ml-2 text-muted">
+                  · {booking.guestGender === 'MALE' ? 'Nam' : booking.guestGender === 'FEMALE' ? 'Nữ' : 'Khác'}
+                </span>
+              )}
+            </Field>
+          )}
+          {booking.guestAddress && (
+            <Field label="Địa chỉ">
+              <span>{booking.guestAddress}</span>
+            </Field>
+          )}
         </dl>
         {booking.guestNote && (
           <p className="mt-2 rounded-ctl bg-fg/5 px-3 py-2 text-small text-fg">
