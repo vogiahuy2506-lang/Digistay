@@ -179,12 +179,31 @@ export async function lastBuyer(workspaceId: string, db: Db = prisma): Promise<I
 export const lookupCodeFor = (orderCode: string) => `DSG${orderCode}`
 
 /**
- * "Dịch vụ cho thuê phần mềm - Gói Growth 1 tháng". No dates: a scheduled
+ * Format Vietnam payment time: HH:mm:ss dd/MM/yyyy.
+ */
+export function formatPaymentTime(date: Date = new Date()): string {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date)
+  const get = (t: string) => parts.find((p) => p.type === t)?.value
+  return `${get('hour')}:${get('minute')}:${get('second')} ${get('day')}/${get('month')}/${get('year')}`
+}
+
+/**
+ * "Phần mềm Digistay - Gói Growth tháng". No dates: a scheduled
  * downgrade's period moves if the period before it changes.
  */
 export function planLine(payment: Pick<SubscriptionPayment, 'plan' | 'billing'>): string {
   const name = planById(payment.plan).id
-  return `Dịch vụ cho thuê phần mềm - Gói ${name.charAt(0).toUpperCase()}${name.slice(1)} ${payment.billing === 'YEAR' ? '12 tháng' : '1 tháng'}`
+  const period = payment.billing === 'YEAR' ? 'năm' : 'tháng'
+  return `Phần mềm Digistay - Gói ${name.charAt(0).toUpperCase()}${name.slice(1)} ${period}`
 }
 
 /**
@@ -264,6 +283,8 @@ export function buildSubscriptionInvoice(
             NMua_DCTDTu: invoice.email ?? '',
           }
         : { NMua_Ten: '', NMua_MST: '', NMua_DChi: '', NMua_HVTNMHang: 'Bán cho người tiêu dùng', NMua_DCTDTu: '' }
+  const email = invoice.email || buyer.NMua_DCTDTu || ''
+  const noteInfo = email ? `KH: ${email} | Thời gian TT: ${formatPaymentTime(now)} | Note: ` : `Thời gian TT: ${formatPaymentTime(now)} | Note: `
   return {
     KHMSHDon: settings.templateCode,
     KHHDon: settings.series,
@@ -293,6 +314,12 @@ export function buildSubscriptionInvoice(
         TSuat: vatCode,
         TThue: vat,
         TgTien: gross,
+      },
+      {
+        TChat: 4,
+        STT: 2,
+        THHDVu: noteInfo,
+        TSuat: vatCode,
       },
     ],
     TgThTien: net,

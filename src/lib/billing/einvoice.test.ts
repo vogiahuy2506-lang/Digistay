@@ -61,8 +61,9 @@ describe('buildSubscriptionInvoice', () => {
     const p = buildSubscriptionInvoice(base, payment, settings, now)
     expect(p).toMatchObject({ KHMSHDon: '1', KHHDon: 'C26TAA', MaTraCuu: 'DSG123456789', NLap: '2026-10-27T10:04:05' })
     expect(p).toMatchObject({ NMua_Ten: 'Công ty TNHH Mây', NMua_MST: '0312345678', NMua_DChi: '1 Lê Lợi, Huế', NMua_HVTNMHang: 'Trần Bình', NMua_DCTDTu: 'ketoan@may.vn' })
-    expect(p.DSHHDVu[0]).toMatchObject({ THHDVu: 'Dịch vụ cho thuê phần mềm - Gói Growth 12 tháng', DVTinh: 'Gói', SLuong: 1 })
-    expect(planLine({ plan: 'starter', billing: 'MONTH' })).toBe('Dịch vụ cho thuê phần mềm - Gói Starter 1 tháng')
+    expect(p.DSHHDVu[0]).toMatchObject({ THHDVu: 'Phần mềm Digistay - Gói Growth năm', DVTinh: 'Gói', SLuong: 1 })
+    expect(p.DSHHDVu[1]).toMatchObject({ TChat: 4, STT: 2, TSuat: -1 })
+    expect(planLine({ plan: 'starter', billing: 'MONTH' })).toBe('Phần mềm Digistay - Gói Starter tháng')
   })
 
   it('is not subject to VAT by default: no tax, the total is what was paid', () => {
