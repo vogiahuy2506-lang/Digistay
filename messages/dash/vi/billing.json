@@ -267,7 +267,7 @@
   },
   "trialWelcome": {
     "title": "Bạn được tặng {days} ngày dùng gói {plan} miễn phí",
-    "lead": "Chào mừng đến với Digistay! {workspace} được dùng đầy đủ gói {plan} đến ngày {date}, không cần thanh toán trước.",
+    "lead": "Chào mừng đến với Digistay! Workspace {workspace} được dùng đầy đủ gói {plan} đến ngày {date}, không cần thanh toán trước.",
     "includesTitle": "Trong thời gian dùng thử, bạn có",
     "includes": {
       "properties": "Tối đa {count} cơ sở",

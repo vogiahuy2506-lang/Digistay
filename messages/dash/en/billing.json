@@ -267,7 +267,7 @@
   },
   "trialWelcome": {
     "title": "You get {days} days of the {plan} plan, free",
-    "lead": "Welcome to Digistay! {workspace} has the full {plan} plan until {date}, with nothing to pay up front.",
+    "lead": "Welcome to Digistay! The {workspace} workspace has the full {plan} plan until {date}, with nothing to pay up front.",
     "includesTitle": "During the trial you get",
     "includes": {
       "properties": "Up to {count} properties",
