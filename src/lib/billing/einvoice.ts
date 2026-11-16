@@ -54,19 +54,20 @@ export function platformEinvoiceConfigured(env: Record<string, string | undefine
 
 /** Digistay's Mắt Bão account; callers check platformEinvoiceConfigured() first. */
 export function platformEinvoiceSettings(env: Record<string, string | undefined> = process.env) {
-  const vat = env.DIGISTAY_MATBAO_VAT?.trim() ? Number(env.DIGISTAY_MATBAO_VAT.trim()) : -1
+  const vatRaw = env.MATBAO_VAT ?? env.DIGISTAY_MATBAO_VAT
+  const vat = vatRaw?.trim() ? Number(vatRaw.trim()) : -1
   const isProd =
-    env.DIGISTAY_MATBAO_ENV?.trim().toUpperCase() === 'PRODUCTION' ||
     env.MATBAO_ENV?.trim().toLowerCase() === 'prod' ||
+    env.DIGISTAY_MATBAO_ENV?.trim().toUpperCase() === 'PRODUCTION' ||
     (Boolean(env.MATBAO_BASE_URL?.includes('api-hddt.matbao.in:11443')) && !env.MATBAO_BASE_URL?.includes('demo'))
 
   return {
     environment: (isProd ? 'PRODUCTION' : 'DEMO') as MatbaoEnvironment,
-    taxCode: (env.DIGISTAY_MATBAO_TAX_CODE || env.MATBAO_MST || env.MATBAO_TAX_CODE)?.trim() ?? '',
-    username: (env.DIGISTAY_MATBAO_USERNAME || env.MATBAO_USERNAME)?.trim() ?? '',
-    password: (env.DIGISTAY_MATBAO_PASSWORD || env.MATBAO_PASSWORD)?.trim() ?? '',
-    templateCode: (env.DIGISTAY_MATBAO_TEMPLATE || env.MATBAO_TEMPLATE)?.trim() || '1',
-    series: (env.DIGISTAY_MATBAO_SERIES || env.MATBAO_SERIES || 'C26MTT')?.trim().toUpperCase() ?? '',
+    taxCode: (env.MATBAO_MST || env.MATBAO_TAX_CODE || env.DIGISTAY_MATBAO_TAX_CODE)?.trim() ?? '',
+    username: (env.MATBAO_USERNAME || env.DIGISTAY_MATBAO_USERNAME)?.trim() ?? '',
+    password: (env.MATBAO_PASSWORD || env.DIGISTAY_MATBAO_PASSWORD)?.trim() ?? '',
+    templateCode: (env.MATBAO_TEMPLATE || env.DIGISTAY_MATBAO_TEMPLATE)?.trim() || '1',
+    series: (env.MATBAO_SERIES || env.DIGISTAY_MATBAO_SERIES || 'C26MTT')?.trim().toUpperCase() ?? '',
     vatCode: (isVatCode(vat) ? vat : -1) as VatCode,
   }
 }
@@ -512,7 +513,7 @@ function sameSecret(given: string, expected: string): boolean {
  * (DIGISTAY_MATBAO_WEBHOOK_SECRET) is the credential.
  */
 export async function handlePlatformMatbaoWebhook(token: string, body: unknown): Promise<{ status: number; outcome: string }> {
-  const secret = process.env.DIGISTAY_MATBAO_WEBHOOK_SECRET?.trim()
+  const secret = (process.env.MATBAO_WEBHOOK_SECRET || process.env.DIGISTAY_MATBAO_WEBHOOK_SECRET)?.trim()
   if (!realSetting(secret)) return { status: 404, outcome: 'not_configured' }
   if (!sameSecret(token, secret!)) return { status: 401, outcome: 'bad_token' }
 
