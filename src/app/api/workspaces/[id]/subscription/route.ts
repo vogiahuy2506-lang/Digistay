@@ -34,7 +34,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
     workspaceUsage(id),
     prisma.workspace.findUnique({ where: { id }, select: { id: true, name: true, slug: true } }),
     prisma.subscriptionPayment.findMany({ where: { workspaceId: id }, orderBy: { createdAt: 'desc' }, take: 20, include: { invoice: true } }),
-    lastBuyer(id),
+    einvoiceReady ? lastBuyer(id) : null,
     prisma.user.findUnique({ where: { id: access.userId }, select: { email: true } }),
     overageView(id, now),
     getPlatformPlans(),
@@ -118,7 +118,8 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
       trialDays: TRIAL_DAYS,
       graceDays: GRACE_DAYS,
       checkoutReady: platformPayosConfigured(),
-      einvoice: { vat: platformVatLabel(), email: me?.email ?? null, lastBuyer: buyer, ready: einvoiceReady },
+      // The invoice step at checkout: off until Digistay's Mắt Bão account is set.
+      einvoice: einvoiceReady ? { vat: platformVatLabel(), email: me?.email ?? null, lastBuyer: buyer } : null,
       pending: waiting ? await paymentView(waiting) : null,
       payments: await Promise.all(payments.filter((p) => p.status === 'PAID' || p.status === 'PENDING').map((p) => paymentView({ ...p, qrCode: null }))),
     },

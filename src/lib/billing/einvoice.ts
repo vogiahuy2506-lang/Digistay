@@ -65,9 +65,12 @@ type Settings = ReturnType<typeof platformEinvoiceSettings>
 /**
  * Resolves active platform Mắt Bão settings from environment variables or PlatformSetting database record.
  */
-export async function getActivePlatformEinvoiceSettings(): Promise<Settings | null> {
-  if (platformEinvoiceConfigured()) {
-    return platformEinvoiceSettings()
+export async function getActivePlatformEinvoiceSettings(env: Record<string, string | undefined> = process.env): Promise<Settings | null> {
+  if (platformEinvoiceConfigured(env)) {
+    return platformEinvoiceSettings(env)
+  }
+  if (env !== process.env) {
+    return null
   }
   try {
     const row = await prisma.platformSetting.findUnique({ where: { key: 'matbao' } })
@@ -91,9 +94,9 @@ export async function getActivePlatformEinvoiceSettings(): Promise<Settings | nu
   return null
 }
 
-export async function isPlatformEinvoiceReady(): Promise<boolean> {
-  if (platformEinvoiceConfigured()) return true
-  const s = await getActivePlatformEinvoiceSettings()
+export async function isPlatformEinvoiceReady(env: Record<string, string | undefined> = process.env): Promise<boolean> {
+  if (platformEinvoiceConfigured(env)) return true
+  const s = await getActivePlatformEinvoiceSettings(env)
   return Boolean(s)
 }
 
@@ -181,11 +184,11 @@ export async function prepareSubscriptionInvoice(
   db: Db,
   env: Record<string, string | undefined> = process.env,
 ): Promise<string | null> {
-  const ready = platformEinvoiceConfigured(env) || Boolean(await getActivePlatformEinvoiceSettings())
-  if (!ready && !payment.invoiceBuyer) return null
+  const ready = await isPlatformEinvoiceReady(env)
+  if (!ready) return null
   const buyer = readBuyer(payment.invoiceBuyer)
   const email = buyer.type === 'none' ? null : await payerEmail(payment, db)
-  const settings = (await getActivePlatformEinvoiceSettings()) ?? platformEinvoiceSettings(env)
+  const settings = (await getActivePlatformEinvoiceSettings(env)) ?? platformEinvoiceSettings(env)
   const row = await db.subscriptionInvoice.create({
     data: {
       paymentId: payment.id,

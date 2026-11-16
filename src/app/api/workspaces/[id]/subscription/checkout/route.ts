@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db'
 import { requireAccess } from '@/lib/auth/access'
 import { isPlanId } from '@/lib/marketing/plans'
 import { BillingError, createCheckout } from '@/lib/billing/checkout'
-import { invoiceBuyerSchema, platformEinvoiceConfigured } from '@/lib/billing/einvoice'
+import { invoiceBuyerSchema, isPlatformEinvoiceReady } from '@/lib/billing/einvoice'
 import { paymentView } from '@/lib/billing/view'
 import { appOrigin } from '@/lib/public-site/site-host'
 
@@ -33,8 +33,8 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
   }
 
   let invoiceBuyer
-  if (parsed.data.invoice) {
-    const buyer = invoiceBuyerSchema.safeParse(parsed.data.invoice)
+  if (await isPlatformEinvoiceReady()) {
+    const buyer = invoiceBuyerSchema.safeParse(parsed.data.invoice ?? { type: 'none' })
     if (!buyer.success) {
       return NextResponse.json({ success: false, error: buyer.error.issues[0]?.message ?? 'Thông tin hoá đơn không hợp lệ' }, { status: 400 })
     }
