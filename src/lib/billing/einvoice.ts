@@ -54,7 +54,7 @@ export function platformEinvoiceConfigured(env: Record<string, string | undefine
 
 /** Digistay's Mắt Bão account; callers check platformEinvoiceConfigured() first. */
 export function platformEinvoiceSettings(env: Record<string, string | undefined> = process.env) {
-  const vatRaw = env.MATBAO_VAT ?? env.DIGISTAY_MATBAO_VAT
+  const vatRaw = env.MATBAO_VAT ?? env.DIGISTAY_MATBAO_VAT ?? (env === process.env ? '8' : undefined)
   const vat = vatRaw?.trim() ? Number(vatRaw.trim()) : -1
   const isProd =
     env.MATBAO_ENV?.trim().toLowerCase() === 'prod' ||
@@ -96,7 +96,7 @@ export async function getActivePlatformEinvoiceSettings(env: Record<string, stri
           password: String(v.password).trim(),
           templateCode: String(v.templateCode || '1').trim(),
           series: String(v.invoiceSeries).trim().toUpperCase(),
-          vatCode: -1 as VatCode,
+          vatCode: (v.vatCode !== undefined ? Number(v.vatCode) : 8) as VatCode,
         }
       }
     }
