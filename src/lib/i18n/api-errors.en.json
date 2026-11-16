@@ -508,7 +508,7 @@
   "Phòng đã được giữ trong {0} phút": "Room held for {0} minutes",
   "Phương thức thanh toán không hợp lệ": "Invalid payment method",
   "Phường/xã không thuộc tỉnh/thành phố đã chọn": "That ward or commune is not in the chosen province or city",
-  "Phần mềm Digistay - Gói {0}{1} {2}": "Digistay software - {0}{1} plan, {2}",
+  "Dịch vụ cho thuê phần mềm - Gói {0}{1} {2}": "Software leasing service - {0}{1} plan, {2}",
   "Phần trăm hoàn là số nguyên": "The refund percentage must be a whole number",
   "Phần trăm hoàn tối đa 100%": "The refund percentage can be at most 100%",
   "SSL certificate vẫn còn hiệu lực": "The SSL certificate is still valid",

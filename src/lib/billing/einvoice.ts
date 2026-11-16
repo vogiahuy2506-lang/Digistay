@@ -179,12 +179,12 @@ export async function lastBuyer(workspaceId: string, db: Db = prisma): Promise<I
 export const lookupCodeFor = (orderCode: string) => `DSG${orderCode}`
 
 /**
- * "Phần mềm Digistay - Gói Growth 1 tháng". No dates: a scheduled
+ * "Dịch vụ cho thuê phần mềm - Gói Growth 1 tháng". No dates: a scheduled
  * downgrade's period moves if the period before it changes.
  */
 export function planLine(payment: Pick<SubscriptionPayment, 'plan' | 'billing'>): string {
   const name = planById(payment.plan).id
-  return `Phần mềm Digistay - Gói ${name.charAt(0).toUpperCase()}${name.slice(1)} ${payment.billing === 'YEAR' ? '12 tháng' : '1 tháng'}`
+  return `Dịch vụ cho thuê phần mềm - Gói ${name.charAt(0).toUpperCase()}${name.slice(1)} ${payment.billing === 'YEAR' ? '12 tháng' : '1 tháng'}`
 }
 
 /**
