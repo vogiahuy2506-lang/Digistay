@@ -62,6 +62,41 @@ export function platformEinvoiceSettings(env: Record<string, string | undefined>
 
 type Settings = ReturnType<typeof platformEinvoiceSettings>
 
+/**
+ * Resolves active platform Mắt Bão settings from environment variables or PlatformSetting database record.
+ */
+export async function getActivePlatformEinvoiceSettings(): Promise<Settings | null> {
+  if (platformEinvoiceConfigured()) {
+    return platformEinvoiceSettings()
+  }
+  try {
+    const row = await prisma.platformSetting.findUnique({ where: { key: 'matbao' } })
+    if (row?.value && typeof row.value === 'object') {
+      const v = row.value as any
+      if (v.taxCode && v.username && v.password && v.invoiceSeries) {
+        return {
+          environment: (v.environment === 'prod' || v.environment === 'PRODUCTION' ? 'PRODUCTION' : 'DEMO') as MatbaoEnvironment,
+          taxCode: String(v.taxCode).trim(),
+          username: String(v.username).trim(),
+          password: String(v.password).trim(),
+          templateCode: String(v.templateCode || '1').trim(),
+          series: String(v.invoiceSeries).trim().toUpperCase(),
+          vatCode: -1 as VatCode,
+        }
+      }
+    }
+  } catch {
+    // DB error fallback
+  }
+  return null
+}
+
+export async function isPlatformEinvoiceReady(): Promise<boolean> {
+  if (platformEinvoiceConfigured()) return true
+  const s = await getActivePlatformEinvoiceSettings()
+  return Boolean(s)
+}
+
 function client(settings: Settings) {
   const { environment, taxCode, username, password } = settings
   return new MatbaoClient({ environment, taxCode, username, password })
@@ -146,9 +181,11 @@ export async function prepareSubscriptionInvoice(
   db: Db,
   env: Record<string, string | undefined> = process.env,
 ): Promise<string | null> {
-  if (!platformEinvoiceConfigured(env)) return null
+  const ready = platformEinvoiceConfigured(env) || Boolean(await getActivePlatformEinvoiceSettings())
+  if (!ready && !payment.invoiceBuyer) return null
   const buyer = readBuyer(payment.invoiceBuyer)
   const email = buyer.type === 'none' ? null : await payerEmail(payment, db)
+  const settings = (await getActivePlatformEinvoiceSettings()) ?? platformEinvoiceSettings(env)
   const row = await db.subscriptionInvoice.create({
     data: {
       paymentId: payment.id,
@@ -161,7 +198,7 @@ export async function prepareSubscriptionInvoice(
       address: buyer.type === 'none' ? null : (buyer.address ?? null),
       email,
       amount: payment.amount,
-      vatCode: platformEinvoiceSettings(env).vatCode,
+      vatCode: settings.vatCode,
       lookupCode: lookupCodeFor(payment.orderCode),
     },
     select: { id: true },
@@ -268,8 +305,8 @@ export async function issueSubscriptionInvoice(
   now = new Date(),
   { force = false } = {},
 ): Promise<{ outcome: IssueOutcome; error?: string }> {
-  if (!platformEinvoiceConfigured()) return { outcome: 'off' }
-  const settings = platformEinvoiceSettings()
+  const settings = (await getActivePlatformEinvoiceSettings()) ?? (platformEinvoiceConfigured() ? platformEinvoiceSettings() : null)
+  if (!settings) return { outcome: 'off' }
   const claimed = await prisma.subscriptionInvoice.updateMany({
     where: {
       id,
@@ -335,7 +372,8 @@ export async function issueSubscriptionInvoice(
 /** The issued invoice's PDF, from Mắt Bão. */
 export async function getSubscriptionInvoicePdf(invoice: Pick<SubscriptionInvoice, 'status' | 'lookupCode' | 'invoiceCode' | 'einvoiceNumber'>) {
   if (invoice.status !== 'ISSUED') throw new MatbaoError('Hoá đơn chưa phát hành', 'not_issued', false)
-  const pdf = await client(platformEinvoiceSettings()).downloadPdf({ maTraCuu: invoice.lookupCode, maSoHDon: invoice.invoiceCode })
+  const settings = (await getActivePlatformEinvoiceSettings()) ?? platformEinvoiceSettings()
+  const pdf = await client(settings).downloadPdf({ maTraCuu: invoice.lookupCode, maSoHDon: invoice.invoiceCode })
   return { pdf, filename: `hoa-don-digistay-${invoice.einvoiceNumber ?? invoice.lookupCode}.pdf` }
 }
 
@@ -421,7 +459,8 @@ export function issueAfterResponse(id: string | null) {
 
 /** For the plan jobs: invoices due to be issued, then their emails. */
 export async function runSubscriptionInvoiceJobs(now = new Date()) {
-  if (!platformEinvoiceConfigured()) return { issued: 0, failed: 0, emailed: 0 }
+  const settings = (await getActivePlatformEinvoiceSettings()) ?? (platformEinvoiceConfigured() ? platformEinvoiceSettings() : null)
+  if (!settings) return { issued: 0, failed: 0, emailed: 0 }
   const due = await prisma.subscriptionInvoice.findMany({
     where: { OR: [{ status: 'PENDING' }, { status: { in: ['FAILED', 'ISSUING'] }, nextAttemptAt: { lte: now } }] },
     orderBy: { createdAt: 'asc' },

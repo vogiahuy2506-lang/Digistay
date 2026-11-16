@@ -1,4 +1,7 @@
 {
+  "Không tìm thấy hóa đơn": "Invoice not found",
+  "Hóa đơn chưa được phát hành": "Invoice has not been issued yet",
+  "Không thể tải file PDF từ Mắt Bão lúc này": "Could not download invoice PDF from Mat Bao at this time",
   "Việt Nam": "Vietnam",
   "Không tìm thấy cơ sở lưu trú": "Property not found",
   "Chưa xếp": "Unassigned",

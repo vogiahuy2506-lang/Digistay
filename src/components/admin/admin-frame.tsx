@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Command,
   CreditCard,
+  FileSpreadsheet,
   History,
   LayoutDashboard,
   LogOut,
@@ -61,6 +62,7 @@ const NAV_GROUPS: NavGroupDef[] = [
     items: [
       { href: '/admin/plans', key: 'plans', icon: CreditCard, badge: 'VIP' },
       { href: '/admin/vouchers', key: 'vouchers', icon: Ticket },
+      { href: '/admin/einvoices', key: 'einvoices', icon: FileSpreadsheet, badge: 'VAT' },
     ],
   },
   {
@@ -124,6 +126,7 @@ export function AdminFrame({ children }: { children: React.ReactNode }) {
       { title: 'Dashboard Tổng quan & Tăng trưởng', href: '/admin', icon: LayoutDashboard, category: 'Nền tảng' },
       { title: 'Quản lý Khách hàng & Workspace lưu trú', href: '/admin/customers', icon: Building2, category: 'Khách hàng' },
       { title: 'Quản lý Đơn hàng thanh toán gói cước', href: '/admin/orders', icon: Receipt, category: 'Kinh doanh' },
+      { title: 'Quản lý Hóa đơn điện tử Mắt Bão (VAT)', href: '/admin/einvoices', icon: FileSpreadsheet, category: 'Tài chính' },
       { title: 'Quản lý Gói cước & Tạo gói Tùy chỉnh (Custom Plans)', href: '/admin/plans', icon: CreditCard, category: 'Gói cước' },
       { title: 'Chiến dịch Voucher & Mã giảm giá', href: '/admin/vouchers', icon: Ticket, category: 'Khuyến mãi' },
       { title: 'Cấu hình Nền tảng Toàn cầu (PayOS, Mắt Bão, Gemini, SMTP)', href: '/admin/platform-settings', icon: Settings, category: 'Cấu hình' },

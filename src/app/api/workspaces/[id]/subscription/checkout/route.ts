@@ -33,8 +33,8 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
   }
 
   let invoiceBuyer
-  if (platformEinvoiceConfigured()) {
-    const buyer = invoiceBuyerSchema.safeParse(parsed.data.invoice ?? { type: 'none' })
+  if (parsed.data.invoice) {
+    const buyer = invoiceBuyerSchema.safeParse(parsed.data.invoice)
     if (!buyer.success) {
       return NextResponse.json({ success: false, error: buyer.error.issues[0]?.message ?? 'Thông tin hoá đơn không hợp lệ' }, { status: 400 })
     }

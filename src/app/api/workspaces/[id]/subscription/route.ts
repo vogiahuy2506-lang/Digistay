@@ -9,7 +9,7 @@ import { platformPayosConfigured } from '@/lib/billing/platform-payos'
 import { GRACE_DAYS, RENEW_WINDOW_DAYS, TRIAL_DAYS, planChange } from '@/lib/billing/period'
 import { changeBlockMessage } from '@/lib/billing/checkout'
 import { paymentView } from '@/lib/billing/view'
-import { lastBuyer, platformEinvoiceConfigured, platformVatLabel } from '@/lib/billing/einvoice'
+import { isPlatformEinvoiceReady, lastBuyer, platformEinvoiceConfigured, platformVatLabel } from '@/lib/billing/einvoice'
 import { overageView } from '@/lib/billing/overage'
 
 /**
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
   if (!access.ok) return access.response
 
   const planQuery = request.nextUrl.searchParams.get('plan')
-  const einvoice = platformEinvoiceConfigured()
+  const einvoiceReady = await isPlatformEinvoiceReady()
   // One clock for every read: a workspace's first read makes its trial, and two
   // reads with their own `now` racing to make it showed "15 days" of a 14-day trial.
   const now = new Date()
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
     workspaceUsage(id),
     prisma.workspace.findUnique({ where: { id }, select: { id: true, name: true, slug: true } }),
     prisma.subscriptionPayment.findMany({ where: { workspaceId: id }, orderBy: { createdAt: 'desc' }, take: 20, include: { invoice: true } }),
-    einvoice ? lastBuyer(id) : null,
+    lastBuyer(id),
     prisma.user.findUnique({ where: { id: access.userId }, select: { email: true } }),
     overageView(id, now),
     getPlatformPlans(),
@@ -118,8 +118,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
       trialDays: TRIAL_DAYS,
       graceDays: GRACE_DAYS,
       checkoutReady: platformPayosConfigured(),
-      // The invoice step at checkout: off until Digistay's Mắt Bão account is set.
-      einvoice: einvoice ? { vat: platformVatLabel(), email: me?.email ?? null, lastBuyer: buyer } : null,
+      einvoice: { vat: platformVatLabel(), email: me?.email ?? null, lastBuyer: buyer, ready: einvoiceReady },
       pending: waiting ? await paymentView(waiting) : null,
       payments: await Promise.all(payments.filter((p) => p.status === 'PAID' || p.status === 'PENDING').map((p) => paymentView({ ...p, qrCode: null }))),
     },
