@@ -247,6 +247,8 @@ model SubscriptionPayment {
   /// How it was applied when paid: new | renew | upgrade | downgrade (period.ts planChange)
   change       String?
   createdById  String?
+  voucherCode  String?
+  discountAmount Int?
   /// Who the e-invoice is for, chosen at checkout (src/lib/billing/einvoice.ts):
   /// {type: none | personal | company, name, idNumber, companyName, taxCode, address, phone}
   invoiceBuyer Json?

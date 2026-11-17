@@ -26,6 +26,7 @@ gen-lang-client-*.json
 
 # Scratch scripts for preparing brand artwork
 /.tmp-logos/
+/scratch/
 
 # Debug
 npm-debug.log*

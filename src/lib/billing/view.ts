@@ -14,6 +14,8 @@ export async function paymentView(p: SubscriptionPayment & { invoice?: Subscript
     status: p.status,
     orderCode: p.orderCode,
     description: isPlanId(p.plan) ? checkoutDescription(p.plan, p.billing) : null,
+    voucherCode: p.voucherCode ?? null,
+    discountAmount: p.discountAmount ?? null,
     checkoutUrl: waiting ? p.checkoutUrl : null,
     qrImage: waiting && p.qrCode ? await QRCode.toDataURL(p.qrCode, { margin: 1, width: 560, errorCorrectionLevel: 'M' }) : null,
     expiresAt: p.expiresAt?.toISOString() ?? null,

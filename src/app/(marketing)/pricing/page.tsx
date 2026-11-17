@@ -8,6 +8,8 @@ import { formatVnd } from '@/lib/bookings/display'
 import { ADDON_IDS, ADDON_PRICES, YEARLY_MONTHS } from '@/lib/marketing/plans'
 import { getAllPlatformPlans, type FullPlatformPlan } from '@/lib/plans/dynamic-plans'
 import { cn } from '@/lib/utils'
+import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/db'
 import { ComparePicker, CompareCell, type CompareGroupView } from './ComparePicker'
 import { PlanCards } from './PlanCards'
 import { appOrigin } from '@/lib/public-site/site-host'
@@ -37,6 +39,27 @@ export default async function PricingPage() {
   // Load active public plans from database (or fallback presets)
   const fullPlans: FullPlatformPlan[] = await getAllPlatformPlans({ includePrivate: false, includeInactive: false })
   const planNames = fullPlans.map((p) => p.name)
+
+  // Identify logged-in user's active account subscription plan
+  const session = await auth()
+  const userId = session?.user?.id
+  let currentPlanId: string | null = null
+  if (userId) {
+    const userSub = await prisma.subscription.findFirst({
+      where: {
+        workspace: { ownerId: userId, deletedAt: null },
+        periodEnd: { gt: new Date() },
+      },
+      orderBy: [
+        { trial: 'asc' }, // Prioritize paid plans over trial
+        { periodEnd: 'desc' },
+      ],
+      select: { plan: true },
+    })
+    if (userSub) {
+      currentPlanId = userSub.plan
+    }
+  }
 
   // 8 Dynamic Feature Groups mirroring Super Admin's Platform Plans management
   const groups: CompareGroupView[] = [
@@ -281,6 +304,7 @@ export default async function PricingPage() {
               choose: t('choose'),
               featured: isEn ? 'Most Popular' : 'Được tin dùng nhất',
             }}
+            currentPlanId={currentPlanId}
           />
         </section>
         <p className={cn(frame, 'mt-4 text-[13px] text-muted')}>{tp('vat')}</p>

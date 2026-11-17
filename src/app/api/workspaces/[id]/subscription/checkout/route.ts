@@ -8,7 +8,12 @@ import { invoiceBuyerSchema, isPlatformEinvoiceReady } from '@/lib/billing/einvo
 import { paymentView } from '@/lib/billing/view'
 import { appOrigin } from '@/lib/public-site/site-host'
 
-const schema = z.object({ plan: z.string().trim().min(1), billing: z.enum(['MONTH', 'YEAR']), invoice: z.unknown().optional() })
+const schema = z.object({
+  plan: z.string().trim().min(1),
+  billing: z.enum(['MONTH', 'YEAR']),
+  invoice: z.unknown().optional(),
+  voucherCode: z.string().trim().optional(),
+})
 
 /**
  * POST /api/workspaces/[id]/subscription/checkout — a PayOS link and VietQR
@@ -50,6 +55,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ id: 
       userId: access.userId,
       returnUrl: `${appOrigin()}/workspace/${workspace.slug}/billing`,
       invoiceBuyer,
+      voucherCode: parsed.data.voucherCode,
     })
     return NextResponse.json({ success: true, data: await paymentView(payment) })
   } catch (error) {

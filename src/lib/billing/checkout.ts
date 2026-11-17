@@ -131,11 +131,47 @@ export async function createCheckout(input: {
   returnUrl: string
   /** Who the e-invoice is for (einvoice.ts); kept until the money comes */
   invoiceBuyer?: InvoiceBuyer
+  voucherCode?: string | null
 }): Promise<SubscriptionPayment> {
   if (!platformPayosConfigured()) throw new BillingError(PAYOS_NOT_READY, 503)
   const { sub, change } = await quoteChange(input.workspaceId, input.plan, input.billing)
   if (change.blocked) throw new BillingError(changeBlockMessage(change.blocked, change, sub), 409)
-  const amount = await getPlatformPlanPrice(input.plan, input.billing)
+  let amount = await getPlatformPlanPrice(input.plan, input.billing)
+  let voucherApplied: { code: string; discountAmount: number } | null = null
+
+  if (input.voucherCode) {
+    const code = input.voucherCode.trim().toUpperCase()
+    const now = new Date()
+    const voucher = await prisma.platformVoucher.findUnique({ where: { code } })
+    if (!voucher || !voucher.isActive || voucher.deletedAt || voucher.startDate > now || voucher.endDate < now) {
+      throw new BillingError('Mã voucher không hợp lệ hoặc đã hết hạn', 400)
+    }
+    if (voucher.usageLimit !== null && voucher.usageCount >= voucher.usageLimit) {
+      throw new BillingError('Mã voucher đã hết lượt sử dụng', 400)
+    }
+    if (voucher.applicablePlans) {
+      const allowed = voucher.applicablePlans.split(',').map((p) => p.trim().toLowerCase())
+      if (!allowed.includes(input.plan.toLowerCase())) {
+        throw new BillingError('Mã voucher không áp dụng cho gói này', 400)
+      }
+    }
+    if (voucher.minOrderAmount !== null && amount < voucher.minOrderAmount) {
+      throw new BillingError('Đơn hàng chưa đạt giá trị tối thiểu để áp dụng voucher này', 400)
+    }
+    let discount = 0
+    if (voucher.discountType === 'PERCENT') {
+      discount = Math.round(amount * (voucher.discountValue / 100))
+      if (voucher.maxDiscount !== null && discount > voucher.maxDiscount) {
+        discount = Math.round(voucher.maxDiscount)
+      }
+    } else {
+      discount = Math.round(voucher.discountValue)
+    }
+    discount = Math.min(discount, amount)
+    amount = Math.max(1000, amount - discount)
+    voucherApplied = { code: voucher.code, discountAmount: discount }
+  }
+
   const waiting = await prisma.subscriptionPayment.findMany({
     where: { workspaceId: input.workspaceId, status: 'PENDING' },
     select: { id: true, orderCode: true },
@@ -156,6 +192,8 @@ export async function createCheckout(input: {
       amount,
       orderCode: String(newOrderCode()),
       createdById: input.userId,
+      voucherCode: voucherApplied?.code ?? null,
+      discountAmount: voucherApplied?.discountAmount ?? null,
       ...(input.invoiceBuyer && { invoiceBuyer: input.invoiceBuyer }),
     },
   })
@@ -313,6 +351,50 @@ async function applyToSubscription(sub: Subscription, payment: SubscriptionPayme
 
   await tx.subscription.update({ where: { workspaceId: sub.workspaceId }, data })
   await tx.subscriptionPayment.update({ where: { id: payment.id }, data: { ...period, change: change.kind } })
+
+  if (payment.voucherCode) {
+    await tx.platformVoucher.updateMany({
+      where: { code: payment.voucherCode },
+      data: { usageCount: { increment: 1 } },
+    })
+  }
+
+  // Synchronize subscription to all other workspaces owned by the same user account
+  const ws = await tx.workspace.findUnique({ where: { id: sub.workspaceId }, select: { ownerId: true } })
+  const ownerId = ws?.ownerId || payment.createdById
+  if (ownerId) {
+    const otherWorkspaces = await tx.workspace.findMany({
+      where: { ownerId, id: { not: sub.workspaceId }, deletedAt: null },
+      select: { id: true },
+    })
+    for (const ow of otherWorkspaces) {
+      await tx.subscription.upsert({
+        where: { workspaceId: ow.id },
+        create: {
+          workspaceId: ow.id,
+          plan,
+          billing: payment.billing,
+          trial: false,
+          periodStart: period.periodStart,
+          periodEnd: period.periodEnd,
+        },
+        update: {
+          plan,
+          billing: payment.billing,
+          trial: false,
+          periodStart: period.periodStart,
+          periodEnd: period.periodEnd,
+          reminders: Prisma.DbNull,
+          ...(data.nextPlan && {
+            nextPlan: data.nextPlan,
+            nextBilling: data.nextBilling,
+            nextPeriodEnd: data.nextPeriodEnd,
+          }),
+        },
+      })
+      reconcileOverageSoon(ow.id)
+    }
+  }
 }
 
 /** Asks PayOS about one plan payment and applies what it says; returns the status after. */
