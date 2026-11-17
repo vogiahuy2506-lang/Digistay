@@ -962,5 +962,9 @@
   "Đã mở khóa tài khoản quản trị": "Admin account unlocked",
   "Đã xảy ra lỗi khi cập nhật tài khoản quản trị": "Error updating admin account",
   "Đã thu hồi quyền quản trị của {0}": "Revoked admin privileges of {0}",
-  "Đã xảy ra lỗi khi thu hồi quyền quản trị": "Error revoking admin privileges"
+  "Đã xảy ra lỗi khi thu hồi quyền quản trị": "Error revoking admin privileges",
+  "năm": "year",
+  "tháng": "month",
+  "KH: {0} | Thời gian TT: {1} | Note: ": "Customer: {0} | Payment time: {1} | Note: ",
+  "Thời gian TT: {0} | Note: ": "Payment time: {0} | Note: "
 }
