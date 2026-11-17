@@ -70,11 +70,7 @@ export default async function HomePage() {
           <HeroVideo src="/marketing/hero-cam-ranh.mp4" pauseLabel={t('videoPause')} playLabel={t('videoPlay')} />
           {/* Darker toward the text (left on wide screens, bottom on phones) so white type stays readable */}
           <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-black/75 via-black/45 to-black/15 lg:bg-gradient-to-r lg:from-black/75 lg:via-black/40 lg:to-black/5" />
-          <div className={cn(frame, 'flex min-h-[calc(100svh-69px)] flex-col justify-end pb-20 pt-24 lg:min-h-[calc(100svh-81px)] lg:pb-28 lg:pt-28')}>
-            <div className="hero-in mb-3.5 inline-flex items-center gap-2 self-start rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-[11px] font-medium tracking-wide text-white/90 backdrop-blur-xs">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>{t('ecosystemBadge')}</span>
-            </div>
+          <div className={cn(frame, 'flex min-h-[calc(100svh-69px)] flex-col justify-end pb-32 pt-24 lg:min-h-[calc(100svh-81px)] lg:pb-44 lg:pt-32')}>
             <p className="hero-in text-[11px] font-medium uppercase leading-[1.6] tracking-[0.16em] text-white/80 lg:text-[12px]">{t('eyebrow')}</p>
             <h1
               style={revealDelay(120)}

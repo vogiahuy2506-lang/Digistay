@@ -647,7 +647,7 @@
     },
     "home": {
       "eyebrow": "For hotels, homestays and resorts in Vietnam",
-      "ecosystemBadge": "Enterprise Hospitality Platform by DIGISO · Ministry of Industry & Trade Registered",
+      "ecosystemBadge": "Enterprise Hospitality Platform by DIGISO",
       "title": "Your hotel's booking website and front desk, in one account",
       "lead": "Build your own website with online booking and PayOS deposits, then run bookings, check-in and check-out, invoices and reports in one place.",
       "register": "Sign up",
@@ -742,13 +742,13 @@
       "ecosystem": {
         "tag": "DEVELOPED & OPERATED BY",
         "title": "Enterprise Cloud Platform by DIGISO Digital Solutions Co., Ltd.",
-        "lead": "Digistay is developed and maintained by DIGISO Digital Solutions Co., Ltd. (Tax ID: 0316725362), registered with the Ministry of Industry and Trade (online.gov.vn).",
+        "lead": "Digistay is developed and maintained by DIGISO Digital Solutions Co., Ltd. (Tax ID: 0316725362), an enterprise specialized in digital transformation and software solutions.",
         "digisoName": "DIGISO Digital Solutions Co., Ltd.",
         "digisoDesc": "Pioneering digital transformation, business automation, and cloud management software for thousands of businesses across Vietnam.",
         "digisoAction": "Explore DIGISO technology solutions (digiso.vn)",
         "digistayName": "Digistay — Direct Booking & Operations Platform",
         "digistayDesc": "Dedicated hospitality platform: Commission-free direct booking websites, automated 24/7 PayOS VietQR reconciliation, and unified operations.",
-        "verifiedBadge": "Ministry of Industry & Trade Registered",
+        "verifiedBadge": "Transparent E-Commerce",
         "verifiedText": "Operating in full compliance with e-commerce regulations, legal VAT electronic invoicing, and secure PayOS audits."
       },
       "cta": {
