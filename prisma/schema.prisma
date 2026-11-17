@@ -24,6 +24,9 @@ model User {
   password      String?
   role          UserRole  @default(USER)
 
+  /// When the user accepted Digistay's Terms of Service & Privacy Policy.
+  termsAcceptedAt DateTime?
+
   // OAuth providers
   accounts Account[]
   sessions Session[]

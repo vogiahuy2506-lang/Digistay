@@ -60,8 +60,6 @@ export function RegisterForm({ google }: { google: boolean }) {
   const [form, setForm] = React.useState({ name: '', username: '', email: '', phone: '', password: '', confirm: '' })
   const [terms, setTerms] = React.useState(false)
   const [tried, setTried] = React.useState(false)
-  // Set by "Sign up with Google" with the terms box unticked: only that box's error shows.
-  const [googleTried, setGoogleTried] = React.useState(false)
   const [busy, setBusy] = React.useState(false)
   const [taken, setTaken] = React.useState<{ username?: string; email?: string }>({})
   const [error, setError] = React.useState('')
@@ -328,15 +326,12 @@ export function RegisterForm({ google }: { google: boolean }) {
     return <p className="py-16 text-center text-[15px] text-muted">{t('register.invite.loading')}</p>
   }
 
-  const termsError = shown.terms ?? (googleTried && !terms ? t('register.termsRequired') : undefined)
+  const termsError = shown.terms
   const inviteRole = invite ? t(`invite.roles.${invite.role}`) : ''
 
-  // Google makes the account on its first sign-in (next-auth adapter); the terms box counts for it too.
+  // Google sign-up: users sign in directly with Google. Terms acceptance modal is displayed
+  // upon first entering the app if they haven't agreed yet.
   const signUpWithGoogle = () => {
-    if (!terms) {
-      setGoogleTried(true)
-      return
-    }
     signIn('google', { callbackUrl: next })
   }
 
@@ -359,17 +354,30 @@ export function RegisterForm({ google }: { google: boolean }) {
       ) : (
         stepBar(1)
       )}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className={authTitle}>{invite ? t('register.invite.title', { workspace: invite.workspace.name }) : t('register.title')}</h1>
-          {invite && <p className="mt-3 text-[15px] leading-[1.6] text-fg/80">{t('register.invite.lead')}</p>}
-          <p className="mt-3 text-[15px] text-fg/80">
-            {t.rich('register.haveAccount', { link: (c) => <Link href={withNext('/login')} className={cn(textLink, 'underline')}>{c}</Link> })}
-          </p>
-        </div>
-        {/* Beside the title, not above the fields, so the step still fits one laptop screen */}
-        {google && <GoogleButton label={t('register.google')} onClick={signUpWithGoogle} disabled={busy} className="h-11 shrink-0 px-4 text-[14.5px]" />}
+      <div>
+        <h1 className={authTitle}>{invite ? t('register.invite.title', { workspace: invite.workspace.name }) : t('register.title')}</h1>
+        {invite && <p className="mt-3 text-[15px] leading-[1.6] text-fg/80">{t('register.invite.lead')}</p>}
+        <p className="mt-2 text-[15px] text-fg/80">
+          {t.rich('register.haveAccount', { link: (c) => <Link href={withNext('/login')} className={cn(textLink, 'underline')}>{c}</Link> })}
+        </p>
       </div>
+
+      {google && (
+        <div className="mt-6 flex flex-col gap-4">
+          <GoogleButton
+            label={t('register.google')}
+            onClick={signUpWithGoogle}
+            disabled={busy}
+            className="h-[52px] w-full text-[15px] font-medium"
+          />
+          <div className="flex items-center gap-4 text-[13px] text-muted">
+            <span className="h-px flex-1 bg-line" />
+            <span className="text-[12px] font-medium uppercase tracking-wider">{t('common.or')}</span>
+            <span className="h-px flex-1 bg-line" />
+          </div>
+        </div>
+      )}
+
       <div className="mt-6 flex flex-col gap-5">
         {count > 0 && <Notice tone="err">⚠ {t('common.summary', { count })}</Notice>}
         {error && <Notice tone="err">⚠ {error}</Notice>}

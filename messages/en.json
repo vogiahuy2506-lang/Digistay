@@ -1052,6 +1052,20 @@
         "submit": "Create my account and join"
       }
     },
+    "termsModal": {
+      "title": "Terms of Service & Privacy Policy",
+      "subtitle": "Confirm before using Digistay",
+      "intro": "Welcome to Digistay! To ensure security and compliance while using our hotel management platform, please review and accept:",
+      "termsTitle": "Terms of Service",
+      "termsDesc": "Ownership rights, user responsibilities, and service quality commitments.",
+      "privacyTitle": "Privacy Policy",
+      "privacyDesc": "Customer data protection, information encryption, and regulatory compliance.",
+      "checkbox": "I have read, understood, and agree to Digistay's Terms of Service and Privacy Policy.",
+      "signOut": "Sign out",
+      "agree": "Agree & continue",
+      "submitting": "Saving...",
+      "success": "Welcome to Digistay!"
+    },
     "forgot": {
       "step": "Step {n} of 4 · {name}",
       "steps": {

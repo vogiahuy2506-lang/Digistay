@@ -193,10 +193,10 @@ export function LoginForm({ google }: { google: boolean }) {
 
         {google && (
           <>
-            <GoogleButton label={t('common.google')} onClick={() => signIn('google', { callbackUrl: next })} disabled={busy} className="h-[50px] text-[15px]" />
+            <GoogleButton label={t('common.google')} onClick={() => signIn('google', { callbackUrl: next })} disabled={busy} className="h-[52px] w-full text-[15px] font-medium" />
             <div className="flex items-center gap-4 text-[13px] text-muted">
               <span className="h-px flex-1 bg-line" />
-              {t('common.or')}
+              <span className="text-[12px] font-medium uppercase tracking-wider">{t('common.or')}</span>
               <span className="h-px flex-1 bg-line" />
             </div>
           </>

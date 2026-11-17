@@ -1052,6 +1052,20 @@
         "submit": "Tạo tài khoản và vào workspace"
       }
     },
+    "termsModal": {
+      "title": "Điều khoản dịch vụ & Chính sách bảo mật",
+      "subtitle": "Xác nhận trước khi sử dụng Digistay",
+      "intro": "Chào mừng bạn đến với Digistay! Để đảm bảo quyền lợi và bảo mật thông tin khi sử dụng hệ thống, vui lòng đọc và xác nhận đồng ý với:",
+      "termsTitle": "Điều khoản dịch vụ (Terms of Service)",
+      "termsDesc": "Quy định về quyền sở hữu, trách nhiệm người dùng và cam kết chất lượng dịch vụ.",
+      "privacyTitle": "Chính sách bảo mật (Privacy Policy)",
+      "privacyDesc": "Cam kết bảo mật dữ liệu khách hàng, mã hóa thông tin và tuân thủ quy định pháp luật.",
+      "checkbox": "Tôi đã đọc, hiểu rõ và đồng ý với Điều khoản dịch vụ và Chính sách bảo mật của Digistay.",
+      "signOut": "Đăng xuất",
+      "agree": "Đồng ý và tiếp tục",
+      "submitting": "Đang lưu...",
+      "success": "Chào mừng bạn đến với Digistay!"
+    },
     "forgot": {
       "step": "Bước {n} / 4 · {name}",
       "steps": {

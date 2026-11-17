@@ -127,6 +127,7 @@ export async function POST(request: NextRequest) {
         phone,
         password: hashedPassword,
         emailVerified: null, // Not verified yet
+        termsAcceptedAt: new Date(),
       },
       select: {
         id: true,

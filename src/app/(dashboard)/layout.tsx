@@ -4,11 +4,13 @@ import { cookies } from 'next/headers'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { Suspense } from 'react'
+import { prisma } from '@/lib/db'
 import { Loading } from '@/components/ui/loading'
 import { ToastProvider } from '@/components/ui/toast'
 import { ThemeRoot } from '@/components/layout/theme-root'
 import { THEME_COOKIE, parseThemePreference } from '@/lib/theme'
 import { SessionScope } from '@/components/providers'
+import { TermsModal } from '@/components/auth/terms-modal'
 
 // "<page> · Digistay" for pages with a title of their own, "Digistay" for the
 // rest: not Digistay's home page title. Workspace and property pages name the
@@ -28,7 +30,16 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
-  const theme = parseThemePreference((await cookies()).get(THEME_COOKIE)?.value)
+  const [user, cookieStore] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { termsAcceptedAt: true },
+    }),
+    cookies(),
+  ])
+
+  const needsTermsAcceptance = !user?.termsAcceptedAt
+  const theme = parseThemePreference(cookieStore.get(THEME_COOKIE)?.value)
 
   // Workspace-scoped routes (under /workspace/[slug]) have their own
   // layout (WorkspaceShell) that handles its own sidebar.
@@ -40,6 +51,7 @@ export default async function DashboardLayout({
     <SessionScope session={session}>
       <ThemeRoot initial={theme}>
         <ToastProvider>
+          <TermsModal initialNeedsAcceptance={needsTermsAcceptance} />
           <Suspense fallback={<Loading />}>{children}</Suspense>
         </ToastProvider>
       </ThemeRoot>

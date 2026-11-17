@@ -69,7 +69,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ toke
     const hashed = await bcrypt.hash(password, 12)
     await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
-        data: { name: name.trim(), username, email, phone: phone?.trim() || null, password: hashed, emailVerified: new Date() },
+        data: { name: name.trim(), username, email, phone: phone?.trim() || null, password: hashed, emailVerified: new Date(), termsAcceptedAt: new Date() },
         select: { id: true, email: true, name: true },
       })
       await joinFromInvitation(tx, invitation, user)
