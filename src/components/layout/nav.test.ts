@@ -3,7 +3,7 @@ import { activeHref, primaryNav, workspaceNav } from './nav'
 import { ROLE_PRESETS, type Role } from '@/lib/auth/permissions'
 
 const items = [...primaryNav('demo', 'p1'), ...workspaceNav('demo')]
-const P = '/workspace/demo/properties/p1'
+const P = '/app/demo/p1'
 
 describe('dashboard menu', () => {
   it('lights up the most specific entry', () => {
@@ -25,8 +25,8 @@ describe('dashboard menu', () => {
   })
 
   it('does not match a sibling that only shares a prefix', () => {
-    expect(activeHref('/workspace/demo/properties/p10/bookings', items)).toBeUndefined()
-    expect(activeHref('/workspace/demo/membership', items)).toBeUndefined()
+    expect(activeHref('/app/demo/p10/bookings', items)).toBeUndefined()
+    expect(activeHref('/app/demo/membership', items)).toBeUndefined()
     expect(activeHref(`${P}/calendars`, items)).toBe(P)
   })
 
@@ -58,7 +58,7 @@ describe('dashboard menu', () => {
 
   it('lights up "Cơ sở" on the workspace home', () => {
     const outside = [...primaryNav('demo'), ...workspaceNav('demo')]
-    expect(activeHref('/workspace/demo', outside)).toBe('/workspace/demo')
-    expect(activeHref('/workspace/demo/settings', outside)).toBe('/workspace/demo/settings')
+    expect(activeHref('/app/demo', outside)).toBe('/app/demo')
+    expect(activeHref('/app/demo/settings', outside)).toBe('/app/demo/settings')
   })
 })

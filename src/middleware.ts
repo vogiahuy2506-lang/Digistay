@@ -47,6 +47,23 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Short dashboard URLs: /app/[slug]/... -> /workspace/[slug]/...
+  if (path === '/app' || path.startsWith('/app/')) {
+    const [, , slug, third, ...more] = path.split('/')
+    if (slug) {
+      const WORKSPACE_SECTIONS = new Set(['members', 'billing', 'settings', 'help', 'notifications', 'properties'])
+      const url = request.nextUrl.clone()
+      if (!third) {
+        url.pathname = `/workspace/${slug}`
+      } else if (WORKSPACE_SECTIONS.has(third)) {
+        url.pathname = `/workspace/${slug}/${third}${more.length ? `/${more.join('/')}` : ''}`
+      } else {
+        url.pathname = `/workspace/${slug}/properties/${third}${more.length ? `/${more.join('/')}` : ''}`
+      }
+      return NextResponse.rewrite(url)
+    }
+  }
+
   // digistay.vn/<hotel>/... is the same site as <hotel>.digistay.vn/...
   const [, first, ...more] = path.split('/')
   if (first && isAllowedSubdomain(first)) {

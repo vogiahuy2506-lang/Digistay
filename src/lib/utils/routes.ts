@@ -21,46 +21,46 @@ export interface RouteContext {
 export const routes = {
   // Top-level
   workspaces: () => '/workspaces',
-  workspace: (slug: string) => `/workspace/${slug}`,
+  workspace: (slug: string) => `/app/${slug}`,
 
-  // Property-scoped
-  properties: (slug: string) => `/workspace/${slug}/properties`,
-  newProperty: (slug: string) => `/workspace/${slug}/properties/new`,
-  property: (slug: string, id: string) => `/workspace/${slug}/properties/${id}`,
-  propertyBookings: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/bookings`,
+  // Property-scoped (shortened via middleware rewrite /app/[slug]/[id]/*)
+  properties: (slug: string) => `/app/${slug}/properties`,
+  newProperty: (slug: string) => `/app/${slug}/properties/new`,
+  property: (slug: string, id: string) => `/app/${slug}/${id}`,
+  propertyBookings: (slug: string, id: string) => `/app/${slug}/${id}/bookings`,
   propertyBooking: (slug: string, propId: string, bookingId: string) =>
-    `/workspace/${slug}/properties/${propId}/bookings/${bookingId}`,
+    `/app/${slug}/${propId}/bookings/${bookingId}`,
   propertyBookingNew: (slug: string, id: string) =>
-    `/workspace/${slug}/properties/${id}/bookings/new`,
-  propertyCalendar: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/calendar`,
-  propertyRooms: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/rooms`,
-  propertyWebsite: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/website`,
-  propertyReports: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/reports`,
+    `/app/${slug}/${id}/bookings/new`,
+  propertyCalendar: (slug: string, id: string) => `/app/${slug}/${id}/calendar`,
+  propertyRooms: (slug: string, id: string) => `/app/${slug}/${id}/rooms`,
+  propertyWebsite: (slug: string, id: string) => `/app/${slug}/${id}/website`,
+  propertyReports: (slug: string, id: string) => `/app/${slug}/${id}/reports`,
   propertyDailyReport: (slug: string, id: string) =>
-    `/workspace/${slug}/properties/${id}/reports/daily`,
-  propertyPayments: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/payments`,
-  propertyInvoices: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/invoices`,
+    `/app/${slug}/${id}/reports/daily`,
+  propertyPayments: (slug: string, id: string) => `/app/${slug}/${id}/payments`,
+  propertyInvoices: (slug: string, id: string) => `/app/${slug}/${id}/invoices`,
   propertyBankAccounts: (slug: string, id: string) =>
-    `/workspace/${slug}/properties/${id}/bank-accounts`,
-  propertyServices: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/services`,
-  propertyMenu: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/menu`,
-  propertyPolicies: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/policies`,
-  propertySettings: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/settings`,
-  propertyCoupons: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/coupons`,
-  propertyChannels: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/channels`,
-  propertyCustomers: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/customers`,
+    `/app/${slug}/${id}/bank-accounts`,
+  propertyServices: (slug: string, id: string) => `/app/${slug}/${id}/services`,
+  propertyMenu: (slug: string, id: string) => `/app/${slug}/${id}/menu`,
+  propertyPolicies: (slug: string, id: string) => `/app/${slug}/${id}/policies`,
+  propertySettings: (slug: string, id: string) => `/app/${slug}/${id}/settings`,
+  propertyCoupons: (slug: string, id: string) => `/app/${slug}/${id}/coupons`,
+  propertyChannels: (slug: string, id: string) => `/app/${slug}/${id}/channels`,
+  propertyCustomers: (slug: string, id: string) => `/app/${slug}/${id}/customers`,
   propertyCustomer: (slug: string, id: string, customerId: string) =>
-    `/workspace/${slug}/properties/${id}/customers/${customerId}`,
-  propertyLeads: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/leads`,
-  propertyBlog: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/blog`,
-  propertyBlogNew: (slug: string, id: string) => `/workspace/${slug}/properties/${id}/blog/new`,
-  propertyBlogPost: (slug: string, id: string, postId: string) => `/workspace/${slug}/properties/${id}/blog/${postId}`,
+    `/app/${slug}/${id}/customers/${customerId}`,
+  propertyLeads: (slug: string, id: string) => `/app/${slug}/${id}/leads`,
+  propertyBlog: (slug: string, id: string) => `/app/${slug}/${id}/blog`,
+  propertyBlogNew: (slug: string, id: string) => `/app/${slug}/${id}/blog/new`,
+  propertyBlogPost: (slug: string, id: string, postId: string) => `/app/${slug}/${id}/blog/${postId}`,
 
   // Workspace-scoped
-  members: (slug: string) => `/workspace/${slug}/members`,
-  settings: (slug: string) => `/workspace/${slug}/settings`,
-  billing: (slug: string) => `/workspace/${slug}/billing`,
-  help: (slug: string) => `/workspace/${slug}/help`,
+  members: (slug: string) => `/app/${slug}/members`,
+  settings: (slug: string) => `/app/${slug}/settings`,
+  billing: (slug: string) => `/app/${slug}/billing`,
+  help: (slug: string) => `/app/${slug}/help`,
   billingCheckout: (_slug: string, plan?: string, billing?: string) =>
     `/billing/checkout${plan ? `?plan=${plan}&billing=${billing ?? 'MONTH'}` : ''}`,
 
