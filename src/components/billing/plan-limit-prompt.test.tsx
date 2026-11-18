@@ -91,7 +91,7 @@ describe('PlanLimitPrompt', () => {
     expect(offer).toMatch(/799\.000\s₫\/tháng/)
 
     act(() => button('Nâng cấp gói')!.click())
-    expect(navigation.push).toHaveBeenCalledWith('/workspace/khach-san-a/billing')
+    expect(navigation.push).toHaveBeenCalledWith('/app/khach-san-a/billing')
     expect(dialog()).toBeNull()
   })
 
@@ -132,7 +132,7 @@ describe('PlanLimitPrompt', () => {
     await request(json(402, { success: false, error: 'x', code: 'PROPERTY_PLAN_LOCKED' }))
     expect(dialog()?.textContent).toContain('Cơ sở này đang bị khoá vì workspace dùng vượt gói')
     act(() => button('Xem gói')!.click())
-    expect(navigation.push).toHaveBeenCalledWith('/workspace/khach-san-a/billing')
+    expect(navigation.push).toHaveBeenCalledWith('/app/khach-san-a/billing')
   })
 
   it('speaks English on English pages', async () => {

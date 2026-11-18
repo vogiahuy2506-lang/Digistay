@@ -339,7 +339,6 @@
   "Không tìm thấy cơ sở đã xoá": "Deleted property not found",
   "Không tìm thấy dịch vụ": "Service not found",
   "Không tìm thấy hoá đơn": "Invoice not found",
-  "Không tìm thấy hóa đơn": "Invoice not found",
   "Không tìm thấy hạng phòng": "Room type not found",
   "Không tìm thấy khoản thanh toán": "Payment not found",
   "Không tìm thấy khách sạn": "Hotel not found",
@@ -980,5 +979,9 @@
   "năm": "year",
   "tháng": "month",
   "KH: {0} | Thời gian TT: {1} | Note: ": "Customer: {0} | Payment time: {1} | Note: ",
-  "Thời gian TT: {0} | Note: ": "Payment time: {0} | Note: "
+  "Thời gian TT: {0} | Note: ": "Payment time: {0} | Note: ",
+  "Lỗi tải thông tin giấy tờ": "Failed to load guest identity information",
+  "Không có quyền cập nhật thông tin khách": "You do not have permission to update guest information",
+  "Chỉ có thể cập nhật giấy tờ cho đơn đang chờ, đã xác nhận hoặc đang lưu trú": "Identity documents can only be updated for pending, confirmed, or checked-in bookings",
+  "Lỗi cập nhật thông tin giấy tờ khách": "Failed to update guest identity information"
 }

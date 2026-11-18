@@ -76,7 +76,7 @@ describe('TrialWelcome', () => {
   it('leads to the plans, also marking it seen', async () => {
     mount()
     await act(async () => button('Xem các gói').click())
-    expect(navigation.push).toHaveBeenCalledWith('/workspace/bo-ke/billing')
+    expect(navigation.push).toHaveBeenCalledWith('/app/bo-ke/billing')
     expect(backend).toHaveBeenCalledTimes(1)
   })
 
