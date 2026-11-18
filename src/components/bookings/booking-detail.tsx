@@ -23,6 +23,7 @@ import { useCan } from '@/components/layout/workspace-context'
 import { CheckOutDialog } from './check-out-dialog'
 import { CancelDialog } from './cancel-dialog'
 import { CheckInDialog } from './check-in-dialog'
+import { GuestIdentityModal } from './guest-identity-modal'
 import { AddServiceDialog } from './add-service-dialog'
 import { RecordPaymentDialog } from './record-payment-dialog'
 import { buildPrintHtml, nightsBetween, remainingAmount } from '@/lib/bookings/display'
@@ -310,8 +311,10 @@ export function BookingDetailContent({ booking, onChanged }: { booking: BookingD
 
   const [showAddService, setShowAddService] = React.useState(false)
   const [showRecordPayment, setShowRecordPayment] = React.useState(false)
+  const [showIdentityModal, setShowIdentityModal] = React.useState(false)
   const [deletingServiceIndex, setDeletingServiceIndex] = React.useState<number | null>(null)
   const canManageServices = editable && booking.status !== 'CANCELLED' && booking.status !== 'NO_SHOW'
+  const canEditIdentity = editable && ['PENDING', 'CONFIRMED', 'CHECKED_IN'].includes(booking.status)
 
   const handleDeleteService = async (index: number, serviceName: string) => {
     if (!window.confirm(t('money.deleteServiceConfirm'))) return
@@ -377,14 +380,36 @@ export function BookingDetailContent({ booking, onChanged }: { booking: BookingD
             )}
           </Field>
           <Field label={t('guest.guests')}>{labels.guests(booking.numAdults, booking.numChildren)}</Field>
-          {booking.guestIdNumber && (
-            <Field label={booking.guestIdType === 'PASSPORT' ? 'Hộ chiếu' : 'CCCD / CMND'}>
-              <span className="font-mono text-fg">{booking.guestIdNumber}</span>
-              {booking.guestNationality && booking.guestNationality !== 'Việt Nam' && (
-                <span className="ml-2 text-muted">({booking.guestNationality})</span>
+          <Field label={booking.guestIdType === 'PASSPORT' ? 'Hộ chiếu' : 'CCCD / Hộ chiếu'}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                {booking.guestIdNumber ? (
+                  <>
+                    <span className="font-mono font-medium text-fg">{booking.guestIdNumber}</span>
+                    {booking.guestNationality && (
+                      <span className="ml-2 text-muted">({booking.guestNationality})</span>
+                    )}
+                    {Array.isArray(booking.stayGuests) && booking.stayGuests.length > 0 && (
+                      <span className="ml-2 text-xs text-acc font-medium">
+                        +{booking.stayGuests.length} người ở cùng
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span className="text-warn text-xs font-medium">Chưa nhập giấy tờ lưu trú</span>
+                )}
+              </div>
+              {canEditIdentity && (
+                <button
+                  type="button"
+                  onClick={() => setShowIdentityModal(true)}
+                  className="text-xs font-semibold text-primary hover:underline shrink-0"
+                >
+                  {booking.guestIdNumber ? 'Sửa giấy tờ' : '+ Nhập CCCD / Hộ chiếu'}
+                </button>
               )}
-            </Field>
-          )}
+            </div>
+          </Field>
           {booking.guestBirthDate && (
             <Field label="Ngày sinh">
               <span className="tabular-nums">
@@ -573,6 +598,15 @@ export function BookingDetailContent({ booking, onChanged }: { booking: BookingD
           onDone={onChanged}
         />
       )}
+
+      <GuestIdentityModal
+        bookingId={booking.id}
+        bookingCode={booking.bookingCode}
+        guestName={booking.guestName}
+        isOpen={showIdentityModal}
+        onClose={() => setShowIdentityModal(false)}
+        onSaved={onChanged}
+      />
     </div>
   )
 }

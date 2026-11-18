@@ -1,8 +1,9 @@
 'use client'
 
 import * as React from 'react'
-import { Calendar, Download, FileSpreadsheet, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Calendar, Download, FileSpreadsheet, AlertCircle, CheckCircle2, Pencil } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { GuestIdentityModal } from './guest-identity-modal'
 import {
   Badge,
   Button,
@@ -64,6 +65,12 @@ export function ResidenceExportModal({
   const [loading, setLoading] = React.useState(false)
   const [guests, setGuests] = React.useState<ResidentGuest[]>([])
   const [error, setError] = React.useState('')
+  const [filterStatus, setFilterStatus] = React.useState<'all' | 'missing' | 'ready'>('all')
+  const [editingGuest, setEditingGuest] = React.useState<{
+    bookingId: string
+    bookingCode: string
+    guestName: string
+  } | null>(null)
 
   const loadData = React.useCallback(async (date: string) => {
     setLoading(true)
@@ -104,6 +111,12 @@ export function ResidenceExportModal({
 
   const countMissingId = guests.filter((g) => !g.idNumber?.trim()).length
   const countHasId = guests.length - countMissingId
+
+  const visibleGuests = React.useMemo(() => {
+    if (filterStatus === 'missing') return guests.filter((g) => !g.idNumber?.trim())
+    if (filterStatus === 'ready') return guests.filter((g) => !!g.idNumber?.trim())
+    return guests
+  }, [guests, filterStatus])
 
   const buildExportRows = () => {
     return guests.map((g, idx) => [
@@ -203,18 +216,42 @@ export function ResidenceExportModal({
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant="plain">
-              Tổng: <strong className="ml-1">{guests.length}</strong>
-            </Badge>
-            <Badge variant="success">
-              <CheckCircle2 className="w-3 h-3 mr-1 inline" aria-hidden="true" />
+            <button
+              type="button"
+              onClick={() => setFilterStatus('all')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${
+                filterStatus === 'all'
+                  ? 'bg-ink text-on-ink border-transparent'
+                  : 'bg-panel border-line text-muted hover:text-fg'
+              }`}
+            >
+              Tổng: <strong className="ml-0.5">{guests.length}</strong>
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterStatus(filterStatus === 'ready' ? 'all' : 'ready')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-medium border inline-flex items-center transition-colors ${
+                filterStatus === 'ready'
+                  ? 'bg-ok text-white border-transparent'
+                  : 'bg-ok-soft/60 border-ok/30 text-ok hover:bg-ok-soft'
+              }`}
+            >
+              <CheckCircle2 className="w-3 h-3 mr-1" aria-hidden="true" />
               Đủ giấy tờ: <strong className="ml-1">{countHasId}</strong>
-            </Badge>
+            </button>
             {countMissingId > 0 && (
-              <Badge variant="warn">
-                <AlertCircle className="w-3 h-3 mr-1 inline" aria-hidden="true" />
+              <button
+                type="button"
+                onClick={() => setFilterStatus(filterStatus === 'missing' ? 'all' : 'missing')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium border inline-flex items-center transition-colors ${
+                  filterStatus === 'missing'
+                    ? 'bg-warn text-white border-transparent'
+                    : 'bg-warn-soft/80 border-warn/40 text-warn hover:bg-warn-soft'
+                }`}
+              >
+                <AlertCircle className="w-3 h-3 mr-1" aria-hidden="true" />
                 Thiếu CCCD: <strong className="ml-1">{countMissingId}</strong>
-              </Badge>
+              </button>
             )}
           </div>
         </div>
@@ -245,10 +282,11 @@ export function ResidenceExportModal({
                   <TableHead>Ngày sinh</TableHead>
                   <TableHead>Giới tính</TableHead>
                   <TableHead>Thời gian lưu trú</TableHead>
+                  <TableHead className="text-right">Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {guests.map((g, index) => {
+                {visibleGuests.map((g, index) => {
                   const hasId = !!g.idNumber?.trim()
                   return (
                     <TableRow key={`${g.bookingId}-${index}`}>
@@ -279,6 +317,24 @@ export function ResidenceExportModal({
                       <TableCell className="text-small">{formatGender(g.gender)}</TableCell>
                       <TableCell className="text-small tabular-nums text-muted">
                         {labels.dayMonth(g.checkInDate)} → {labels.dayMonth(g.checkOutDate)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={hasId ? 'ghost' : 'outline'}
+                          onClick={() =>
+                            setEditingGuest({
+                              bookingId: g.bookingId,
+                              bookingCode: g.bookingCode,
+                              guestName: g.guestName,
+                            })
+                          }
+                          className={hasId ? 'h-7 px-2 text-xs' : 'h-7 px-2.5 text-xs border-warn/50 text-warn hover:bg-warn-soft'}
+                        >
+                          <Pencil className="w-3 h-3 mr-1" />
+                          {hasId ? 'Sửa' : 'Nhập ngay'}
+                        </Button>
                       </TableCell>
                     </TableRow>
                   )
@@ -312,6 +368,15 @@ export function ResidenceExportModal({
           </Button>
         </div>
       </ModalFooter>
+
+      <GuestIdentityModal
+        bookingId={editingGuest?.bookingId ?? null}
+        bookingCode={editingGuest?.bookingCode}
+        guestName={editingGuest?.guestName}
+        isOpen={Boolean(editingGuest)}
+        onClose={() => setEditingGuest(null)}
+        onSaved={() => void loadData(selectedDate)}
+      />
     </Modal>
   )
 }
