@@ -4,7 +4,7 @@ import * as React from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { Alert, AlertDescription, Badge, Button, Loading } from '@/components/ui'
-import { TitleBlock } from '@/components/layout'
+import { PageContainer, TitleBlock } from '@/components/layout'
 import { useWorkspace } from '@/lib/hooks/use-workspace'
 import { formatVnd } from '@/lib/bookings/display'
 import { apiError } from '@/lib/i18n/api-errors'
@@ -95,7 +95,7 @@ export default function BillingPage() {
   }
 
   return (
-    <>
+    <PageContainer>
       <TitleBlock title={t('title')} lead={t('lead', { workspace: data.workspace.name })} />
 
       {/* The plan in force */}
@@ -297,7 +297,7 @@ export default function BillingPage() {
           }}
         />
       )}
-    </>
+    </PageContainer>
   )
 }
 

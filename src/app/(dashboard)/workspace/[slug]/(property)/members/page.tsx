@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { History, Lock, LockOpen, Mail, MoreVertical, RotateCw, ShieldCheck, Trash2, UserPlus, Users, XCircle } from 'lucide-react'
-import { TitleBlock } from '@/components/layout'
+import { PageContainer, TitleBlock } from '@/components/layout'
 import { Avatar, Button, Dropdown, DropdownDivider, DropdownItem, ExportDropdown, Loading, Modal, ModalBody, ModalFooter, toast } from '@/components/ui'
 import { exportToCsv, exportToExcel } from '@/lib/export/export-data'
 import { NoAccess } from '@/components/payment/no-access'
@@ -327,7 +327,7 @@ export default function MembersPage() {
   }
 
   return (
-    <div>
+    <PageContainer>
       <TitleBlock
         title={t('title')}
         lead={t('lead')}
@@ -607,7 +607,7 @@ export default function MembersPage() {
           </Button>
         </ModalFooter>
       </Modal>
-    </div>
+    </PageContainer>
   )
 }
 

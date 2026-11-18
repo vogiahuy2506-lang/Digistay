@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { TitleBlock } from '@/components/layout'
+import { PageContainer, TitleBlock } from '@/components/layout'
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Loading, Select, Textarea } from '@/components/ui'
 import {
   Settings, Building2, Bell, Shield, Users,
@@ -210,7 +210,7 @@ export default function WorkspaceSettingsPage() {
       activeTab === tab ? 'bg-panel text-acc shadow-sm' : 'text-muted hover:text-fg'
     )
   return (
-    <div>
+    <PageContainer>
       <TitleBlock
         title={t('settings.title')}
         lead={t('settings.description', { name: workspace.name })}
@@ -438,6 +438,6 @@ export default function WorkspaceSettingsPage() {
       )}
       </div>
       </div>
-    </div>
+    </PageContainer>
   )
 }

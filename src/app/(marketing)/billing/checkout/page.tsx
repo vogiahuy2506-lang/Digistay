@@ -9,7 +9,7 @@ import { formatVnd } from '@/lib/bookings/display'
 import { apiError } from '@/lib/i18n/api-errors'
 import type { PaymentView } from '@/lib/billing/view'
 import { InvoiceForm, buyerPayload, buyerValid, initialBuyer, type BuyerDraft } from '@/components/billing/invoice-form'
-import { planName, vnDate, type Billing, type BillingData } from '@/app/(dashboard)/workspace/[slug]/(level)/billing/types'
+import { planName, vnDate, type Billing, type BillingData } from '@/app/(dashboard)/workspace/[slug]/(property)/billing/types'
 import { MarketingHeader } from '@/components/marketing/MarketingHeader'
 import { cn } from '@/lib/utils'
 

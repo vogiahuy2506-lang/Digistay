@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { ArrowLeft, Headphones, MessageCircle, Mail, LifeBuoy } from 'lucide-react'
+import { PageContainer } from '@/components/layout'
 import { prisma } from '@/lib/db/prisma'
 import { routes } from '@/lib/utils/routes'
 import { QuickstartVideo } from '@/components/help/quickstart-video'
@@ -61,7 +62,7 @@ export default async function WorkspaceHelpPage({
   }
 
   return (
-    <div className="space-y-8">
+    <PageContainer className="space-y-8">
       {/* Top Hero Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -148,6 +149,6 @@ export default async function WorkspaceHelpPage({
           </div>
         </div>
       </section>
-    </div>
+    </PageContainer>
   )
 }
