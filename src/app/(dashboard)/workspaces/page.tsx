@@ -26,7 +26,7 @@ import {
 } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
-import { ArrowRight, Building2, LogOut, MoreVertical, Pencil, Plus, Search, Trash2, Users } from 'lucide-react'
+import { ArrowRight, Building2, Globe, Home, Hotel, LogOut, MoreVertical, Palmtree, Pencil, Plus, Search, Sparkles, Trash2, Upload, Users } from 'lucide-react'
 import { apiError } from '@/lib/i18n/api-errors'
 import { uploadPhoto } from '@/lib/media/upload-client'
 import { useUploadProblemText } from '@/components/ui/photo-upload'
@@ -647,6 +647,12 @@ interface WorkspaceFormModalProps {
   onSubmit: (event: React.FormEvent) => void
 }
 
+const BUSINESS_TYPE_ICONS: Record<BusinessType, React.ComponentType<{ className?: string }>> = {
+  boutique_hotel: Hotel,
+  resort: Palmtree,
+  homestay: Home,
+}
+
 function WorkspaceFormModal({
   open,
   editing,
@@ -659,7 +665,6 @@ function WorkspaceFormModal({
 }: WorkspaceFormModalProps) {
   const t = useTranslations('workspaces')
   const slugInput = React.useRef<HTMLInputElement>(null)
-  // Upload problems belong to the file field, not the submit error slot.
   const [uploadError, setUploadError] = React.useState('')
   const [logoUploading, setLogoUploading] = React.useState(false)
   const uploadProblem = useUploadProblemText()
@@ -672,10 +677,17 @@ function WorkspaceFormModal({
         className="flex flex-col min-h-0"
       >
         <ModalHeader onClose={onClose}>
-          <h2 className="text-body font-semibold text-fg">
-            {editing ? t('form.editTitle') : t('form.createTitle')}
-          </h2>
-          {!editing && <p className="text-small text-muted">{t('form.createLead')}</p>}
+          <div className="flex items-center gap-3 pr-4">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0">
+              <Building2 className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-fg">
+                {editing ? t('form.editTitle') : t('form.createTitle')}
+              </h2>
+              {!editing && <p className="text-xs text-muted">{t('form.createLead')}</p>}
+            </div>
+          </div>
         </ModalHeader>
 
         <ModalBody className="space-y-5">
@@ -685,159 +697,172 @@ function WorkspaceFormModal({
             </Alert>
           )}
 
-          <Input
-            label={t('form.name')}
-            required
-            value={form.name}
-            placeholder={t('form.namePlaceholder')}
-            onChange={(e) =>
-              onFormChange({
-                ...form,
-                name: e.target.value,
-                // The short name follows the name until it is edited by hand.
-                ...onNameTyped(e.target.value, form, SLUG_MAX),
-              })
-            }
-          />
-
-          {/* The slug is shown as the "short name", in the user's language. It is
-              set once: PATCH /api/workspaces/[id] does not change it. */}
-          {!editing && (
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between gap-3">
-                <label htmlFor="workspace-slug" className="block text-small font-medium text-fg">
-                  {t('form.shortName')}
-                </label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    slugInput.current?.focus()
-                    slugInput.current?.select()
-                  }}
-                  className="text-small text-acc hover:underline rounded-ctl focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
-                >
-                  {t('form.shortNameEdit')}
-                </button>
+          {/* Nhóm 1: Thương hiệu & Logo */}
+          <div className="p-4 rounded-xl bg-raised/50 border border-line space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-dashed border-line bg-panel shadow-2xs">
+                {form.logo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={form.logo} alt={t('form.logoAlt')} className="h-full w-full object-cover" />
+                ) : (
+                  <Building2 className="h-6 w-6 text-muted" aria-hidden="true" />
+                )}
               </div>
-              <Input
-                id="workspace-slug"
-                ref={slugInput}
-                value={form.slug}
-                placeholder="an-nam-boutique"
-                onChange={(e) => onFormChange({ ...form, ...onSlugTyped(e.target.value, SLUG_MAX) })}
-                onBlur={() => onFormChange({ ...form, slug: finishSlugInput(form.slug) })}
-                hint={t('form.shortNameHint', { slug: form.slug || '…' })}
-              />
-            </div>
-          )}
-
-          <fieldset className="space-y-2">
-            <legend className="text-small font-medium text-fg mb-2">{t('form.businessType')}</legend>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {BUSINESS_TYPES.map((value) => (
-                <label
-                  key={value}
-                  className={cn(
-                    'flex items-center gap-2 rounded-ctl border px-3 h-10 cursor-pointer transition-colors duration-160',
-                    form.businessType === value ? 'border-ink bg-plain-soft/60' : 'border-line hover:border-muted'
-                  )}
-                >
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <label
+                    htmlFor="workspace-logo"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-panel hover:bg-raised px-3 h-8 text-xs font-semibold text-fg cursor-pointer transition-colors"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-muted" />
+                    <span>{logoUploading ? t('form.logoUploading') : t('form.logoUpload')}</span>
+                  </label>
                   <input
-                    type="radio"
-                    name="business-type"
-                    value={value}
-                    checked={form.businessType === value}
-                    onChange={() => onFormChange({ ...form, businessType: value })}
+                    id="workspace-logo"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
                     className="sr-only"
+                    disabled={logoUploading}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0]
+                      e.target.value = ''
+                      if (!file) return
+                      setUploadError('')
+                      setLogoUploading(true)
+                      try {
+                        const url = await uploadPhoto(file, editing ? { workspaceId: editing.id } : {}, 512)
+                        onFormChange((current) => ({ ...current, logo: url }))
+                      } catch (err) {
+                        setUploadError(uploadProblem(err))
+                      } finally {
+                        setLogoUploading(false)
+                      }
+                    }}
                   />
-                  <span
-                    aria-hidden="true"
+                  {form.logo && (
+                    <button
+                      type="button"
+                      onClick={() => onFormChange({ ...form, logo: null })}
+                      className="rounded-xl px-2.5 h-8 text-xs font-medium text-err hover:bg-err-soft transition-colors"
+                    >
+                      {t('form.logoRemove')}
+                    </button>
+                  )}
+                </div>
+                <p className="mt-1.5 text-[11px] text-muted">{t('form.logoHint')}</p>
+              </div>
+            </div>
+
+            <Input
+              label={t('form.name')}
+              required
+              value={form.name}
+              placeholder={t('form.namePlaceholder')}
+              onChange={(e) =>
+                onFormChange({
+                  ...form,
+                  name: e.target.value,
+                  ...onNameTyped(e.target.value, form, SLUG_MAX),
+                })
+              }
+            />
+
+            {!editing && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between gap-3">
+                  <label htmlFor="workspace-slug" className="block text-small font-medium text-fg">
+                    {t('form.shortName')}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      slugInput.current?.focus()
+                      slugInput.current?.select()
+                    }}
+                    className="text-xs font-medium text-acc hover:underline rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
+                  >
+                    {t('form.shortNameEdit')}
+                  </button>
+                </div>
+                <Input
+                  id="workspace-slug"
+                  ref={slugInput}
+                  value={form.slug}
+                  placeholder="an-nam-boutique"
+                  onChange={(e) => onFormChange({ ...form, ...onSlugTyped(e.target.value, SLUG_MAX) })}
+                  onBlur={() => onFormChange({ ...form, slug: finishSlugInput(form.slug) })}
+                />
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-panel border border-line text-xs">
+                  <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
+                  <span className="text-muted">Đường dẫn quản trị:</span>
+                  <span className="font-mono font-medium text-fg truncate">
+                    /workspace/{form.slug || 'ten-workspace'}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Nhóm 2: Loại hình kinh doanh */}
+          <fieldset className="space-y-2">
+            <legend className="text-small font-medium text-fg mb-1.5">{t('form.businessType')}</legend>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              {BUSINESS_TYPES.map((value) => {
+                const Icon = BUSINESS_TYPE_ICONS[value]
+                const active = form.businessType === value
+                return (
+                  <label
+                    key={value}
                     className={cn(
-                      'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border',
-                      form.businessType === value ? 'border-ink' : 'border-line'
+                      'flex items-center gap-2.5 rounded-xl border px-3.5 py-2.5 cursor-pointer transition-all',
+                      active
+                        ? 'bg-acc-soft border-acc/50 text-acc shadow-2xs font-semibold'
+                        : 'bg-raised/40 border-line text-fg/85 hover:bg-raised hover:border-fg/20'
                     )}
                   >
-                    {form.businessType === value && <span className="h-2 w-2 rounded-full bg-ink" />}
-                  </span>
-                  <span className="text-small text-fg">{t(`form.businessTypes.${value}`)}</span>
-                </label>
-              ))}
+                    <input
+                      type="radio"
+                      name="business-type"
+                      value={value}
+                      checked={active}
+                      onChange={() => onFormChange({ ...form, businessType: value })}
+                      className="sr-only"
+                    />
+                    <Icon className={cn('w-4 h-4 shrink-0', active ? 'text-acc' : 'text-muted')} />
+                    <span className="text-xs sm:text-small truncate">{t(`form.businessTypes.${value}`)}</span>
+                  </label>
+                )
+              })}
             </div>
           </fieldset>
 
-          <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-box border border-dashed border-line bg-plain-soft/50">
-              {form.logo ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={form.logo} alt={t('form.logoAlt')} className="h-full w-full object-cover" />
-              ) : (
-                <Building2 className="h-5 w-5 text-muted" aria-hidden="true" />
-              )}
+          {/* Nhóm 3: Tiền tệ, Múi giờ & Mô tả */}
+          <div className="p-4 rounded-xl bg-raised/50 border border-line space-y-4">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted">
+              <Globe className="w-3.5 h-3.5 text-primary" />
+              <span>Khu vực & Mô tả</span>
             </div>
-            <div className="min-w-0">
-              <label
-                htmlFor="workspace-logo"
-                className="inline-flex items-center rounded-ctl border border-ink px-3 h-9 sm:h-8 text-small font-medium text-fg cursor-pointer hover:bg-panel transition-colors duration-160"
-              >
-                {logoUploading ? t('form.logoUploading') : t('form.logoUpload')}
-              </label>
-              <input
-                id="workspace-logo"
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                className="sr-only"
-                disabled={logoUploading}
-                onChange={async (e) => {
-                  const file = e.target.files?.[0]
-                  // Reset so picking the same file twice still fires.
-                  e.target.value = ''
-                  if (!file) return
-                  setUploadError('')
-                  setLogoUploading(true)
-                  try {
-                    // Stored (Cloudinary), not kept as a data: URL in the workspace row.
-                    const url = await uploadPhoto(file, editing ? { workspaceId: editing.id } : {}, 512)
-                    onFormChange((current) => ({ ...current, logo: url }))
-                  } catch (error) {
-                    setUploadError(uploadProblem(error))
-                  } finally {
-                    setLogoUploading(false)
-                  }
-                }}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <Select
+                label={t('form.currency')}
+                options={CURRENCIES.map((value) => ({ value, label: t(`form.currencies.${value}`) }))}
+                value={form.currency}
+                onChange={(e) => onFormChange({ ...form, currency: e.target.value })}
               />
-              {form.logo && (
-                <button
-                  type="button"
-                  onClick={() => onFormChange({ ...form, logo: null })}
-                  className="ml-2 rounded-ctl px-3 h-9 sm:h-8 text-small font-medium text-err hover:bg-err-soft transition-colors duration-160"
-                >
-                  {t('form.logoRemove')}
-                </button>
-              )}
-              <p className="mt-1 text-small text-muted">{t('form.logoHint')}</p>
+              <Select
+                label={t('form.timezone')}
+                options={TIMEZONES.map(({ value, key }) => ({ value, label: t(`form.timezones.${key}`) }))}
+                value={form.timezone}
+                onChange={(e) => onFormChange({ ...form, timezone: e.target.value })}
+              />
             </div>
-          </div>
 
-          <Textarea
-            label={t('form.description')}
-            rows={2}
-            value={form.description}
-            placeholder={t('form.descriptionPlaceholder')}
-            onChange={(e) => onFormChange({ ...form, description: e.target.value.slice(0, 500) })}
-          />
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Select
-              label={t('form.currency')}
-              options={CURRENCIES.map((value) => ({ value, label: t(`form.currencies.${value}`) }))}
-              value={form.currency}
-              onChange={(e) => onFormChange({ ...form, currency: e.target.value })}
-            />
-            <Select
-              label={t('form.timezone')}
-              options={TIMEZONES.map(({ value, key }) => ({ value, label: t(`form.timezones.${key}`) }))}
-              value={form.timezone}
-              onChange={(e) => onFormChange({ ...form, timezone: e.target.value })}
+            <Textarea
+              label={t('form.description')}
+              rows={2}
+              value={form.description}
+              placeholder={t('form.descriptionPlaceholder')}
+              onChange={(e) => onFormChange({ ...form, description: e.target.value.slice(0, 500) })}
             />
           </div>
         </ModalBody>

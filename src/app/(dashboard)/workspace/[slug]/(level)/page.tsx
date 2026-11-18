@@ -19,6 +19,7 @@ import {
 } from '@/components/ui'
 import { useWorkspace } from '@/lib/hooks/use-workspace'
 import { useCan, useWorkspaceAccess } from '@/components/layout/workspace-context'
+import { CreatePropertyModal } from '@/components/properties/create-property-modal'
 import { cn } from '@/lib/utils'
 import { routes } from '@/lib/utils/routes'
 import {
@@ -73,6 +74,7 @@ export default function WorkspaceDashboardPage() {
   const [error, setError] = React.useState('')
   const [tab, setTab] = React.useState<'all' | 'active' | 'paused'>('all')
   const [query, setQuery] = React.useState('')
+  const [createPropertyOpen, setCreatePropertyOpen] = React.useState(false)
 
   React.useEffect(() => {
     if (!workspace?.id) return
@@ -147,12 +149,10 @@ export default function WorkspaceDashboardPage() {
           <p className="mt-2 text-small text-muted sm:text-body">{t('lead')}</p>
         </div>
         {canAddProperty && (
-          <Link href={routes.newProperty(slug)} className="shrink-0 self-start sm:self-auto">
-            <Button>
-              <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />
-              {t('addProperty')}
-            </Button>
-          </Link>
+          <Button onClick={() => setCreatePropertyOpen(true)} className="shrink-0 self-start sm:self-auto">
+            <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />
+            {t('addProperty')}
+          </Button>
         )}
       </div>
 
@@ -200,12 +200,10 @@ export default function WorkspaceDashboardPage() {
           <p className="text-body text-fg">{emptyText.title}</p>
           <p className="mt-1.5 text-small text-muted">{emptyText.text}</p>
           {(properties.length === 0 || (tab === 'active' && !query.trim())) && canAddProperty && (
-            <Link href={routes.newProperty(slug)} className="inline-block mt-6">
-              <Button>
-                <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />
-                {t('empty.action')}
-              </Button>
-            </Link>
+            <Button onClick={() => setCreatePropertyOpen(true)} className="mt-6">
+              <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />
+              {t('empty.action')}
+            </Button>
           )}
         </div>
       ) : (
@@ -236,6 +234,16 @@ export default function WorkspaceDashboardPage() {
       {/* Properties deleted in the last 30 days, for the owner (who alone gets the list). */}
       {access?.isOwner && workspace && (
         <RecentlyDeleted kind="property" workspaceId={workspace.id} slug={slug} />
+      )}
+
+      {workspace && (
+        <CreatePropertyModal
+          isOpen={createPropertyOpen}
+          onClose={() => setCreatePropertyOpen(false)}
+          workspaceId={workspace.id}
+          workspaceSlug={slug}
+          workspaceName={workspace.name}
+        />
       )}
     </div>
   )
