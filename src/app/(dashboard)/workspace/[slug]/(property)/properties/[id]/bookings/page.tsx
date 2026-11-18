@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { ChevronLeft, ChevronRight, FileSpreadsheet, MoreHorizontal, Plus, Search } from 'lucide-react'
+import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, FileSpreadsheet, IdCard, MoreHorizontal, Plus, Search } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Header, PageContainer } from '@/components/layout'
 import {
@@ -34,6 +34,7 @@ import {
 } from '@/components/ui'
 import { exportToCsv, exportToExcel } from '@/lib/export/export-data'
 import { BookingActions, BookingDetailContent, useBooking } from '@/components/bookings/booking-detail'
+import { GuestIdentityModal } from '@/components/bookings/guest-identity-modal'
 import { ResidenceExportModal } from '@/components/bookings/residence-export-modal'
 import { BookingsViews } from '@/components/bookings/bookings-views'
 import { useCan } from '@/components/layout/workspace-context'
@@ -57,6 +58,10 @@ interface BookingRow {
   depositAmount: number
   paymentStatus: string
   source: string
+  guestIdType?: string | null
+  guestIdNumber?: string | null
+  guestNationality?: string | null
+  stayGuests?: unknown[] | null
   /** the guest said they transferred a manual deposit (src/lib/payments/manual-deposit.ts) */
   transferClaimedAt?: string | null
   bookingItems: { roomTypeId: string; roomTypeName: string | null; roomNumber: string | null }[]
@@ -116,6 +121,7 @@ export default function BookingsPage() {
   const params = useParams<{ slug: string; id: string }>()
   const propertyId = params.id
   const canCreate = useCan('bookings_create')
+  const canEdit = useCan('bookings_edit')
   const t = useTranslations('dash.bookings')
   const tc = useTranslations('dash.common')
   const labels = useDashLabels()
@@ -133,6 +139,7 @@ export default function BookingsPage() {
   const [reloadKey, setReloadKey] = React.useState(0)
   const [openId, setOpenId] = React.useState<string | null>(null)
   const [isResidenceModalOpen, setIsResidenceModalOpen] = React.useState(false)
+  const [identityRow, setIdentityRow] = React.useState<BookingRow | null>(null)
 
   // A new filter starts again from page 1.
   React.useEffect(() => setPage(1), [tab, q, source, payment])
@@ -434,13 +441,14 @@ export default function BookingsPage() {
             ))}
           </ul>
 
-          {/* From md up: the 5-column table (redesign 4a). */}
+          {/* From md up: the 6-column table with direct ID check & edit */}
           <div className="hidden md:block rounded-box border border-line bg-panel overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>{t('list.columns.guest')}</TableHead>
                   <TableHead>{t('list.columns.roomDates')}</TableHead>
+                  <TableHead>Giấy tờ lưu trú</TableHead>
                   <TableHead className="text-right">{t('list.columns.total')}</TableHead>
                   <TableHead>{t('list.columns.status')}</TableHead>
                   <TableHead className="w-12">
@@ -449,7 +457,10 @@ export default function BookingsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((row) => (
+                {rows.map((row) => {
+                  const canEditRowId = canEdit && ['PENDING', 'CONFIRMED', 'CHECKED_IN'].includes(row.status)
+                  const companionCount = Array.isArray(row.stayGuests) ? row.stayGuests.length : 0
+                  return (
                   <TableRow key={row.id} selected={row.id === openId} onClick={() => setOpenId(row.id)}>
                     <TableCell>
                       <button
@@ -466,6 +477,43 @@ export default function BookingsPage() {
                     <TableCell>
                       <div className="text-fg">{roomText(row, t)}</div>
                       <div className="text-xs text-muted">{datesText(row, labels)}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-2">
+                        {row.guestIdNumber ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-ok-soft/70 text-ok font-mono text-xs font-medium">
+                              <CheckCircle2 className="w-3 h-3 shrink-0" />
+                              {row.guestIdNumber}
+                            </span>
+                            {companionCount > 0 && (
+                              <span className="text-[11px] font-medium text-muted">+{companionCount}</span>
+                            )}
+                            {canEditRowId && (
+                              <button
+                                type="button"
+                                onClick={() => setIdentityRow(row)}
+                                className="text-xs font-medium text-muted hover:text-primary hover:underline px-1"
+                              >
+                                Sửa
+                              </button>
+                            )}
+                          </div>
+                        ) : canEditRowId ? (
+                          <button
+                            type="button"
+                            onClick={() => setIdentityRow(row)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-warn-soft/80 hover:bg-warn-soft border border-warn/40 text-warn text-xs font-semibold transition-colors"
+                          >
+                            <IdCard className="w-3.5 h-3.5 shrink-0" />
+                            <span>+ Nhập CCCD</span>
+                          </button>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-xs text-muted">
+                            <AlertCircle className="w-3 h-3" /> Chưa nhập
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="font-semibold tabular-nums whitespace-nowrap">{labels.money(row.totalAmount)}</div>
@@ -487,6 +535,11 @@ export default function BookingsPage() {
                           }
                         >
                           <DropdownItem onClick={() => setOpenId(row.id)}>{t('list.viewDetails')}</DropdownItem>
+                          {canEditRowId && (
+                            <DropdownItem onClick={() => setIdentityRow(row)}>
+                              {row.guestIdNumber ? 'Sửa giấy tờ (CCCD / Hộ chiếu)' : 'Nhập CCCD / Hộ chiếu'}
+                            </DropdownItem>
+                          )}
                           <DropdownItem onClick={() => router.push(routes.propertyBooking(params.slug, propertyId, row.id))}>
                             {t('actions.openFullPage')}
                           </DropdownItem>
@@ -494,7 +547,8 @@ export default function BookingsPage() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                  )
+                })}
               </TableBody>
             </Table>
           </div>
@@ -600,6 +654,15 @@ export default function BookingsPage() {
         propertyId={propertyId}
         isOpen={isResidenceModalOpen}
         onClose={() => setIsResidenceModalOpen(false)}
+      />
+
+      <GuestIdentityModal
+        bookingId={identityRow?.id ?? null}
+        bookingCode={identityRow?.bookingCode}
+        guestName={identityRow?.guestName}
+        isOpen={Boolean(identityRow)}
+        onClose={() => setIdentityRow(null)}
+        onSaved={refreshAll}
       />
     </PageContainer>
   )

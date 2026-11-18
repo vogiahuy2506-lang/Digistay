@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Check, Copy, MoreHorizontal, Phone, Plus, Trash2 } from 'lucide-react'
+import { Check, Copy, IdCard, MoreHorizontal, Phone, Plus, Trash2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import {
@@ -380,36 +380,6 @@ export function BookingDetailContent({ booking, onChanged }: { booking: BookingD
             )}
           </Field>
           <Field label={t('guest.guests')}>{labels.guests(booking.numAdults, booking.numChildren)}</Field>
-          <Field label={booking.guestIdType === 'PASSPORT' ? 'Hộ chiếu' : 'CCCD / Hộ chiếu'}>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                {booking.guestIdNumber ? (
-                  <>
-                    <span className="font-mono font-medium text-fg">{booking.guestIdNumber}</span>
-                    {booking.guestNationality && (
-                      <span className="ml-2 text-muted">({booking.guestNationality})</span>
-                    )}
-                    {Array.isArray(booking.stayGuests) && booking.stayGuests.length > 0 && (
-                      <span className="ml-2 text-xs text-acc font-medium">
-                        +{booking.stayGuests.length} người ở cùng
-                      </span>
-                    )}
-                  </>
-                ) : (
-                  <span className="text-warn text-xs font-medium">Chưa nhập giấy tờ lưu trú</span>
-                )}
-              </div>
-              {canEditIdentity && (
-                <button
-                  type="button"
-                  onClick={() => setShowIdentityModal(true)}
-                  className="text-xs font-semibold text-primary hover:underline shrink-0"
-                >
-                  {booking.guestIdNumber ? 'Sửa giấy tờ' : '+ Nhập CCCD / Hộ chiếu'}
-                </button>
-              )}
-            </div>
-          </Field>
           {booking.guestBirthDate && (
             <Field label="Ngày sinh">
               <span className="tabular-nums">
@@ -428,6 +398,53 @@ export function BookingDetailContent({ booking, onChanged }: { booking: BookingD
             </Field>
           )}
         </dl>
+
+        {/* Prominent Guest Identity & Residence Card */}
+        <div
+          className={cn(
+            'mt-3 rounded-xl border p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3',
+            booking.guestIdNumber
+              ? 'bg-raised/60 border-line'
+              : 'bg-warn-soft/50 border-warn/40'
+          )}
+        >
+          <div className="space-y-1">
+            <div className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
+              <IdCard className="w-3.5 h-3.5 text-primary" />
+              <span>Giấy tờ tùy thân & Khai báo lưu trú</span>
+            </div>
+            {booking.guestIdNumber ? (
+              <div className="text-sm text-fg">
+                <span className="font-mono font-semibold">{booking.guestIdNumber}</span>
+                <span className="ml-1.5 text-xs text-muted">
+                  ({booking.guestIdType === 'PASSPORT' ? 'Hộ chiếu' : 'CCCD'}) · {booking.guestNationality || 'Việt Nam'}
+                </span>
+                {Array.isArray(booking.stayGuests) && booking.stayGuests.length > 0 && (
+                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-md bg-acc-soft text-acc text-xs font-medium">
+                    +{booking.stayGuests.length} khách đi cùng
+                  </span>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs font-medium text-warn">
+                Chưa có thông tin CCCD / Hộ chiếu để khai báo lưu trú công an.
+              </p>
+            )}
+          </div>
+
+          {canEditIdentity && (
+            <Button
+              type="button"
+              size="sm"
+              variant={booking.guestIdNumber ? 'outline' : 'primary'}
+              onClick={() => setShowIdentityModal(true)}
+              className="shrink-0"
+            >
+              <IdCard className="w-3.5 h-3.5 mr-1.5" />
+              {booking.guestIdNumber ? 'Sửa giấy tờ' : '+ Nhập CCCD / Hộ chiếu'}
+            </Button>
+          )}
+        </div>
         {booking.guestNote && (
           <p className="mt-2 rounded-ctl bg-fg/5 px-3 py-2 text-small text-fg">
             <span className="text-muted">{t('guest.note')} </span>
@@ -963,7 +980,7 @@ export function BookingActions({
   const tc = useTranslations('dash.common')
   const labels = useDashLabels()
   const [busy, setBusy] = React.useState<ActionKey | null>(null)
-  const [dialog, setDialog] = React.useState<'cancel' | 'extend' | 'noshow' | 'checkin' | 'checkout' | 'payment' | null>(null)
+  const [dialog, setDialog] = React.useState<'cancel' | 'extend' | 'noshow' | 'checkin' | 'checkout' | 'payment' | 'identity' | null>(null)
   const [extendDate, setExtendDate] = React.useState('')
   const [dialogError, setDialogError] = React.useState('')
 
@@ -1059,6 +1076,12 @@ export function BookingActions({
           {t('actions.checkIn')}
         </Button>
       )}
+      {canManage && ['PENDING', 'CONFIRMED', 'CHECKED_IN'].includes(booking.status) && (
+        <Button variant="outline" onClick={() => setDialog('identity')} disabled={!!busy}>
+          <IdCard className="w-4 h-4 mr-1.5 text-primary" aria-hidden="true" />
+          {booking.guestIdNumber ? 'Giấy tờ' : 'Nhập CCCD'}
+        </Button>
+      )}
       {canManage && remaining > 0 && booking.status !== 'CANCELLED' && (
         <Button variant="outline" onClick={() => setDialog('payment')} disabled={!!busy}>
           Thu tiền
@@ -1104,7 +1127,13 @@ export function BookingActions({
             {t('actions.sendConfirmation')}
           </DropdownItem>
         )}
-        {canManage && remaining > 0 && booking.status !== 'CANCELLED' && (
+        {canManage && ['PENDING', 'CONFIRMED', 'CHECKED_IN'].includes(booking.status) && (
+        <Button variant="outline" onClick={() => setDialog('identity')} disabled={!!busy}>
+          <IdCard className="w-4 h-4 mr-1.5 text-primary" aria-hidden="true" />
+          {booking.guestIdNumber ? 'Giấy tờ' : 'Nhập CCCD'}
+        </Button>
+      )}
+      {canManage && remaining > 0 && booking.status !== 'CANCELLED' && (
           <DropdownItem onClick={() => setDialog('payment')}>
             Ghi nhận thanh toán
           </DropdownItem>
@@ -1156,6 +1185,18 @@ export function BookingActions({
         isOpen={dialog === 'payment'}
         onClose={() => setDialog(null)}
         onDone={() => {
+          setDialog(null)
+          onChanged()
+        }}
+      />
+
+      <GuestIdentityModal
+        bookingId={booking.id}
+        bookingCode={booking.bookingCode}
+        guestName={booking.guestName}
+        isOpen={dialog === 'identity'}
+        onClose={() => setDialog(null)}
+        onSaved={() => {
           setDialog(null)
           onChanged()
         }}
