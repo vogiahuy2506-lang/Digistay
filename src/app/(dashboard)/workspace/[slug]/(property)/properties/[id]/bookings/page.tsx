@@ -442,8 +442,8 @@ export default function BookingsPage() {
           </ul>
 
           {/* From md up: the 6-column table with direct ID check & edit */}
-          <div className="hidden md:block rounded-box border border-line bg-panel">
-            <Table className="overflow-visible">
+          <div className="hidden md:block rounded-box border border-line bg-panel overflow-hidden">
+            <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>{t('list.columns.guest')}</TableHead>
