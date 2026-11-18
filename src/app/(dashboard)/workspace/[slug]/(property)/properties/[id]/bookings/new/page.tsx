@@ -89,7 +89,18 @@ export default function WalkinBookingPage() {
   const [rooms, setRooms] = React.useState<{ listed: boolean; list: Room[] } | null>(null)
   const [roomId, setRoomId] = React.useState('')
 
-  const [guest, setGuest] = React.useState({ name: '', phone: '', email: '', note: '' })
+  const [guest, setGuest] = React.useState({
+    name: '',
+    phone: '',
+    email: '',
+    note: '',
+    idType: 'CCCD',
+    idNumber: '',
+    nationality: 'Việt Nam',
+    birthDate: '',
+    gender: '',
+    address: '',
+  })
   const [source, setSource] = React.useState<'WALK_IN' | 'PHONE'>('WALK_IN')
   const [method, setMethod] = React.useState<Method>('NONE')
   const [scope, setScope] = React.useState<'full' | 'deposit'>('full')
@@ -175,7 +186,18 @@ export default function WalkinBookingPage() {
 
   const resetForm = () => {
     setSelectedTypeId(null)
-    setGuest({ name: '', phone: '', email: '', note: '' })
+    setGuest({
+      name: '',
+      phone: '',
+      email: '',
+      note: '',
+      idType: 'CCCD',
+      idNumber: '',
+      nationality: 'Việt Nam',
+      birthDate: '',
+      gender: '',
+      address: '',
+    })
     setSource('WALK_IN')
     setMethod('NONE')
     setScope('full')
@@ -220,6 +242,12 @@ export default function WalkinBookingPage() {
           guestPhone: guest.phone.trim(),
           guestEmail: guest.email.trim(),
           guestNote: guest.note.trim() || undefined,
+          guestIdType: guest.idType,
+          guestIdNumber: guest.idNumber.trim() || undefined,
+          guestNationality: guest.nationality.trim() || 'Việt Nam',
+          guestBirthDate: guest.birthDate || undefined,
+          guestGender: guest.gender || undefined,
+          guestAddress: guest.address.trim() || undefined,
           checkInDate,
           checkOutDate,
           numAdults,
@@ -524,6 +552,70 @@ export default function WalkinBookingPage() {
                 <input className={field} placeholder={t('summary.namePlaceholder')} aria-label={t('summary.namePlaceholder')} value={guest.name} onChange={(e) => setGuest({ ...guest, name: e.target.value })} autoComplete="off" />
                 <input className={field} placeholder={t('summary.phonePlaceholder')} aria-label={t('summary.phonePlaceholder')} value={guest.phone} onChange={(e) => setGuest({ ...guest, phone: e.target.value })} type="tel" autoComplete="off" />
                 <input className={field} placeholder={t('summary.emailPlaceholder')} aria-label={t('summary.emailPlaceholder')} value={guest.email} onChange={(e) => setGuest({ ...guest, email: e.target.value })} type="email" autoComplete="off" />
+
+                {/* Giấy tờ tùy thân & Lưu trú */}
+                <div className="pt-2 space-y-2 border-t border-line/70">
+                  <div className="text-xs font-semibold text-muted uppercase tracking-wider">
+                    Giấy tờ tùy thân (CCCD / Hộ chiếu)
+                  </div>
+                  <div className="grid grid-cols-5 gap-2">
+                    <select
+                      className={cn(field, 'col-span-2')}
+                      aria-label="Loại giấy tờ"
+                      value={guest.idType}
+                      onChange={(e) => setGuest({ ...guest, idType: e.target.value })}
+                    >
+                      <option value="CCCD">CCCD</option>
+                      <option value="PASSPORT">Hộ chiếu</option>
+                      <option value="OTHER">Khác</option>
+                    </select>
+                    <input
+                      className={cn(field, 'col-span-3')}
+                      placeholder={guest.idType === 'PASSPORT' ? 'Số hộ chiếu...' : 'Số CCCD / CMND...'}
+                      aria-label="Số CCCD hoặc Hộ chiếu"
+                      value={guest.idNumber}
+                      onChange={(e) => setGuest({ ...guest, idNumber: e.target.value })}
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <input
+                      type="date"
+                      className={field}
+                      title="Ngày sinh"
+                      aria-label="Ngày sinh"
+                      value={guest.birthDate}
+                      onChange={(e) => setGuest({ ...guest, birthDate: e.target.value })}
+                    />
+                    <select
+                      className={field}
+                      aria-label="Giới tính"
+                      value={guest.gender}
+                      onChange={(e) => setGuest({ ...guest, gender: e.target.value })}
+                    >
+                      <option value="">Giới tính</option>
+                      <option value="MALE">Nam</option>
+                      <option value="FEMALE">Nữ</option>
+                      <option value="OTHER">Khác</option>
+                    </select>
+                    <input
+                      className={field}
+                      placeholder="Quốc tịch"
+                      aria-label="Quốc tịch"
+                      value={guest.nationality}
+                      onChange={(e) => setGuest({ ...guest, nationality: e.target.value })}
+                    />
+                  </div>
+                  <input
+                    className={field}
+                    placeholder="Địa chỉ thường trú (ghi trên CCCD)..."
+                    aria-label="Địa chỉ thường trú"
+                    value={guest.address}
+                    onChange={(e) => setGuest({ ...guest, address: e.target.value })}
+                    autoComplete="off"
+                  />
+                </div>
+
                 <textarea
                   className={cn(field, 'h-auto py-2')}
                   rows={2}

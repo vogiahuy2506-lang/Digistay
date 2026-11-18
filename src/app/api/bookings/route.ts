@@ -30,6 +30,12 @@ const createBookingSchema = z.object({
   guestEmail: z.string().trim().email('Email không hợp lệ').optional().or(z.literal('')),
   guestPhone: z.string().min(10, 'Số điện thoại không hợp lệ'),
   guestNote: z.string().optional(),
+  guestIdType: z.string().optional(),
+  guestIdNumber: z.string().optional(),
+  guestNationality: z.string().optional(),
+  guestBirthDate: z.string().optional(),
+  guestGender: z.string().optional(),
+  guestAddress: z.string().optional(),
   checkInDate: z.string(),
   checkOutDate: z.string(),
   numAdults: z.number().int().min(1),
@@ -223,6 +229,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Ngày không hợp lệ' }, { status: 400 })
     }
 
+    const parsedBirthDate = data.guestBirthDate ? new Date(data.guestBirthDate) : null
+    const validBirthDate = parsedBirthDate && !Number.isNaN(parsedBirthDate.getTime()) ? parsedBirthDate : null
+
     const { booking, emailIds } = await createBooking({
       propertyId: data.propertyId,
       roomTypeId: data.roomTypeId,
@@ -231,6 +240,12 @@ export async function POST(request: NextRequest) {
       guestEmail: data.guestEmail ?? '',
       guestPhone: data.guestPhone,
       guestNote: data.guestNote,
+      guestIdType: data.guestIdType || 'CCCD',
+      guestIdNumber: data.guestIdNumber?.trim() || null,
+      guestNationality: data.guestNationality?.trim() || 'Việt Nam',
+      guestBirthDate: validBirthDate,
+      guestGender: data.guestGender || null,
+      guestAddress: data.guestAddress?.trim() || null,
       checkIn,
       checkOut,
       numAdults: data.numAdults,

@@ -50,6 +50,12 @@ export interface NewBooking {
   guestEmail: string
   guestPhone: string
   guestNote?: string | null
+  guestIdType?: string | null
+  guestIdNumber?: string | null
+  guestNationality?: string | null
+  guestBirthDate?: Date | null
+  guestGender?: string | null
+  guestAddress?: string | null
   checkIn: Date
   checkOut: Date
   numAdults: number
@@ -306,6 +312,12 @@ export async function createBooking(input: NewBooking) {
         guestEmail: input.guestEmail,
         guestPhone: input.guestPhone,
         guestNote: input.guestNote ?? null,
+        ...(input.guestIdType ? { guestIdType: input.guestIdType } : {}),
+        ...(input.guestIdNumber ? { guestIdNumber: input.guestIdNumber } : {}),
+        ...(input.guestNationality ? { guestNationality: input.guestNationality } : {}),
+        ...(input.guestBirthDate ? { guestBirthDate: input.guestBirthDate } : {}),
+        ...(input.guestGender ? { guestGender: input.guestGender } : {}),
+        ...(input.guestAddress ? { guestAddress: input.guestAddress } : {}),
         checkInDate: input.checkIn,
         checkOutDate: input.checkOut,
         numAdults: input.numAdults,
