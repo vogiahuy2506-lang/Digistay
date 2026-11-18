@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { useTranslations } from 'next-intl'
+import { Plus, Trash2, Users } from 'lucide-react'
 import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Select } from '@/components/ui'
 import { useDashLabels } from '@/lib/i18n/dash'
 import { apiError } from '@/lib/i18n/api-errors'
@@ -97,6 +98,20 @@ export function CheckInDialog({
   )
   const [gender, setGender] = React.useState(booking.guestGender || '')
   const [address, setAddress] = React.useState(booking.guestAddress || '')
+  const [stayGuests, setStayGuests] = React.useState<
+    Array<{ name: string; idType: string; idNumber: string; nationality: string; birthDate: string; gender: string }>
+  >(
+    Array.isArray(booking.stayGuests)
+      ? booking.stayGuests.map((g) => ({
+          name: g.name || '',
+          idType: g.idType || 'CCCD',
+          idNumber: g.idNumber || '',
+          nationality: g.nationality || 'Việt Nam',
+          birthDate: g.birthDate ? String(g.birthDate).slice(0, 10) : '',
+          gender: g.gender || '',
+        }))
+      : []
+  )
 
   React.useEffect(() => {
     if (!isOpen) return
@@ -115,6 +130,18 @@ export function CheckInDialog({
     )
     setGender(booking.guestGender || '')
     setAddress(booking.guestAddress || '')
+    setStayGuests(
+      Array.isArray(booking.stayGuests)
+        ? booking.stayGuests.map((g) => ({
+            name: g.name || '',
+            idType: g.idType || 'CCCD',
+            idNumber: g.idNumber || '',
+            nationality: g.nationality || 'Việt Nam',
+            birthDate: g.birthDate ? String(g.birthDate).slice(0, 10) : '',
+            gender: g.gender || '',
+          }))
+        : []
+    )
     if (!item || split) {
       setRooms({ listed: false, list: [] })
       return
@@ -186,6 +213,17 @@ export function CheckInDialog({
           return
         }
       }
+      const cleanedStayGuests = stayGuests
+        .filter((g) => g.name.trim())
+        .map((g) => ({
+          name: g.name.trim(),
+          idType: g.idType || 'CCCD',
+          idNumber: g.idNumber.trim() || undefined,
+          nationality: g.nationality.trim() || 'Việt Nam',
+          birthDate: g.birthDate || undefined,
+          gender: g.gender || undefined,
+        }))
+
       const res = await fetch(`/api/bookings/${booking.id}/check-in`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -196,6 +234,7 @@ export function CheckInDialog({
           guestBirthDate: birthDate || null,
           guestGender: gender || null,
           guestAddress: address.trim() || null,
+          stayGuests: cleanedStayGuests,
         }),
       })
       const data = await res.json()
@@ -209,7 +248,7 @@ export function CheckInDialog({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="md">
+    <Modal isOpen={isOpen} onClose={onClose} size="lg">
       <ModalHeader onClose={onClose}>
         <span className="font-semibold">{t('checkIn.title', { code: booking.bookingCode })}</span>
       </ModalHeader>
@@ -257,10 +296,25 @@ export function CheckInDialog({
         )}
 
         {/* Identity & Residence Section */}
-        <div className="rounded-card border border-border/70 bg-bg-card/50 p-3.5 space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted">
-            {t('checkIn.identitySection')}
-          </p>
+        <div className="rounded-xl border border-line bg-raised/60 p-3.5 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+              {t('checkIn.identitySection')}
+            </p>
+            <button
+              type="button"
+              onClick={() =>
+                setStayGuests((prev) => [
+                  ...prev,
+                  { name: '', idType: 'CCCD', idNumber: '', nationality: 'Việt Nam', birthDate: '', gender: '' },
+                ])
+              }
+              className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Thêm khách cùng phòng</span>
+            </button>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Select
@@ -314,6 +368,108 @@ export function CheckInDialog({
             onChange={(e) => setAddress(e.target.value)}
             placeholder={t('checkIn.addressPlaceholder')}
           />
+
+          {/* Additional Stay Guests */}
+          {stayGuests.length > 0 && (
+            <div className="pt-3 border-t border-line space-y-3">
+              <p className="text-xs font-semibold text-fg flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-primary" />
+                <span>Khách đi cùng / Ở cùng phòng ({stayGuests.length})</span>
+              </p>
+              {stayGuests.map((sg, idx) => (
+                <div key={idx} className="p-3 rounded-xl bg-panel border border-line space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-muted">Khách đi cùng #{idx + 1}</span>
+                    <button
+                      type="button"
+                      onClick={() => setStayGuests((prev) => prev.filter((_, i) => i !== idx))}
+                      className="text-xs text-err hover:underline inline-flex items-center gap-1"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>Xóa</span>
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <Input
+                      label="Họ và tên"
+                      value={sg.name}
+                      onChange={(e) =>
+                        setStayGuests((prev) =>
+                          prev.map((item, i) => (i === idx ? { ...item, name: e.target.value } : item))
+                        )
+                      }
+                      placeholder="Nguyễn Văn B"
+                    />
+                    <div className="grid grid-cols-5 gap-2">
+                      <div className="col-span-2">
+                        <Select
+                          label="Giấy tờ"
+                          value={sg.idType}
+                          onChange={(e) =>
+                            setStayGuests((prev) =>
+                              prev.map((item, i) => (i === idx ? { ...item, idType: e.target.value } : item))
+                            )
+                          }
+                        >
+                          <option value="CCCD">CCCD</option>
+                          <option value="PASSPORT">Hộ chiếu</option>
+                          <option value="OTHER">Khác</option>
+                        </Select>
+                      </div>
+                      <div className="col-span-3">
+                        <Input
+                          label="Số giấy tờ"
+                          value={sg.idNumber}
+                          onChange={(e) =>
+                            setStayGuests((prev) =>
+                              prev.map((item, i) => (i === idx ? { ...item, idNumber: e.target.value } : item))
+                            )
+                          }
+                          placeholder="079..."
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <Input
+                      type="date"
+                      label="Ngày sinh"
+                      value={sg.birthDate}
+                      onChange={(e) =>
+                        setStayGuests((prev) =>
+                          prev.map((item, i) => (i === idx ? { ...item, birthDate: e.target.value } : item))
+                        )
+                      }
+                    />
+                    <Select
+                      label="Giới tính"
+                      value={sg.gender}
+                      onChange={(e) =>
+                        setStayGuests((prev) =>
+                          prev.map((item, i) => (i === idx ? { ...item, gender: e.target.value } : item))
+                        )
+                      }
+                    >
+                      <option value="">-- Chọn --</option>
+                      <option value="MALE">Nam</option>
+                      <option value="FEMALE">Nữ</option>
+                      <option value="OTHER">Khác</option>
+                    </Select>
+                    <Input
+                      label="Quốc tịch"
+                      value={sg.nationality}
+                      onChange={(e) =>
+                        setStayGuests((prev) =>
+                          prev.map((item, i) => (i === idx ? { ...item, nationality: e.target.value } : item))
+                        )
+                      }
+                      placeholder="Việt Nam"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {early && (

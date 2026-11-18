@@ -187,7 +187,7 @@ export function ResidenceExportModal({
         </p>
 
         {/* Date Filter & Status Counter */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-card border border-border/70 bg-muted/20 p-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-line bg-raised p-3">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-muted shrink-0" aria-hidden="true" />
             <label htmlFor="residence-date" className="text-small font-medium text-fg whitespace-nowrap">
@@ -227,15 +227,15 @@ export function ResidenceExportModal({
             <Loading size="lg" />
           </div>
         ) : guests.length === 0 ? (
-          <div className="text-center py-10 border border-dashed border-border rounded-card">
+          <div className="text-center py-10 border border-dashed border-line rounded-xl">
             <p className="text-muted text-small">
               Không có khách lưu trú nào trong ngày {labels.date(selectedDate)}.
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto max-h-[380px] rounded-card border border-border/80">
+          <div className="overflow-x-auto max-h-[380px] rounded-xl border border-line">
             <Table>
-              <TableHeader className="sticky top-0 bg-bg-card z-10 shadow-sm">
+              <TableHeader className="sticky top-0 bg-panel z-10 shadow-sm">
                 <TableRow>
                   <TableHead className="w-10">STT</TableHead>
                   <TableHead>Khách hàng</TableHead>
