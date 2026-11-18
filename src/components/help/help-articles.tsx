@@ -16,6 +16,9 @@ import {
   ThumbsUp,
   ThumbsDown,
   X,
+  Image as ImageIcon,
+  PenLine,
+  MousePointerClick,
 } from 'lucide-react'
 import {
   HELP_CATEGORIES,
@@ -39,6 +42,7 @@ export function HelpArticles() {
   const [searchQuery, setSearchQuery] = React.useState('')
   const [selectedCategoryId, setSelectedCategoryId] = React.useState<string>('all')
   const [activeArticle, setActiveArticle] = React.useState<HelpArticle | null>(null)
+  const [activeSpotIdx, setActiveSpotIdx] = React.useState<number>(0)
   const [feedbackMap, setFeedbackMap] = React.useState<Record<string, 'up' | 'down'>>({})
   const searchInputRef = React.useRef<HTMLInputElement>(null)
 
@@ -52,6 +56,11 @@ export function HelpArticles() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
+
+  const openArticle = (article: HelpArticle) => {
+    setActiveArticle(article)
+    setActiveSpotIdx(0)
+  }
 
   const normalizedQuery = searchQuery.trim().toLowerCase()
 
@@ -76,6 +85,8 @@ export function HelpArticles() {
     })
   }, [selectedCategoryId, normalizedQuery])
 
+  const activeSpot = activeArticle?.spots?.[activeSpotIdx]
+
   return (
     <section className="space-y-6">
       {/* Search Bar */}
@@ -84,10 +95,10 @@ export function HelpArticles() {
           <div>
             <h2 className="text-base font-bold text-fg flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-primary" />
-              Thư viện tài liệu hướng dẫn chi tiết
+              Hướng dẫn sử dụng toàn bộ hệ thống ({HELP_ARTICLES.length} bài)
             </h2>
             <p className="text-xs text-muted mt-0.5">
-              Tìm kiếm nhanh quy trình thao tác hoặc chọn theo từng nhóm nghiệp vụ khách sạn.
+              Tìm kiếm nhanh quy trình thao tác hoặc chọn theo từng phân hệ. Mọi bài viết đều có hình ảnh thật & tô sáng vị trí cần bấm/điền.
             </p>
           </div>
 
@@ -98,7 +109,7 @@ export function HelpArticles() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm hướng dẫn (VD: check-in, vietqr, website...)"
+              placeholder="Tìm hướng dẫn (VD: lịch phòng, vietqr, báo cáo...)"
               className="w-full h-10 pl-10 pr-20 rounded-xl bg-raised border border-line text-sm text-fg placeholder:text-muted focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
             />
             {searchQuery ? (
@@ -169,7 +180,7 @@ export function HelpArticles() {
         <div className="px-5 py-3.5 border-b border-line bg-raised/60 flex items-center justify-between">
           <span className="text-xs font-semibold uppercase tracking-wider text-muted">
             {selectedCategoryId === 'all'
-              ? `Tất cả bài viết (${filteredArticles.length})`
+              ? `Tất cả bài hướng dẫn (${filteredArticles.length})`
               : `${HELP_CATEGORIES.find((c) => c.id === selectedCategoryId)?.title ?? ''} (${filteredArticles.length})`}
           </span>
           {selectedCategoryId !== 'all' && (
@@ -199,7 +210,7 @@ export function HelpArticles() {
                 <button
                   key={article.id}
                   type="button"
-                  onClick={() => setActiveArticle(article)}
+                  onClick={() => openArticle(article)}
                   className="w-full text-left p-4 sm:px-5 hover:bg-raised/60 transition-colors flex items-center justify-between gap-4 group"
                 >
                   <div className="min-w-0 flex-1">
@@ -207,6 +218,12 @@ export function HelpArticles() {
                       {category && (
                         <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-raised border border-line text-muted">
                           {category.title}
+                        </span>
+                      )}
+                      {article.screenshot && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-acc-soft text-acc border border-acc/20">
+                          <ImageIcon className="w-3 h-3" />
+                          Có ảnh chỉ dẫn
                         </span>
                       )}
                       <span className="inline-flex items-center gap-1 text-[11px] text-muted">
@@ -227,12 +244,12 @@ export function HelpArticles() {
         )}
       </div>
 
-      {/* Article Reader Modal */}
+      {/* Article Reader Modal with Interactive Annotated Screenshot */}
       {activeArticle && (
         <Modal
           isOpen={Boolean(activeArticle)}
           onClose={() => setActiveArticle(null)}
-          size="lg"
+          size="xl"
         >
           <ModalHeader onClose={() => setActiveArticle(null)}>
             <div className="pr-4">
@@ -240,7 +257,96 @@ export function HelpArticles() {
               <p className="text-xs text-muted mt-0.5 font-normal">{activeArticle.summary}</p>
             </div>
           </ModalHeader>
-          <ModalBody className="space-y-4">
+          <ModalBody className="space-y-5">
+            {/* Interactive Screenshot with Highlighted Callouts */}
+            {activeArticle.screenshot && (
+              <div className="space-y-2.5">
+                <div className="aspect-video w-full rounded-xl overflow-hidden border border-line bg-neutral-950 relative shadow-md select-none">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={activeArticle.screenshot}
+                    alt={activeArticle.title}
+                    className="w-full h-full object-cover object-top"
+                  />
+                  <div className="absolute inset-0 bg-black/15 pointer-events-none" />
+
+                  {activeArticle.spots?.map((spot, idx) => {
+                    const isCurrent = idx === activeSpotIdx
+                    const Icon = spot.kind === 'input' ? PenLine : MousePointerClick
+                    return (
+                      <button
+                        key={spot.id}
+                        type="button"
+                        onClick={() => setActiveSpotIdx(idx)}
+                        style={{
+                          left: `${spot.x}%`,
+                          top: `${spot.y}%`,
+                          width: `${spot.w}%`,
+                          height: `${spot.h}%`,
+                        }}
+                        className={cn(
+                          'absolute rounded-lg transition-all duration-200 cursor-pointer focus:outline-none',
+                          isCurrent
+                            ? 'border-2 border-primary bg-primary/15 ring-4 ring-primary/40 shadow-lg z-20'
+                            : 'border-2 border-dashed border-amber-400/80 bg-amber-400/10 hover:bg-amber-400/20 z-10 opacity-85'
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            'absolute left-0 flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold whitespace-nowrap shadow-md',
+                            spot.badgePos === 'bottom' ? 'top-full mt-1' : 'bottom-full mb-1',
+                            isCurrent
+                              ? 'bg-primary text-white'
+                              : 'bg-neutral-900/90 text-amber-300 border border-amber-400/40'
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              'w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-extrabold',
+                              isCurrent ? 'bg-white text-primary' : 'bg-amber-400 text-neutral-950'
+                            )}
+                          >
+                            {spot.id}
+                          </span>
+                          <Icon className="w-3 h-3 shrink-0" />
+                          <span>{spot.label}</span>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {/* Callout Spot Pills & Explanation */}
+                {activeArticle.spots && activeArticle.spots.length > 0 && (
+                  <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-raised border border-line">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {activeArticle.spots.map((s, idx) => (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => setActiveSpotIdx(idx)}
+                          className={cn(
+                            'px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors',
+                            idx === activeSpotIdx
+                              ? 'bg-primary text-on-primary border-transparent'
+                              : 'bg-panel border-line text-muted hover:text-fg'
+                          )}
+                        >
+                          #{s.id} {s.label}
+                        </button>
+                      ))}
+                    </div>
+                    {activeSpot && (
+                      <p className="text-xs font-medium text-fg">
+                        👉 <span className="text-primary font-semibold">{activeSpot.label}:</span> {activeSpot.hint}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Text Step-by-Step */}
             <div className="space-y-3">
               {activeArticle.steps.map((step, idx) => (
                 <div
