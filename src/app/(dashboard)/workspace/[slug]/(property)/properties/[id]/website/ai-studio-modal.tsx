@@ -4,7 +4,7 @@ import * as React from 'react'
 import { Sparkles, Wand2, Check, RefreshCw, Layers, Compass, Palette, Type, HelpCircle, Loader2 } from 'lucide-react'
 import { Button, Modal, ModalHeader, ModalBody, ModalFooter, Input } from '@/components/ui'
 import { cn } from '@/lib/utils'
-import { THEME_PRESETS } from '@/lib/ai/website-ai'
+import { THEME_PRESETS } from '@/lib/ai/website-theme-presets'
 
 export interface AiStudioModalProps {
   isOpen: boolean
