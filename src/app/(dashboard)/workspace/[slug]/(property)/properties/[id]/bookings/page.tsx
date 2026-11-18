@@ -442,8 +442,8 @@ export default function BookingsPage() {
           </ul>
 
           {/* From md up: the 6-column table with direct ID check & edit */}
-          <div className="hidden md:block rounded-box border border-line bg-panel overflow-hidden">
-            <Table>
+          <div className="hidden md:block rounded-box border border-line bg-panel">
+            <Table className="overflow-visible">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t('list.columns.guest')}</TableHead>
@@ -503,7 +503,7 @@ export default function BookingsPage() {
                           <button
                             type="button"
                             onClick={() => setIdentityRow(row)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-warn-soft/80 hover:bg-warn-soft border border-warn/40 text-warn text-xs font-semibold transition-colors"
+                            className="inline-flex items-center gap-1.5 whitespace-nowrap px-2.5 py-1 rounded-lg bg-warn-soft/80 hover:bg-warn-soft border border-warn/40 text-warn text-xs font-semibold transition-colors"
                           >
                             <IdCard className="w-3.5 h-3.5 shrink-0" />
                             <span>+ Nhập CCCD</span>
