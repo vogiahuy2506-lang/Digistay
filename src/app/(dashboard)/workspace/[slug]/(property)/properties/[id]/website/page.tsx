@@ -47,7 +47,6 @@ import { InspectableSection } from './inspectable-section'
 import { BlockInspectorPanel } from './block-inspector-panel'
 import { TemplateCard } from './template-card'
 import { THEME_PRESETS } from '@/lib/ai/website-theme-presets'
-import { AiStudioModal } from './ai-studio-modal'
 import { AiRemixDrawer } from './ai-remix-drawer'
 import { AiTextCopilot } from './ai-text-copilot'
 import { HOTEL_LANDING_TEMPLATES, type HotelLandingTemplate } from '@/lib/public-site/landing-templates'
@@ -841,8 +840,6 @@ export default function WebsiteBuilderPage() {
   const [history, setHistory] = React.useState<Block[][]>([])
   const [historyIndex, setHistoryIndex] = React.useState(-1)
 
-  // AI Studio & Copilot states
-  const [showAiStudioModal, setShowAiStudioModal] = React.useState(false)
   const [remixingBlock, setRemixingBlock] = React.useState<Block | null>(null)
   const [aiCopilotField, setAiCopilotField] = React.useState<{
     fieldKey: string
@@ -882,7 +879,6 @@ export default function WebsiteBuilderPage() {
   const handleQuickAiGenerate = async (customPrompt?: string, preset?: string) => {
     const promptToUse = customPrompt ?? aiPromptInput
     if (!promptToUse && !preset) {
-      setShowAiStudioModal(true)
       return
     }
 
@@ -1460,17 +1456,6 @@ export default function WebsiteBuilderPage() {
             <RefreshCw className={cn('w-3.5 h-3.5', isSyncing && 'animate-spin text-primary')} />
             <span className="hidden xl:inline">{isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ'}</span>
           </Button>
-
-          {/* AI Studio Button */}
-          <button
-            type="button"
-            onClick={() => setShowAiStudioModal(true)}
-            className="flex items-center gap-1.5 h-8 px-3 rounded-xl bg-ink hover:bg-ink/90 text-on-ink text-xs font-semibold shadow-xs border border-ink/40 transition-all active:scale-95"
-            title="Mở Digistay AI Website Studio"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>AI Studio</span>
-          </button>
 
           {/* Quick Publish Toggle */}
           <button
@@ -2255,22 +2240,6 @@ export default function WebsiteBuilderPage() {
         />
       )}
 
-      {/* AI Studio Modal */}
-      {showAiStudioModal && (
-        <AiStudioModal
-          isOpen={showAiStudioModal}
-          onClose={() => setShowAiStudioModal(false)}
-          propertyId={propertyId}
-          propertyName={property?.name || propertyData?.name || 'Khách sạn'}
-          onApplySite={({ settings: newSettings, blocks: newBlocks }) => {
-            setBlocks(newBlocks)
-            pushHistory(newBlocks)
-            if (newSettings) setSettings(newSettings)
-            setUsingDefaults(false)
-            toast.success('Đã áp dụng toàn bộ giao diện và nội dung do AI thiết kế!')
-          }}
-        />
-      )}
 
       {/* AI Remix Drawer */}
       {remixingBlock && (
