@@ -44,6 +44,7 @@ import { routes } from '@/lib/utils/routes'
 import { siteFontVariables } from '@/app/(public)/[subdomain]/fonts'
 import { PreviewBlock, PreviewHeader, type PreviewSite } from './site-preview'
 import { InspectableSection } from './inspectable-section'
+import { BlockInspectorPanel } from './block-inspector-panel'
 import { TemplateCard } from './template-card'
 import { THEME_PRESETS } from '@/lib/ai/website-theme-presets'
 import { AiStudioModal } from './ai-studio-modal'
@@ -604,637 +605,6 @@ function SortableBlockItem({
   )
 }
 
-// Block Configuration Panel Component
-function BlockConfigPanel({
-  block,
-  onUpdate,
-  onClose,
-  propertyData,
-  onPhotoAdded,
-  onOpenCopilot,
-}: {
-  block: Block
-  onUpdate: (config: BlockConfig) => void
-  onClose: () => void
-  propertyData: any
-  onPhotoAdded: (photo: { id: string; url: string; alt?: string | null }) => void
-  onOpenCopilot?: (fieldKey: string, label: string, currentText: string, onApply: (val: string) => void) => void
-}) {
-  const t = useTranslations('dash.website.config')
-  const tc = useTranslations('dash.common')
-  const text = useBlockText()
-  const blockTypeInfo = blockTypes.find(b => b.type === block.type)
-  const BlockIcon = blockTypeInfo?.icon || Layout
-  const bgGradient = blockTypeInfo?.bgGradient || 'from-gray-500 to-gray-600'
-  const [config, setConfig] = React.useState<BlockConfig>(block.config || {})
-
-  React.useEffect(() => {
-    setConfig(block.config || {})
-  }, [block])
-
-  const updateConfig = (key: keyof BlockConfig, value: any) => {
-    const newConfig = { ...config, [key]: value }
-    setConfig(newConfig)
-    onUpdate(newConfig)
-  }
-  const englishTexts = BLOCK_TEXTS[block.type] ?? []
-  const updateEnglish = (key: BlockTextKey, value: string) => updateConfig('en', { ...config.en, [key]: value })
-
-  return (
-    // The shared dialog: role="dialog", named by its header, Esc and focus kept inside.
-    <Modal isOpen onClose={onClose} size="lg">
-        <ModalHeader onClose={onClose}>
-            <div className="w-10 h-10 shrink-0 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shadow-xs">
-              <BlockIcon className="w-5 h-5" aria-hidden="true" />
-            </div>
-            <div className="min-w-0">
-              <h2 className="font-semibold text-fg">{t('heading', { name: text.blockName(block) })}</h2>
-              <p className="text-xs text-muted">{text.description(block.type)}</p>
-            </div>
-        </ModalHeader>
-
-        <ModalBody className="space-y-4">
-          {block.type === 'FOOTER' && <p className="rounded-box bg-fg/[0.03] p-3 text-sm text-muted">{t('footerHint')}</p>}
-
-          {/* Hero Config */}
-          {block.type === 'HERO' && (
-            <>
-              <div className="rounded-xl bg-primary/5 border border-primary/20 p-2.5 text-xs space-y-1.5">
-                <div className="flex items-center gap-1.5 font-medium text-primary">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Gợi ý câu từ chuyển đổi cao (CRO):</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      updateConfig('heroTitle', propertyData?.name ? `Trải nghiệm nghỉ dưỡng tuyệt vời tại ${propertyData.name}` : 'Trải nghiệm nghỉ dưỡng đẳng cấp')
-                      updateConfig('heroSubtitle', 'Không gian thư thái, dịch vụ tận tâm và cam kết giá tốt nhất khi đặt trực tiếp.')
-                    }}
-                    className="px-2 py-1 rounded-lg bg-panel border border-line hover:border-primary/40 hover:text-primary text-fg text-xs transition-colors"
-                  >
-                    + Nghỉ dưỡng & Thư giãn
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      updateConfig('heroTitle', propertyData?.name ? `Chào mừng đến với ${propertyData.name}` : 'Điểm dừng chân lý tưởng')
-                      updateConfig('heroSubtitle', 'Vị trí đắc địa, tiện nghi hiện đại và dịch vụ tận tâm cho kỳ nghỉ trọn vẹn.')
-                    }}
-                    className="px-2 py-1 rounded-lg bg-panel border border-line hover:border-primary/40 hover:text-primary text-fg text-xs transition-colors"
-                  >
-                    + Hiện đại & Tiện nghi
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      updateConfig('heroTitle', 'Ưu đãi đặt phòng trực tiếp hôm nay')
-                      updateConfig('heroSubtitle', 'Giảm ngay 10% so với OTA kèm miễn phí bữa sáng hàng ngày khi đặt phòng tại website.')
-                    }}
-                    className="px-2 py-1 rounded-lg bg-panel border border-line hover:border-primary/40 hover:text-primary text-fg text-xs transition-colors"
-                  >
-                    + Khuyến mãi trực tiếp
-                  </button>
-                </div>
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-sm font-medium text-fg">{t('fields.heroTitle')}</label>
-                  {onOpenCopilot && (
-                    <button
-                      type="button"
-                      onClick={() => onOpenCopilot('heroTitle', t('fields.heroTitle'), config.heroTitle || '', (val) => updateConfig('heroTitle', val))}
-                      className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary-hover bg-primary/10 hover:bg-primary/20 border border-primary/20 px-2 py-0.5 rounded-lg transition-colors"
-                      title="Dùng AI viết lại hoặc dịch"
-                    >
-                      <Sparkles className="w-3 h-3" />
-                      <span>AI Viết lại</span>
-                    </button>
-                  )}
-                </div>
-                <Input 
-                  value={config.heroTitle || ''} 
-                  onChange={(e) => updateConfig('heroTitle', e.target.value)}
-                  placeholder={t('placeholders.heroTitle')}
-                />
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-sm font-medium text-fg">{t('fields.subtitle')}</label>
-                  {onOpenCopilot && (
-                    <button
-                      type="button"
-                      onClick={() => onOpenCopilot('heroSubtitle', t('fields.subtitle'), config.heroSubtitle || '', (val) => updateConfig('heroSubtitle', val))}
-                      className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary-hover bg-primary/10 hover:bg-primary/20 border border-primary/20 px-2 py-0.5 rounded-lg transition-colors"
-                      title="Dùng AI viết lại hoặc dịch"
-                    >
-                      <Sparkles className="w-3 h-3" />
-                      <span>AI Viết lại</span>
-                    </button>
-                  )}
-                </div>
-                <Input 
-                  value={config.heroSubtitle || ''} 
-                  onChange={(e) => updateConfig('heroSubtitle', e.target.value)}
-                  placeholder={t('placeholders.heroSubtitle')}
-                />
-              </div>
-              <CoverPicker
-                propertyId={propertyData?.id ?? ''}
-                photos={propertyData?.images ?? []}
-                value={config.backgroundImage || undefined}
-                onChange={(url) => updateConfig('backgroundImage', url)}
-                onPhotoAdded={onPhotoAdded}
-              />
-              <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.ctaButton')}</label>
-                <Input 
-                  value={config.heroCtaText || ''} 
-                  onChange={(e) => updateConfig('heroCtaText', e.target.value)}
-                  placeholder={t('placeholders.ctaButton')}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.ctaLink')}</label>
-                <Input 
-                  value={config.heroCtaLink || ''} 
-                  onChange={(e) => updateConfig('heroCtaLink', e.target.value)}
-                  placeholder={t('placeholders.ctaLink')}
-                />
-              </div>
-            </>
-          )}
-
-          {/* Rooms Config */}
-          {block.type === 'ROOMS' && (
-            <>
-              <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.title')}</label>
-                <Input 
-                  value={config.roomsTitle || ''} 
-                  onChange={(e) => updateConfig('roomsTitle', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.displayStyle')}</label>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => updateConfig('roomsDisplay', 'grid')}
-                    className={`flex-1 py-2 rounded-lg border transition-all ${config.roomsDisplay === 'grid' ? 'border-acc bg-acc-soft text-acc' : 'border-line text-muted'}`}
-                  >
-                    {t('display.grid')}
-                  </button>
-                  <button
-                    onClick={() => updateConfig('roomsDisplay', 'list')}
-                    className={`flex-1 py-2 rounded-lg border transition-all ${config.roomsDisplay === 'list' ? 'border-acc bg-acc-soft text-acc' : 'border-line text-muted'}`}
-                  >
-                    {t('display.list')}
-                  </button>
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.roomsLimit')}</label>
-                <Input 
-                  type="number"
-                  value={config.roomsLimit || 6} 
-                  onChange={(e) => updateConfig('roomsLimit', parseInt(e.target.value))}
-                  min={1}
-                  max={20}
-                />
-              </div>
-            </>
-          )}
-
-          {/* Amenities Config */}
-          {block.type === 'AMENITIES' && (
-            <>
-              <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.title')}</label>
-                <Input 
-                  value={config.amenitiesTitle || ''} 
-                  onChange={(e) => updateConfig('amenitiesTitle', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.columnsShown')}</label>
-                <select
-                  value={config.amenitiesColumns || 3}
-                  onChange={(e) => updateConfig('amenitiesColumns', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-line rounded-ctl bg-raised text-fg text-base sm:text-sm"
-                >
-                  <option value={2}>{t('columnCount', { count: 2 })}</option>
-                  <option value={3}>{t('columnCount', { count: 3 })}</option>
-                  <option value={4}>{t('columnCount', { count: 4 })}</option>
-                </select>
-              </div>
-            </>
-          )}
-
-          {/* About Config */}
-          {block.type === 'ABOUT' && (
-            <>
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-sm font-medium text-fg">{t('fields.title')}</label>
-                  {onOpenCopilot && (
-                    <button
-                      type="button"
-                      onClick={() => onOpenCopilot('aboutTitle', t('fields.title'), config.aboutTitle || '', (val) => updateConfig('aboutTitle', val))}
-                      className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary-hover bg-primary/10 hover:bg-primary/20 border border-primary/20 px-2 py-0.5 rounded-lg transition-colors"
-                      title="Dùng AI viết lại hoặc dịch"
-                    >
-                      <Sparkles className="w-3 h-3" />
-                      <span>AI Viết lại</span>
-                    </button>
-                  )}
-                </div>
-                <Input 
-                  value={config.aboutTitle || ''} 
-                  onChange={(e) => updateConfig('aboutTitle', e.target.value)}
-                />
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-sm font-medium text-fg">{t('fields.content')}</label>
-                  {onOpenCopilot && (
-                    <button
-                      type="button"
-                      onClick={() => onOpenCopilot('aboutContent', t('fields.content'), config.aboutContent || '', (val) => updateConfig('aboutContent', val))}
-                      className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary-hover bg-primary/10 hover:bg-primary/20 border border-primary/20 px-2 py-0.5 rounded-lg transition-colors"
-                      title="Dùng AI viết lại hoặc dịch"
-                    >
-                      <Sparkles className="w-3 h-3" />
-                      <span>AI Viết lại</span>
-                    </button>
-                  )}
-                </div>
-                <textarea
-                  value={config.aboutContent || ''}
-                  onChange={(e) => updateConfig('aboutContent', e.target.value)}
-                  className="w-full px-3 py-2 border border-line rounded-ctl bg-raised text-fg text-base sm:text-sm"
-                  rows={4}
-                  placeholder={t('placeholders.about')}
-                />
-              </div>
-            </>
-          )}
-
-          {/* Gallery Config */}
-          {block.type === 'GALLERY' && (
-            <>
-              <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.title')}</label>
-                <Input 
-                  value={config.galleryTitle || ''} 
-                  onChange={(e) => updateConfig('galleryTitle', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.columns')}</label>
-                <select
-                  value={config.galleryColumns || 3}
-                  onChange={(e) => updateConfig('galleryColumns', parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-line rounded-ctl bg-raised text-fg text-base sm:text-sm"
-                >
-                  <option value={2}>{t('columnCount', { count: 2 })}</option>
-                  <option value={3}>{t('columnCount', { count: 3 })}</option>
-                  <option value={4}>{t('columnCount', { count: 4 })}</option>
-                </select>
-              </div>
-            </>
-          )}
-
-          {/* Reviews Config */}
-          {block.type === 'REVIEWS' && (
-            <>
-              <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.title')}</label>
-                <Input 
-                  value={config.reviewsTitle || ''} 
-                  onChange={(e) => updateConfig('reviewsTitle', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.reviewsLimit')}</label>
-                <Input 
-                  type="number"
-                  value={config.reviewsLimit || 4} 
-                  onChange={(e) => updateConfig('reviewsLimit', parseInt(e.target.value))}
-                  min={1}
-                  max={10}
-                />
-              </div>
-              <ReviewsEditor value={config.reviews ?? []} onChange={(reviews) => updateConfig('reviews', reviews)} />
-            </>
-          )}
-
-          {/* Map Config */}
-          {block.type === 'MAP' && (
-            <>
-              <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.mapAddress')}</label>
-                <Input 
-                  value={config.mapAddress || ''} 
-                  onChange={(e) => updateConfig('mapAddress', e.target.value)}
-                  placeholder={t('placeholders.mapAddress')}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-fg block mb-1">{t('fields.latitude')}</label>
-                  <Input 
-                    type="number"
-                    step="0.0001"
-                    value={config.mapLat || ''} 
-                    onChange={(e) => updateConfig('mapLat', parseFloat(e.target.value))}
-                    placeholder="21.0285"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-fg block mb-1">{t('fields.longitude')}</label>
-                  <Input 
-                    type="number"
-                    step="0.0001"
-                    value={config.mapLng || ''} 
-                    onChange={(e) => updateConfig('mapLng', parseFloat(e.target.value))}
-                    placeholder="105.8542"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.zoom')}</label>
-                <Input 
-                  type="number"
-                  value={config.mapZoom || 15} 
-                  onChange={(e) => updateConfig('mapZoom', parseInt(e.target.value))}
-                  min={1}
-                  max={20}
-                />
-              </div>
-            </>
-          )}
-
-          {/* Contact Config */}
-          {block.type === 'CONTACT' && (
-            <>
-              <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.title')}</label>
-                <Input 
-                  value={config.contactTitle || ''} 
-                  onChange={(e) => updateConfig('contactTitle', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.email')}</label>
-                <Input 
-                  type="email"
-                  value={config.contactEmail || ''} 
-                  onChange={(e) => updateConfig('contactEmail', e.target.value)}
-                  placeholder="contact@example.com"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.phone')}</label>
-                <Input 
-                  value={config.contactPhone || ''} 
-                  onChange={(e) => updateConfig('contactPhone', e.target.value)}
-                  placeholder="0901 234 567"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.address')}</label>
-                <Input 
-                  value={config.contactAddress || ''} 
-                  onChange={(e) => updateConfig('contactAddress', e.target.value)}
-                  placeholder={t('placeholders.address')}
-                />
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-fg/[0.03] rounded-lg">
-                <input
-                  type="checkbox"
-                  id="contactForm"
-                  checked={config.contactFormEnabled ?? true}
-                  onChange={(e) => updateConfig('contactFormEnabled', e.target.checked)}
-                  className="w-4 h-4 rounded"
-                />
-                <label htmlFor="contactForm" className="text-sm font-medium text-fg">
-                  {t('contactForm')}
-                </label>
-              </div>
-            </>
-          )}
-
-          {/* Services Config */}
-          {block.type === 'SERVICES' && (
-            <>
-              <p className="rounded-box bg-fg/[0.03] p-3 text-sm text-muted">{t('servicesHint')}</p>
-              <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.title')}</label>
-                <Input
-                  value={config.servicesTitle || ''}
-                  onChange={(e) => updateConfig('servicesTitle', e.target.value)}
-                  placeholder={t('placeholders.servicesTitle')}
-                />
-              </div>
-            </>
-          )}
-
-          {/* Restaurant Menu Config */}
-          {block.type === 'RESTAURANT_MENU' && (
-            <>
-              <p className="rounded-box bg-fg/[0.03] p-3 text-sm text-muted">{t('menuHint')}</p>
-              <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.title')}</label>
-                <Input
-                  value={config.menuTitle || ''}
-                  onChange={(e) => updateConfig('menuTitle', e.target.value)}
-                  placeholder={t('placeholders.menuTitle')}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.description')}</label>
-                <Input
-                  value={config.menuNote || ''}
-                  onChange={(e) => updateConfig('menuNote', e.target.value)}
-                  placeholder={t('placeholders.menuNote')}
-                />
-              </div>
-            </>
-          )}
-
-          {/* CTA Config */}
-          {block.type === 'CTA' && (
-            <>
-              <div className="rounded-box bg-acc/5 border border-acc/20 p-2.5 text-xs space-y-1.5">
-                <div className="flex items-center gap-1.5 font-medium text-acc">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Gợi ý CTA thúc đẩy chuyển đổi:</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      updateConfig('ctaBadge', 'Ưu đãi độc quyền trực tiếp')
-                      updateConfig('ctaTitle', 'Đặt phòng ngay hôm nay - Giữ giá ưu đãi')
-                      updateConfig('ctaSubtitle', 'Tiết kiệm tới 15% so với đặt qua các trang OTA, hỗ trợ đổi trả linh hoạt.')
-                      updateConfig('ctaButtonText', 'Đặt phòng ngay')
-                    }}
-                    className="px-2 py-1 rounded bg-raised border border-line hover:border-acc text-fg text-xs transition-colors"
-                  >
-                    + Ưu đãi giá tốt nhất
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      updateConfig('ctaBadge', 'Kỳ nghỉ trong mơ')
-                      updateConfig('ctaTitle', 'Sẵn sàng cho chuyến du lịch sắp tới?')
-                      updateConfig('ctaSubtitle', 'Lựa chọn hạng phòng ưng ý và tận hưởng dịch vụ chu đáo hàng đầu.')
-                      updateConfig('ctaButtonText', 'Xem phòng & Giá ưu đãi')
-                    }}
-                    className="px-2 py-1 rounded bg-raised border border-line hover:border-acc text-fg text-xs transition-colors"
-                  >
-                    + Thúc đẩy du lịch
-                  </button>
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-fg block mb-1">Huy hiệu ưu đãi (Badge)</label>
-                <Input 
-                  value={config.ctaBadge || ''} 
-                  onChange={(e) => updateConfig('ctaBadge', e.target.value)}
-                  placeholder="Ví dụ: Ưu đãi đặt trực tiếp"
-                />
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-sm font-medium text-fg">{t('fields.title')}</label>
-                  {onOpenCopilot && (
-                    <button
-                      type="button"
-                      onClick={() => onOpenCopilot('ctaTitle', t('fields.title'), config.ctaTitle || '', (val) => updateConfig('ctaTitle', val))}
-                      className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary-hover bg-primary/10 hover:bg-primary/20 border border-primary/20 px-2 py-0.5 rounded-lg transition-colors"
-                      title="Dùng AI viết lại hoặc dịch"
-                    >
-                      <Sparkles className="w-3 h-3" />
-                      <span>AI Viết lại</span>
-                    </button>
-                  )}
-                </div>
-                <Input 
-                  value={config.ctaTitle || ''} 
-                  onChange={(e) => updateConfig('ctaTitle', e.target.value)}
-                />
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-sm font-medium text-fg">{t('fields.description')}</label>
-                  {onOpenCopilot && (
-                    <button
-                      type="button"
-                      onClick={() => onOpenCopilot('ctaSubtitle', t('fields.description'), config.ctaSubtitle || '', (val) => updateConfig('ctaSubtitle', val))}
-                      className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary-hover bg-primary/10 hover:bg-primary/20 border border-primary/20 px-2 py-0.5 rounded-lg transition-colors"
-                      title="Dùng AI viết lại hoặc dịch"
-                    >
-                      <Sparkles className="w-3 h-3" />
-                      <span>AI Viết lại</span>
-                    </button>
-                  )}
-                </div>
-                <Input 
-                  value={config.ctaSubtitle || ''} 
-                  onChange={(e) => updateConfig('ctaSubtitle', e.target.value)}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-fg block mb-1">{t('fields.buttonText')}</label>
-                  <Input 
-                    value={config.ctaButtonText || ''} 
-                    onChange={(e) => updateConfig('ctaButtonText', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-fg block mb-1">{t('fields.buttonLink')}</label>
-                  <Input 
-                    value={config.ctaButtonLink || ''} 
-                    onChange={(e) => updateConfig('ctaButtonLink', e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* Direct Booking Perks */}
-              <div className="space-y-2 pt-2 border-t border-line">
-                <label className="text-sm font-medium text-fg block">Đặc quyền đặt trực tiếp (Perks)</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                  {[
-                    'Cam kết giá rẻ hơn Booking/Agoda',
-                    'Miễn phí bữa sáng hàng ngày',
-                    'Nhận phòng sớm & Trả phòng trễ',
-                    'Miễn phí hủy phòng trước 24h',
-                  ].map((perk) => {
-                    const perks = config.ctaPerks || []
-                    const active = perks.includes(perk)
-                    return (
-                      <button
-                        type="button"
-                        key={perk}
-                        onClick={() => {
-                          const next = active ? perks.filter((p) => p !== perk) : [...perks, perk]
-                          updateConfig('ctaPerks', next)
-                        }}
-                        className={cn(
-                          'flex items-center gap-2 p-2 rounded-lg border text-left transition-colors',
-                          active
-                            ? 'border-acc bg-acc/10 text-acc font-medium'
-                            : 'border-line text-muted hover:border-fg/20'
-                        )}
-                      >
-                        <span className={cn('w-4 h-4 rounded-full flex items-center justify-center text-[10px]', active ? 'bg-acc text-on-acc' : 'bg-fg/10')}>
-                          {active ? '✓' : '+'}
-                        </span>
-                        <span className="truncate">{perk}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            </>
-          )}
-
-          {englishTexts.length > 0 && (
-            <EnglishCopy filled={englishTexts.some(({ key }) => config.en?.[key])}>
-              {englishTexts.map(({ key, label, long }) => (
-                <div key={key}>
-                  <label htmlFor={`en-${key}`} className="text-sm font-medium text-fg block mb-1">{t(`fields.${label}`)}</label>
-                  {long ? (
-                    <textarea
-                      id={`en-${key}`}
-                      value={config.en?.[key] ?? ''}
-                      onChange={(e) => updateEnglish(key, e.target.value)}
-                      placeholder={config[key] ?? ''}
-                      rows={4}
-                      className="w-full px-3 py-2 border border-line rounded-ctl bg-raised text-fg text-base sm:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acc"
-                    />
-                  ) : (
-                    <Input
-                      id={`en-${key}`}
-                      value={config.en?.[key] ?? ''}
-                      onChange={(e) => updateEnglish(key, e.target.value)}
-                      placeholder={config[key] ?? ''}
-                    />
-                  )}
-                </div>
-              ))}
-            </EnglishCopy>
-          )}
-        </ModalBody>
-
-        <ModalFooter>
-          <Button onClick={onClose} className="w-full">{tc('actions.close')}</Button>
-        </ModalFooter>
-    </Modal>
-  )
-}
 
 /** A color the hotel may leave to the default (null): a swatch, the hex, and "Mặc định". */
 function OptionalColor({
@@ -2002,7 +1372,7 @@ export default function WebsiteBuilderPage() {
         {/* Center: Device Switcher + Theme Toggle + Undo/Redo */}
         <div className="hidden md:flex items-center gap-2">
           {/* Viewport switch */}
-          <div className="flex items-center gap-0.5 bg-surface-container rounded-xl p-1 border border-line">
+          <div className="flex items-center gap-0.5 bg-raised rounded-xl p-1 border border-line">
             <button
               type="button"
               onClick={() => setPreviewMode('desktop')}
@@ -2036,14 +1406,14 @@ export default function WebsiteBuilderPage() {
                 return effective === 'dark' ? 'light' : 'dark'
               })
             }
-            className="p-1.5 rounded-xl bg-surface-container border border-line text-muted hover:text-fg transition-colors"
+            className="p-1.5 rounded-xl bg-raised border border-line text-muted hover:text-fg transition-colors"
             title={siteTheme === 'dark' ? 'Chuyển sang xem trước giao diện sáng' : 'Chuyển sang xem trước giao diện tối'}
           >
             {siteTheme === 'dark' ? <Moon className="w-4 h-4 text-primary" /> : <Sun className="w-4 h-4 text-amber-500" />}
           </button>
 
           {/* Undo/Redo */}
-          <div className="flex items-center gap-0.5 bg-surface-container rounded-xl p-0.5 border border-line">
+          <div className="flex items-center gap-0.5 bg-raised rounded-xl p-0.5 border border-line">
             <button
               onClick={undo}
               disabled={historyIndex <= 0}
@@ -2112,7 +1482,7 @@ export default function WebsiteBuilderPage() {
               'h-8 px-2.5 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-all',
               settings?.isPublished
                 ? 'border-ok/30 bg-ok-soft text-ok hover:bg-ok-soft/80'
-                : 'border-line bg-surface-container text-muted hover:text-fg'
+                : 'border-line bg-raised text-muted hover:text-fg'
             )}
           >
             <span className={cn('w-2 h-2 rounded-full', settings?.isPublished ? 'bg-ok' : 'bg-muted/60')} />
@@ -2135,17 +1505,23 @@ export default function WebsiteBuilderPage() {
         </div>
       </header>
 
-      {/* Main Workspace Layout */}
+      {/* Main Workspace Layout (3-Panel Studio) */}
       <div
         className={cn(
           'grid grid-cols-1 gap-4 lg:flex-1 lg:min-h-0',
-          panelOpen ? 'lg:grid-cols-[380px_minmax(0,1fr)] 2xl:grid-cols-[420px_minmax(0,1fr)]' : 'lg:grid-cols-1'
+          selectedBlock
+            ? panelOpen
+              ? 'lg:grid-cols-[300px_minmax(0,1fr)_360px] 2xl:grid-cols-[330px_minmax(0,1fr)_390px]'
+              : 'lg:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_390px]'
+            : panelOpen
+              ? 'lg:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[400px_minmax(0,1fr)]'
+              : 'lg:grid-cols-1'
         )}
       >
         {/* Left Sidebar - Google Stitch Style 4-Tab Dock */}
         <div id="builder-panel" className={cn('space-y-3.5 lg:min-h-0 lg:overflow-y-auto lg:pr-1 lg:pb-3', !panelOpen && 'lg:hidden')}>
           {/* Tab Dock */}
-          <div className="grid grid-cols-4 gap-1 p-1 bg-surface-container rounded-2xl border border-line" role="tablist">
+          <div className="grid grid-cols-4 gap-1 p-1 bg-raised rounded-2xl border border-line" role="tablist">
             <button
               type="button"
               role="tab"
@@ -2615,11 +1991,11 @@ export default function WebsiteBuilderPage() {
         </div>
 
         {/* Canvas & Preview */}
-        <div className="rounded-2xl border border-line bg-surface-container-low p-2 sm:p-3 lg:min-h-0 lg:flex lg:flex-col relative">
+        <div className="rounded-2xl border border-line bg-panel p-2 sm:p-3 lg:min-h-0 lg:flex lg:flex-col relative">
           {/* Browser Frame */}
           <div className={cn('flex flex-col overflow-hidden rounded-xl border border-line bg-panel shadow-xs lg:min-h-0 lg:flex-1 relative', previewMode === 'mobile' && 'mx-auto w-full max-w-[400px]')}>
             {/* Browser Header Bar */}
-            <div className="shrink-0 bg-surface-container px-4 py-2 flex items-center gap-3 border-b border-line">
+            <div className="shrink-0 bg-raised px-4 py-2 flex items-center gap-3 border-b border-line">
               <div className="flex gap-1.5" aria-hidden="true">
                 <div className="w-2.5 h-2.5 rounded-full bg-fg/20"></div>
                 <div className="w-2.5 h-2.5 rounded-full bg-fg/20"></div>
@@ -2641,7 +2017,7 @@ export default function WebsiteBuilderPage() {
                         return effective === 'dark' ? 'light' : 'dark'
                       })
                     }
-                    className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-surface-container border border-line text-fg hover:border-primary/40 transition-colors"
+                    className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-panel border border-line text-fg hover:border-primary/40 transition-colors"
                   >
                     {siteTheme === 'dark' ? <Moon className="w-3 h-3 text-primary" /> : <Sun className="w-3 h-3 text-amber-500" />}
                     <span>{siteTheme === 'dark' ? 'Tối' : 'Sáng'}</span>
@@ -2772,60 +2148,65 @@ export default function WebsiteBuilderPage() {
                 </button>
               </form>
 
-              {/* Quick Suggestion Chips */}
+              {/* Quick Suggestion Chips (Fixed Dark Mode Contrast) */}
               <div className="flex items-center gap-1.5 mt-2 overflow-x-auto pb-0.5 scrollbar-none text-[11px]">
                 <span className="text-muted text-[10px] uppercase font-semibold shrink-0">Gợi ý nhanh:</span>
                 <button
                   type="button"
                   onClick={() => handleQuickAiGenerate('Thiết kế website nghỉ dưỡng cao cấp sang trọng chuẩn 5 sao', 'luxury_boutique')}
                   disabled={isAiGenerating}
-                  className="shrink-0 px-2.5 py-1 rounded-full bg-surface-container hover:bg-primary/10 hover:text-primary border border-line hover:border-primary/30 transition-colors text-fg/80"
+                  className="shrink-0 px-2.5 py-1 rounded-full bg-raised hover:bg-primary/15 hover:text-primary border border-line hover:border-primary/40 transition-colors text-fg font-medium shadow-2xs"
                 >
-                  Luxury 5 Sao
+                  ✨ Luxury 5 Sao
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuickAiGenerate('Resort sinh thái nhiệt đới gần gũi thiên nhiên và thư giãn', 'tropical_eco')}
                   disabled={isAiGenerating}
-                  className="shrink-0 px-2.5 py-1 rounded-full bg-surface-container hover:bg-primary/10 hover:text-primary border border-line hover:border-primary/30 transition-colors text-fg/80"
+                  className="shrink-0 px-2.5 py-1 rounded-full bg-raised hover:bg-primary/15 hover:text-primary border border-line hover:border-primary/40 transition-colors text-fg font-medium shadow-2xs"
                 >
-                  Tropical Eco
+                  🌿 Tropical Eco
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuickAiGenerate('Khách sạn phong cách tối giản hiện đại cho du khách trẻ', 'modern_clean')}
                   disabled={isAiGenerating}
-                  className="shrink-0 px-2.5 py-1 rounded-full bg-surface-container hover:bg-primary/10 hover:text-primary border border-line hover:border-primary/30 transition-colors text-fg/80"
+                  className="shrink-0 px-2.5 py-1 rounded-full bg-raised hover:bg-primary/15 hover:text-primary border border-line hover:border-primary/40 transition-colors text-fg font-medium shadow-2xs"
                 >
-                  Modern Clean
+                  🏢 Modern Clean
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuickAiGenerate('Tối ưu hóa các nút đặt phòng và chương trình khuyến mãi đặt trực tiếp', 'luxury_boutique')}
                   disabled={isAiGenerating}
-                  className="shrink-0 px-2.5 py-1 rounded-full bg-surface-container hover:bg-primary/10 hover:text-primary border border-line hover:border-primary/30 transition-colors text-fg/80"
+                  className="shrink-0 px-2.5 py-1 rounded-full bg-raised hover:bg-primary/15 hover:text-primary border border-line hover:border-primary/40 transition-colors text-fg font-medium shadow-2xs"
                 >
-                  Ưu đãi trực tiếp (CRO)
+                  🎯 Ưu đãi trực tiếp (CRO)
                 </button>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Block Configuration Modal */}
-      {selectedBlock && (
-        <BlockConfigPanel
-          block={selectedBlock}
-          onUpdate={(config) => updateBlockConfig(selectedBlock.id, config)}
-          onClose={() => setSelectedBlockId(null)}
-          propertyData={propertyData}
-          onPhotoAdded={(photo) => setPropertyData((p: any) => (p ? { ...p, images: [...(p.images ?? []), photo] } : p))}
-          onOpenCopilot={(fieldKey, label, currentText, onApply) =>
-            setAiCopilotField({ fieldKey, label, text: currentText, onApply })
-          }
-        />
-      )}
+        {/* Right Inspector Panel (WYSIWYG Live Editing - No Modal popup) */}
+        {selectedBlock && (
+          <aside className="lg:min-h-0 lg:overflow-hidden flex flex-col animate-in fade-in slide-in-from-right-4 duration-200">
+            <BlockInspectorPanel
+              block={selectedBlock}
+              onUpdate={(config) => updateBlockConfig(selectedBlock.id, config)}
+              onClose={() => setSelectedBlockId(null)}
+              onToggleEnabled={() => toggleBlock(selectedBlock.id)}
+              onRemove={() => removeBlock(selectedBlock.id)}
+              onRemix={() => setRemixingBlock(selectedBlock)}
+              propertyData={propertyData}
+              onPhotoAdded={(photo) => setPropertyData((p: any) => (p ? { ...p, images: [...(p.images ?? []), photo] } : p))}
+              onOpenCopilot={(fieldKey, label, currentText, onApply) =>
+                setAiCopilotField({ fieldKey, label, text: currentText, onApply })
+              }
+            />
+          </aside>
+        )}
+      </div>
 
       {/* Template Selection Modal */}
       {showTemplateModal && (

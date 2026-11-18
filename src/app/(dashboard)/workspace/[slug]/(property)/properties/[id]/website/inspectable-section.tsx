@@ -76,7 +76,7 @@ export function InspectableSection({
         )}
       >
         {/* Section Badge */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container-high text-fg text-xs font-semibold select-none border border-line">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-raised text-fg text-xs font-semibold select-none border border-line">
           <Sparkles className="w-3 h-3 shrink-0 text-primary" aria-hidden="true" />
           <span className="max-w-[140px] truncate">
             #{index + 1} {name}

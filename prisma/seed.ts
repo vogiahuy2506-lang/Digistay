@@ -49,15 +49,19 @@ async function main() {
   // Create demo user
   const hashedPassword = await bcrypt.hash('demo123', 12)
   
+  const now = new Date()
+
   // Tài khoản Admin (Chủ sở hữu workspace - toàn quyền)
   const adminUser = await prisma.user.upsert({
     where: { email: 'admin@digistay.vn' },
-    update: {},
+    update: { emailVerified: now, termsAcceptedAt: now },
     create: {
       name: 'Trần Minh Đức',
       email: 'admin@digistay.vn',
       password: hashedPassword,
       role: 'USER',
+      emailVerified: now,
+      termsAcceptedAt: now,
     },
   })
 
@@ -66,12 +70,14 @@ async function main() {
   // Tài khoản Quản lý (thấp hơn Admin)
   const managerUser = await prisma.user.upsert({
     where: { email: 'quanly@digistay.vn' },
-    update: {},
+    update: { emailVerified: now, termsAcceptedAt: now },
     create: {
       name: 'Trần Thị Quản Lý',
       email: 'quanly@digistay.vn',
       password: hashedPassword,
       role: 'USER',
+      emailVerified: now,
+      termsAcceptedAt: now,
     },
   })
 
@@ -80,12 +86,14 @@ async function main() {
   // Tài khoản Lễ tân
   const receptionistUser = await prisma.user.upsert({
     where: { email: 'leitan@digistay.vn' },
-    update: {},
+    update: { emailVerified: now, termsAcceptedAt: now },
     create: {
       name: 'Lê Văn Lễ Tân',
       email: 'leitan@digistay.vn',
       password: hashedPassword,
       role: 'USER',
+      emailVerified: now,
+      termsAcceptedAt: now,
     },
   })
 
@@ -94,12 +102,14 @@ async function main() {
   // Tài khoản Người dùng thường
   const normalUser = await prisma.user.upsert({
     where: { email: 'user@digistay.vn' },
-    update: {},
+    update: { emailVerified: now, termsAcceptedAt: now },
     create: {
       name: 'Phạm Văn User',
       email: 'user@digistay.vn',
       password: hashedPassword,
       role: 'USER',
+      emailVerified: now,
+      termsAcceptedAt: now,
     },
   })
 
