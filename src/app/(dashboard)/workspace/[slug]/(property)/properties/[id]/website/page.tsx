@@ -211,8 +211,8 @@ const blockTypes: BlockType[] = [
     type: 'HERO', 
     name: 'Banner Hero', 
     icon: LayoutGrid, 
-    color: 'text-info', 
-    bgGradient: 'from-blue-500 to-blue-600',
+    color: 'text-primary', 
+    bgGradient: 'bg-primary/10 text-primary border border-primary/20',
     defaultConfig: {
       // No title: the site shows the hotel's name (the old default, a bare "Chào mừng đến với", showed nothing after it).
       heroTitle: '',
@@ -225,8 +225,8 @@ const blockTypes: BlockType[] = [
     type: 'ROOMS', 
     name: 'Danh sách phòng', 
     icon: Hotel, 
-    color: 'text-ok', 
-    bgGradient: 'from-emerald-500 to-emerald-600',
+    color: 'text-primary', 
+    bgGradient: 'bg-primary/10 text-primary border border-primary/20',
     defaultConfig: {
       roomsTitle: 'Các hạng phòng',
       roomsDisplay: 'grid',
@@ -237,8 +237,8 @@ const blockTypes: BlockType[] = [
     type: 'AMENITIES', 
     name: 'Tiện ích', 
     icon: Zap, 
-    color: 'text-warn', 
-    bgGradient: 'from-amber-500 to-amber-600',
+    color: 'text-primary', 
+    bgGradient: 'bg-primary/10 text-primary border border-primary/20',
     defaultConfig: {
       amenitiesTitle: 'Tiện ích nổi bật',
       amenitiesColumns: 3
@@ -248,8 +248,8 @@ const blockTypes: BlockType[] = [
     type: 'ABOUT', 
     name: 'Giới thiệu', 
     icon: Sparkles, 
-    color: 'text-refund', 
-    bgGradient: 'from-purple-500 to-purple-600',
+    color: 'text-primary', 
+    bgGradient: 'bg-primary/10 text-primary border border-primary/20',
     defaultConfig: {
       aboutTitle: 'Về chúng tôi',
       aboutContent: 'Nơi mang đến cho bạn trải nghiệm lưu trú tuyệt vời với dịch vụ chuyên nghiệp và không gian thoải mái.'
@@ -259,8 +259,8 @@ const blockTypes: BlockType[] = [
     type: 'GALLERY', 
     name: 'Thư viện ảnh', 
     icon: ImageIcon, 
-    color: 'text-refund', 
-    bgGradient: 'from-pink-500 to-pink-600',
+    color: 'text-primary', 
+    bgGradient: 'bg-primary/10 text-primary border border-primary/20',
     defaultConfig: {
       galleryTitle: 'Thư viện hình ảnh',
       galleryColumns: 3,
@@ -271,8 +271,8 @@ const blockTypes: BlockType[] = [
     type: 'REVIEWS', 
     name: 'Đánh giá', 
     icon: Star, 
-    color: 'text-warn', 
-    bgGradient: 'from-yellow-500 to-yellow-600',
+    color: 'text-primary', 
+    bgGradient: 'bg-primary/10 text-primary border border-primary/20',
     defaultConfig: {
       reviewsTitle: 'Đánh giá từ khách hàng',
       reviewsLimit: 4
@@ -282,8 +282,8 @@ const blockTypes: BlockType[] = [
     type: 'MAP', 
     name: 'Bản đồ', 
     icon: MapPin, 
-    color: 'text-err', 
-    bgGradient: 'from-red-500 to-red-600',
+    color: 'text-primary', 
+    bgGradient: 'bg-primary/10 text-primary border border-primary/20',
     defaultConfig: {
       // Empty: the site then shows the property's own address (or coordinates).
       mapAddress: '',
@@ -294,8 +294,8 @@ const blockTypes: BlockType[] = [
     type: 'CONTACT', 
     name: 'Liên hệ', 
     icon: Phone, 
-    color: 'text-info', 
-    bgGradient: 'from-cyan-500 to-cyan-600',
+    color: 'text-primary', 
+    bgGradient: 'bg-primary/10 text-primary border border-primary/20',
     defaultConfig: {
       contactTitle: 'Liên hệ với chúng tôi',
       contactFormEnabled: true
@@ -305,8 +305,8 @@ const blockTypes: BlockType[] = [
     type: 'CTA', 
     name: 'Call to Action', 
     icon: MousePointer2, 
-    color: 'text-info', 
-    bgGradient: 'from-indigo-500 to-indigo-600',
+    color: 'text-primary', 
+    bgGradient: 'bg-primary/10 text-primary border border-primary/20',
     defaultConfig: {
       ctaTitle: 'Sẵn sàng trải nghiệm?',
       ctaSubtitle: 'Đặt phòng ngay hôm nay để nhận ưu đãi đặc biệt',
@@ -319,8 +319,8 @@ const blockTypes: BlockType[] = [
     type: 'SERVICES',
     name: 'Dịch vụ',
     icon: ConciergeBell,
-    color: 'text-info',
-    bgGradient: 'from-teal-500 to-teal-600',
+    color: 'text-primary',
+    bgGradient: 'bg-primary/10 text-primary border border-primary/20',
     defaultConfig: {}
   },
   {
@@ -328,8 +328,8 @@ const blockTypes: BlockType[] = [
     type: 'RESTAURANT_MENU',
     name: 'Thực đơn',
     icon: UtensilsCrossed,
-    color: 'text-warn',
-    bgGradient: 'from-orange-500 to-orange-600',
+    color: 'text-primary',
+    bgGradient: 'bg-primary/10 text-primary border border-primary/20',
     defaultConfig: {}
   },
   {
@@ -337,8 +337,8 @@ const blockTypes: BlockType[] = [
     type: 'FOOTER',
     name: 'Footer',
     icon: PanelBottom,
-    color: 'text-muted',
-    bgGradient: 'from-slate-500 to-slate-600',
+    color: 'text-primary',
+    bgGradient: 'bg-primary/10 text-primary border border-primary/20',
     defaultConfig: {}
   },
 ]
@@ -517,84 +517,86 @@ function SortableBlockItem({
       style={style}
       className={`
         group relative rounded-xl border transition-all duration-200 cursor-grab active:cursor-grabbing
-        ${isSelected ? 'ring-2 ring-acc ring-offset-2 border-acc bg-acc-soft' : ''}
+        ${isSelected ? 'ring-2 ring-primary ring-offset-1 border-primary bg-primary/5' : ''}
         ${block.isEnabled 
-          ? 'bg-panel border-line hover:shadow-md hover:border-acc hover:bg-acc-soft/30' 
+          ? 'bg-panel border-line hover:border-primary/40 hover:shadow-xs' 
           : 'bg-fg/[0.03] border-line opacity-60'
         }
-        ${isDragging ? 'shadow-xl border-acc bg-acc-soft z-50 scale-[1.02]' : 'shadow-sm'}
+        ${isDragging ? 'shadow-xl border-primary bg-primary/10 z-50 scale-[1.02]' : 'shadow-xs'}
       `}
     >
       <div 
         {...attributes}
         {...listeners}
-        className="flex items-center gap-2 p-2.5 select-none"
+        className="flex items-center gap-2.5 p-2.5 select-none"
       >
         {/* Drag Indicator */}
         <div title={t('dragHint')} className={`
           flex flex-col gap-0.5 py-1 px-0.5 rounded-lg transition-colors duration-200
-          ${isDragging ? 'bg-acc-soft' : 'group-hover:bg-fg/5'}
+          ${isDragging ? 'bg-primary/20 text-primary' : 'text-muted/40 group-hover:text-muted'}
         `}>
-          <div className="w-3.5 h-1 rounded-full bg-current opacity-40"></div>
-          <div className="w-3.5 h-1 rounded-full bg-current opacity-40"></div>
-          <div className="w-3.5 h-1 rounded-full bg-current opacity-40"></div>
+          <div className="w-3.5 h-1 rounded-full bg-current"></div>
+          <div className="w-3.5 h-1 rounded-full bg-current"></div>
+          <div className="w-3.5 h-1 rounded-full bg-current"></div>
         </div>
 
         {/* Block Icon */}
-        <div className={`
-          w-8 h-8 rounded-lg flex items-center justify-center shrink-0
-          bg-gradient-to-br ${bgGradient} text-white shadow-sm
-        `}>
+        <div className={cn(
+          'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border transition-colors',
+          block.isEnabled
+            ? 'bg-primary/10 text-primary border-primary/20'
+            : 'bg-fg/5 text-muted border-line'
+        )}>
           <BlockIcon className="w-4 h-4" />
         </div>
 
         {/* Block Info */}
         <div className="flex-1 min-w-0">
-          <p className={`font-medium text-sm ${block.isEnabled ? 'text-fg' : 'text-muted'}`}>
+          <p className={`font-medium text-xs sm:text-sm truncate ${block.isEnabled ? 'text-fg' : 'text-muted'}`}>
             {text.blockName(block)}
           </p>
-          <p className="text-xs text-muted line-clamp-2">{text.description(block.type)}</p>
+          <p className="text-[11px] text-muted line-clamp-1">{text.description(block.type)}</p>
         </div>
 
         {/* Actions */}
-        <div className="flex shrink-0 items-center gap-0.5">
+        <div className="flex shrink-0 items-center gap-1">
           {/* Edit */}
           <button
             onClick={(e) => { e.stopPropagation(); onEdit(); }}
             className={`
-              p-1 rounded-lg transition-all duration-200
+              p-1.5 rounded-lg transition-colors
               ${isSelected 
-                ? 'bg-acc-soft text-acc hover:bg-acc-soft' 
-                : 'bg-fg/5 text-muted hover:bg-acc-soft hover:text-acc'
+                ? 'bg-primary text-on-primary' 
+                : 'bg-fg/5 text-muted hover:bg-primary/10 hover:text-primary'
               }
             `}
             title={t('configure')}
           >
-            <Settings className="w-4 h-4" />
+            <Settings className="w-3.5 h-3.5" />
           </button>
 
           {/* Toggle */}
           <button
             onClick={(e) => { e.stopPropagation(); onToggle(); }}
             className={`
-              p-1 rounded-lg transition-all duration-200
+              p-1.5 rounded-lg transition-colors
               ${block.isEnabled 
-                ? 'bg-ok-soft text-ok hover:bg-ok-soft' 
+                ? 'bg-ok-soft text-ok hover:bg-ok-soft/80' 
                 : 'bg-fg/5 text-muted hover:bg-fg/10'
               }
             `}
             title={block.isEnabled ? t('hide') : t('show')}
           >
-            {block.isEnabled ? <Eye className="w-4 h-4" /> : <X className="w-4 h-4" />}
+            {block.isEnabled ? <Eye className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
           </button>
 
           {/* Remove */}
           <button
             onClick={(e) => { e.stopPropagation(); onRemove(); }}
-            className="p-1 rounded-lg bg-fg/5 text-muted hover:bg-err-soft hover:text-err transition-all duration-200"
+            className="p-1.5 rounded-lg bg-fg/5 text-muted hover:bg-err-soft hover:text-err transition-colors"
             title={t('remove')}
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
@@ -642,8 +644,8 @@ function BlockConfigPanel({
     // The shared dialog: role="dialog", named by its header, Esc and focus kept inside.
     <Modal isOpen onClose={onClose} size="lg">
         <ModalHeader onClose={onClose}>
-            <div className={`w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br ${bgGradient} flex items-center justify-center shadow-lg`}>
-              <BlockIcon className="w-5 h-5 text-white" aria-hidden="true" />
+            <div className="w-10 h-10 shrink-0 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shadow-xs">
+              <BlockIcon className="w-5 h-5" aria-hidden="true" />
             </div>
             <div className="min-w-0">
               <h2 className="font-semibold text-fg">{t('heading', { name: text.blockName(block) })}</h2>
@@ -657,8 +659,8 @@ function BlockConfigPanel({
           {/* Hero Config */}
           {block.type === 'HERO' && (
             <>
-              <div className="rounded-box bg-acc/5 border border-acc/20 p-2.5 text-xs space-y-1.5">
-                <div className="flex items-center gap-1.5 font-medium text-acc">
+              <div className="rounded-xl bg-primary/5 border border-primary/20 p-2.5 text-xs space-y-1.5">
+                <div className="flex items-center gap-1.5 font-medium text-primary">
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>Gợi ý câu từ chuyển đổi cao (CRO):</span>
                 </div>
@@ -669,7 +671,7 @@ function BlockConfigPanel({
                       updateConfig('heroTitle', propertyData?.name ? `Trải nghiệm nghỉ dưỡng tuyệt vời tại ${propertyData.name}` : 'Trải nghiệm nghỉ dưỡng đẳng cấp')
                       updateConfig('heroSubtitle', 'Không gian thư thái, dịch vụ tận tâm và cam kết giá tốt nhất khi đặt trực tiếp.')
                     }}
-                    className="px-2 py-1 rounded bg-raised border border-line hover:border-acc text-fg text-xs transition-colors"
+                    className="px-2 py-1 rounded-lg bg-panel border border-line hover:border-primary/40 hover:text-primary text-fg text-xs transition-colors"
                   >
                     + Nghỉ dưỡng & Thư giãn
                   </button>
@@ -679,7 +681,7 @@ function BlockConfigPanel({
                       updateConfig('heroTitle', propertyData?.name ? `Chào mừng đến với ${propertyData.name}` : 'Điểm dừng chân lý tưởng')
                       updateConfig('heroSubtitle', 'Vị trí đắc địa, tiện nghi hiện đại và dịch vụ tận tâm cho kỳ nghỉ trọn vẹn.')
                     }}
-                    className="px-2 py-1 rounded bg-raised border border-line hover:border-acc text-fg text-xs transition-colors"
+                    className="px-2 py-1 rounded-lg bg-panel border border-line hover:border-primary/40 hover:text-primary text-fg text-xs transition-colors"
                   >
                     + Hiện đại & Tiện nghi
                   </button>
@@ -689,7 +691,7 @@ function BlockConfigPanel({
                       updateConfig('heroTitle', 'Ưu đãi đặt phòng trực tiếp hôm nay')
                       updateConfig('heroSubtitle', 'Giảm ngay 10% so với OTA kèm miễn phí bữa sáng hàng ngày khi đặt phòng tại website.')
                     }}
-                    className="px-2 py-1 rounded bg-raised border border-line hover:border-acc text-fg text-xs transition-colors"
+                    className="px-2 py-1 rounded-lg bg-panel border border-line hover:border-primary/40 hover:text-primary text-fg text-xs transition-colors"
                   >
                     + Khuyến mãi trực tiếp
                   </button>
@@ -702,7 +704,7 @@ function BlockConfigPanel({
                     <button
                       type="button"
                       onClick={() => onOpenCopilot('heroTitle', t('fields.heroTitle'), config.heroTitle || '', (val) => updateConfig('heroTitle', val))}
-                      className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 bg-purple-500/10 hover:bg-purple-500/20 px-2 py-0.5 rounded transition-colors"
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary-hover bg-primary/10 hover:bg-primary/20 border border-primary/20 px-2 py-0.5 rounded-lg transition-colors"
                       title="Dùng AI viết lại hoặc dịch"
                     >
                       <Sparkles className="w-3 h-3" />
@@ -723,7 +725,7 @@ function BlockConfigPanel({
                     <button
                       type="button"
                       onClick={() => onOpenCopilot('heroSubtitle', t('fields.subtitle'), config.heroSubtitle || '', (val) => updateConfig('heroSubtitle', val))}
-                      className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 bg-purple-500/10 hover:bg-purple-500/20 px-2 py-0.5 rounded transition-colors"
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary-hover bg-primary/10 hover:bg-primary/20 border border-primary/20 px-2 py-0.5 rounded-lg transition-colors"
                       title="Dùng AI viết lại hoặc dịch"
                     >
                       <Sparkles className="w-3 h-3" />
@@ -838,7 +840,7 @@ function BlockConfigPanel({
                     <button
                       type="button"
                       onClick={() => onOpenCopilot('aboutTitle', t('fields.title'), config.aboutTitle || '', (val) => updateConfig('aboutTitle', val))}
-                      className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 bg-purple-500/10 hover:bg-purple-500/20 px-2 py-0.5 rounded transition-colors"
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary-hover bg-primary/10 hover:bg-primary/20 border border-primary/20 px-2 py-0.5 rounded-lg transition-colors"
                       title="Dùng AI viết lại hoặc dịch"
                     >
                       <Sparkles className="w-3 h-3" />
@@ -858,7 +860,7 @@ function BlockConfigPanel({
                     <button
                       type="button"
                       onClick={() => onOpenCopilot('aboutContent', t('fields.content'), config.aboutContent || '', (val) => updateConfig('aboutContent', val))}
-                      className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 bg-purple-500/10 hover:bg-purple-500/20 px-2 py-0.5 rounded transition-colors"
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary-hover bg-primary/10 hover:bg-primary/20 border border-primary/20 px-2 py-0.5 rounded-lg transition-colors"
                       title="Dùng AI viết lại hoặc dịch"
                     >
                       <Sparkles className="w-3 h-3" />
@@ -1110,7 +1112,7 @@ function BlockConfigPanel({
                     <button
                       type="button"
                       onClick={() => onOpenCopilot('ctaTitle', t('fields.title'), config.ctaTitle || '', (val) => updateConfig('ctaTitle', val))}
-                      className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 bg-purple-500/10 hover:bg-purple-500/20 px-2 py-0.5 rounded transition-colors"
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary-hover bg-primary/10 hover:bg-primary/20 border border-primary/20 px-2 py-0.5 rounded-lg transition-colors"
                       title="Dùng AI viết lại hoặc dịch"
                     >
                       <Sparkles className="w-3 h-3" />
@@ -1130,7 +1132,7 @@ function BlockConfigPanel({
                     <button
                       type="button"
                       onClick={() => onOpenCopilot('ctaSubtitle', t('fields.description'), config.ctaSubtitle || '', (val) => updateConfig('ctaSubtitle', val))}
-                      className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 bg-purple-500/10 hover:bg-purple-500/20 px-2 py-0.5 rounded transition-colors"
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary-hover bg-primary/10 hover:bg-primary/20 border border-primary/20 px-2 py-0.5 rounded-lg transition-colors"
                       title="Dùng AI viết lại hoặc dịch"
                     >
                       <Sparkles className="w-3 h-3" />
@@ -1338,23 +1340,19 @@ function BlockOverlay({ block }: { block: Block }) {
   const text = useBlockText()
   const blockTypeInfo = blockTypes.find(b => b.type === block.type)
   const BlockIcon = blockTypeInfo?.icon || Layout
-  const bgGradient = blockTypeInfo?.bgGradient || 'from-gray-500 to-gray-600'
 
   return (
-    <div className="w-full rounded-xl bg-panel border-2 border-acc shadow-2xl p-3 rotate-2 scale-105">
+    <div className="w-full rounded-xl bg-panel border-2 border-primary shadow-2xl p-3 rotate-2 scale-105">
       <div className="flex items-center gap-3">
-        <div className={`
-          w-10 h-10 rounded-xl flex items-center justify-center
-          bg-gradient-to-br ${bgGradient} text-white shadow-lg
-        `}>
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-primary text-on-primary shadow-md">
           <BlockIcon className="w-5 h-5" />
         </div>
         <div className="flex-1">
-          <p className="font-medium text-sm text-fg">{text.blockName(block)}</p>
+          <p className="font-semibold text-sm text-fg">{text.blockName(block)}</p>
           <p className="text-xs text-muted">{text.description(block.type)}</p>
         </div>
-        <div className="px-2 py-1 bg-acc-soft rounded-lg">
-          <span className="text-xs text-acc font-medium">{t('moving')}</span>
+        <div className="px-2 py-1 bg-primary/10 rounded-lg">
+          <span className="text-xs text-primary font-medium">{t('moving')}</span>
         </div>
       </div>
     </div>
@@ -1378,22 +1376,23 @@ function AvailableBlockCard({
   return (
     <div
       className={cn(
-        'flex items-center gap-3 rounded-xl border border-line p-2.5 transition-colors duration-200',
-        isAdded ? 'bg-fg/[0.03]' : 'bg-panel hover:border-acc'
+        'group flex items-center gap-3 rounded-xl border p-2.5 transition-all duration-200',
+        isAdded ? 'bg-fg/[0.02] border-line opacity-75' : 'bg-panel border-line hover:border-primary/40 hover:shadow-xs'
       )}
     >
       <div
         className={cn(
-          'w-9 h-9 shrink-0 rounded-xl flex items-center justify-center bg-gradient-to-br text-white shadow-sm',
-          blockType.bgGradient,
-          isAdded && 'opacity-60'
+          'w-9 h-9 shrink-0 rounded-xl flex items-center justify-center border transition-colors',
+          isAdded
+            ? 'bg-fg/5 text-muted border-line'
+            : 'bg-primary/10 text-primary border-primary/20 group-hover:bg-primary group-hover:text-on-primary'
         )}
       >
         <BlockIcon className="w-4 h-4" aria-hidden="true" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className={cn('font-medium text-sm', isAdded ? 'text-muted' : 'text-fg')}>{text.typeName(blockType.type)}</p>
-        <p className="text-xs text-muted line-clamp-2">{text.description(blockType.type)}</p>
+        <p className={cn('font-medium text-xs sm:text-sm truncate', isAdded ? 'text-muted' : 'text-fg')}>{text.typeName(blockType.type)}</p>
+        <p className="text-[11px] text-muted line-clamp-1">{text.description(blockType.type)}</p>
       </div>
 
       {/* Add Button */}
@@ -1402,13 +1401,13 @@ function AvailableBlockCard({
           type="button"
           onClick={onAdd}
           aria-label={t('addNamed', { name: text.typeName(blockType.type) })}
-          className="shrink-0 h-8 px-2.5 rounded-lg text-xs font-medium bg-ink text-on-ink hover:bg-ink/90 flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
+          className="shrink-0 h-8 px-2.5 rounded-lg text-xs font-medium bg-ink text-on-ink hover:bg-ink/90 flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary shadow-xs transition-colors"
         >
           <Plus className="w-3.5 h-3.5" aria-hidden="true" />
           {t('add')}
         </button>
       ) : (
-        <span className="shrink-0 h-8 px-2.5 rounded-lg text-xs font-medium bg-ok-soft text-ok flex items-center gap-1">
+        <span className="shrink-0 h-8 px-2.5 rounded-lg text-xs font-medium bg-ok-soft text-ok flex items-center gap-1 border border-ok/20">
           <Check className="w-3.5 h-3.5" aria-hidden="true" />
           {t('added')}
         </span>
@@ -1974,12 +1973,12 @@ export default function WebsiteBuilderPage() {
                 {property?.name || 'Website Khách sạn'}
               </h1>
               {hasUnsavedChanges ? (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-warn-soft text-warn border border-warn/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-warn animate-pulse" />
                   Chưa lưu
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-ok-soft text-ok border border-ok/30">
                   <Check className="w-3 h-3" />
                   Đã lưu
                 </span>
@@ -1990,7 +1989,7 @@ export default function WebsiteBuilderPage() {
                 href={`/${property.subdomain}`}
                 target="_blank"
                 rel="noreferrer"
-                className="text-[11px] text-muted hover:text-acc inline-flex items-center gap-1 transition-colors truncate"
+                className="text-[11px] text-muted hover:text-primary inline-flex items-center gap-1 transition-colors truncate"
                 title="Mở website trong tab mới"
               >
                 <span>{property.subdomain}.digistay.vn</span>
@@ -2003,13 +2002,13 @@ export default function WebsiteBuilderPage() {
         {/* Center: Device Switcher + Theme Toggle + Undo/Redo */}
         <div className="hidden md:flex items-center gap-2">
           {/* Viewport switch */}
-          <div className="flex items-center gap-0.5 bg-fg/5 rounded-xl p-1 border border-line/60">
+          <div className="flex items-center gap-0.5 bg-surface-container rounded-xl p-1 border border-line">
             <button
               type="button"
               onClick={() => setPreviewMode('desktop')}
               className={cn(
                 'flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
-                previewMode === 'desktop' ? 'bg-panel shadow-xs text-acc font-semibold' : 'text-muted hover:text-fg'
+                previewMode === 'desktop' ? 'bg-panel shadow-xs text-primary font-semibold' : 'text-muted hover:text-fg'
               )}
             >
               <Monitor className="w-3.5 h-3.5" />
@@ -2020,7 +2019,7 @@ export default function WebsiteBuilderPage() {
               onClick={() => setPreviewMode('mobile')}
               className={cn(
                 'flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
-                previewMode === 'mobile' ? 'bg-panel shadow-xs text-acc font-semibold' : 'text-muted hover:text-fg'
+                previewMode === 'mobile' ? 'bg-panel shadow-xs text-primary font-semibold' : 'text-muted hover:text-fg'
               )}
             >
               <Smartphone className="w-3.5 h-3.5" />
@@ -2037,14 +2036,14 @@ export default function WebsiteBuilderPage() {
                 return effective === 'dark' ? 'light' : 'dark'
               })
             }
-            className="p-1.5 rounded-xl bg-fg/5 border border-line/60 text-muted hover:text-fg transition-colors"
+            className="p-1.5 rounded-xl bg-surface-container border border-line text-muted hover:text-fg transition-colors"
             title={siteTheme === 'dark' ? 'Chuyển sang xem trước giao diện sáng' : 'Chuyển sang xem trước giao diện tối'}
           >
-            {siteTheme === 'dark' ? <Moon className="w-4 h-4 text-acc" /> : <Sun className="w-4 h-4 text-amber-500" />}
+            {siteTheme === 'dark' ? <Moon className="w-4 h-4 text-primary" /> : <Sun className="w-4 h-4 text-amber-500" />}
           </button>
 
           {/* Undo/Redo */}
-          <div className="flex items-center gap-0.5 bg-fg/5 rounded-xl p-0.5 border border-line/60">
+          <div className="flex items-center gap-0.5 bg-surface-container rounded-xl p-0.5 border border-line">
             <button
               onClick={undo}
               disabled={historyIndex <= 0}
@@ -2088,7 +2087,7 @@ export default function WebsiteBuilderPage() {
             title="Đồng bộ lại phòng, ảnh và tiện ích mới nhất từ cơ sở dữ liệu"
             className="h-8 px-2.5 gap-1.5 text-xs hidden sm:inline-flex"
           >
-            <RefreshCw className={cn('w-3.5 h-3.5', isSyncing && 'animate-spin text-acc')} />
+            <RefreshCw className={cn('w-3.5 h-3.5', isSyncing && 'animate-spin text-primary')} />
             <span className="hidden xl:inline">{isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ'}</span>
           </Button>
 
@@ -2096,10 +2095,10 @@ export default function WebsiteBuilderPage() {
           <button
             type="button"
             onClick={() => setShowAiStudioModal(true)}
-            className="flex items-center gap-1.5 h-8 px-3 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-xs font-semibold shadow-md shadow-purple-500/20 hover:shadow-lg transition-all active:scale-95"
-            title="Mở Google Stitch AI Website Studio"
+            className="flex items-center gap-1.5 h-8 px-3 rounded-xl bg-ink hover:bg-ink/90 text-on-ink text-xs font-semibold shadow-xs border border-ink/40 transition-all active:scale-95"
+            title="Mở Digistay AI Website Studio"
           >
-            <Sparkles className="w-3.5 h-3.5 animate-pulse text-amber-300" />
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             <span>AI Studio</span>
           </button>
 
@@ -2110,13 +2109,13 @@ export default function WebsiteBuilderPage() {
             disabled={isPublishing || !settings}
             title={settings?.isPublished ? 'Bấm để hủy xuất bản' : 'Bấm để xuất bản website'}
             className={cn(
-              'h-8 px-2.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all',
+              'h-8 px-2.5 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-all',
               settings?.isPublished
-                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'
-                : 'border-line bg-fg/5 text-muted hover:text-fg hover:bg-fg/10'
+                ? 'border-ok/30 bg-ok-soft text-ok hover:bg-ok-soft/80'
+                : 'border-line bg-surface-container text-muted hover:text-fg'
             )}
           >
-            <span className={cn('w-2 h-2 rounded-full', settings?.isPublished ? 'bg-emerald-500 animate-pulse' : 'bg-neutral-400')} />
+            <span className={cn('w-2 h-2 rounded-full', settings?.isPublished ? 'bg-ok' : 'bg-muted/60')} />
             <span className="hidden md:inline">{settings?.isPublished ? 'Đã xuất bản' : 'Bản nháp'}</span>
           </button>
 
@@ -2126,8 +2125,8 @@ export default function WebsiteBuilderPage() {
             disabled={isSaving}
             size="sm"
             className={cn(
-              'h-8 px-3 gap-1.5 text-xs font-semibold shadow-md',
-              hasUnsavedChanges && 'ring-2 ring-acc/50 ring-offset-1'
+              'h-8 px-3.5 gap-1.5 text-xs font-semibold bg-primary hover:bg-primary-hover text-on-primary shadow-xs transition-all',
+              hasUnsavedChanges && 'ring-2 ring-primary/40 ring-offset-1'
             )}
           >
             {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
@@ -2146,7 +2145,7 @@ export default function WebsiteBuilderPage() {
         {/* Left Sidebar - Google Stitch Style 4-Tab Dock */}
         <div id="builder-panel" className={cn('space-y-3.5 lg:min-h-0 lg:overflow-y-auto lg:pr-1 lg:pb-3', !panelOpen && 'lg:hidden')}>
           {/* Tab Dock */}
-          <div className="grid grid-cols-4 gap-1 p-1 bg-fg/5 rounded-2xl border border-line/60" role="tablist">
+          <div className="grid grid-cols-4 gap-1 p-1 bg-surface-container rounded-2xl border border-line" role="tablist">
             <button
               type="button"
               role="tab"
@@ -2155,11 +2154,11 @@ export default function WebsiteBuilderPage() {
               className={cn(
                 'flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[11px] font-medium transition-all gap-1',
                 activeTab === 'blocks'
-                  ? 'bg-panel text-fg shadow-xs border border-line font-semibold'
+                  ? 'bg-panel text-primary shadow-xs border border-line font-semibold'
                   : 'text-muted hover:text-fg'
               )}
             >
-              <LayoutGrid className="w-4 h-4 text-acc" />
+              <LayoutGrid className="w-4 h-4" />
               <span>Khối ({blocks.length})</span>
             </button>
             <button
@@ -2170,11 +2169,11 @@ export default function WebsiteBuilderPage() {
               className={cn(
                 'flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[11px] font-medium transition-all gap-1',
                 activeTab === 'style'
-                  ? 'bg-panel text-fg shadow-xs border border-line font-semibold'
+                  ? 'bg-panel text-primary shadow-xs border border-line font-semibold'
                   : 'text-muted hover:text-fg'
               )}
             >
-              <Palette className="w-4 h-4 text-acc" />
+              <Palette className="w-4 h-4" />
               <span>Giao diện</span>
             </button>
             <button
@@ -2185,11 +2184,11 @@ export default function WebsiteBuilderPage() {
               className={cn(
                 'flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[11px] font-medium transition-all gap-1',
                 activeTab === 'templates'
-                  ? 'bg-panel text-fg shadow-xs border border-line font-semibold'
+                  ? 'bg-panel text-primary shadow-xs border border-line font-semibold'
                   : 'text-muted hover:text-fg'
               )}
             >
-              <Wand2 className="w-4 h-4 text-acc" />
+              <Wand2 className="w-4 h-4" />
               <span>Mẫu sẵn</span>
             </button>
             <button
@@ -2200,11 +2199,11 @@ export default function WebsiteBuilderPage() {
               className={cn(
                 'flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[11px] font-medium transition-all gap-1',
                 activeTab === 'settings'
-                  ? 'bg-panel text-fg shadow-xs border border-line font-semibold'
+                  ? 'bg-panel text-primary shadow-xs border border-line font-semibold'
                   : 'text-muted hover:text-fg'
               )}
             >
-              <Settings className="w-4 h-4 text-acc" />
+              <Settings className="w-4 h-4" />
               <span>Cài đặt</span>
             </button>
           </div>
@@ -2220,10 +2219,10 @@ export default function WebsiteBuilderPage() {
                 onDragEnd={handleDragEnd}
               >
                 {/* Active Blocks - Sortable */}
-                <div className="bg-panel rounded-2xl border border-line p-3.5 shadow-sm">
+                <div className="bg-panel rounded-2xl border border-line p-3.5 shadow-xs">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-lg text-white">
+                      <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shadow-xs">
                         <LayoutGrid className="w-4 h-4" />
                       </div>
                       <div>
@@ -2231,7 +2230,7 @@ export default function WebsiteBuilderPage() {
                         <p className="text-xs text-muted">{t('blocks.arrangeHint')}</p>
                       </div>
                     </div>
-                    <Badge className="bg-acc-soft text-acc border-acc/30">
+                    <Badge className="bg-primary/10 text-primary border-primary/20">
                       {t('blocks.count', { count: blocks.length })}
                     </Badge>
                   </div>
@@ -2319,7 +2318,7 @@ export default function WebsiteBuilderPage() {
               <div className="bg-panel rounded-2xl border border-line p-3.5 shadow-sm space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-acc" />
+                    <Sparkles className="w-4 h-4 text-primary" />
                     <h3 className="font-semibold text-fg text-sm">Phong cách giao diện AI</h3>
                   </div>
                   <span className="text-[11px] text-muted">1-Click áp dụng</span>
@@ -2353,8 +2352,8 @@ export default function WebsiteBuilderPage() {
                         className={cn(
                           'w-full text-left p-2.5 rounded-xl border transition-all flex items-center justify-between group',
                           settings?.themePreset === presetKey
-                            ? 'border-acc bg-acc-soft/30 shadow-xs ring-1 ring-acc'
-                            : 'border-line bg-fg/[0.02] hover:border-acc/60 hover:bg-fg/[0.04]'
+                            ? 'border-primary bg-primary/5 shadow-xs ring-1 ring-primary/20'
+                            : 'border-line bg-fg/[0.02] hover:border-primary/40 hover:bg-fg/[0.04]'
                         )}
                       >
                         <div className="min-w-0 pr-2">
@@ -2375,7 +2374,7 @@ export default function WebsiteBuilderPage() {
               {/* Color Customizer */}
               <div className="bg-panel rounded-2xl border border-line p-3.5 shadow-sm space-y-3">
                 <div className="flex items-center gap-2">
-                  <Palette className="w-4 h-4 text-acc" />
+                  <Palette className="w-4 h-4 text-primary" />
                   <h3 className="font-semibold text-fg text-sm">Bảng màu trực tiếp</h3>
                 </div>
 
@@ -2437,7 +2436,7 @@ export default function WebsiteBuilderPage() {
               {/* Typography Customizer */}
               <div className="bg-panel rounded-2xl border border-line p-3.5 shadow-sm space-y-3">
                 <div className="flex items-center gap-2">
-                  <Type className="w-4 h-4 text-acc" />
+                  <Type className="w-4 h-4 text-primary" />
                   <h3 className="font-semibold text-fg text-sm">Phông chữ hiển thị</h3>
                 </div>
 
@@ -2447,7 +2446,7 @@ export default function WebsiteBuilderPage() {
                     <select
                       value={settings?.headingFont || 'Playfair Display'}
                       onChange={(e) => setSettings((c) => (c ? { ...c, headingFont: e.target.value } : c))}
-                      className="w-full px-3 py-2 border border-line rounded-xl bg-fg/[0.02] text-fg text-xs focus:outline-none focus:border-acc"
+                      className="w-full px-3 py-2 border border-line rounded-xl bg-fg/[0.02] text-fg text-xs focus:outline-none focus:border-primary"
                     >
                       {headingFonts.map((f) => (
                         <option key={f.value} value={f.value}>
@@ -2462,7 +2461,7 @@ export default function WebsiteBuilderPage() {
                     <select
                       value={settings?.fontFamily || 'Inter'}
                       onChange={(e) => setSettings((c) => (c ? { ...c, fontFamily: e.target.value } : c))}
-                      className="w-full px-3 py-2 border border-line rounded-xl bg-fg/[0.02] text-fg text-xs focus:outline-none focus:border-acc"
+                      className="w-full px-3 py-2 border border-line rounded-xl bg-fg/[0.02] text-fg text-xs focus:outline-none focus:border-primary"
                     >
                       {bodyFonts.map((f) => (
                         <option key={f.value} value={f.value}>
@@ -2479,7 +2478,7 @@ export default function WebsiteBuilderPage() {
                   onClick={() => setShowThemeModal(true)}
                   className="w-full gap-1.5 text-xs mt-1"
                 >
-                  <Palette className="w-3.5 h-3.5 text-acc" />
+                  <Palette className="w-3.5 h-3.5 text-primary" />
                   <span>Bảng phối màu chi tiết & Đổ màu nâng cao</span>
                 </Button>
               </div>
@@ -2489,8 +2488,8 @@ export default function WebsiteBuilderPage() {
           {/* TAB 3: TEMPLATES */}
           {activeTab === 'templates' && (
             <div className="space-y-3">
-              <div className="p-3 bg-acc-soft/40 rounded-xl border border-acc/20">
-                <div className="flex items-center gap-1.5 text-acc font-semibold text-xs">
+              <div className="p-3 bg-primary/5 rounded-xl border border-primary/20">
+                <div className="flex items-center gap-1.5 text-primary font-semibold text-xs">
                   <Sparkles className="w-4 h-4 shrink-0" />
                   <span>Mẫu giao diện thiết kế sẵn</span>
                 </div>
@@ -2518,7 +2517,7 @@ export default function WebsiteBuilderPage() {
               {/* Domain & SSL Summary Card */}
               <div className="bg-panel rounded-2xl border border-line p-3.5 shadow-sm space-y-3">
                 <div className="flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-acc" />
+                  <Globe className="w-4 h-4 text-primary" />
                   <h3 className="font-semibold text-fg text-sm">Tên miền & Địa chỉ web</h3>
                 </div>
 
@@ -2529,7 +2528,7 @@ export default function WebsiteBuilderPage() {
                       href={`/${property?.subdomain}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="font-medium text-acc hover:underline inline-flex items-center gap-1"
+                      className="font-medium text-primary hover:underline inline-flex items-center gap-1"
                     >
                       <span>{property?.subdomain}.digistay.vn</span>
                       <ExternalLink className="w-2.5 h-2.5" />
@@ -2556,7 +2555,7 @@ export default function WebsiteBuilderPage() {
                   onClick={() => setShowSettingsModal(true)}
                   className="w-full gap-1.5 text-xs"
                 >
-                  <Settings className="w-3.5 h-3.5 text-acc" />
+                  <Settings className="w-3.5 h-3.5 text-primary" />
                   <span>Cấu hình Tên miền riêng & SSL</span>
                 </Button>
               </div>
@@ -2564,7 +2563,7 @@ export default function WebsiteBuilderPage() {
               {/* SEO Quick Settings */}
               <div className="bg-panel rounded-2xl border border-line p-3.5 shadow-sm space-y-3">
                 <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-acc" />
+                  <FileText className="w-4 h-4 text-primary" />
                   <h3 className="font-semibold text-fg text-sm">Tối ưu tìm kiếm (SEO)</h3>
                 </div>
 
@@ -2586,7 +2585,7 @@ export default function WebsiteBuilderPage() {
                       onChange={(e) => setSettings((c) => (c ? { ...c, metaDescription: e.target.value } : c))}
                       placeholder="Mô tả hấp dẫn về điểm đến và ưu đãi đặt phòng trực tiếp..."
                       rows={3}
-                      className="w-full px-3 py-2 border border-line rounded-xl bg-fg/[0.02] text-fg text-xs focus:outline-none focus:border-acc"
+                      className="w-full px-3 py-2 border border-line rounded-xl bg-fg/[0.02] text-fg text-xs focus:outline-none focus:border-primary"
                     />
                   </div>
                 </div>
@@ -2595,7 +2594,7 @@ export default function WebsiteBuilderPage() {
               {/* Version History Quick Access */}
               <div className="bg-panel rounded-2xl border border-line p-3.5 shadow-sm space-y-2">
                 <div className="flex items-center gap-2">
-                  <HistoryIcon className="w-4 h-4 text-acc" />
+                  <HistoryIcon className="w-4 h-4 text-primary" />
                   <h3 className="font-semibold text-fg text-sm">Lịch sử phiên bản</h3>
                 </div>
                 <p className="text-xs text-muted leading-relaxed">
@@ -2607,7 +2606,7 @@ export default function WebsiteBuilderPage() {
                   onClick={() => setShowHistory(true)}
                   className="w-full gap-1.5 text-xs mt-1"
                 >
-                  <HistoryIcon className="w-3.5 h-3.5 text-acc" />
+                  <HistoryIcon className="w-3.5 h-3.5 text-primary" />
                   <span>Xem và khôi phục các phiên bản cũ</span>
                 </Button>
               </div>
@@ -2615,20 +2614,20 @@ export default function WebsiteBuilderPage() {
           )}
         </div>
 
-        {/* Canvas & Preview - Google Stitch Style */}
-        <div className="rounded-2xl border border-line bg-fg/5 p-2 sm:p-3 lg:min-h-0 lg:flex lg:flex-col relative">
+        {/* Canvas & Preview */}
+        <div className="rounded-2xl border border-line bg-surface-container-low p-2 sm:p-3 lg:min-h-0 lg:flex lg:flex-col relative">
           {/* Browser Frame */}
-          <div className={cn('flex flex-col overflow-hidden rounded-xl border border-line bg-panel shadow-sm lg:min-h-0 lg:flex-1 relative', previewMode === 'mobile' && 'mx-auto w-full max-w-[400px]')}>
+          <div className={cn('flex flex-col overflow-hidden rounded-xl border border-line bg-panel shadow-xs lg:min-h-0 lg:flex-1 relative', previewMode === 'mobile' && 'mx-auto w-full max-w-[400px]')}>
             {/* Browser Header Bar */}
-            <div className="shrink-0 bg-fg/5 px-4 py-2 flex items-center gap-3 border-b border-line">
+            <div className="shrink-0 bg-surface-container px-4 py-2 flex items-center gap-3 border-b border-line">
               <div className="flex gap-1.5" aria-hidden="true">
-                <div className="w-3 h-3 rounded-full bg-err/80"></div>
-                <div className="w-3 h-3 rounded-full bg-warn/80"></div>
-                <div className="w-3 h-3 rounded-full bg-ok/80"></div>
+                <div className="w-2.5 h-2.5 rounded-full bg-fg/20"></div>
+                <div className="w-2.5 h-2.5 rounded-full bg-fg/20"></div>
+                <div className="w-2.5 h-2.5 rounded-full bg-fg/20"></div>
               </div>
-              <div className="flex-1 min-w-0 bg-fg/[0.03] rounded-lg px-4 py-1.5 text-xs text-muted flex items-center justify-between gap-2 border border-line/40">
+              <div className="flex-1 min-w-0 bg-panel rounded-lg px-3 py-1 text-xs text-muted flex items-center justify-between gap-2 border border-line">
                 <div className="flex items-center gap-2 min-w-0 truncate">
-                  <Globe className="w-3.5 h-3.5 shrink-0 text-acc" aria-hidden="true" />
+                  <Globe className="w-3.5 h-3.5 shrink-0 text-primary" aria-hidden="true" />
                   <span className="truncate font-mono">{siteAddress}</span>
                   {customDomain && settings?.sslEnabled && <Shield className="w-3.5 h-3.5 shrink-0 text-ok" aria-hidden="true" />}
                 </div>
@@ -2642,9 +2641,9 @@ export default function WebsiteBuilderPage() {
                         return effective === 'dark' ? 'light' : 'dark'
                       })
                     }
-                    className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-raised border border-line text-fg hover:border-acc transition-colors"
+                    className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-surface-container border border-line text-fg hover:border-primary/40 transition-colors"
                   >
-                    {siteTheme === 'dark' ? <Moon className="w-3 h-3 text-acc" /> : <Sun className="w-3 h-3 text-amber-500" />}
+                    {siteTheme === 'dark' ? <Moon className="w-3 h-3 text-primary" /> : <Sun className="w-3 h-3 text-amber-500" />}
                     <span>{siteTheme === 'dark' ? 'Tối' : 'Sáng'}</span>
                   </button>
                 </div>
@@ -2659,7 +2658,7 @@ export default function WebsiteBuilderPage() {
               style={siteStyle}
               className={cn(
                 siteFontVariables,
-                'min-h-[600px] bg-page text-fg font-site-body lg:min-h-0 lg:flex-1 lg:overflow-y-auto pb-24',
+                'min-h-[600px] bg-page text-fg font-site-body lg:min-h-0 lg:flex-1 lg:overflow-y-auto pb-6',
                 previewMode === 'mobile' && 'max-h-[700px] overflow-y-auto lg:max-h-none'
               )}
             >
@@ -2729,85 +2728,85 @@ export default function WebsiteBuilderPage() {
                 </div>
               )}
             </div>
+          </div>
 
-            {/* Google Stitch Signature Floating AI Command Bar */}
-            <div className="absolute bottom-3 left-0 right-0 z-30 px-3 w-full max-w-xl mx-auto pointer-events-auto">
-              <div className="rounded-2xl border border-line/80 bg-panel/95 shadow-2xl backdrop-blur-xl p-2.5 transition-all focus-within:border-acc focus-within:ring-2 focus-within:ring-acc/30">
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault()
-                    if (aiPromptInput.trim()) {
-                      void handleQuickAiGenerate()
-                    }
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 via-purple-600 to-indigo-600 text-white shadow-xs">
-                    <Sparkles className="h-4 w-4 animate-pulse" />
-                  </div>
-                  <input
-                    type="text"
-                    value={aiPromptInput}
-                    onChange={(e) => setAiPromptInput(e.target.value)}
-                    placeholder="Yêu cầu AI (ví dụ: Biệt thự nghỉ dưỡng ven biển, ưu đãi giảm 10%)..."
-                    disabled={isAiGenerating}
-                    className="flex-1 min-w-0 bg-transparent text-xs sm:text-sm text-fg placeholder:text-muted focus:outline-none"
-                  />
-                  <button
-                    type="submit"
-                    disabled={isAiGenerating || !aiPromptInput.trim()}
-                    className="shrink-0 flex items-center gap-1.5 h-8 px-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-semibold hover:opacity-95 shadow-sm disabled:opacity-40 transition-all cursor-pointer"
-                  >
-                    {isAiGenerating ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Đang tạo...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>Tạo bằng AI</span>
-                      </>
-                    )}
-                  </button>
-                </form>
-
-                {/* Quick Suggestion Chips */}
-                <div className="flex items-center gap-1.5 mt-2 overflow-x-auto pb-0.5 scrollbar-none text-[11px]">
-                  <span className="text-muted text-[10px] uppercase font-semibold shrink-0">Gợi ý:</span>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickAiGenerate('Thiết kế website nghỉ dưỡng cao cấp sang trọng chuẩn 5 sao', 'luxury_boutique')}
-                    disabled={isAiGenerating}
-                    className="shrink-0 px-2.5 py-0.5 rounded-full bg-fg/5 hover:bg-acc/10 hover:text-acc border border-line hover:border-acc/40 transition-colors"
-                  >
-                    💎 Luxury 5 Sao
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickAiGenerate('Resort sinh thái nhiệt đới gần gũi thiên nhiên và thư giãn', 'tropical_eco')}
-                    disabled={isAiGenerating}
-                    className="shrink-0 px-2.5 py-0.5 rounded-full bg-fg/5 hover:bg-acc/10 hover:text-acc border border-line hover:border-acc/40 transition-colors"
-                  >
-                    🌴 Tropical Eco
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickAiGenerate('Khách sạn phong cách tối giản hiện đại cho du khách trẻ', 'modern_clean')}
-                    disabled={isAiGenerating}
-                    className="shrink-0 px-2.5 py-0.5 rounded-full bg-fg/5 hover:bg-acc/10 hover:text-acc border border-line hover:border-acc/40 transition-colors"
-                  >
-                    ✨ Modern Clean
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickAiGenerate('Tối ưu hóa các nút đặt phòng và chương trình khuyến mãi đặt trực tiếp', 'luxury_boutique')}
-                    disabled={isAiGenerating}
-                    className="shrink-0 px-2.5 py-0.5 rounded-full bg-fg/5 hover:bg-acc/10 hover:text-acc border border-line hover:border-acc/40 transition-colors"
-                  >
-                    🎯 Ưu đãi trực tiếp (CRO)
-                  </button>
+          {/* DOCKED AI Command Bar - Dưới browser frame, KHÔNG che phủ viewport của trang web */}
+          <div className="shrink-0 mt-3 w-full">
+            <div className="rounded-2xl border border-line bg-panel p-2.5 shadow-xs transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  if (aiPromptInput.trim()) {
+                    void handleQuickAiGenerate()
+                  }
+                }}
+                className="flex items-center gap-2"
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-ink text-on-ink shadow-xs border border-line">
+                  <Sparkles className="h-4 w-4 text-amber-400" />
                 </div>
+                <input
+                  type="text"
+                  value={aiPromptInput}
+                  onChange={(e) => setAiPromptInput(e.target.value)}
+                  placeholder="Yêu cầu AI (ví dụ: Biệt thự nghỉ dưỡng ven biển, ưu đãi giảm 10% khi đặt trực tiếp)..."
+                  disabled={isAiGenerating}
+                  className="flex-1 min-w-0 bg-transparent text-xs sm:text-sm text-fg placeholder:text-muted focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={isAiGenerating || !aiPromptInput.trim()}
+                  className="shrink-0 flex items-center gap-1.5 h-8 px-3.5 rounded-xl bg-primary hover:bg-primary-hover text-on-primary text-xs font-semibold shadow-xs disabled:opacity-40 transition-all cursor-pointer"
+                >
+                  {isAiGenerating ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Đang tạo...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Tạo bằng AI</span>
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Quick Suggestion Chips */}
+              <div className="flex items-center gap-1.5 mt-2 overflow-x-auto pb-0.5 scrollbar-none text-[11px]">
+                <span className="text-muted text-[10px] uppercase font-semibold shrink-0">Gợi ý nhanh:</span>
+                <button
+                  type="button"
+                  onClick={() => handleQuickAiGenerate('Thiết kế website nghỉ dưỡng cao cấp sang trọng chuẩn 5 sao', 'luxury_boutique')}
+                  disabled={isAiGenerating}
+                  className="shrink-0 px-2.5 py-1 rounded-full bg-surface-container hover:bg-primary/10 hover:text-primary border border-line hover:border-primary/30 transition-colors text-fg/80"
+                >
+                  Luxury 5 Sao
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickAiGenerate('Resort sinh thái nhiệt đới gần gũi thiên nhiên và thư giãn', 'tropical_eco')}
+                  disabled={isAiGenerating}
+                  className="shrink-0 px-2.5 py-1 rounded-full bg-surface-container hover:bg-primary/10 hover:text-primary border border-line hover:border-primary/30 transition-colors text-fg/80"
+                >
+                  Tropical Eco
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickAiGenerate('Khách sạn phong cách tối giản hiện đại cho du khách trẻ', 'modern_clean')}
+                  disabled={isAiGenerating}
+                  className="shrink-0 px-2.5 py-1 rounded-full bg-surface-container hover:bg-primary/10 hover:text-primary border border-line hover:border-primary/30 transition-colors text-fg/80"
+                >
+                  Modern Clean
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickAiGenerate('Tối ưu hóa các nút đặt phòng và chương trình khuyến mãi đặt trực tiếp', 'luxury_boutique')}
+                  disabled={isAiGenerating}
+                  className="shrink-0 px-2.5 py-1 rounded-full bg-surface-container hover:bg-primary/10 hover:text-primary border border-line hover:border-primary/30 transition-colors text-fg/80"
+                >
+                  Ưu đãi trực tiếp (CRO)
+                </button>
               </div>
             </div>
           </div>

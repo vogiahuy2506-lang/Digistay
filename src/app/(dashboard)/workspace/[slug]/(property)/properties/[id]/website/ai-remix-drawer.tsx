@@ -83,13 +83,13 @@ export function AiRemixDrawer({
   return (
     <Modal isOpen onClose={onClose}>
       <ModalHeader className="border-b border-line pb-3.5">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-xs">
-            <Sparkles className="h-4 w-4" />
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-ink text-on-ink shadow-xs border border-line">
+            <Sparkles className="h-4 w-4 text-amber-400" />
           </div>
           <div>
             <h2 className="text-base font-semibold text-fg">
-              ✨ Remix Khối: {block.name}
+              Remix Khối: {block.name}
             </h2>
             <p className="text-xs text-muted">
               AI đề xuất các biến thể bố cục và văn phong mới tối ưu cho khối này.
@@ -101,12 +101,12 @@ export function AiRemixDrawer({
       <ModalBody className="max-h-[70vh] overflow-y-auto py-4 space-y-4">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-10 text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <p className="mt-3 text-sm font-medium text-fg">Đang remix các biến thể layout và copywriting…</p>
             <p className="text-xs text-muted">Vui lòng chờ trong giây lát</p>
           </div>
         ) : error ? (
-          <div className="rounded-ctl border border-warn/40 bg-warn-soft p-3 text-xs text-warn">
+          <div className="rounded-xl border border-warn/40 bg-warn-soft p-3 text-xs text-warn">
             {error}
           </div>
         ) : (
@@ -121,26 +121,26 @@ export function AiRemixDrawer({
                   key={idx}
                   onClick={() => setSelectedVariantIndex(idx)}
                   className={cn(
-                    'cursor-pointer rounded-ctl border p-4 transition-all relative',
+                    'cursor-pointer rounded-xl border p-4 transition-all relative',
                     active
-                      ? 'border-indigo-600 bg-indigo-500/[0.05] ring-2 ring-indigo-500/20 shadow-xs'
+                      ? 'border-primary bg-primary/5 ring-2 ring-primary/20 shadow-xs'
                       : 'border-line hover:border-muted hover:bg-fg/[0.01]'
                   )}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Layout className="w-4 h-4 text-indigo-600" />
+                      <Layout className="w-4 h-4 text-primary" />
                       <span className="text-sm font-semibold text-fg">{v.title}</span>
                     </div>
                     {active && (
-                      <span className="flex items-center gap-1 text-[11px] font-bold text-indigo-600">
+                      <span className="flex items-center gap-1 text-[11px] font-bold text-primary">
                         <Check className="w-3.5 h-3.5" /> Đã chọn
                       </span>
                     )}
                   </div>
 
                   {/* Summary of changes */}
-                  <div className="mt-2.5 rounded bg-page p-2.5 text-xs text-muted space-y-1">
+                  <div className="mt-2.5 rounded-lg bg-page p-2.5 text-xs text-muted space-y-1 border border-line/60">
                     {v.config.heroTitle && (
                       <div>
                         <strong className="text-fg">Tiêu đề:</strong> {v.config.heroTitle}
@@ -187,7 +187,7 @@ export function AiRemixDrawer({
             onClick={handleApply}
             disabled={loading || selectedVariantIndex === null}
             size="sm"
-            className="bg-indigo-600 text-white font-medium hover:bg-indigo-700"
+            className="bg-primary hover:bg-primary-hover text-on-primary font-medium"
           >
             Áp dụng biến thể này
           </Button>

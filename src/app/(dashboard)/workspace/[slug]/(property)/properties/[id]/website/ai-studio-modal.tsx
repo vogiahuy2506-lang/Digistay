@@ -128,18 +128,18 @@ export function AiStudioModal({
   if (!isOpen) return null
 
   return (
-    <Modal isOpen onClose={loading ? () => {} : onClose}>
+    <Modal isOpen onClose={loading ? () => {} : onClose} size="lg">
       <ModalHeader className="border-b border-line pb-4">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 to-indigo-600 text-white shadow-md">
-            <Sparkles className="h-5 w-5" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-ink text-on-ink shadow-sm border border-line">
+            <Sparkles className="h-5 w-5 text-amber-400" />
           </div>
           <div>
             <h2 className="text-base font-semibold text-fg">
               Digistay AI Website Studio
             </h2>
             <p className="text-xs text-muted">
-              Tạo website hoàn chỉnh trong 10 giây cho: <strong className="text-fg">{propertyName}</strong>
+              Tạo website hoàn chỉnh cho: <strong className="text-fg">{propertyName}</strong>
             </p>
           </div>
         </div>
@@ -148,9 +148,9 @@ export function AiStudioModal({
       <ModalBody className="max-h-[75vh] overflow-y-auto py-5 space-y-6">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 p-1 shadow-lg animate-pulse">
+            <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 border border-primary/20 p-1 shadow-sm">
               <div className="flex h-full w-full items-center justify-center rounded-full bg-panel">
-                <Wand2 className="h-8 w-8 text-indigo-500 animate-spin" />
+                <Wand2 className="h-8 w-8 text-primary animate-spin" />
               </div>
             </div>
 
@@ -163,7 +163,7 @@ export function AiStudioModal({
 
             <div className="mt-6 w-full max-w-xs bg-line rounded-full h-1.5 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-indigo-500 to-purple-600 h-full transition-all duration-500"
+                className="bg-primary h-full transition-all duration-500"
                 style={{ width: `${((stepIndex + 1) / GENERATION_STEPS.length) * 100}%` }}
               ></div>
             </div>
@@ -179,7 +179,7 @@ export function AiStudioModal({
             {/* Bước 1: Chọn phong cách lưu trú */}
             <div>
               <label className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-1.5">
-                <Palette className="w-3.5 h-3.5 text-acc" />
+                <Palette className="w-3.5 h-3.5 text-primary" />
                 1. Chọn phong cách chủ đạo (Style & Vibe)
               </label>
               <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
@@ -191,9 +191,9 @@ export function AiStudioModal({
                       type="button"
                       onClick={() => setSelectedStyle(st.id)}
                       className={cn(
-                        'flex flex-col rounded-ctl border p-3.5 text-left transition-all relative',
+                        'flex flex-col rounded-xl border p-3.5 text-left transition-all relative',
                         active
-                          ? 'border-indigo-600 bg-indigo-500/[0.06] ring-2 ring-indigo-500/30 shadow-xs'
+                          ? 'border-primary bg-primary/5 ring-2 ring-primary/20 shadow-xs'
                           : 'border-line hover:border-muted hover:bg-fg/[0.01]'
                       )}
                     >
@@ -201,11 +201,11 @@ export function AiStudioModal({
                         <span className="text-sm font-semibold text-fg">{st.title}</span>
                         <div className="flex items-center gap-1">
                           <span
-                            className="h-3 w-3 rounded-full border border-white/40 shadow-xs"
+                            className="h-3 w-3 rounded-full border border-black/10 shadow-xs"
                             style={{ backgroundColor: st.primaryColor }}
                           />
                           <span
-                            className="h-3 w-3 rounded-full border border-white/40 shadow-xs"
+                            className="h-3 w-3 rounded-full border border-black/10 shadow-xs"
                             style={{ backgroundColor: st.secondaryColor }}
                           />
                         </div>
@@ -224,7 +224,7 @@ export function AiStudioModal({
             <div>
               <label className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
-                  <Wand2 className="w-3.5 h-3.5 text-acc" />
+                  <Wand2 className="w-3.5 h-3.5 text-primary" />
                   2. Mô tả mong muốn bổ sung (Tùy chọn)
                 </span>
                 <span className="text-[11px] font-normal text-muted">Prompt tự do</span>
@@ -234,7 +234,7 @@ export function AiStudioModal({
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="Ví dụ: Resort ven sông Hội An yên bình, nhấn mạnh vào trải nghiệm chèo thuyền kayak ngắm bình minh và ẩm thực hữu cơ địa phương..."
-                  className="w-full rounded-ctl border border-line bg-page p-3 text-xs text-fg placeholder:text-muted/60 focus:border-ink focus:outline-hidden min-h-[75px]"
+                  className="w-full rounded-xl border border-line bg-page p-3 text-xs text-fg placeholder:text-muted/60 focus:border-primary focus:outline-hidden min-h-[75px]"
                 />
               </div>
 
@@ -245,7 +245,7 @@ export function AiStudioModal({
                     key={i}
                     type="button"
                     onClick={() => setPrompt(qp)}
-                    className="rounded-full border border-line bg-panel px-2.5 py-1 text-[11px] text-muted hover:text-fg hover:border-muted transition-colors"
+                    className="rounded-full border border-line bg-panel px-2.5 py-1 text-[11px] text-muted hover:text-fg hover:border-primary/40 hover:bg-primary/5 transition-colors"
                   >
                     + {qp}
                   </button>
@@ -254,7 +254,7 @@ export function AiStudioModal({
             </div>
 
             {/* Thông tin tự động kéo từ hệ thống */}
-            <div className="rounded-ctl border border-dashed border-line p-3 text-xs text-muted flex items-start gap-2.5 bg-fg/[0.01]">
+            <div className="rounded-xl border border-dashed border-line p-3 text-xs text-muted flex items-start gap-2.5 bg-fg/[0.01]">
               <Sparkles className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
               <div>
                 <span className="font-semibold text-fg">Tự động đồng bộ dữ liệu thật:</span>
@@ -275,7 +275,7 @@ export function AiStudioModal({
           onClick={handleGenerate}
           disabled={loading}
           size="sm"
-          className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium hover:opacity-95 shadow-xs px-5"
+          className="bg-primary hover:bg-primary-hover text-on-primary font-medium shadow-xs px-5"
         >
           {loading ? (
             <>

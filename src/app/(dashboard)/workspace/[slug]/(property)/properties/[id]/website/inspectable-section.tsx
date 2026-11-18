@@ -62,8 +62,8 @@ export function InspectableSection({
       className={cn(
         'group relative border-2 transition-all duration-200',
         isBeingDragged && 'border-info/40 bg-info-soft/30 opacity-50',
-        !isBeingDragged && isSelected && 'border-acc ring-2 ring-acc/30 shadow-md',
-        !isBeingDragged && !isSelected && isHovered && 'border-acc/70 ring-1 ring-acc/20',
+        !isBeingDragged && isSelected && 'border-primary ring-2 ring-primary/30 shadow-md',
+        !isBeingDragged && !isSelected && isHovered && 'border-primary/70 ring-1 ring-primary/20',
         !isBeingDragged && !isSelected && !isHovered && 'border-transparent',
         !isEnabled && 'opacity-60 bg-fg/[0.02]'
       )}
@@ -71,13 +71,13 @@ export function InspectableSection({
       {/* Floating Action Toolbar on Hover / Selection */}
       <div
         className={cn(
-          'absolute top-3 right-3 z-30 flex items-center gap-1 p-1 rounded-xl bg-page/95 shadow-xl border border-line backdrop-blur-md transition-all duration-200',
+          'absolute top-3 right-3 z-30 flex items-center gap-1.5 p-1 rounded-xl bg-panel/95 shadow-xl border border-line backdrop-blur-md transition-all duration-200',
           showToolbar ? 'opacity-100 pointer-events-auto translate-y-0' : 'opacity-0 pointer-events-none -translate-y-1'
         )}
       >
         {/* Section Badge */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-acc-soft text-acc text-xs font-semibold select-none">
-          <Sparkles className="w-3 h-3 shrink-0" aria-hidden="true" />
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container-high text-fg text-xs font-semibold select-none border border-line">
+          <Sparkles className="w-3 h-3 shrink-0 text-primary" aria-hidden="true" />
           <span className="max-w-[140px] truncate">
             #{index + 1} {name}
           </span>
@@ -90,7 +90,7 @@ export function InspectableSection({
             e.stopPropagation()
             onEdit()
           }}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-acc text-on-acc text-xs font-medium hover:opacity-95 shadow-sm transition-opacity"
+          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary text-on-primary text-xs font-medium hover:bg-primary-hover shadow-xs transition-colors"
           title="Chỉnh sửa nội dung & giao diện khối này"
         >
           <Edit3 className="w-3.5 h-3.5" aria-hidden="true" />
@@ -105,10 +105,10 @@ export function InspectableSection({
               e.stopPropagation()
               onRemix()
             }}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-medium hover:opacity-95 shadow-sm transition-opacity"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-ink text-on-ink text-xs font-medium hover:bg-ink/90 shadow-xs transition-colors"
             title="Remix biến thể layout và văn phong bằng AI"
           >
-            <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
+            <Sparkles className="w-3.5 h-3.5 text-amber-300" aria-hidden="true" />
             <span>Remix AI</span>
           </button>
         )}

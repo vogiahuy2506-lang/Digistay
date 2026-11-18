@@ -78,9 +78,9 @@ export function AiTextCopilot({
   return (
     <Modal isOpen onClose={onClose}>
       <ModalHeader className="border-b border-line pb-3.5">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-xs">
-            <Wand2 className="h-4 w-4" />
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-ink text-on-ink shadow-xs border border-line">
+            <Wand2 className="h-4 w-4 text-amber-400" />
           </div>
           <div>
             <h2 className="text-base font-semibold text-fg">
@@ -103,7 +103,7 @@ export function AiTextCopilot({
             value={currentText}
             onChange={(e) => setCurrentText(e.target.value)}
             rows={3}
-            className="mt-1.5 w-full rounded-ctl border border-line bg-page p-3 text-xs text-fg focus:border-ink focus:outline-hidden"
+            className="mt-1.5 w-full rounded-xl border border-line bg-page p-3 text-xs text-fg focus:border-primary focus:outline-hidden"
           />
         </div>
 
@@ -124,13 +124,13 @@ export function AiTextCopilot({
                     handleRefine(act.id)
                   }}
                   className={cn(
-                    'flex flex-col rounded-ctl border p-2.5 text-left transition-all',
+                    'flex flex-col rounded-xl border p-2.5 text-left transition-all',
                     active
-                      ? 'border-indigo-600 bg-indigo-500/[0.08] text-fg shadow-xs ring-1 ring-indigo-500/20'
+                      ? 'border-primary bg-primary/5 text-fg shadow-xs ring-1 ring-primary/20'
                       : 'border-line text-muted hover:text-fg hover:border-muted'
                   )}
                 >
-                  <span className="text-xs font-semibold">{act.label}</span>
+                  <span className={cn('text-xs font-semibold', active ? 'text-primary' : 'text-fg')}>{act.label}</span>
                   <span className="text-[10.5px] text-muted line-clamp-1">{act.desc}</span>
                 </button>
               )
@@ -140,15 +140,15 @@ export function AiTextCopilot({
 
         {/* Kết quả sau AI */}
         {loading ? (
-          <div className="flex items-center justify-center py-6 text-center text-xs text-muted">
-            <Loader2 className="w-4 h-4 animate-spin mr-2 text-indigo-600" />
+          <div className="flex items-center justify-center py-6 text-center text-xs text-primary font-medium">
+            <Loader2 className="w-4 h-4 animate-spin mr-2 text-primary" />
             AI đang tinh chỉnh câu từ chuẩn hospitality…
           </div>
         ) : error ? (
           <p className="text-xs text-warn">{error}</p>
         ) : refinedText ? (
-          <div className="rounded-ctl border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-xs">
-            <div className="flex items-center justify-between text-emerald-800 dark:text-emerald-300 font-semibold mb-1">
+          <div className="rounded-xl border border-ok/30 bg-ok-soft p-3.5 text-xs">
+            <div className="flex items-center justify-between text-ok font-semibold mb-1">
               <span>✓ Bản thảo gợi ý từ AI:</span>
               <button
                 type="button"
@@ -173,7 +173,7 @@ export function AiTextCopilot({
               onClick={() => handleRefine()}
               disabled={loading || !currentText.trim()}
               size="sm"
-              className="bg-indigo-600 text-white font-medium hover:bg-indigo-700"
+              className="bg-primary hover:bg-primary-hover text-on-primary font-medium"
             >
               {loading ? 'Đang xử lý…' : 'Thực hiện với AI'}
             </Button>
@@ -185,7 +185,7 @@ export function AiTextCopilot({
                 onClose()
               }}
               size="sm"
-              className="bg-emerald-600 text-white font-medium hover:bg-emerald-700"
+              className="bg-primary hover:bg-primary-hover text-on-primary font-medium"
             >
               <Check className="w-3.5 h-3.5 mr-1" />
               Áp dụng vào website
