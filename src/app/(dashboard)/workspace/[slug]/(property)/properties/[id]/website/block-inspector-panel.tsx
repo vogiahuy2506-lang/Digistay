@@ -68,8 +68,8 @@ export interface BlockInspectorPanelProps {
   block: Block
   onUpdate: (config: BlockConfig) => void
   onClose: () => void
-  onToggleEnabled?: () => void
-  onRemove?: () => void
+  onToggleEnabled: () => void
+  onRemove: () => void
   onRemix?: () => void
   propertyData: any
   onPhotoAdded: (photo: { id: string; url: string; alt?: string | null }) => void
@@ -762,3 +762,4 @@ export function BlockInspectorPanel({
     </div>
   )
 }
+

@@ -1354,22 +1354,25 @@
       "textIgnore": "If you didn't ask for this code, please ignore this email."
     },
     "welcome": {
-      "subject": "Welcome to Digistay! 🎉",
-      "preview": "Your account is ready",
-      "title": "🎉 Your account is ready!",
-      "welcomeName": "Welcome to <accent>Digistay</accent>, <b>{name}</b>.",
-      "welcome": "Welcome to <accent>Digistay</accent>.",
-      "verified": "Your email is verified. You can start using Digistay right away.",
-      "nextSteps": "Next steps:",
+      "subject": "Welcome to Digistay! 5 steps to launch your hotel online 🏨",
+      "preview": "Set up your property and publish your direct booking website in 15 minutes.",
+      "title": "🎉 Welcome to Digistay!",
+      "welcomeName": "Hello <b>{name}</b>, welcome to <accent>Digistay</accent>.",
+      "welcome": "Welcome to <accent>Digistay</accent> — your account is now active.",
+      "verified": "To start welcoming guests and saving on OTA commissions today, complete these 5 quick setup steps (under 15 minutes):",
+      "nextSteps": "5 steps to get started:",
       "steps": {
-        "workspace": "Create your first workspace",
-        "members": "Add your team and choose their roles",
-        "property": "Set up your hotel",
-        "bookings": "Start managing bookings & guests"
+        "workspace": "1. Complete your hotel profile: Add your logo, address, and best photos.",
+        "property": "2. Add room types & rates: Configure rooms and weekday / weekend pricing.",
+        "website": "3. Publish your direct booking website: Launch your branded site in minutes.",
+        "bookings": "4. Enable VietQR & test your first booking: Accept deposits directly to your bank.",
+        "members": "5. Invite front desk staff: Assign safe role permissions for daily shifts."
       },
-      "signIn": "Sign in now →",
-      "text": "Welcome to Digistay! Your account is verified.",
-      "textSignIn": "Sign in: {url}"
+      "signIn": "Start setup now →",
+      "supportTitle": "Need help getting set up?",
+      "supportBody": "Our Digistay onboarding specialists are available daily (08:00 – 22:00) via Zalo or support@digistay.vn.",
+      "text": "Welcome to Digistay! Complete 5 quick steps: 1. Hotel profile, 2. Room types & rates, 3. Publish direct website, 4. Enable VietQR & first booking, 5. Invite staff.",
+      "textSignIn": "Start setup now: {url}"
     },
     "passwordChanged": {
       "subject": "[Digistay] Your password was changed",

@@ -1354,22 +1354,25 @@
       "textIgnore": "Nếu bạn không yêu cầu mã này, vui lòng bỏ qua email."
     },
     "welcome": {
-      "subject": "Chào mừng bạn đến với Digistay! 🎉",
-      "preview": "Tài khoản của bạn đã được kích hoạt",
-      "title": "🎉 Tài khoản đã sẵn sàng!",
-      "welcomeName": "Chào mừng <b>{name}</b> đến với <accent>Digistay</accent>.",
-      "welcome": "Chào mừng bạn đến với <accent>Digistay</accent>.",
-      "verified": "Email của bạn đã được xác thực thành công. Bạn có thể bắt đầu sử dụng ngay bây giờ.",
-      "nextSteps": "Bước tiếp theo:",
+      "subject": "Chào mừng bạn đến với Digistay! 5 bước bắt đầu kinh doanh khách sạn hiệu quả 🏨",
+      "preview": "Khởi tạo khách sạn và sở hữu website đặt phòng trực tiếp chỉ trong 15 phút.",
+      "title": "🎉 Chào mừng bạn đến với Digistay!",
+      "welcomeName": "Xin chào <b>{name}</b>, chúc mừng bạn đã gia nhập nền tảng <accent>Digistay</accent>.",
+      "welcome": "Chúc mừng bạn đã chính thức kích hoạt tài khoản tại <accent>Digistay</accent>.",
+      "verified": "Để bắt đầu đón khách và tiết kiệm hàng triệu đồng phí hoa hồng OTA ngay hôm nay, hãy hoàn thành 5 bước thiết lập nhanh (chưa đầy 15 phút):",
+      "nextSteps": "5 bước bắt đầu dành cho chủ khách sạn:",
       "steps": {
-        "workspace": "Tạo workspace đầu tiên của bạn",
-        "members": "Thêm thành viên và phân quyền",
-        "property": "Cấu hình thuộc tính khách sạn",
-        "bookings": "Bắt đầu quản lý bookings & khách hàng"
+        "workspace": "1. Hoàn tất hồ sơ khách sạn: Tải logo, địa chỉ và 3–5 hình ảnh đẹp nhất.",
+        "property": "2. Thêm hạng phòng & bảng giá: Nhập các loại phòng và giá ngày thường / cuối tuần.",
+        "website": "3. Xuất bản Website đặt phòng trực tiếp: Tạo trang web thương hiệu riêng chỉ trong vài phút.",
+        "bookings": "4. Kích hoạt VietQR & tạo booking đầu tiên: Nhận cọc tự động thẳng vào tài khoản ngân hàng.",
+        "members": "5. Mời nhân viên lễ tân: Phân quyền giao ca minh bạch, bảo mật doanh thu."
       },
-      "signIn": "Đăng nhập ngay →",
-      "text": "Chào mừng đến với Digistay! Tài khoản đã được xác thực.",
-      "textSignIn": "Đăng nhập: {url}"
+      "signIn": "Bắt đầu thiết lập ngay →",
+      "supportTitle": "Bạn cần hỗ trợ thiết lập ban đầu?",
+      "supportBody": "Đội ngũ kỹ thuật Digistay sẵn sàng hỗ trợ miễn phí 1-1 qua Zalo hoặc Email support@digistay.vn (08:00 – 22:00 hằng ngày).",
+      "text": "Chào mừng đến với Digistay! Hoàn thành 5 bước bắt đầu: 1. Hồ sơ khách sạn, 2. Hạng phòng & giá, 3. Xuất bản Website trực tiếp, 4. Kích hoạt VietQR & booking đầu tiên, 5. Mời nhân viên lễ tân.",
+      "textSignIn": "Bắt đầu thiết lập ngay: {url}"
     },
     "passwordChanged": {
       "subject": "[Digistay] Mật khẩu vừa được thay đổi",

@@ -52,8 +52,8 @@ describe('dashboard menu', () => {
     expect(forRole('MANAGER')).not.toContain('settings')
     expect(forRole('MANAGER')).toEqual(expect.arrayContaining(['members', 'cashbook', 'reports']))
     expect(forRole('ADMIN')).toEqual(expect.arrayContaining(['bankAccounts', 'billing', 'settings']))
-    expect(forRole('RECEPTIONIST')).toEqual(['overview', 'bookings', 'customers', 'rooms', 'payments', 'cashbook'])
-    expect(forRole('USER')).toEqual(['overview', 'bookings', 'rooms'])
+    expect(forRole('RECEPTIONIST')).toEqual(['overview', 'bookings', 'customers', 'rooms', 'payments', 'cashbook', 'help'])
+    expect(forRole('USER')).toEqual(['overview', 'bookings', 'rooms', 'help'])
   })
 
   it('lights up "Cơ sở" on the workspace home', () => {

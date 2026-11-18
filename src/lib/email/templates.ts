@@ -272,11 +272,12 @@ export function welcomeEmailTemplate(props: BaseEmailProps & { loginUrl?: string
       <tr>
         <td style="background-color: ${BRAND.bg}; border-radius: 12px; padding: 20px;">
           <p style="margin: 0 0 12px; font-size: 14px; font-weight: 600; color: ${BRAND.text};">${escapeHtml(t('nextSteps'))}</p>
-          <ul style="margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.8; color: ${BRAND.textMuted};">
-            <li>${escapeHtml(t('steps.workspace'))}</li>
+          <ul style="margin: 0; padding-left: 0; list-style: none; font-size: 14px; line-height: 1.85; color: ${BRAND.textMuted};">
+            <li style="margin-bottom: 6px;">${escapeHtml(t('steps.workspace'))}</li>
+            <li style="margin-bottom: 6px;">${escapeHtml(t('steps.property'))}</li>
+            <li style="margin-bottom: 6px;">${escapeHtml(t('steps.website'))}</li>
+            <li style="margin-bottom: 6px;">${escapeHtml(t('steps.bookings'))}</li>
             <li>${escapeHtml(t('steps.members'))}</li>
-            <li>${escapeHtml(t('steps.property'))}</li>
-            <li>${escapeHtml(t('steps.bookings'))}</li>
           </ul>
         </td>
       </tr>
@@ -293,6 +294,15 @@ export function welcomeEmailTemplate(props: BaseEmailProps & { loginUrl?: string
       </tr>
     </table>
     ` : ''}
+
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0 0;">
+      <tr>
+        <td style="border-top: 1px solid ${BRAND.border}; padding-top: 18px;">
+          <p style="margin: 0 0 4px; font-size: 13px; font-weight: 600; color: ${BRAND.text};">${escapeHtml(t('supportTitle'))}</p>
+          <p style="margin: 0; font-size: 13px; line-height: 1.6; color: ${BRAND.textMuted};">${escapeHtml(t('supportBody'))}</p>
+        </td>
+      </tr>
+    </table>
   `
 
   return {

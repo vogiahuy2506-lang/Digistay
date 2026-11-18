@@ -27,6 +27,7 @@ export type NavKey =
   | 'members'
   | 'billing'
   | 'settings'
+  | 'help'
 
 /** The sidebar's sections, in order; 'main' has no heading (dash.common.nav.groups.<group>). */
 export const NAV_GROUPS = [
@@ -105,6 +106,7 @@ export function workspaceNav(slug: string): NavItem[] {
     { key: 'members', href: routes.members(slug), can: ['members_manage'], group: 'workspace' },
     { key: 'billing', href: routes.billing(slug), can: ['billing_manage'], group: 'workspace' },
     { key: 'settings', href: routes.settings(slug), can: ['workspace_settings'], group: 'workspace' },
+    { key: 'help', href: routes.help(slug), can: null, group: 'workspace' },
   ]
 }
 

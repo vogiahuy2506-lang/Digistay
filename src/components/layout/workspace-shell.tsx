@@ -16,6 +16,7 @@ import {
   Contact,
   CreditCard,
   Globe,
+  HelpCircle,
   Hotel,
   House,
   Landmark,
@@ -82,6 +83,7 @@ const NAV_ICONS: Record<NavKey, LucideIcon> = {
   members: UsersRound,
   billing: Package,
   settings: Settings,
+  help: HelpCircle,
 }
 import { useDocumentTitle } from './document-title'
 import { accessCan, useWorkspaceAccess } from './workspace-context'

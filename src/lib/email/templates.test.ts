@@ -269,11 +269,11 @@ describe('account emails', () => {
 
   it('welcome, password changed, email change', () => {
     const welcome = noKeys(welcomeEmailTemplate({ recipientName: NAME, loginUrl: 'https://digistay.test/login', locale: 'en' }))
-    expect(welcome.subject).toBe('Welcome to Digistay! 🎉')
-    expect(welcome.html).toContain('Welcome to <strong style="color: #a93119;">Digistay</strong>, <strong>Hoa &lt;b&gt;&amp;&lt;/b&gt;</strong>.')
-    expect(welcome.html).toContain('<li>Start managing bookings &amp; guests</li>')
-    expect(welcome.text).toBe('Welcome to Digistay! Your account is verified.\n\nSign in: https://digistay.test/login')
-    expect(welcomeEmailTemplate({}).subject).toBe('Chào mừng bạn đến với Digistay! 🎉')
+    expect(welcome.subject).toBe('Welcome to Digistay! 5 steps to launch your hotel online 🏨')
+    expect(welcome.html).toContain('Hello <strong>Hoa &lt;b&gt;&amp;&lt;/b&gt;</strong>, welcome to <strong style="color: #a93119;">Digistay</strong>.')
+    expect(welcome.html).toContain('3. Publish your direct booking website')
+    expect(welcome.text).toContain('Start setup now: https://digistay.test/login')
+    expect(welcomeEmailTemplate({}).subject).toBe('Chào mừng bạn đến với Digistay! 5 bước bắt đầu kinh doanh khách sạn hiệu quả 🏨')
 
     const changedAt = new Date('2026-12-23T08:30:05Z')
     const password = noKeys(passwordChangedTemplate({ changedAt, supportUrl: 'https://digistay.test/lien-he', locale: 'en' }))
