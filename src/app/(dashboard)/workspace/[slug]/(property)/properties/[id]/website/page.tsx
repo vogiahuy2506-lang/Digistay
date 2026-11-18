@@ -45,6 +45,7 @@ import { siteFontVariables } from '@/app/(public)/[subdomain]/fonts'
 import { PreviewBlock, PreviewHeader, type PreviewSite } from './site-preview'
 import { InspectableSection } from './inspectable-section'
 import { TemplateCard } from './template-card'
+import { THEME_PRESETS } from '@/lib/ai/website-ai'
 import { AiStudioModal } from './ai-studio-modal'
 import { AiRemixDrawer } from './ai-remix-drawer'
 import { AiTextCopilot } from './ai-text-copilot'
@@ -1416,6 +1417,14 @@ function AvailableBlockCard({
   )
 }
 
+const PRESET_LABELS: Record<string, { name: string; desc: string }> = {
+  luxury_boutique: { name: 'Luxury Boutique Resort', desc: 'Sang trọng, hoàng gia' },
+  tropical_eco: { name: 'Tropical Eco Resort', desc: 'Sinh thái nhiệt đới, thư thái' },
+  modern_clean: { name: 'Modern Minimalist', desc: 'Hiện đại, tinh tế' },
+  vintage_boho: { name: 'Vintage & Boho Homestay', desc: 'Ấm cúng, mộc mạc' },
+  coastal_breeze: { name: 'Coastal Breeze Beach Resort', desc: 'Biển xanh ngát, tươi mới' },
+}
+
 // Main Component
 export default function WebsiteBuilderPage() {
   const router = useRouter()
@@ -1494,6 +1503,47 @@ export default function WebsiteBuilderPage() {
       toast.error('Lỗi kết nối khi đồng bộ dữ liệu')
     } finally {
       setIsSyncing(false)
+    }
+  }
+
+  // Quick AI Prompt generation (Google Stitch Style)
+  const [aiPromptInput, setAiPromptInput] = React.useState('')
+  const [isAiGenerating, setIsAiGenerating] = React.useState(false)
+
+  const handleQuickAiGenerate = async (customPrompt?: string, preset?: string) => {
+    const promptToUse = customPrompt ?? aiPromptInput
+    if (!promptToUse && !preset) {
+      setShowAiStudioModal(true)
+      return
+    }
+
+    setIsAiGenerating(true)
+    try {
+      const res = await fetch('/api/website/ai/generate-site', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          propertyId,
+          prompt: promptToUse || undefined,
+          stylePreset: preset || settings?.themePreset || 'luxury_boutique',
+        }),
+      })
+      const json = await res.json().catch(() => null)
+      if (!res.ok || !json?.success) {
+        toast.error(json?.error || 'Không thể tạo website bằng AI lúc này')
+        return
+      }
+
+      setBlocks(json.data.blocks)
+      pushHistory(json.data.blocks)
+      if (json.data.settings) setSettings(json.data.settings)
+      setUsingDefaults(false)
+      setAiPromptInput('')
+      toast.success('✨ AI đã tái thiết kế website theo yêu cầu của bạn!')
+    } catch {
+      toast.error('Lỗi kết nối khi gửi yêu cầu tới AI')
+    } finally {
+      setIsAiGenerating(false)
     }
   }
 
@@ -1897,9 +1947,10 @@ export default function WebsiteBuilderPage() {
     // From lg up the builder fills the window: one row of tools, then the
     // editor and the preview, each scrolling on its own.
     <PageContainer className="max-w-full lg:px-5 lg:py-4 lg:h-dvh lg:flex lg:flex-col">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 mb-4 lg:mb-3 shrink-0 bg-panel rounded-2xl px-3 py-2 shadow-sm border border-line">
-        <div className="flex min-w-0 items-center gap-3">
+      {/* Header - Google Stitch Studio Inspired Layout */}
+      <header className="flex items-center justify-between gap-3 mb-3 shrink-0 bg-panel rounded-2xl px-3.5 py-2.5 shadow-sm border border-line">
+        {/* Left: Back + Property Info + Subdomain Pill */}
+        <div className="flex min-w-0 items-center gap-2.5">
           <Button 
             variant="ghost" 
             size="sm"
@@ -1909,322 +1960,257 @@ export default function WebsiteBuilderPage() {
               }
               router.push(routes.property(slug, propertyId))
             }}
-            className="gap-2"
+            className="h-8 px-2 gap-1 text-xs"
           >
             <ChevronRight className="w-4 h-4 rotate-180" />
-            {tc('actions.back')}
+            <span className="hidden sm:inline">{tc('actions.back')}</span>
           </Button>
-          <div className="h-8 w-px bg-fg/10" />
+
+          <div className="h-5 w-px bg-fg/10 hidden sm:block" />
+
           <div className="min-w-0">
-            <h1 className="text-base font-semibold text-fg flex items-center gap-2">
-              <Layout className="w-4 h-4 shrink-0 text-acc" aria-hidden="true" />
-              {t('header.title')}
-            </h1>
-            {/* The sidebar is folded here: which hotel's site this is. */}
-            <p className="text-xs text-muted truncate">{property?.name ?? '\u00a0'}</p>
+            <div className="flex items-center gap-1.5">
+              <h1 className="text-sm font-semibold text-fg truncate max-w-[180px] sm:max-w-[240px]">
+                {property?.name || 'Website Khách sạn'}
+              </h1>
+              {hasUnsavedChanges ? (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                  Chưa lưu
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  <Check className="w-3 h-3" />
+                  Đã lưu
+                </span>
+              )}
+            </div>
+            {property?.subdomain && (
+              <a
+                href={`/${property.subdomain}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[11px] text-muted hover:text-acc inline-flex items-center gap-1 transition-colors truncate"
+                title="Mở website trong tab mới"
+              >
+                <span>{property.subdomain}.digistay.vn</span>
+                <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+              </a>
+            )}
           </div>
         </div>
-        
-        <div className="flex flex-wrap items-center gap-2">
+
+        {/* Center: Device Switcher + Theme Toggle + Undo/Redo */}
+        <div className="hidden md:flex items-center gap-2">
+          {/* Viewport switch */}
+          <div className="flex items-center gap-0.5 bg-fg/5 rounded-xl p-1 border border-line/60">
+            <button
+              type="button"
+              onClick={() => setPreviewMode('desktop')}
+              className={cn(
+                'flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
+                previewMode === 'desktop' ? 'bg-panel shadow-xs text-acc font-semibold' : 'text-muted hover:text-fg'
+              )}
+            >
+              <Monitor className="w-3.5 h-3.5" />
+              <span>Máy tính</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPreviewMode('mobile')}
+              className={cn(
+                'flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
+                previewMode === 'mobile' ? 'bg-panel shadow-xs text-acc font-semibold' : 'text-muted hover:text-fg'
+              )}
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>Điện thoại</span>
+            </button>
+          </div>
+
+          {/* Light/Dark mode */}
+          <button
+            type="button"
+            onClick={() =>
+              setPreviewTheme((curr) => {
+                const effective = curr === 'auto' ? defaultSiteTheme : curr
+                return effective === 'dark' ? 'light' : 'dark'
+              })
+            }
+            className="p-1.5 rounded-xl bg-fg/5 border border-line/60 text-muted hover:text-fg transition-colors"
+            title={siteTheme === 'dark' ? 'Chuyển sang xem trước giao diện sáng' : 'Chuyển sang xem trước giao diện tối'}
+          >
+            {siteTheme === 'dark' ? <Moon className="w-4 h-4 text-acc" /> : <Sun className="w-4 h-4 text-amber-500" />}
+          </button>
+
           {/* Undo/Redo */}
-          <div className="flex items-center gap-1 bg-fg/5 rounded-lg p-1">
+          <div className="flex items-center gap-0.5 bg-fg/5 rounded-xl p-0.5 border border-line/60">
             <button
               onClick={undo}
               disabled={historyIndex <= 0}
-              className="p-2 rounded-md hover:bg-panel hover:shadow-sm transition-all disabled:opacity-40 disabled:hover:bg-transparent"
-              title={t('header.undo')}
+              className="p-1.5 rounded-lg text-muted hover:text-fg hover:bg-panel disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+              title="Hoàn tác (Undo)"
             >
-              <Undo2 className="w-4 h-4 text-muted" />
+              <Undo2 className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={redo}
               disabled={historyIndex >= history.length - 1}
-              className="p-2 rounded-md hover:bg-panel hover:shadow-sm transition-all disabled:opacity-40 disabled:hover:bg-transparent"
-              title={t('header.redo')}
+              className="p-1.5 rounded-lg text-muted hover:text-fg hover:bg-panel disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+              title="Làm lại (Redo)"
             >
-              <Redo2 className="w-4 h-4 text-muted" />
+              <Redo2 className="w-3.5 h-3.5" />
             </button>
           </div>
+        </div>
 
-          {/* AI Website Studio Button */}
-          <button
-            type="button"
-            onClick={() => setShowAiStudioModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-xs font-semibold shadow-md shadow-purple-500/20 hover:shadow-lg transition-all active:scale-95"
-            title="Tạo website thông minh bằng AI (tự động phân tích ảnh, phòng, giá và viết bài)"
+        {/* Right: AI Studio + Sync + Publish Switch + Save */}
+        <div className="flex items-center gap-2">
+          {/* Toggle sidebar button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setPanelOpen((open) => !open)}
+            aria-expanded={panelOpen}
+            aria-label={panelOpen ? 'Ẩn thanh công cụ' : 'Hiện thanh công cụ'}
+            title={panelOpen ? 'Ẩn thanh công cụ bên trái' : 'Hiện thanh công cụ bên trái'}
+            className="hidden lg:inline-flex px-2 h-8 text-muted hover:text-fg"
           >
-            <Sparkles className="w-3.5 h-3.5 animate-pulse text-amber-300" />
-            <span>AI Studio</span>
-          </button>
+            {panelOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
+          </Button>
 
-          {/* Sync Property Data Button */}
+          {/* Sync Button */}
           <Button
             variant="outline"
             size="sm"
             onClick={handleSyncPropertyData}
             disabled={isSyncing}
             title="Đồng bộ lại phòng, ảnh và tiện ích mới nhất từ cơ sở dữ liệu"
-            className="gap-1.5"
+            className="h-8 px-2.5 gap-1.5 text-xs hidden sm:inline-flex"
           >
-            <RefreshCw className={cn("w-3.5 h-3.5", isSyncing && "animate-spin text-acc")} />
-            <span className="lg:hidden xl:inline">{isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ'}</span>
+            <RefreshCw className={cn('w-3.5 h-3.5', isSyncing && 'animate-spin text-acc')} />
+            <span className="hidden xl:inline">{isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ'}</span>
           </Button>
 
-          {/* Template Button */}
-          <Button 
-            variant="outline"
-            size="sm"
-            onClick={() => setShowTemplateModal(true)}
-            aria-label={t('header.template')}
-            title={t('header.template')}
-            className="gap-2"
+          {/* AI Studio Button */}
+          <button
+            type="button"
+            onClick={() => setShowAiStudioModal(true)}
+            className="flex items-center gap-1.5 h-8 px-3 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-xs font-semibold shadow-md shadow-purple-500/20 hover:shadow-lg transition-all active:scale-95"
+            title="Mở Google Stitch AI Website Studio"
           >
-            <Wand2 className="w-4 h-4" aria-hidden="true" />
-            {/* Icons only between lg and xl, where the row is short of room. */}
-            <span className="lg:hidden xl:inline">{t('header.template')}</span>
-          </Button>
+            <Sparkles className="w-3.5 h-3.5 animate-pulse text-amber-300" />
+            <span>AI Studio</span>
+          </button>
 
-          {/* Theme & Style Modal */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowThemeModal(true)}
-            aria-label={t('tabs.style')}
-            title={t('tabs.style')}
-            className="gap-2"
+          {/* Quick Publish Toggle */}
+          <button
+            type="button"
+            onClick={() => settings && handleTogglePublish(!settings.isPublished)}
+            disabled={isPublishing || !settings}
+            title={settings?.isPublished ? 'Bấm để hủy xuất bản' : 'Bấm để xuất bản website'}
+            className={cn(
+              'h-8 px-2.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all',
+              settings?.isPublished
+                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'
+                : 'border-line bg-fg/5 text-muted hover:text-fg hover:bg-fg/10'
+            )}
           >
-            <Palette className="w-4 h-4 text-acc" aria-hidden="true" />
-            <span className="lg:hidden xl:inline">{t('tabs.style')}</span>
-          </Button>
+            <span className={cn('w-2 h-2 rounded-full', settings?.isPublished ? 'bg-emerald-500 animate-pulse' : 'bg-neutral-400')} />
+            <span className="hidden md:inline">{settings?.isPublished ? 'Đã xuất bản' : 'Bản nháp'}</span>
+          </button>
 
-          {/* Website Settings Modal */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowSettingsModal(true)}
-            aria-label={t('tabs.settings')}
-            title={t('tabs.settings')}
-            className="gap-2"
-          >
-            <Settings className="w-4 h-4 text-acc" aria-hidden="true" />
-            <span className="lg:hidden xl:inline">{t('tabs.settings')}</span>
-          </Button>
-
-          {/* Saved versions: view, restore */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowHistory(true)}
-            aria-label={t('versions.open')}
-            title={t('versions.open')}
-            className="gap-2"
-          >
-            <HistoryIcon className="w-4 h-4" aria-hidden="true" />
-            <span className="lg:hidden xl:inline">{t('versions.open')}</span>
-          </Button>
-
-          {/* The editor column in or out: out, the site takes the whole width. */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPanelOpen((open) => !open)}
-            aria-expanded={panelOpen}
-            aria-controls="builder-panel"
-            aria-label={panelOpen ? t('header.hidePanel') : t('header.showPanel')}
-            title={panelOpen ? t('header.hidePanel') : t('header.showPanel')}
-            className="hidden lg:inline-flex px-2.5"
-          >
-            {panelOpen ? <PanelLeftClose className="w-4 h-4" aria-hidden="true" /> : <PanelLeftOpen className="w-4 h-4" aria-hidden="true" />}
-          </Button>
-
-          {/* Preview Mode Toggle */}
-          <div className="flex items-center gap-1 bg-fg/5 rounded-xl p-1">
-            <button aria-label={t('header.desktop')}
-              onClick={() => setPreviewMode('desktop')}
-              className={`
-                p-2 rounded-lg transition-all duration-200
-                ${previewMode === 'desktop' 
-                  ? 'bg-panel shadow-sm text-acc' 
-                  : 'text-muted hover:text-fg'
-                }
-              `}
-            >
-              <Monitor className="w-4 h-4" />
-            </button>
-            <button aria-label={t('header.mobile')}
-              onClick={() => setPreviewMode('mobile')}
-              className={`
-                p-2 rounded-lg transition-all duration-200
-                ${previewMode === 'mobile' 
-                  ? 'bg-panel shadow-sm text-acc' 
-                  : 'text-muted hover:text-fg'
-                }
-              `}
-            >
-              <Smartphone className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Preview Theme Toggle (Light / Dark) */}
-          <div className="flex items-center bg-fg/5 rounded-xl p-1">
-            <button
-              aria-label={siteTheme === 'dark' ? t('header.previewThemeLight') : t('header.previewThemeDark')}
-              title={siteTheme === 'dark' ? t('header.previewThemeLight') : t('header.previewThemeDark')}
-              onClick={() =>
-                setPreviewTheme((curr) => {
-                  const effective = curr === 'auto' ? defaultSiteTheme : curr
-                  return effective === 'dark' ? 'light' : 'dark'
-                })
-              }
-              className={`
-                p-2 rounded-lg transition-all duration-200
-                ${siteTheme === 'dark' ? 'bg-panel shadow-sm text-acc' : 'text-muted hover:text-fg'}
-              `}
-            >
-              {siteTheme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-            </button>
-          </div>
-          
-          {/* Quick Publish Toggle / Status */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-line bg-fg/[0.03]">
-            <span
-              className={cn(
-                'w-2 h-2 rounded-full shrink-0',
-                settings?.isPublished ? 'bg-emerald-500 animate-pulse' : 'bg-neutral-400'
-              )}
-            />
-            <span className="text-xs font-medium text-fg hidden sm:inline">
-              {settings?.isPublished ? 'Đã xuất bản' : 'Chưa công khai'}
-            </span>
-            <button
-              type="button"
-              onClick={() => settings && handleTogglePublish(!settings.isPublished)}
-              disabled={isPublishing || !settings}
-              title={
-                settings?.isPublished
-                  ? 'Bấm để hủy công khai (chuyển về riêng tư)'
-                  : 'Bấm để công khai website cho du khách ngay'
-              }
-              className={cn(
-                'ml-1 text-[11px] font-semibold px-2 py-0.5 rounded-md transition-all flex items-center gap-1 disabled:opacity-50 cursor-pointer',
-                settings?.isPublished
-                  ? 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
-                  : 'bg-acc text-white hover:bg-acc/90 shadow-sm'
-              )}
-            >
-              {isPublishing ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
-              ) : settings?.isPublished ? (
-                'Hủy xuất bản'
-              ) : (
-                'Xuất bản ngay'
-              )}
-            </button>
-          </div>
-
-          <Button 
-            variant="outline"
-            size="sm"
-            // The site lives at /<subdomain> (it opened /<property id>, a 404).
-            // Before publishing, only signed-in members see it, as a preview.
-            onClick={() => property && window.open(`/${property.subdomain}`, '_blank')}
-            disabled={!property}
-            className="gap-2"
-          >
-            <Eye className="w-4 h-4" />
-            {t('header.preview')}
-          </Button>
-          
+          {/* Save Button */}
           <Button 
             onClick={() => handleSave()}
             disabled={isSaving}
             size="sm"
-            className={cn("gap-2 shadow-lg relative", hasUnsavedChanges && "ring-2 ring-acc/50 ring-offset-1")}
+            className={cn(
+              'h-8 px-3 gap-1.5 text-xs font-semibold shadow-md',
+              hasUnsavedChanges && 'ring-2 ring-acc/50 ring-offset-1'
+            )}
           >
-            {hasUnsavedChanges && (
-              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-acc opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-acc"></span>
-              </span>
-            )}
-            {isSaving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-            {isSaving ? tc('actions.saving') : tc('actions.saveChanges')}
+            {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            <span>{isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}</span>
           </Button>
         </div>
-      </div>
+      </header>
 
-      {/* The editor in a narrow column, the site in the rest: what the user looks at most. */}
+      {/* Main Workspace Layout */}
       <div
         className={cn(
           'grid grid-cols-1 gap-4 lg:flex-1 lg:min-h-0',
-          panelOpen ? 'lg:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[400px_minmax(0,1fr)]' : 'lg:grid-cols-1'
+          panelOpen ? 'lg:grid-cols-[380px_minmax(0,1fr)] 2xl:grid-cols-[420px_minmax(0,1fr)]' : 'lg:grid-cols-1'
         )}
       >
-        {/* Block Manager Sidebar */}
-        <div id="builder-panel" className={cn('space-y-4 lg:min-h-0 lg:overflow-y-auto lg:pr-1 lg:pb-2', !panelOpen && 'lg:hidden')}>
-          {/* Tab Selector between Templates & Blocks */}
-          <div className="flex items-center gap-1 p-1 bg-fg/5 rounded-xl border border-line/60" role="tablist">
+        {/* Left Sidebar - Google Stitch Style 4-Tab Dock */}
+        <div id="builder-panel" className={cn('space-y-3.5 lg:min-h-0 lg:overflow-y-auto lg:pr-1 lg:pb-3', !panelOpen && 'lg:hidden')}>
+          {/* Tab Dock */}
+          <div className="grid grid-cols-4 gap-1 p-1 bg-fg/5 rounded-2xl border border-line/60" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'blocks'}
+              onClick={() => setActiveTab('blocks')}
+              className={cn(
+                'flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[11px] font-medium transition-all gap-1',
+                activeTab === 'blocks'
+                  ? 'bg-panel text-fg shadow-xs border border-line font-semibold'
+                  : 'text-muted hover:text-fg'
+              )}
+            >
+              <LayoutGrid className="w-4 h-4 text-acc" />
+              <span>Khối ({blocks.length})</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'style'}
+              onClick={() => setActiveTab('style')}
+              className={cn(
+                'flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[11px] font-medium transition-all gap-1',
+                activeTab === 'style'
+                  ? 'bg-panel text-fg shadow-xs border border-line font-semibold'
+                  : 'text-muted hover:text-fg'
+              )}
+            >
+              <Palette className="w-4 h-4 text-acc" />
+              <span>Giao diện</span>
+            </button>
             <button
               type="button"
               role="tab"
               aria-selected={activeTab === 'templates'}
               onClick={() => setActiveTab('templates')}
               className={cn(
-                'flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold transition-all',
+                'flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[11px] font-medium transition-all gap-1',
                 activeTab === 'templates'
-                  ? 'bg-panel text-fg shadow-sm border border-line/60'
+                  ? 'bg-panel text-fg shadow-xs border border-line font-semibold'
                   : 'text-muted hover:text-fg'
               )}
             >
-              <Wand2 className="w-3.5 h-3.5 text-acc" />
-              <span>Mẫu Landing Page</span>
+              <Wand2 className="w-4 h-4 text-acc" />
+              <span>Mẫu sẵn</span>
             </button>
             <button
               type="button"
               role="tab"
-              aria-label="Khối"
-              aria-selected={activeTab === 'blocks'}
-              onClick={() => setActiveTab('blocks')}
+              aria-selected={activeTab === 'settings'}
+              onClick={() => setActiveTab('settings')}
               className={cn(
-                'flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold transition-all',
-                activeTab === 'blocks'
-                  ? 'bg-panel text-fg shadow-sm border border-line/60'
+                'flex flex-col items-center justify-center py-2 px-1 rounded-xl text-[11px] font-medium transition-all gap-1',
+                activeTab === 'settings'
+                  ? 'bg-panel text-fg shadow-xs border border-line font-semibold'
                   : 'text-muted hover:text-fg'
               )}
             >
-              <LayoutGrid className="w-3.5 h-3.5 text-acc" />
-              <span>Cấu trúc & Khối ({blocks.length})</span>
+              <Settings className="w-4 h-4 text-acc" />
+              <span>Cài đặt</span>
             </button>
           </div>
 
-          {activeTab === 'templates' ? (
-            <div className="space-y-3">
-              <div className="p-3 bg-acc-soft/40 rounded-xl border border-acc/20">
-                <div className="flex items-center gap-1.5 text-acc font-semibold text-xs">
-                  <Sparkles className="w-4 h-4 shrink-0" />
-                  <span>Mẫu giao diện thiết kế sẵn</span>
-                </div>
-                <p className="text-[11px] text-muted mt-1 leading-relaxed">
-                  Bấm &quot;Áp dụng mẫu này&quot; để tự động cấu hình bố cục, màu sắc và phông chữ chuẩn CRO. Sau đó, bạn có thể rê chuột vào website bên phải để nhấp và chỉnh sửa từng phần trực tiếp.
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                {HOTEL_LANDING_TEMPLATES.map((tmpl) => (
-                  <TemplateCard
-                    key={tmpl.id}
-                    template={tmpl}
-                    isActive={settings?.layout === tmpl.id}
-                    onApply={applyLandingTemplate}
-                  />
-                ))}
-              </div>
-            </div>
-          ) : (
+          {/* TAB 1: BLOCKS (Sortable & Addable) */}
+          {activeTab === 'blocks' && (
             <div className="space-y-4">
               <DndContext
                 sensors={sensors}
@@ -2234,14 +2220,14 @@ export default function WebsiteBuilderPage() {
                 onDragEnd={handleDragEnd}
               >
                 {/* Active Blocks - Sortable */}
-                <div className="bg-panel rounded-2xl border border-line p-3 shadow-sm">
+                <div className="bg-panel rounded-2xl border border-line p-3.5 shadow-sm">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-lg">
-                        <LayoutGrid className="w-4 h-4 text-white" />
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-lg text-white">
+                        <LayoutGrid className="w-4 h-4" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-fg">{t('blocks.arrange')}</h3>
+                        <h3 className="font-semibold text-fg text-sm">{t('blocks.arrange')}</h3>
                         <p className="text-xs text-muted">{t('blocks.arrangeHint')}</p>
                       </div>
                     </div>
@@ -2250,7 +2236,7 @@ export default function WebsiteBuilderPage() {
                     </Badge>
                   </div>
                   {usingDefaults && (
-                    <p className="mb-3 rounded-box bg-info-soft px-3 py-2 text-xs text-info">{t('blocks.defaultLayout')}</p>
+                    <p className="mb-3 rounded-xl bg-info-soft px-3 py-2 text-xs text-info">{t('blocks.defaultLayout')}</p>
                   )}
 
                   {blocks.length === 0 ? (
@@ -2297,14 +2283,14 @@ export default function WebsiteBuilderPage() {
                 </DragOverlay>
               </DndContext>
 
-              {/* Available Blocks */}
-              <div className="bg-panel rounded-2xl border border-line p-3 shadow-sm">
+              {/* Available Blocks Library */}
+              <div className="bg-panel rounded-2xl border border-line p-3.5 shadow-sm">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-8 h-8 rounded-xl bg-ink flex items-center justify-center shadow-lg">
                     <Plus className="w-4 h-4 text-on-ink" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-fg">{t('blocks.addTitle')}</h3>
+                    <h3 className="font-semibold text-fg text-sm">{t('blocks.addTitle')}</h3>
                     <p className="text-xs text-muted">{t('blocks.addHint')}</p>
                   </div>
                 </div>
@@ -2325,42 +2311,347 @@ export default function WebsiteBuilderPage() {
               </div>
             </div>
           )}
+
+          {/* TAB 2: STYLE & THEME (Live Real-time Editing) */}
+          {activeTab === 'style' && (
+            <div className="space-y-4">
+              {/* AI Theme Presets */}
+              <div className="bg-panel rounded-2xl border border-line p-3.5 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-acc" />
+                    <h3 className="font-semibold text-fg text-sm">Phong cách giao diện AI</h3>
+                  </div>
+                  <span className="text-[11px] text-muted">1-Click áp dụng</span>
+                </div>
+
+                <div className="space-y-2">
+                  {Object.entries(THEME_PRESETS).map(([presetKey, p]) => {
+                    const presetInfo = PRESET_LABELS[presetKey] || { name: presetKey, desc: '' }
+                    return (
+                      <button
+                        key={presetKey}
+                        type="button"
+                        onClick={() => {
+                          setSettings((curr) => {
+                            if (!curr) return curr
+                            return {
+                              ...curr,
+                              primaryColor: p.primaryColor,
+                              secondaryColor: p.secondaryColor,
+                              accentColor: p.accentColor,
+                              buttonColor: p.buttonColor,
+                              headingColor: p.headingColor,
+                              backgroundColor: p.backgroundColor,
+                              fontFamily: p.fontFamily,
+                              headingFont: p.headingFont,
+                              themePreset: presetKey,
+                            }
+                          })
+                          toast.success(`Đã áp dụng phong cách ${presetInfo.name}`)
+                        }}
+                        className={cn(
+                          'w-full text-left p-2.5 rounded-xl border transition-all flex items-center justify-between group',
+                          settings?.themePreset === presetKey
+                            ? 'border-acc bg-acc-soft/30 shadow-xs ring-1 ring-acc'
+                            : 'border-line bg-fg/[0.02] hover:border-acc/60 hover:bg-fg/[0.04]'
+                        )}
+                      >
+                        <div className="min-w-0 pr-2">
+                          <p className="text-xs font-semibold text-fg truncate">{presetInfo.name}</p>
+                          <p className="text-[11px] text-muted truncate">{p.headingFont} + {p.fontFamily}</p>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <span className="w-3.5 h-3.5 rounded-full border border-black/10 shadow-xs" style={{ backgroundColor: p.primaryColor }} />
+                          <span className="w-3.5 h-3.5 rounded-full border border-black/10 shadow-xs" style={{ backgroundColor: p.secondaryColor }} />
+                          <span className="w-3.5 h-3.5 rounded-full border border-black/10 shadow-xs" style={{ backgroundColor: p.accentColor }} />
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Color Customizer */}
+              <div className="bg-panel rounded-2xl border border-line p-3.5 shadow-sm space-y-3">
+                <div className="flex items-center gap-2">
+                  <Palette className="w-4 h-4 text-acc" />
+                  <h3 className="font-semibold text-fg text-sm">Bảng màu trực tiếp</h3>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5 text-xs">
+                  <div>
+                    <label className="text-muted block mb-1">Màu thương hiệu</label>
+                    <div className="flex items-center gap-2 p-1.5 rounded-xl border border-line bg-fg/[0.02]">
+                      <input
+                        type="color"
+                        value={settings?.primaryColor || '#1A2B49'}
+                        onChange={(e) => setSettings((c) => (c ? { ...c, primaryColor: e.target.value } : c))}
+                        className="w-7 h-7 rounded-lg border-0 cursor-pointer p-0 bg-transparent"
+                      />
+                      <span className="font-mono text-fg uppercase text-[11px]">{settings?.primaryColor || '#1A2B49'}</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-muted block mb-1">Màu nút bấm</label>
+                    <div className="flex items-center gap-2 p-1.5 rounded-xl border border-line bg-fg/[0.02]">
+                      <input
+                        type="color"
+                        value={settings?.buttonColor || settings?.primaryColor || '#1A2B49'}
+                        onChange={(e) => setSettings((c) => (c ? { ...c, buttonColor: e.target.value } : c))}
+                        className="w-7 h-7 rounded-lg border-0 cursor-pointer p-0 bg-transparent"
+                      />
+                      <span className="font-mono text-fg uppercase text-[11px]">{settings?.buttonColor || settings?.primaryColor || '#1A2B49'}</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-muted block mb-1">Màu tiêu đề</label>
+                    <div className="flex items-center gap-2 p-1.5 rounded-xl border border-line bg-fg/[0.02]">
+                      <input
+                        type="color"
+                        value={settings?.headingColor || '#1A2B49'}
+                        onChange={(e) => setSettings((c) => (c ? { ...c, headingColor: e.target.value } : c))}
+                        className="w-7 h-7 rounded-lg border-0 cursor-pointer p-0 bg-transparent"
+                      />
+                      <span className="font-mono text-fg uppercase text-[11px]">{settings?.headingColor || '#1A2B49'}</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-muted block mb-1">Màu nền website</label>
+                    <div className="flex items-center gap-2 p-1.5 rounded-xl border border-line bg-fg/[0.02]">
+                      <input
+                        type="color"
+                        value={settings?.backgroundColor || '#FFFFFF'}
+                        onChange={(e) => setSettings((c) => (c ? { ...c, backgroundColor: e.target.value } : c))}
+                        className="w-7 h-7 rounded-lg border-0 cursor-pointer p-0 bg-transparent"
+                      />
+                      <span className="font-mono text-fg uppercase text-[11px]">{settings?.backgroundColor || '#FFFFFF'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Typography Customizer */}
+              <div className="bg-panel rounded-2xl border border-line p-3.5 shadow-sm space-y-3">
+                <div className="flex items-center gap-2">
+                  <Type className="w-4 h-4 text-acc" />
+                  <h3 className="font-semibold text-fg text-sm">Phông chữ hiển thị</h3>
+                </div>
+
+                <div className="space-y-2.5 text-xs">
+                  <div>
+                    <label className="text-muted block mb-1">Phông tiêu đề</label>
+                    <select
+                      value={settings?.headingFont || 'Playfair Display'}
+                      onChange={(e) => setSettings((c) => (c ? { ...c, headingFont: e.target.value } : c))}
+                      className="w-full px-3 py-2 border border-line rounded-xl bg-fg/[0.02] text-fg text-xs focus:outline-none focus:border-acc"
+                    >
+                      {headingFonts.map((f) => (
+                        <option key={f.value} value={f.value}>
+                          {f.value} ({f.trait})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-muted block mb-1">Phông nội dung</label>
+                    <select
+                      value={settings?.fontFamily || 'Inter'}
+                      onChange={(e) => setSettings((c) => (c ? { ...c, fontFamily: e.target.value } : c))}
+                      className="w-full px-3 py-2 border border-line rounded-xl bg-fg/[0.02] text-fg text-xs focus:outline-none focus:border-acc"
+                    >
+                      {bodyFonts.map((f) => (
+                        <option key={f.value} value={f.value}>
+                          {f.value} ({f.trait})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowThemeModal(true)}
+                  className="w-full gap-1.5 text-xs mt-1"
+                >
+                  <Palette className="w-3.5 h-3.5 text-acc" />
+                  <span>Bảng phối màu chi tiết & Đổ màu nâng cao</span>
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: TEMPLATES */}
+          {activeTab === 'templates' && (
+            <div className="space-y-3">
+              <div className="p-3 bg-acc-soft/40 rounded-xl border border-acc/20">
+                <div className="flex items-center gap-1.5 text-acc font-semibold text-xs">
+                  <Sparkles className="w-4 h-4 shrink-0" />
+                  <span>Mẫu giao diện thiết kế sẵn</span>
+                </div>
+                <p className="text-[11px] text-muted mt-1 leading-relaxed">
+                  Bấm &quot;Áp dụng mẫu này&quot; để tự động cấu hình bố cục, màu sắc và phông chữ chuẩn CRO. Sau đó, bạn có thể chỉnh sửa trực tiếp từng phần.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {HOTEL_LANDING_TEMPLATES.map((tmpl) => (
+                  <TemplateCard
+                    key={tmpl.id}
+                    template={tmpl}
+                    isActive={settings?.layout === tmpl.id}
+                    onApply={applyLandingTemplate}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: SETTINGS & SEO */}
+          {activeTab === 'settings' && (
+            <div className="space-y-4">
+              {/* Domain & SSL Summary Card */}
+              <div className="bg-panel rounded-2xl border border-line p-3.5 shadow-sm space-y-3">
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-acc" />
+                  <h3 className="font-semibold text-fg text-sm">Tên miền & Địa chỉ web</h3>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-fg/[0.03] border border-line/60 space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted">Tên miền mặc định:</span>
+                    <a
+                      href={`/${property?.subdomain}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-medium text-acc hover:underline inline-flex items-center gap-1"
+                    >
+                      <span>{property?.subdomain}.digistay.vn</span>
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted">Tên miền riêng:</span>
+                    <span className="font-medium text-fg">
+                      {settings?.customDomain ? (
+                        <span className="inline-flex items-center gap-1 text-ok">
+                          <Shield className="w-3 h-3" />
+                          {settings.customDomain}
+                        </span>
+                      ) : (
+                        'Chưa kết nối'
+                      )}
+                    </span>
+                  </div>
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowSettingsModal(true)}
+                  className="w-full gap-1.5 text-xs"
+                >
+                  <Settings className="w-3.5 h-3.5 text-acc" />
+                  <span>Cấu hình Tên miền riêng & SSL</span>
+                </Button>
+              </div>
+
+              {/* SEO Quick Settings */}
+              <div className="bg-panel rounded-2xl border border-line p-3.5 shadow-sm space-y-3">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-acc" />
+                  <h3 className="font-semibold text-fg text-sm">Tối ưu tìm kiếm (SEO)</h3>
+                </div>
+
+                <div className="space-y-2 text-xs">
+                  <div>
+                    <label className="text-muted block mb-1">Tiêu đề SEO (Meta Title)</label>
+                    <Input
+                      value={settings?.metaTitle || ''}
+                      onChange={(e) => setSettings((c) => (c ? { ...c, metaTitle: e.target.value } : c))}
+                      placeholder="Ví dụ: Digistay Resort - Nghỉ dưỡng ven sông Hội An"
+                      className="text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-muted block mb-1">Mô tả SEO (Meta Description)</label>
+                    <textarea
+                      value={settings?.metaDescription || ''}
+                      onChange={(e) => setSettings((c) => (c ? { ...c, metaDescription: e.target.value } : c))}
+                      placeholder="Mô tả hấp dẫn về điểm đến và ưu đãi đặt phòng trực tiếp..."
+                      rows={3}
+                      className="w-full px-3 py-2 border border-line rounded-xl bg-fg/[0.02] text-fg text-xs focus:outline-none focus:border-acc"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Version History Quick Access */}
+              <div className="bg-panel rounded-2xl border border-line p-3.5 shadow-sm space-y-2">
+                <div className="flex items-center gap-2">
+                  <HistoryIcon className="w-4 h-4 text-acc" />
+                  <h3 className="font-semibold text-fg text-sm">Lịch sử phiên bản</h3>
+                </div>
+                <p className="text-xs text-muted leading-relaxed">
+                  Hệ thống tự động lưu lại các bản chụp website mỗi khi bạn lưu hoặc AI tạo mới. Bạn có thể khôi phục lại bất kỳ lúc nào.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowHistory(true)}
+                  className="w-full gap-1.5 text-xs mt-1"
+                >
+                  <HistoryIcon className="w-3.5 h-3.5 text-acc" />
+                  <span>Xem và khôi phục các phiên bản cũ</span>
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Preview: the hotel's site in a browser frame, as tall as the window from lg up */}
-        <div className="rounded-2xl border border-line bg-fg/5 p-2 sm:p-3 lg:min-h-0 lg:flex lg:flex-col">
-          {/* Browser Chrome (the dashboard's colors) */}
-          <div className={cn('flex flex-col overflow-hidden rounded-xl border border-line bg-panel shadow-sm lg:min-h-0 lg:flex-1', previewMode === 'mobile' && 'mx-auto w-full max-w-[400px]')}>
+        {/* Canvas & Preview - Google Stitch Style */}
+        <div className="rounded-2xl border border-line bg-fg/5 p-2 sm:p-3 lg:min-h-0 lg:flex lg:flex-col relative">
+          {/* Browser Frame */}
+          <div className={cn('flex flex-col overflow-hidden rounded-xl border border-line bg-panel shadow-sm lg:min-h-0 lg:flex-1 relative', previewMode === 'mobile' && 'mx-auto w-full max-w-[400px]')}>
+            {/* Browser Header Bar */}
             <div className="shrink-0 bg-fg/5 px-4 py-2 flex items-center gap-3 border-b border-line">
               <div className="flex gap-1.5" aria-hidden="true">
-                <div className="w-3 h-3 rounded-full bg-err"></div>
-                <div className="w-3 h-3 rounded-full bg-warn"></div>
-                <div className="w-3 h-3 rounded-full bg-ok"></div>
+                <div className="w-3 h-3 rounded-full bg-err/80"></div>
+                <div className="w-3 h-3 rounded-full bg-warn/80"></div>
+                <div className="w-3 h-3 rounded-full bg-ok/80"></div>
               </div>
-              <div className="flex-1 min-w-0 bg-fg/[0.03] rounded-lg px-4 py-1.5 text-sm text-muted flex items-center justify-between gap-2">
+              <div className="flex-1 min-w-0 bg-fg/[0.03] rounded-lg px-4 py-1.5 text-xs text-muted flex items-center justify-between gap-2 border border-line/40">
                 <div className="flex items-center gap-2 min-w-0 truncate">
-                  <Globe className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                  <span className="truncate">{siteAddress}</span>
+                  <Globe className="w-3.5 h-3.5 shrink-0 text-acc" aria-hidden="true" />
+                  <span className="truncate font-mono">{siteAddress}</span>
                   {customDomain && settings?.sslEnabled && <Shield className="w-3.5 h-3.5 shrink-0 text-ok" aria-hidden="true" />}
                 </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setPreviewTheme((curr) => {
-                      const effective = curr === 'auto' ? defaultSiteTheme : curr
-                      return effective === 'dark' ? 'light' : 'dark'
-                    })
-                  }
-                  className="shrink-0 flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-raised border border-line text-fg hover:border-acc transition-colors"
-                  title={siteTheme === 'dark' ? t('header.previewThemeLight') : t('header.previewThemeDark')}
-                >
-                  {siteTheme === 'dark' ? <Moon className="w-3 h-3 text-acc" /> : <Sun className="w-3 h-3 text-warn" />}
-                  <span className="text-[11px] font-medium hidden sm:inline">{siteTheme === 'dark' ? 'Tối' : 'Sáng'}</span>
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[10px] text-muted uppercase font-medium hidden sm:inline">Xem trước trực quan</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPreviewTheme((curr) => {
+                        const effective = curr === 'auto' ? defaultSiteTheme : curr
+                        return effective === 'dark' ? 'light' : 'dark'
+                      })
+                    }
+                    className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-raised border border-line text-fg hover:border-acc transition-colors"
+                  >
+                    {siteTheme === 'dark' ? <Moon className="w-3 h-3 text-acc" /> : <Sun className="w-3 h-3 text-amber-500" />}
+                    <span>{siteTheme === 'dark' ? 'Tối' : 'Sáng'}</span>
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Website Preview Content: the hotel's site */}
+            {/* Website Preview Scrollable Canvas */}
             <div
               data-surface="site"
               data-theme={siteTheme}
@@ -2368,7 +2659,7 @@ export default function WebsiteBuilderPage() {
               style={siteStyle}
               className={cn(
                 siteFontVariables,
-                'min-h-[600px] bg-page text-fg font-site-body lg:min-h-0 lg:flex-1 lg:overflow-y-auto',
+                'min-h-[600px] bg-page text-fg font-site-body lg:min-h-0 lg:flex-1 lg:overflow-y-auto pb-24',
                 previewMode === 'mobile' && 'max-h-[700px] overflow-y-auto lg:max-h-none'
               )}
             >
@@ -2437,6 +2728,87 @@ export default function WebsiteBuilderPage() {
                   )}
                 </div>
               )}
+            </div>
+
+            {/* Google Stitch Signature Floating AI Command Bar */}
+            <div className="absolute bottom-3 left-0 right-0 z-30 px-3 w-full max-w-xl mx-auto pointer-events-auto">
+              <div className="rounded-2xl border border-line/80 bg-panel/95 shadow-2xl backdrop-blur-xl p-2.5 transition-all focus-within:border-acc focus-within:ring-2 focus-within:ring-acc/30">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    if (aiPromptInput.trim()) {
+                      void handleQuickAiGenerate()
+                    }
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 via-purple-600 to-indigo-600 text-white shadow-xs">
+                    <Sparkles className="h-4 w-4 animate-pulse" />
+                  </div>
+                  <input
+                    type="text"
+                    value={aiPromptInput}
+                    onChange={(e) => setAiPromptInput(e.target.value)}
+                    placeholder="Yêu cầu AI (ví dụ: Biệt thự nghỉ dưỡng ven biển, ưu đãi giảm 10%)..."
+                    disabled={isAiGenerating}
+                    className="flex-1 min-w-0 bg-transparent text-xs sm:text-sm text-fg placeholder:text-muted focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isAiGenerating || !aiPromptInput.trim()}
+                    className="shrink-0 flex items-center gap-1.5 h-8 px-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-semibold hover:opacity-95 shadow-sm disabled:opacity-40 transition-all cursor-pointer"
+                  >
+                    {isAiGenerating ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Đang tạo...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Tạo bằng AI</span>
+                      </>
+                    )}
+                  </button>
+                </form>
+
+                {/* Quick Suggestion Chips */}
+                <div className="flex items-center gap-1.5 mt-2 overflow-x-auto pb-0.5 scrollbar-none text-[11px]">
+                  <span className="text-muted text-[10px] uppercase font-semibold shrink-0">Gợi ý:</span>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickAiGenerate('Thiết kế website nghỉ dưỡng cao cấp sang trọng chuẩn 5 sao', 'luxury_boutique')}
+                    disabled={isAiGenerating}
+                    className="shrink-0 px-2.5 py-0.5 rounded-full bg-fg/5 hover:bg-acc/10 hover:text-acc border border-line hover:border-acc/40 transition-colors"
+                  >
+                    💎 Luxury 5 Sao
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickAiGenerate('Resort sinh thái nhiệt đới gần gũi thiên nhiên và thư giãn', 'tropical_eco')}
+                    disabled={isAiGenerating}
+                    className="shrink-0 px-2.5 py-0.5 rounded-full bg-fg/5 hover:bg-acc/10 hover:text-acc border border-line hover:border-acc/40 transition-colors"
+                  >
+                    🌴 Tropical Eco
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickAiGenerate('Khách sạn phong cách tối giản hiện đại cho du khách trẻ', 'modern_clean')}
+                    disabled={isAiGenerating}
+                    className="shrink-0 px-2.5 py-0.5 rounded-full bg-fg/5 hover:bg-acc/10 hover:text-acc border border-line hover:border-acc/40 transition-colors"
+                  >
+                    ✨ Modern Clean
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickAiGenerate('Tối ưu hóa các nút đặt phòng và chương trình khuyến mãi đặt trực tiếp', 'luxury_boutique')}
+                    disabled={isAiGenerating}
+                    className="shrink-0 px-2.5 py-0.5 rounded-full bg-fg/5 hover:bg-acc/10 hover:text-acc border border-line hover:border-acc/40 transition-colors"
+                  >
+                    🎯 Ưu đãi trực tiếp (CRO)
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
