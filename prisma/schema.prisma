@@ -954,8 +954,9 @@ model WebsiteBlock {
   propertyId String
   property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
-  type BlockType
-  name String
+  type          BlockType
+  name          String
+  layoutVariant String    @default("default")
 
   // Block content/settings
   config Json @default("{}")
@@ -1000,8 +1001,13 @@ model WebsiteSettings {
   buttonColor    String?
   /// Page and section titles on the site (#rrggbb); null: the text color.
   headingColor   String?
+  backgroundColor String? @default("#FFFFFF")
   fontFamily     String  @default("Inter")
   headingFont    String  @default("Playfair Display")
+
+  // Theme preset and AI prompt
+  themePreset    String? @default("modern_clean")
+  lastAiPrompt   String?
 
   // Layout
   layout         String @default("modern") // modern, classic, minimal

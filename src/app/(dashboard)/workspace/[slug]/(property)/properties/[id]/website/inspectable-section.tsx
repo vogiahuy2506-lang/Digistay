@@ -24,6 +24,7 @@ export interface InspectableSectionProps {
   compact?: boolean
   onEdit: () => void
   onToggle: () => void
+  onRemix?: () => void
   onMoveUp?: () => void
   onMoveDown?: () => void
   onRemove?: () => void
@@ -44,6 +45,7 @@ export function InspectableSection({
   compact = false,
   onEdit,
   onToggle,
+  onRemix,
   onMoveUp,
   onMoveDown,
   onRemove,
@@ -94,6 +96,22 @@ export function InspectableSection({
           <Edit3 className="w-3.5 h-3.5" aria-hidden="true" />
           <span>Sửa</span>
         </button>
+
+        {/* AI Remix button */}
+        {onRemix && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onRemix()
+            }}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-medium hover:opacity-95 shadow-sm transition-opacity"
+            title="Remix biến thể layout và văn phong bằng AI"
+          >
+            <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
+            <span>Remix AI</span>
+          </button>
+        )}
 
         {/* Visibility Toggle */}
         <button

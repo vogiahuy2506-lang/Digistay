@@ -45,6 +45,9 @@ import { siteFontVariables } from '@/app/(public)/[subdomain]/fonts'
 import { PreviewBlock, PreviewHeader, type PreviewSite } from './site-preview'
 import { InspectableSection } from './inspectable-section'
 import { TemplateCard } from './template-card'
+import { AiStudioModal } from './ai-studio-modal'
+import { AiRemixDrawer } from './ai-remix-drawer'
+import { AiTextCopilot } from './ai-text-copilot'
 import { HOTEL_LANDING_TEMPLATES, type HotelLandingTemplate } from '@/lib/public-site/landing-templates'
 import {
   Monitor, Smartphone, Eye, Save, Globe, Palette, Type, Image,
@@ -75,6 +78,9 @@ interface WebsiteSettings {
   exitIntentEnabled?: boolean
   exitIntentCouponId?: string | null
   facebookPixelId?: string | null
+  backgroundColor?: string | null
+  themePreset?: string | null
+  lastAiPrompt?: string | null
   googleTagId?: string | null
   isPublished: boolean
   customDomain?: string
@@ -182,6 +188,7 @@ interface Block {
   name: string
   isEnabled: boolean
   sortOrder: number
+  layoutVariant?: string
   config: BlockConfig
 }
 
@@ -601,12 +608,14 @@ function BlockConfigPanel({
   onClose,
   propertyData,
   onPhotoAdded,
+  onOpenCopilot,
 }: {
   block: Block
   onUpdate: (config: BlockConfig) => void
   onClose: () => void
   propertyData: any
   onPhotoAdded: (photo: { id: string; url: string; alt?: string | null }) => void
+  onOpenCopilot?: (fieldKey: string, label: string, currentText: string, onApply: (val: string) => void) => void
 }) {
   const t = useTranslations('dash.website.config')
   const tc = useTranslations('dash.common')
@@ -686,7 +695,20 @@ function BlockConfigPanel({
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.heroTitle')}</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-sm font-medium text-fg">{t('fields.heroTitle')}</label>
+                  {onOpenCopilot && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenCopilot('heroTitle', t('fields.heroTitle'), config.heroTitle || '', (val) => updateConfig('heroTitle', val))}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 bg-purple-500/10 hover:bg-purple-500/20 px-2 py-0.5 rounded transition-colors"
+                      title="Dùng AI viết lại hoặc dịch"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>AI Viết lại</span>
+                    </button>
+                  )}
+                </div>
                 <Input 
                   value={config.heroTitle || ''} 
                   onChange={(e) => updateConfig('heroTitle', e.target.value)}
@@ -694,7 +716,20 @@ function BlockConfigPanel({
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.subtitle')}</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-sm font-medium text-fg">{t('fields.subtitle')}</label>
+                  {onOpenCopilot && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenCopilot('heroSubtitle', t('fields.subtitle'), config.heroSubtitle || '', (val) => updateConfig('heroSubtitle', val))}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 bg-purple-500/10 hover:bg-purple-500/20 px-2 py-0.5 rounded transition-colors"
+                      title="Dùng AI viết lại hoặc dịch"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>AI Viết lại</span>
+                    </button>
+                  )}
+                </div>
                 <Input 
                   value={config.heroSubtitle || ''} 
                   onChange={(e) => updateConfig('heroSubtitle', e.target.value)}
@@ -796,14 +831,40 @@ function BlockConfigPanel({
           {block.type === 'ABOUT' && (
             <>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.title')}</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-sm font-medium text-fg">{t('fields.title')}</label>
+                  {onOpenCopilot && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenCopilot('aboutTitle', t('fields.title'), config.aboutTitle || '', (val) => updateConfig('aboutTitle', val))}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 bg-purple-500/10 hover:bg-purple-500/20 px-2 py-0.5 rounded transition-colors"
+                      title="Dùng AI viết lại hoặc dịch"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>AI Viết lại</span>
+                    </button>
+                  )}
+                </div>
                 <Input 
                   value={config.aboutTitle || ''} 
                   onChange={(e) => updateConfig('aboutTitle', e.target.value)}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.content')}</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-sm font-medium text-fg">{t('fields.content')}</label>
+                  {onOpenCopilot && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenCopilot('aboutContent', t('fields.content'), config.aboutContent || '', (val) => updateConfig('aboutContent', val))}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 bg-purple-500/10 hover:bg-purple-500/20 px-2 py-0.5 rounded transition-colors"
+                      title="Dùng AI viết lại hoặc dịch"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>AI Viết lại</span>
+                    </button>
+                  )}
+                </div>
                 <textarea
                   value={config.aboutContent || ''}
                   onChange={(e) => updateConfig('aboutContent', e.target.value)}
@@ -1042,14 +1103,40 @@ function BlockConfigPanel({
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.title')}</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-sm font-medium text-fg">{t('fields.title')}</label>
+                  {onOpenCopilot && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenCopilot('ctaTitle', t('fields.title'), config.ctaTitle || '', (val) => updateConfig('ctaTitle', val))}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 bg-purple-500/10 hover:bg-purple-500/20 px-2 py-0.5 rounded transition-colors"
+                      title="Dùng AI viết lại hoặc dịch"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>AI Viết lại</span>
+                    </button>
+                  )}
+                </div>
                 <Input 
                   value={config.ctaTitle || ''} 
                   onChange={(e) => updateConfig('ctaTitle', e.target.value)}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-fg block mb-1">{t('fields.description')}</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-sm font-medium text-fg">{t('fields.description')}</label>
+                  {onOpenCopilot && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenCopilot('ctaSubtitle', t('fields.description'), config.ctaSubtitle || '', (val) => updateConfig('ctaSubtitle', val))}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 bg-purple-500/10 hover:bg-purple-500/20 px-2 py-0.5 rounded transition-colors"
+                      title="Dùng AI viết lại hoặc dịch"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>AI Viết lại</span>
+                    </button>
+                  )}
+                </div>
                 <Input 
                   value={config.ctaSubtitle || ''} 
                   onChange={(e) => updateConfig('ctaSubtitle', e.target.value)}
@@ -1375,6 +1462,40 @@ export default function WebsiteBuilderPage() {
   // Undo/Redo state
   const [history, setHistory] = React.useState<Block[][]>([])
   const [historyIndex, setHistoryIndex] = React.useState(-1)
+
+  // AI Studio & Copilot states
+  const [showAiStudioModal, setShowAiStudioModal] = React.useState(false)
+  const [remixingBlock, setRemixingBlock] = React.useState<Block | null>(null)
+  const [aiCopilotField, setAiCopilotField] = React.useState<{
+    fieldKey: string
+    label: string
+    text: string
+    onApply: (val: string) => void
+  } | null>(null)
+  const [isSyncing, setIsSyncing] = React.useState(false)
+
+  const handleSyncPropertyData = async () => {
+    if (!propertyId) return
+    setIsSyncing(true)
+    try {
+      const res = await fetch('/api/website/sync-property', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ propertyId }),
+      })
+      const json = await res.json().catch(() => null)
+      if (!res.ok || !json?.success) {
+        toast.error(json?.error || 'Không thể đồng bộ dữ liệu lúc này')
+        return
+      }
+      toast.success(json.message || 'Đồng bộ dữ liệu phòng, ảnh và tiện ích thành công!')
+      void fetchWebsiteData()
+    } catch {
+      toast.error('Lỗi kết nối khi đồng bộ dữ liệu')
+    } finally {
+      setIsSyncing(false)
+    }
+  }
 
   // DnD sensors
   const sensors = useSensors(
@@ -1825,6 +1946,30 @@ export default function WebsiteBuilderPage() {
             </button>
           </div>
 
+          {/* AI Website Studio Button */}
+          <button
+            type="button"
+            onClick={() => setShowAiStudioModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-xs font-semibold shadow-md shadow-purple-500/20 hover:shadow-lg transition-all active:scale-95"
+            title="Tạo website thông minh bằng AI (tự động phân tích ảnh, phòng, giá và viết bài)"
+          >
+            <Sparkles className="w-3.5 h-3.5 animate-pulse text-amber-300" />
+            <span>AI Studio</span>
+          </button>
+
+          {/* Sync Property Data Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSyncPropertyData}
+            disabled={isSyncing}
+            title="Đồng bộ lại phòng, ảnh và tiện ích mới nhất từ cơ sở dữ liệu"
+            className="gap-1.5"
+          >
+            <RefreshCw className={cn("w-3.5 h-3.5", isSyncing && "animate-spin text-acc")} />
+            <span className="lg:hidden xl:inline">{isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ'}</span>
+          </Button>
+
           {/* Template Button */}
           <Button 
             variant="outline"
@@ -2274,6 +2419,7 @@ export default function WebsiteBuilderPage() {
                         isBeingDragged={isBeingDragged}
                         compact={previewMode === 'mobile'}
                         onEdit={() => setSelectedBlockId(block.id)}
+                        onRemix={() => setRemixingBlock(block)}
                         onToggle={() => toggleBlock(block.id)}
                         onMoveUp={index > 0 ? () => moveBlock(block.id, 'up') : undefined}
                         onMoveDown={index < arr.length - 1 ? () => moveBlock(block.id, 'down') : undefined}
@@ -2304,6 +2450,9 @@ export default function WebsiteBuilderPage() {
           onClose={() => setSelectedBlockId(null)}
           propertyData={propertyData}
           onPhotoAdded={(photo) => setPropertyData((p: any) => (p ? { ...p, images: [...(p.images ?? []), photo] } : p))}
+          onOpenCopilot={(fieldKey, label, currentText, onApply) =>
+            setAiCopilotField({ fieldKey, label, text: currentText, onApply })
+          }
         />
       )}
 
@@ -2351,6 +2500,53 @@ export default function WebsiteBuilderPage() {
           onChange={(patch) => setSettings((curr) => (curr ? { ...curr, ...patch } as any : curr))}
           bodyFonts={bodyFonts}
           headingFonts={headingFonts}
+        />
+      )}
+
+      {/* AI Studio Modal */}
+      {showAiStudioModal && (
+        <AiStudioModal
+          isOpen={showAiStudioModal}
+          onClose={() => setShowAiStudioModal(false)}
+          propertyId={propertyId}
+          propertyName={property?.name || propertyData?.name || 'Khách sạn'}
+          onApplySite={({ settings: newSettings, blocks: newBlocks }) => {
+            setBlocks(newBlocks)
+            pushHistory(newBlocks)
+            if (newSettings) setSettings(newSettings)
+            setUsingDefaults(false)
+            toast.success('Đã áp dụng toàn bộ giao diện và nội dung do AI thiết kế!')
+          }}
+        />
+      )}
+
+      {/* AI Remix Drawer */}
+      {remixingBlock && (
+        <AiRemixDrawer
+          isOpen={Boolean(remixingBlock)}
+          onClose={() => setRemixingBlock(null)}
+          propertyId={propertyId}
+          block={remixingBlock}
+          onApplyVariant={(blockId, layoutVariant, newConfig) => {
+            setBlocks((prev) =>
+              prev.map((b) => (b.id === blockId ? { ...b, layoutVariant, config: { ...b.config, ...newConfig } } : b))
+            )
+            toast.success(`Đã áp dụng biến thể AI mới cho khối ${remixingBlock.name || remixingBlock.type}`)
+          }}
+        />
+      )}
+
+      {/* AI Text Copilot Modal */}
+      {aiCopilotField && (
+        <AiTextCopilot
+          isOpen={Boolean(aiCopilotField)}
+          onClose={() => setAiCopilotField(null)}
+          label={aiCopilotField.label}
+          initialText={aiCopilotField.text}
+          onApplyText={(refined: string) => {
+            aiCopilotField.onApply(refined)
+            setAiCopilotField(null)
+          }}
         />
       )}
     </PageContainer>
