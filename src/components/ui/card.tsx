@@ -5,13 +5,22 @@ import { cn } from '@/lib/utils'
 
 interface CardProps {
   className?: string
+  interactive?: boolean
+  onClick?: (e: React.MouseEvent<HTMLDivElement>) => void
   children: React.ReactNode
 }
 
 // Flat panels: depth comes from the panel/page contrast and a 1 px line, not a shadow.
-export function Card({ className, children }: CardProps) {
+export function Card({ className, interactive, onClick, children }: CardProps) {
   return (
-    <div className={cn('bg-panel text-fg rounded-box border border-line overflow-hidden', className)}>
+    <div
+      onClick={onClick}
+      className={cn(
+        'bg-panel text-fg rounded-box border border-line overflow-hidden transition-all duration-200',
+        interactive && 'hover:border-muted hover:shadow-lift cursor-pointer hover:-translate-y-0.5 active:translate-y-0',
+        className
+      )}
+    >
       {children}
     </div>
   )

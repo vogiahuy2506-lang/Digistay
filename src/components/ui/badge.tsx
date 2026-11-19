@@ -32,6 +32,8 @@ interface BadgeProps {
   size?: 'sm' | 'md'
   className?: string
   textColor?: string
+  dot?: boolean
+  pulse?: boolean
   children: React.ReactNode
 }
 
@@ -40,38 +42,107 @@ const sizes = {
   md: 'px-2.5 py-1 text-small',
 }
 
-export function Badge({ variant = 'primary', size = 'sm', className, textColor, children }: BadgeProps) {
+export function Badge({ variant = 'primary', size = 'sm', className, textColor, dot, pulse, children }: BadgeProps) {
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded font-medium whitespace-nowrap',
+        'inline-flex items-center rounded font-medium whitespace-nowrap transition-colors duration-160',
         variants[variant],
         sizes[size],
         textColor,
         className
       )}
     >
-      {children}
+      {(dot || pulse) && (
+        <span className="relative flex h-1.5 w-1.5 mr-1.5 shrink-0">
+          {pulse && (
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-current motion-reduce:hidden" />
+          )}
+          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-current" />
+        </span>
+      )}
+      <span>{children}</span>
     </span>
   )
 }
 
-function MetaBadge({ meta, label, size, className }: { meta: StatusMeta; label: string; size?: BadgeProps['size']; className?: string }) {
+function MetaBadge({
+  meta,
+  label,
+  size,
+  dot,
+  pulse,
+  className,
+}: {
+  meta: StatusMeta
+  label: string
+  size?: BadgeProps['size']
+  dot?: boolean
+  pulse?: boolean
+  className?: string
+}) {
   return (
-    <Badge variant={meta.tone} size={size} className={cn(meta.struck && 'line-through', className)}>
+    <Badge
+      variant={meta.tone}
+      size={size}
+      dot={dot}
+      pulse={pulse}
+      className={cn(meta.struck && 'line-through', className)}
+    >
       {label}
     </Badge>
   )
 }
 
 /** Chip for `Booking.status` (string so API JSON can be passed straight in). */
-export function BookingStatusBadge({ status, ...rest }: { status: string; size?: BadgeProps['size']; className?: string }) {
+export function BookingStatusBadge({
+  status,
+  dot,
+  pulse,
+  ...rest
+}: {
+  status: string
+  size?: BadgeProps['size']
+  dot?: boolean
+  pulse?: boolean
+  className?: string
+}) {
   const labels = useDashLabels()
-  return <MetaBadge meta={getBookingStatusMeta(status)} label={labels.bookingStatus(status)} {...rest} />
+  // Active in-house stays can have a subtle pulse dot by default
+  const isLive = status === 'CHECKED_IN' || status === 'CONFIRMED'
+  return (
+    <MetaBadge
+      meta={getBookingStatusMeta(status)}
+      label={labels.bookingStatus(status)}
+      dot={dot ?? isLive}
+      pulse={pulse ?? (status === 'CHECKED_IN')}
+      {...rest}
+    />
+  )
 }
 
 /** Chip for `Booking.paymentStatus` and `Payment.status`. */
-export function PaymentStatusBadge({ status, ...rest }: { status: string; size?: BadgeProps['size']; className?: string }) {
+export function PaymentStatusBadge({
+  status,
+  dot,
+  pulse,
+  ...rest
+}: {
+  status: string
+  size?: BadgeProps['size']
+  dot?: boolean
+  pulse?: boolean
+  className?: string
+}) {
   const labels = useDashLabels()
-  return <MetaBadge meta={getPaymentStatusMeta(status)} label={labels.paymentStatus(status)} {...rest} />
+  const isPending = status === 'PENDING'
+  return (
+    <MetaBadge
+      meta={getPaymentStatusMeta(status)}
+      label={labels.paymentStatus(status)}
+      dot={dot ?? isPending}
+      pulse={pulse ?? isPending}
+      {...rest}
+    />
+  )
 }

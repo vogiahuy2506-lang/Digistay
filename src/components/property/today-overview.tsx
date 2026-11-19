@@ -186,9 +186,10 @@ export function TodayOverview({ slug, propertyId }: { slug: string; propertyId: 
               <StatCard
                 label={t('stats.expectedRevenue', { month: figures.month })}
                 value={
-                  <span className="text-fg">
-                    {t('stats.millions', { amount: (figures.monthBookings.total / 1_000_000).toLocaleString(intlLocale, { maximumFractionDigits: 1 }) })}
-                  </span>
+                  <SlidingNumber
+                    value={(figures.monthBookings.total / 1_000_000).toLocaleString(intlLocale, { maximumFractionDigits: 1 })}
+                    suffix={intlLocale.startsWith('en') ? 'M' : ' tr'}
+                  />
                 }
                 note={
                   <span className="text-muted flex items-center gap-1">

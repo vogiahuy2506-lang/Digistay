@@ -9,6 +9,7 @@ import { apiError } from '@/lib/i18n/api-errors'
 import { cn } from '@/lib/utils'
 import { SiteLink, useSiteHref } from '../../_components/site-base'
 import { SaveQrButton } from './SaveQrButton'
+import { AnimatedCheckmark } from '@/components/ui'
 
 const POLL_MS = 4000
 /** A manual transfer waits for staff, not a webhook: no need to ask as often. */
@@ -242,12 +243,12 @@ export function DepositLive({
               </span>
             </p>
           ) : claimedTime ? (
-            <p className="flex items-start gap-3 bg-ok-soft px-6 py-4 text-[14px] leading-[1.55] text-fg lg:px-8" role="status">
-              <span aria-hidden className="mt-1.5 h-2 w-2 flex-none animate-pulse rounded-full bg-ok" />
+            <div className="flex items-start gap-3 bg-ok-soft px-6 py-4 text-[14px] leading-[1.55] text-fg lg:px-8 border-t border-ok/20" role="status">
+              <AnimatedCheckmark size="sm" className="mt-0.5 text-ok shrink-0" />
               <span>
                 <b className="font-semibold">{t('claimedTitle', { time: claimedTime })}</b> {t('claimedText', { hotel: hotel.name })}
               </span>
-            </p>
+            </div>
           ) : (
             <div className="flex flex-col gap-3 bg-plain-soft/70 px-6 py-5 sm:flex-row sm:items-center sm:justify-between lg:px-8">
               <p className="max-w-[440px] text-[14px] leading-[1.55] text-fg">
