@@ -18,19 +18,35 @@ function DigitColumn({ digit, className }: { digit: number; className?: string }
   const shouldReduceMotion = useReducedMotion()
 
   return (
-    <span className={cn('relative inline-flex h-[1.25em] w-[0.62em] overflow-hidden leading-none', className)}>
+    <span
+      className={cn('relative inline-flex overflow-hidden leading-none tabular-nums select-none', className)}
+      aria-hidden="true"
+    >
+      {/* Invisible placeholder that sets exact width, height and baseline of the digit */}
+      <span className="invisible select-none pointer-events-none" aria-hidden="true">
+        {digit}
+      </span>
+
+      {/* Sliding reel of 10 digits */}
       <motion.span
-        className="flex flex-col"
+        className="absolute inset-0 flex flex-col items-center"
         initial={false}
-        animate={{ y: shouldReduceMotion ? 0 : `-${digit * 10}%` }}
-        transition={{
-          type: 'spring',
-          stiffness: 300,
-          damping: 30,
-        }}
+        animate={{ y: `-${digit * 100}%` }}
+        transition={
+          shouldReduceMotion
+            ? { duration: 0 }
+            : {
+                type: 'spring',
+                stiffness: 280,
+                damping: 28,
+              }
+        }
       >
         {DIGITS.map((d) => (
-          <span key={d} className="flex h-[1.25em] items-center justify-center tabular-nums">
+          <span
+            key={d}
+            className="flex h-full w-full shrink-0 items-center justify-center tabular-nums leading-none"
+          >
             {d}
           </span>
         ))}
@@ -49,7 +65,10 @@ export function SlidingNumber({
   const chars = String(value).split('')
 
   return (
-    <span className={cn('inline-flex items-baseline font-mono tabular-nums leading-none', className)}>
+    <span
+      className={cn('inline-flex items-baseline tabular-nums leading-none', className)}
+      aria-label={`${prefix ?? ''}${value}${suffix ?? ''}`}
+    >
       {prefix && <span className="mr-0.5 select-none">{prefix}</span>}
       {chars.map((char, i) => {
         const num = parseInt(char, 10)
