@@ -27,6 +27,48 @@ describe('dashboard theme', () => {
     }
     expect(isDarkReady('/workspace/demo/help')).toBe(true)
     expect(isDarkReady('/workspace/demo/billing/checkout')).toBe(true)
+    expect(isDarkReady('/billing/checkout')).toBe(true)
+
+    // Shortened /app/[slug]/* routes
+    for (const appReady of [
+      '/app/demo',
+      '/app/demo/properties',
+      '/app/demo/properties/new',
+      '/app/demo/members',
+      '/app/demo/settings',
+      '/app/demo/billing',
+      '/app/demo/billing/checkout',
+      '/app/demo/help',
+      '/app/demo/notifications',
+      '/app/demo/p1',
+      '/app/demo/p1/bookings',
+      '/app/demo/p1/bookings/new',
+      '/app/demo/p1/bookings/b1',
+      '/app/demo/p1/calendar',
+      '/app/demo/p1/reports',
+      '/app/demo/p1/reports/daily',
+      '/app/demo/p1/rooms',
+      '/app/demo/p1/services',
+      '/app/demo/p1/menu',
+      '/app/demo/p1/policies',
+      '/app/demo/p1/coupons',
+      '/app/demo/p1/bank-accounts',
+      '/app/demo/p1/website',
+      '/app/demo/p1/payments',
+      '/app/demo/p1/invoices',
+      '/app/demo/p1/leads',
+      '/app/demo/p1/customers',
+      '/app/demo/p1/customers/c1',
+      '/app/demo/p1/blog',
+      '/app/demo/p1/blog/new',
+      '/app/demo/p1/blog/post1',
+      '/app/demo/p1/channels',
+      '/app/demo/p1/cashbook',
+      '/app/demo/p1/settings',
+    ]) {
+      expect(isDarkReady(appReady)).toBe(true)
+    }
+
     // Only the pages themselves, not made-up paths below them.
     expect(isDarkReady(`${P}/payments/p1`)).toBe(false)
     expect(isDarkReady(`${P}/invoices/i1`)).toBe(false)

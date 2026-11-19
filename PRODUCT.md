@@ -1,85 +1,73 @@
-# Product
+# Tài Liệu Sản Phẩm: Digistay (Digistay Product Specification)
 
-<!-- impeccable:product-schema 1 -->
+<!-- digistay:product-specification 2.0 -->
 
-## Platform
+## 1. Tổng Quan Nền Tảng (Platform Overview)
 
-web
+**Digistay** là nền tảng tất-cả-trong-một (All-in-One Hospitality Operating System & Direct Booking Engine) dành cho các khách sạn độc lập, homestay cao cấp, boutique resort và chuỗi cơ sở lưu trú tại Việt Nam.
 
-## Users
+Digistay giải quyết hai bài toán sống còn của chủ khách sạn:
+1. **Giải phóng khỏi phụ thuộc kênh trung gian (OTA Dependency)**: Cung cấp website đặt phòng trực tiếp không mất phí hoa hồng, tiền cọc chuyển khoản thẳng vào tài khoản ngân hàng của khách sạn thông qua VietQR / PayOS.
+2. **Hợp nhất vận hành tại quầy lễ tân (Unified Front-Desk Operations)**: Quản lý toàn diện lịch buồng phòng, quy trình nhận/trả phòng nhanh, tích hợp thanh toán VietQR động, khai báo cư trú tự động gửi cơ quan Công an, xuất hóa đơn điện tử hợp chuẩn Tổng cục Thuế và sổ quỹ thu chi minh bạch.
 
-Bốn nhóm người dùng, đã được chủ dự án xác nhận:
+---
 
-- **Chủ khách sạn / homestay / resort nhỏ tại Việt Nam.** Tự vận hành hoặc thuê ít nhân sự, không có đội kỹ thuật, trước giờ nhận đặt phòng qua OTA, Zalo, Facebook và điện thoại. Việc cần làm: có website đặt phòng của riêng mình, nhận cọc thẳng vào tài khoản ngân hàng, biết doanh thu mà không ghi tay.
-- **Lễ tân / nhân viên trực quầy.** Dùng trang quản lý nhiều giờ liền, kể cả ca đêm. Việc cần làm: xem mọi đặt phòng (từ website và khách đến trực tiếp) trong một danh sách, nhận phòng, trả phòng, ghi tiền mặt, không nhầm trạng thái thanh toán. Không được thấy doanh thu.
-- **Khách đặt phòng trực tiếp**, chủ yếu trên điện thoại, đa số là người Việt, một phần là khách nước ngoài (có bản tiếng Anh). Việc cần làm: xem phòng và giá từng đêm, đặt, cọc bằng mã QR chuyển khoản, nhận xác nhận, tin rằng khoản cọc là thật.
-- **Chủ chuỗi nhiều cơ sở.** Quản lý nhiều khách sạn trong một workspace, phân quyền Chủ / Quản lý / Lễ tân cho từng người.
+## 2. Các Nhóm Người Dùng Mục Tiêu (Target Personas)
 
-## Product Purpose
+1. **Chủ cơ sở lưu trú (Hotel Owner / GM)**:
+   - *Mục tiêu*: Giữ tối đa lợi nhuận biên bằng cách tăng tỷ trọng đặt phòng trực tiếp (Direct Booking), quản lý doanh thu theo thời gian thực từ xa, kiểm soát thất thoát tiền mặt và chi phí hoa hồng OTA.
+   - *Tính năng trọng tâm*: Báo cáo doanh thu & công suất phòng, quản lý nhân viên & phân quyền RBAC, kết nối ngân hàng VietQR, website builder độc quyền, cấu hình gói cước và hóa đơn điện tử.
 
-Digistay là nền tảng cho khách sạn tại Việt Nam tự dựng website đặt phòng trực tiếp và quản lý toàn bộ vận hành (đặt phòng, lịch phòng, nhận / trả phòng, thanh toán, hoá đơn, báo cáo) trong cùng một tài khoản. Mỗi cơ sở có website riêng trên `ten-khach-san.digistay.vn` hoặc tên miền riêng.
+2. **Nhân viên Lễ tân & Quản lý Ca (Front-Desk Staff & Shift Leads)**:
+   - *Mục tiêu*: Thao tác nhận phòng (Check-in), trả phòng (Check-out) trong vòng dưới 30 giây; không bao giờ bị overbooking; không nhầm lẫn tiền cọc/tiền phòng; vận hành ca đêm êm ái với Dark Mode.
+   - *Tính năng trọng tâm*: Lịch phòng trực quan (Room Calendar Timeline), hộp thoại Check-out tự tính phụ thu và sinh mã VietQR động theo đơn, kiểm tra định danh CCCD/Hộ chiếu với tải ảnh giấy tờ, xuất báo cáo lưu trú BCA, ghi chép sổ quỹ tiền mặt hàng ngày.
 
-Thành công là khách sạn nhận được đơn đặt trực tiếp mà không trả hoa hồng cho trung gian, tiền cọc về đúng tài khoản của mình, và lễ tân không phải đối chiếu tay giữa nhiều công cụ.
+3. **Khách Đặt Phòng Trực Tiếp (Guests & Travelers)**:
+   - *Mục tiêu*: Xem phòng, chọn ngày và đặt phòng trên giao diện di động mượt mà, minh bạch về giá và phụ thu, thanh toán cọc nhanh chóng qua app ngân hàng bằng quét mã QR và nhận email xác nhận tức thì.
+   - *Tính năng trọng tâm*: Website đặt phòng thương hiệu riêng (`[subdomain].digistay.vn` hoặc tên miền tùy chỉnh), giao diện song ngữ (Việt - Anh), hỗ trợ mã ưu đãi (Coupons), thanh toán VietQR tự động xác nhận đơn.
 
-## Positioning
+4. **Chủ Chuỗi Nhiều Cơ Sở (Multi-Property Enterprise Owners)**:
+   - *Mục tiêu*: Quản lý tập trung nhiều khách sạn dưới một Workspace duy nhất; chuyển đổi cơ sở nhanh trong 1 click mà không cần đăng nhập lại; phân quyền chi tiết cho từng cơ sở.
 
-Ba điểm mà một sản phẩm hàng xóm khó sao chép trọn vẹn, đều do chủ dự án xác nhận:
+---
 
-- **Đặt phòng trực tiếp, không hoa hồng.** Digistay thu phí thuê bao theo gói (Starter / Growth / Business), không cắt phần trăm trên đơn đặt phòng và không giữ tiền của khách sạn. Tiền cọc vào thẳng tài khoản ngân hàng của khách sạn đã kết nối PayOS.
-- **Làm đúng quy định và thói quen thanh toán Việt Nam.** Cọc bằng mã QR chuyển khoản (VietQR / PayOS), đối soát tự động, hoá đơn điện tử Mắt Bão (phát hành, điều chỉnh, thay thế), phí dịch vụ Digistay thanh toán bằng chuyển khoản ngân hàng.
-- **Website không cần code, dựng nhanh.** Ghép các khối có sẵn thành website hoàn chỉnh. Mục tiêu sản phẩm là một khách sạn có website nhận đặt phòng trong khoảng 15 phút; đây là mục tiêu thiết kế, chưa phải số đo từ khách hàng thật.
+## 3. Các Tính Năng & Phân Hệ Cốt Lõi (Core Capabilities)
 
-## Operating Context
+### 3.1. Website Builder & Công Cụ Đặt Phòng Trực Tiếp (Direct Booking Engine)
+- **Trình dựng trang không mã (No-Code Modular Builder)**: Tự do tùy biến các khối nội dung (Hero banner, Giới thiệu, Thư viện ảnh, Danh sách hạng phòng, Đánh giá của khách, Tiện ích xung quanh, Chân trang).
+- **Xem trước trực quan thời gian thực (Live Responsive Preview)**: Chuyển đổi giữa chế độ xem Điện thoại, Máy tính bảng và Máy tính bàn ngay trong trình chỉnh sửa.
+- **Hỗ trợ Tên Miền Riêng (Custom Domain) & Subdomain**: Cung cấp tên miền miễn phí dạng `tenkhachsan.digistay.vn` và hỗ trợ đấu nối tên miền riêng của khách sạn (ví dụ: `www.khachsangiatot.vn`) với SSL tự động.
+- **Tối ưu hóa SEO & Đa ngôn ngữ**: Tự động sinh Meta tags, OpenGraph, sitemap và chuyển ngữ liền mạch Tiếng Việt - Tiếng Anh.
 
-- Quầy lễ tân hoạt động cả ngày lẫn đêm, trên máy tính để bàn hoặc laptop, đôi khi trên điện thoại; ca đêm cần giao diện tối.
-- Khách đặt phòng thường mở website khách sạn từ điện thoại, từ liên kết trên Facebook, Zalo hoặc Google.
-- Tiền đi qua chuyển khoản ngân hàng và mã QR; tiền mặt vẫn tồn tại tại quầy và phải được ghi sổ quỹ hằng ngày.
-- Hoá đơn điện tử gắn với đơn đặt phòng và gửi cho khách qua email.
-- Ngôn ngữ chính là tiếng Việt, kèm tiếng Anh cho website khách sạn. Tiền tệ là VND; ngày giờ theo múi giờ Việt Nam.
+### 3.2. Quản Lý Buồng Phòng & Lịch Đặt Phòng (Property & Booking Management)
+- **Lịch Timeline Trực Quan (Interactive Calendar)**: Kéo thả, hiển thị màu sắc theo trạng thái đặt phòng (Chờ cọc, Đã xác nhận, Đang ở, Đã trả phòng, Đã hủy).
+- **Hạng Phòng & Buồng Vật Lý (Room Types & Inventory)**: Phân tầng giữa hạng phòng thương mại (Standard, Deluxe, Suite) và danh sách phòng vật lý cụ thể (P.101, P.102...).
+- **Quy Trình Nhận/Trả Phòng Nhanh (Fast Check-in / Check-out)**:
+  - Sinh mã VietQR động chứa chính xác số tiền cần thanh toán và mã đơn phòng.
+  - Tự động tính phụ thu nhận phòng sớm / trả phòng muộn dựa trên chính sách khách sạn.
+- **Định Danh Khách Lưu Trú & Báo Cáo Cư Trú BCA**:
+  - Hỗ trợ lưu trữ số CCCD/CMND/Hộ chiếu, quốc tịch, ngày sinh và ảnh chụp 2 mặt giấy tờ tùy thân.
+  - Xuất file danh sách khách lưu trú định dạng chuẩn nộp cho cơ quan Công an quản lý xuất nhập cảnh và trật tự xã hội.
 
-## Capabilities and Constraints
+### 3.3. Thanh Toán & Tài Chính Khách Sạn (Payments & Cashbook)
+- **Cổng Thanh Toán VietQR Tự Động (PayOS Integration)**: Tiền cọc vào thẳng tài khoản ngân hàng của khách sạn, hệ thống tự động bắt webhook xác nhận thanh toán mà không cần kiểm tra sao kê thủ công.
+- **Sổ Quỹ Tiền Mặt & Thu Chi (Cashbook)**: Ghi nhận mọi dòng tiền mặt phát sinh tại quầy lễ tân (tiền đặt cọc, thanh toán còn lại, tiền giặt ủi, nước uống, chi mua văn phòng phẩm).
+- **Hóa Đơn Điện Tử Hợp Chuẩn (E-Invoices - Mắt Bão / TCT)**: Phát hành hóa đơn VAT điện tử gắn trực tiếp với booking, hỗ trợ gửi hóa đơn qua email, lập hóa đơn điều chỉnh và thay thế đúng chuẩn Nghị định 123 / Thông tư 78.
 
-Đang có trong sản phẩm (đọc từ mã nguồn và nội dung trang giới thiệu):
+### 3.4. Quản Lý Kênh Phân Phối (Channel Manager - iCal Two-Way Sync)
+- **Đồng bộ lịch hai chiều qua chuẩn iCal**: Kết nối tự động với các sàn OTA hàng đầu (Booking.com, Agoda, Airbnb, Traveloka) để ngăn chặn overbooking.
 
-- Trình dựng website theo khối, subdomain và tên miền riêng, bản tiếng Anh.
-- Đặt phòng trực tiếp với giá theo hạng phòng, giá cuối tuần, phụ thu và tiền cọc tính tự động; cọc qua PayOS.
-- Quản lý đặt phòng và lịch phòng, khách walk-in, nhận / trả phòng, phí trả phòng muộn.
-- Đối soát thanh toán, sổ quỹ hằng ngày, báo cáo doanh thu, hoá đơn điện tử Mắt Bão.
-- Nhiều cơ sở trong một workspace; vai trò Chủ, Quản lý, Lễ tân; giao diện tối; đăng nhập hai lớp tuỳ chọn.
+### 3.5. Trợ Giúp & Đào Tạo Vận Hành Tương Tác (Interactive Onboarding & Help Center)
+- **Video Hướng Dẫn Tương Tác 5 Bước (Interactive Annotated Video Player)**: Mô phỏng giao diện thật với con trỏ chuột bay đến chính xác vị trí cần bấm/nhập liệu.
+- **Ngân Hàng Bài Viết Nghiệp Vụ Thực Tế**: Hơn 20+ hướng dẫn chuyên sâu kèm ảnh chụp màn hình đánh dấu tọa độ từng điểm thao tác.
 
-Ràng buộc:
+### 3.6. Quản Trị Hệ Thống Nền Tảng (Platform Admin)
+- Kiểm soát danh sách Workspace, khách hàng, đơn hàng thuê bao gói (Orders), quản lý gói cước động (Platform Plans), voucher khuyến mãi, nhật ký bảo mật (Security audit) và kiểm tra sức khỏe hệ thống máy chủ (System health metrics).
 
-- Đa tenant: mỗi workspace chỉ thấy dữ liệu của mình; Lễ tân không thấy báo cáo doanh thu.
-- Đăng nhập hai lớp là tuỳ chọn, không bao giờ bắt buộc.
-- Website khách sạn dùng màu và phông do chính khách sạn chọn, nên giao diện của Digistay không được giả định một màu hay một phông cố định ở đó.
-- Webhook thanh toán và các thao tác chạm tiền chịu ràng buộc bảo mật riêng (xem `CLAUDE.md`).
-- Thanh toán online chỉ qua PayOS của chính khách sạn: khách trả bằng chuyển khoản / VietQR, không có thanh toán thẻ (quyết định ngày 25/10/2026).
+---
 
-Chưa quyết định: thanh toán trực tuyến ngoài khoản cọc.
+## 4. Các Cam Kết Về Trải Nghiệm & Kỹ Thuật (Non-Functional Commitments)
 
-## Brand Commitments
-
-- Tên: **Digistay**. Lời hứa thương hiệu là sự minh bạch về tiền: khách sạn giữ tiền của mình, Digistay không là bên trung gian giữ tiền.
-- Giọng văn: tiếng Việt thẳng, cụ thể, nói bằng việc sản phẩm làm được hôm nay; không dùng số liệu hay lời hứa chưa có bằng chứng.
-- Dấu hiệu thương hiệu hiện có: chấm vuông nhỏ màu đất nung cạnh chữ "Digistay" và dòng "Vận hành bởi Digistay" trên website khách sạn.
-
-## Evidence on Hand
-
-- Sản phẩm đang ở giai đoạn trước ra mắt: **chưa có khách hàng trả tiền, chưa có lời chứng thực, chưa có số liệu sử dụng, chưa có logo khách hàng.** Không được bịa các thứ này trong nội dung hay giao diện, kể cả ở chỗ giữ chỗ trông như thật.
-- Có sẵn: ảnh chụp giao diện thật của trang quản lý và website khách sạn dùng trên trang giới thiệu; bảng giá ba gói trong `messages/vi.json`; tài liệu vận hành trong `docs/`.
-
-## Product Principles
-
-1. **Tiền phải rõ ràng.** Mọi con số, trạng thái thanh toán và hành động chạm tiền phải đọc được ngay, không nhầm, không phải suy ra. Trạng thái tiền không bao giờ chỉ dựa vào màu.
-2. **Quầy lễ tân là nơi thử thách chính.** Việc hằng ngày (tìm đơn, nhận phòng, trả phòng, ghi tiền) phải nhanh, ít bước, bền với ca đêm và với người dùng ít kinh nghiệm công nghệ.
-3. **Khách sạn là chủ, Digistay đứng sau.** Website khách phải mang diện mạo của khách sạn; Digistay chỉ hiện ở mức một dấu ghi nhận nhỏ.
-4. **Nói đúng những gì đang chạy.** Chỉ mô tả tính năng đã có; không hứa, không thổi phồng, không thêm bằng chứng giả.
-5. **Mặc định an toàn.** Quyền truy cập, dữ liệu khách và khoá thanh toán được bảo vệ trước khi tiện lợi; người dùng không phải tự bật các bảo vệ cơ bản.
-
-## Accessibility & Inclusion
-
-- Độ tương phản chữ tối thiểu 4,5:1 (WCAG 2.x AA) ở cả giao diện sáng và tối; đã có test kiểm trong `src/styles/tokens.test.ts`.
-- Vùng chạm tối thiểu 44 px trên điện thoại; ô nhập 16 px trên điện thoại để iOS không tự phóng to.
-- Điều hướng bằng bàn phím với vòng focus nhìn thấy; tôn trọng `prefers-reduced-motion`.
-- Người dùng chính không phải dân công nghệ và có thể đọc trên màn hình cũ, ánh sáng xấu: ưu tiên chữ rõ, nhãn bằng lời thay vì chỉ biểu tượng.
-- Xác nhận đầy đủ WCAG cần kiểm thử thủ công với công nghệ hỗ trợ; tài liệu này chỉ ghi mục tiêu.
+1. **Hiệu năng & Tốc độ**: Tải trang dưới 1.2s; SSR đầu tiên có sẵn theme chuẩn qua cookie; không layout shift khi cuộn số nhờ `SlidingNumber [contain:paint]`.
+2. **Khả năng tiếp cận & Chế độ tối**: Dark mode kích hoạt toàn diện 100% trên mọi route quản trị `/app/*` và `/admin/*`; độ tương phản chữ luôn đạt WCAG 2.1 AA.
+3. **Bảo mật đa tầng**: Phân quyền nghiêm ngặt theo Tenant Isolation; webhook thanh toán xác thực bằng chữ ký SHA-256; bảo mật 2 lớp (2FA) tùy chọn cho chủ cơ sở.

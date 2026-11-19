@@ -19,7 +19,7 @@ function DigitColumn({ digit, className }: { digit: number; className?: string }
 
   return (
     <span
-      className={cn('relative inline-flex overflow-hidden leading-none tabular-nums select-none', className)}
+      className={cn('relative inline-flex overflow-hidden [contain:paint] leading-none tabular-nums select-none', className)}
       aria-hidden="true"
     >
       {/* Invisible placeholder that sets exact width, height and baseline of the digit */}
