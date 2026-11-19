@@ -497,14 +497,15 @@ function SidebarContent(props: SidebarProps & { onCollapse?: () => void }) {
       </div>
 
       {/* Context switcher: the hotel being managed, or the workspace. */}
-      <div className="px-3 pb-2 shrink-0 w-full min-w-0">
+      <div className="px-3 pb-2 shrink-0 w-full min-w-0 max-w-full overflow-hidden">
         <Dropdown
           align="left"
           className="w-full"
+          containerClassName="w-full min-w-0 max-w-full"
           trigger={
             <button
               type="button"
-              className="w-full min-w-0 max-w-full flex items-center gap-2 px-3 py-2.5 rounded-box border border-line bg-panel text-left hover:border-muted transition-colors duration-160 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
+              className="w-full min-w-0 max-w-full overflow-hidden flex items-center gap-2 px-3 py-2.5 rounded-box border border-line bg-panel text-left hover:border-muted transition-colors duration-160 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
             >
               <span className="min-w-0 flex-1 overflow-hidden">
                 <span className="block text-sm font-medium text-fg truncate">

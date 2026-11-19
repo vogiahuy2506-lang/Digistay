@@ -81,13 +81,13 @@ export function Dropdown({ trigger, children, align = 'right', className, contai
     <div
       className={cn(
         'relative',
-        containerClassName ? containerClassName : isFullWidth ? 'w-full min-w-0' : 'inline-block'
+        containerClassName ? containerClassName : isFullWidth ? 'w-full min-w-0 max-w-full' : 'inline-block'
       )}
       ref={triggerRef}
       onKeyDown={handleKeyDown}
     >
       <div
-        className={cn(isFullWidth && 'w-full min-w-0')}
+        className={cn(isFullWidth && 'w-full min-w-0 max-w-full')}
         onClick={() => {
           if (!isOpen) updatePosition()
           setIsOpen(!isOpen)
