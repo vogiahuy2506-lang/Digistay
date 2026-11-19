@@ -6,7 +6,6 @@ import { authOptions } from '@/lib/auth'
 import { Suspense } from 'react'
 import { prisma } from '@/lib/db'
 import { Loading } from '@/components/ui/loading'
-import { ToastProvider } from '@/components/ui/toast'
 import { ThemeRoot } from '@/components/layout/theme-root'
 import { THEME_COOKIE, parseThemePreference } from '@/lib/theme'
 import { SessionScope } from '@/components/providers'
@@ -44,16 +43,12 @@ export default async function DashboardLayout({
   // Workspace-scoped routes (under /workspace/[slug]) have their own
   // layout (WorkspaceShell) that handles its own sidebar.
   // Wrap in Suspense for useSearchParams support.
-  // ToastProvider listens for toast.success()/error() from every dashboard
-  // page; it sits inside ThemeRoot so toasts follow the dashboard's theme.
   // SessionScope: useSession (the profile page) without a fetch on load.
   return (
     <SessionScope session={session}>
       <ThemeRoot initial={theme}>
-        <ToastProvider>
-          <TermsModal initialNeedsAcceptance={needsTermsAcceptance} />
-          <Suspense fallback={<Loading />}>{children}</Suspense>
-        </ToastProvider>
+        <TermsModal initialNeedsAcceptance={needsTermsAcceptance} />
+        <Suspense fallback={<Loading />}>{children}</Suspense>
       </ThemeRoot>
     </SessionScope>
   )

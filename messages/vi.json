@@ -1,5 +1,6 @@
 {
   "common": {
+    "close": "Đóng",
     "error": {
       "title": "Không thể hiển thị trang này",
       "text": "Đã xảy ra lỗi khi tải nội dung. Vui lòng thử lại sau ít phút.",

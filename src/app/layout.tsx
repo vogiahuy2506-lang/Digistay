@@ -12,6 +12,7 @@ import { getLocale, getMessages, getTranslations } from 'next-intl/server'
 import { SITE_LOCALE_HEADER } from '@/i18n/locales'
 import Providers from '@/components/providers'
 import { ApiErrorsProvider } from '@/components/i18n/api-errors-provider'
+import { ToastProvider } from '@/components/ui/toast'
 
 /**
  * The default title and description, for pages without their own (the
@@ -78,7 +79,9 @@ export default async function RootLayout({
           }
         >
           <ApiErrorsProvider dictionary={apiErrors}>
-            <Providers>{children}</Providers>
+            <Providers>
+              <ToastProvider>{children}</ToastProvider>
+            </Providers>
           </ApiErrorsProvider>
         </NextIntlClientProvider>
       </body>

@@ -1,5 +1,6 @@
 {
   "common": {
+    "close": "Close",
     "error": {
       "title": "This page can't be shown",
       "text": "Something went wrong while loading it. Please try again in a few minutes.",

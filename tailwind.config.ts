@@ -249,6 +249,7 @@ const config: Config = {
         'panel-in': 'panel-in 250ms cubic-bezier(0.2, 0.7, 0.2, 1)',
         'drawer-in': 'drawer-in 250ms cubic-bezier(0.2, 0.7, 0.2, 1)',
         'toast-in': 'toast-in 250ms cubic-bezier(0.2, 0.7, 0.2, 1)',
+        'toast-out': 'toast-out 200ms cubic-bezier(0.2, 0.7, 0.2, 1) forwards',
         'ping': 'ping 1s cubic-bezier(0, 0, 0.2, 1) infinite',
         'bounce': 'bounce 2s infinite',
         'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
@@ -266,6 +267,10 @@ const config: Config = {
         'toast-in': {
           from: { transform: 'translateY(8px)', opacity: '0' },
           to: { transform: 'none', opacity: '1' },
+        },
+        'toast-out': {
+          from: { transform: 'none', opacity: '1' },
+          to: { transform: 'translateY(8px) scale(0.96)', opacity: '0' },
         },
         ping: {
           '75%, 100%': { transform: 'scale(2)', opacity: '0' },
