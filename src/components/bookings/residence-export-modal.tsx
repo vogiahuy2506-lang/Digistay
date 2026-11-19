@@ -55,6 +55,8 @@ export function ResidenceExportModal({
 }) {
   const t = useTranslations('dash.bookings')
   const tc = useTranslations('dash.common')
+  const tr = useTranslations('dash.bookings.residenceReport')
+  const tgi = useTranslations('dash.bookings.guestIdentity')
   const labels = useDashLabels()
 
   const todayStr = React.useMemo(() => {
@@ -81,14 +83,14 @@ export function ResidenceExportModal({
       if (json.success) {
         setGuests(json.data || [])
       } else {
-        setError(json.error || 'Không tải được danh sách lưu trú')
+        setError(json.error || tr('loadError'))
       }
     } catch {
-      setError('Lỗi kết nối khi tải danh sách')
+      setError(tr('networkError'))
     } finally {
       setLoading(false)
     }
-  }, [propertyId])
+  }, [propertyId, tr])
 
   React.useEffect(() => {
     if (isOpen) {
@@ -98,15 +100,15 @@ export function ResidenceExportModal({
 
   const formatGender = (gender: string | null) => {
     if (!gender) return '—'
-    if (gender === 'MALE') return 'Nam'
-    if (gender === 'FEMALE') return 'Nữ'
-    return 'Khác'
+    if (gender === 'MALE') return tgi('genderMale')
+    if (gender === 'FEMALE') return tgi('genderFemale')
+    return tgi('genderOther')
   }
 
   const formatIdType = (type: string | null) => {
-    if (type === 'PASSPORT') return 'Hộ chiếu'
-    if (type === 'OTHER') return 'Khác'
-    return 'CCCD'
+    if (type === 'PASSPORT') return tgi('idTypePassport')
+    if (type === 'OTHER') return tgi('idTypeOther')
+    return tgi('idTypeCccd')
   }
 
   const countMissingId = guests.filter((g) => !g.idNumber?.trim()).length
@@ -204,7 +206,7 @@ export function ResidenceExportModal({
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-muted shrink-0" aria-hidden="true" />
             <label htmlFor="residence-date" className="text-small font-medium text-fg whitespace-nowrap">
-              Ngày lưu trú:
+              {tr('filterDate')}:
             </label>
             <Input
               id="residence-date"
@@ -225,7 +227,7 @@ export function ResidenceExportModal({
                   : 'bg-panel border-line text-muted hover:text-fg'
               }`}
             >
-              Tổng: <strong className="ml-0.5">{guests.length}</strong>
+              {tr('filterAll', { count: guests.length })}
             </button>
             <button
               type="button"
@@ -237,7 +239,7 @@ export function ResidenceExportModal({
               }`}
             >
               <CheckCircle2 className="w-3 h-3 mr-1" aria-hidden="true" />
-              Đủ giấy tờ: <strong className="ml-1">{countHasId}</strong>
+              {tr('filterReady', { count: countHasId })}
             </button>
             {countMissingId > 0 && (
               <button
@@ -250,7 +252,7 @@ export function ResidenceExportModal({
                 }`}
               >
                 <AlertCircle className="w-3 h-3 mr-1" aria-hidden="true" />
-                Thiếu CCCD: <strong className="ml-1">{countMissingId}</strong>
+                {tr('filterMissing', { count: countMissingId })}
               </button>
             )}
           </div>
@@ -266,7 +268,7 @@ export function ResidenceExportModal({
         ) : guests.length === 0 ? (
           <div className="text-center py-10 border border-dashed border-line rounded-xl">
             <p className="text-muted text-small">
-              Không có khách lưu trú nào trong ngày {labels.date(selectedDate)}.
+              {tr('empty')}
             </p>
           </div>
         ) : (
@@ -274,15 +276,14 @@ export function ResidenceExportModal({
             <Table>
               <TableHeader className="sticky top-0 bg-panel z-10 shadow-sm">
                 <TableRow>
-                  <TableHead className="w-10">STT</TableHead>
-                  <TableHead>Khách hàng</TableHead>
-                  <TableHead>Phòng</TableHead>
-                  <TableHead>CCCD / Hộ chiếu</TableHead>
-                  <TableHead>Quốc tịch</TableHead>
-                  <TableHead>Ngày sinh</TableHead>
-                  <TableHead>Giới tính</TableHead>
-                  <TableHead>Thời gian lưu trú</TableHead>
-                  <TableHead className="text-right">Thao tác</TableHead>
+                  <TableHead className="w-10">#</TableHead>
+                  <TableHead>{tr('colGuest')}</TableHead>
+                  <TableHead>{tr('colRoom')}</TableHead>
+                  <TableHead>{tr('colId')}</TableHead>
+                  <TableHead>{tr('colNationality')}</TableHead>
+                  <TableHead>{tr('colBirthGender')}</TableHead>
+                  <TableHead>{tr('colStayPeriod')}</TableHead>
+                  <TableHead className="text-right">{tr('colAction')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -306,15 +307,15 @@ export function ResidenceExportModal({
                           </div>
                         ) : (
                           <span className="text-xs text-warn font-medium flex items-center gap-1">
-                            <AlertCircle className="w-3 h-3" aria-hidden="true" /> Chưa nhập
+                            <AlertCircle className="w-3 h-3" aria-hidden="true" /> {tr('missingBadge')}
                           </span>
                         )}
                       </TableCell>
                       <TableCell className="text-small">{g.nationality || 'Việt Nam'}</TableCell>
                       <TableCell className="text-small tabular-nums">
                         {g.birthDate ? new Date(g.birthDate).toLocaleDateString('vi-VN') : '—'}
+                        <span className="text-xs text-muted ml-1">({formatGender(g.gender)})</span>
                       </TableCell>
-                      <TableCell className="text-small">{formatGender(g.gender)}</TableCell>
                       <TableCell className="text-small tabular-nums text-muted">
                         {labels.dayMonth(g.checkInDate)} → {labels.dayMonth(g.checkOutDate)}
                       </TableCell>
@@ -333,7 +334,7 @@ export function ResidenceExportModal({
                           className={hasId ? 'h-7 px-2 text-xs' : 'h-7 px-2.5 text-xs border-warn/50 text-warn hover:bg-warn-soft'}
                         >
                           <Pencil className="w-3 h-3 mr-1" />
-                          {hasId ? 'Sửa' : 'Nhập ngay'}
+                          {tr('editId')}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -356,7 +357,7 @@ export function ResidenceExportModal({
             className="flex-1 sm:flex-none"
           >
             <Download className="w-4 h-4 mr-1.5" aria-hidden="true" />
-            Xuất CSV
+            {tr('exportCsv')}
           </Button>
           <Button
             disabled={guests.length === 0 || loading}
@@ -364,7 +365,7 @@ export function ResidenceExportModal({
             className="flex-1 sm:flex-none"
           >
             <FileSpreadsheet className="w-4 h-4 mr-1.5" aria-hidden="true" />
-            Xuất Excel (Khai báo)
+            {tr('exportExcel')}
           </Button>
         </div>
       </ModalFooter>

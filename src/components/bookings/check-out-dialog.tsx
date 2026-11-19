@@ -51,6 +51,7 @@ export function CheckOutDialog({
 }) {
   const t = useTranslations('dash.bookings')
   const tc = useTranslations('dash.common')
+  const tv = useTranslations('dash.bookings.checkOutVietQr')
   const labels = useDashLabels()
   const [preview, setPreview] = React.useState<Preview | null>(null)
   const [decision, setDecision] = React.useState<Decision>('apply')
@@ -294,7 +295,7 @@ export function CheckOutDialog({
                         <div className="flex items-center justify-between pb-2 border-b border-line/60">
                           <div className="flex items-center gap-1.5 text-xs font-bold text-primary">
                             <QrCode className="h-4 w-4" />
-                            <span>MÃ VIETQR THANH TOÁN TRẢ PHÒNG</span>
+                            <span>{tv('qrTitle')}</span>
                           </div>
                           <span className="text-[11px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded tabular-nums">
                             {labels.money(toCollect)}
@@ -313,22 +314,22 @@ export function CheckOutDialog({
                                 description={`DS${bookingCode}`}
                                 size={160}
                               />
-                              <p className="mt-1.5 text-[10px] font-medium text-slate-500">
-                                Quét bằng app ngân hàng
+                              <p className="mt-1.5 text-[10px] font-medium text-muted">
+                                {tv('scanHint')}
                               </p>
                             </div>
 
                             {/* Thông tin tài khoản & nội dung */}
                             <div className="flex-1 min-w-0 space-y-2 text-xs">
                               <div>
-                                <span className="text-[10px] uppercase font-bold text-muted block">Ngân hàng:</span>
+                                <span className="text-[10px] uppercase font-bold text-muted block">{tv('bank')}</span>
                                 <span className="font-semibold text-fg block">
                                   {preview.bankAccount.bankName} ({preview.bankAccount.bankCode})
                                 </span>
                               </div>
 
                               <div>
-                                <span className="text-[10px] uppercase font-bold text-muted block">Số tài khoản:</span>
+                                <span className="text-[10px] uppercase font-bold text-muted block">{tv('accountNumber')}</span>
                                 <div className="flex items-center gap-2 mt-0.5">
                                   <span className="font-mono font-bold text-sm text-primary tabular-nums">
                                     {preview.bankAccount.accountNumber}
@@ -337,10 +338,10 @@ export function CheckOutDialog({
                                     type="button"
                                     onClick={() => copyText(preview.bankAccount!.accountNumber)}
                                     className="p-1 rounded hover:bg-fg/10 text-muted hover:text-fg transition-colors"
-                                    title="Sao chép số tài khoản"
+                                    title={tv('copyAccount')}
                                   >
                                     {copied ? (
-                                      <Check className="h-3.5 w-3.5 text-emerald-500" />
+                                      <Check className="h-3.5 w-3.5 text-ok" />
                                     ) : (
                                       <Copy className="h-3.5 w-3.5" />
                                     )}
@@ -349,14 +350,14 @@ export function CheckOutDialog({
                               </div>
 
                               <div>
-                                <span className="text-[10px] uppercase font-bold text-muted block">Chủ tài khoản:</span>
+                                <span className="text-[10px] uppercase font-bold text-muted block">{tv('accountHolder')}</span>
                                 <span className="font-semibold text-fg uppercase block">
                                   {preview.bankAccount.accountHolder}
                                 </span>
                               </div>
 
                               <div>
-                                <span className="text-[10px] uppercase font-bold text-muted block">Nội dung chuyển:</span>
+                                <span className="text-[10px] uppercase font-bold text-muted block">{tv('transferContent')}</span>
                                 <span className="font-mono font-bold text-fg bg-fg/5 px-2 py-0.5 rounded text-[11px] inline-block mt-0.5">
                                   DS{bookingCode}
                                 </span>
@@ -367,9 +368,9 @@ export function CheckOutDialog({
                           <div className="rounded-lg border border-warn/30 bg-warn-soft p-3 text-xs text-warn flex items-start gap-2.5">
                             <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                             <div>
-                              <p className="font-semibold">Cơ sở chưa cài đặt tài khoản ngân hàng nhận tiền</p>
+                              <p className="font-semibold">{tv('noBankWarningTitle')}</p>
                               <p className="mt-0.5 text-[11px] text-muted">
-                                Vui lòng cấu hình tài khoản trong mục <strong>Tài khoản ngân hàng</strong> của cơ sở để tạo mã VietQR tự động, hoặc chọn thu tiền mặt tại quầy.
+                                {tv('noBankWarningDesc')}
                               </p>
                             </div>
                           </div>

@@ -19,9 +19,14 @@ describe('dashboard theme', () => {
     for (const ready of ['', '/bookings', '/bookings/b1', '/bookings/new', '/calendar', '/reports', '/reports/daily']) {
       expect(isDarkReady(`${P}${ready}`)).toBe(true)
     }
-    for (const ready of ['/rooms', '/services', '/menu', '/policies', '/coupons', '/bank-accounts', '/website', '/payments', '/invoices', '/leads', '/customers', '/blog', '/payments/', '/invoices/', '/customers/', '/blog/']) {
+    for (const ready of ['/rooms', '/services', '/menu', '/policies', '/coupons', '/bank-accounts', '/website', '/payments', '/invoices', '/leads', '/customers', '/blog', '/channels', '/cashbook', '/settings', '/payments/', '/invoices/', '/customers/', '/blog/']) {
       expect(isDarkReady(`${P}${ready}`)).toBe(true)
     }
+    for (const adminReady of ['/admin/system', '/admin/customers/ws_1', '/admin/orders', '/admin/plans', '/admin/einvoices', '/admin/platform-settings', '/admin/security', '/admin/team', '/admin/vouchers']) {
+      expect(isDarkReady(adminReady)).toBe(true)
+    }
+    expect(isDarkReady('/workspace/demo/help')).toBe(true)
+    expect(isDarkReady('/workspace/demo/billing/checkout')).toBe(true)
     // Only the pages themselves, not made-up paths below them.
     expect(isDarkReady(`${P}/payments/p1`)).toBe(false)
     expect(isDarkReady(`${P}/invoices/i1`)).toBe(false)

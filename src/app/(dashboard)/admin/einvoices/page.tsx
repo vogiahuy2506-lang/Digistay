@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 import {
   AlertCircle,
   CheckCircle2,
@@ -84,15 +85,8 @@ interface ListResponse {
   counts: Record<string, number>
 }
 
-const STATUS_TABS = [
-  { id: 'all', label: 'Tất cả' },
-  { id: 'issued', label: 'Đã phát hành' },
-  { id: 'pending', label: 'Đang xử lý' },
-  { id: 'failed', label: 'Thất bại' },
-  { id: 'stuck', label: 'Cần chú ý' },
-] as const
-
 export default function AdminEinvoicesPage() {
+  const t = useTranslations('dash.admin.einvoices')
   const [tab, setTab] = React.useState<string>('all')
   const [search, setSearch] = React.useState('')
   const [dateFrom, setDateFrom] = React.useState('')
@@ -102,6 +96,13 @@ export default function AdminEinvoicesPage() {
   const [data, setData] = React.useState<ListResponse | null>(null)
   const [loading, setLoading] = React.useState(true)
   const [actionId, setActionId] = React.useState<string | null>(null)
+
+  const statusTabs = [
+    { id: 'all', label: t('tabAll') },
+    { id: 'issued', label: t('tabIssued') },
+    { id: 'pending', label: t('tabPending') },
+    { id: 'failed', label: t('tabFailed') },
+  ] as const
 
   const fetchEinvoices = React.useCallback(async () => {
     setLoading(true)
@@ -120,14 +121,14 @@ export default function AdminEinvoicesPage() {
       if (json.success) {
         setData(json.data)
       } else {
-        toast.error(json.error || 'Không tải được danh sách hóa đơn')
+        toast.error(json.error || t('loadError'))
       }
     } catch {
-      toast.error('Lỗi kết nối khi tải danh sách hóa đơn')
+      toast.error(t('networkError'))
     } finally {
       setLoading(false)
     }
-  }, [tab, page, search, dateFrom, dateTo])
+  }, [tab, page, search, dateFrom, dateTo, t])
 
   React.useEffect(() => {
     fetchEinvoices()
@@ -143,13 +144,13 @@ export default function AdminEinvoicesPage() {
       })
       const json = await res.json()
       if (res.ok && json.success) {
-        toast.success(`Đã phát hành lại thành công hóa đơn ${invoice.lookupCode}`)
+        toast.success(t('retrySuccess', { code: invoice.lookupCode }))
         fetchEinvoices()
       } else {
-        toast.error(json.error || 'Phát hành lại thất bại')
+        toast.error(json.error || t('retryError'))
       }
     } catch {
-      toast.error('Lỗi kết nối khi gửi yêu cầu phát hành lại')
+      toast.error(t('networkError'))
     } finally {
       setActionId(null)
     }
@@ -165,13 +166,13 @@ export default function AdminEinvoicesPage() {
       })
       const json = await res.json()
       if (res.ok && json.success) {
-        toast.success(`Đã gửi lại email hóa đơn tới ${invoice.email}`)
+        toast.success(t('resendSuccess', { email: invoice.email || '' }))
         fetchEinvoices()
       } else {
-        toast.error(json.error || 'Gửi lại email thất bại')
+        toast.error(json.error || t('resendError'))
       }
     } catch {
-      toast.error('Lỗi kết nối khi gửi lại email')
+      toast.error(t('networkError'))
     } finally {
       setActionId(null)
     }
@@ -188,7 +189,7 @@ export default function AdminEinvoicesPage() {
           <div className="flex items-center gap-1.5 font-medium text-fg">
             <Building className="w-3.5 h-3.5 text-acc shrink-0" aria-hidden="true" />
             <span className="truncate max-w-[220px]" title={inv.companyName || ''}>
-              {inv.companyName || 'Công ty'}
+              {inv.companyName || t('buyerCompany')}
             </span>
           </div>
           <div className="text-xs text-muted font-mono">MST: {inv.taxCode || '—'}</div>
@@ -201,7 +202,7 @@ export default function AdminEinvoicesPage() {
           <div className="flex items-center gap-1.5 font-medium text-fg">
             <User className="w-3.5 h-3.5 text-muted shrink-0" aria-hidden="true" />
             <span className="truncate max-w-[220px]" title={inv.buyerName || ''}>
-              {inv.buyerName || 'Khách cá nhân'}
+              {inv.buyerName || t('buyerPersonal')}
             </span>
           </div>
           <div className="text-xs text-muted font-mono">CCCD: {inv.idNumber || '—'}</div>
@@ -210,7 +211,7 @@ export default function AdminEinvoicesPage() {
     }
     return (
       <span className="text-xs text-muted italic">
-        Bán cho người tiêu dùng (Không lấy HĐ)
+        {t('buyerAnonymous')}
       </span>
     )
   }
@@ -218,13 +219,13 @@ export default function AdminEinvoicesPage() {
   const renderStatusBadge = (status: EinvoiceRow['status']) => {
     switch (status) {
       case 'ISSUED':
-        return <Badge variant="success">Đã phát hành</Badge>
+        return <Badge variant="success">{t('statusIssued')}</Badge>
       case 'PENDING':
-        return <Badge variant="warn">Đang chờ</Badge>
+        return <Badge variant="warn">{t('statusPending')}</Badge>
       case 'ISSUING':
-        return <Badge variant="plain">Đang gửi Mắt Bão</Badge>
+        return <Badge variant="plain">{t('statusIssuing')}</Badge>
       case 'FAILED':
-        return <Badge variant="err">Thất bại</Badge>
+        return <Badge variant="err">{t('statusFailed')}</Badge>
       default:
         return <Badge variant="plain">{status}</Badge>
     }
@@ -234,14 +235,14 @@ export default function AdminEinvoicesPage() {
     if (!status) return <span className="text-xs text-muted">—</span>
     switch (status) {
       case 'SENT':
-        return <Badge variant="success" className="text-[11px]">Đã gửi mail</Badge>
+        return <Badge variant="success" className="text-[11px]">{t('emailSent')}</Badge>
       case 'PENDING':
       case 'SENDING':
-        return <Badge variant="warn" className="text-[11px]">Chờ gửi mail</Badge>
+        return <Badge variant="warn" className="text-[11px]">{t('emailPending')}</Badge>
       case 'FAILED':
-        return <Badge variant="err" className="text-[11px]">Lỗi gửi mail</Badge>
+        return <Badge variant="err" className="text-[11px]">{t('emailFailed')}</Badge>
       case 'SKIPPED':
-        return <Badge variant="plain" className="text-[11px]">Bỏ qua</Badge>
+        return <Badge variant="plain" className="text-[11px]">{t('emailSkipped')}</Badge>
       default:
         return <span className="text-xs text-muted">{status}</span>
     }
@@ -250,8 +251,8 @@ export default function AdminEinvoicesPage() {
   return (
     <PageContainer className="max-w-[1600px] space-y-6">
       <Header
-        eyebrow="Quản lý Tài chính & Thuế"
-        title="Hóa đơn điện tử Mắt Bão"
+        eyebrow={t('subtitle')}
+        title={t('title')}
         actions={
           <div className="flex items-center gap-2">
             <Button
@@ -261,7 +262,7 @@ export default function AdminEinvoicesPage() {
               isLoading={loading}
             >
               <RefreshCw className="w-4 h-4 mr-1.5" aria-hidden="true" />
-              Làm mới
+              {t('tabAll')}
             </Button>
           </div>
         }
@@ -271,12 +272,12 @@ export default function AdminEinvoicesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <Tabs value={tab} onValueChange={(val) => { setTab(val); setPage(1); }}>
           <TabsList variant="underline">
-            {STATUS_TABS.map((t) => (
-              <TabsTrigger key={t.id} value={t.id}>
-                {t.label}
-                {data?.counts && t.id in data.counts && (
+            {statusTabs.map((st) => (
+              <TabsTrigger key={st.id} value={st.id}>
+                {st.label}
+                {data?.counts && st.id in data.counts && (
                   <span className="ml-1.5 text-xs text-muted tabular-nums">
-                    {data.counts[t.id]}
+                    {data.counts[st.id]}
                   </span>
                 )}
               </TabsTrigger>
@@ -290,7 +291,7 @@ export default function AdminEinvoicesPage() {
             <Search className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
             <Input
               type="search"
-              placeholder="Tìm mã tra cứu, số HĐ, MST, email..."
+              placeholder={t('searchPlaceholder')}
               className="pl-9 h-9 w-[240px] sm:w-[280px] text-small"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -302,7 +303,7 @@ export default function AdminEinvoicesPage() {
             className="h-9 w-auto text-small"
             value={dateFrom}
             onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
-            title="Từ ngày"
+            title={t('filterDateFrom')}
           />
           <span className="text-muted text-xs">→</span>
           <Input
@@ -310,7 +311,7 @@ export default function AdminEinvoicesPage() {
             className="h-9 w-auto text-small"
             value={dateTo}
             onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
-            title="Đến ngày"
+            title={t('filterDateTo')}
           />
         </div>
       </div>
@@ -323,10 +324,7 @@ export default function AdminEinvoicesPage() {
       ) : !data || data.einvoices.length === 0 ? (
         <div className="text-center py-16 border border-dashed border-border rounded-card bg-bg-card/40">
           <FileSpreadsheet className="w-10 h-10 text-muted mx-auto mb-3" aria-hidden="true" />
-          <h3 className="text-body font-semibold text-fg">Chưa có hóa đơn nào</h3>
-          <p className="text-small text-muted mt-1">
-            Không tìm thấy hóa đơn điện tử nào khớp với tiêu chí tìm kiếm.
-          </p>
+          <h3 className="text-body font-semibold text-fg">{t('empty')}</h3>
         </div>
       ) : (
         <div className="space-y-4">
@@ -334,14 +332,14 @@ export default function AdminEinvoicesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Mã tra cứu / Số HĐ</TableHead>
-                  <TableHead>Đơn hàng / Gói cước</TableHead>
-                  <TableHead>Workspace / Khách hàng</TableHead>
-                  <TableHead>Tổng tiền</TableHead>
-                  <TableHead>Trạng thái HĐ</TableHead>
-                  <TableHead>Trạng thái Email</TableHead>
-                  <TableHead>Ngày lập</TableHead>
-                  <TableHead className="text-right">Thao tác</TableHead>
+                  <TableHead>{t('colInvoice')}</TableHead>
+                  <TableHead>{t('colBuyer')}</TableHead>
+                  <TableHead>{t('colAmount')}</TableHead>
+                  <TableHead>{t('colStatus')}</TableHead>
+                  <TableHead>{t('colCqt')}</TableHead>
+                  <TableHead>{t('colEmail')}</TableHead>
+                  <TableHead>{t('colCreated')}</TableHead>
+                  <TableHead className="text-right">{t('colActions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -443,10 +441,10 @@ export default function AdminEinvoicesPage() {
                               size="sm"
                               isLoading={isBusy}
                               onClick={() => handleRetry(inv)}
-                              title="Phát hành lại hóa đơn này qua Mắt Bão"
+                              title={t('retry')}
                             >
                               <RefreshCw className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
-                              Thử lại
+                              {t('retry')}
                             </Button>
                           )}
 
@@ -457,10 +455,10 @@ export default function AdminEinvoicesPage() {
                               size="sm"
                               isLoading={isBusy}
                               onClick={() => handleResendEmail(inv)}
-                              title="Gửi lại email hóa đơn cho người mua"
+                              title={t('resendEmail')}
                             >
                               <Mail className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
-                              Gửi lại
+                              {t('resendEmail')}
                             </Button>
                           )}
 
@@ -470,7 +468,7 @@ export default function AdminEinvoicesPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDownloadPdf(inv)}
-                              title="Tải file PDF hóa đơn gốc từ Mắt Bão"
+                              title={t('downloadPdf')}
                             >
                               <Download className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
                               PDF
@@ -483,7 +481,7 @@ export default function AdminEinvoicesPage() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center justify-center h-8 w-8 rounded-ctl text-muted hover:text-fg hover:bg-fg/5 transition-colors"
-                            title="Mở cổng tra cứu hóa đơn Mắt Bão"
+                            title="Portal Mat Bao"
                           >
                             <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
                           </a>
@@ -500,7 +498,7 @@ export default function AdminEinvoicesPage() {
           {data.totalPages > 1 && (
             <div className="flex items-center justify-between text-small text-muted py-2">
               <div>
-                Hiển thị {(data.page - 1) * data.limit + 1}–{Math.min(data.page * data.limit, data.total)} / {data.total} hóa đơn
+                {(data.page - 1) * data.limit + 1}–{Math.min(data.page * data.limit, data.total)} / {data.total}
               </div>
               <div className="flex items-center gap-1">
                 <Button
@@ -509,7 +507,7 @@ export default function AdminEinvoicesPage() {
                   disabled={data.page <= 1 || loading}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                 >
-                  Trang trước
+                  &larr;
                 </Button>
                 <span className="px-3 text-xs font-mono">
                   {data.page} / {data.totalPages}

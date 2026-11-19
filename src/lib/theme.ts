@@ -20,14 +20,14 @@ export function parseThemePreference(value: string | undefined | null): ThemePre
 const darkReadyPaths: RegExp[] = [
   /^\/workspaces\/?$/,
   /^\/profile\/?$/,
-  /^\/admin(\/(system|customers|orders|activity))?\/?$/,
+  /^\/admin(\/(system|customers|orders|activity|plans|einvoices|platform-settings|security|team|vouchers))?\/?$/,
   /^\/admin\/customers\/[^/]+\/?$/,
   /^\/workspace\/[^/]+\/?$/,
-  /^\/workspace\/[^/]+\/(members|settings|billing|notifications)\/?$/,
+  /^\/workspace\/[^/]+\/(members|settings|billing(\/checkout)?|notifications|help)\/?$/,
   /^\/workspace\/[^/]+\/properties(\/new)?\/?$/,
   /^\/workspace\/[^/]+\/properties\/[^/]+\/?$/,
-  /^\/workspace\/[^/]+\/properties\/[^/]+\/bookings(\/[^/]+)?\/?$/,
-  /^\/workspace\/[^/]+\/properties\/[^/]+\/(calendar|reports(\/daily)?|rooms|services|menu|policies|coupons|bank-accounts|website|payments|invoices|leads|customers|blog)\/?$/,
+  /^\/workspace\/[^/]+\/properties\/[^/]+\/bookings(\/new|\/[^/]+)?\/?$/,
+  /^\/workspace\/[^/]+\/properties\/[^/]+\/(calendar|reports(\/daily)?|rooms|services|menu|policies|coupons|bank-accounts|website|payments|invoices|leads|customers|blog|channels|cashbook|settings)\/?$/,
 ]
 
 export function isDarkReady(pathname: string | null | undefined): boolean {

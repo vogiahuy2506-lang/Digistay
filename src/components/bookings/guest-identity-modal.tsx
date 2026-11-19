@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { IdCard, Plus, Trash2, Users, Save } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import {
   Button,
   Input,
@@ -41,6 +42,7 @@ export function GuestIdentityModal({
   onClose: () => void
   onSaved?: () => void
 }) {
+  const t = useTranslations('dash.bookings.guestIdentity')
   const [loading, setLoading] = React.useState(false)
   const [saving, setSaving] = React.useState(false)
   const [error, setError] = React.useState('')
@@ -88,11 +90,11 @@ export function GuestIdentityModal({
               : []
           )
         } else {
-          setError(json.error || 'Không tải được thông tin giấy tờ')
+          setError(json.error || t('loadError'))
         }
       })
       .catch(() => {
-        if (!cancelled) setError('Lỗi kết nối khi tải thông tin')
+        if (!cancelled) setError(t('networkError'))
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -101,7 +103,7 @@ export function GuestIdentityModal({
     return () => {
       cancelled = true
     }
-  }, [isOpen, bookingId, bookingCode, guestName])
+  }, [isOpen, bookingId, bookingCode, guestName, t])
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -136,14 +138,14 @@ export function GuestIdentityModal({
       })
       const json = await res.json()
       if (!json.success) {
-        setError(json.error || 'Không lưu được thông tin giấy tờ')
+        setError(json.error || t('saveError'))
         return
       }
-      toast.success('Đã cập nhật giấy tờ & thông tin lưu trú')
+      toast.success(t('saveSuccess'))
       onSaved?.()
       onClose()
     } catch {
-      setError('Lỗi kết nối máy chủ')
+      setError(t('networkError'))
     } finally {
       setSaving(false)
     }
@@ -159,10 +161,10 @@ export function GuestIdentityModal({
             </div>
             <div>
               <h3 className="text-base font-bold text-fg">
-                Giấy tờ khách lưu trú {displayCode ? `· ${displayCode}` : ''}
+                {t('modalTitle', { code: displayCode ? `· ${displayCode}` : '' })}
               </h3>
               <p className="text-xs text-muted">
-                Khách chính: <strong className="text-fg">{displayGuest || '—'}</strong> · Dùng cho Check-in & Khai báo lưu trú
+                {t('primaryGuest', { name: displayGuest || '—' })} · {t('purposeNote')}
               </p>
             </div>
           </div>
@@ -183,26 +185,26 @@ export function GuestIdentityModal({
               <div className="rounded-xl border border-line bg-raised/60 p-4 space-y-3.5">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-muted">
-                    Thông tin giấy tờ khách chính
+                    {t('primarySection')}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Select
-                    label="Loại giấy tờ"
+                    label={t('idType')}
                     value={idType}
                     onChange={(e) => setIdType(e.target.value)}
                   >
-                    <option value="CCCD">CCCD / CMND</option>
-                    <option value="PASSPORT">Hộ chiếu (Passport)</option>
-                    <option value="OTHER">Giấy tờ khác</option>
+                    <option value="CCCD">{t('idTypeCccd')}</option>
+                    <option value="PASSPORT">{t('idTypePassport')}</option>
+                    <option value="OTHER">{t('idTypeOther')}</option>
                   </Select>
 
                   <Input
-                    label="Số CCCD / Hộ chiếu *"
+                    label={t('idNumber')}
                     value={idNumber}
                     onChange={(e) => setIdNumber(e.target.value)}
-                    placeholder={idType === 'PASSPORT' ? 'VD: C1234567' : 'VD: 079200012345'}
+                    placeholder={idType === 'PASSPORT' ? t('idNumberPlaceholderPassport') : t('idNumberPlaceholderCccd')}
                     autoFocus
                   />
                 </div>
@@ -210,24 +212,24 @@ export function GuestIdentityModal({
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <Input
                     type="date"
-                    label="Ngày sinh"
+                    label={t('birthDate')}
                     value={birthDate}
                     onChange={(e) => setBirthDate(e.target.value)}
                   />
 
                   <Select
-                    label="Giới tính"
+                    label={t('gender')}
                     value={gender}
                     onChange={(e) => setGender(e.target.value)}
                   >
-                    <option value="">-- Chọn --</option>
-                    <option value="MALE">Nam</option>
-                    <option value="FEMALE">Nữ</option>
-                    <option value="OTHER">Khác</option>
+                    <option value="">{t('genderSelect')}</option>
+                    <option value="MALE">{t('genderMale')}</option>
+                    <option value="FEMALE">{t('genderFemale')}</option>
+                    <option value="OTHER">{t('genderOther')}</option>
                   </Select>
 
                   <Input
-                    label="Quốc tịch"
+                    label={t('nationality')}
                     value={nationality}
                     onChange={(e) => setNationality(e.target.value)}
                     placeholder="Việt Nam"
@@ -236,7 +238,7 @@ export function GuestIdentityModal({
 
                 {/* Quick Nationality Pills */}
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[11px] text-muted mr-1">Chọn nhanh:</span>
+                  <span className="text-[11px] text-muted mr-1">{t('quickSelect')}</span>
                   {QUICK_NATIONALITIES.map((nat) => (
                     <button
                       key={nat}
@@ -254,10 +256,10 @@ export function GuestIdentityModal({
                 </div>
 
                 <Input
-                  label="Địa chỉ thường trú (ghi trên CCCD)"
+                  label={t('address')}
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Số nhà, Phường/Xã, Quận/Huyện, Tỉnh/TP..."
+                  placeholder={t('addressPlaceholder')}
                 />
               </div>
 
@@ -266,7 +268,7 @@ export function GuestIdentityModal({
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-bold text-fg flex items-center gap-1.5">
                     <Users className="w-4 h-4 text-primary" />
-                    <span>Khách đi cùng / Ở cùng phòng ({stayGuests.length})</span>
+                    <span>{t('companionSection', { count: stayGuests.length })}</span>
                   </span>
                   <Button
                     type="button"
@@ -281,13 +283,13 @@ export function GuestIdentityModal({
                     className="h-7 px-2.5 text-xs"
                   >
                     <Plus className="w-3.5 h-3.5 mr-1" />
-                    Thêm người ở cùng
+                    {t('addCompanion')}
                   </Button>
                 </div>
 
                 {stayGuests.length === 0 ? (
                   <p className="text-xs text-muted">
-                    Chưa có khách đi cùng. Bấm &ldquo;Thêm người ở cùng&rdquo; nếu phòng có từ 2 khách trở lên cần khai báo lưu trú.
+                    {t('companionHint')}
                   </p>
                 ) : (
                   <div className="space-y-2.5">
@@ -302,31 +304,31 @@ export function GuestIdentityModal({
                           className="p-3 rounded-xl bg-panel border border-line space-y-2.5"
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs font-semibold text-muted">Khách đi cùng #{idx + 1}</span>
+                            <span className="text-xs font-semibold text-muted">{t('companionIndex', { index: idx + 1 })}</span>
                             <button
                               type="button"
                               onClick={() => setStayGuests((prev) => prev.filter((_, i) => i !== idx))}
                               className="text-xs text-err hover:underline inline-flex items-center gap-1"
                             >
                               <Trash2 className="w-3 h-3" />
-                              <span>Xóa</span>
+                              <span>{t('removeCompanion')}</span>
                             </button>
                           </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                           <Input
-                            label="Họ và tên *"
+                            label={t('companionName')}
                             value={sg.name}
                             onChange={(e) =>
                               setStayGuests((prev) =>
                                 prev.map((item, i) => (i === idx ? { ...item, name: e.target.value } : item))
                               )
                             }
-                            placeholder="Nguyễn Văn B"
+                            placeholder={t('companionNamePlaceholder')}
                           />
                           <div className="grid grid-cols-5 gap-2">
                             <div className="col-span-2">
                               <Select
-                                label="Giấy tờ"
+                                label={t('idType')}
                                 value={sg.idType}
                                 onChange={(e) =>
                                   setStayGuests((prev) =>
@@ -334,14 +336,14 @@ export function GuestIdentityModal({
                                   )
                                 }
                               >
-                                <option value="CCCD">CCCD</option>
-                                <option value="PASSPORT">Hộ chiếu</option>
-                                <option value="OTHER">Khác</option>
+                                <option value="CCCD">{t('idTypeCccd')}</option>
+                                <option value="PASSPORT">{t('idTypePassport')}</option>
+                                <option value="OTHER">{t('idTypeOther')}</option>
                               </Select>
                             </div>
                             <div className="col-span-3">
                               <Input
-                                label="Số giấy tờ"
+                                label={t('idNumber')}
                                 value={sg.idNumber}
                                 onChange={(e) =>
                                   setStayGuests((prev) =>
@@ -356,7 +358,7 @@ export function GuestIdentityModal({
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                           <Input
                             type="date"
-                            label="Ngày sinh"
+                            label={t('birthDate')}
                             value={sg.birthDate}
                             onChange={(e) =>
                               setStayGuests((prev) =>
@@ -365,7 +367,7 @@ export function GuestIdentityModal({
                             }
                           />
                           <Select
-                            label="Giới tính"
+                            label={t('gender')}
                             value={sg.gender}
                             onChange={(e) =>
                               setStayGuests((prev) =>
@@ -373,13 +375,13 @@ export function GuestIdentityModal({
                               )
                             }
                           >
-                            <option value="">-- Chọn --</option>
-                            <option value="MALE">Nam</option>
-                            <option value="FEMALE">Nữ</option>
-                            <option value="OTHER">Khác</option>
+                            <option value="">{t('genderSelect')}</option>
+                            <option value="MALE">{t('genderMale')}</option>
+                            <option value="FEMALE">{t('genderFemale')}</option>
+                            <option value="OTHER">{t('genderOther')}</option>
                           </Select>
                           <Input
-                            label="Quốc tịch"
+                            label={t('nationality')}
                             value={sg.nationality}
                             onChange={(e) =>
                               setStayGuests((prev) =>
@@ -401,11 +403,11 @@ export function GuestIdentityModal({
 
         <ModalFooter>
           <Button type="button" variant="ghost" onClick={onClose}>
-            Đóng
+            {t('cancel')}
           </Button>
           <Button type="submit" isLoading={saving} disabled={loading}>
             <Save className="w-4 h-4 mr-1.5" />
-            Lưu giấy tờ khách
+            {saving ? t('saving') : t('save')}
           </Button>
         </ModalFooter>
       </form>
