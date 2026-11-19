@@ -9,13 +9,16 @@ interface DropdownProps {
   children: React.ReactNode
   align?: 'left' | 'right'
   className?: string
+  containerClassName?: string
 }
 
-export function Dropdown({ trigger, children, align = 'right', className }: DropdownProps) {
+export function Dropdown({ trigger, children, align = 'right', className, containerClassName }: DropdownProps) {
   const [isOpen, setIsOpen] = React.useState(false)
-  const [coords, setCoords] = React.useState<{ top: number; left?: number; right?: number; openUp: boolean } | null>(null)
+  const [coords, setCoords] = React.useState<{ top: number; left?: number; right?: number; width?: number; openUp: boolean } | null>(null)
   const triggerRef = React.useRef<HTMLDivElement>(null)
   const menuRef = React.useRef<HTMLDivElement>(null)
+
+  const isFullWidth = Boolean(className?.includes('w-full') || containerClassName?.includes('w-full'))
 
   const updatePosition = React.useCallback(() => {
     if (!triggerRef.current) return
@@ -27,16 +30,18 @@ export function Dropdown({ trigger, children, align = 'right', className }: Drop
       setCoords({
         top: openUp ? rect.top - 6 : rect.bottom + 6,
         right: window.innerWidth - rect.right,
+        width: isFullWidth ? rect.width : undefined,
         openUp,
       })
     } else {
       setCoords({
         top: openUp ? rect.top - 6 : rect.bottom + 6,
         left: rect.left,
+        width: isFullWidth ? rect.width : undefined,
         openUp,
       })
     }
-  }, [align])
+  }, [align, isFullWidth])
 
   React.useEffect(() => {
     if (!isOpen) return
@@ -73,8 +78,16 @@ export function Dropdown({ trigger, children, align = 'right', className }: Drop
   }
 
   return (
-    <div className="relative inline-block" ref={triggerRef} onKeyDown={handleKeyDown}>
+    <div
+      className={cn(
+        'relative',
+        containerClassName ? containerClassName : isFullWidth ? 'w-full min-w-0' : 'inline-block'
+      )}
+      ref={triggerRef}
+      onKeyDown={handleKeyDown}
+    >
       <div
+        className={cn(isFullWidth && 'w-full min-w-0')}
         onClick={() => {
           if (!isOpen) updatePosition()
           setIsOpen(!isOpen)
@@ -95,11 +108,12 @@ export function Dropdown({ trigger, children, align = 'right', className }: Drop
               top: coords.top,
               left: coords.left,
               right: coords.right,
+              width: coords.width,
               transform: coords.openUp ? 'translateY(-100%)' : undefined,
             }}
             className={cn(
               'z-[100] min-w-[200px] py-1 bg-raised text-fg rounded-box border border-line shadow-lift',
-              className
+              isFullWidth && className ? className.replace(/\bw-full\b/g, '').trim() : className
             )}
             onKeyDown={handleKeyDown}
           >

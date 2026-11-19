@@ -481,8 +481,8 @@ function SidebarContent(props: SidebarProps & { onCollapse?: () => void }) {
   const groupId = React.useId()
 
   return (
-    <div className="flex flex-col h-full min-h-0">
-      <div className="px-3 pt-3 pb-2 shrink-0 flex items-center justify-between gap-1">
+    <div className="flex flex-col h-full min-h-0 w-full min-w-0">
+      <div className="px-3 pt-3 pb-2 shrink-0 flex items-center justify-between gap-1 w-full min-w-0">
         <Brand slug={slug} />
         {/* On phones the top bar has these; the drawer's close button sits here. */}
         <div className="hidden lg:flex items-center">
@@ -497,16 +497,16 @@ function SidebarContent(props: SidebarProps & { onCollapse?: () => void }) {
       </div>
 
       {/* Context switcher: the hotel being managed, or the workspace. */}
-      <div className="px-3 pb-2 shrink-0">
+      <div className="px-3 pb-2 shrink-0 w-full min-w-0">
         <Dropdown
           align="left"
           className="w-full"
           trigger={
             <button
               type="button"
-              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-box border border-line bg-panel text-left hover:border-muted transition-colors duration-160 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
+              className="w-full min-w-0 max-w-full flex items-center gap-2 px-3 py-2.5 rounded-box border border-line bg-panel text-left hover:border-muted transition-colors duration-160 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
             >
-              <span className="min-w-0 flex-1">
+              <span className="min-w-0 flex-1 overflow-hidden">
                 <span className="block text-sm font-medium text-fg truncate">
                   {propertyId ? property?.name ?? '…' : workspace.name}
                 </span>
