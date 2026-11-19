@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 interface TabsProps {
@@ -77,14 +78,14 @@ interface TabsTriggerProps {
 
 const triggerStyles: Record<TabsVariant, { base: string; active: string; idle: string }> = {
   segmented: {
-    base: 'px-3 h-9 sm:h-8 text-small font-medium whitespace-nowrap shrink-0 rounded-[calc(var(--ds-r-ctl)-2px)]',
-    active: 'bg-panel text-fg shadow-sm',
+    base: 'relative px-3 h-9 sm:h-8 text-small font-medium whitespace-nowrap shrink-0 rounded-[calc(var(--ds-r-ctl)-2px)]',
+    active: 'text-fg font-semibold',
     idle: 'text-muted hover:text-fg',
   },
   underline: {
-    base: 'h-10 -mb-px border-b-2 px-0.5 text-small font-medium whitespace-nowrap',
-    active: 'border-fg text-fg',
-    idle: 'border-transparent text-muted hover:text-fg',
+    base: 'relative h-10 -mb-px px-0.5 text-small font-medium whitespace-nowrap flex items-center justify-center',
+    active: 'text-fg font-semibold',
+    idle: 'text-muted hover:text-fg',
   },
 }
 
@@ -116,7 +117,22 @@ export function TabsTrigger({ value, children, className, disabled }: TabsTrigge
         className
       )}
     >
-      {children}
+      {/* Sliding indicator powered by Framer Motion layoutId */}
+      {isActive && variant === 'segmented' && (
+        <motion.span
+          layoutId={`${context.baseId}-segmented-active`}
+          className="absolute inset-0 bg-panel rounded-[calc(var(--ds-r-ctl)-2px)] shadow-sm z-0"
+          transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+        />
+      )}
+      {isActive && variant === 'underline' && (
+        <motion.span
+          layoutId={`${context.baseId}-underline-active`}
+          className="absolute bottom-0 inset-x-0 h-0.5 bg-fg z-0"
+          transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+        />
+      )}
+      <span className="relative z-10 pointer-events-none">{children}</span>
     </button>
   )
 }
@@ -138,7 +154,7 @@ export function TabsContent({ value, children, className }: TabsContentProps) {
       role="tabpanel"
       id={`${context.baseId}-panel-${value}`}
       aria-labelledby={`${context.baseId}-tab-${value}`}
-      className={cn('mt-4', className)}
+      className={cn('mt-4 animate-in fade-in-50 duration-150', className)}
     >
       {children}
     </div>

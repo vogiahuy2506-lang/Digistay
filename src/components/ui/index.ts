@@ -14,3 +14,4 @@ export { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 export { VietQR, downloadQR } from './viet-qr'
 export { Alert, AlertDescription, AlertIcon } from './alert'
 export { ExportDropdown } from './export-dropdown'
+export { SlidingNumber } from './sliding-number'

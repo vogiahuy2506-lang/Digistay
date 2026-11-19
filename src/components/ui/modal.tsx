@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { motion } from 'framer-motion'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 import { X } from 'lucide-react'
@@ -47,6 +48,8 @@ function useCloseLabel() {
 // ModalHeader registers its id so the dialog is named by its header text.
 const ModalLabelContext = React.createContext<string | undefined>(undefined)
 
+const isTest = typeof process !== 'undefined' && process.env.NODE_ENV === 'test'
+
 export function Modal({ isOpen, onClose, title, description, showHeader = false, children, size = 'md' }: ModalProps) {
   const dialogRef = React.useRef<HTMLDivElement>(null)
   const labelId = React.useId()
@@ -57,19 +60,25 @@ export function Modal({ isOpen, onClose, title, description, showHeader = false,
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto">
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/50 transition-opacity" onClick={onClose} aria-hidden="true" />
+      <motion.div
+        initial={isTest ? false : { opacity: 0 }}
+        animate={isTest ? false : { opacity: 1 }}
+        transition={{ duration: 0.16 }}
+        className="fixed inset-0 bg-black/50 backdrop-blur-[2px]"
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
-      <div
+      <motion.div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label={title}
         aria-labelledby={title ? undefined : labelId}
         tabIndex={-1}
-        // overflow-y-auto, not hidden: most dialogs put their content straight
-        // in here (no ModalBody), and a tall one lost its footer buttons below
-        // the 92vh limit with no way to scroll to them. With ModalBody the body
-        // scrolls and header / footer stay in view, as before.
+        initial={isTest ? false : { opacity: 0, scale: 0.96, y: 6 }}
+        animate={isTest ? false : { opacity: 1, scale: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 450, damping: 30 }}
         className={cn(
           'relative bg-raised text-fg rounded-box border border-line shadow-lift w-full max-h-[92vh] flex flex-col z-10 overflow-y-auto overscroll-contain focus:outline-none',
           sizes[size]
@@ -86,7 +95,7 @@ export function Modal({ isOpen, onClose, title, description, showHeader = false,
           )}
           {children}
         </ModalLabelContext.Provider>
-      </div>
+      </motion.div>
     </div>
   )
 }

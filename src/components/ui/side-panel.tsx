@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { motion } from 'framer-motion'
 import { useTranslations } from 'next-intl'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -42,6 +43,8 @@ function useCloseLabel() {
   return fallback.actions.close
 }
 
+const isTest = typeof process !== 'undefined' && process.env.NODE_ENV === 'test'
+
 export function SidePanel({ open, onClose, label, children, className }: SidePanelProps) {
   const panelRef = React.useRef<HTMLDivElement>(null)
   const isPhone = useMediaQuery('(max-width: 767.98px)')
@@ -51,21 +54,23 @@ export function SidePanel({ open, onClose, label, children, className }: SidePan
 
   return (
     <SidePanelContext.Provider value={{ onClose }}>
-      <div
+      <motion.div
         ref={panelRef}
         role="dialog"
         aria-modal={isPhone || undefined}
         aria-label={label}
         tabIndex={-1}
+        initial={isTest ? false : { x: '100%' }}
+        animate={isTest ? false : { x: 0 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 32 }}
         className={cn(
           'fixed z-40 inset-0 flex flex-col bg-raised text-fg focus:outline-none',
           'md:left-auto md:w-[480px] md:border-l md:border-line md:shadow-drawer',
-          'animate-panel-in motion-reduce:animate-none',
           className
         )}
       >
         {children}
-      </div>
+      </motion.div>
     </SidePanelContext.Provider>
   )
 }

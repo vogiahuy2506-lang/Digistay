@@ -4,7 +4,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { Bed, BedDouble, Bell, CheckCircle, Clock, DoorOpen, ListChecks, PieChart, Receipt, Users, type LucideIcon } from 'lucide-react'
-import { Button, PaymentStatusBadge } from '@/components/ui'
+import { Button, PaymentStatusBadge, SlidingNumber } from '@/components/ui'
 import { useCan } from '@/components/layout/workspace-context'
 import {
   arrivalsOn,
@@ -138,7 +138,7 @@ export function TodayOverview({ slug, propertyId }: { slug: string; propertyId: 
           <div className={cn('grid grid-cols-1 sm:grid-cols-2 gap-3.5', figures.showRevenue ? 'xl:grid-cols-4' : 'xl:grid-cols-3')}>
             <StatCard
               label={t('stats.totalRooms')}
-              value={<span className="text-fg">{figures.totalRooms}</span>}
+              value={<SlidingNumber value={figures.totalRooms} />}
               unit={<span className="text-[11px] text-muted font-medium">{t('stats.physicalRooms')}</span>}
               note={
                 <span className="text-ok flex items-center gap-1">
@@ -156,7 +156,7 @@ export function TodayOverview({ slug, propertyId }: { slug: string; propertyId: 
             />
             <StatCard
               label={t('stats.inHouse')}
-              value={<span className="text-ok">{figures.house.stays}</span>}
+              value={<span className="text-ok"><SlidingNumber value={figures.house.stays} /></span>}
               unit={<span className="text-[11px] text-muted font-medium">{t('stats.ofRooms', { count: figures.totalRooms })}</span>}
               note={
                 <span className="text-muted flex items-center gap-1">
@@ -169,7 +169,7 @@ export function TodayOverview({ slug, propertyId }: { slug: string; propertyId: 
             />
             <StatCard
               label={t('stats.arrivingToday')}
-              value={<span className="text-warn">{figures.arrivals.length}</span>}
+              value={<span className="text-warn"><SlidingNumber value={figures.arrivals.length} /></span>}
               unit={
                 <span className="text-[11px] text-warn bg-warn-soft px-1.5 rounded font-bold border border-warn/30">{t('stats.checkIns')}</span>
               }
