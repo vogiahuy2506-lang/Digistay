@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
 import { useTranslations } from 'next-intl'
 import { CalendarDays, LayoutList, Rows3 } from 'lucide-react'
 import { useCan } from '@/components/layout/workspace-context'
@@ -82,13 +83,22 @@ export function BookingsViews({
             aria-selected={active}
             onClick={() => choose(value)}
             className={cn(
-              'inline-flex items-center justify-center gap-1.5 px-3 h-9 sm:h-8 shrink-0 whitespace-nowrap rounded-[calc(var(--ds-r-ctl)-2px)] text-small font-medium',
+              'relative inline-flex items-center justify-center gap-1.5 px-3 h-9 sm:h-8 shrink-0 whitespace-nowrap rounded-[calc(var(--ds-r-ctl)-2px)] text-small font-medium',
               'transition-colors duration-160 ease-ds focus:outline-none focus-visible:ring-2 focus-visible:ring-acc',
-              active ? 'bg-panel text-fg shadow-sm' : 'text-muted hover:text-fg'
+              active ? 'text-fg font-semibold' : 'text-muted hover:text-fg'
             )}
           >
-            <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-            {t(value)}
+            {active && (
+              <motion.span
+                layoutId="bookings-views-active"
+                className="absolute inset-0 bg-panel rounded-[calc(var(--ds-r-ctl)-2px)] shadow-sm z-0"
+                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+              />
+            )}
+            <span className="relative z-10 flex items-center gap-1.5 pointer-events-none">
+              <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+              {t(value)}
+            </span>
           </button>
         )
       })}

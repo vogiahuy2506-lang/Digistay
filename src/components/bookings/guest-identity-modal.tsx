@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { IdCard, Plus, Trash2, Users, Save } from 'lucide-react'
 import {
   Button,
@@ -290,19 +291,27 @@ export function GuestIdentityModal({
                   </p>
                 ) : (
                   <div className="space-y-2.5">
-                    {stayGuests.map((sg, idx) => (
-                      <div key={idx} className="p-3 rounded-xl bg-panel border border-line space-y-2.5">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-semibold text-muted">Khách đi cùng #{idx + 1}</span>
-                          <button
-                            type="button"
-                            onClick={() => setStayGuests((prev) => prev.filter((_, i) => i !== idx))}
-                            className="text-xs text-err hover:underline inline-flex items-center gap-1"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                            <span>Xóa</span>
-                          </button>
-                        </div>
+                    <AnimatePresence initial={false}>
+                      {stayGuests.map((sg, idx) => (
+                        <motion.div
+                          key={`guest-${idx}`}
+                          initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          transition={{ duration: 0.18 }}
+                          className="p-3 rounded-xl bg-panel border border-line space-y-2.5"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-semibold text-muted">Khách đi cùng #{idx + 1}</span>
+                            <button
+                              type="button"
+                              onClick={() => setStayGuests((prev) => prev.filter((_, i) => i !== idx))}
+                              className="text-xs text-err hover:underline inline-flex items-center gap-1"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              <span>Xóa</span>
+                            </button>
+                          </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                           <Input
                             label="Họ và tên *"
@@ -380,9 +389,10 @@ export function GuestIdentityModal({
                             placeholder="Việt Nam"
                           />
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
-                  </div>
+                  </AnimatePresence>
+                </div>
                 )}
               </div>
             </>
