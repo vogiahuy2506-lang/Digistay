@@ -112,7 +112,7 @@ export function Dropdown({ trigger, children, align = 'right', className, contai
               transform: coords.openUp ? 'translateY(-100%)' : undefined,
             }}
             className={cn(
-              'z-[100] min-w-[200px] py-1 bg-raised text-fg rounded-box border border-line shadow-lift',
+              'z-[100] min-w-[200px] py-1 bg-raised text-fg rounded-box border border-line shadow-lift animate-in fade-in-0 zoom-in-95 duration-150 origin-top',
               isFullWidth && className ? className.replace(/\bw-full\b/g, '').trim() : className
             )}
             onKeyDown={handleKeyDown}

@@ -128,7 +128,7 @@ export function NotificationBell({ align = 'right', buttonClassName }: { align?:
       >
         <Bell className="w-4 h-4" aria-hidden="true" />
         {unread > 0 && (
-          <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-err text-[10px] font-semibold leading-4 text-white text-center tabular-nums">
+          <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-err text-[10px] font-semibold leading-4 text-white text-center tabular-nums animate-in zoom-in-50 duration-200">
             {unread > 99 ? '99+' : unread}
           </span>
         )}
@@ -140,7 +140,7 @@ export function NotificationBell({ align = 'right', buttonClassName }: { align?:
           aria-label={t('title')}
           tabIndex={-1}
           className={cn(
-            'absolute z-50 mt-2 w-[min(360px,calc(100vw-24px))] rounded-box border border-line bg-raised shadow-lg focus:outline-none',
+            'absolute z-50 mt-2 w-[min(360px,calc(100vw-24px))] rounded-box border border-line bg-raised shadow-lg focus:outline-none origin-top animate-in fade-in-0 zoom-in-95 duration-150',
             align === 'right' ? 'right-0' : 'left-0'
           )}
         >

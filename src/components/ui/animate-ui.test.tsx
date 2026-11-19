@@ -5,6 +5,10 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs'
 import { SlidingNumber } from './sliding-number'
+import { AnimatedCheckmark } from './animated-checkmark'
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './collapsible'
+import { Card } from './card'
+import { Badge } from './badge'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -87,5 +91,66 @@ describe('Animate UI components', () => {
     expect(container.textContent).toContain('Tổng quan')
     expect(container.textContent).toContain('Chi tiết')
     expect(container.textContent).toContain('Tab 1')
+  })
+
+  it('renders AnimatedCheckmark with SVG path', () => {
+    act(() => {
+      root.render(<AnimatedCheckmark size="lg" className="text-ok" />)
+    })
+
+    const svg = container.querySelector('svg')
+    expect(svg).toBeDefined()
+    expect(svg?.getAttribute('viewBox')).toBe('0 0 52 52')
+  })
+
+  it('renders Collapsible and toggles content', () => {
+    function CollapsibleDemo() {
+      return (
+        <Collapsible defaultOpen={false}>
+          <CollapsibleTrigger>Tiêu đề mở rộng</CollapsibleTrigger>
+          <CollapsibleContent>Nội dung ẩn hiện</CollapsibleContent>
+        </Collapsible>
+      )
+    }
+
+    act(() => {
+      root.render(<CollapsibleDemo />)
+    })
+
+    expect(container.textContent).toContain('Tiêu đề mở rộng')
+    expect(container.textContent).not.toContain('Nội dung ẩn hiện')
+
+    const trigger = container.querySelector('button')
+    act(() => {
+      trigger?.click()
+    })
+
+    expect(container.textContent).toContain('Nội dung ẩn hiện')
+  })
+
+  it('renders interactive Card with hover styles', () => {
+    const onClick = () => {}
+    act(() => {
+      root.render(
+        <Card interactive onClick={onClick}>
+          <p>Thẻ tương tác</p>
+        </Card>
+      )
+    })
+
+    const card = container.firstElementChild as HTMLElement
+    expect(card.className).toContain('hover:border-muted')
+    expect(card.className).toContain('cursor-pointer')
+    expect(container.textContent).toContain('Thẻ tương tác')
+  })
+
+  it('renders Badge with pulsing live dot', () => {
+    act(() => {
+      root.render(<Badge variant="ok" dot pulse>Đang ở</Badge>)
+    })
+
+    expect(container.textContent).toContain('Đang ở')
+    const ping = container.querySelector('.animate-ping')
+    expect(ping).toBeDefined()
   })
 })

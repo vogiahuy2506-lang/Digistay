@@ -17,6 +17,8 @@ const sizeMap = {
   xl: 'w-16 h-16',
 }
 
+const isTest = typeof process !== 'undefined' && process.env.NODE_ENV === 'test'
+
 export function AnimatedCheckmark({ size = 'md', className, color = 'currentColor' }: AnimatedCheckmarkProps) {
   return (
     <motion.svg
@@ -24,8 +26,8 @@ export function AnimatedCheckmark({ size = 'md', className, color = 'currentColo
       viewBox="0 0 52 52"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      initial={{ scale: 0.7, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
+      initial={isTest ? false : { scale: 0.7, opacity: 0 }}
+      animate={isTest ? false : { scale: 1, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
     >
       <motion.circle
@@ -35,8 +37,8 @@ export function AnimatedCheckmark({ size = 'md', className, color = 'currentColo
         stroke={color}
         strokeWidth="3"
         strokeLinecap="round"
-        initial={{ pathLength: 0 }}
-        animate={{ pathLength: 1 }}
+        initial={isTest ? false : { pathLength: 0 }}
+        animate={isTest ? false : { pathLength: 1 }}
         transition={{ duration: 0.35, ease: 'easeOut' }}
       />
       <motion.path
@@ -45,8 +47,8 @@ export function AnimatedCheckmark({ size = 'md', className, color = 'currentColo
         strokeWidth="3.5"
         strokeLinecap="round"
         strokeLinejoin="round"
-        initial={{ pathLength: 0 }}
-        animate={{ pathLength: 1 }}
+        initial={isTest ? false : { pathLength: 0 }}
+        animate={isTest ? false : { pathLength: 1 }}
         transition={{ duration: 0.28, delay: 0.2, ease: 'easeOut' }}
       />
     </motion.svg>

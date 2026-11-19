@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import { useTranslations } from 'next-intl'
 import { Bed, BedDouble, Bell, CheckCircle, Clock, DoorOpen, ListChecks, PieChart, Receipt, Users, type LucideIcon } from 'lucide-react'
 import { Button, PaymentStatusBadge, SlidingNumber } from '@/components/ui'
@@ -141,15 +142,25 @@ export function TodayOverview({ slug, propertyId }: { slug: string; propertyId: 
               value={<SlidingNumber value={figures.totalRooms} />}
               unit={<span className="text-[11px] text-muted font-medium">{t('stats.physicalRooms')}</span>}
               note={
-                <span className="text-ok flex items-center gap-1">
-                  <PieChart className="w-3 h-3 shrink-0" aria-hidden="true" />
-                  <span>
-                    {t.rich('stats.monthOccupancy', {
-                      percent: figures.occupancy.toLocaleString(intlLocale, { maximumFractionDigits: 1 }),
-                      b: (c) => <strong className="text-acc">{c}</strong>,
-                    })}
+                <div className="space-y-1.5 mt-0.5">
+                  <span className="text-ok flex items-center gap-1">
+                    <PieChart className="w-3 h-3 shrink-0" aria-hidden="true" />
+                    <span>
+                      {t.rich('stats.monthOccupancy', {
+                        percent: figures.occupancy.toLocaleString(intlLocale, { maximumFractionDigits: 1 }),
+                        b: (c) => <strong className="text-acc">{c}</strong>,
+                      })}
+                    </span>
                   </span>
-                </span>
+                  <div className="w-full h-1.5 rounded-full bg-plain-soft overflow-hidden" aria-hidden="true">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.min(100, Math.max(0, figures.occupancy))}%` }}
+                      transition={{ duration: 0.8, ease: 'easeOut' }}
+                      className="h-full bg-acc rounded-full"
+                    />
+                  </div>
+                </div>
               }
               icon={DoorOpen}
               tile="bg-info-soft text-info border-info/30"
