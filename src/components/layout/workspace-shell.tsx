@@ -22,6 +22,7 @@ import {
   Landmark,
   LayoutDashboard,
   Menu,
+  Moon,
   Newspaper,
   Package,
   PanelLeftClose,
@@ -30,6 +31,7 @@ import {
   ScrollText,
   Settings,
   Share2,
+  Sun,
   TicketPercent,
   UserCheck,
   UsersRound,
@@ -57,6 +59,7 @@ import { Dropdown, DropdownItem, DropdownDivider } from '@/components/ui'
 import { useDialogBehavior } from '@/components/ui/dialog-behavior'
 import { AccountMenu } from './account-menu'
 import { NotificationBell } from './notification-bell'
+import { useTheme } from './theme-root'
 import { NAV_GROUPS, activeHref, primaryNav, workspaceNav, type NavGroup, type NavItem, type NavKey, type WorkspaceRole } from './nav'
 
 /** One icon per menu entry, so the grouped menu reads at a glance. */
@@ -323,7 +326,8 @@ export function WorkspaceShell(props: WorkspaceShellProps) {
           <Menu className="w-5 h-5" aria-hidden="true" />
         </button>
         <Brand slug={props.workspace.slug} />
-        <div className="ml-auto pr-1 flex items-center">
+        <div className="ml-auto pr-1 flex items-center gap-1">
+          <SidebarThemeToggle className="w-9 h-9" />
           <HomeLink className="w-9 h-9" />
           <NotificationBell />
         </div>
@@ -340,14 +344,17 @@ export function WorkspaceShell(props: WorkspaceShellProps) {
             tabIndex={-1}
             className="absolute inset-y-0 left-0 w-72 max-w-[85vw] flex flex-col bg-page border-r border-line animate-drawer-in motion-reduce:animate-none focus:outline-none"
           >
-            <button
-              type="button"
-              onClick={closeDrawer}
-              aria-label={t('closeMenu')}
-              className="absolute top-3 right-3 w-9 h-9 rounded-ctl flex items-center justify-center text-muted hover:text-fg hover:bg-fg/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
-            >
-              <X className="w-4 h-4" aria-hidden="true" />
-            </button>
+            <div className="absolute top-3 right-3 flex items-center gap-1 z-10">
+              <SidebarThemeToggle className="w-9 h-9" />
+              <button
+                type="button"
+                onClick={closeDrawer}
+                aria-label={t('closeMenu')}
+                className="w-9 h-9 rounded-ctl flex items-center justify-center text-muted hover:text-fg hover:bg-fg/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
+              >
+                <X className="w-4 h-4" aria-hidden="true" />
+              </button>
+            </div>
             <SidebarContent {...sidebar} />
           </div>
         </div>
@@ -379,6 +386,29 @@ function HomeLink({ className, ...tip }: { className: string } & Partial<TipHand
     <Link href="/" aria-label={t('home')} title={tip.onMouseEnter ? undefined : t('home')} className={cn(iconButton, className)} {...tip}>
       <House className="w-4 h-4" aria-hidden="true" />
     </Link>
+  )
+}
+
+/** Theme toggle directly on sidebar and mobile header */
+function SidebarThemeToggle({ className, ...tip }: { className: string } & Partial<TipHandlers>) {
+  const theme = useTheme()
+  const dark = theme?.preference === 'dark'
+  const t = useTranslations('dash.common.shell')
+
+  if (!theme) return null
+
+  const label = dark ? t('toLight') : t('toDark')
+  return (
+    <button
+      type="button"
+      onClick={() => theme.setPreference(dark ? 'light' : 'dark')}
+      aria-label={label}
+      title={tip.onMouseEnter ? undefined : label}
+      className={cn(iconButton, className)}
+      {...tip}
+    >
+      {dark ? <Sun className="w-4 h-4 text-warn" aria-hidden="true" /> : <Moon className="w-4 h-4" aria-hidden="true" />}
+    </button>
   )
 }
 
@@ -485,7 +515,8 @@ function SidebarContent(props: SidebarProps & { onCollapse?: () => void }) {
       <div className="px-3 pt-3 pb-2 shrink-0 flex items-center justify-between gap-1 w-full min-w-0">
         <Brand slug={slug} />
         {/* On phones the top bar has these; the drawer's close button sits here. */}
-        <div className="hidden lg:flex items-center">
+        <div className="hidden lg:flex items-center gap-0.5">
+          <SidebarThemeToggle className="w-8 h-8" />
           <HomeLink className="w-8 h-8" />
           <NotificationBell align="left" buttonClassName="w-8 h-8" />
           {onCollapse && (
@@ -612,6 +643,7 @@ function SidebarRail(props: SidebarProps & { onExpand: () => void }) {
           <PanelLeftOpen className="w-4 h-4" aria-hidden="true" />
         </button>
         <HomeLink className="w-10 h-10" {...tipFor(t('home'))} />
+        <SidebarThemeToggle className="w-10 h-10" />
         <NotificationBell align="left" buttonClassName="w-10 h-10" />
       </div>
 
