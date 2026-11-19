@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   Search,
   ConciergeBell,
@@ -21,8 +22,7 @@ import {
   MousePointerClick,
 } from 'lucide-react'
 import {
-  HELP_CATEGORIES,
-  HELP_ARTICLES,
+  getHelpDocs,
   type HelpArticle,
   type HelpCategory,
 } from '@/lib/help/help-docs'
@@ -39,6 +39,10 @@ const CATEGORY_ICONS: Record<HelpCategory['iconName'], React.ComponentType<{ cla
 }
 
 export function HelpArticles() {
+  const t = useTranslations('dash.help.articles')
+  const locale = useLocale()
+  const { helpCategories, helpArticles } = React.useMemo(() => getHelpDocs(locale), [locale])
+
   const [searchQuery, setSearchQuery] = React.useState('')
   const [selectedCategoryId, setSelectedCategoryId] = React.useState<string>('all')
   const [activeArticle, setActiveArticle] = React.useState<HelpArticle | null>(null)
@@ -65,7 +69,7 @@ export function HelpArticles() {
   const normalizedQuery = searchQuery.trim().toLowerCase()
 
   const filteredArticles = React.useMemo(() => {
-    return HELP_ARTICLES.filter((article) => {
+    return helpArticles.filter((article) => {
       const matchesCategory =
         selectedCategoryId === 'all' || article.categoryId === selectedCategoryId
       if (!matchesCategory) return false
@@ -83,7 +87,15 @@ export function HelpArticles() {
         )
       )
     })
-  }, [selectedCategoryId, normalizedQuery])
+  }, [helpArticles, selectedCategoryId, normalizedQuery])
+
+  // Keep activeArticle synced when locale changes
+  React.useEffect(() => {
+    if (activeArticle) {
+      const updated = helpArticles.find((a) => a.id === activeArticle.id)
+      if (updated) setActiveArticle(updated)
+    }
+  }, [helpArticles]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const activeSpot = activeArticle?.spots?.[activeSpotIdx]
 
@@ -95,10 +107,10 @@ export function HelpArticles() {
           <div>
             <h2 className="text-base font-bold text-fg flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-primary" />
-              Hướng dẫn sử dụng toàn bộ hệ thống ({HELP_ARTICLES.length} bài)
+              {t('title', { count: helpArticles.length })}
             </h2>
             <p className="text-xs text-muted mt-0.5">
-              Tìm kiếm nhanh quy trình thao tác hoặc chọn theo từng phân hệ. Mọi bài viết đều có hình ảnh thật & tô sáng vị trí cần bấm/điền.
+              {t('subtitle')}
             </p>
           </div>
 
@@ -109,7 +121,7 @@ export function HelpArticles() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm hướng dẫn (VD: lịch phòng, vietqr, báo cáo...)"
+              placeholder={t('searchPlaceholder')}
               className="w-full h-10 pl-10 pr-20 rounded-xl bg-raised border border-line text-sm text-fg placeholder:text-muted focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
             />
             {searchQuery ? (
@@ -117,7 +129,7 @@ export function HelpArticles() {
                 type="button"
                 onClick={() => setSearchQuery('')}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-fg p-1"
-                aria-label="Xóa từ khóa"
+                aria-label={t('clearSearch')}
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -131,10 +143,10 @@ export function HelpArticles() {
 
         {/* 6 Category Filter Pills */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-5">
-          {HELP_CATEGORIES.map((cat) => {
+          {helpCategories.map((cat) => {
             const Icon = CATEGORY_ICONS[cat.iconName]
             const isSelected = selectedCategoryId === cat.id
-            const articleCount = HELP_ARTICLES.filter((a) => a.categoryId === cat.id).length
+            const articleCount = helpArticles.filter((a) => a.categoryId === cat.id).length
 
             return (
               <button
@@ -162,7 +174,7 @@ export function HelpArticles() {
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-semibold text-fg truncate">{cat.title}</span>
                     <span className="text-[11px] font-medium text-muted bg-panel px-1.5 py-0.5 rounded border border-line shrink-0">
-                      {articleCount} bài
+                      {t('articleCount', { count: articleCount })}
                     </span>
                   </div>
                   <p className="text-xs text-muted mt-1 line-clamp-2 leading-relaxed">
@@ -180,8 +192,11 @@ export function HelpArticles() {
         <div className="px-5 py-3.5 border-b border-line bg-raised/60 flex items-center justify-between">
           <span className="text-xs font-semibold uppercase tracking-wider text-muted">
             {selectedCategoryId === 'all'
-              ? `Tất cả bài hướng dẫn (${filteredArticles.length})`
-              : `${HELP_CATEGORIES.find((c) => c.id === selectedCategoryId)?.title ?? ''} (${filteredArticles.length})`}
+              ? t('allCategories', { count: filteredArticles.length })
+              : t('categoryTitle', {
+                  title: helpCategories.find((c) => c.id === selectedCategoryId)?.title ?? '',
+                  count: filteredArticles.length,
+                })}
           </span>
           {selectedCategoryId !== 'all' && (
             <button
@@ -189,7 +204,7 @@ export function HelpArticles() {
               onClick={() => setSelectedCategoryId('all')}
               className="text-xs font-medium text-primary hover:underline"
             >
-              Xem tất cả danh mục
+              {t('viewAll')}
             </button>
           )}
         </div>
@@ -197,15 +212,15 @@ export function HelpArticles() {
         {filteredArticles.length === 0 ? (
           <div className="p-10 text-center">
             <BookOpen className="w-8 h-8 text-muted mx-auto mb-2 opacity-60" />
-            <p className="text-sm font-medium text-fg">Không tìm thấy hướng dẫn phù hợp</p>
+            <p className="text-sm font-medium text-fg">{t('notFoundTitle')}</p>
             <p className="text-xs text-muted mt-1">
-              Thử từ khóa khác hoặc liên hệ trực tiếp chuyên viên hỗ trợ Digistay bên dưới.
+              {t('notFoundSubtitle')}
             </p>
           </div>
         ) : (
           <div className="divide-y divide-line">
             {filteredArticles.map((article) => {
-              const category = HELP_CATEGORIES.find((c) => c.id === article.categoryId)
+              const category = helpCategories.find((c) => c.id === article.categoryId)
               return (
                 <button
                   key={article.id}
@@ -223,12 +238,12 @@ export function HelpArticles() {
                       {article.screenshot && (
                         <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-acc-soft text-acc border border-acc/20">
                           <ImageIcon className="w-3 h-3" />
-                          Có ảnh chỉ dẫn
+                          {t('hasScreenshots')}
                         </span>
                       )}
                       <span className="inline-flex items-center gap-1 text-[11px] text-muted">
                         <Clock className="w-3 h-3" />
-                        {article.readTimeMinutes} phút đọc
+                        {t('readTime', { min: article.readTimeMinutes })}
                       </span>
                     </div>
                     <h3 className="text-sm font-semibold text-fg group-hover:text-primary transition-colors">
@@ -363,7 +378,7 @@ export function HelpArticles() {
               <div className="p-4 rounded-xl bg-acc-soft/50 border border-acc/30 flex items-start gap-3">
                 <Lightbulb className="w-4 h-4 text-acc shrink-0 mt-0.5" />
                 <div className="text-xs sm:text-sm text-fg leading-relaxed">
-                  <span className="font-semibold text-acc">Mẹo vận hành: </span>
+                  <span className="font-semibold text-acc">{t('modalTipTitle')}</span>
                   {activeArticle.tip}
                 </div>
               </div>
@@ -371,7 +386,7 @@ export function HelpArticles() {
 
             {/* Helpful feedback */}
             <div className="pt-2 border-t border-line flex flex-wrap items-center justify-between gap-3">
-              <span className="text-xs text-muted">Hướng dẫn này có giúp ích cho bạn không?</span>
+              <span className="text-xs text-muted">{t('feedbackQuestion')}</span>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -386,7 +401,7 @@ export function HelpArticles() {
                   )}
                 >
                   <ThumbsUp className="w-3.5 h-3.5" />
-                  <span>Hữu ích</span>
+                  <span>{t('feedbackHelpful')}</span>
                 </button>
                 <button
                   type="button"
@@ -401,13 +416,13 @@ export function HelpArticles() {
                   )}
                 >
                   <ThumbsDown className="w-3.5 h-3.5" />
-                  <span>Cần chi tiết hơn</span>
+                  <span>{t('feedbackNeedMore')}</span>
                 </button>
               </div>
             </div>
           </ModalBody>
           <ModalFooter>
-            <Button onClick={() => setActiveArticle(null)}>Đóng</Button>
+            <Button onClick={() => setActiveArticle(null)}>{t('close')}</Button>
           </ModalFooter>
         </Modal>
       )}

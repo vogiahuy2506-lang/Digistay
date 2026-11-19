@@ -19,19 +19,27 @@ function DigitColumn({ digit, className }: { digit: number; className?: string }
 
   return (
     <span
-      className={cn('relative inline-flex overflow-hidden [contain:paint] leading-none tabular-nums select-none', className)}
+      className={cn(
+        'relative inline-flex overflow-hidden tabular-nums select-none align-baseline',
+        className
+      )}
+      style={{ height: '1.2em', lineHeight: '1.2em' }}
       aria-hidden="true"
     >
-      {/* Invisible placeholder that sets exact width, height and baseline of the digit */}
-      <span className="invisible select-none pointer-events-none" aria-hidden="true">
+      {/* Invisible placeholder that sets exact width and baseline of the digit */}
+      <span
+        className="invisible select-none pointer-events-none flex items-center justify-center"
+        aria-hidden="true"
+        style={{ height: '1.2em', lineHeight: '1.2em' }}
+      >
         {digit}
       </span>
 
       {/* Sliding reel of 10 digits */}
       <motion.span
-        className="absolute inset-0 flex flex-col items-center"
+        className="absolute left-0 top-0 w-full flex flex-col items-center"
         initial={false}
-        animate={{ y: `-${digit * 100}%` }}
+        animate={{ y: `-${digit * 1.2}em` }}
         transition={
           shouldReduceMotion
             ? { duration: 0 }
@@ -41,11 +49,13 @@ function DigitColumn({ digit, className }: { digit: number; className?: string }
                 damping: 28,
               }
         }
+        style={{ height: '12em' }}
       >
         {DIGITS.map((d) => (
           <span
             key={d}
-            className="flex h-full w-full shrink-0 items-center justify-center tabular-nums leading-none"
+            className="flex w-full shrink-0 items-center justify-center tabular-nums"
+            style={{ height: '1.2em', lineHeight: '1.2em' }}
           >
             {d}
           </span>
@@ -66,7 +76,8 @@ export function SlidingNumber({
 
   return (
     <span
-      className={cn('inline-flex items-baseline tabular-nums leading-none', className)}
+      className={cn('inline-flex items-baseline tabular-nums', className)}
+      style={{ lineHeight: '1.2em' }}
       aria-label={`${prefix ?? ''}${value}${suffix ?? ''}`}
     >
       {prefix && <span className="mr-0.5 select-none">{prefix}</span>}
@@ -74,7 +85,11 @@ export function SlidingNumber({
         const num = parseInt(char, 10)
         if (Number.isNaN(num)) {
           return (
-            <span key={`${i}-${char}`} className="select-none">
+            <span
+              key={`${i}-${char}`}
+              className="select-none inline-flex items-center"
+              style={{ height: '1.2em', lineHeight: '1.2em' }}
+            >
               {char}
             </span>
           )

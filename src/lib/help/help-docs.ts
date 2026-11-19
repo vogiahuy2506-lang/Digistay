@@ -53,7 +53,23 @@ export interface HelpArticle {
   tip?: string
 }
 
-export const QUICKSTART_VIDEO_META = {
+export interface CalloutSpot {
+  id: number
+  kind: 'click' | 'input'
+  label: string
+  hint: string
+  x: number
+  y: number
+  w: number
+  h: number
+  badgePos?: 'top' | 'bottom' | 'left'
+}
+
+/* =========================================================================
+   VIETNAMESE DATA (MẶC ĐỊNH)
+   ========================================================================= */
+
+export const QUICKSTART_VIDEO_META_VI = {
   title: '5 Bước Bắt Đầu Dành Cho Chủ Khách Sạn Trên Digistay',
   durationLabel: '45 giây',
   subtitle:
@@ -61,7 +77,7 @@ export const QUICKSTART_VIDEO_META = {
   embedUrl: '',
 }
 
-export const VIDEO_CHAPTERS: VideoChapter[] = [
+export const VIDEO_CHAPTERS_VI: VideoChapter[] = [
   {
     id: 'chap-1',
     stepNumber: 1,
@@ -104,7 +120,7 @@ export const VIDEO_CHAPTERS: VideoChapter[] = [
   },
 ]
 
-export const QUICKSTART_STEPS: QuickstartStep[] = [
+export const QUICKSTART_STEPS_VI: QuickstartStep[] = [
   {
     id: 'step-property',
     stepNumber: 1,
@@ -152,7 +168,7 @@ export const QUICKSTART_STEPS: QuickstartStep[] = [
   },
 ]
 
-export const HELP_CATEGORIES: HelpCategory[] = [
+export const HELP_CATEGORIES_VI: HelpCategory[] = [
   {
     id: 'operations',
     title: 'Lễ tân & Vận hành hằng ngày',
@@ -191,7 +207,50 @@ export const HELP_CATEGORIES: HelpCategory[] = [
   },
 ]
 
-export const HELP_ARTICLES: HelpArticle[] = [
+export const STEP_SCREENSHOTS_VI: Record<number, { image: string; spots: CalloutSpot[] }> = {
+  1: {
+    image: '/guides/step-1.png',
+    spots: [
+      { id: 1, kind: 'click', label: 'Bấm vào đây', hint: 'Tải lên logo & ảnh bìa khách sạn', x: 47.2, y: 37.2, w: 11.2, h: 6.2, badgePos: 'top' },
+      { id: 2, kind: 'input', label: 'Điền vào đây', hint: 'Nhập tên khách sạn hiển thị với khách', x: 24.0, y: 81.5, w: 48.0, h: 6.8, badgePos: 'top' },
+      { id: 3, kind: 'click', label: 'Bấm lưu', hint: 'Nhấn Lưu thay đổi để hoàn tất', x: 87.3, y: 6.5, w: 10.6, h: 5.6, badgePos: 'bottom' },
+    ],
+  },
+  2: {
+    image: '/guides/step-2.png',
+    spots: [
+      { id: 1, kind: 'click', label: 'Bấm vào đây', hint: 'Tạo hạng phòng mới (Deluxe, Suite...)', x: 83.6, y: 5.8, w: 14.3, h: 6.2, badgePos: 'bottom' },
+      { id: 2, kind: 'click', label: 'Bấm vào đây', hint: 'Mở cài đặt để sửa giá & tải ảnh phòng', x: 23.0, y: 39.8, w: 6.2, h: 5.5, badgePos: 'bottom' },
+      { id: 3, kind: 'click', label: 'Bấm vào đây', hint: 'Đánh số phòng cụ thể (P.101, P.102...)', x: 32.0, y: 14.5, w: 11.5, h: 6.2, badgePos: 'bottom' },
+    ],
+  },
+  3: {
+    image: '/guides/step-3.png',
+    spots: [
+      { id: 1, kind: 'input', label: 'Điền vào đây', hint: 'Nhập mô tả hoặc bấm chọn gợi ý AI', x: 34.4, y: 83.5, w: 62.8, h: 11.2, badgePos: 'top' },
+      { id: 2, kind: 'click', label: 'Bấm vào đây', hint: 'Bật trạng thái Đã xuất bản để mở web', x: 78.6, y: 4.0, w: 9.0, h: 5.6, badgePos: 'bottom' },
+      { id: 3, kind: 'click', label: 'Bấm lưu', hint: 'Nhấn Lưu thay đổi để cập nhật website', x: 87.6, y: 4.0, w: 10.2, h: 5.6, badgePos: 'bottom' },
+    ],
+  },
+  4: {
+    image: '/guides/step-4.png',
+    spots: [
+      { id: 1, kind: 'input', label: 'Điền vào đây', hint: 'Chọn ngày nhận phòng & trả phòng', x: 22.8, y: 19.5, w: 33.0, h: 8.5, badgePos: 'bottom' },
+      { id: 2, kind: 'click', label: 'Bấm vào đây', hint: 'Chọn hạng phòng còn trống cho khách', x: 52.6, y: 55.2, w: 12.6, h: 5.8, badgePos: 'top' },
+      { id: 3, kind: 'input', label: 'Điền vào đây', hint: 'Nhập tên, SĐT khách và xác nhận đơn', x: 68.4, y: 74.2, w: 27.8, h: 14.5, badgePos: 'top' },
+    ],
+  },
+  5: {
+    image: '/guides/step-5.png',
+    spots: [
+      { id: 1, kind: 'click', label: 'Bấm vào đây', hint: 'Nhập email để mời lễ tân hoặc quản lý', x: 82.2, y: 21.2, w: 12.0, h: 6.0, badgePos: 'bottom' },
+      { id: 2, kind: 'click', label: 'Bấm vào đây', hint: 'Kiểm tra danh sách lời mời đang chờ', x: 17.8, y: 40.8, w: 8.6, h: 5.8, badgePos: 'bottom' },
+      { id: 3, kind: 'click', label: 'Bấm vào đây', hint: 'Tùy chỉnh quyền để bảo mật doanh thu', x: 79.2, y: 69.2, w: 10.8, h: 5.8, badgePos: 'top' },
+    ],
+  },
+}
+
+export const HELP_ARTICLES_VI: HelpArticle[] = [
   // 1. Operations
   {
     id: 'art-overview-dashboard',
@@ -469,3 +528,491 @@ export const HELP_ARTICLES: HelpArticle[] = [
     ],
   },
 ]
+
+/* =========================================================================
+   ENGLISH DATA (PHIÊN BẢN TIẾNG ANH)
+   ========================================================================= */
+
+export const QUICKSTART_VIDEO_META_EN = {
+  title: '5 Essential Steps for Hoteliers on Digistay',
+  durationLabel: '45 seconds',
+  subtitle:
+    'Interactive visual walkthrough on the live UI: from hotel profile and room types to publishing your direct booking website and receiving reservations.',
+  embedUrl: '',
+}
+
+export const VIDEO_CHAPTERS_EN: VideoChapter[] = [
+  {
+    id: 'chap-1',
+    stepNumber: 1,
+    timestamp: '00:00',
+    seconds: 0,
+    title: 'Complete Hotel Profile & Visual Assets',
+    summary: 'Upload your logo, cover photo, enter property details and click Save Changes to build guest trust.',
+  },
+  {
+    id: 'chap-2',
+    stepNumber: 2,
+    timestamp: '00:09',
+    seconds: 9,
+    title: 'Create Room Types & Flexible Rates',
+    summary: 'Add room categories (Deluxe, Suite...), configure pricing & photos, and assign physical room numbers.',
+  },
+  {
+    id: 'chap-3',
+    stepNumber: 3,
+    timestamp: '00:18',
+    seconds: 18,
+    title: 'Publish Direct Booking Website',
+    summary: 'Use the AI Prompt bar to refine content, toggle Published mode, and click Save Changes to go live.',
+  },
+  {
+    id: 'chap-4',
+    stepNumber: 4,
+    timestamp: '00:27',
+    seconds: 27,
+    title: 'Create Reservations & VietQR Payments',
+    summary: 'Select check-in/out dates, pick available rooms, and enter guest details to confirm reservations.',
+  },
+  {
+    id: 'chap-5',
+    stepNumber: 5,
+    timestamp: '00:36',
+    seconds: 36,
+    title: 'Invite Front-Desk Staff & Set Roles',
+    summary: 'Invite staff via email, track invites, and configure role-based permissions to protect revenue data.',
+  },
+]
+
+export const QUICKSTART_STEPS_EN: QuickstartStep[] = [
+  {
+    id: 'step-property',
+    stepNumber: 1,
+    title: 'Update hotel profile & brand photos',
+    description: 'Enter hotel name, hotline phone number, address, and upload at least 3 high-quality property photos.',
+    estimatedMinutes: 3,
+    actionLabel: 'Update Profile',
+    hrefType: 'propertySettings',
+  },
+  {
+    id: 'step-rooms',
+    stepNumber: 2,
+    title: 'Create room types & assign room numbers',
+    description: 'Set up room categories with standard nightly rates, maximum guest capacity, and physical room list.',
+    estimatedMinutes: 4,
+    actionLabel: 'Manage Rooms',
+    hrefType: 'rooms',
+  },
+  {
+    id: 'step-website',
+    stepNumber: 3,
+    title: 'Design & publish direct booking website',
+    description: 'Use AI or drag-and-drop building blocks to build a branded, commission-free booking website.',
+    estimatedMinutes: 3,
+    actionLabel: 'Open Website Builder',
+    hrefType: 'website',
+  },
+  {
+    id: 'step-booking',
+    stepNumber: 4,
+    title: 'Create your first reservation (Test check-in)',
+    description: 'Familiarize yourself with walk-in bookings, room assignment, and instant payment QR code generation.',
+    estimatedMinutes: 3,
+    actionLabel: 'New Booking',
+    hrefType: 'bookingNew',
+  },
+  {
+    id: 'step-members',
+    stepNumber: 5,
+    title: 'Invite front-desk staff & configure roles',
+    description: 'Add front-desk receptionists or shift managers for seamless, auditable shift handovers.',
+    estimatedMinutes: 2,
+    actionLabel: 'Invite Members',
+    hrefType: 'members',
+  },
+]
+
+export const HELP_CATEGORIES_EN: HelpCategory[] = [
+  {
+    id: 'operations',
+    title: 'Front Desk & Operations',
+    description: 'Dashboard overview, calendar timeline, front-desk walk-in bookings, and guest CRM.',
+    iconName: 'concierge',
+  },
+  {
+    id: 'rooms',
+    title: 'Rooms, Services & Policies',
+    description: 'Room types, physical rooms, extra amenities, and check-in / check-out policy configuration.',
+    iconName: 'bed',
+  },
+  {
+    id: 'website',
+    title: 'Direct Website & Promotions',
+    description: 'AI website builder, responsive previews, custom domain, and discount coupons.',
+    iconName: 'globe',
+  },
+  {
+    id: 'finance',
+    title: 'VietQR Payments & Reports',
+    description: 'Connect VietQR / PayOS bank accounts, automated reconciliation, and revenue analytics.',
+    iconName: 'wallet',
+  },
+  {
+    id: 'channels',
+    title: 'OTA Channels & Hotel Profile',
+    description: 'Update hotel brand profiles and two-way iCal sync with Booking.com, Agoda, and Airbnb.',
+    iconName: 'share',
+  },
+  {
+    id: 'account',
+    title: 'Account & Staff Permissions',
+    description: 'Invite receptionists, managers, configure role-based access control (RBAC), and security.',
+    iconName: 'shield',
+  },
+]
+
+export const STEP_SCREENSHOTS_EN: Record<number, { image: string; spots: CalloutSpot[] }> = {
+  1: {
+    image: '/guides/step-1.png',
+    spots: [
+      { id: 1, kind: 'click', label: 'Click here', hint: 'Upload hotel logo & cover photo', x: 47.2, y: 37.2, w: 11.2, h: 6.2, badgePos: 'top' },
+      { id: 2, kind: 'input', label: 'Fill in here', hint: 'Enter hotel display name for guests', x: 24.0, y: 81.5, w: 48.0, h: 6.8, badgePos: 'top' },
+      { id: 3, kind: 'click', label: 'Click save', hint: 'Click Save Changes to complete setup', x: 87.3, y: 6.5, w: 10.6, h: 5.6, badgePos: 'bottom' },
+    ],
+  },
+  2: {
+    image: '/guides/step-2.png',
+    spots: [
+      { id: 1, kind: 'click', label: 'Click here', hint: 'Create new room category (Deluxe, Suite...)', x: 83.6, y: 5.8, w: 14.3, h: 6.2, badgePos: 'bottom' },
+      { id: 2, kind: 'click', label: 'Click here', hint: 'Open settings to edit pricing & photos', x: 23.0, y: 39.8, w: 6.2, h: 5.5, badgePos: 'bottom' },
+      { id: 3, kind: 'click', label: 'Click here', hint: 'Assign physical room numbers (Room 101, 102...)', x: 32.0, y: 14.5, w: 11.5, h: 6.2, badgePos: 'bottom' },
+    ],
+  },
+  3: {
+    image: '/guides/step-3.png',
+    spots: [
+      { id: 1, kind: 'input', label: 'Fill in here', hint: 'Enter prompt or pick AI quick suggestions', x: 34.4, y: 83.5, w: 62.8, h: 11.2, badgePos: 'top' },
+      { id: 2, kind: 'click', label: 'Click here', hint: 'Toggle Published status to open website', x: 78.6, y: 4.0, w: 9.0, h: 5.6, badgePos: 'bottom' },
+      { id: 3, kind: 'click', label: 'Click save', hint: 'Click Save Changes to update live website', x: 87.6, y: 4.0, w: 10.2, h: 5.6, badgePos: 'bottom' },
+    ],
+  },
+  4: {
+    image: '/guides/step-4.png',
+    spots: [
+      { id: 1, kind: 'input', label: 'Fill in here', hint: 'Select check-in & check-out dates', x: 22.8, y: 19.5, w: 33.0, h: 8.5, badgePos: 'bottom' },
+      { id: 2, kind: 'click', label: 'Click here', hint: 'Select available room category for guest', x: 52.6, y: 55.2, w: 12.6, h: 5.8, badgePos: 'top' },
+      { id: 3, kind: 'input', label: 'Fill in here', hint: 'Enter guest name, phone, and confirm booking', x: 68.4, y: 74.2, w: 27.8, h: 14.5, badgePos: 'top' },
+    ],
+  },
+  5: {
+    image: '/guides/step-5.png',
+    spots: [
+      { id: 1, kind: 'click', label: 'Click here', hint: 'Enter email to invite receptionist or manager', x: 82.2, y: 21.2, w: 12.0, h: 6.0, badgePos: 'bottom' },
+      { id: 2, kind: 'click', label: 'Click here', hint: 'Check pending invitations list', x: 17.8, y: 40.8, w: 8.6, h: 5.8, badgePos: 'bottom' },
+      { id: 3, kind: 'click', label: 'Click here', hint: 'Customize permissions to protect revenue data', x: 79.2, y: 69.2, w: 10.8, h: 5.8, badgePos: 'top' },
+    ],
+  },
+}
+
+export const HELP_ARTICLES_EN: HelpArticle[] = [
+  // 1. Operations
+  {
+    id: 'art-overview-dashboard',
+    categoryId: 'operations',
+    title: 'Monitor Room Occupancy & Today Arrivals / Departures',
+    summary: 'Get an instant overview of occupied rooms, expected check-ins today, and estimated monthly revenue on one screen.',
+    readTimeMinutes: 2,
+    tags: ['overview', 'dashboard', 'occupancy', 'front-desk'],
+    screenshot: '/guides/overview.png',
+    spots: [
+      { id: 1, kind: 'click', label: 'Quick View Web', hint: 'Click to open the hotel live booking website', x: 50.2, y: 19.2, w: 10.6, h: 5.2, badgePos: 'bottom' },
+      { id: 2, kind: 'click', label: 'Track Today', hint: 'View occupied rooms, expected arrivals & monthly revenue', x: 22.8, y: 31.8, w: 74.5, h: 14.5, badgePos: 'bottom' },
+      { id: 3, kind: 'click', label: 'Manage Moves', hint: 'List of check-in and check-out guests for today', x: 61.0, y: 48.0, w: 36.2, h: 19.5, badgePos: 'top' },
+    ],
+    steps: [
+      { heading: 'Step 1: Check top statistic summary cards', detail: 'Four key metrics display Total Physical Rooms, Occupied Rooms, Expected Arrivals Today, and Estimated Monthly Revenue.' },
+      { heading: 'Step 2: Monitor real-time room availability', detail: 'The left column displays remaining vacant rooms per category for instant price quoting.' },
+      { heading: 'Step 3: Process Today Moves', detail: 'Click on individual reservations in the right column to perform check-in or collect remaining balance.' },
+    ],
+  },
+  {
+    id: 'art-walkin-booking',
+    categoryId: 'operations',
+    title: 'Create Walk-In & Phone Call Reservations Quickly',
+    summary: 'How to create direct bookings when guests arrive at the front desk or call via telephone.',
+    readTimeMinutes: 3,
+    tags: ['walk-in', 'create-booking', 'front-desk', 'reservations'],
+    screenshot: '/guides/step-4.png',
+    spots: [
+      { id: 1, kind: 'input', label: 'Select stay dates', hint: 'Choose check-in, check-out dates & guest count', x: 22.8, y: 19.5, w: 33.0, h: 8.5, badgePos: 'bottom' },
+      { id: 2, kind: 'click', label: 'Choose room', hint: 'Click + Select on available room category', x: 52.6, y: 55.2, w: 12.6, h: 5.8, badgePos: 'top' },
+      { id: 3, kind: 'input', label: 'Guest info', hint: 'Enter guest name, phone, and click Create Booking below', x: 68.4, y: 74.2, w: 27.8, h: 14.5, badgePos: 'top' },
+    ],
+    steps: [
+      { heading: 'Step 1: Select stay dates & guest count', detail: 'Choose arrival and departure dates on the top bar; available room types are filtered automatically.' },
+      { heading: 'Step 2: Select room category & room number', detail: 'Pick the desired room type and assign a specific physical room number (e.g. Room 101, 102).' },
+      { heading: 'Step 3: Enter guest details & save booking', detail: 'Fill in guest full name and phone number on the right panel, then click Create Booking.' },
+    ],
+  },
+  {
+    id: 'art-calendar-view',
+    categoryId: 'operations',
+    title: 'Use Interactive Calendar Timeline & Room Matrix',
+    summary: 'Switch seamlessly between List, Month Calendar, and Room Matrix to manage hotel vacancy.',
+    readTimeMinutes: 2,
+    tags: ['calendar', 'timeline', 'room-matrix', 'check-in', 'check-out'],
+    screenshot: '/guides/calendar.png',
+    spots: [
+      { id: 1, kind: 'click', label: 'Switch view mode', hint: 'Toggle between List, Month Calendar, and Room Matrix', x: 22.8, y: 14.8, w: 27.5, h: 5.5, badgePos: 'bottom' },
+      { id: 2, kind: 'click', label: 'New reservation', hint: 'Click + New Booking or click + Add directly on date cell', x: 87.0, y: 6.5, w: 11.2, h: 5.2, badgePos: 'bottom' },
+      { id: 3, kind: 'click', label: 'Booking details', hint: 'Click directly on reservation pill to view details, check-in, or swap rooms', x: 44.2, y: 73.0, w: 10.2, h: 12.2, badgePos: 'top' },
+    ],
+    steps: [
+      { heading: 'Step 1: Select preferred view mode', detail: 'Use Month Calendar for overall monthly occupancy, or Room Matrix to drag-and-drop room assignments.' },
+      { heading: 'Step 2: Click on any booking bar', detail: 'Click directly on a guest name on the calendar grid to open booking details, confirm check-in, or check-out.' },
+    ],
+  },
+  {
+    id: 'art-customers-crm',
+    categoryId: 'operations',
+    title: 'Manage Customer Directory & Stay History (CRM)',
+    summary: 'Automatically store guest profiles, categorize VIP/regular guests, and record special preferences.',
+    readTimeMinutes: 2,
+    tags: ['customers', 'crm', 'vip', 'sync'],
+    screenshot: '/guides/customers.png',
+    spots: [
+      { id: 1, kind: 'click', label: 'Sync from bookings', hint: 'Aggregate all customer data from existing booking history', x: 82.8, y: 6.8, w: 14.8, h: 5.2, badgePos: 'bottom' },
+      { id: 2, kind: 'input', label: 'Search guests', hint: 'Search by name, phone number, or notes to view stay history', x: 22.8, y: 29.0, w: 34.8, h: 5.5, badgePos: 'bottom' },
+    ],
+    steps: [
+      { heading: 'Step 1: Synchronize customer database', detail: 'The system automatically saves guest profiles on new bookings, or click "Sync from Bookings" to update legacy data.' },
+      { heading: 'Step 2: Search & note guest preferences', detail: 'Search by phone number to see total stays, lifetime spend, and custom notes (e.g., prefers quiet high-floor room).' },
+    ],
+  },
+
+  // 2. Rooms & Services & Policies
+  {
+    id: 'art-create-rooms',
+    categoryId: 'rooms',
+    title: 'Configure Room Categories, Numbers & Weekday/Weekend Rates',
+    summary: 'Set accurate room inventory, gallery images, and rates displayed on both direct website and front-desk PMS.',
+    readTimeMinutes: 4,
+    tags: ['room-types', 'room-rates', 'pricing', 'inventory'],
+    screenshot: '/guides/step-2.png',
+    spots: [
+      { id: 1, kind: 'click', label: 'Add Room Type', hint: 'Click to create a new room category (Deluxe, Suite...)', x: 83.6, y: 5.8, w: 14.3, h: 6.2, badgePos: 'bottom' },
+      { id: 2, kind: 'click', label: 'Edit Rates & Photos', hint: 'Click Edit to update weekend pricing and room photos', x: 23.0, y: 39.8, w: 6.2, h: 5.5, badgePos: 'bottom' },
+      { id: 3, kind: 'click', label: 'Assign Room Numbers', hint: 'Switch to Physical Rooms tab to add Room 101, 102...', x: 32.0, y: 14.5, w: 11.5, h: 6.2, badgePos: 'bottom' },
+    ],
+    steps: [
+      { heading: 'Step 1: Create new room category', detail: 'Click "+ Add Room Type", fill in category name, maximum capacity, and standard nightly rate.' },
+      { heading: 'Step 2: Number physical rooms', detail: 'Switch to "Physical Rooms" tab to add specific room numbers (P.101, P.102...) under that category.' },
+      { heading: 'Step 3: Upload photos & configure weekend rate', detail: 'Upload 3-5 crisp photos per room category for attractive display on your direct booking website.' },
+    ],
+  },
+  {
+    id: 'art-services-amenities',
+    categoryId: 'rooms',
+    title: 'Manage Amenities & Extra Services (Minibar, Dining, Airport Shuttle)',
+    summary: 'Highlight signature amenities on your website and create billable add-on services for guests.',
+    readTimeMinutes: 2,
+    tags: ['services', 'amenities', 'minibar', 'breakfast', 'wifi'],
+    screenshot: '/guides/services.png',
+    spots: [
+      { id: 1, kind: 'click', label: 'Add custom amenity', hint: 'Click to create custom amenity or unique service', x: 76.2, y: 20.5, w: 13.2, h: 5.2, badgePos: 'bottom' },
+      { id: 2, kind: 'click', label: 'Enable & star', hint: 'Select pre-configured amenities and star key highlights', x: 42.2, y: 33.5, w: 17.5, h: 6.8, badgePos: 'bottom' },
+      { id: 3, kind: 'click', label: 'Save changes', hint: 'Click Save to synchronize amenities to your website', x: 89.8, y: 20.5, w: 6.0, h: 5.2, badgePos: 'bottom' },
+    ],
+    steps: [
+      { heading: 'Step 1: Select pre-configured amenities', detail: 'Click amenity badges such as Air Conditioning, Swimming Pool, Breakfast, Free High-speed WiFi to activate.' },
+      { heading: 'Step 2: Star top highlights & save', detail: 'Star your most attractive amenities to feature them prominently at the top of your website.' },
+    ],
+  },
+  {
+    id: 'art-policies-setup',
+    categoryId: 'rooms',
+    title: 'Set Check-in/out Policies & Late Check-out Surcharges',
+    summary: 'Configure standard check-in/out hours and automated late check-out fee rules (30%, 50%, 100%).',
+    readTimeMinutes: 2,
+    tags: ['policies', 'check-in', 'check-out', 'surcharges', 'cancellation'],
+    screenshot: '/guides/policies.png',
+    spots: [
+      { id: 1, kind: 'input', label: 'Set standard hours', hint: 'Set standard check-in (14:00) and check-out (12:00)', x: 24.2, y: 29.2, w: 71.0, h: 7.2, badgePos: 'bottom' },
+      { id: 2, kind: 'input', label: 'Set late fees', hint: 'Configure surcharge percentage before 15:00 or 18:00', x: 24.2, y: 55.8, w: 26.0, h: 27.5, badgePos: 'top' },
+      { id: 3, kind: 'click', label: 'Save changes', hint: 'Click Save Changes at top right to apply', x: 87.0, y: 6.5, w: 10.6, h: 5.2, badgePos: 'bottom' },
+    ],
+    steps: [
+      { heading: 'Step 1: Set check-in and check-out schedule', detail: 'Input standard times (typically 02:00 PM check-in and 12:00 PM check-out) for clear display on booking vouchers.' },
+      { heading: 'Step 2: Configure late check-out surcharges', detail: 'Enable surcharge rules based on percentage of room rate for fast, automated billing during check-out.' },
+    ],
+  },
+
+  // 3. Website & Marketing
+  {
+    id: 'art-website-builder',
+    categoryId: 'website',
+    title: 'Design and Publish Direct Booking Website with AI',
+    summary: 'Launch a direct booking website under your own brand, enabling commission-free reservations.',
+    readTimeMinutes: 4,
+    tags: ['website', 'ai', 'builder', 'publish', 'domain'],
+    screenshot: '/guides/step-3.png',
+    spots: [
+      { id: 1, kind: 'input', label: 'AI Prompt', hint: 'Describe desired theme or click quick suggestions', x: 34.4, y: 83.5, w: 62.8, h: 11.2, badgePos: 'top' },
+      { id: 2, kind: 'click', label: 'Toggle publish', hint: 'Click to publish website publicly for guests', x: 78.6, y: 4.0, w: 9.0, h: 5.6, badgePos: 'bottom' },
+      { id: 3, kind: 'click', label: 'Save changes', hint: 'Click Save Changes after editing content blocks', x: 87.6, y: 4.0, w: 10.2, h: 5.6, badgePos: 'bottom' },
+    ],
+    steps: [
+      { heading: 'Step 1: Prompt AI or pick a template', detail: 'Use the AI Prompt bar below to generate professional copywriting and layout in 5 seconds.' },
+      { heading: 'Step 2: Click directly on blocks to edit', detail: 'Click any section in the live preview to open the editing inspector (replace photos, edit text, customize colors).' },
+      { heading: 'Step 3: Toggle Published status & save', detail: 'Switch status to "Published" and click "Save Changes" to launch immediately.' },
+    ],
+  },
+  {
+    id: 'art-coupons-promo',
+    categoryId: 'website',
+    title: 'Create Promo Coupons to Drive Direct Bookings',
+    summary: 'Generate percentage or fixed-amount discount codes (e.g. DIRECT10, WELCOME) for guests booking on your website.',
+    readTimeMinutes: 2,
+    tags: ['coupons', 'discounts', 'promotions', 'cro'],
+    screenshot: '/guides/coupons.png',
+    spots: [
+      { id: 1, kind: 'click', label: 'New coupon', hint: 'Click + Create first coupon to set code, discount & expiry', x: 53.6, y: 50.2, w: 12.5, h: 5.6, badgePos: 'bottom' },
+      { id: 2, kind: 'input', label: 'Filter coupons', hint: 'Search code or filter Active / Inactive coupons', x: 24.4, y: 18.2, w: 71.2, h: 5.8, badgePos: 'bottom' },
+    ],
+    steps: [
+      { heading: 'Step 1: Create a promotional code', detail: 'Click "+ Create First Coupon", set an easy-to-remember code (e.g. BOOKDIRECT10), and choose percentage or cash discount.' },
+      { heading: 'Step 2: Share code on Website banner & Socials', detail: 'Guests entering this code during checkout will receive an instant discount.' },
+    ],
+  },
+
+  // 4. Finance & VietQR
+  {
+    id: 'art-vietqr-setup',
+    categoryId: 'finance',
+    title: 'Configure VietQR Bank Account & Automated Payment Gateway',
+    summary: 'Guests scan VietQR with pre-filled amount and booking code; funds transfer directly into your bank account.',
+    readTimeMinutes: 3,
+    tags: ['vietqr', 'payments', 'banking', 'payos', 'sepay'],
+    screenshot: '/guides/bank.png',
+    spots: [
+      { id: 1, kind: 'click', label: 'Add bank account', hint: 'Click + Add Account to enter receiving bank details', x: 85.4, y: 9.2, w: 12.4, h: 5.4, badgePos: 'bottom' },
+      { id: 2, kind: 'click', label: 'Automated gateway', hint: 'Or click this tab to connect PayOS for instant reconciliation', x: 40.2, y: 18.0, w: 31.0, h: 6.0, badgePos: 'bottom' },
+    ],
+    steps: [
+      { heading: 'Step 1: Add VietQR receiving bank account', detail: 'Click "+ Add Account", choose your bank (Vietcombank, Techcombank, MB Bank...), enter Account Number and Account Holder Name.' },
+      { heading: 'Step 2: (Optional) Connect PayOS automated webhook', detail: 'Connect via Automated Gateways tab to auto-confirm bookings instantly when payment arrives without manual verification.' },
+    ],
+  },
+  {
+    id: 'art-payments-tracking',
+    categoryId: 'finance',
+    title: 'Track Payment Transactions & Reconcile Guest Deposits',
+    summary: 'Review payment receipts, filter by method, and export Excel transaction logs for month-end accounting.',
+    readTimeMinutes: 2,
+    tags: ['transactions', 'payments', 'deposits', 'excel'],
+    screenshot: '/guides/payments.png',
+    spots: [
+      { id: 1, kind: 'input', label: 'Filter payments', hint: 'Search by transaction ID, guest name, status, or date range', x: 24.0, y: 42.5, w: 71.8, h: 6.2, badgePos: 'bottom' },
+      { id: 2, kind: 'click', label: 'Export Excel', hint: 'Click to download transaction spreadsheet for accounting', x: 88.0, y: 56.8, w: 8.2, h: 4.2, badgePos: 'top' },
+      { id: 3, kind: 'click', label: 'View details', hint: 'Click Details to view receipt or confirm transfer', x: 90.2, y: 72.5, w: 5.6, h: 4.5, badgePos: 'top' },
+    ],
+    steps: [
+      { heading: 'Step 1: Check top payment summary cards', detail: 'View real-time Total Settled Revenue and Pending Transactions.' },
+      { heading: 'Step 2: Reconcile & Export to Excel', detail: 'Filter by date range or payment method (VietQR, Cash) and click Export Excel when closing books.' },
+    ],
+  },
+  {
+    id: 'art-revenue-reports',
+    categoryId: 'finance',
+    title: 'Analyze Daily / Monthly Revenue Reports & Export Statements',
+    summary: 'Analyze total income, refunds, net profit, and intuitive revenue charts to empower business decisions.',
+    readTimeMinutes: 2,
+    tags: ['reports', 'revenue', 'charts', 'excel'],
+    screenshot: '/guides/reports.png',
+    spots: [
+      { id: 1, kind: 'input', label: 'Select date range', hint: 'Choose past 30 days, current month, or custom period', x: 22.8, y: 15.0, w: 46.2, h: 5.8, badgePos: 'bottom' },
+      { id: 2, kind: 'click', label: 'Export Excel', hint: 'Download comprehensive revenue spreadsheet to your device', x: 87.6, y: 6.5, w: 10.0, h: 5.2, badgePos: 'bottom' },
+    ],
+    steps: [
+      { heading: 'Step 1: Select date range & payment filters', detail: 'Use top filters to view 7-day, 30-day, or monthly financial performance.' },
+      { heading: 'Step 2: Review trend charts & export', detail: 'Bar charts illustrate daily revenue trends. Click "Export Excel" to save complete statements.' },
+    ],
+  },
+
+  // 5. Property Profile & Channels
+  {
+    id: 'art-property-profile',
+    categoryId: 'channels',
+    title: 'Update Hotel Profile, Logo, Cover Photo & Address',
+    summary: 'Establish professional brand identity synchronized across direct website and reservation confirmation vouchers.',
+    readTimeMinutes: 3,
+    tags: ['profile', 'logo', 'cover-photo', 'address', 'settings'],
+    screenshot: '/guides/step-1.png',
+    spots: [
+      { id: 1, kind: 'click', label: 'Upload logo & cover', hint: 'Click to select high-res logo and hotel exterior cover photo', x: 47.2, y: 37.2, w: 11.2, h: 6.2, badgePos: 'top' },
+      { id: 2, kind: 'input', label: 'Fill name & type', hint: 'Enter brand name and property type (Resort, Hotel, Homestay)', x: 24.0, y: 81.5, w: 48.0, h: 6.8, badgePos: 'top' },
+      { id: 3, kind: 'click', label: 'Save changes', hint: 'Click Save Changes at top right corner', x: 87.3, y: 6.5, w: 10.6, h: 5.6, badgePos: 'bottom' },
+    ],
+    steps: [
+      { heading: 'Step 1: Upload Logo & Cover Photo', detail: 'Upload a sharp logo and a panoramic cover photo of your property.' },
+      { heading: 'Step 2: Complete Contact & GPS Location tabs', detail: 'Navigate through Contact & Social tabs to enter hotline phone, Zalo, Fanpage, and map coordinates.' },
+    ],
+  },
+  {
+    id: 'art-ota-ical',
+    categoryId: 'channels',
+    title: 'Synchronize OTA Room Availability (Booking.com, Agoda, Airbnb) via iCal',
+    summary: 'Prevent overbooking when selling rooms simultaneously across OTA platforms and your direct booking website.',
+    readTimeMinutes: 4,
+    tags: ['ota', 'booking.com', 'agoda', 'airbnb', 'ical', 'sync'],
+    steps: [
+      { heading: 'Step 1: Copy iCal export URL from Digistay', detail: 'Go to "OTA Channels", select a room, and copy the Digistay iCal Export URL.' },
+      { heading: 'Step 2: Paste link into OTA Extranet', detail: 'Open Booking.com / Agoda / Airbnb Extranet -> Calendar Sync -> Import Calendar, and paste the Digistay link.' },
+      { heading: 'Step 3: Import OTA calendar link back into Digistay', detail: 'Copy export link from the OTA channel and paste into Digistay "Import iCal" field to automatically block reserved dates.' },
+    ],
+  },
+
+  // 6. Account & Staff Roles
+  {
+    id: 'art-staff-roles',
+    categoryId: 'account',
+    title: 'Invite Receptionists & Configure Role-Based Access Control',
+    summary: 'Grant front-desk staff necessary booking permissions while keeping sensitive revenue and financial reports secure.',
+    readTimeMinutes: 2,
+    tags: ['staff', 'receptionist', 'roles', 'account', 'security'],
+    screenshot: '/guides/step-5.png',
+    spots: [
+      { id: 1, kind: 'click', label: 'Invite staff', hint: 'Click + Invite Member, enter email and choose Receptionist or Manager', x: 82.2, y: 21.2, w: 12.0, h: 6.0, badgePos: 'bottom' },
+      { id: 2, kind: 'click', label: 'Track invitations', hint: 'Monitor pending invites and resend if necessary', x: 17.8, y: 40.8, w: 8.6, h: 5.8, badgePos: 'bottom' },
+      { id: 3, kind: 'click', label: 'Fine-tune roles', hint: 'Click Permissions to customize granular rights (hide revenue, hide settings)', x: 79.2, y: 69.2, w: 10.8, h: 5.8, badgePos: 'top' },
+    ],
+    steps: [
+      { heading: 'Step 1: Click + Invite Member', detail: 'Enter staff email and select their role (Receptionist or Manager).' },
+      { heading: 'Step 2: Customize granular permissions anytime', detail: 'Click "Permissions" on each staff row to toggle access to financial reports or system configuration.' },
+    ],
+  },
+]
+
+/* =========================================================================
+   LOCALIZED ACCESS HELPER
+   ========================================================================= */
+
+export function getHelpDocs(locale: string = 'vi') {
+  const isEn = locale.startsWith('en')
+  return {
+    videoMeta: isEn ? QUICKSTART_VIDEO_META_EN : QUICKSTART_VIDEO_META_VI,
+    videoChapters: isEn ? VIDEO_CHAPTERS_EN : VIDEO_CHAPTERS_VI,
+    quickstartSteps: isEn ? QUICKSTART_STEPS_EN : QUICKSTART_STEPS_VI,
+    helpCategories: isEn ? HELP_CATEGORIES_EN : HELP_CATEGORIES_VI,
+    helpArticles: isEn ? HELP_ARTICLES_EN : HELP_ARTICLES_VI,
+    stepScreenshots: isEn ? STEP_SCREENSHOTS_EN : STEP_SCREENSHOTS_VI,
+  }
+}
+
+// Backward compatibility defaults (Vietnamese)
+export const QUICKSTART_VIDEO_META = QUICKSTART_VIDEO_META_VI
+export const VIDEO_CHAPTERS = VIDEO_CHAPTERS_VI
+export const QUICKSTART_STEPS = QUICKSTART_STEPS_VI
+export const HELP_CATEGORIES = HELP_CATEGORIES_VI
+export const HELP_ARTICLES = HELP_ARTICLES_VI
+export const STEP_SCREENSHOTS = STEP_SCREENSHOTS_VI

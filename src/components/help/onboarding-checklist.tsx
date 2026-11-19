@@ -3,7 +3,8 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { CheckCircle2, Circle, ArrowRight, Sparkles, Trophy, Clock } from 'lucide-react'
-import { QUICKSTART_STEPS, type QuickstartStep } from '@/lib/help/help-docs'
+import { useTranslations, useLocale } from 'next-intl'
+import { getHelpDocs, type QuickstartStep } from '@/lib/help/help-docs'
 import { routes } from '@/lib/utils/routes'
 import { cn } from '@/lib/utils'
 
@@ -26,6 +27,10 @@ export function OnboardingChecklist({
   defaultPropertyId,
   autoStatus,
 }: OnboardingChecklistProps) {
+  const t = useTranslations('dash.help.checklist')
+  const locale = useLocale()
+  const { quickstartSteps } = React.useMemo(() => getHelpDocs(locale), [locale])
+
   const storageKey = `digistay_help_checklist_${workspaceSlug}`
   const [manualChecked, setManualChecked] = React.useState<Record<string, boolean>>({})
 
@@ -90,8 +95,9 @@ export function OnboardingChecklist({
     }
   }
 
-  const completedCount = QUICKSTART_STEPS.filter(isStepCompleted).length
-  const progressPercent = Math.round((completedCount / QUICKSTART_STEPS.length) * 100)
+  const completedCount = quickstartSteps.filter(isStepCompleted).length
+  const progressPercent = Math.round((completedCount / quickstartSteps.length) * 100)
+  const allCompleted = completedCount === quickstartSteps.length
 
   return (
     <section className="rounded-2xl border border-line bg-panel overflow-hidden shadow-xs">
@@ -100,7 +106,7 @@ export function OnboardingChecklist({
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-ok-soft text-ok flex items-center justify-center shrink-0 border border-ok/20">
-              {completedCount === QUICKSTART_STEPS.length ? (
+              {allCompleted ? (
                 <Trophy className="w-5 h-5" />
               ) : (
                 <Sparkles className="w-5 h-5" />
@@ -108,12 +114,10 @@ export function OnboardingChecklist({
             </div>
             <div>
               <h2 className="text-base font-bold text-fg">
-                Checklist 5 Bước Thiết Lập Nhanh
+                {t('title')}
               </h2>
               <p className="text-xs text-muted mt-0.5">
-                {completedCount === QUICKSTART_STEPS.length
-                  ? 'Tuyệt vời! Khách sạn của bạn đã sẵn sàng đón khách & nhận đặt phòng.'
-                  : 'Hoàn thành 5 bước dưới đây để vận hành khách sạn trơn tru trong chưa đầy 15 phút.'}
+                {allCompleted ? t('completedTitle') : t('progress', { count: completedCount, percent: progressPercent })}
               </p>
             </div>
           </div>
@@ -121,9 +125,9 @@ export function OnboardingChecklist({
           <div className="flex items-center gap-3 min-w-[180px]">
             <div className="flex-1">
               <div className="flex items-center justify-between text-xs font-semibold mb-1.5">
-                <span className="text-muted">Tiến độ</span>
+                <span className="text-muted">{t('title')}</span>
                 <span className="text-fg">
-                  {completedCount}/{QUICKSTART_STEPS.length} ({progressPercent}%)
+                  {completedCount}/{quickstartSteps.length} ({progressPercent}%)
                 </span>
               </div>
               <div className="h-2 w-full rounded-full bg-raised border border-line overflow-hidden">
@@ -139,7 +143,7 @@ export function OnboardingChecklist({
 
       {/* Checklist Items */}
       <div className="divide-y divide-line">
-        {QUICKSTART_STEPS.map((step) => {
+        {quickstartSteps.map((step) => {
           const done = isStepCompleted(step)
           const href = getStepHref(step)
 
@@ -159,8 +163,8 @@ export function OnboardingChecklist({
                     'mt-0.5 shrink-0 transition-transform active:scale-90',
                     done ? 'text-ok' : 'text-muted hover:text-fg'
                   )}
-                  aria-label={done ? 'Đánh dấu chưa hoàn thành' : 'Đánh dấu đã hoàn thành'}
-                  title="Bấm để đánh dấu hoàn thành"
+                  aria-label={t('toggleStep', { step: step.stepNumber })}
+                  title={t('toggleStep', { step: step.stepNumber })}
                 >
                   {done ? (
                     <CheckCircle2 className="w-5 h-5 fill-ok/15" />
@@ -176,11 +180,11 @@ export function OnboardingChecklist({
                         done ? 'text-muted line-through' : 'text-fg'
                       )}
                     >
-                      Bước {step.stepNumber}: {step.title}
+                      #{step.stepNumber}: {step.title}
                     </span>
                     <span className="inline-flex items-center gap-1 text-[11px] text-muted bg-raised px-2 py-0.5 rounded-md border border-line">
                       <Clock className="w-3 h-3" />
-                      ~{step.estimatedMinutes} phút
+                      ~{t('minutes', { min: step.estimatedMinutes })}
                     </span>
                   </div>
                   <p className="text-xs text-muted mt-1 leading-relaxed">
@@ -199,7 +203,7 @@ export function OnboardingChecklist({
                       : 'bg-primary hover:bg-primary-hover text-on-primary border-transparent shadow-2xs'
                   )}
                 >
-                  <span>{done ? 'Xem lại' : step.actionLabel}</span>
+                  <span>{done ? t('completedBadge') : step.actionLabel}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>

@@ -6,7 +6,6 @@ import {
   Pause,
   RotateCcw,
   Clock,
-  Sparkles,
   MonitorPlay,
   Captions,
   MousePointer2,
@@ -15,218 +14,11 @@ import {
   PenLine,
   MousePointerClick,
 } from 'lucide-react'
-import { QUICKSTART_VIDEO_META, VIDEO_CHAPTERS, type VideoChapter } from '@/lib/help/help-docs'
+import { useTranslations, useLocale } from 'next-intl'
+import { getHelpDocs, type VideoChapter } from '@/lib/help/help-docs'
 import { cn } from '@/lib/utils'
 
-interface CalloutSpot {
-  id: number
-  kind: 'click' | 'input'
-  label: string
-  hint: string
-  /** Percentage coordinates matching the 1280x720 screenshot */
-  x: number
-  y: number
-  w: number
-  h: number
-  /** Where to place the floating badge relative to the box */
-  badgePos?: 'top' | 'bottom' | 'left'
-}
-
-const STEP_SCREENSHOTS: Record<number, { image: string; spots: CalloutSpot[] }> = {
-  1: {
-    image: '/guides/step-1.png',
-    spots: [
-      {
-        id: 1,
-        kind: 'click',
-        label: 'Bấm vào đây',
-        hint: 'Tải lên logo & ảnh bìa khách sạn',
-        x: 47.2,
-        y: 37.2,
-        w: 11.2,
-        h: 6.2,
-        badgePos: 'top',
-      },
-      {
-        id: 2,
-        kind: 'input',
-        label: 'Điền vào đây',
-        hint: 'Nhập tên khách sạn hiển thị với khách',
-        x: 24.0,
-        y: 81.5,
-        w: 48.0,
-        h: 6.8,
-        badgePos: 'top',
-      },
-      {
-        id: 3,
-        kind: 'click',
-        label: 'Bấm lưu',
-        hint: 'Nhấn Lưu thay đổi để hoàn tất',
-        x: 87.3,
-        y: 6.5,
-        w: 10.6,
-        h: 5.6,
-        badgePos: 'bottom',
-      },
-    ],
-  },
-  2: {
-    image: '/guides/step-2.png',
-    spots: [
-      {
-        id: 1,
-        kind: 'click',
-        label: 'Bấm vào đây',
-        hint: 'Tạo hạng phòng mới (Deluxe, Suite...)',
-        x: 83.6,
-        y: 5.8,
-        w: 14.3,
-        h: 6.2,
-        badgePos: 'bottom',
-      },
-      {
-        id: 2,
-        kind: 'click',
-        label: 'Bấm vào đây',
-        hint: 'Mở cài đặt để sửa giá & tải ảnh phòng',
-        x: 23.0,
-        y: 39.8,
-        w: 6.2,
-        h: 5.5,
-        badgePos: 'bottom',
-      },
-      {
-        id: 3,
-        kind: 'click',
-        label: 'Bấm vào đây',
-        hint: 'Đánh số phòng cụ thể (P.101, P.102...)',
-        x: 32.0,
-        y: 14.5,
-        w: 11.5,
-        h: 6.2,
-        badgePos: 'bottom',
-      },
-    ],
-  },
-  3: {
-    image: '/guides/step-3.png',
-    spots: [
-      {
-        id: 1,
-        kind: 'input',
-        label: 'Điền vào đây',
-        hint: 'Nhập mô tả hoặc bấm chọn gợi ý AI',
-        x: 34.4,
-        y: 83.5,
-        w: 62.8,
-        h: 11.2,
-        badgePos: 'top',
-      },
-      {
-        id: 2,
-        kind: 'click',
-        label: 'Bấm vào đây',
-        hint: 'Bật trạng thái Đã xuất bản để mở web',
-        x: 78.6,
-        y: 4.0,
-        w: 9.0,
-        h: 5.6,
-        badgePos: 'bottom',
-      },
-      {
-        id: 3,
-        kind: 'click',
-        label: 'Bấm lưu',
-        hint: 'Nhấn Lưu thay đổi để cập nhật website',
-        x: 87.6,
-        y: 4.0,
-        w: 10.2,
-        h: 5.6,
-        badgePos: 'bottom',
-      },
-    ],
-  },
-  4: {
-    image: '/guides/step-4.png',
-    spots: [
-      {
-        id: 1,
-        kind: 'input',
-        label: 'Điền vào đây',
-        hint: 'Chọn ngày nhận phòng & trả phòng',
-        x: 22.8,
-        y: 19.5,
-        w: 33.0,
-        h: 8.5,
-        badgePos: 'bottom',
-      },
-      {
-        id: 2,
-        kind: 'click',
-        label: 'Bấm vào đây',
-        hint: 'Chọn hạng phòng còn trống cho khách',
-        x: 52.6,
-        y: 55.2,
-        w: 12.6,
-        h: 5.8,
-        badgePos: 'top',
-      },
-      {
-        id: 3,
-        kind: 'input',
-        label: 'Điền vào đây',
-        hint: 'Nhập tên, SĐT khách và xác nhận đơn',
-        x: 68.4,
-        y: 74.2,
-        w: 27.8,
-        h: 14.5,
-        badgePos: 'top',
-      },
-    ],
-  },
-  5: {
-    image: '/guides/step-5.png',
-    spots: [
-      {
-        id: 1,
-        kind: 'click',
-        label: 'Bấm vào đây',
-        hint: 'Nhập email để mời lễ tân hoặc quản lý',
-        x: 82.2,
-        y: 21.2,
-        w: 12.0,
-        h: 6.0,
-        badgePos: 'bottom',
-      },
-      {
-        id: 2,
-        kind: 'click',
-        label: 'Bấm vào đây',
-        hint: 'Kiểm tra danh sách lời mời đang chờ',
-        x: 17.8,
-        y: 40.8,
-        w: 8.6,
-        h: 5.8,
-        badgePos: 'bottom',
-      },
-      {
-        id: 3,
-        kind: 'click',
-        label: 'Bấm vào đây',
-        hint: 'Tùy chỉnh quyền để bảo mật doanh thu',
-        x: 79.2,
-        y: 69.2,
-        w: 10.8,
-        h: 5.8,
-        badgePos: 'top',
-      },
-    ],
-  },
-}
-
 const STEP_DURATION_SEC = 9 // 3 seconds per callout spot * 3 spots = 9s/chapter
-const TOTAL_DURATION_SEC = VIDEO_CHAPTERS.length * STEP_DURATION_SEC
 
 function formatVideoTime(sec: number): string {
   const s = Math.max(0, Math.floor(sec))
@@ -236,6 +28,11 @@ function formatVideoTime(sec: number): string {
 }
 
 export function QuickstartVideo() {
+  const t = useTranslations('dash.help.video')
+  const locale = useLocale()
+  const { videoMeta, videoChapters, stepScreenshots } = React.useMemo(() => getHelpDocs(locale), [locale])
+  const totalDurationSec = videoChapters.length * STEP_DURATION_SEC
+
   const [isPlaying, setIsPlaying] = React.useState(false)
   const [elapsedSec, setElapsedSec] = React.useState(0)
   const [playbackRate, setPlaybackRate] = React.useState<1 | 1.5 | 2>(1)
@@ -247,22 +44,22 @@ export function QuickstartVideo() {
     const interval = window.setInterval(() => {
       setElapsedSec((prev) => {
         const next = prev + 0.1 * playbackRate
-        if (next >= TOTAL_DURATION_SEC) {
+        if (next >= totalDurationSec) {
           setIsPlaying(false)
-          return TOTAL_DURATION_SEC
+          return totalDurationSec
         }
         return next
       })
     }, 100)
     return () => window.clearInterval(interval)
-  }, [isPlaying, playbackRate])
+  }, [isPlaying, playbackRate, totalDurationSec])
 
   const currentChapterIndex = Math.min(
-    VIDEO_CHAPTERS.length - 1,
+    videoChapters.length - 1,
     Math.floor(elapsedSec / STEP_DURATION_SEC)
   )
-  const activeChapter: VideoChapter = VIDEO_CHAPTERS[currentChapterIndex]
-  const sceneData = STEP_SCREENSHOTS[activeChapter.stepNumber]
+  const activeChapter: VideoChapter = videoChapters[currentChapterIndex]
+  const sceneData = stepScreenshots[activeChapter.stepNumber]
 
   const timeInChapter = elapsedSec - currentChapterIndex * STEP_DURATION_SEC
   const spotIndex = Math.min(
@@ -281,7 +78,7 @@ export function QuickstartVideo() {
   }
 
   const handleTogglePlay = () => {
-    if (elapsedSec >= TOTAL_DURATION_SEC) {
+    if (elapsedSec >= totalDurationSec) {
       setElapsedSec(0)
     }
     setIsPlaying((v) => !v)
@@ -302,14 +99,14 @@ export function QuickstartVideo() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base font-bold text-fg">{QUICKSTART_VIDEO_META.title}</h2>
+              <h2 className="text-base font-bold text-fg">{videoMeta.title}</h2>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-acc-soft text-acc border border-acc/20">
                 <Clock className="w-3 h-3" />
-                Hướng dẫn trực quan trên giao diện thật
+                {t('liveUiBadge')}
               </span>
             </div>
             <p className="text-xs text-muted mt-0.5 max-w-2xl">
-              {QUICKSTART_VIDEO_META.subtitle}
+              {videoMeta.subtitle}
             </p>
           </div>
         </div>
@@ -401,7 +198,7 @@ export function QuickstartVideo() {
                   className="flex items-center gap-2.5 px-5 py-3 rounded-full bg-primary hover:bg-primary-hover text-white font-semibold text-sm shadow-2xl transition-transform hover:scale-105 active:scale-95 ring-4 ring-white/25"
                 >
                   <Play className="w-5 h-5 fill-current" />
-                  <span>Xem hướng dẫn từng bước</span>
+                  <span>{t('watchStepByStep')}</span>
                 </button>
               </div>
             )}
@@ -410,7 +207,7 @@ export function QuickstartVideo() {
             {showCaptions && activeSpot && (
               <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 max-w-[90%] px-3.5 py-1.5 rounded-xl bg-black/85 border border-white/15 text-center shadow-xl backdrop-blur-xs">
                 <span className="text-[11px] sm:text-xs font-semibold text-amber-300 mr-1.5">
-                  Điểm {activeSpot.id} ({activeSpot.label}):
+                  {t('spotPrefix', { id: activeSpot.id, label: activeSpot.label })}
                 </span>
                 <span className="text-[11px] sm:text-xs text-white">
                   {activeSpot.hint}
@@ -424,11 +221,11 @@ export function QuickstartVideo() {
             <input
               type="range"
               min={0}
-              max={TOTAL_DURATION_SEC}
+              max={totalDurationSec}
               step={0.1}
               value={elapsedSec}
               onChange={(e) => setElapsedSec(Number(e.target.value))}
-              aria-label="Thanh tiến trình video"
+              aria-label={t('progressAria')}
               className="w-full h-1.5 accent-primary cursor-pointer rounded-full"
             />
 
@@ -440,7 +237,7 @@ export function QuickstartVideo() {
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-on-primary font-semibold hover:bg-primary-hover transition-colors"
                 >
                   {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
-                  <span>{isPlaying ? 'Tạm dừng' : 'Phát'}</span>
+                  <span>{isPlaying ? t('pause') : t('play')}</span>
                 </button>
                 <button
                   type="button"
@@ -449,12 +246,12 @@ export function QuickstartVideo() {
                     setIsPlaying(true)
                   }}
                   className="p-1.5 rounded-lg bg-panel border border-line text-muted hover:text-fg transition-colors"
-                  title="Xem lại từ đầu"
+                  title={t('replay')}
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                 </button>
                 <span className="font-mono text-[11px] text-muted">
-                  {formatVideoTime(elapsedSec)} / {formatVideoTime(TOTAL_DURATION_SEC)}
+                  {formatVideoTime(elapsedSec)} / {formatVideoTime(totalDurationSec)}
                 </span>
               </div>
 
@@ -484,7 +281,7 @@ export function QuickstartVideo() {
                     setPlaybackRate((r) => (r === 1 ? 1.5 : r === 1.5 ? 2 : 1))
                   }
                   className="px-2 py-1 rounded-md bg-panel border border-line hover:bg-raised font-mono text-[11px] font-semibold text-fg transition-colors"
-                  title="Tốc độ phát"
+                  title={t('playbackSpeed')}
                 >
                   {playbackRate}x
                 </button>
@@ -497,7 +294,7 @@ export function QuickstartVideo() {
                       ? 'bg-acc-soft border-acc/30 text-acc'
                       : 'bg-panel border-line text-muted hover:text-fg'
                   )}
-                  title="Bật/tắt chú thích trên hình"
+                  title={t('toggleCaptions')}
                 >
                   <Captions className="w-4 h-4" />
                 </button>
@@ -505,7 +302,7 @@ export function QuickstartVideo() {
                   type="button"
                   onClick={() => setIsExpanded((e) => !e)}
                   className="p-1.5 rounded-lg bg-panel border border-line text-muted hover:text-fg transition-colors"
-                  title={isExpanded ? 'Thu nhỏ' : 'Phóng to'}
+                  title={isExpanded ? t('minimize') : t('expand')}
                 >
                   {isExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
                 </button>
@@ -518,13 +315,13 @@ export function QuickstartVideo() {
         <div className="lg:col-span-4 border-t lg:border-t-0 lg:border-l border-line p-4 sm:p-5 flex flex-col overflow-y-auto">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted">
-              5 Chương Hướng Dẫn Thực Tế
+              {t('chaptersTitle')}
             </h3>
-            <span className="text-[11px] text-muted">Bấm để chuyển màn hình</span>
+            <span className="text-[11px] text-muted">{t('chaptersSubtitle')}</span>
           </div>
 
           <div className="space-y-2 flex-1">
-            {VIDEO_CHAPTERS.map((chap, idx) => {
+            {videoChapters.map((chap, idx) => {
               const isActive = currentChapterIndex === idx
               return (
                 <button
