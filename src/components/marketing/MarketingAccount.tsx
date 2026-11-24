@@ -14,24 +14,41 @@ export interface MarketingAccountLabels {
   signOut: string
 }
 
-/** Signing out from a public page lands on the home page, like the dashboard's top bars. */
+/**
+ * Signing out from a public page lands on the home page.
+ *
+ * In Safari (macOS & iOS), `location.reload()` or in-place URL reload serves the cached
+ * page from bfcache (in-memory cache), and background `fetch('/api/auth/signout')` has
+ * an asynchronous race condition with the cookie jar.
+ *
+ * Navigating to `/api/auth/logout` performs a native HTTP 302 redirect with Set-Cookie: Max-Age=0
+ * and Cache-Control headers, forcing WebKit/Safari to permanently flush the session and reload
+ * a fresh guest document from the server.
+ */
 export async function signOutToHome() {
   try {
     sessionStorage.setItem('justSignedOut', 'true')
   } catch {
     // Storage blocked: nothing depends on it.
   }
+
+  // 1. Client-side cookie purge fallback
+  if (typeof document !== 'undefined') {
+    const expired = '=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    document.cookie = `next-auth.session-token${expired}`
+    document.cookie = `__Secure-next-auth.session-token${expired}; Secure`
+  }
+
+  // 2. Broadcast session invalidation to NextAuth client state across tabs
   try {
     await signOut({ redirect: false })
   } catch {
-    // Network or NextAuth error: proceed to reload
+    // Network or NextAuth error: proceed to hard server logout
   }
+
+  // 3. Hard top-level navigation to dedicated purge endpoint
   if (typeof window !== 'undefined') {
-    if (window.location.pathname === '/') {
-      window.location.reload()
-    } else {
-      window.location.href = '/'
-    }
+    window.location.href = '/api/auth/logout'
   }
 }
 
@@ -55,11 +72,20 @@ export function MarketingAccount({ email, labels }: { email: string; labels: Mar
   React.useEffect(() => {
     if (!open) return
     items()[0]?.focus()
-    const onDown = (e: PointerEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
+    // Use mousedown & touchstart instead of pointerdown to prevent Safari premature
+    // tap dismissals when tapping child SVG icons
+    const onDown = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node | null
+      if (target && rootRef.current && !rootRef.current.contains(target)) {
+        setOpen(false)
+      }
     }
-    document.addEventListener('pointerdown', onDown)
-    return () => document.removeEventListener('pointerdown', onDown)
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('touchstart', onDown)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('touchstart', onDown)
+    }
   }, [open])
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -100,12 +126,12 @@ export function MarketingAccount({ email, labels }: { email: string; labels: Mar
             setOpen(true)
           }
         }}
-        className="flex h-11 items-center gap-2.5 rounded-ctl px-1.5 font-medium text-fg hover:bg-fg/5 lg:h-10"
+        className="flex h-11 items-center gap-2.5 rounded-ctl px-1.5 font-medium text-fg hover:bg-fg/5 lg:h-10 cursor-pointer"
       >
-        <span aria-hidden className="flex h-8 w-8 items-center justify-center rounded-full bg-plain-soft text-[12px] font-semibold">
+        <span aria-hidden className="flex h-8 w-8 items-center justify-center rounded-full bg-plain-soft text-[12px] font-semibold pointer-events-none">
           {initials}
         </span>
-        <span className="hidden max-w-[200px] truncate lg:block">{email}</span>
+        <span className="hidden max-w-[200px] truncate lg:block pointer-events-none">{email}</span>
       </button>
       {open && (
         <div
@@ -116,24 +142,24 @@ export function MarketingAccount({ email, labels }: { email: string; labels: Mar
         >
           <p className="truncate px-3.5 pb-2 pt-1 text-[12px] text-muted lg:hidden">{email}</p>
           <Link role="menuitem" href="/workspaces" className={item} onClick={() => setOpen(false)}>
-            <LayoutGrid className="h-4 w-4 text-muted" aria-hidden />
+            <LayoutGrid className="h-4 w-4 text-muted pointer-events-none" aria-hidden />
             {labels.dashboard}
           </Link>
           <Link role="menuitem" href="/profile" className={item} onClick={() => setOpen(false)}>
-            <UserRound className="h-4 w-4 text-muted" aria-hidden />
+            <UserRound className="h-4 w-4 text-muted pointer-events-none" aria-hidden />
             {labels.profile}
           </Link>
           <div className="my-1.5 border-t border-line" role="separator" />
           <button
             role="menuitem"
             type="button"
-            className={cn(item, 'text-err')}
-            onClick={async () => {
-              setOpen(false)
+            className={cn(item, 'text-err cursor-pointer')}
+            onClick={async (e) => {
+              e.preventDefault()
               await signOutToHome()
             }}
           >
-            <LogOut className="h-4 w-4" aria-hidden />
+            <LogOut className="h-4 w-4 pointer-events-none" aria-hidden />
             {labels.signOut}
           </button>
         </div>
@@ -147,10 +173,13 @@ export function MarketingSignOutButton({ label }: { label: string }) {
   return (
     <button
       type="button"
-      onClick={signOutToHome}
-      className="mt-1 flex h-12 w-full items-center justify-center gap-2 rounded-ctl border border-line text-[15px] font-medium text-err"
+      onClick={async (e) => {
+        e.preventDefault()
+        await signOutToHome()
+      }}
+      className="mt-1 flex h-12 w-full items-center justify-center gap-2 rounded-ctl border border-line bg-panel text-[15px] font-medium text-err hover:bg-fg/5 cursor-pointer"
     >
-      <LogOut className="h-4 w-4" aria-hidden />
+      <LogOut className="h-4 w-4 pointer-events-none" aria-hidden />
       {label}
     </button>
   )
