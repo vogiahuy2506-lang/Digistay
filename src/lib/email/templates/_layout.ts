@@ -6,7 +6,7 @@ export function emailLayout({
   title,
   body,
   preheader,
-  siteUrl = 'http://localhost:3000',
+  siteUrl = 'https://digistay.vn',
 }: {
   title: string
   body: string
@@ -48,17 +48,39 @@ export function emailLayout({
 <body style="margin: 0; padding: 0; background-color: #fbf9f6;">
   <div style="padding: 24px 12px;">
     <div class="container">
-      <div style="background: linear-gradient(135deg, #a93119 0%, #bd3c22 45%, #cb492f 100%); padding: 32px 32px 26px; text-align: center;">
-        <div style="display: inline-block; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.25); border-radius: 12px; padding: 10px 18px; margin-bottom: 8px;">
-          <a href="${siteUrl}" style="color: #ffffff; font-size: 20px; font-weight: 700; text-decoration: none; letter-spacing: 0.5px;">🏨 Digistay</a>
+      <div style="background: linear-gradient(135deg, #a93119 0%, #bd3c22 45%, #8b1b05 100%); padding: 32px 32px 26px; text-align: center;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto;">
+          <tr>
+            <td align="center">
+              <a href="${siteUrl}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; display: inline-block;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                  <tr>
+                    <td style="vertical-align: middle; padding-right: 12px;">
+                      <img src="https://digistay.vn/logo_digistay.png" alt="DIGISTAY" width="44" height="44" style="display: block; width: 44px; height: 44px; border-radius: 10px; border: 0; outline: none; background-color: #ffffff; box-shadow: 0 3px 10px rgba(0,0,0,0.15);" />
+                    </td>
+                    <td style="vertical-align: middle; text-align: left;">
+                      <span style="display: block; font-size: 22px; font-weight: 800; letter-spacing: 0.8px; color: #ffffff; line-height: 1.15; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;">DIGISTAY</span>
+                    </td>
+                  </tr>
+                </table>
+              </a>
+            </td>
+          </tr>
+        </table>
+        <div style="color: rgba(255,255,255,0.92); font-size: 13px; font-weight: 500; letter-spacing: 0.3px; margin-top: 10px;">
+          Nền tảng quản lý &amp; kinh doanh lưu trú
         </div>
-        <p style="color: rgba(255,255,255,0.9); margin: 4px 0 0; font-size: 13px; letter-spacing: 0.2px;">Hotel OS — Hệ điều hành quản lý khách sạn</p>
       </div>
       <div class="content">
         ${body}
       </div>
       <div class="footer">
-        <p style="margin: 0 0 8px;">Email này được gửi tự động từ hệ thống <a href="${siteUrl}" style="color: #a93119; font-weight: 600;">Digistay</a></p>
+        <div style="margin-bottom: 12px;">
+          <a href="${siteUrl}" target="_blank" rel="noopener noreferrer" style="color: #a93119; font-weight: 600; text-decoration: none; font-size: 13px;">digistay.vn</a>
+          <span style="color: #cbd5e1; margin: 0 8px;">•</span>
+          <a href="https://digistay.vn/lien-he" target="_blank" rel="noopener noreferrer" style="color: #59413c; text-decoration: none; font-size: 13px;">Hỗ trợ khách hàng</a>
+        </div>
+        <p style="margin: 0 0 6px;">Email này được gửi tự động từ hệ thống <a href="${siteUrl}" style="color: #a93119; font-weight: 600;">Digistay</a></p>
         <p style="margin: 0;">© ${new Date().getFullYear()} Digistay. Mọi quyền được bảo lưu.</p>
       </div>
     </div>

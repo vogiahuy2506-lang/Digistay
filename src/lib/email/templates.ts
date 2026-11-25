@@ -27,9 +27,11 @@ export interface BaseEmailProps {
 }
 
 export const BRAND = {
-  name: 'Digistay',
-  tagline: 'Hotel OS — Hệ điều hành quản lý khách sạn',
-  logoUrl: 'https://digistay.vn/logo.png',
+  name: 'DIGISTAY',
+  tagline: 'Nền tảng quản lý & kinh doanh lưu trú',
+  logoUrl: 'https://digistay.vn/logo_digistay.png',
+  faviconUrl: 'https://digistay.vn/favicon.ico',
+  siteUrl: 'https://digistay.vn',
   primary: '#a93119',
   primaryDark: '#8b1b05',
   primaryLight: '#cb492f',
@@ -137,11 +139,26 @@ export function baseLayout(props: {
 
           <!-- Header -->
           <tr>
-            <td class="email-header" style="background: linear-gradient(135deg, ${BRAND.primary} 0%, #bd3c22 45%, ${BRAND.primaryLight} 100%); padding: 32px 32px 28px; text-align: center;">
-              <div style="display: inline-block; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.25); border-radius: 12px; padding: 10px 18px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
-                <span style="color: #ffffff; font-size: 20px; font-weight: 700; letter-spacing: 0.5px;">🏨 ${brand}</span>
-              </div>
-              <div style="color: rgba(255,255,255,0.9); font-size: 13px; font-weight: 400; letter-spacing: 0.2px;">
+            <td class="email-header" style="background: linear-gradient(135deg, ${BRAND.primary} 0%, #bd3c22 45%, ${BRAND.primaryDark} 100%); padding: 32px 32px 26px; text-align: center;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto;">
+                <tr>
+                  <td align="center">
+                    <a href="https://digistay.vn" target="_blank" rel="noopener noreferrer" style="text-decoration: none; display: inline-block;">
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                        <tr>
+                          <td style="vertical-align: middle; padding-right: 12px;">
+                            <img src="${BRAND.logoUrl}" alt="DIGISTAY" width="44" height="44" style="display: block; width: 44px; height: 44px; border-radius: 10px; border: 0; outline: none; background-color: #ffffff; box-shadow: 0 3px 10px rgba(0,0,0,0.15);" />
+                          </td>
+                          <td style="vertical-align: middle; text-align: left;">
+                            <span style="display: block; font-size: 22px; font-weight: 800; letter-spacing: 0.8px; color: #ffffff; line-height: 1.15; font-family: ${BRAND.fontFamily};">DIGISTAY</span>
+                          </td>
+                        </tr>
+                      </table>
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <div style="color: rgba(255,255,255,0.92); font-size: 13px; font-weight: 500; letter-spacing: 0.3px; margin-top: 10px;">
                 ${escapeHtml(t('tagline'))}
               </div>
             </td>
@@ -157,7 +174,12 @@ export function baseLayout(props: {
           <!-- Footer -->
           <tr>
             <td class="email-footer" style="background-color: ${BRAND.bg}; padding: 24px 32px; border-top: 1px solid ${BRAND.border}; text-align: center;">
-              <p style="margin: 0 0 8px; color: ${BRAND.textMuted}; font-size: 12px; line-height: 1.5;">
+              <div style="margin-bottom: 12px;">
+                <a href="https://digistay.vn" target="_blank" rel="noopener noreferrer" style="color: ${BRAND.primary}; font-weight: 600; text-decoration: none; font-size: 13px;">digistay.vn</a>
+                <span style="color: #cbd5e1; margin: 0 8px;">•</span>
+                <a href="https://digistay.vn/lien-he" target="_blank" rel="noopener noreferrer" style="color: ${BRAND.textMuted}; text-decoration: none; font-size: 13px;">Hỗ trợ khách hàng</a>
+              </div>
+              <p style="margin: 0 0 6px; color: ${BRAND.textMuted}; font-size: 12px; line-height: 1.5;">
                 ${escapeHtml(t('automated'))}
               </p>
               <p style="margin: 0; color: ${BRAND.textMuted}; font-size: 12px; line-height: 1.5;">
