@@ -163,16 +163,13 @@ describe('a manual deposit', () => {
       bankCode: 'VCB',
       bankAccount: '0123456789',
       transferContent: booking.bookingCode,
-      metadata: { guestDeposit: true, manual: true, percent: 30, autoCancel: true, deadlineMinutes: 60 },
+      metadata: { guestDeposit: true, manual: true, percent: 30, autoCancel: true, deadlineMinutes: 30 },
     })
-    expect(Math.abs(payment.expiresAt!.getTime() - later(60).getTime())).toBeLessThan(60_000)
+    expect(Math.abs(payment.expiresAt!.getTime() - later(30).getTime())).toBeLessThan(60_000)
     expect(qrParts(payment.qrCodeUrl!)).toEqual({ guid: 'A000000727', bin: '970436', account: '0123456789', amount: '541000', content: booking.bookingCode })
 
-    // The guest's email points to the deposit page, worded for a transfer.
-    const confirmation = await mail('booking_confirmation', booking.id)
-    expect(confirmation.html).toContain(`/dat-coc/${depositToken(booking.id)}`)
-    expect(confirmation.html).toContain('Xem mã QR đặt cọc')
-    expect(confirmation.html).not.toContain('PayOS')
+    // No booking email is sent before the manual deposit is confirmed by staff.
+    expect(await prisma.emailOutbox.count({ where: { kind: 'booking_confirmation', refId: booking.id } })).toBe(0)
 
     // The deposit page reads the hotel's account, not PayOS.
     const view = await loadDepositView(property.subdomain, depositToken(booking.id))
@@ -429,7 +426,7 @@ describe('how the hotel takes deposits (deposit mode)', () => {
 
     await connectPayos(property.id)
     expect((await put(property.id, { mode: 'PAYOS' })).status).toBe(200)
-    expect(await onlineDepositOf(property.id)).toEqual({ percent: 30, deadlineMinutes: 0, mode: 'PAYOS' })
+    expect(await onlineDepositOf(property.id)).toEqual({ percent: 30, deadlineMinutes: 30, mode: 'PAYOS' })
     expect((await put(property.id, { mode: 'MANUAL' })).status).toBe(200)
     expect(await onlineDepositOf(property.id)).toMatchObject({ mode: 'MANUAL' })
     expect(await prisma.activityLog.count({ where: { action: 'DEPOSIT_MODE_CHANGED', entityId: property.id } })).toBe(2)
@@ -449,7 +446,7 @@ describe('how the hotel takes deposits (deposit mode)', () => {
     // The site learns the mode, nothing about the account.
     await prisma.bankAccount.updateMany({ where: { propertyId: property.id }, data: { isActive: true } })
     const { data } = await (await publicProperty(new NextRequest(`http://digistay.test/api/properties/public?subdomain=${property.subdomain}`))).json()
-    expect(data.onlineDeposit).toEqual({ percent: 30, deadlineMinutes: 0, mode: 'MANUAL' })
+    expect(data.onlineDeposit).toEqual({ percent: 30, deadlineMinutes: 30, mode: 'MANUAL' })
     expect(data).not.toHaveProperty('bankAccounts')
     expect(data).not.toHaveProperty('depositAccountId')
   })

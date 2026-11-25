@@ -204,12 +204,12 @@ describe("the hotel's deposit deadline", () => {
     const { property, room } = await hotel({ connected: true, percent: 30, deadlineMinutes: 60, totalRooms: 1 })
     const { body } = await book(property.id, room.id)
     const payment = await depositOf(body.data.bookingCode)
-    // The link ends at the deadline.
-    expect(Math.abs(payment.expiresAt!.getTime() - later(60).getTime())).toBeLessThan(60_000)
+    // The link is capped at the 30-minute maximum deadline.
+    expect(Math.abs(payment.expiresAt!.getTime() - later(30).getTime())).toBeLessThan(60_000)
     expect((await book(property.id, room.id, 'khac@example.com')).status).toBe(409) // held meanwhile
 
-    expect(await expireUnpaidDeposits(later(30))).toMatchObject({ checked: 0 })
-    expect(await expireUnpaidDeposits(later(61))).toEqual({ checked: 1, cancelled: 1, paid: 0, errors: 0 })
+    expect(await expireUnpaidDeposits(later(15))).toMatchObject({ checked: 0 })
+    expect(await expireUnpaidDeposits(later(31))).toEqual({ checked: 1, cancelled: 1, paid: 0, errors: 0 })
 
     const booking = await prisma.booking.findUniqueOrThrow({ where: { bookingCode: body.data.bookingCode } })
     expect(booking.status).toBe('CANCELLED')
@@ -263,11 +263,8 @@ describe("the hotel's deposit deadline", () => {
     expect(await depositEmails('khach@example.com')).toBe(1)
   })
 
-  it('left alone: no deadline, a link PayOS refused (the hotel will call), a booking the hotel confirmed', async () => {
-    const none = await hotel({ connected: true, percent: 30 })
-    const a = await book(none.property.id, none.room.id, 'a@example.com')
-
-    const timed = await hotel({ connected: true, percent: 30, deadlineMinutes: 60 })
+  it('left alone: a link PayOS refused (the hotel will call), a booking the hotel confirmed', async () => {
+    const timed = await hotel({ connected: true, percent: 30, deadlineMinutes: 30 })
     const confirmed = await book(timed.property.id, timed.room.id, 'b@example.com')
     await prisma.booking.update({ where: { bookingCode: confirmed.body.data.bookingCode }, data: { status: 'CONFIRMED' } })
     fake.accounts.delete(ACCOUNT.clientId)
@@ -275,7 +272,7 @@ describe("the hotel's deposit deadline", () => {
     expect(failed.body.data.depositUnavailable).toBe(true)
 
     expect(await expireUnpaidDeposits(later(3 * 24 * 60))).toMatchObject({ checked: 0 })
-    for (const { body } of [a, confirmed, failed]) {
+    for (const { body } of [confirmed, failed]) {
       expect((await prisma.booking.findUniqueOrThrow({ where: { bookingCode: body.data.bookingCode } })).status).not.toBe('CANCELLED')
     }
   })
@@ -386,44 +383,27 @@ describe('paying the deposit again', () => {
     expect((await bookingOf(body.data.bookingCode)).status).toBe('CONFIRMED')
   })
 
-  it("the booking email links to the deposit page when the hotel takes one, and not otherwise", async () => {
-    const message = async (bookingCode: string) => {
-      const booking = await bookingOf(bookingCode)
-      const row = await prisma.emailOutbox.findFirstOrThrow({ where: { kind: 'booking_confirmation', refId: booking.id } })
-      return { booking, mail: JSON.parse(decryptSecret(row.message, secretContext('email_outbox', row.id, 'message'))) }
-    }
-    const withDeposit = await hotel({ connected: true, percent: 30, deadlineMinutes: 60 })
-    const a = await message((await book(withDeposit.property.id, withDeposit.room.id)).body.data.bookingCode)
-    expect(a.mail.html).toContain(`/dat-coc/${depositToken(a.booking.id)}`)
-    expect(a.mail.text).toContain('Đặt cọc 541.000')
+  it("no booking email is sent before payment when the hotel takes an online deposit; hotels without one email right away", async () => {
+    const withDeposit = await hotel({ connected: true, percent: 30, deadlineMinutes: 30 })
+    const aBooking = await bookingOf((await book(withDeposit.property.id, withDeposit.room.id)).body.data.bookingCode)
+    expect(await prisma.emailOutbox.count({ where: { kind: 'booking_confirmation', refId: aBooking.id } })).toBe(0)
 
     const without = await hotel({ connected: false, percent: 30 })
-    const b = await message((await book(without.property.id, without.room.id, 'n@example.com')).body.data.bookingCode)
-    expect(b.mail.html).not.toContain('/dat-coc/')
-
-    // No secret to sign the link: the booking still goes through, the email without it.
-    const secret = process.env.NEXTAUTH_SECRET
-    delete process.env.NEXTAUTH_SECRET
-    try {
-      const unsigned = await book(withDeposit.property.id, withDeposit.room.id, 'u@example.com')
-      expect(unsigned.status).toBe(200)
-      expect((await message(unsigned.body.data.bookingCode)).mail.html).not.toContain('/dat-coc/')
-    } finally {
-      process.env.NEXTAUTH_SECRET = secret
-    }
+    const bBooking = await bookingOf((await book(without.property.id, without.room.id, 'n@example.com')).body.data.bookingCode)
+    const row = await prisma.emailOutbox.findFirstOrThrow({ where: { kind: 'booking_confirmation', refId: bBooking.id } })
+    const bMail = JSON.parse(decryptSecret(row.message, secretContext('email_outbox', row.id, 'message')))
+    expect(bMail.html).not.toContain('/dat-coc/')
   })
 
-  it("an English guest's emails are in English and link to the English deposit page", async () => {
+  it("an English guest's emails are in English once paid or expired", async () => {
     const mail = async (kind: string, bookingId: string) => {
       const row = await prisma.emailOutbox.findFirstOrThrow({ where: { kind, refId: bookingId } })
       return JSON.parse(decryptSecret(row.message, secretContext('email_outbox', row.id, 'message'))) as { subject: string; text: string; html: string }
     }
-    const { property, room } = await hotel({ connected: true, percent: 30, deadlineMinutes: 60, totalRooms: 2 })
+    const { property, room } = await hotel({ connected: true, percent: 30, deadlineMinutes: 30, totalRooms: 2 })
 
     const paid = await bookingOf((await book(property.id, room.id, 'paid@example.com', { locale: 'en' })).body.data.bookingCode)
-    const confirmation = await mail('booking_confirmation', paid.id)
-    expect(confirmation.html).toContain(`http://digistay.test/${property.subdomain}/en/dat-coc/${depositToken(paid.id)}`)
-    expect(confirmation.text).toMatch(/Pay the 541,000 ₫ deposit by \d+ \w{3}, \d\d:\d\d GMT\+7: /)
+    expect(await prisma.emailOutbox.count({ where: { kind: 'booking_confirmation', refId: paid.id } })).toBe(0)
     const payment = await depositOf(paid.bookingCode)
     expect((await postWebhook(property.id, await fake.pay(Number(payment.gatewayOrderCode)))).status).toBe(200)
     const received = await mail('deposit_received', paid.id)
@@ -432,7 +412,7 @@ describe('paying the deposit again', () => {
     expect(received.text).toContain('To pay at check-in: 1,262,000 ₫')
 
     const unpaid = await bookingOf((await book(property.id, room.id, 'late@example.com', { locale: 'en' })).body.data.bookingCode)
-    expect(await expireUnpaidDeposits(later(61))).toMatchObject({ cancelled: 1 })
+    expect(await expireUnpaidDeposits(later(31))).toMatchObject({ cancelled: 1 })
     expect((await mail('deposit_expired', unpaid.id)).subject).toBe(`Booking #${unpaid.bookingCode} was cancelled: the deposit didn't arrive`)
   })
 
@@ -452,7 +432,7 @@ describe('what the hotel and the site see', () => {
     await prisma.policy.update({ where: { propertyId: property.id }, data: { cancellationHours: 48, cancellationPolicy: 'Hoàn cọc khi huỷ trước 48 giờ.' } })
     const res = await publicProperty(new NextRequest(`http://digistay.test/api/properties/public?subdomain=${property.subdomain}`))
     const { data } = await res.json()
-    expect(data.onlineDeposit).toEqual({ percent: 25, deadlineMinutes: 0, mode: 'PAYOS' })
+    expect(data.onlineDeposit).toEqual({ percent: 25, deadlineMinutes: 30, mode: 'PAYOS' })
     expect(data.policy).toEqual({ cancellationHours: 48, cancellationPolicy: 'Hoàn cọc khi huỷ trước 48 giờ.', childrenAllowed: true })
     expect(data).not.toHaveProperty('payos')
 
@@ -476,8 +456,8 @@ describe('what the hotel and the site see', () => {
       patchPolicy(new NextRequest('http://x', { method: 'PATCH', body: JSON.stringify({ depositDeadlineMinutes: value }) }), {
         params: Promise.resolve({ id: property.id }),
       })
-    for (const ok of [0, 30, 1440]) expect((await deadline(ok)).status).toBe(200)
-    for (const bad of [10, 1441, -5]) expect((await deadline(bad)).status).toBe(400)
+    for (const ok of [5, 15, 30]) expect((await deadline(ok)).status).toBe(200)
+    for (const bad of [0, 4, 31, 1440, -5]) expect((await deadline(bad)).status).toBe(400)
     const got = await (await getPolicy(new NextRequest('http://x'), { params: Promise.resolve({ id: property.id }) })).json()
     expect(got.data).toMatchObject({ onlineDepositPercent: 30, payosConnected: false })
   })
