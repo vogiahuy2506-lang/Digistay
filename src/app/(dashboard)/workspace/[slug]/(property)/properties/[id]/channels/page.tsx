@@ -438,7 +438,7 @@ export default function OtaChannelsPage() {
               <span>{t('card.twoWay')}</span>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                 <Zap className="w-3 h-3" />
-                AES-256 Encrypted
+                Mã hóa bảo mật AES-256
               </span>
             </h4>
             <p className="text-xs text-muted leading-relaxed">
@@ -511,7 +511,7 @@ export default function OtaChannelsPage() {
                             {meta.name}
                           </h3>
                           <span className="text-[11px] text-muted">
-                            ~{meta.defaultCommissionRate}% commission
+                            Phí hoa hồng ~{meta.defaultCommissionRate}%
                           </span>
                         </div>
                       </div>

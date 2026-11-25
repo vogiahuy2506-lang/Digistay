@@ -827,6 +827,7 @@ export default function WebsiteBuilderPage() {
   const [showHistory, setShowHistory] = React.useState(false)
   const [propertyData, setPropertyData] = React.useState<any>(null)
   const [isPublishing, setIsPublishing] = React.useState(false)
+  const [isUnpublishModalOpen, setIsUnpublishModalOpen] = React.useState(false)
   const savedSnapshotRef = React.useRef<string | null>(null)
   // What the site shows (real rooms, prices, photos...), for the preview.
   const [site, setSite] = React.useState<PreviewSite | null>(null)
@@ -1457,21 +1458,34 @@ export default function WebsiteBuilderPage() {
             <span className="hidden xl:inline">{isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ'}</span>
           </Button>
 
-          {/* Quick Publish Toggle */}
+          {/* Quick Publish Toggle Button */}
           <button
             type="button"
-            onClick={() => settings && handleTogglePublish(!settings.isPublished)}
+            onClick={() => {
+              if (!settings) return
+              if (settings.isPublished) {
+                setIsUnpublishModalOpen(true)
+              } else {
+                void handleTogglePublish(true)
+              }
+            }}
             disabled={isPublishing || !settings}
-            title={settings?.isPublished ? 'Bấm để hủy xuất bản' : 'Bấm để xuất bản website'}
+            title={settings?.isPublished ? 'Bấm để tắt công khai website' : 'Bấm để xuất bản website cho du khách'}
             className={cn(
-              'h-8 px-2.5 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-all',
+              'h-8 px-3 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer',
               settings?.isPublished
                 ? 'border-ok/30 bg-ok-soft text-ok hover:bg-ok-soft/80'
-                : 'border-line bg-raised text-muted hover:text-fg'
+                : 'border-acc/40 bg-acc text-on-acc hover:bg-acc/90 font-bold'
             )}
           >
-            <span className={cn('w-2 h-2 rounded-full', settings?.isPublished ? 'bg-ok' : 'bg-muted/60')} />
-            <span className="hidden md:inline">{settings?.isPublished ? 'Đã xuất bản' : 'Bản nháp'}</span>
+            {isPublishing ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : settings?.isPublished ? (
+              <Check className="w-3.5 h-3.5 text-ok" />
+            ) : (
+              <Globe className="w-3.5 h-3.5 text-on-acc" />
+            )}
+            <span>{settings?.isPublished ? 'Đã xuất bản' : 'Xuất bản website'}</span>
           </button>
 
           {/* Save Button */}
@@ -1977,6 +1991,28 @@ export default function WebsiteBuilderPage() {
 
         {/* Canvas & Preview */}
         <div className="rounded-2xl border border-line bg-panel p-2 sm:p-3 lg:min-h-0 lg:flex lg:flex-col relative">
+          {/* Orange Warning Banner if Unpublished */}
+          {!settings?.isPublished && (
+            <div className="mb-3 p-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-900 dark:text-amber-200 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
+              <div className="flex items-center gap-2.5 text-xs font-medium">
+                <span className="text-base" aria-hidden="true">⚠️</span>
+                <span>
+                  <strong>Website chưa xuất bản:</strong> Khách truy cập vào tên miền hiện thấy thông báo chưa công khai hoặc bản xem trước.
+                </span>
+              </div>
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={() => void handleTogglePublish(true)}
+                disabled={isPublishing}
+                className="h-7 px-3 text-xs bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-xs shrink-0 gap-1.5"
+              >
+                {isPublishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Globe className="w-3.5 h-3.5" />}
+                <span>Xuất bản website ngay</span>
+              </Button>
+            </div>
+          )}
+
           {/* Browser Frame */}
           <div className={cn('flex flex-col overflow-hidden rounded-xl border border-line bg-panel shadow-xs lg:min-h-0 lg:flex-1 relative', previewMode === 'mobile' && 'mx-auto w-full max-w-[400px]')}>
             {/* Browser Header Bar */}
@@ -2270,6 +2306,40 @@ export default function WebsiteBuilderPage() {
           }}
         />
       )}
+
+      {/* Modal: Xác nhận tắt công khai website */}
+      <Modal isOpen={isUnpublishModalOpen} onClose={() => setIsUnpublishModalOpen(false)} size="md">
+        <ModalHeader onClose={() => setIsUnpublishModalOpen(false)}>
+          <div className="flex items-center gap-2 text-warn">
+            <AlertCircle className="w-5 h-5 shrink-0" />
+            <span className="font-bold text-fg">Xác nhận tắt công khai website?</span>
+          </div>
+        </ModalHeader>
+        <ModalBody className="text-sm text-fg/80 space-y-2">
+          <p>
+            Khi tắt công khai, du khách sẽ không thể truy cập vào website của bạn và không thể đặt phòng trực tuyến được nữa.
+          </p>
+          <p className="text-xs text-muted">
+            Website sẽ chuyển về chế độ <strong>Bản nháp</strong> (chỉ bạn và nhân viên khách sạn đăng nhập mới có thể xem trước).
+          </p>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="outline" onClick={() => setIsUnpublishModalOpen(false)} disabled={isPublishing}>
+            Giữ công khai
+          </Button>
+          <Button
+            variant="danger"
+            onClick={async () => {
+              setIsUnpublishModalOpen(false)
+              await handleTogglePublish(false)
+            }}
+            disabled={isPublishing}
+          >
+            {isPublishing ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
+            Xác nhận tắt công khai
+          </Button>
+        </ModalFooter>
+      </Modal>
     </PageContainer>
   )
 }

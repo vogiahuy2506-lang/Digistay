@@ -79,6 +79,20 @@ describe('Hotel AI Chatbot Grounding & Logic', () => {
     expect(res.reply).toContain('Family Suite')
   })
 
+  it('accurately answers questions about air conditioning and deposit policy', () => {
+    const depositKb: HotelKnowledgeBase = { ...MOCK_KB, depositPercent: 30, depositDeadlineMinutes: 45 }
+    const resDeposit = generateHeuristicChatReply(depositKb, 'Đặt phòng phải cọc bao nhiêu?', false)
+    expect(resDeposit.reply).toContain('30%')
+    expect(resDeposit.reply).toContain('45 phút')
+
+    const resAc = generateHeuristicChatReply(MOCK_KB, 'Phòng có điều hoà không?', false)
+    expect(resAc.reply).toContain('điều hòa')
+
+    const resCombined = generateHeuristicChatReply(depositKb, 'phòng có điều hoà không, đặt phòng phải cọc bao nhiêu', false)
+    expect(resCombined.reply).toContain('điều hòa')
+    expect(resCombined.reply).toContain('30%')
+  })
+
   it('provides polite fallback when online booking is not available or paused', () => {
     const pausedReply = `Dạ hiện khách sạn chưa mở nhận đặt trực tuyến qua website, quý khách vui lòng liên hệ hotline: **${MOCK_KB.phone}** để được phục vụ chu đáo nhất ạ!`
     expect(pausedReply).toContain('chưa mở nhận đặt trực tuyến qua website')

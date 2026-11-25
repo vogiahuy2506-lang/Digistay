@@ -23,7 +23,7 @@ const STATE_TONE: Record<State, 'success' | 'warning' | 'danger' | 'secondary'> 
   grace: 'warning',
   locked: 'danger',
 }
-const LIMITS: LimitKey[] = ['properties', 'rooms', 'staff', 'invoices']
+const LIMITS: LimitKey[] = ['properties', 'rooms', 'staff']
 
 /**
  * The workspace's Digistay plan (owner and admins): its state and usage,
@@ -208,7 +208,6 @@ export default function BillingPage() {
                 </p>
                 <ul className="mt-5 grid gap-1.5 border-t border-line/70 pt-4 text-small text-fg/80">
                   <li>{t('planLimits', { properties: p.properties, rooms: p.rooms, staff: p.staff })}</li>
-                  <li>{p.invoices > 0 ? t('planInvoices', { count: p.invoices }) : t('planNoInvoices')}</li>
                 </ul>
                 <Button
                   className="mt-6 w-full"

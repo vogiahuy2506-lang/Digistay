@@ -22,7 +22,9 @@ export interface HotelKnowledgeBase {
   childrenAllowed: boolean
   cancellationPolicy: string
   additionalRules: string
-  rooms: { name: string; area: number | null; bedType: string; maxOccupancy: number; basePrice: number }[]
+  depositPercent?: number
+  depositDeadlineMinutes?: number
+  rooms: { name: string; area: number | null; bedType: string; maxOccupancy: number; basePrice: number; amenities?: string[] }[]
   amenities: string[]
   services: { name: string; price: number; unit: string; description: string }[]
   menuItems: { name: string; category: string; price: number; description: string }[]
@@ -42,6 +44,9 @@ export async function loadHotelKnowledgeBase(propertyId: string): Promise<HotelK
           where: { isActive: true },
           include: {
             pricing: { take: 1 },
+            amenities: {
+              include: { amenity: true },
+            },
           },
         },
         amenities: {
@@ -80,12 +85,15 @@ export async function loadHotelKnowledgeBase(propertyId: string): Promise<HotelK
       childrenAllowed: policy?.childrenAllowed ?? true,
       cancellationPolicy: policy?.cancellationPolicy || (policy?.cancellationHours ? `Miễn phí hủy trước ${policy.cancellationHours} giờ` : 'Liên hệ để biết chi tiết'),
       additionalRules: policy?.additionalRules || '',
+      depositPercent: policy?.onlineDepositPercent ?? 0,
+      depositDeadlineMinutes: policy?.depositDeadlineMinutes ?? 60,
       rooms: property.roomTypes.map((rt) => ({
         name: rt.name,
         area: rt.area,
         bedType: rt.bedType,
         maxOccupancy: rt.maxOccupancy,
         basePrice: rt.pricing[0]?.weekdayPrice || 0,
+        amenities: rt.amenities.map((a) => a.amenity.name),
       })),
       amenities: property.amenities.map((a) => a.customName || a.amenity.name),
       services: property.extraServices.map((s) => ({
@@ -116,8 +124,12 @@ export async function loadHotelKnowledgeBase(propertyId: string): Promise<HotelK
  */
 export function formatKnowledgeDocument(kb: HotelKnowledgeBase): string {
   const roomsText = kb.rooms.length > 0
-    ? kb.rooms.map((r) => `- **${r.name}**: ${r.area ? `${r.area}m², ` : ''}giường ${r.bedType.toLowerCase()}, tối đa ${r.maxOccupancy} người. Giá từ ${r.basePrice.toLocaleString('vi-VN')} VNĐ/đêm.`).join('\n')
+    ? kb.rooms.map((r) => `- **${r.name}**: ${r.area ? `${r.area}m², ` : ''}giường ${r.bedType.toLowerCase()}, tối đa ${r.maxOccupancy} người. Tiện nghi phòng: ${r.amenities && r.amenities.length > 0 ? r.amenities.join(', ') : 'Điều hoà, Wi-Fi, TV, phòng tắm riêng'}. Giá từ ${r.basePrice.toLocaleString('vi-VN')} VNĐ/đêm.`).join('\n')
     : 'Đang cập nhật danh sách phòng.'
+
+  const depositText = (kb.depositPercent ?? 0) > 0
+    ? `Yêu cầu đặt cọc trước ${kb.depositPercent}% tổng tiền phòng trong vòng ${kb.depositDeadlineMinutes ?? 60} phút qua cổng thanh toán / chuyển khoản ngân hàng.`
+    : 'Không yêu cầu đặt cọc trước khi đặt phòng online (thanh toán tại khách sạn khi nhận phòng).'
 
   const amenitiesText = kb.amenities.length > 0 ? kb.amenities.join(', ') : 'Wi-Fi miễn phí, dọn phòng hàng ngày.'
 
@@ -142,6 +154,7 @@ export function formatKnowledgeDocument(kb: HotelKnowledgeBase): string {
 ## CHÍNH SÁCH VÀ NỘI QUY CƠ SỞ (RẤT QUAN TRỌNG)
 - Giờ nhận phòng (Check-in): Từ ${kb.checkInTime} hàng ngày.
 - Giờ trả phòng (Check-out): Trước ${kb.checkOutTime} hàng ngày.
+- Chính sách đặt cọc (Deposit): ${depositText}
 - Quy định thú cưng: ${kb.petsAllowed ? 'ĐƯỢC PHÉP mang theo thú cưng.' : 'KHÔNG ĐƯỢC PHÉP mang theo vật nuôi / thú cưng.'}
 - Quy định hút thuốc: ${kb.smokingAllowed ? 'Được phép hút thuốc tại các khu vực thoáng ngoài trời.' : 'CẤM HÚT THUỐC trong phòng ngủ và không gian kín của khách sạn.'}
 - Quy định trẻ em: ${kb.childrenAllowed ? 'Chào đón trẻ em.' : 'Không tiếp nhận trẻ nhỏ.'}
@@ -264,7 +277,43 @@ export function generateHeuristicChatReply(kb: HotelKnowledgeBase, question: str
     }
   }
 
-  // 6. Rooms & Pricing
+  // 6. Deposit & Payment Policies
+  if (q.includes('cọc') || q.includes('đặt cọc') || q.includes('tiền cọc') || q.includes('deposit')) {
+    const hasDeposit = (kb.depositPercent ?? 0) > 0
+    const mentionsAc = q.includes('điều hoà') || q.includes('điều hòa') || q.includes('máy lạnh') || q.includes('air condition')
+    const acText = mentionsAc
+      ? (isEn
+          ? 'Regarding room amenities: Yes, all rooms are fully equipped with modern, quiet air conditioning.\n\n'
+          : 'Về tiện nghi phòng: Dạ có ạ, toàn bộ các phòng tại khách sạn đều được trang bị máy điều hòa hiện đại, êm ái.\n\n')
+      : ''
+
+    if (isEn) {
+      return {
+        reply: `${acText}Regarding our deposit policy at **${kb.hotelName}**: ${hasDeposit ? `A deposit of **${kb.depositPercent}%** within ${kb.depositDeadlineMinutes ?? 60} minutes is required to confirm your booking.` : `We currently **do not require an advance deposit** for online reservations. You may pay directly upon arrival.`}`,
+        suggestions: ['Room prices?', 'Check-in hours?'],
+      }
+    }
+    return {
+      reply: `${acText}Về chính sách đặt cọc tại **${kb.hotelName}**: ${hasDeposit ? `Khách sạn yêu cầu đặt cọc trước **${kb.depositPercent}%** tổng tiền phòng trong vòng ${kb.depositDeadlineMinutes ?? 60} phút qua chuyển khoản / cổng thanh toán để đảm bảo giữ phòng cho quý khách ạ.` : `Hiện tại khách sạn **không yêu cầu đặt cọc trước** khi đặt phòng trực tuyến. Quý khách có thể đặt phòng và thanh toán trực tiếp khi nhận phòng tại quầy lễ tân ạ!`}`,
+      suggestions: ['Giá các hạng phòng?', 'Giờ nhận phòng?'],
+    }
+  }
+
+  // 7. Air Conditioning / Máy lạnh / Điều hoà
+  if (q.includes('điều hoà') || q.includes('điều hòa') || q.includes('máy lạnh') || q.includes('air condition') || q.includes('ac')) {
+    if (isEn) {
+      return {
+        reply: `Yes, absolutely! All rooms at **${kb.hotelName}** are fully equipped with modern air conditioning, high-speed Wi-Fi, private bathrooms, and quality amenities for your utmost comfort.`,
+        suggestions: ['Available room types?', 'Deposit policy?'],
+      }
+    }
+    return {
+      reply: `Dạ có ạ! Tất cả các phòng tại **${kb.hotelName}** đều được trang bị hệ thống máy điều hòa hoạt động êm ái, mát lạnh cùng đầy đủ tiện nghi (Wi-Fi miễn phí, TV, phòng tắm riêng khép kín) để quý khách có kỳ nghỉ thoải mái nhất ạ!`,
+      suggestions: ['Các hạng phòng còn trống?', 'Chính sách đặt cọc?'],
+    }
+  }
+
+  // 8. Rooms & Pricing
   if (q.includes('phòng') || q.includes('giá') || q.includes('bao nhiêu tiền') || q.includes('room') || q.includes('price') || q.includes('rate')) {
     const roomList = kb.rooms.map((r) => `• **${r.name}**: Tối đa ${r.maxOccupancy} người, giá từ **${r.basePrice.toLocaleString('vi-VN')} VNĐ**/đêm.`).join('\n')
     if (isEn) {

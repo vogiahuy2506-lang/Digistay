@@ -46,7 +46,7 @@ export const LEGAL_DOCS: Record<string, { vi: LegalDoc; en: LegalDoc }> = {
         {
           heading: '2. Phạm vi dịch vụ cung cấp',
           paragraphs: [
-            'Digistay là giải pháp phần mềm quản trị dạng dịch vụ (SaaS) chuyên sâu cho ngành khách sạn và lưu trú, bao gồm: công cụ tạo website đặt phòng trực tiếp (direct booking), hệ thống quản trị lễ tân (nhận/trả phòng, lịch phòng), kết nối đối soát cổng thanh toán trực tuyến VietQR PayOS, và tích hợp phát hành hóa đơn điện tử GTGT qua Mắt Bão.',
+            'Digistay là giải pháp phần mềm quản trị dạng dịch vụ (SaaS) chuyên sâu cho ngành khách sạn và lưu trú, bao gồm: công cụ tạo website đặt phòng trực tiếp (direct booking), hệ thống quản trị lễ tân (nhận/trả phòng, lịch phòng), quản lý kênh bán phòng OTA hai chiều qua chuẩn iCal, và kết nối đối soát cổng thanh toán trực tuyến VietQR PayOS.',
             'DIGISO duy trì hạ tầng đám mây, cập nhật phần mềm định kỳ, bảo mật cơ sở dữ liệu và hỗ trợ kỹ thuật trực tuyến trong suốt thời hạn gói dịch vụ có hiệu lực.',
           ],
         },
@@ -123,7 +123,7 @@ export const LEGAL_DOCS: Record<string, { vi: LegalDoc; en: LegalDoc }> = {
       slug: 'privacy',
       title: 'Chính sách bảo mật thông tin',
       shortTitle: 'Chính sách bảo mật',
-      summary: 'Cam kết của DIGISO trong việc thu thập, lưu trữ, sử dụng và bảo vệ dữ liệu cá nhân theo quy định của pháp luật Việt Nam và Nghị định 13/2023/NĐ-CP.',
+      summary: 'Cam kết của DIGISO trong việc thu thập, lưu trữ, sử dụng và bảo vệ dữ liệu cá nhân theo Luật Bảo vệ dữ liệu cá nhân năm 2025 (có hiệu lực từ ngày 01/01/2026).',
       category: 'legal',
       lastUpdated: '11/11/2026',
       sections: [
@@ -161,7 +161,7 @@ export const LEGAL_DOCS: Record<string, { vi: LegalDoc; en: LegalDoc }> = {
       slug: 'privacy',
       title: 'Privacy Policy',
       shortTitle: 'Privacy Policy',
-      summary: 'DIGISO commitments regarding the collection, processing, and protection of personal data in compliance with Decree 13/2023/ND-CP.',
+      summary: 'DIGISO commitments regarding the collection, processing, and protection of personal data in compliance with the Personal Data Protection Law 2025 (effective January 1, 2026).',
       category: 'legal',
       lastUpdated: 'November 11, 2026',
       sections: [
@@ -202,7 +202,7 @@ export const LEGAL_DOCS: Record<string, { vi: LegalDoc; en: LegalDoc }> = {
       slug: 'public-dpa',
       title: 'Thỏa thuận xử lý dữ liệu cá nhân (DPA)',
       shortTitle: 'Thỏa thuận xử lý dữ liệu',
-      summary: 'Quy chuẩn pháp lý phân định vai trò giữa Khách sạn (Bên kiểm soát dữ liệu) và DIGISO (Bên xử lý dữ liệu) theo Nghị định 13/2023/NĐ-CP.',
+      summary: 'Quy chuẩn pháp lý phân định vai trò giữa Khách sạn (Bên kiểm soát dữ liệu) và DIGISO (Bên xử lý dữ liệu) theo Luật Bảo vệ dữ liệu cá nhân năm 2025 (có hiệu lực từ ngày 01/01/2026).',
       category: 'legal',
       lastUpdated: '11/11/2026',
       sections: [
@@ -233,7 +233,7 @@ export const LEGAL_DOCS: Record<string, { vi: LegalDoc; en: LegalDoc }> = {
       slug: 'public-dpa',
       title: 'Data Processing Agreement (DPA)',
       shortTitle: 'Data Processing Agreement',
-      summary: 'Contractual terms establishing roles between the Hotel (Data Controller) and DIGISO (Data Processor) under Decree 13/2023/ND-CP.',
+      summary: 'Contractual terms establishing roles between the Hotel (Data Controller) and DIGISO (Data Processor) under the Personal Data Protection Law 2025 (effective January 1, 2026).',
       category: 'legal',
       lastUpdated: 'November 11, 2026',
       sections: [
@@ -397,7 +397,7 @@ export const LEGAL_DOCS: Record<string, { vi: LegalDoc; en: LegalDoc }> = {
       slug: 'payment-policy',
       title: 'Chính sách về thanh toán',
       shortTitle: 'Chính sách thanh toán',
-      summary: 'Quy định phương thức thanh toán chuyển khoản VietQR PayOS, quy trình đối soát tự động và phát hành hóa đơn điện tử GTGT.',
+      summary: 'Quy định phương thức thanh toán chuyển khoản VietQR PayOS, quy trình đối soát tự động và biên nhận thanh toán điện tử.',
       category: 'policy',
       lastUpdated: '11/11/2026',
       sections: [
@@ -415,9 +415,9 @@ export const LEGAL_DOCS: Record<string, { vi: LegalDoc; en: LegalDoc }> = {
           ],
         },
         {
-          heading: '3. Xuất hóa đơn điện tử GTGT',
+          heading: '3. Hoá đơn và biên nhận thanh toán',
           paragraphs: [
-            'DIGISO tự động phát hành hóa đơn GTGT điện tử hợp pháp qua nhà cung cấp giải pháp Mắt Bão và gửi vào email của khách hàng sau khi thanh toán thành công.',
+            'DIGISO cung cấp biên nhận thanh toán điện tử qua email cho khách hàng ngay sau khi giao dịch đăng ký hoặc gia hạn gói cước hoàn tất thành công. Quý khách có nhu cầu xuất hoá đơn GTGT cho doanh nghiệp vui lòng liên hệ bộ phận kế toán DIGISO qua email hotro@digistay.vn để được hỗ trợ.',
           ],
         },
       ],
@@ -426,7 +426,7 @@ export const LEGAL_DOCS: Record<string, { vi: LegalDoc; en: LegalDoc }> = {
       slug: 'payment-policy',
       title: 'Payment Policy',
       shortTitle: 'Payment Policy',
-      summary: 'Guidelines for VietQR PayOS bank transfers, automated real-time reconciliation, and legal electronic VAT invoicing.',
+      summary: 'Guidelines for VietQR PayOS bank transfers, automated real-time reconciliation, and electronic payment receipts.',
       category: 'policy',
       lastUpdated: 'November 11, 2026',
       sections: [
@@ -444,9 +444,9 @@ export const LEGAL_DOCS: Record<string, { vi: LegalDoc; en: LegalDoc }> = {
           ],
         },
         {
-          heading: '3. Official VAT Electronic Invoices',
+          heading: '3. Invoices and Payment Receipts',
           paragraphs: [
-            'DIGISO automatically issues an official VAT e-invoice via Mat Bao, delivered directly to the buyer email address.',
+            'DIGISO provides electronic payment receipts via email immediately after successful registration or renewal. Customers requiring official VAT company invoices may contact our accounting department at hotro@digistay.vn.',
           ],
         },
       ],
@@ -663,7 +663,7 @@ export const LEGAL_DOCS: Record<string, { vi: LegalDoc; en: LegalDoc }> = {
           heading: '1. Quyền và nghĩa vụ của DIGISO',
           paragraphs: [
             '• Quyền: Có quyền tạm ngừng cung cấp dịch vụ đối với tài khoản có hành vi vi phạm pháp luật, gian lận thanh toán hoặc phát tán mã độc. Có quyền điều chỉnh và nâng cấp tính năng phần mềm để hoàn thiện sản phẩm.',
-            '• Nghĩa vụ: Đảm bảo phần mềm hoạt động ổn định, bảo mật an toàn thông tin khách hàng, xuất hóa đơn GTGT đầy đủ và cung cấp kênh hỗ trợ kỹ thuật trực tuyến trong giờ làm việc quy định.',
+            '• Nghĩa vụ: Đảm bảo phần mềm hoạt động ổn định, bảo mật an toàn thông tin khách hàng, cung cấp biên nhận thanh toán và kênh hỗ trợ kỹ thuật trực tuyến trong giờ làm việc quy định.',
           ],
         },
         {
@@ -687,7 +687,7 @@ export const LEGAL_DOCS: Record<string, { vi: LegalDoc; en: LegalDoc }> = {
           heading: '1. Rights and Obligations of DIGISO',
           paragraphs: [
             '• Rights: Reserve the right to suspend accounts engaged in unlawful acts, payment fraud, or system abuse. Reserve the right to deploy updates and improvements.',
-            '• Obligations: Maintain platform stability, ensure data security, provide official VAT e-invoices, and maintain technical support during business hours.',
+            '• Obligations: Maintain platform stability, ensure data security, provide payment receipts, and maintain technical support during business hours.',
           ],
         },
         {

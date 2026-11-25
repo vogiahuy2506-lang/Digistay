@@ -10,7 +10,6 @@ import { SiteLink, useIsPreview, useSiteHref } from '../_components/site-base'
 import { Container } from '../_components/site-ui'
 import { StaySummary, type SummaryLine } from '../_components/booking/StaySummary'
 import { apiError } from '@/lib/i18n/api-errors'
-import { useTaxLookup } from '@/lib/hooks/use-tax-lookup'
 import { HOLD_HEADER, browserHoldSession } from '@/lib/bookings/hold-session'
 import { trackMarketingEvent } from '@/components/marketing/MarketingTracking'
 import type { DepositMode } from '@/lib/payments/deposit-mode'
@@ -104,14 +103,6 @@ export function BookingForm({
   const isPreview = useIsPreview()
   const [guest, setGuest] = React.useState({ name: '', phone: '', email: '', note: '' })
   const [qty, setQty] = React.useState<Record<string, number>>({})
-  const [invoice, setInvoice] = React.useState(false)
-  const [vat, setVat] = React.useState({ company: '', taxCode: '', address: '', email: '' })
-  // The tax register fills the company's name and address in (still editable).
-  const taxLookup = useTaxLookup(
-    vat.taxCode,
-    (company) => setVat((v) => ({ ...v, company: company.name, address: company.address || v.address })),
-    invoice,
-  )
   const [tried, setTried] = React.useState(false)
   const [sending, setSending] = React.useState(false)
   const [problem, setProblem] = React.useState<'roomGone' | 'badDates' | 'tooMany' | 'failed' | string | null>(null)
@@ -279,9 +270,6 @@ export function BookingForm({
     name: guest.name.trim().length < 2 && tf('nameError'),
     phone: (!/^[0-9+().\s-]*$/.test(guest.phone.trim()) || digits < 8 || digits > 15) && tf('phoneError'),
     email: !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(guest.email.trim()) && tf('emailError'),
-    company: invoice && !vat.company.trim() && tf('companyError'),
-    taxCode: invoice && !/^\d{10}(\d{3})?$/.test(vat.taxCode.replace(/[\s-]/g, '')) && tf('taxCodeError'),
-    vatEmail: invoice && !!vat.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(vat.email.trim()) && tf('emailError'),
   }
   const shown = (k: keyof typeof errors) => (tried ? errors[k] : false)
   const errorCount = Object.values(errors).filter(Boolean).length
@@ -309,12 +297,6 @@ export function BookingForm({
           numChildren: stay.children,
           services: chosen.map((c) => ({ serviceId: c.service.id, quantity: c.quantity })),
           ...(holdId.current && { holdId: holdId.current }),
-          ...(invoice && {
-            vatCompany: vat.company.trim(),
-            vatTaxCode: vat.taxCode.replace(/[\s-]/g, ''),
-            vatAddress: vat.address.trim() || undefined,
-            vatEmail: vat.email.trim(),
-          }),
           ...(coupon && { couponCode: coupon.code }),
           // The guest's emails come in the page's language.
           locale: lang,
@@ -612,67 +594,9 @@ export function BookingForm({
               tf('servicesLead', { hotel: property.name }),
             )}
 
-          {section(
-            services.length > 0 ? '03' : '02',
-            tf('invoice'),
-            <div className="flex flex-col gap-5">
-              <label className="flex cursor-pointer items-center gap-3 text-[15px] text-fg">
-                <input type="checkbox" checked={invoice} onChange={(e) => setInvoice(e.target.checked)} disabled={sending} className="h-5 w-5 accent-ink" />
-                <span>
-                  {tf('invoiceAsk')} <span className="text-muted">{tf('optional')}</span>
-                </span>
-              </label>
-              {invoice && (
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <div className="sm:col-span-2">
-                    {field('bk-tax', tf('taxCode'), shown('taxCode'), (
-                      <div className="flex gap-2">
-                        <input id="bk-tax" inputMode="numeric" value={vat.taxCode} onChange={(e) => setVat((v) => ({ ...v, taxCode: e.target.value }))} placeholder={tf('taxCodeHint')} aria-describedby="bk-tax-lookup" className={inputClass(!!shown('taxCode'))} />
-                        <button
-                          type="button"
-                          onClick={taxLookup.retry}
-                          disabled={!taxLookup.code || taxLookup.state.status === 'loading' || sending}
-                          className="h-12 shrink-0 border border-line bg-panel px-4 text-[14px] font-medium text-fg hover:border-ink disabled:opacity-50"
-                        >
-                          {tf('taxLookup')}
-                        </button>
-                      </div>
-                    ))}
-                    <p id="bk-tax-lookup" aria-live="polite" className={cn('mt-2 text-[13px] leading-[1.5]', taxLookup.state.status === 'found' && !taxLookup.state.company.active ? 'text-err' : 'text-muted')}>
-                      {taxLookup.state.status === 'loading'
-                        ? tf('taxLookupLoading')
-                        : taxLookup.state.status === 'found'
-                          ? taxLookup.state.company.active
-                            ? tf('taxLookupFound')
-                            : `⚠ ${tf('taxLookupInactive', { status: taxLookup.state.company.status ?? '' })}`
-                          : taxLookup.state.status === 'missing'
-                            ? tf('taxLookupMissing')
-                            : taxLookup.state.status === 'failed'
-                              ? tf('taxLookupFailed')
-                              : !shown('taxCode') && tf('taxLookupHint')}
-                    </p>
-                  </div>
-                  <div className="sm:col-span-2">
-                    {field('bk-company', tf('company'), shown('company'), (
-                      <input id="bk-company" value={vat.company} onChange={(e) => setVat((v) => ({ ...v, company: e.target.value }))} autoComplete="organization" className={inputClass(!!shown('company'))} />
-                    ))}
-                  </div>
-                  <div className="sm:col-span-2">
-                    {field('bk-vat-address', tf('companyAddress'), false, (
-                      <input id="bk-vat-address" value={vat.address} onChange={(e) => setVat((v) => ({ ...v, address: e.target.value }))} autoComplete="street-address" className={inputClass()} />
-                    ))}
-                  </div>
-                  {field('bk-vat-email', tf('invoiceEmail'), shown('vatEmail'), (
-                    <input id="bk-vat-email" type="email" value={vat.email} onChange={(e) => setVat((v) => ({ ...v, email: e.target.value }))} className={inputClass(!!shown('vatEmail'))} />
-                  ))}
-                </div>
-              )}
-            </div>,
-          )}
-
           {policies.length > 0 &&
             section(
-              services.length > 0 ? '04' : '03',
+              services.length > 0 ? '03' : '02',
               tf('policies'),
               <dl className="border-t border-line">
                 {policies.map((p) => (
@@ -685,7 +609,7 @@ export function BookingForm({
             )}
 
           {section(
-            String(2 + (services.length > 0 ? 1 : 0) + (policies.length > 0 ? 1 : 0) + 1).padStart(2, '0'),
+            String(1 + (services.length > 0 ? 1 : 0) + (policies.length > 0 ? 1 : 0) + 1).padStart(2, '0'),
             tf('couponTitle'),
             <div className="flex flex-col gap-3">
               {coupon ? (
@@ -753,7 +677,7 @@ export function BookingForm({
           )}
 
           {section(
-            String(2 + (services.length > 0 ? 1 : 0) + (policies.length > 0 ? 1 : 0) + 2).padStart(2, '0'),
+            String(1 + (services.length > 0 ? 1 : 0) + (policies.length > 0 ? 1 : 0) + 2).padStart(2, '0'),
             tf('payment'),
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 sm:gap-6 border border-ink bg-panel p-5 ring-1 ring-ink lg:p-6">
               <div className="flex gap-4">

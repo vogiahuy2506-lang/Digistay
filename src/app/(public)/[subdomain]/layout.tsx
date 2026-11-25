@@ -6,6 +6,7 @@ import { SITE_BASE_HEADER, SITE_PATH_HEADER, siteBasePath, siteHref } from '@/li
 import { loadExitIntentCoupon, loadSiteFrame, siteFrameStyle, siteSeoTexts } from '@/lib/public-site/site-frame'
 import { loadVisibleSite } from '@/lib/public-site/visibility'
 import { OG_LOCALES } from '@/lib/seo/page-metadata'
+import { PublishNowButton } from './_components/PublishNowButton'
 import { SiteBaseProvider, type SiteHotel } from './_components/site-base'
 import { ExitIntentModal } from './_components/ExitIntentModal'
 import { StickyBookingBar } from './_components/StickyBookingBar'
@@ -107,9 +108,12 @@ export default async function HotelSiteLayout({
       style={style}
     >
       {preview && (
-        <div className="sticky top-0 z-50 bg-amber-500 text-amber-950 px-4 py-2.5 text-center text-xs font-semibold shadow-md flex items-center justify-center gap-2">
-          <span aria-hidden="true">⚠️</span>
-          <span>Bản xem trước: Website đang ở chế độ xem trước (Chưa công khai cho du khách). Không nhận đơn đặt phòng thật.</span>
+        <div className="sticky top-0 z-50 bg-amber-500 text-amber-950 px-4 py-2 text-center text-xs font-semibold shadow-md flex flex-wrap items-center justify-center gap-3">
+          <div className="flex items-center gap-2">
+            <span aria-hidden="true">⚠️</span>
+            <span>Bản xem trước: Website đang ở chế độ xem trước (Chưa công khai cho du khách). Không nhận đơn đặt phòng thật.</span>
+          </div>
+          <PublishNowButton propertyId={frame?.id} />
         </div>
       )}
       <SiteBaseProvider locale={locale} bases={bases} switchHref={switchHref} theme={theme} hotel={hotel} preview={preview}>

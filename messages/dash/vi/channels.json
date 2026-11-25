@@ -62,7 +62,7 @@
     "noRoomTypes": "Chưa có hạng phòng nào trong cơ sở này. Vui lòng tạo hạng phòng trước."
   },
   "logs": {
-    "title": "Nhật ký đồng bộ gần nhất (2-Way Sync Logs)",
+    "title": "Nhật ký đồng bộ 2 chiều gần nhất",
     "description": "Theo dõi các lượt đẩy giá phòng trống (Outbound) và tiếp nhận đơn đặt/hủy từ kênh (Inbound Webhook).",
     "colDirection": "Chiều",
     "colChannel": "Kênh",

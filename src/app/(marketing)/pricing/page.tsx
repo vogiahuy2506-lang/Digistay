@@ -195,10 +195,6 @@ export default async function PricingPage() {
           label: isEn ? 'Excel / CSV raw data export' : 'Xuất dữ liệu báo cáo ra file Excel / CSV',
           cells: fullPlans.map((p) => p.allowDataExport),
         },
-        {
-          label: isEn ? 'Mắt Bão VAT e-invoices included' : 'Hóa đơn điện tử GTGT Mắt Bão tặng kèm',
-          cells: fullPlans.map((p) => (p.invoices === 0 ? (isEn ? 'None' : 'Không có') : `${p.invoices} ${isEn ? 'invoices/mo' : 'hóa đơn/tháng'}`)),
-        },
       ],
     },
     {
@@ -284,11 +280,6 @@ export default async function PricingPage() {
                     label: isEn ? 'AI & Chatbot' : 'Trí tuệ nhân tạo AI',
                     value: `${p.monthlyAiContentQuota} ${isEn ? 'AI articles/mo' : 'bài/tháng'}${p.hasChatbotAi ? ` · Chatbot` : ''}`,
                     muted: false,
-                  },
-                  {
-                    label: isEn ? 'VAT E-invoices' : 'HĐĐT Mắt Bão',
-                    value: p.invoices === 0 ? (isEn ? 'Not included' : 'Không tặng kèm') : `${p.invoices} ${isEn ? 'invoices/mo' : 'hóa đơn/tháng'}`,
-                    muted: p.invoices === 0,
                   },
                 ],
               }

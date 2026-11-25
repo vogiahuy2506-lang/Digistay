@@ -293,6 +293,13 @@ export function parseStayDatesFromText(text: string, referenceDate = new Date())
     if (count >= 0 && count <= 10) children = count
   }
 
+  // If the query is an inquiry about amenities or deposit/policies without explicit dates,
+  // do not treat as an availability search so the chatbot can answer the questions directly.
+  const isAmenityOrPolicyInquiry = /điều ho[àa]|máy lạnh|air condition|wifi|tiện ích|tiện nghi|hồ bơi|bể bơi|ăn sáng|cọc|đặt cọc|deposit|hủy phòng|cancel|check-in mấy giờ|nhận phòng mấy giờ|thú cưng|pet/i.test(q)
+  if (isAmenityOrPolicyInquiry && !hasExplicitDates) {
+    isRoomInquiry = false
+  }
+
   return {
     isRoomInquiry,
     checkIn: formatVnDate(checkInDate),

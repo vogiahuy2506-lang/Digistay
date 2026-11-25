@@ -160,7 +160,7 @@
       "summaryWithChildren": "{nights} · {adults} · {children}"
     },
     "bookingBox": {
-      "weekend": "Saturday, Sunday: {price}/night",
+      "weekend": "Friday, Saturday: {price}/night",
       "maxOccupancy": "This room takes up to {adults}.",
       "maxOccupancyWithChildren": "This room takes up to {adults} + {children}.",
       "extraGuests": "Extra guests",

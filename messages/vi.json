@@ -160,7 +160,7 @@
       "summaryWithChildren": "{nights} · {adults} · {children}"
     },
     "bookingBox": {
-      "weekend": "Thứ Bảy, Chủ nhật: {price}/đêm",
+      "weekend": "Thứ Sáu, Thứ Bảy: {price}/đêm",
       "maxOccupancy": "Phòng này tối đa {adults}.",
       "maxOccupancyWithChildren": "Phòng này tối đa {adults} + {children}.",
       "extraGuests": "Phụ thu khách thêm",

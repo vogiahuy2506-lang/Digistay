@@ -38,6 +38,13 @@ describe('Animate UI components', () => {
     expect(container.textContent).toContain('5')
   })
 
+  it('renders only the active value in SlidingNumber without phantom reel digits', () => {
+    act(() => {
+      root.render(<SlidingNumber value="10" />)
+    })
+    expect(container.textContent).toBe('10')
+  })
+
   it('renders animated Tabs and switches active tabs', () => {
     function TabsDemo() {
       const [tab, setTab] = React.useState('all')
