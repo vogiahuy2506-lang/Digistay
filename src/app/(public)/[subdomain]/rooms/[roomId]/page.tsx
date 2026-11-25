@@ -347,9 +347,9 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
             {t('bookingBox.book')}
           </a>
         ) : (
-          <a href="/#lien-he" className="inline-flex h-11 items-center rounded-ctl border border-line bg-panel px-6 text-small font-medium text-fg">
+          <SiteLink path="/#lien-he" className="inline-flex h-11 items-center rounded-ctl border border-line bg-panel px-6 text-small font-medium text-fg">
             {t('room.contact')}
-          </a>
+          </SiteLink>
         )}
       </div>
     </>

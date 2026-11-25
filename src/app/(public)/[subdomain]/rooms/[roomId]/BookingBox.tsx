@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Minus, Plus } from 'lucide-react'
 import { formatVnd } from '@/lib/bookings/display'
 import { quoteStay, type Rates } from '@/lib/pricing/quote'
-import { useIsPreview, useSiteHref } from '../../_components/site-base'
+import { SiteLink, useIsPreview, useSiteHref } from '../../_components/site-base'
 import { useLocale, useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 
@@ -171,12 +171,12 @@ export function BookingBox({ rates, baseOccupancy, maxAdults, maxChildren, check
       )}
 
       {priced == null || (priced.weekdayPrice === 0 && priced.weekendPrice === 0) ? (
-        <a
-          href="/#lien-he"
+        <SiteLink
+          path="/#lien-he"
           className="mt-6 flex h-[52px] w-full items-center justify-center rounded-ctl text-body font-medium transition-colors bg-ink text-on-ink hover:bg-ink/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc focus-visible:ring-offset-2"
         >
           {t('room.contact')}
-        </a>
+        </SiteLink>
       ) : (
         <button
           type="button"
