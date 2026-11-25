@@ -170,20 +170,29 @@ export function BookingBox({ rates, baseOccupancy, maxAdults, maxChildren, check
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={book}
-        disabled={!validDates || isPreview}
-        title={isPreview ? 'Chưa xuất bản, không nhận đơn' : undefined}
-        className={cn(
-          "mt-6 flex h-[52px] w-full items-center justify-center rounded-ctl text-body font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-acc focus-visible:ring-offset-2",
-          isPreview
-            ? "bg-fg/10 text-muted cursor-not-allowed border border-line"
-            : "bg-ink text-on-ink hover:bg-ink/90 disabled:opacity-60"
-        )}
-      >
-        {isPreview ? 'Chưa xuất bản, không nhận đơn' : t('bookingBox.book')}
-      </button>
+      {priced == null || (priced.weekdayPrice === 0 && priced.weekendPrice === 0) ? (
+        <a
+          href="/#lien-he"
+          className="mt-6 flex h-[52px] w-full items-center justify-center rounded-ctl text-body font-medium transition-colors bg-ink text-on-ink hover:bg-ink/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-acc focus-visible:ring-offset-2"
+        >
+          {t('room.contact')}
+        </a>
+      ) : (
+        <button
+          type="button"
+          onClick={book}
+          disabled={!validDates || isPreview}
+          title={isPreview ? 'Chưa xuất bản, không nhận đơn' : undefined}
+          className={cn(
+            "mt-6 flex h-[52px] w-full items-center justify-center rounded-ctl text-body font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-acc focus-visible:ring-offset-2",
+            isPreview
+              ? "bg-fg/10 text-muted cursor-not-allowed border border-line"
+              : "bg-ink text-on-ink hover:bg-ink/90 disabled:opacity-60"
+          )}
+        >
+          {isPreview ? 'Chưa xuất bản, không nhận đơn' : t('bookingBox.book')}
+        </button>
+      )}
       <p className="mt-3 text-center text-xs text-muted">
         {isPreview ? 'Website đang ở chế độ xem trước nội bộ' : t('bookingBox.noChargeYet')}
       </p>

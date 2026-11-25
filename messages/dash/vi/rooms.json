@@ -79,6 +79,7 @@
         "range": "Vui lòng kiểm tra lại các số: người lớn 1–10, trẻ em 0–10, số khách 1–20, số phòng từ 1.",
         "baseOverMax": "Số khách tiêu chuẩn (đã gồm trong giá) không được lớn hơn sức chứa tối đa của phòng.",
         "adultsOverMax": "Số người lớn tối đa không được lớn hơn sức chứa tối đa của phòng.",
+        "singleWithChildren": "Phòng có sức chứa tối đa 1 người thì số trẻ em tối đa phải là 0.",
         "maxOverAdultsAndChildren": "Sức chứa tối đa không được lớn hơn tổng (người lớn tối đa + trẻ em tối đa). Vui lòng tăng số người lớn/trẻ em hoặc giảm sức chứa tối đa."
       }
     },

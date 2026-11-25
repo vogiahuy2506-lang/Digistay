@@ -14,11 +14,12 @@ export interface Capacity {
 }
 
 /** What is wrong, or null: the guests priced in the base are within the maximum, and the maximum can be reached. */
-export type CapacityProblem = 'baseOverMax' | 'adultsOverMax' | 'maxOverAdultsAndChildren'
+export type CapacityProblem = 'baseOverMax' | 'adultsOverMax' | 'maxOverAdultsAndChildren' | 'singleWithChildren'
 
 export function capacityProblem(c: Capacity): CapacityProblem | null {
   if (c.baseOccupancy > c.maxOccupancy) return 'baseOverMax'
   if (c.maxAdults > c.maxOccupancy) return 'adultsOverMax'
+  if (c.maxOccupancy === 1 && c.maxChildren > 0) return 'singleWithChildren'
   if (c.maxOccupancy > c.maxAdults + c.maxChildren) return 'maxOverAdultsAndChildren'
   return null
 }

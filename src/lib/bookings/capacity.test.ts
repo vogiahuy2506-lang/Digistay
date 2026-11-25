@@ -18,6 +18,10 @@ describe('capacityProblem', () => {
     expect(capacityProblem({ ...room, maxAdults: 4, maxChildren: 0 })).toBe('adultsOverMax')
   })
 
+  it('refuses a single room allowing children', () => {
+    expect(capacityProblem({ baseOccupancy: 1, maxOccupancy: 1, maxAdults: 1, maxChildren: 1 })).toBe('singleWithChildren')
+  })
+
   it('refuses a maximum the adults and children cannot reach (the old form saved 2 adults, 0 children for "up to 4")', () => {
     expect(capacityProblem({ baseOccupancy: 2, maxOccupancy: 4, maxAdults: 2, maxChildren: 0 })).toBe('maxOverAdultsAndChildren')
   })

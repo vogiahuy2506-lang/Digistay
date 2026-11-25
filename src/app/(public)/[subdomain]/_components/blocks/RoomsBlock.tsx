@@ -60,11 +60,17 @@ export function RoomsBlock({ block, roomTypes, property }: Props) {
               <div className="flex flex-1 flex-col p-5 sm:p-6">
                 <div className="flex items-start justify-between gap-3">
                   <h3 className="text-lg font-semibold text-fg group-hover:text-acc transition-colors">{room.name}</h3>
-                  {showPrice && room.fromPrice != null && room.fromPrice > 0 && (
-                    <p className="shrink-0 text-right text-base font-bold tabular-nums text-fg">
-                      {formatVnd(room.fromPrice, locale)}
-                      <span className="block text-xs font-normal text-muted">{t('units.perNight')}</span>
-                    </p>
+                  {showPrice && (
+                    room.fromPrice != null && room.fromPrice > 0 ? (
+                      <p className="shrink-0 text-right text-base font-bold tabular-nums text-fg">
+                        {formatVnd(room.fromPrice, locale)}
+                        <span className="block text-xs font-normal text-muted">{t('units.perNight')}</span>
+                      </p>
+                    ) : (
+                      <p className="shrink-0 text-right text-small font-medium text-muted">
+                        {t('room.contactForPrice')}
+                      </p>
+                    )
                   )}
                 </div>
                 <p className="mt-1.5 text-small text-muted">{roomMeta(room, t)}</p>
@@ -88,13 +94,22 @@ export function RoomsBlock({ block, roomTypes, property }: Props) {
                       <SiteLink path={`/rooms/${room.id}`} className="text-small font-medium text-acc hover:underline">
                         {t('room.details')}
                       </SiteLink>
-                      {/* The room page's booking box: dates, guests, then the booking form. */}
-                      <SiteLink
-                        path={`/rooms/${room.id}#dat-phong`}
-                        className="inline-flex h-10 shrink-0 items-center rounded-ctl bg-ink px-4 text-small font-medium text-on-ink shadow-sm transition-all hover:bg-ink/90 hover:shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
-                      >
-                        {t('room.bookNow')}
-                      </SiteLink>
+                      {/* If room has 0đ or no price, show "Liên hệ" button linking to contact section instead of "Đặt ngay" */}
+                      {room.fromPrice != null && room.fromPrice > 0 ? (
+                        <SiteLink
+                          path={`/rooms/${room.id}#dat-phong`}
+                          className="inline-flex h-10 shrink-0 items-center rounded-ctl bg-ink px-4 text-small font-medium text-on-ink shadow-sm transition-all hover:bg-ink/90 hover:shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
+                        >
+                          {t('room.bookNow')}
+                        </SiteLink>
+                      ) : (
+                        <SiteLink
+                          path="/#lien-he"
+                          className="inline-flex h-10 shrink-0 items-center rounded-ctl border border-line bg-panel px-4 text-small font-medium text-fg shadow-sm transition-all hover:border-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-acc"
+                        >
+                          {t('room.contact')}
+                        </SiteLink>
+                      )}
                     </div>
                   </div>
                 )}

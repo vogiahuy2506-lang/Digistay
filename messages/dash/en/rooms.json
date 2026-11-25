@@ -79,6 +79,7 @@
         "range": "Please check the numbers: adults 1–10, children 0–10, guests 1–20, rooms from 1.",
         "baseOverMax": "Standard guests included in the rate cannot exceed maximum room capacity.",
         "adultsOverMax": "Maximum adults cannot exceed maximum room capacity.",
+        "singleWithChildren": "A 1-guest room cannot allow children.",
         "maxOverAdultsAndChildren": "Maximum capacity cannot exceed the sum of maximum adults and children. Please adjust numbers accordingly."
       }
     },

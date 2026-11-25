@@ -342,9 +342,15 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
             t('room.contactForPrice')
           )}
         </p>
-        <a href="#dat-phong" className="inline-flex h-11 items-center rounded-ctl bg-ink px-6 text-small font-medium text-on-ink">
-          {t('bookingBox.book')}
-        </a>
+        {rates && (rates.weekdayPrice > 0 || rates.weekendPrice > 0) ? (
+          <a href="#dat-phong" className="inline-flex h-11 items-center rounded-ctl bg-ink px-6 text-small font-medium text-on-ink">
+            {t('bookingBox.book')}
+          </a>
+        ) : (
+          <a href="/#lien-he" className="inline-flex h-11 items-center rounded-ctl border border-line bg-panel px-6 text-small font-medium text-fg">
+            {t('room.contact')}
+          </a>
+        )}
       </div>
     </>
   )

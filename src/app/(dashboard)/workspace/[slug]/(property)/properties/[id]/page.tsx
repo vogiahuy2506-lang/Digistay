@@ -223,6 +223,22 @@ export default function PropertyDetailPage() {
     }
   }
 
+  const incompleteRooms = React.useMemo(() => {
+    if (!property?.roomTypes) return []
+    return property.roomTypes
+      .map((rt) => {
+        const issues: string[] = []
+        const hasPrice = rt.pricing && rt.pricing.length > 0 && (rt.pricing[0].weekdayPrice > 0 || rt.pricing[0].weekendPrice > 0)
+        const hasPhotos = rt.images && rt.images.length > 0
+        const hasRooms = rt.totalRooms > 0
+        if (!hasPrice) issues.push('chưa cài đặt giá phòng')
+        if (!hasPhotos) issues.push('chưa có ảnh minh họa')
+        if (!hasRooms) issues.push('chưa tạo số phòng vật lý')
+        return issues.length > 0 ? { ...rt, issues } : null
+      })
+      .filter(Boolean) as { id: string; name: string; issues: string[] }[]
+  }, [property])
+
   if (isLoading) {
     return (
       <PageContainer>
@@ -307,6 +323,33 @@ export default function PropertyDetailPage() {
         </div>
       </div>
       <EditPropertyModal property={property} isOpen={showEditModal} onClose={() => setShowEditModal(false)} onSaved={fetchProperty} />
+
+      {/* Warning banner for incomplete room types (missing price, photo, or physical rooms) */}
+      {incompleteRooms.length > 0 && (
+        <div className="mb-6 p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200">
+          <div className="flex items-start gap-3">
+            <span className="text-xl shrink-0" aria-hidden="true">⚠️</span>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-sm">Cảnh báo hạng phòng chưa hoàn tất cấu hình:</h3>
+              <ul className="mt-1.5 space-y-1 text-xs">
+                {incompleteRooms.map((r) => (
+                  <li key={r.id}>
+                    • <strong>{r.name}</strong>: {r.issues.join(', ')}. Khách vào website sẽ không thể đặt trực tuyến loại phòng này.
+                  </li>
+                ))}
+              </ul>
+              <Button
+                size="sm"
+                variant="outline"
+                className="mt-3 text-xs bg-panel hover:bg-amber-500/20"
+                onClick={() => router.push(routes.propertyRooms(slug, propertyId))}
+              >
+                Cập nhật cấu hình hạng phòng ngay &gt;
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Today at the hotel first (the figures the calendar page had), then the property. */}
       <TodayOverview slug={slug} propertyId={propertyId} />
