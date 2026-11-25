@@ -84,6 +84,7 @@ interface RoomType {
   planLockedAt?: string | null
   images: { id: string; url: string; isPrimary: boolean }[]
   amenities: { amenity: Amenity }[]
+  pricing?: { weekdayPrice: number; weekendPrice: number }[]
 }
 
 interface Amenity {
@@ -225,10 +226,11 @@ export default function PropertyDetailPage() {
 
   const incompleteRooms = React.useMemo(() => {
     if (!property?.roomTypes) return []
+    const propertyHasBasePrice = property.pricing && property.pricing.length > 0 && (property.pricing[0].weekdayPrice > 0 || property.pricing[0].weekendPrice > 0)
     return property.roomTypes
       .map((rt) => {
         const issues: string[] = []
-        const hasPrice = rt.pricing && rt.pricing.length > 0 && (rt.pricing[0].weekdayPrice > 0 || rt.pricing[0].weekendPrice > 0)
+        const hasPrice = (rt.pricing && rt.pricing.length > 0 && (rt.pricing[0].weekdayPrice > 0 || rt.pricing[0].weekendPrice > 0)) || propertyHasBasePrice
         const hasPhotos = rt.images && rt.images.length > 0
         const hasRooms = rt.totalRooms > 0
         if (!hasPrice) issues.push('chưa cài đặt giá phòng')
