@@ -20,7 +20,8 @@
     "rateMarkup": "Rate markup: {rate}x",
     "directApi": "Direct API Integration",
     "twoWay": "Two-Way Automated",
-    "webhookSupport": "Instant Webhook"
+    "webhookSupport": "Instant Webhook",
+    "encrypted": "Encrypted connection"
   },
   "modal": {
     "title": "Configure {channel} Connection",

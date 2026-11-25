@@ -373,8 +373,10 @@ export default function ServicesPage() {
 
   const serviceCategoryLabel = (category: string | null) =>
     t(`serviceCategory.${SERVICE_CATEGORIES.includes(category as ServiceCategory) ? (category as ServiceCategory) : 'other'}`)
-  const amenityCategoryLabel = (category: string) =>
-    AMENITY_CATEGORIES.includes(category as AmenityCategory) ? t(`amenityCategory.${category as AmenityCategory}`) : category
+  const amenityCategoryLabel = (category: string) => {
+    const key = category.toLowerCase().trim() as AmenityCategory
+    return AMENITY_CATEGORIES.includes(key) ? t(`amenityCategory.${key}`) : category
+  }
 
   const groupedAmenities = React.useMemo(() => {
     const filtered = amenities.filter(a =>

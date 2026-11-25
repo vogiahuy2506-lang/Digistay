@@ -264,7 +264,7 @@
   "Hình thức thanh toán không hợp lệ": "Invalid payment method",
   "Hóa đơn đã phát hành không huỷ ở đây được: cần lập thông báo sai sót (mẫu 04/SS-HĐĐT) trên cổng Mắt Bão.": "Issued invoices can't be cancelled here: file an error notice (form 04/SS-HĐĐT) on the Mắt Bão portal.",
   "Hóa đơn đã được hủy": "The invoice has already been cancelled",
-  "Hạn đặt cọc từ 15 phút tới 24 giờ, hoặc 0 (không tự huỷ)": "The deposit deadline must be 15 minutes to 24 hours, or 0 (no auto-cancel)",
+  "Hạn đặt cọc tối đa 30 phút (từ 5 đến 30 phút)": "The deposit deadline must be between 5 and 30 minutes",
   "Hạng phòng này chưa có giá: đặt giá ở trang Hạng phòng trước khi nhận đặt phòng": "This room type has no price yet: set a price on the Room types page before taking bookings",
   "Hạng phòng này hiện không nhận đặt phòng online. Vui lòng chọn hạng phòng khác hoặc liên hệ trực tiếp khách sạn.": "This room type cannot be booked online at the moment. Please choose another room type or contact the hotel directly.",
   "Hạng phòng này nhận tối đa {0} người lớn, {1} trẻ em": "This room type allows up to {0} adults and {1} children",

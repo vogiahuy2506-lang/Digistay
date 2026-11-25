@@ -438,7 +438,7 @@ export default function OtaChannelsPage() {
               <span>{t('card.twoWay')}</span>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                 <Zap className="w-3 h-3" />
-                Mã hóa bảo mật AES-256
+                {t('card.encrypted')}
               </span>
             </h4>
             <p className="text-xs text-muted leading-relaxed">
@@ -622,7 +622,7 @@ export default function OtaChannelsPage() {
               </h3>
             </div>
             <p className="text-xs text-muted">
-              Đồng bộ lịch 2 chiều tự động: Xuất lịch Digistay sang sàn và nhập lịch từ sàn về Digistay. Khóa phòng tức thì, chống trùng phòng (overbooking) 100%.
+              Đồng bộ lịch 2 chiều tự động: Xuất lịch Digistay sang sàn và nhập lịch từ sàn về Digistay. Khóa phòng tức thì, chống trùng phòng 100%.
             </p>
           </div>
 

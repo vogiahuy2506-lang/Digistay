@@ -18,9 +18,10 @@
     "lastSync": "Đồng bộ lần cuối:",
     "never": "Chưa đồng bộ",
     "rateMarkup": "Hệ số giá: {rate}x",
-    "directApi": "Kết nối API trực tiếp",
+    "directApi": "Kết nối trực tiếp",
     "twoWay": "Hai chiều tự động",
-    "webhookSupport": "Webhook tức thì"
+    "webhookSupport": "Nhận đơn tức thì",
+    "encrypted": "Bảo mật dữ liệu kết nối"
   },
   "modal": {
     "title": "Cấu hình kết nối {channel}",
@@ -63,15 +64,15 @@
   },
   "logs": {
     "title": "Nhật ký đồng bộ 2 chiều gần nhất",
-    "description": "Theo dõi các lượt đẩy giá phòng trống (Outbound) và tiếp nhận đơn đặt/hủy từ kênh (Inbound Webhook).",
+    "description": "Theo dõi các lượt cập nhật giá, phòng trống lên kênh và nhận đơn đặt/hủy từ kênh về hệ thống.",
     "colDirection": "Chiều",
     "colChannel": "Kênh",
     "colAction": "Thao tác",
     "colStatus": "Trạng thái",
     "colDetails": "Chi tiết kết quả",
     "colTime": "Thời gian",
-    "outbound": "Gửi đi (Outbound)",
-    "inbound": "Nhận về (Inbound)",
+    "outbound": "Đẩy lên kênh",
+    "inbound": "Nhận về hệ thống",
     "success": "Thành công",
     "failed": "Thất bại",
     "empty": "Chưa có lượt đồng bộ nào được ghi nhận."
