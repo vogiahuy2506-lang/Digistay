@@ -149,8 +149,10 @@ async function queueBookingEmails(tx: Tx, booking: BookingForEmails, deposit?: N
   // not confirmed yet. The emails must not say the room is booked.
   const fromWebsite = booking.createdById === null
   const ids: string[] = []
-  // A walk-in booked by staff may have no email.
-  if (booking.guestEmail) ids.push(
+  // Only email the guest at booking time when no online payment/deposit is required.
+  // When online payment is required, the guest is emailed ONLY after payment succeeds.
+  const requiresOnlinePayment = Boolean(deposit)
+  if (booking.guestEmail && !requiresOnlinePayment) ids.push(
     await queueBookingConfirmation(
       {
         guestName: booking.guestName,

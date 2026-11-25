@@ -36,9 +36,7 @@ export async function processAbandonedBookings(options?: {
         contains: '@',
       },
       payments: {
-        none: {
-          status: 'PAID',
-        },
+        none: {},
       },
     },
     include: {

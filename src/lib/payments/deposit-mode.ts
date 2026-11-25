@@ -97,6 +97,9 @@ export async function depositSettingsOf(propertyId: string, db: Db = prisma): Pr
     vnpayConnected: Boolean(property.vnpay),
     accountId: depositAccountIdFrom(property),
     percent: property.policy?.onlineDepositPercent ?? 0,
-    deadlineMinutes: property.policy?.depositDeadlineMinutes ?? 0,
+    deadlineMinutes:
+      (property.policy?.depositDeadlineMinutes ?? 0) > 0
+        ? Math.min(property.policy!.depositDeadlineMinutes, 30)
+        : 30,
   }
 }

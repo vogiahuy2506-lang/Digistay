@@ -33,11 +33,11 @@ const policySchema = z.object({
     .unknown()
     .refine((v) => v === null || isValidTiers(v), 'Mức phí trả muộn không hợp lệ: giờ tăng dần, mỗi mức 0–300%')
     .optional(),
-  /** minutes to pay that deposit before the booking is cancelled; 0 = never */
+  /** minutes to pay that deposit before the booking is cancelled (max 30 minutes) */
   depositDeadlineMinutes: z.coerce
     .number()
     .int()
-    .refine((m) => m === 0 || (m >= 15 && m <= 1440), 'Hạn đặt cọc từ 15 phút tới 24 giờ, hoặc 0 (không tự huỷ)')
+    .refine((m) => m >= 5 && m <= 30, 'Hạn đặt cọc tối đa 30 phút (từ 5 đến 30 phút)')
     .optional(),
   translations: translationsInput(['cancellationPolicy', 'additionalRules'], 2000),
 })

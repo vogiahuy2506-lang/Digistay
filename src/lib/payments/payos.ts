@@ -30,8 +30,8 @@ import { sendAfterResponse } from '@/lib/email/outbox'
 import { lockBooking, syncBookingPayments } from './booking-payments'
 import { queueGuestDepositReceived } from './deposit-received'
 
-/** How long a guest can pay a link: staff often send it by Zalo. */
-export const PAYOS_LINK_TTL_SEC = 24 * 60 * 60
+/** How long a guest can pay a link (max 30 minutes). */
+export const PAYOS_LINK_TTL_SEC = 30 * 60
 /** PayOS limit; longer descriptions are rejected. */
 const DESCRIPTION_MAX = 25
 const ORDER_CODE_MIN = 10 ** 15

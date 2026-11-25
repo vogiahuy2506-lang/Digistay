@@ -35,8 +35,8 @@ interface Policy {
 
 const TIER_INPUT = 'h-10 px-3 border border-line rounded-ctl bg-raised text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acc'
 
-/** How long a guest has to pay the online deposit (Policy.depositDeadlineMinutes), in minutes; 0: never cancel. */
-const DEADLINE_OPTIONS = [0, 30, 60, 120, 360, 720, 1440]
+/** How long a guest has to pay the online deposit (Policy.depositDeadlineMinutes), in minutes (max 30). */
+const DEADLINE_OPTIONS = [15, 30]
 
 export default function PoliciesPage() {
   const t = useTranslations('dash.rooms.policies')

@@ -86,7 +86,7 @@ export async function loadHotelKnowledgeBase(propertyId: string): Promise<HotelK
       cancellationPolicy: policy?.cancellationPolicy || (policy?.cancellationHours ? `Miễn phí hủy trước ${policy.cancellationHours} giờ` : 'Liên hệ để biết chi tiết'),
       additionalRules: policy?.additionalRules || '',
       depositPercent: policy?.onlineDepositPercent ?? 0,
-      depositDeadlineMinutes: policy?.depositDeadlineMinutes ?? 60,
+      depositDeadlineMinutes: Math.min(policy?.depositDeadlineMinutes || 30, 30),
       rooms: property.roomTypes.map((rt) => ({
         name: rt.name,
         area: rt.area,

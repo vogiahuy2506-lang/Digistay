@@ -39,9 +39,11 @@ import { DEPOSIT_MODE_SELECT, effectiveDepositMode, type DepositMode, type Depos
 import { MANUAL_DEPOSIT_WHERE, createManualDeposit } from './manual-deposit'
 import { cancelPayosPayment, createPayosLink, newOrderCode, PayosError, syncPayosPayment } from './payos'
 
+export const MAX_DEPOSIT_DEADLINE_MINUTES = 30
+
 export interface OnlineDeposit {
   percent: number
-  /** 0: no deadline */
+  /** Max 30 minutes */
   deadlineMinutes: number
   /** PAYOS: a PayOS link; MANUAL: a VietQR to the hotel's account, confirmed by staff */
   mode: DepositMode
@@ -71,7 +73,9 @@ export function onlineDepositFrom(
   if (!(percent > 0) || !property) return null
   const mode = effectiveDepositMode(property)
   if (!mode) return null
-  return { percent, deadlineMinutes: property.policy?.depositDeadlineMinutes ?? 0, mode }
+  const rawMinutes = property.policy?.depositDeadlineMinutes ?? 0
+  const deadlineMinutes = rawMinutes > 0 ? Math.min(rawMinutes, MAX_DEPOSIT_DEADLINE_MINUTES) : MAX_DEPOSIT_DEADLINE_MINUTES
+  return { percent, deadlineMinutes, mode }
 }
 
 /**
