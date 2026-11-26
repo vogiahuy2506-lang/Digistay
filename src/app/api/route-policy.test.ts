@@ -58,6 +58,8 @@ const PUBLIC_HANDLERS: Record<string, string> = {
     'scheduled job: checkCronSecret (CRON_SECRET header, timing-safe), and nginx does not route /api/internal/',
   'POST /api/internal/email-outbox':
     'scheduled job: checkCronSecret (CRON_SECRET header, timing-safe), and nginx does not route /api/internal/',
+  'POST /api/internal/ical-sync':
+    'scheduled job (auto-sync OTA iCal calendars): checkCronSecret (CRON_SECRET header, timing-safe), and nginx does not route /api/internal/',
   'POST /api/internal/einvoice-jobs':
     'scheduled job: checkCronSecret (CRON_SECRET header, timing-safe), and nginx does not route /api/internal/',
   'POST /api/internal/ops-alerts':

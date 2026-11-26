@@ -256,6 +256,10 @@ export async function syncIcalFeed(feedId: string): Promise<{
     return { success: false, eventsCount: 0, error: 'Không tìm thấy liên kết iCal' }
   }
 
+  if (!feed.isActive) {
+    return { success: false, eventsCount: 0, error: 'Liên kết đang tạm dừng' }
+  }
+
   if (!feed.importUrl || !feed.importUrl.trim()) {
     return { success: false, eventsCount: 0, error: 'Chưa cấu hình URL nhập lịch iCal' }
   }
@@ -333,5 +337,38 @@ export async function syncIcalFeed(feedId: string): Promise<{
     }).catch(() => {})
     return { success: false, eventsCount: 0, error: msg }
   }
+}
+
+/**
+ * Syncs all active iCal feeds that have an importUrl configured.
+ * Optionally scoped to a single propertyId (for the "Sync all" button).
+ */
+export async function syncAllActiveIcalFeeds(
+  propertyId?: string
+): Promise<{ total: number; synced: number; failed: number }> {
+  const feeds = await prisma.icalSyncFeed.findMany({
+    where: {
+      isActive: true,
+      importUrl: { not: null },
+      ...(propertyId ? { propertyId } : {}),
+    },
+    select: { id: true, importUrl: true },
+  })
+
+  const targets = feeds.filter((f) => f.importUrl && f.importUrl.trim().length > 0)
+  let synced = 0
+  let failed = 0
+
+  const CONCURRENCY = 5
+  for (let i = 0; i < targets.length; i += CONCURRENCY) {
+    const batch = targets.slice(i, i + CONCURRENCY)
+    const results = await Promise.all(batch.map((f) => syncIcalFeed(f.id)))
+    for (const r of results) {
+      if (r.success) synced++
+      else failed++
+    }
+  }
+
+  return { total: targets.length, synced, failed }
 }
 

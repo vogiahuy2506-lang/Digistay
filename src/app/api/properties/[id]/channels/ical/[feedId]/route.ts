@@ -35,11 +35,15 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { name, importUrl, isActive } = body
+    const { name, channel, importUrl, isActive } = body
 
     const updateData: any = {}
     if (typeof name === 'string' && name.trim()) {
       updateData.name = name.trim()
+    }
+    const validChannels = ['AIRBNB', 'BOOKING_COM', 'AGODA', 'TRAVELOKA', 'EXPEDIA', 'VRBO', 'GOOGLE', 'OTHER']
+    if (typeof channel === 'string' && validChannels.includes(channel)) {
+      updateData.channel = channel
     }
 
     if (importUrl !== undefined) {

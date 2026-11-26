@@ -112,8 +112,8 @@ export async function POST(
     }
 
     // Validate channel
-    const validChannels: OtaChannel[] = ['AIRBNB', 'BOOKING_COM', 'AGODA', 'TRAVELOKA', 'EXPEDIA']
-    const assignedChannel = validChannels.includes(channel) ? channel : 'AIRBNB'
+    const validChannels = ['AIRBNB', 'BOOKING_COM', 'AGODA', 'TRAVELOKA', 'EXPEDIA', 'VRBO', 'GOOGLE', 'OTHER']
+    const assignedChannel = validChannels.includes(channel) ? channel : 'OTHER'
 
     const feed = await prisma.icalSyncFeed.create({
       data: {
