@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import { Header, PageContainer } from '@/components/layout'
 import {
   Card,
+  CardContent,
   Button,
   Input,
   Modal,
@@ -25,6 +26,8 @@ import {
   Plus,
   Trash2,
   Pencil,
+  BookOpen,
+  Info,
 } from 'lucide-react'
 
 function Skeleton({ className }: { className?: string }) {
@@ -470,6 +473,83 @@ export default function OtaChannelsPage() {
               </table>
             </div>
           )}
+        </Card>
+      </div>
+
+      {/* Guide Section: How to sync OTA via iCal */}
+      <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card className="lg:col-span-2 border-line bg-panel shadow-xs">
+          <CardContent className="p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-acc shrink-0" />
+              <h4 className="text-sm font-semibold text-fg">
+                Hướng dẫn kết nối 2 chiều trong 3 bước (hỗ trợ nhiều tài khoản OTA)
+              </h4>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div className="p-3 rounded-ctl bg-fg/[0.03] border border-line space-y-1">
+                <span className="inline-block px-2 py-0.5 rounded bg-acc/10 text-acc font-semibold text-[11px]">
+                  Bước 1
+                </span>
+                <p className="font-semibold text-fg">Thêm tài khoản OTA</p>
+                <p className="text-muted leading-relaxed">
+                  Bấm <strong>Thêm tài khoản OTA</strong>, chọn hạng phòng, chọn sàn (Airbnb, Booking.com, Agoda Homes...) và đặt tên gợi nhớ. Có thể thêm nhiều tài khoản cho 1 hạng phòng.
+                </p>
+              </div>
+              <div className="p-3 rounded-ctl bg-fg/[0.03] border border-line space-y-1">
+                <span className="inline-block px-2 py-0.5 rounded bg-acc/10 text-acc font-semibold text-[11px]">
+                  Bước 2
+                </span>
+                <p className="font-semibold text-fg">Nhận lịch từ sàn về Digistay</p>
+                <p className="text-muted leading-relaxed">
+                  Vào mục <strong>Xuất lịch (.ics)</strong> trên trang quản lý của sàn OTA, copy link dán vào ô <strong>Link nhận từ sàn</strong> trên Digistay rồi bấm <strong>Đồng bộ</strong>.
+                </p>
+              </div>
+              <div className="p-3 rounded-ctl bg-fg/[0.03] border border-line space-y-1">
+                <span className="inline-block px-2 py-0.5 rounded bg-acc/10 text-acc font-semibold text-[11px]">
+                  Bước 3
+                </span>
+                <p className="font-semibold text-fg">Đẩy lịch Digistay lên sàn</p>
+                <p className="text-muted leading-relaxed">
+                  Bấm nút <strong>Sao chép</strong> ở cột <em>Link xuất từ Digistay</em> và dán vào mục <strong>Nhập lịch (Import Calendar)</strong> trên sàn OTA để tự động khóa ngày khi có đơn mới.
+                </p>
+              </div>
+            </div>
+
+            <div className="border-t border-line pt-3 space-y-2 text-xs">
+              <p className="font-semibold text-fg">Cách lấy link .ics trên các sàn phổ biến:</p>
+              <ul className="space-y-1.5 text-muted list-disc pl-4">
+                <li><strong>Airbnb:</strong> Lịch (Calendar) → Cài đặt khả năng đặt phòng → Đồng bộ lịch (Calendar sync) → Xuất lịch / Nhập lịch.</li>
+                <li><strong>Booking.com:</strong> Lịch &amp; Giá (Calendar &amp; Pricing) → Đồng bộ lịch (Sync calendars) → Thêm liên kết lịch.</li>
+                <li><strong>Agoda Homes:</strong> Danh sách chỗ ở → Lịch → Đồng bộ lịch (Calendar Sync) → Xuất / Nhập lịch iCal.</li>
+                <li><strong>Google Calendar / Kênh khác:</strong> Cài đặt lịch → Tích hợp lịch → Địa chỉ iCal (<code>.ics</code>).</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-line bg-panel shadow-xs">
+          <CardContent className="p-5 space-y-3 text-xs">
+            <div className="flex items-center gap-2">
+              <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <h4 className="text-sm font-semibold text-fg">Lưu ý khi sử dụng iCal</h4>
+            </div>
+            <ul className="space-y-2 text-muted leading-relaxed list-disc pl-4">
+              <li>
+                <strong>Phù hợp nhất:</strong> Homestay, villa, căn hộ hoặc mỗi phòng tách thành 1 hạng phòng riêng (vì iCal chỉ báo <em>Trống</em> hoặc <em>Đã khóa</em>).
+              </li>
+              <li>
+                <strong>Không đồng bộ giá:</strong> iCal chỉ đồng bộ ngày trống/bận, giá bán vẫn được chỉnh riêng trên Digistay và từng sàn OTA.
+              </li>
+              <li>
+                <strong>Nhiều tài khoản:</strong> Bạn có thể gắn nhiều nick Airbnb, Booking.com khác nhau vào cùng 1 hạng phòng — Digistay sẽ gộp lịch khóa phòng đầy đủ.
+              </li>
+              <li>
+                <strong>Tốc độ cập nhật:</strong> Bạn có thể bấm <strong>Đồng bộ tất cả</strong> bất kỳ lúc nào; phía sàn OTA thường tự quét lại link Digistay sau mỗi 15–60 phút tùy sàn.
+              </li>
+            </ul>
+          </CardContent>
         </Card>
       </div>
 

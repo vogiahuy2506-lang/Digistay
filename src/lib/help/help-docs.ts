@@ -497,14 +497,15 @@ export const HELP_ARTICLES_VI: HelpArticle[] = [
   {
     id: 'art-ota-ical',
     categoryId: 'channels',
-    title: 'Đồng bộ lịch phòng OTA (Booking.com, Agoda, Airbnb) qua iCal',
-    summary: 'Hạn chế tối đa tình trạng trùng phòng khi vừa bán phòng trên các sàn OTA vừa bán phòng trực tiếp.',
-    readTimeMinutes: 4,
+    title: 'Đồng bộ lịch phòng OTA (Airbnb, Booking.com, Agoda Homes) qua iCal',
+    summary: 'Kết nối 1 hoặc nhiều tài khoản OTA cùng lúc để tự động khóa ngày trống 2 chiều, chống trùng phòng.',
+    readTimeMinutes: 3,
     tags: ['ota', 'booking.com', 'agoda', 'airbnb', 'ical', 'đồng bộ'],
     steps: [
-      { heading: 'Bước 1: Lấy link iCal từ Digistay', detail: 'Vào mục "Kênh bán OTA", chọn từng phòng và sao chép đường dẫn lịch xuất (Export iCal URL) của Digistay.' },
-      { heading: 'Bước 2: Dán link vào trang quản trị OTA', detail: 'Mở Extranet của Booking.com / Agoda / Airbnb -> Đồng bộ lịch -> Nhập lịch và dán link từ Digistay.' },
-      { heading: 'Bước 3: Nhập link ngược lại từ OTA về Digistay', detail: 'Sao chép link lịch xuất từ sàn OTA và dán vào ô "Nhập lịch iCal" trên Digistay để tự động khóa phòng khi có đơn mới từ sàn.' },
+      { heading: 'Bước 1: Thêm tài khoản OTA trên Digistay', detail: 'Vào mục "Kênh bán OTA", bấm "Thêm tài khoản OTA", chọn hạng phòng, chọn sàn (Airbnb, Booking.com, Agoda Homes, Google Calendar...) và đặt tên gợi nhớ. Có thể gắn nhiều tài khoản OTA cho 1 hạng phòng.' },
+      { heading: 'Bước 2: Nhập lịch từ OTA về Digistay', detail: 'Mở trang quản trị sàn OTA -> Xuất lịch (Export Calendar / Sync calendars) để copy link .ics, dán vào ô "Link lịch từ sàn OTA" trên Digistay rồi bấm Đồng bộ.' },
+      { heading: 'Bước 3: Dán link xuất từ Digistay lên sàn OTA', detail: 'Bấm Sao chép ở cột "Link xuất từ Digistay" và dán vào mục Nhập lịch (Import Calendar) trên sàn OTA để tự động khóa ngày khi có đơn từ web hoặc lễ tân.' },
+      { heading: 'Lưu ý khi sử dụng', detail: 'iCal đồng bộ trạng thái trống/khóa ngày rất chuẩn cho homestay, villa, căn hộ hoặc từng phòng riêng. Giá phòng vẫn được cài đặt riêng trên từng sàn.' },
     ],
   },
 
@@ -961,14 +962,15 @@ export const HELP_ARTICLES_EN: HelpArticle[] = [
   {
     id: 'art-ota-ical',
     categoryId: 'channels',
-    title: 'Synchronize OTA Room Availability (Booking.com, Agoda, Airbnb) via iCal',
-    summary: 'Prevent overbooking when selling rooms simultaneously across OTA platforms and your direct booking website.',
-    readTimeMinutes: 4,
+    title: 'Synchronize OTA Room Availability (Airbnb, Booking.com, Agoda Homes) via iCal',
+    summary: 'Connect one or multiple OTA accounts per room type to automatically block booked dates two-way and prevent overbooking.',
+    readTimeMinutes: 3,
     tags: ['ota', 'booking.com', 'agoda', 'airbnb', 'ical', 'sync'],
     steps: [
-      { heading: 'Step 1: Copy iCal export URL from Digistay', detail: 'Go to "OTA Channels", select a room, and copy the Digistay iCal Export URL.' },
-      { heading: 'Step 2: Paste link into OTA Extranet', detail: 'Open Booking.com / Agoda / Airbnb Extranet -> Calendar Sync -> Import Calendar, and paste the Digistay link.' },
-      { heading: 'Step 3: Import OTA calendar link back into Digistay', detail: 'Copy export link from the OTA channel and paste into Digistay "Import iCal" field to automatically block reserved dates.' },
+      { heading: 'Step 1: Add OTA account on Digistay', detail: 'Go to "OTA Channels", click "Add OTA Account", select the room type, platform (Airbnb, Booking.com, Agoda Homes, Google Calendar...), and give it a clear label. Multiple accounts per room type are supported.' },
+      { heading: 'Step 2: Import OTA calendar link into Digistay', detail: 'In your OTA Extranet -> Calendar Sync -> Export Calendar, copy the .ics URL and paste it into Digistay, then click Sync.' },
+      { heading: 'Step 3: Paste Digistay export link into OTA', detail: 'Copy the Digistay Export URL from the table and paste it into Import Calendar on the OTA platform to block dates automatically.' },
+      { heading: 'Good to know', detail: 'iCal syncs availability (free/blocked dates) and works best for homestays, villas, apartments, or individual room listings. Room rates remain managed separately on each platform.' },
     ],
   },
 
